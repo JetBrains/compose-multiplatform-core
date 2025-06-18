@@ -146,6 +146,24 @@ class VideoPlayerTestActivity : ComponentActivity() {
         Log.d(TAG, "ColorCorrectionMode toggled to: $colorCorrectionMode")
     }
 
+    enum class SuperSamplingMode {
+        NONE,
+        DEFAULT,
+    }
+
+    var superSamplingMode by mutableStateOf(SuperSamplingMode.DEFAULT)
+        private set
+
+    fun toggleSuperSamplingMode() {
+        superSamplingMode =
+            if (superSamplingMode == SuperSamplingMode.NONE) {
+                SuperSamplingMode.DEFAULT
+            } else {
+                SuperSamplingMode.NONE
+            }
+        Log.d(TAG, "SuperSamplingMode toggled to: $superSamplingMode")
+    }
+
     private var currentPoseForVideo: Pose? = null
     private var currentVideoSize: VideoSize? = null
     // When the video is recorded using a rotated phone, the encoded video
@@ -159,7 +177,6 @@ class VideoPlayerTestActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val session = (Session.create(this) as SessionCreateSuccess).session
-        session.resume()
         session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
 
@@ -585,6 +602,16 @@ class VideoPlayerTestActivity : ComponentActivity() {
                             SurfaceEntity.ContentSecurityLevel.NONE
                         }
 
+                    val superSamplingMode =
+                        if (
+                            this@VideoPlayerTestActivity.superSamplingMode ==
+                                SuperSamplingMode.DEFAULT
+                        ) {
+                            SurfaceEntity.SuperSampling.DEFAULT
+                        } else {
+                            SurfaceEntity.SuperSampling.NONE
+                        }
+
                     surfaceEntity =
                         SurfaceEntity.create(
                             session,
@@ -593,6 +620,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                             canvasShape,
                             surfaceContentLevel,
                             null,
+                            superSamplingMode,
                         )
                     // Make the video player movable (to make it easier to look at it from different
                     // angles and distances) (only on quad canvas)
@@ -1081,7 +1109,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 }
                 Button(
                     onClick = {
-                        session.scene.spatialEnvironment.requestFullSpaceMode()
+                        session.scene.requestFullSpaceMode()
                         // Set up the MoveableComponent on the first jump into FSM so the user can
                         // move the Main Panel out of the way.
                         if (movableComponentMP.value == null) {
@@ -1097,7 +1125,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 ) {
                     Text(text = "Request FSM", fontSize = 18.sp)
                 }
-                Button(onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }) {
+                Button(onClick = { session.scene.requestHomeSpaceMode() }) {
                     Text(text = "Request HSM", fontSize = 18.sp)
                 }
                 Button(onClick = { ActivityCompat.recreate(activity) }) {
@@ -1112,6 +1140,18 @@ class VideoPlayerTestActivity : ComponentActivity() {
                             "CC: Best Effort (Tap to User Managed)"
                         } else {
                             "CC: User Managed (Tap to Best Effort)"
+                        }
+                    Text(text = buttonTextToDisplay, fontSize = 18.sp)
+                }
+                Button(onClick = { activity.toggleSuperSamplingMode() }) {
+                    val buttonTextToDisplay =
+                        if (
+                            activity.superSamplingMode ==
+                                VideoPlayerTestActivity.SuperSamplingMode.DEFAULT
+                        ) {
+                            "SuperSampling: Enabled (Tap to disable)"
+                        } else {
+                            "SuperSampling: Disabled (Tap to enable)"
                         }
                     Text(text = buttonTextToDisplay, fontSize = 18.sp)
                 }

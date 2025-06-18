@@ -36,7 +36,7 @@
             android:label="@string/title_activity_mode_change"
             android:theme="@style/Theme.IntegrationTestsApp" />
        <activity
-           android:name=".movable.Movable"
+           android:name=".movable.MovableActivity"
            android:exported="true"
            android:label="Movable"
            android:theme="@style/Theme.IntegrationTestsApp" />

@@ -129,6 +129,8 @@ public final class QueryStats extends BaseStats {
     private final int mNumResultsReturnedAdditionalPages;
     /** Overall time used for the native function call. */
     private final int mNativeLatencyMillis;
+    /** Overall time used for the first native search call. */
+    private final int mFirstNativeCallLatencyMillis;
     /**
      * Overall time used for retrieving additional pages if the first page did not retrieve
      * enough results.
@@ -184,6 +186,7 @@ public final class QueryStats extends BaseStats {
         mNativeNumResultsReturnedCurrentPage = builder.mNativeNumResultsReturnedCurrentPage;
         mNumResultsReturnedAdditionalPages = builder.mNumResultsReturnedAdditionalPages;
         mNativeLatencyMillis = builder.mNativeLatencyMillis;
+        mFirstNativeCallLatencyMillis = builder.mFirstNativeCallLatencyMillis;
         mAdditionalPageRetrievalLatencyMillis = builder.mAdditionalPageRetrievalLatencyMillis;
         mNativeRankingLatencyMillis = builder.mNativeRankingLatencyMillis;
         mNativeDocumentRetrievingLatencyMillis = builder.mNativeDocumentRetrievingLatencyMillis;
@@ -297,6 +300,11 @@ public final class QueryStats extends BaseStats {
     /** Returns how much time spent on the native calls. */
     public int getNativeLatencyMillis() {
         return mNativeLatencyMillis;
+    }
+
+    /** Returns how much time is spent on the first native search call. */
+    public int getFirstNativeCallLatencyMillis() {
+        return mFirstNativeCallLatencyMillis;
     }
 
     /**
@@ -459,6 +467,7 @@ public final class QueryStats extends BaseStats {
         int mNativeNumResultsReturnedCurrentPage;
         int mNumResultsReturnedAdditionalPages;
         int mNativeLatencyMillis;
+        int mFirstNativeCallLatencyMillis;
         int mAdditionalPageRetrievalLatencyMillis;
         int mNativeRankingLatencyMillis;
         int mNativeDocumentRetrievingLatencyMillis;
@@ -595,6 +604,13 @@ public final class QueryStats extends BaseStats {
         @CanIgnoreReturnValue
         public @NonNull Builder setNativeLatencyMillis(int nativeLatencyMillis) {
             mNativeLatencyMillis = nativeLatencyMillis;
+            return this;
+        }
+
+        /** Sets time used for the first native function call. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setFirstNativeCallLatency(int firstNativeCallLatencyMillis) {
+            mFirstNativeCallLatencyMillis = firstNativeCallLatencyMillis;
             return this;
         }
 

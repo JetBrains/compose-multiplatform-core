@@ -38,7 +38,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-unit:1.8.0-rc02")
     implementation(project(":compose:material3:adaptive:adaptive"))
     implementation(project(":compose:material3:adaptive:adaptive-layout"))
-    implementation("androidx.compose.material3:material3:1.4.0-alpha15")
+    implementation(project(":compose:material3:material3"))
     implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
 
     implementation(project(":xr:compose:compose"))

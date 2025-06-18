@@ -23,6 +23,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,12 +74,14 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import kotlin.math.max
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
@@ -102,7 +106,7 @@ fun HorizontalMultiBrowseCarouselSample() {
 
     HorizontalMultiBrowseCarousel(
         state = rememberCarouselState { items.count() },
-        modifier = Modifier.width(412.dp).height(221.dp),
+        modifier = Modifier.fillMaxWidth().height(221.dp),
         preferredItemWidth = 186.dp,
         itemSpacing = 8.dp,
         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -174,8 +178,10 @@ fun HorizontalCenteredHeroCarouselSample() {
             CarouselItem(3, R.drawable.carousel_image_4, R.string.carousel_image_4_description),
             CarouselItem(4, R.drawable.carousel_image_5, R.string.carousel_image_5_description),
         )
+    val state = rememberCarouselState { items.count() }
+    val animationScope = rememberCoroutineScope()
     HorizontalCenteredHeroCarousel(
-        state = rememberCarouselState { items.count() },
+        state = state,
         modifier = Modifier.fillMaxWidth().height(221.dp).padding(horizontal = 24.dp),
         itemSpacing = 8.dp,
         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -183,7 +189,12 @@ fun HorizontalCenteredHeroCarouselSample() {
         val item = items[i]
         Image(
             modifier =
-                Modifier.fillMaxWidth().height(205.dp).maskClip(MaterialTheme.shapes.extraLarge),
+                Modifier.fillMaxWidth()
+                    .height(205.dp)
+                    .maskClip(MaterialTheme.shapes.extraLarge)
+                    .clickable(true, "Tap to focus", Role.Image) {
+                        animationScope.launch { state.animateScrollToItem(i) }
+                    },
             painter = painterResource(id = item.imageResId),
             contentDescription = stringResource(item.contentDescriptionResId),
             contentScale = ContentScale.Crop,

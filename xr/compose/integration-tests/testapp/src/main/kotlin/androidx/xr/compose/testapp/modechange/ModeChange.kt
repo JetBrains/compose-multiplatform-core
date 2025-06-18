@@ -94,7 +94,7 @@ class ModeChange : ComponentActivity() {
                     onClickRecreate = { this@ModeChange.recreate() },
                 ) { padding ->
                     PanelContent(padding, "FullSpace Mode", "Transition to HomeSpace Mode") {
-                        renderingSession!!.scene.spatialEnvironment.requestHomeSpaceMode()
+                        renderingSession!!.scene.requestHomeSpaceMode()
                     }
                 }
 
@@ -118,7 +118,7 @@ class ModeChange : ComponentActivity() {
             onClickRecreate = { this@ModeChange.recreate() },
         ) { padding ->
             PanelContent(padding, "HomeSpace Mode", "Transition to FullSpace Mode") {
-                renderingSession!!.scene.spatialEnvironment.requestFullSpaceMode()
+                renderingSession!!.scene.requestFullSpaceMode()
             }
         }
     }

@@ -15,6 +15,7 @@
  */
 
 import androidx.build.AndroidXConfig
+import androidx.build.ApkCopyHelperKt
 
 plugins {
     id("AndroidXPlugin")
@@ -61,3 +62,7 @@ dependencies {
 
     compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
 }
+
+// Making this APK available via Android Build so the QA team can
+// access it in a convenient manner.
+ApkCopyHelperKt.setupAppApkCopy(project, "release")

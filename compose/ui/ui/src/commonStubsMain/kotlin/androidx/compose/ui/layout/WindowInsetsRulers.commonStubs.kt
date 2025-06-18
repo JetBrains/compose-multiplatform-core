@@ -16,26 +16,10 @@
 
 package androidx.compose.ui.layout
 
-import androidx.annotation.IntRange
-
-actual sealed interface WindowInsetsAnimationProperties {
-    actual val source: RectRulers
-
-    actual val target: RectRulers
-
-    actual val isVisible: Boolean
-
-    actual val isAnimating: Boolean
-
-    actual val fraction: Float
-
-    @get:IntRange(from = 0) actual val durationMillis: Long
-}
-
 internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope): List<RectRulers> =
     emptyList()
 
 internal actual fun findInsetsAnimationProperties(
     placementScope: Placeable.PlacementScope,
     windowInsetsRulers: WindowInsetsRulers,
-): WindowInsetsAnimationProperties = NoAnimationProperties
+): WindowInsetsAnimation = NoWindowInsetsAnimation

@@ -70,7 +70,7 @@ import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.animation.Animation
 import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.modechange.ModeChange
-import androidx.xr.compose.testapp.movable.Movable
+import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
 import androidx.xr.compose.testapp.permissionsdialog.PermissionsDialog
 import androidx.xr.compose.testapp.rotation.Rotation
@@ -257,7 +257,7 @@ class MainActivity : ComponentActivity() {
                         startTest<CurvedLayout>()
                     }
                     TestCaseColumnRowItem(getString(R.string.movable_panels_test)) {
-                        startTest<Movable>()
+                        startTest<MovableActivity>()
                     }
                     TestCaseColumnRowItem(getString(R.string.enable_permission_dialog_test)) {
                         startTest<PermissionsDialog>()

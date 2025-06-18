@@ -29,6 +29,7 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 35
         namespace = "androidx.navigation.compose"
+        androidResources.enable = true
     }
     desktop()
     mac()

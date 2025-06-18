@@ -96,7 +96,7 @@ fun SourceAndTargetInsetsSample() {
                         val placeable =
                             measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
                         val ime = WindowInsetsRulers.Ime
-                        val animationProperties = ime.getAnimationProperties(this)
+                        val animationProperties = ime.getAnimation(this)
                         val height = constraints.maxHeight.toFloat()
                         val sourceBottom = animationProperties.source.bottom.current(height)
                         val targetBottom = animationProperties.target.bottom.current(height)
@@ -149,15 +149,14 @@ fun InsetsRulersAlphaSample() {
                 val bottom =
                     WindowInsetsRulers.NavigationBars.current.bottom.current(0f).roundToInt()
                 measurables[0].measure(Constraints.fixed(width, top)).placeWithLayer(0, 0) {
-                    alpha = WindowInsetsRulers.StatusBars.getAnimationProperties(this@layout).alpha
+                    alpha = WindowInsetsRulers.StatusBars.getAnimation(this@layout).alpha
                 }
                 measurables[2].measure(Constraints.fixed(width, height - bottom)).place(0, bottom)
                 measurables[1].measure(Constraints.fixed(width, bottom - top)).placeWithLayer(
                     0,
                     top,
                 ) {
-                    alpha =
-                        WindowInsetsRulers.NavigationBars.getAnimationProperties(this@layout).alpha
+                    alpha = WindowInsetsRulers.NavigationBars.getAnimation(this@layout).alpha
                 }
             }
         },
@@ -166,7 +165,7 @@ fun InsetsRulersAlphaSample() {
 
 @Composable
 @Sampled
-fun RulersIgnoringVisibilitySample() {
+fun MaximumSample() {
     // When the status bar is visible, don't show the content that would be in the status area.
     // When the status bar is hidden, show content that would be in the status area.
     Layout(
@@ -179,12 +178,8 @@ fun RulersIgnoringVisibilitySample() {
             val width = constraints.maxWidth
             val height = constraints.maxHeight
             layout(width, height) {
-                val top =
-                    WindowInsetsRulers.StatusBars.rulersIgnoringVisibility.top
-                        .current(0f)
-                        .roundToInt()
-                val statusBarAnimationProperties =
-                    WindowInsetsRulers.StatusBars.getAnimationProperties(this)
+                val top = WindowInsetsRulers.StatusBars.maximum.top.current(0f).roundToInt()
+                val statusBarAnimationProperties = WindowInsetsRulers.StatusBars.getAnimation(this)
                 if (!statusBarAnimationProperties.isVisible) {
                     // Only place the status bar content when the status bar isn't visible. We don't
                     // want it cluttering the status bar area when the status bar is shown.

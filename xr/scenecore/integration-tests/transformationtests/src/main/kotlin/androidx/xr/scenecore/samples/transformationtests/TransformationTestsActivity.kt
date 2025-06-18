@@ -66,7 +66,6 @@ class TransformationTestsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.transformationtests_activity)
-        session.resume()
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         setupMovableMainPanel()
 

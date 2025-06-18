@@ -16,94 +16,81 @@
 
 package androidx.test.shell
 
+import android.annotation.SuppressLint
 import androidx.kruth.assertThat
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
-import androidx.test.shell.utils.asyncDelayed
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import androidx.test.shell.internal.instrumentationPackageMediaDir
+import java.io.File
+import org.junit.Before
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = 23)
 @SmallTest
 class ShellTest {
 
-    @Test
-    fun manyCommands() = withShell {
-        val howMany = 100
+    companion object {
+        private const val PKG_SETTINGS: String = "com.android.settings"
+    }
 
-        // Runs the above echo command to generate 100 outputs
-        val list = (0 until howMany).map { command("echo $it").stdOut.text() }
-
-        // Ensure that all the generated outputs are stored in the list
-        assertThat(list)
-            .containsExactly(*(0 until howMany).map { it.toString() }.toTypedArray())
-            .inOrder()
+    @Before
+    fun setup() {
+        Shell.setShellProcessFactory { ShellProcess.create(nativeLogs = true) }
     }
 
     @Test
-    fun command() = withShell {
-        val out = command("echo test")
-        assertThat(out.stdOut.text()).isEqualTo("test")
-        assertThat(out.stdErr.text()).isEqualTo("")
-    }
+    fun wifi(): Unit =
+        with(Shell.wifi()) {
+            turnOff()
+            assertThat(isEnabled()).isFalse()
+            turnOn()
+            assertThat(isEnabled()).isTrue()
+            turnOff()
+            assertThat(isEnabled()).isFalse()
+        }
 
     @Test
-    fun multiCommand() = withShell {
-        val out = command("echo 1; echo 2; echo 3;")
-        assertThat(out.stdOut.text().lines()).containsExactly("1", "2", "3")
-        assertThat(out.stdErr.text()).isEqualTo("")
-    }
+    fun startStopApplication(): Unit =
+        with(Shell.application(PKG_SETTINGS)) {
+            startApp()
+            assertThat(Shell.screen().resumedActivityName()).startsWith(PKG_SETTINGS)
+            stopApp()
+            assertThat(Shell.screen().resumedActivityName()).doesNotContain(PKG_SETTINGS)
+        }
 
     @Test
-    fun emptyCommand() = withShell {
-        val out = command("echo")
-        assertThat(out.stdOut.text()).isEqualTo("")
-        assertThat(out.stdErr.text()).isEqualTo("")
-    }
+    fun clearApplicationData(): Unit =
+        with(Shell.application(PKG_SETTINGS)) {
+            startApp()
+            assertThat(Shell.screen().resumedActivityName()).startsWith(PKG_SETTINGS)
+            clearAppData()
+            assertThat(Shell.screen().resumedActivityName()).doesNotContain(PKG_SETTINGS)
+        }
 
     @Test
-    fun multiLineCommand() = withShell {
-        val out = command("echo 1; echo 2; echo 3")
-        assertThat(out.stdOut.text())
-            .isEqualTo(
-                """
-            |1
-            |2
-            |3
-        """
-                    .trimMargin()
-            )
-        assertThat(out.stdErr.text()).isEqualTo("")
-    }
-
-    @Test
-    fun nonExistingCommand() = withShell {
-        val out = command("""echo "Error message" >&2""")
-        assertThat(out.stdErr.text()).isEqualTo("Error message")
-        assertThat(out.stdOut.text()).isEqualTo("")
-    }
-
-    @Test
-    fun multipleTerminalInstances() = withShell {
-        val path = "/sdcard/test"
-
-        val output =
-            Executors.newSingleThreadExecutor()
-                .submit(
-                    Callable {
-                        Shell.create()
-                            .command("while ! [ -f \"$path\" ]; do sleep 1; done && cat \"$path\"")
+    fun killPid(): Unit =
+        with(Shell.process()) {
+            val pid =
+                with(Shell.command("echo pid:$$ ; exec sleep 10")) {
+                    stdOutStream {
+                        bufferedReader()
+                            .lineSequence()
+                            .first { it.startsWith("pid:") }
+                            .split("pid:")[1]
+                            .toInt()
                     }
-                )
+                }
+            killPid(pid)
+            assertThat(getPid("sleep")).isEqualTo(-1)
+        }
 
-        asyncDelayed(1000) { Shell.create().command("echo hello > $path") }
-
-        val out = output.get(5, TimeUnit.SECONDS)
-        assertThat(out.stdErr.text()).isEmpty()
-        assertThat(out.stdOut.text()).isEqualTo("hello")
-    }
-
-    private fun withShell(block: Shell.() -> (Unit)): Unit = Shell.create().use { block(it) }
+    @SuppressLint("BanThreadSleep")
+    @Test
+    fun recording(): Unit =
+        with(Shell.recorder()) {
+            val file = File(instrumentationPackageMediaDir, "recording.mp4")
+            val recording = start(outputFile = file, timeLimitSeconds = 5, bitRateMb = 4)
+            recording.await()
+            assertThat(file.length()).isGreaterThan(0L)
+        }
 }

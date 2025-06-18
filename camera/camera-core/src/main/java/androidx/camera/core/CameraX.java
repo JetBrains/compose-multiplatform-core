@@ -39,6 +39,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
 import androidx.arch.core.util.Function;
+import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
@@ -428,12 +429,17 @@ public final class CameraX {
                     executor.init(mCameraFactory);
                 }
 
+                // Initialize the Repository with the Factory
                 mCameraRepository.init(mCameraFactory);
+
+                // Initialize the Coordinator with the Repository
+                CameraCoordinator cameraCoordinator = mCameraFactory.getCameraCoordinator();
+                cameraCoordinator.init(mCameraRepository);
 
                 // Prepare CameraUseCaseAdapterProvider
                 mCameraUseCaseAdapterProvider = new CameraUseCaseAdapterProviderImpl(
                         mCameraRepository,
-                        mCameraFactory.getCameraCoordinator(),
+                        cameraCoordinator,
                         mDefaultConfigFactory,
                         mStreamSpecsCalculator);
                 for (CameraInternal camera : mCameraRepository.getCameras()) {

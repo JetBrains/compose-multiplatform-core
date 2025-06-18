@@ -365,6 +365,9 @@ constructor(
             synchronized(lock) {
                 closeCurrentUseCases()
                 meteringRepeating.onUnbind()
+                cameraDevices.disconnectAsync(cameraConfig.cameraId).also {
+                    closingCameraJobs.add(it)
+                }
                 closingCameraJobs.toList()
             }
         closingJobs.joinAll()
@@ -899,6 +902,7 @@ constructor(
                         streamSpec.implementationOptions ?: MutableOptionsBundle.create(),
                         streamSpec.sessionType,
                         streamSpec.expectedFrameRateRange,
+                        useCase.currentConfig.isStrictFrameRateRequired,
                     )
                 )
             }

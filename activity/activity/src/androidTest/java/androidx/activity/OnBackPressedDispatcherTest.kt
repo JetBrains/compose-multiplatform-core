@@ -18,6 +18,7 @@ package androidx.activity
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.testing.TestLifecycleOwner
+import androidx.navigationevent.NavigationEventCallback
 import androidx.test.annotation.UiThreadTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -510,8 +511,8 @@ class OnBackPressedHandlerTest {
     @UiThreadTest
     @Test
     fun testBothCallbacksAdded() {
-        val callback1 = CountingOnBackPressedCallback()
-        dispatcher.eventDispatcher.addCallback(callback1.eventCallback)
+        val callback1 = CountingNavigationEventCallback()
+        dispatcher.eventDispatcher.addCallback(callback1)
 
         val callback2 = CountingOnBackPressedCallback()
         dispatcher.addCallback(callback2)
@@ -549,6 +550,20 @@ class OnBackPressedHandlerTest {
         assertWithMessage("Count should be incremented after onBackPressed")
             .that(callback.count)
             .isEqualTo(2)
+
+        callback.remove()
+
+        dispatcher1.onBackPressed()
+
+        assertWithMessage("Count should stay the same after remove")
+            .that(callback.count)
+            .isEqualTo(2)
+
+        dispatcher2.onBackPressed()
+
+        assertWithMessage("Count should stay the same after remove")
+            .that(callback.count)
+            .isEqualTo(2)
     }
 
     @UiThreadTest
@@ -567,12 +582,66 @@ class OnBackPressedHandlerTest {
     @UiThreadTest
     @Test
     fun testOnBackPressedDispatchesToNavigationEventCallback() {
-        val callback = CountingOnBackPressedCallback()
-        dispatcher.eventDispatcher.addCallback(callback.eventCallback)
+        val callback = CountingNavigationEventCallback()
+        dispatcher.eventDispatcher.addCallback(callback)
 
         dispatcher.onBackPressed()
 
         assertWithMessage("Count should be incremented after onBackPressed")
+            .that(callback.count)
+            .isEqualTo(1)
+    }
+
+    @Test
+    fun removeShouldRemoveAllRegistrationsIfACallbackIsAddedToTheSameDispatcherMultipleTimes() {
+        val callback = CountingOnBackPressedCallback()
+
+        dispatcher.addCallback(callback)
+        dispatcher.addCallback(callback)
+
+        dispatcher.onBackPressed()
+
+        assertWithMessage("Count should be incremented after onBackPressed")
+            .that(callback.count)
+            .isEqualTo(1)
+
+        // Remove all registrations.
+        callback.remove()
+
+        dispatcher.onBackPressed()
+
+        assertWithMessage("Count should not be incremented after remove()")
+            .that(callback.count)
+            .isEqualTo(1)
+    }
+
+    @Test
+    fun lifecycleAutoRemoveShouldNotRemoveTheNewestRegistrationIfACallbackIsAddedToTheSameDispatcherMultipleTimes() {
+        val callback = CountingOnBackPressedCallback()
+
+        val lifecycleOwner1 = TestLifecycleOwner(Lifecycle.State.STARTED)
+        dispatcher.addCallback(lifecycleOwner1, callback)
+
+        val lifecycleOwner2 = TestLifecycleOwner(Lifecycle.State.STARTED)
+
+        dispatcher.addCallback(
+            lifecycleOwner2,
+            object : OnBackPressedCallback(enabled = true) {
+                override fun handleOnBackPressed() {
+                    // no-op
+                }
+            },
+        )
+        dispatcher.addCallback(lifecycleOwner2, callback)
+
+        // Should remove the first registration.
+        lifecycleOwner1.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+
+        dispatcher.onBackPressed()
+
+        assertWithMessage(
+                "Count should be incremented as the second registration is still at the top"
+            )
             .that(callback.count)
             .isEqualTo(1)
     }
@@ -599,5 +668,14 @@ private class CountingOnBackPressedCallback(
     override fun handleOnBackPressed() {
         count++
         onBackPressed()
+    }
+}
+
+private class CountingNavigationEventCallback : NavigationEventCallback(isEnabled = true) {
+    var count = 0
+        private set
+
+    override fun onEventCompleted() {
+        count++
     }
 }

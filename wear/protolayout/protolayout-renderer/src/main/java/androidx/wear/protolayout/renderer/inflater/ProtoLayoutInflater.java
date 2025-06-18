@@ -3011,7 +3011,12 @@ public final class ProtoLayoutInflater {
                 textViewLayout.getLineBottom(lineCntNum - 1)
                         - textViewLayout.getLineTop(lineCntNum - 1);
 
-        int availableHeight = /* total height */ parent.getHeight() - lastLineHeight;
+        // Available height is total parent height with excluded vertical padding and last line.
+        int availableHeight =
+                parent.getHeight()
+                        - parent.getPaddingTop()
+                        - parent.getPaddingBottom()
+                        - lastLineHeight;
 
         int visibleLinesCnt = 1; // Definitely we have space for 1 ("last") line
         int currentLineIndex = 0;

@@ -954,38 +954,33 @@ fun ButtonStackDemo() {
         ScalingLazyDemo {
             item { ListHeader { Text(text = "Button Stack") } }
 
-            buttonStack(cornerExtraSmall)
+            item { ButtonStack(cornerExtraSmall) }
 
             // Additional spacing between button stacks to emphasise the groupings
             item { Spacer(Modifier.height(8.dp)) }
 
-            buttonStack(cornerExtraSmall)
+            item { ButtonStack(cornerExtraSmall) }
         }
     }
 }
 
-private fun ScalingLazyListScope.buttonStack(cornerSize: CornerSize) {
-    item {
+@Composable
+private fun ButtonStack(cornerSize: CornerSize) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Button(
-            onClick = {},
+            onClick = { /* Do something */ },
             modifier = Modifier.fillMaxWidth(),
             shape = ButtonDefaults.shape.bottom(cornerSize),
             label = { Text("Top", Modifier.fillMaxWidth()) },
         )
-    }
-
-    item {
         Button(
-            onClick = {},
+            onClick = { /* Do something */ },
             modifier = Modifier.fillMaxWidth(),
             shape = ButtonDefaults.shape.copy(cornerSize),
             label = { Text("Middle", Modifier.fillMaxWidth()) },
         )
-    }
-
-    item {
         Button(
-            onClick = {},
+            onClick = { /* Do something */ },
             modifier = Modifier.fillMaxWidth(),
             shape = ButtonDefaults.shape.top(cornerSize),
             label = { Text("Bottom", Modifier.fillMaxWidth()) },

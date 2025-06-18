@@ -25,6 +25,14 @@ import androidx.xr.runtime.Session
 import androidx.xr.scenecore.SpatialPointerComponent
 import androidx.xr.scenecore.SpatialPointerIcon
 
+/**
+ * When present, this modifier defines how the pointer icon will be displayed when the spatial
+ * pointer hovers over an element. Any child elements will inherit the pointer icon setting that
+ * this modifier defines for their parent element upon hovering.
+ *
+ * @param icon The [SpatialPointerIcon] to be displayed on hover.
+ * @return A [SubspaceModifier] that includes the hover icon behavior.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.pointerHoverIcon(icon: SpatialPointerIcon): SubspaceModifier =
     this.then(SpatialPointerHoverIconElement(icon))

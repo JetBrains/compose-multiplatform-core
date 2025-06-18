@@ -14,6 +14,15 @@ package androidx.appsearch.app {
 
 package androidx.appsearch.builtintypes {
 
+  @androidx.appsearch.annotation.Document(name="builtin:Account") public class Account {
+    ctor public Account(String, String, String, String, String);
+    method public String getAccountId();
+    method public String getAccountName();
+    method public String getAccountType();
+    method public String getId();
+    method public String getNamespace();
+  }
+
   @androidx.appsearch.annotation.Document(name="builtin:Alarm") public class Alarm extends androidx.appsearch.builtintypes.Thing {
     method public String? getBlackoutPeriodEndDate();
     method public String? getBlackoutPeriodStartDate();

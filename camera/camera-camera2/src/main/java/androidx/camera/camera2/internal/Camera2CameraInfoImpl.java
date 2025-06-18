@@ -18,7 +18,6 @@ package androidx.camera.camera2.internal;
 
 import static android.hardware.camera2.CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES;
 import static android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON;
-import static android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION;
 import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO;
 import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA;
 import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_PRIVATE_REPROCESSING;
@@ -655,17 +654,7 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     @Override
     public boolean isPreviewStabilizationSupported() {
-        int[] availableVideoStabilizationModes =
-                mCameraCharacteristicsCompat.get(
-                        CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
-        if (availableVideoStabilizationModes != null) {
-            for (int mode : availableVideoStabilizationModes) {
-                if (mode == CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return VideoStabilizationUtil.isPreviewStabilizationSupported(mCameraCharacteristicsCompat);
     }
 
     /**

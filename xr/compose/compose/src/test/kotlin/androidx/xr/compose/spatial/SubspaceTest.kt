@@ -3235,7 +3235,7 @@ class SubspaceTest {
             TestSetup {
                 testNode = ContentlessEntity.create(LocalSession.current!!, "TestRoot")
                 CompositionLocalProvider(LocalSubspaceRootNode provides testNode) {
-                    assertThat(LocalSession.current!!.scene.centerOfAttention).isNull()
+                    assertThat(LocalSession.current!!.scene.keyEntity).isNull()
                     ApplicationSubspace {
                         SpatialBox(modifier = SubspaceModifier.testTag("Box")) {}
                     }
@@ -3256,7 +3256,7 @@ class SubspaceTest {
     fun applicationSubspace_multipleApplicationSubspaces_haveTheSameRootContainer() {
         composeTestRule.setContent {
             TestSetup {
-                assertThat(LocalSession.current!!.scene.centerOfAttention).isNull()
+                assertThat(LocalSession.current!!.scene.keyEntity).isNull()
                 ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
                 ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box2")) {} }
             }

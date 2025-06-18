@@ -31,7 +31,7 @@ import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
  *   drawable resource reference. Setting this to the default value [Resources.ID_NULL] means that
  *   it will not be displayed.
  * @param onClick Action to perform upon the item being clicked/pressed.
- * @sample androidx.compose.foundation.samples.AddItemToTextContextMenuAndroid
+ * @sample androidx.compose.foundation.samples.AppendItemToTextContextMenuAndroid
  */
 fun TextContextMenuBuilderScope.item(
     key: Any,

@@ -103,16 +103,6 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
             }
         }
 
-    // Note: public experimental properties are not allowed because the accessors will not appear
-    // experimental to Java clients. There are public accessors for this property below.
-    @ExperimentalInkCustomBrushApi
-    private var textureBitmapStore: TextureBitmapStore = TextureBitmapStore { null }
-        @JvmName("setTextureBitmapStorePrivate")
-        set(value) {
-            check(!isInitialized()) { "Cannot set textureBitmapStore after initialization." }
-            field = value
-        }
-
     /**
      * [TextureBitmapStore] used by the default value for [rendererFactory].
      *
@@ -121,20 +111,11 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * something that does load and store texture images, it must be set before the first call to
      * [startStroke] or [eagerInit].
      */
-    @ExperimentalInkCustomBrushApi
-    public fun getTextureBitmapStore(): TextureBitmapStore {
-        return textureBitmapStore
-    }
-
-    /**
-     * Sets the [TextureBitmapStore] used by the default value for [rendererFactory].
-     *
-     * See [getTextureBitmapStore].
-     */
-    @ExperimentalInkCustomBrushApi
-    public fun setTextureBitmapStore(value: TextureBitmapStore) {
-        textureBitmapStore = value
-    }
+    public var textureBitmapStore: TextureBitmapStore = TextureBitmapStore { null }
+        set(value) {
+            check(!isInitialized()) { "Cannot set textureBitmapStore after initialization." }
+            field = value
+        }
 
     /**
      * A function that creates a [CanvasStrokeRenderer] when invoked. The default implementation of
@@ -143,7 +124,7 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * the first call to [startStroke] or [eagerInit].
      */
     public var rendererFactory: () -> CanvasStrokeRenderer = {
-        @OptIn(ExperimentalInkCustomBrushApi::class) CanvasStrokeRenderer.create(textureBitmapStore)
+        CanvasStrokeRenderer.create(textureBitmapStore)
     }
         set(value) {
             check(!isInitialized()) { "Cannot set rendererFactory after initialization." }
@@ -152,11 +133,12 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
         }
 
     /**
-     * Denote an area of this [InProgressStrokesView] where no ink should be visible. This is useful
-     * for UI elements that float on top of (in Z order) the drawing surface - without this, a user
-     * would be able to draw in-progress ("wet") strokes on top of those UI elements, but then when
-     * the stroke is finished, it will appear as a dry stroke underneath of the UI element. If this
-     * mask is set to the shape and position of the floating UI element, then the ink will never be
+     * Denote an area of this [InProgressStrokesView] where no ink should be visible. A value of
+     * `null` indicates that strokes will be visible anywhere they are drawn. This is useful for UI
+     * elements that float on top of (in Z order) the drawing surface - without this, a user would
+     * be able to draw in-progress ("wet") strokes on top of those UI elements, but then when the
+     * stroke is finished, it will appear as a dry stroke underneath of the UI element. If this mask
+     * is set to the shape and position of the floating UI element, then the ink will never be
      * rendered in that area, making it appear as if it's being drawn underneath the UI element.
      *
      * This technique is most convincing when the UI element is opaque. Often there are parts of the
@@ -164,6 +146,11 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * result will look a little different between wet and dry strokes for those cases, but it can
      * be a worthwhile tradeoff compared to the alternative of drawing wet strokes on top of that UI
      * element.
+     *
+     * Note that this parameter does not affect the contents of the strokes at all, nor how they
+     * appear when drawn in a separate composable after
+     * [InProgressStrokesFinishedListener.onStrokesFinished] is called - just how the strokes appear
+     * when they are still in progress in this view.
      */
     public var maskPath: Path? = null
         set(value) {
@@ -363,6 +350,12 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
     /** Removes a listener that had previously been added with [addFinishedStrokesListener]. */
     public fun removeFinishedStrokesListener(listener: InProgressStrokesFinishedListener) {
         finishedStrokesListeners.remove(listener)
+    }
+
+    /** Removes all listeners that had previously been added with [addFinishedStrokesListener]. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    public fun clearFinishedStrokesListeners() {
+        finishedStrokesListeners.clear()
     }
 
     /**
@@ -840,10 +833,11 @@ constructor(context: Context, attrs: AttributeSet? = null, @AttrRes defStyleAttr
      * In some ways this is similar to [flush], which is intended for production use in certain
      * circumstances.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @VisibleForTesting
-    internal fun sync(timeout: Long, timeoutUnit: TimeUnit) {
+    public fun sync(timeout: Long, timeoutUnit: TimeUnit) {
+        // Nothing to sync if it's not initialized.
         if (isInitialized()) {
-            // Nothing to sync if it's not initialized.
             inProgressStrokesManager.sync(timeout, timeoutUnit)
         }
     }

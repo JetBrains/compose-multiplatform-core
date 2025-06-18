@@ -32,6 +32,7 @@ import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
+import kotlin.math.PI
 import kotlin.math.max
 
 /**
@@ -50,7 +51,7 @@ internal sealed class CoreEntity(public val entity: Entity) : OpaqueEntity {
     private val density: Density
         get() = layout?.density ?: error { "CoreEntity is not attached to a layout." }
 
-    internal fun updateEntityPose() {
+    internal open fun updateEntityPose() {
         // Compose XR uses pixels, SceneCore uses meters.
         val corePose =
             layout?.measurableLayout?.poseInParentEntity?.convertPixelsToMeters(density)
@@ -106,7 +107,7 @@ internal sealed class CoreEntity(public val entity: Entity) : OpaqueEntity {
             field = value
         }
 
-    public var parent: CoreEntity? = null
+    public open var parent: CoreEntity? = null
         set(value) {
             field = value
 
@@ -304,6 +305,94 @@ internal class CoreSurfaceEntity(
         (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
             surfaceEntity.featherRadiusY = it.size.toWidthPercent(size.width.toFloat(), density)
             surfaceEntity.featherRadiusX = it.size.toHeightPercent(size.height.toFloat(), density)
+        }
+    }
+}
+
+/**
+ * Wrapper class for sphere-based surface entities from SceneCore. Head pose is not a dynamic
+ * property, and should just be calculated upon instantiation to avoid head locking the sphere.
+ */
+internal class CoreSphereSurfaceEntity(
+    internal val surfaceEntity: SurfaceEntity,
+    private val headPose: Pose?,
+    val initialDensity: Density,
+) : CoreEntity(surfaceEntity) {
+
+    internal var stereoMode: Int
+        get() = surfaceEntity.stereoMode
+        set(value) {
+            if (value != surfaceEntity.stereoMode) {
+                surfaceEntity.stereoMode = value
+            }
+        }
+
+    private var currentFeatheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect
+
+    // Layout's density is automatically updated during a configuration change, and may differ from
+    // initialDensity.
+    private val density: Density
+        get() = layout?.density ?: initialDensity
+
+    override fun updateEntityPose() {
+        if (headPose == null) {
+            Log.w("CoreSphereSurfaceEntity", "Positioning Sphere without head Pose.")
+            super.updateEntityPose()
+        } else {
+            // Center the sphere around the user and apply any corePose adjustment
+            val corePose =
+                layout?.measurableLayout?.poseInParentEntity?.convertPixelsToMeters(density)
+                    ?: Pose.Identity
+            val poseFromHead = corePose.copy(corePose.translation.plus(headPose.translation))
+            if (entity.getPose() != poseFromHead) {
+                entity.setPose(poseFromHead)
+            }
+        }
+    }
+
+    /** The parent of spheres is always scene.activitySpaceRoot. Setting this has no affect. */
+    override var parent: CoreEntity? = null
+
+    /** Radius in meters. */
+    internal var radius: Float
+        get() = radiusFromShape(surfaceEntity.canvasShape)
+        set(value) {
+            val shape = surfaceEntity.canvasShape
+            if (value != radiusFromShape(shape)) {
+                if (shape is SurfaceEntity.CanvasShape.Vr180Hemisphere) {
+                    surfaceEntity.canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(value)
+                } else {
+                    surfaceEntity.canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(value)
+                }
+                updateFeathering()
+            }
+        }
+
+    private fun radiusFromShape(shape: SurfaceEntity.CanvasShape): Float {
+        if (shape is SurfaceEntity.CanvasShape.Vr180Hemisphere) {
+            return shape.radius
+        } else if (shape is SurfaceEntity.CanvasShape.Vr360Sphere) {
+            return shape.radius
+        }
+        throw IllegalStateException("Shape must be spherical")
+    }
+
+    internal fun setFeatheringEffect(featheringEffect: SpatialFeatheringEffect) {
+        currentFeatheringEffect = featheringEffect
+        updateFeathering()
+    }
+
+    private fun updateFeathering() {
+        val semicircleArcLength = Meter((radius * PI).toFloat()).toPx(density)
+        (currentFeatheringEffect as? SpatialSmoothFeatheringEffect)?.let {
+            surfaceEntity.featherRadiusX =
+                it.size.toWidthPercent(
+                    if (surfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Vr180Hemisphere)
+                        semicircleArcLength / 2
+                    else semicircleArcLength,
+                    density,
+                )
+            surfaceEntity.featherRadiusY = it.size.toHeightPercent(semicircleArcLength, density)
         }
     }
 }

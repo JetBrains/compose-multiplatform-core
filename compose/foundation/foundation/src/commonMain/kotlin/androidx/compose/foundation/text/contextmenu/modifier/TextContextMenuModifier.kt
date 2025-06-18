@@ -39,9 +39,9 @@ import androidx.compose.ui.platform.InspectorInfo
  *   such as [separator()][TextContextMenuBuilderScope.separator], to add components. The `item`
  *   function is not in the common source set, but is instead defined as an extension function in
  *   the platform specific source sets.
- * @sample androidx.compose.foundation.samples.AddComponentsToTextContextMenu
+ * @sample androidx.compose.foundation.samples.AppendComponentsToTextContextMenu
  */
-fun Modifier.addTextContextMenuComponents(
+fun Modifier.appendTextContextMenuComponents(
     builder: TextContextMenuBuilderScope.() -> Unit
 ): Modifier = this then AddTextContextMenuDataComponentsElement(builder)
 
@@ -51,11 +51,11 @@ fun Modifier.addTextContextMenuComponents(
  * [filter] will not be passed [TextContextMenuSeparator], as they pass by default.
  *
  * [filter]s added via this modifier will always run after every `builder` added via
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents]. When there are multiple
- * instances of this modifier in a layout hierarchy, every [filter] must pass in order for a context
- * menu to be shown. They are always applied after all
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] have been applied, but the
- * order in which they run should not be depended on.
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents]. When there are
+ * multiple instances of this modifier in a layout hierarchy, every [filter] must pass in order for
+ * a context menu to be shown. They are always applied after all
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] have been applied,
+ * but the order in which they run should not be depended on.
  *
  * @param filter a snapshot-aware lambda that determines whether a [TextContextMenuComponent] should
  *   be included in the context menu.
@@ -142,7 +142,7 @@ private const val wrongNodeTypeErrorMessage =
 
 /**
  * Traverses ancestors to find all
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] and
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] and
  * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents] modifiers and runs
  * [builderBlock] and [filterBlock] for each respectively. Each block allows the caller to make use
  * of the `filter` and `builder` parameters of each of the related modifiers.

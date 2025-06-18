@@ -36,7 +36,6 @@ fun createSession(activity: AppCompatActivity): Session? {
         is SessionCreateSuccess -> {
             session = sessionCreateResult.session
             obtainUserPermissions(activity)
-            session.resume()
         }
 
         is SessionCreatePermissionsNotGranted -> {

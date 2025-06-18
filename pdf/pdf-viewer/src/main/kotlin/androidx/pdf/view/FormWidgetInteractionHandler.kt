@@ -19,8 +19,9 @@ package androidx.pdf.view
 import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
-import android.graphics.Rect
+import android.graphics.RectF
 import android.os.DeadObjectException
+import androidx.core.graphics.toRectF
 import androidx.pdf.PdfDocument
 import androidx.pdf.R
 import androidx.pdf.exceptions.RequestFailedException
@@ -48,9 +49,9 @@ internal class FormWidgetInteractionHandler(
 ) {
 
     private val _invalidatedAreas =
-        MutableSharedFlow<Pair<Int, List<Rect>>>(replay = pdfDocument.pageCount)
+        MutableSharedFlow<Pair<Int, List<RectF>>>(replay = pdfDocument.pageCount)
 
-    val invalidatedAreas: SharedFlow<Pair<Int, List<Rect>>>
+    val invalidatedAreas: SharedFlow<Pair<Int, List<RectF>>>
         get() = _invalidatedAreas
 
     private var currentApplyEditJob: Job? = null
@@ -172,7 +173,8 @@ internal class FormWidgetInteractionHandler(
                 previousApplyEditJob?.join()
                 try {
                     _invalidatedAreas.emit(
-                        pageNum to pdfDocument.applyEdit(pageNum, formEditRecord)
+                        pageNum to
+                            pdfDocument.applyEdit(pageNum, formEditRecord).map { it.toRectF() }
                     )
                 } catch (error: Exception) {
                     when (error) {

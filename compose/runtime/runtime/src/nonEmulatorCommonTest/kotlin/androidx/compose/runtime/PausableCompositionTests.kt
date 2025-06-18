@@ -497,6 +497,37 @@ class PausableCompositionTests {
             recomposer.close()
         }
     }
+
+    @Test
+    fun pausableComposition_diagnosticExceptionInApply() = compositionTest {
+        val awaiter = Awaiter()
+
+        var applyException: Exception? = null
+        val w = workflow {
+            setContent()
+            resumeTillComplete { false }
+
+            try {
+                apply()
+            } catch (e: Exception) {
+                applyException = e
+            }
+            awaiter.done()
+        }
+
+        compose {
+            PausableContent(w) {
+                ComposeNode<View, ViewApplier>(
+                    factory = { View().also { it.name = "Crash" } },
+                    update = { init { error("Test") } },
+                    content = {},
+                )
+            }
+        }
+
+        awaiter.await()
+        assertEquals("ComposePausableCompositionException", applyException!!::class.simpleName)
+    }
 }
 
 fun String.splitRecording() = split(", ")

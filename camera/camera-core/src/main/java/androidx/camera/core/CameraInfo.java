@@ -27,7 +27,6 @@ import androidx.annotation.IntRange;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.StringDef;
-import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
 import androidx.camera.core.impl.DynamicRanges;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.internal.compat.MediaActionSoundCompat;
@@ -356,7 +355,7 @@ public interface CameraInfo {
      * @param sessionConfig The {@link SessionConfig} to query supported frame rate ranges for.
      * @return The set of FPS ranges supported by the device's AE algorithm for the given session
      * config.
-     * @see SessionConfig.Builder#setFrameRate(Range)
+     * @see SessionConfig.Builder#setFrameRateRange(Range)
      */
     @ExperimentalSessionConfig
     default @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
@@ -563,7 +562,6 @@ public interface CameraInfo {
      *   different values for the same feature type and can thus never be supported together.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // TODO: Expose the API for public release.
-    @ExperimentalFeatureCombination
     @ExperimentalSessionConfig
     default boolean isFeatureCombinationSupported(@NonNull SessionConfig sessionConfig) {
         return false;

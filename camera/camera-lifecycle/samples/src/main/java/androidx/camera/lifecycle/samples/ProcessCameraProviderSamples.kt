@@ -21,58 +21,12 @@ import android.os.Handler
 import androidx.annotation.Sampled
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraProvider
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
-import androidx.camera.core.Preview
-import androidx.camera.core.UseCaseGroup
 import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.ProcessCameraProvider.Companion.configureInstance
-import androidx.camera.view.PreviewView
 import androidx.concurrent.futures.await
-import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.Executor
-
-@Sampled
-fun bindConcurrentCameraSample(
-    cameraProvider: ProcessCameraProvider,
-    lifecycleOwner: LifecycleOwner,
-    frontPreviewView: PreviewView,
-    backPreviewView: PreviewView,
-) {
-    var cameraSelectorPrimary: CameraSelector? = null
-    var cameraSelectorSecondary: CameraSelector? = null
-    for (cameraInfoList in cameraProvider.availableConcurrentCameraInfos) {
-        for (cameraInfo in cameraInfoList) {
-            if (cameraInfo.lensFacing == CameraSelector.LENS_FACING_FRONT) {
-                cameraSelectorPrimary = cameraInfo.getCameraSelector()
-            } else if (cameraInfo.lensFacing == CameraSelector.LENS_FACING_BACK) {
-                cameraSelectorSecondary = cameraInfo.getCameraSelector()
-            }
-        }
-    }
-    if (cameraSelectorPrimary == null || cameraSelectorSecondary == null) {
-        return
-    }
-    val previewFront = Preview.Builder().build()
-    previewFront.surfaceProvider = frontPreviewView.getSurfaceProvider()
-    val primary =
-        SingleCameraConfig(
-            cameraSelectorPrimary,
-            UseCaseGroup.Builder().addUseCase(previewFront).build(),
-            lifecycleOwner,
-        )
-    val previewBack = Preview.Builder().build()
-    previewBack.surfaceProvider = backPreviewView.getSurfaceProvider()
-    val secondary =
-        SingleCameraConfig(
-            cameraSelectorSecondary,
-            UseCaseGroup.Builder().addUseCase(previewBack).build(),
-            lifecycleOwner,
-        )
-    cameraProvider.bindToLifecycle(listOf(primary, secondary))
-}
 
 @Sampled
 fun getCameraXConfigSample(executor: Executor, handler: Handler) {

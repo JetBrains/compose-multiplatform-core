@@ -29,6 +29,7 @@ import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR;
 import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_IS_STRICT_FRAME_RATE_REQUIRED;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE;
 import static androidx.camera.core.processing.TargetUtils.getNumberOfTargets;
@@ -59,13 +60,13 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator;
-import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
 import androidx.camera.core.featurecombination.Feature;
 import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination;
 import androidx.camera.core.impl.AdapterCameraInfo;
@@ -73,7 +74,6 @@ import androidx.camera.core.impl.AdapterCameraInternal;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraConfigs;
 import androidx.camera.core.impl.CameraControlInternal;
-import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CameraMode;
 import androidx.camera.core.impl.Config;
@@ -381,16 +381,13 @@ public final class CameraUseCaseAdapter implements Camera {
      *                         currently added UseCases exceed the capability of the camera, or
      *                         if the frame rate is not supported by the camera.
      */
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
     public void addUseCases(@NonNull Collection<UseCase> appUseCasesToAdd,
             @Nullable ResolvedFeatureCombination featureCombination) throws CameraException {
         Logger.d(TAG, "addUseCases: appUseCasesToAdd = " + appUseCasesToAdd
                 + ", featureCombination = " + featureCombination);
 
         synchronized (mLock) {
-            // TODO(b/421838573): Check supported frame rate in the binding flow.
-            checkFrameRateOrThrow();
-
             applyCameraConfig();
             Set<UseCase> appUseCases = new LinkedHashSet<>(mAppUseCases);
             appUseCases.addAll(appUseCasesToAdd);
@@ -435,7 +432,7 @@ public final class CameraUseCaseAdapter implements Camera {
      * @throws CameraException Thrown if the combination of newly added UseCases and the
      *                         currently added UseCases exceed the capability of the camera.
      */
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @NonNull
     public CalculatedUseCaseInfo simulateAddUseCases(
             @NonNull Collection<UseCase> appUseCasesToAdd,
@@ -446,11 +443,6 @@ public final class CameraUseCaseAdapter implements Camera {
                 + ", featureCombination = " + featureCombination);
 
         synchronized (mLock) {
-            // TODO(b/421838573): Check supported frame rate in the binding flow.
-            if (!findMaxSupportedFrameRate) {
-                checkFrameRateOrThrow();
-            }
-
             applyCameraConfig();
             Set<UseCase> appUseCases = new LinkedHashSet<>(mAppUseCases);
             appUseCases.addAll(appUseCasesToAdd);
@@ -496,7 +488,6 @@ public final class CameraUseCaseAdapter implements Camera {
         }
     }
 
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
     @GuardedBy("mLock")
     private CalculatedUseCaseInfo calculateAndValidateUseCases(
             @NonNull Collection<UseCase> appUseCases,
@@ -568,11 +559,6 @@ public final class CameraUseCaseAdapter implements Camera {
             //  resolution. Throw exception here if (applyStreamSharing == false), both video
             //  and preview are used and preview resolution is lower than user configuration.
         } catch (IllegalArgumentException exception) {
-            if (isFeatureComboInvocation) {
-                // TODO: b/402297808 - Add StreamSharing support properly for feature combination.
-                throw exception;
-            }
-
             // TODO(b/270187871): instead of catch and retry, we can check UseCase
             //  combination directly with #isUseCasesCombinationSupported(). However
             //  calculateSuggestedStreamSpecs() is currently slow. We will do it after it's
@@ -694,23 +680,6 @@ public final class CameraUseCaseAdapter implements Camera {
         mStreamSharing = info.getStreamSharing();
     }
 
-    private void checkFrameRateOrThrow() throws CameraException {
-        if (FRAME_RATE_RANGE_UNSPECIFIED.equals(mFrameRate)) {
-            return;
-        }
-
-        CameraInfoInternal cameraInfo = mCameraInternal.getCameraInfoInternal();
-        Set<Range<Integer>> supportedFrameRates =
-                mSessionType == SESSION_TYPE_HIGH_SPEED
-                        ? cameraInfo.getSupportedHighSpeedFrameRateRanges()
-                        : cameraInfo.getSupportedFrameRateRanges();
-
-        if (!supportedFrameRates.contains(mFrameRate)) {
-            throw new CameraException("Frame rate is not supported: " + mFrameRate + " by "
-                    + supportedFrameRates);
-        }
-    }
-
     private void applyCameraConfig() {
         mCameraInternal.setExtendedConfig(mCameraConfig);
         if (mSecondaryCameraInternal != null) {
@@ -718,7 +687,7 @@ public final class CameraUseCaseAdapter implements Camera {
         }
     }
 
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @NonNull
     private static Map<UseCase, Set<Feature>> applyFeatureCombination(
             @NonNull Collection<UseCase> useCases,
@@ -732,7 +701,7 @@ public final class CameraUseCaseAdapter implements Camera {
         return previousFeatureComboMap;
     }
 
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
     private static void restoreFeatureCombination(
             Map<UseCase, @Nullable Set<@NonNull Feature>> previousFeatureComboMap) {
         for (Map.Entry<UseCase, Set<Feature>> entry : previousFeatureComboMap.entrySet()) {
@@ -896,6 +865,7 @@ public final class CameraUseCaseAdapter implements Camera {
             }
             if (mStreamSharing != null && mStreamSharing.getChildren().equals(newChildren)) {
                 // Returns the current instance if the new children equals the old.
+                mStreamSharing.updateFeatureCombination(newChildren);
                 return requireNonNull(mStreamSharing);
             }
 
@@ -1198,12 +1168,13 @@ public final class CameraUseCaseAdapter implements Camera {
         // In case useCase already contains target frame rate, only set target frame rate when it
         // is not the default value, i.e. FRAME_RATE_RANGE_UNSPECIFIED.
         if (!FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFrameRate)) {
-            if (mutableConfig.containsOption(OPTION_TARGET_FRAME_RATE)) {
-                Logger.w(TAG, "Override UseCase's target frame rate: "
-                        + mutableConfig.removeOption(OPTION_TARGET_FRAME_RATE)
-                        + " by " + targetFrameRate);
-            }
-            mutableConfig.insertOption(OPTION_TARGET_FRAME_RATE, targetFrameRate);
+            // Use OptionPriority.HIGH_PRIORITY_REQUIRED to avoid frame rate is overridden by
+            // UseCase's target frame rate during UseCase.mergeConfigs().
+            mutableConfig.insertOption(OPTION_TARGET_FRAME_RATE,
+                    Config.OptionPriority.HIGH_PRIORITY_REQUIRED, targetFrameRate);
+
+            // If the frame rate is from SessionConfig, enable strict frame rate.
+            mutableConfig.insertOption(OPTION_IS_STRICT_FRAME_RATE_REQUIRED, true);
         }
 
         return useCase.getUseCaseConfigBuilder(mutableConfig).getUseCaseConfig();

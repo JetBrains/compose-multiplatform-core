@@ -195,6 +195,9 @@ val WearMaterial3Demos =
                         ComposableDemo("In TLC, with icon action") {
                             SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo()
                         },
+                        ComposableDemo("In TLC with expansions and deletions") {
+                            SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo()
+                        },
                         ComposableDemo("In TLC, with reset on scroll") {
                             SwipeToRevealWithTransformingLazyColumnResetOnScrollSample()
                         },

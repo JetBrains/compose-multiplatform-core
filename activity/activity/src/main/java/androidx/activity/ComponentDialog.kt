@@ -94,8 +94,8 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
      * @return The [OnBackPressedDispatcher] associated with this ComponentDialog.
      */
     @Suppress("DEPRECATION")
-    final override val onBackPressedDispatcher: OnBackPressedDispatcher = OnBackPressedDispatcher {
-        @Suppress("DEPRECATION") super.onBackPressed()
+    final override val onBackPressedDispatcher: OnBackPressedDispatcher by lazy {
+        OnBackPressedDispatcher { @Suppress("DEPRECATION") super.onBackPressed() }
     }
 
     /**
@@ -105,8 +105,8 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
      * This dispatcher acts as the central point for back navigation events. When a navigation event
      * occurs (e.g., a back gesture), it safely invokes [ComponentDialog.onBackPressed].
      */
-    override val navigationEventDispatcher: NavigationEventDispatcher by
-        onBackPressedDispatcher::eventDispatcher
+    override val navigationEventDispatcher: NavigationEventDispatcher
+        get() = onBackPressedDispatcher.eventDispatcher
 
     @Suppress("OVERRIDE_DEPRECATION") // b/407493719
     @CallSuper

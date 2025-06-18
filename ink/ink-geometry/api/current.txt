@@ -18,6 +18,26 @@ package androidx.ink.geometry {
     property public androidx.ink.geometry.ImmutableAffineTransform IDENTITY;
   }
 
+  public final class AndroidGraphicsConverter {
+    method public static androidx.ink.geometry.BoxAccumulator add(androidx.ink.geometry.BoxAccumulator, android.graphics.RectF rect);
+    method public static androidx.ink.geometry.ImmutableAffineTransform? createAffineTransform(android.graphics.Matrix matrix);
+    method public static androidx.ink.geometry.ImmutableBox? createBox(android.graphics.RectF rect);
+    method public static androidx.ink.geometry.ImmutableVec createVec(android.graphics.PointF point);
+    method public static androidx.ink.geometry.ImmutableAffineTransform? from(androidx.ink.geometry.ImmutableAffineTransform.Companion, android.graphics.Matrix matrix);
+    method public static androidx.ink.geometry.ImmutableBox? from(androidx.ink.geometry.ImmutableBox.Companion, android.graphics.RectF rect);
+    method public static androidx.ink.geometry.ImmutableVec from(androidx.ink.geometry.ImmutableVec.Companion, android.graphics.PointF point);
+    method public static android.graphics.Path outlinesToPath(androidx.ink.geometry.PartitionedMesh, @IntRange(from=0L) int renderGroupIndex);
+    method public static androidx.ink.geometry.MutableAffineTransform populateFrom(androidx.ink.geometry.MutableAffineTransform, android.graphics.Matrix matrix);
+    method public static androidx.ink.geometry.MutableVec populateFrom(androidx.ink.geometry.MutableVec, android.graphics.PointF point);
+    method public static void populateMatrix(androidx.ink.geometry.AffineTransform, android.graphics.Matrix out);
+    method public static android.graphics.Path populateOutlines(androidx.ink.geometry.PartitionedMesh, @IntRange(from=0L) int renderGroupIndex, android.graphics.Path out);
+    method public static android.graphics.PointF populatePointF(androidx.ink.geometry.Vec, android.graphics.PointF out);
+    method public static android.graphics.RectF populateRectF(androidx.ink.geometry.Box, android.graphics.RectF out);
+    method public static android.graphics.Matrix toMatrix(androidx.ink.geometry.AffineTransform);
+    method public static android.graphics.PointF toPointF(androidx.ink.geometry.Vec);
+    method public static android.graphics.RectF toRectF(androidx.ink.geometry.Box);
+  }
+
   public final class Angle {
     method @androidx.ink.geometry.AngleRadiansFloat public static float degreesToRadians(@androidx.ink.geometry.AngleDegreesFloat float degrees);
     method @FloatRange(from=0.0, to=androidx.ink.geometry.Angle.FULL_TURN_RADIANS_DOUBLE) @androidx.ink.geometry.AngleRadiansFloat public static float normalized(@androidx.ink.geometry.AngleRadiansFloat float radians);
@@ -188,7 +208,7 @@ package androidx.ink.geometry {
     method public static boolean intersects(androidx.ink.geometry.Parallelogram, float x, float y);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Box box, androidx.ink.geometry.AffineTransform meshToBox);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Parallelogram parallelogram, androidx.ink.geometry.AffineTransform meshToParallelogram);
-    method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.PartitionedMesh other, androidx.ink.geometry.AffineTransform thisToCommonTransForm, androidx.ink.geometry.AffineTransform otherToCommonTransform);
+    method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.PartitionedMesh other, androidx.ink.geometry.AffineTransform thisToCommonTransform, androidx.ink.geometry.AffineTransform otherToCommonTransform);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Segment segment, androidx.ink.geometry.AffineTransform meshToSegment);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Triangle triangle, androidx.ink.geometry.AffineTransform meshToTriangle);
     method public static boolean intersects(androidx.ink.geometry.PartitionedMesh, androidx.ink.geometry.Vec point, androidx.ink.geometry.AffineTransform meshToPoint);

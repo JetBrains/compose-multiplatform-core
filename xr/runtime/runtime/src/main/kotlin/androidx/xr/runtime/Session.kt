@@ -21,8 +21,8 @@ package androidx.xr.runtime
 import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -49,12 +49,8 @@ import kotlinx.coroutines.launch
  * system's state and its lifecycle, and contains the state of objects tracked by ARCore for Jetpack
  * XR.
  *
- * This class owns a significant amount of native heap memory. Apps using a `Session` consider its
- * lifecycle to ensure that native resources are released when the session is no longer needed. If
- * your activity is a single XR-enabled activity, it is recommended to call the `Session` object's
- * lifecycle methods from the activity's lifecycle methods using a
- * [lifecycle-aware component](https://developer.android.com/topic/libraries/architecture/lifecycle).
- * See [create], [resume], [pause], and [destroy] for more details.
+ * This class owns a significant amount of native heap memory. The [Session]'s lifecycle will be
+ * scoped to the [Activity] that owns it.
  */
 @Suppress("NotCloseable")
 public class Session
@@ -73,12 +69,13 @@ public constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val coroutineScope: CoroutineScope =
         CoroutineScope(context = CoroutineContexts.Lightweight),
-) : LifecycleOwner {
+) {
     init {
         check(!activitySessionMap.containsKey(activity)) {
             "Session already exists for activity: $activity"
         }
         activitySessionMap[activity] = this
+
         _runtime?.let {
             for (stateExtender in stateExtenders) {
                 stateExtender.initialize(it)
@@ -120,7 +117,7 @@ public constructor(
          * @param unscaledGravityAlignedActivitySpace whether to use the unscaled gravity aligned
          *   activity space for the session. When true, causes ActivitySpace for this Session to
          *   always be gravity aligned and to have a scale of [1 unit = 1 Meter]. Note that this
-         *   might result in visual inconsistencies between Homespace Mode and Fullspace Mode.
+         *   might result in visual inconsistencies between HOME_SPACE and FULL_SPACE_MANAGED modes.
          *   Defaults to False.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
          *   newly created session, or [SessionCreatePermissionsNotGranted] if the required
@@ -133,9 +130,13 @@ public constructor(
             coroutineContext: CoroutineContext = CoroutineContexts.Lightweight,
             unscaledGravityAlignedActivitySpace: Boolean = false,
         ): SessionCreateResult {
+
+            check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }
+
             if (activitySessionMap.containsKey(activity)) {
                 return SessionCreateSuccess(activitySessionMap[activity]!!)
             }
+
             val features = getDeviceFeatures(activity)
             println("Detected device features: $features")
 
@@ -190,8 +191,8 @@ public constructor(
                     sessionConnectors,
                     CoroutineScope(context = coroutineContext),
                 )
+            activity.lifecycle.addObserver(session.lifecycleObserver)
 
-            session.lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
             return SessionCreateSuccess(session)
         }
 
@@ -216,9 +217,6 @@ public constructor(
                 "androidx.xr.runtime.testing.FakeSessionConnector",
             )
     }
-
-    private val lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
-    override public val lifecycle: Lifecycle = lifecycleRegistry
 
     private val _state = MutableStateFlow<CoreState>(CoreState(TimeSource.Monotonic.markNow()))
     /** A [StateFlow] of the current state. */
@@ -248,6 +246,18 @@ public constructor(
     public val config: Config
         get() = runtime.lifecycleManager.config
 
+    private val lifecycleObserver = LifecycleEventObserver { _, event ->
+        when (event) {
+            Lifecycle.Event.ON_RESUME -> resume()
+            Lifecycle.Event.ON_PAUSE -> pause()
+            Lifecycle.Event.ON_DESTROY -> destroy()
+            else -> {}
+        }
+    }
+
+    private val Activity.lifecycle: Lifecycle
+        get() = (this as LifecycleOwner).lifecycle
+
     /**
      * Sets or changes the configuration to use.
      *
@@ -257,7 +267,7 @@ public constructor(
      * @throws IllegalStateException if the session has been destroyed.
      */
     public fun configure(config: Config): SessionConfigureResult {
-        check(lifecycleRegistry.currentState != Lifecycle.State.DESTROYED) {
+        check(activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
             "Session has been destroyed."
         }
         try {
@@ -276,21 +286,14 @@ public constructor(
      * @return the result of the operation. Can be [SessionResumeSuccess] if the session was
      *   successfully resumed, or [SessionResumePermissionsNotGranted] if the required permissions
      *   haven't been granted.
-     * @throws IllegalStateException if the session has been destroyed.
      */
-    public fun resume(): SessionResumeResult {
-        check(lifecycleRegistry.currentState != Lifecycle.State.DESTROYED) {
-            "Session has been destroyed."
+    private fun resume(): SessionResumeResult {
+        _runtime?.let {
+            it.lifecycleManager.resume()
+            // The update loop is only required when the runtime is present.
+            updateJob = coroutineScope.launch { updateLoop() }
         }
-        if (lifecycleRegistry.currentState != Lifecycle.State.RESUMED) {
-            _runtime?.let {
-                it.lifecycleManager.resume()
-                // The update loop is only required when the runtime is present.
-                updateJob = coroutineScope.launch { updateLoop() }
-            }
-            _platformAdapter?.startRenderer()
-            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-        }
+        _platformAdapter?.startRenderer()
 
         return SessionResumeSuccess()
     }
@@ -300,21 +303,12 @@ public constructor(
      * system state will be retained in memory.
      *
      * Calling this method on an inactive session is a no-op.
-     *
-     * @throws IllegalStateException if the session has been destroyed.
      */
-    public fun pause() {
-        check(lifecycleRegistry.currentState != Lifecycle.State.DESTROYED) {
-            "Session has been destroyed."
-        }
-
-        if (lifecycleRegistry.currentState == Lifecycle.State.RESUMED) {
-            lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-            _runtime?.lifecycleManager?.pause()
-            _platformAdapter?.stopRenderer()
-            updateJob?.cancel()
-            updateJob = null
-        }
+    private fun pause() {
+        _runtime?.lifecycleManager?.pause()
+        _platformAdapter?.stopRenderer()
+        updateJob?.cancel()
+        updateJob = null
     }
 
     /**
@@ -324,19 +318,12 @@ public constructor(
      * Calling this method on a destroyed session is a no-op. Additionally, calling this method on
      * an active session will first call [pause].
      */
-    public fun destroy() {
-        if (lifecycleRegistry.currentState == Lifecycle.State.DESTROYED) {
-            return
-        } else if (lifecycleRegistry.currentState == Lifecycle.State.RESUMED) {
-            pause()
-        }
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    private fun destroy() {
         activitySessionMap.remove(activity)
         // TODO: b/422830134 - Remove this check once there are multiple OpenXrManagers.
         if (activitySessionMap.isEmpty()) {
             _runtime?.lifecycleManager?.stop()
         }
-
         for (sessionConnector in sessionConnectors) {
             sessionConnector.close()
         }
@@ -345,7 +332,7 @@ public constructor(
     }
 
     private suspend fun updateLoop() {
-        while (lifecycleRegistry.currentState == Lifecycle.State.RESUMED) {
+        while (activity.lifecycle.currentState == Lifecycle.State.RESUMED) {
             update()
         }
     }

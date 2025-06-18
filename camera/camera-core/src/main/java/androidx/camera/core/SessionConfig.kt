@@ -46,8 +46,9 @@ import java.util.concurrent.Executor
  *   default is no effects.
  * @property frameRateRange The desired frame rate range for the camera session. The value must be
  *   one of the supported frame rates queried by [CameraInfo.getSupportedFrameRateRanges] with a
- *   specific [SessionConfig], or an [IllegalStateException] will be thrown during `SessionConfig`
- *   binding (i.e. when calling `androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle` or
+ *   specific [SessionConfig], or an [IllegalArgumentException] will be thrown during
+ *   `SessionConfig` binding (i.e. when calling
+ *   `androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle` or
  *   `androidx.camera.lifecycle.LifecycleCameraProvider.bindToLifecycle`). When this value is set,
  *   any target frame rate set on individual [UseCase] will be ignored during `SessionConfig`
  *   binding. If this value is not set, the default is [FRAME_RATE_RANGE_UNSPECIFIED], which means

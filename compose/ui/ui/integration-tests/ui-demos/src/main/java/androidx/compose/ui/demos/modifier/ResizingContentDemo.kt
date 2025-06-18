@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -74,7 +74,7 @@ fun ResizingButtons(frameRate: Float) {
 
     Button(
         onClick = { expanded = !expanded },
-        modifier = Modifier.testTag("ContentResizing").requestedFrameRate(frameRate).width(size),
+        modifier = Modifier.testTag("ContentResizing").preferredFrameRate(frameRate).width(size),
     ) {
         Text("Click Me for size change")
     }

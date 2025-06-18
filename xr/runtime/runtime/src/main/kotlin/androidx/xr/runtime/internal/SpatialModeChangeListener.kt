@@ -29,11 +29,11 @@ public fun interface SpatialModeChangeListener {
     /**
      * Called when the activity encounters spatial mode change.
      *
-     * @param recommendedPose the recommended pose for the center of attention entity. The pose is
-     *   relative to ActivitySpace origin, not relative to the center of attention's parent.
-     * @param recommendedScale the recommended scale for the center of attention entity. The scale
-     *   is the accumulated scale for this entity i.e. accumulated scale in activity space, not
-     *   scale relative to the center of attention's parent.
+     * @param recommendedPose the recommended pose for the keyEntity. The pose is relative to
+     *   [ActivitySpace] origin, not relative to the keyEntity's parent.
+     * @param recommendedScale the recommended scale for the keyEntity. The scale is the accumulated
+     *   scale for this entity i.e. accumulated scale in [ActivitySpace], not scale relative to the
+     *   keyEntity's parent.
      */
     public fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Vector3)
 }

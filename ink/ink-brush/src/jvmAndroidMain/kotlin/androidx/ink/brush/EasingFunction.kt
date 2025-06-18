@@ -37,8 +37,12 @@ import kotlin.jvm.JvmField
 @Suppress("NotCloseable")
 public abstract class EasingFunction private constructor(internal val nativePointer: Long) {
 
-    public fun finalize() {
-        EasingFunctionNative.free(nativePointer)
+    // NOMUTANTS -- Not tested post garbage collection.
+    protected fun finalize() {
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            EasingFunctionNative.free(nativePointer)
+        }
     }
 
     public companion object {

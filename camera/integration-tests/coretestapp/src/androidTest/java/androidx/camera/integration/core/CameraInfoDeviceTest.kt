@@ -37,6 +37,8 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.video.ExperimentalHighSpeedVideo
+import androidx.camera.video.HighSpeedVideoSessionConfig
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
@@ -264,6 +266,27 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
 
         // Act.
         val allSupportedFps = cameraInfo.supportedFrameRateRanges
+        val supportedFpsForSessionConfig = cameraInfo.getSupportedFrameRateRanges(sessionConfig)
+
+        // Assert.
+        assertThat(supportedFpsForSessionConfig).isNotEmpty()
+        assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
+    }
+
+    @OptIn(ExperimentalSessionConfig::class, ExperimentalHighSpeedVideo::class)
+    @Test
+    fun getSupportedFrameRateRanges_withHighSpeedVideoSessionConfig() {
+        // Arrange.
+        val videoCapabilities = Recorder.getHighSpeedVideoCapabilities(cameraInfo)
+        assumeTrue(videoCapabilities != null)
+
+        val preview = Preview.Builder().build()
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val sessionConfig =
+            HighSpeedVideoSessionConfig(videoCapture = videoCapture, preview = preview)
+
+        // Act.
+        val allSupportedFps = cameraInfo.supportedHighSpeedFrameRateRanges
         val supportedFpsForSessionConfig = cameraInfo.getSupportedFrameRateRanges(sessionConfig)
 
         // Assert.

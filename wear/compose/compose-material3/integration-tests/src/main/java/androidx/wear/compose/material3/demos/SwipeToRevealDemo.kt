@@ -17,6 +17,7 @@
 package androidx.wear.compose.material3.demos
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -35,10 +36,12 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,6 +57,7 @@ import androidx.wear.compose.foundation.GestureInclusion
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.edgeSwipeToDismiss
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
@@ -774,3 +778,102 @@ fun SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo() {
         }
     }
 }
+
+@Composable
+fun SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo() {
+    val transformationSpec = rememberTransformationSpec()
+    val tlcState = rememberTransformingLazyColumnState()
+
+    var expandedItemKey by remember { mutableStateOf<String?>(null) }
+
+    val messages = remember {
+        mutableStateListOf<MessageItem>().apply {
+            for (i in 1..100) {
+                add(
+                    MessageItem(
+                        "Message #${i}",
+                        body = "Body of the message",
+                        longBody =
+                            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                    )
+                )
+            }
+        }
+    }
+
+    TransformingLazyColumn(
+        state = tlcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(items = messages, key = { it.title }) { message ->
+            val isCurrentlyExpanded = message.title == expandedItemKey
+            val revealState = rememberRevealState(initialValue = Covered)
+            SwipeToReveal(
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = {
+                            if (message.title == expandedItemKey) {
+                                expandedItemKey = null
+                            }
+                            messages.remove(message)
+                        },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                onSwipePrimaryAction = {
+                    if (message.title == expandedItemKey) {
+                        expandedItemKey = null
+                    }
+                    messages.remove(message)
+                },
+                modifier =
+                    Modifier.transformedHeight(this@items, transformationSpec)
+                        .graphicsLayer {
+                            with(transformationSpec) {
+                                applyContainerTransformation(scrollProgress)
+                            }
+                            // Is needed to disable clipping.
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                            clip = false
+                        }
+                        .animateItem(),
+                revealState = revealState,
+                revealDirection = Bidirectional,
+            ) {
+                TitleCard(
+                    onClick = {
+                        if (expandedItemKey == message.title) {
+                            expandedItemKey = null
+                        } else {
+                            expandedItemKey = message.title
+                        }
+                    },
+                    title = { Text(message.title) },
+                    subtitle = { Text(message.body) },
+                    modifier =
+                        Modifier.semantics {
+                            // Use custom actions to make the primary action accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        if (message.title == expandedItemKey) {
+                                            expandedItemKey = null
+                                        }
+                                        messages.remove(message)
+                                        true
+                                    }
+                                )
+                        },
+                ) {
+                    AnimatedVisibility(visible = isCurrentlyExpanded) {
+                        Text(text = message.longBody, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+data class MessageItem(val title: String, val body: String, val longBody: String)

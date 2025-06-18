@@ -33,6 +33,7 @@ import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.DynamicRange.HDR_UNSPECIFIED_10_BIT
+import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.FocusMeteringAction.FLAG_AE
 import androidx.camera.core.FocusMeteringAction.FLAG_AF
@@ -66,6 +67,7 @@ import androidx.camera.core.impl.PreviewConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.StreamSpec
+import androidx.camera.core.impl.UseCaseConfig.OPTION_IS_STRICT_FRAME_RATE_REQUIRED
 import androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE
 import androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE
 import androidx.camera.core.impl.UseCaseConfigFactory
@@ -112,6 +114,7 @@ private const val CAMERA_ID = "0"
 private const val SECONDARY_CAMERA_ID = "1"
 
 /** Unit tests for [CameraUseCaseAdapter]. */
+@OptIn(ExperimentalSessionConfig::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @org.robolectric.annotation.Config(
@@ -261,15 +264,6 @@ class CameraUseCaseAdapterTest {
     }
 
     @Test
-    fun addUseCases_withUnsupportedFrameRate_throwsException() {
-        // Arrange.
-        adapter.frameRate = Range(1, 100)
-
-        // Act.
-        assertThrows(CameraException::class.java) { adapter.addUseCases(setOf(preview)) }
-    }
-
-    @Test
     fun addUseCases_withoutResolvedFeatureCombination_useCaseFeatureCombinationIsNull() {
         // Arrange & Act.
         adapter.addUseCases(listOf(preview))
@@ -374,26 +368,6 @@ class CameraUseCaseAdapterTest {
         // Assert.
         assertThat(fakeCamera.attachedUseCases).isEmpty()
         assertThat(preview.featureCombination).isNull()
-    }
-
-    @Test
-    fun simulateAddUseCases_withUnsupportedFrameRate_throwsException() {
-        // Arrange.
-        adapter.frameRate = Range(1, 100)
-
-        // Act & Assert.
-        assertThrows(CameraException::class.java) {
-            adapter.simulateAddUseCases(setOf(preview), null, false)
-        }
-    }
-
-    @Test
-    fun simulateAddUseCases_withUnsupportedFrameRateAndFindMaxSupportedFrameRate_noException() {
-        // Arrange.
-        adapter.frameRate = Range(1, 100)
-
-        // Act & Assert: no exception
-        adapter.simulateAddUseCases(setOf(preview), null, true)
     }
 
     @Test
@@ -1552,7 +1526,7 @@ class CameraUseCaseAdapterTest {
     }
 
     @Test
-    fun setSessionTypeAndTargetFrameRate_updatesUseCaseConfig() {
+    fun setSessionTypeAndFrameRate_updatesUseCaseConfig() {
         // Arrange: create use cases.
         val fakeUseCase1 = FakeUseCase()
         val fakeUseCase2 = FakeUseCase()
@@ -1570,10 +1544,28 @@ class CameraUseCaseAdapterTest {
             .isEqualTo(sessionType)
         assertThat(fakeUseCase1.currentConfig.retrieveOption(OPTION_TARGET_FRAME_RATE))
             .isEqualTo(frameRate)
+        assertThat(fakeUseCase1.currentConfig.retrieveOption(OPTION_IS_STRICT_FRAME_RATE_REQUIRED))
+            .isTrue()
         assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_SESSION_TYPE))
             .isEqualTo(sessionType)
         assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_TARGET_FRAME_RATE))
             .isEqualTo(frameRate)
+        assertThat(fakeUseCase2.currentConfig.retrieveOption(OPTION_IS_STRICT_FRAME_RATE_REQUIRED))
+            .isTrue()
+    }
+
+    @Test
+    fun setFrameRate_withUseCaseTargetFrameRateSet_overrideUseCaseTargetFrameRate() {
+        // Arrange.
+        val fakeUseCase = FakeUseCaseConfig.Builder().setTargetFrameRate(Range(30, 30)).build()
+        adapter.frameRate = Range(60, 60)
+
+        // Act.
+        adapter.addUseCases(setOf(fakeUseCase))
+
+        // Assert.
+        assertThat(fakeUseCase.currentConfig.targetFrameRate).isEqualTo(Range(60, 60))
+        assertThat(fakeUseCase.currentConfig.isStrictFrameRateRequired).isTrue()
     }
 
     private fun addUltraHdrSupport() {

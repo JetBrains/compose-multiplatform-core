@@ -1,22 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+<issues format="6" by="lint 8.12.0-alpha04" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha04)" variant="all" version="8.12.0-alpha04">
 
     <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        save = { list -> list.map { encodeToSavedState(serializer, it) } },"
-        errorLine2="                              ~~~">
+        id="LifecycleCurrentStateInComposition"
+        message="Lifecycle.currentState should not be called within composition"
+        errorLine1="        childRegistry.lifecycle.currentState = Lifecycle.State.RESUMED"
+        errorLine2="                                ~~~~~~~~~~~~">
         <location
-            file="src/androidMain/kotlin/androidx/navigation3/runtime/NavBackStack.android.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        restore = { list -> list.map { decodeFromSavedState(serializer, it) } },"
-        errorLine2="                                 ~~~">
-        <location
-            file="src/androidMain/kotlin/androidx/navigation3/runtime/NavBackStack.android.kt"/>
+            file="src/commonMain/kotlin/androidx/navigation3/runtime/SavedStateNavEntryDecorator.kt"/>
     </issue>
 
 </issues>

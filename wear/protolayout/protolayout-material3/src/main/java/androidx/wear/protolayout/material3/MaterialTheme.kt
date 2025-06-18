@@ -26,6 +26,7 @@ import androidx.wear.protolayout.expression.RequiresSchemaVersion
 import androidx.wear.protolayout.material3.Typography.TypographyToken
 import androidx.wear.protolayout.material3.tokens.TextStyle
 import androidx.wear.protolayout.types.sp
+import kotlin.math.roundToInt
 
 /**
  * MaterialTheme defines the styling principle from the Wear Material3 design specification which
@@ -73,8 +74,9 @@ internal fun createFontStyleBuilder(
     incrementsForTypographySize: List<Float> = emptyList(),
 ): FontStyle.Builder {
     val textStyle: TextStyle = Typography.fromToken(typographyToken)
+    val baseSize = textStyle.size.value
     val baseSizeInFinalSp =
-        textStyle.size.value.adjustSpIfNotScalable(
+        baseSize.adjustSpIfNotScalable(
             deviceConfiguration = deviceConfiguration,
             isScalable = isScalable,
         )
@@ -92,14 +94,13 @@ internal fun createFontStyleBuilder(
                     // Original size should be at the end for renderers not supporting the feature.
                     *(incrementsForTypographySize
                         .map {
-                            (baseSizeInFinalSp +
-                                    it.adjustSpIfNotScalable(
-                                        deviceConfiguration = deviceConfiguration,
-                                        isScalable = isScalable,
-                                    ))
-                                .toInt()
+                            ((baseSize + it).adjustSpIfNotScalable(
+                                    deviceConfiguration = deviceConfiguration,
+                                    isScalable = isScalable,
+                                ))
+                                .roundToInt()
                         }
-                        .toIntArray() + baseSizeInFinalSp.toInt())
+                        .toIntArray() + baseSizeInFinalSp.roundToInt())
                 )
             }
         }

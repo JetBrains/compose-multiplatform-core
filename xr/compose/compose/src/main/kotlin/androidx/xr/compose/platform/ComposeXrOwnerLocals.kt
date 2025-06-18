@@ -93,7 +93,7 @@ private fun Activity.createXrOwnerLocals(): ComposeXrOwnerLocals? {
             coreMainPanelEntity = CoreMainPanelEntity(session, Density(session.activity)),
             subspaceRootNode =
                 ContentlessEntity.create(session, "SubspaceRootContainer").apply {
-                    session.scene.setCenterOfAttention(this)
+                    session.scene.setKeyEntity(this)
                 },
         )
         .also { window.decorView.setTag(R.id.compose_xr_owner_locals, it) }

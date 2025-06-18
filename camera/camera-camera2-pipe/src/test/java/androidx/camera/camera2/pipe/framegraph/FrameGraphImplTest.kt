@@ -59,7 +59,9 @@ import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -221,6 +223,60 @@ class FrameGraphImplTest {
             advanceUntilIdle()
 
             assertNull(fakeGraphProcessor.repeatingRequest)
+        }
+
+    @Test
+    fun testAcquireSession() =
+        testScope.runTest {
+            val session = frameGraph.acquireSession()
+            assertThat(session).isNotNull()
+        }
+
+    @Test
+    fun testAcquireSessionOrNull() =
+        testScope.runTest {
+            val session = frameGraph.acquireSessionOrNull()
+            assertThat(session).isNotNull()
+        }
+
+    @Test
+    fun testAcquireSessionOrNullAfterAcquireSession() =
+        testScope.runTest {
+            val session = frameGraph.acquireSession()
+            assertThat(session).isNotNull()
+
+            // Since a session is already active, an attempt to acquire another session will fail.
+            val session1 = frameGraph.acquireSessionOrNull()
+            assertThat(session1).isNull()
+
+            // Closing an active session should allow a new session instance to be created.
+            session.close()
+
+            val session2 = frameGraph.acquireSessionOrNull()
+            assertThat(session2).isNotNull()
+        }
+
+    @Test
+    fun testUseSessionClosesAndDoesNotBlock() =
+        testScope.runTest {
+            val events = mutableListOf<Int>()
+            frameGraph.useSession { events += 1 }
+            frameGraph.useSession { events += 2 }
+
+            assertThat(events).containsExactly(1, 2).inOrder()
+        }
+
+    @Test
+    fun testUseSessionInClosesAndDoesNotBlock() =
+        testScope.runTest {
+            val events = mutableListOf<Int>()
+            val scope = CoroutineScope(Job())
+            val job1 = frameGraph.useSessionIn(this) { events += 1 }
+            val job2 = frameGraph.useSessionIn(scope) { events += 2 }
+            job1.await()
+            job2.await()
+
+            assertThat(events.size).isEqualTo(2)
         }
 
     companion object {

@@ -102,7 +102,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
 
     @Override
     public void setContentDescription(@NonNull String text) {
-        // TODO(b/320202321): Finish A11y Text integration.
+        // TODO (b/407776971) Implement Accessibility focus support
         Log.i("BaseEntity", "setContentDescription: " + text);
     }
 

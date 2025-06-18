@@ -39,7 +39,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.AnnotatedOutputTransformation
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
@@ -400,11 +399,11 @@ fun BasicTextFieldAnnotatedOutputTransformationSample() {
                 }
             },
         outputTransformation =
-            AnnotatedOutputTransformation {
+            OutputTransformation {
                 // Find hashtags
                 val regex = Regex("#\\w+")
                 regex
-                    .findAll(text)
+                    .findAll(asCharSequence())
                     .map { it.range }
                     .forEach {
                         addStyle(SpanStyle(color = Color.Blue), it.start, it.endInclusive + 1)

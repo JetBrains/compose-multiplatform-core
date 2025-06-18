@@ -62,7 +62,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.absoluteValue
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
@@ -295,24 +294,22 @@ class DraggableTest {
     }
 
     @Test
-    @Ignore("b/303237627")
     fun draggable_cancel_callsDragStop() {
         var total = 0f
         var dragStopped = 0f
         setDraggableContent {
-            if (total < 20f) {
-                Modifier.draggable(
-                    Orientation.Horizontal,
-                    onDragStopped = { dragStopped += 1 },
-                    startDragImmediately = true,
-                ) {
-                    total += it
-                }
-            } else Modifier
+            Modifier.draggable(
+                Orientation.Horizontal,
+                onDragStopped = { dragStopped += 1 },
+                startDragImmediately = true,
+            ) {
+                total += it
+            }
         }
         rule.onNodeWithTag(draggableBoxTag).performTouchInput {
             down(center)
             moveBy(Offset(100f, 100f))
+            cancel()
         }
         rule.runOnIdle {
             assertThat(total).isGreaterThan(0f)

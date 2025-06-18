@@ -63,7 +63,6 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onParent
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performKeyPress
 import androidx.compose.ui.test.performSemanticsAction
@@ -102,14 +101,14 @@ class CarouselTest {
         rule.setContent { SampleCarousel { BasicText(text = "Text ${it + 1}") } }
 
         rule.onNodeWithText("Text 1").assertIsDisplayed()
-        rule.onNodeWithText("Text 1").onParent().assertIsNotFocused()
+        rule.onNodeWithTag("pager").assertIsNotFocused()
 
-        rule.onNodeWithText("Text 1").onParent().requestFocus()
+        rule.onNodeWithTag("pager").requestFocus()
 
         rule.mainClock.advanceTimeBy(delayBetweenItems)
 
         rule.onNodeWithText("Text 2").assertDoesNotExist()
-        rule.onNodeWithText("Text 1").onParent().assertIsFocused()
+        rule.onNodeWithTag("pager").assertIsFocused()
     }
 
     @Test
@@ -123,7 +122,7 @@ class CarouselTest {
         }
 
         rule.onNodeWithText("Text 1").assertIsDisplayed()
-        rule.onNodeWithText("Text 1").onParent().assertIsNotFocused()
+        rule.onNodeWithTag("pager").assertIsNotFocused()
 
         rule.mainClock.advanceTimeBy(delayBetweenItems)
 
@@ -145,7 +144,7 @@ class CarouselTest {
         rule.mainClock.autoAdvance = false
 
         rule.onNodeWithText("Text 1").assertIsDisplayed()
-        rule.onNodeWithText("Text 1").onParent().assertIsNotFocused()
+        rule.onNodeWithTag("pager").assertIsNotFocused()
 
         rule.mainClock.advanceTimeBy(delayBetweenItems)
 
@@ -183,7 +182,7 @@ class CarouselTest {
 
         rule.mainClock.autoAdvance = false
         rule.onNodeWithText("Text 1").assertIsDisplayed()
-        rule.onNodeWithText("Text 1").onParent().assertIsNotFocused()
+        rule.onNodeWithTag("pager").assertIsNotFocused()
 
         rule.mainClock.advanceTimeBy(delayBetweenItems)
 
@@ -227,7 +226,7 @@ class CarouselTest {
 
         rule.mainClock.autoAdvance = false
         rule.onNodeWithText("Text 1").assertIsDisplayed()
-        rule.onNodeWithText("Text 1").onParent().assertIsNotFocused()
+        rule.onNodeWithTag("pager").assertIsNotFocused()
 
         rule.mainClock.advanceTimeBy(delayBetweenItems)
 
@@ -254,7 +253,7 @@ class CarouselTest {
             }
         }
 
-        rule.onNodeWithText("Text 1").onParent().requestFocus()
+        rule.onNodeWithTag("pager").requestFocus()
 
         rule.onNodeWithText("Card").requestFocus()
         rule.onNodeWithText("Card").assertIsFocused()

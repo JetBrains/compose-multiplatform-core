@@ -58,6 +58,10 @@ open annotation class androidx.compose.runtime.snapshots/StateFactoryMarker : ko
     constructor <init>() // androidx.compose.runtime.snapshots/StateFactoryMarker.<init>|<init>(){}[0]
 }
 
+open annotation class androidx.compose.runtime.tooling/ComposeToolingApi : kotlin/Annotation { // androidx.compose.runtime.tooling/ComposeToolingApi|null[0]
+    constructor <init>() // androidx.compose.runtime.tooling/ComposeToolingApi.<init>|<init>(){}[0]
+}
+
 open annotation class androidx.compose.runtime/Composable : kotlin/Annotation { // androidx.compose.runtime/Composable|null[0]
     constructor <init>() // androidx.compose.runtime/Composable.<init>|<init>(){}[0]
 }
@@ -728,6 +732,51 @@ final class androidx.compose.runtime.snapshots/SnapshotStateObserver { // androi
     final fun withNoObservations(kotlin/Function0<kotlin/Unit>) // androidx.compose.runtime.snapshots/SnapshotStateObserver.withNoObservations|withNoObservations(kotlin.Function0<kotlin.Unit>){}[0]
 }
 
+final class androidx.compose.runtime.tooling/LocationSourceInformation { // androidx.compose.runtime.tooling/LocationSourceInformation|null[0]
+    constructor <init>(kotlin/Int, kotlin/Int, kotlin/Int, kotlin/Boolean) // androidx.compose.runtime.tooling/LocationSourceInformation.<init>|<init>(kotlin.Int;kotlin.Int;kotlin.Int;kotlin.Boolean){}[0]
+
+    final val isRepeatable // androidx.compose.runtime.tooling/LocationSourceInformation.isRepeatable|{}isRepeatable[0]
+        final fun <get-isRepeatable>(): kotlin/Boolean // androidx.compose.runtime.tooling/LocationSourceInformation.isRepeatable.<get-isRepeatable>|<get-isRepeatable>(){}[0]
+    final val length // androidx.compose.runtime.tooling/LocationSourceInformation.length|{}length[0]
+        final fun <get-length>(): kotlin/Int // androidx.compose.runtime.tooling/LocationSourceInformation.length.<get-length>|<get-length>(){}[0]
+    final val lineNumber // androidx.compose.runtime.tooling/LocationSourceInformation.lineNumber|{}lineNumber[0]
+        final fun <get-lineNumber>(): kotlin/Int // androidx.compose.runtime.tooling/LocationSourceInformation.lineNumber.<get-lineNumber>|<get-lineNumber>(){}[0]
+    final val offset // androidx.compose.runtime.tooling/LocationSourceInformation.offset|{}offset[0]
+        final fun <get-offset>(): kotlin/Int // androidx.compose.runtime.tooling/LocationSourceInformation.offset.<get-offset>|<get-offset>(){}[0]
+}
+
+final class androidx.compose.runtime.tooling/ParameterSourceInformation { // androidx.compose.runtime.tooling/ParameterSourceInformation|null[0]
+    constructor <init>(kotlin/Int, kotlin/String? = ..., kotlin/String? = ...) // androidx.compose.runtime.tooling/ParameterSourceInformation.<init>|<init>(kotlin.Int;kotlin.String?;kotlin.String?){}[0]
+
+    final val inlineClass // androidx.compose.runtime.tooling/ParameterSourceInformation.inlineClass|{}inlineClass[0]
+        final fun <get-inlineClass>(): kotlin/String? // androidx.compose.runtime.tooling/ParameterSourceInformation.inlineClass.<get-inlineClass>|<get-inlineClass>(){}[0]
+    final val name // androidx.compose.runtime.tooling/ParameterSourceInformation.name|{}name[0]
+        final fun <get-name>(): kotlin/String? // androidx.compose.runtime.tooling/ParameterSourceInformation.name.<get-name>|<get-name>(){}[0]
+    final val sortedIndex // androidx.compose.runtime.tooling/ParameterSourceInformation.sortedIndex|{}sortedIndex[0]
+        final fun <get-sortedIndex>(): kotlin/Int // androidx.compose.runtime.tooling/ParameterSourceInformation.sortedIndex.<get-sortedIndex>|<get-sortedIndex>(){}[0]
+}
+
+final class androidx.compose.runtime.tooling/SourceInformation { // androidx.compose.runtime.tooling/SourceInformation|null[0]
+    constructor <init>(kotlin/Boolean, kotlin/Boolean, kotlin/String?, kotlin/String?, kotlin.collections/List<androidx.compose.runtime.tooling/ParameterSourceInformation>, kotlin/String?, kotlin.collections/List<androidx.compose.runtime.tooling/LocationSourceInformation>, kotlin/String) // androidx.compose.runtime.tooling/SourceInformation.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.String?;kotlin.String?;kotlin.collections.List<androidx.compose.runtime.tooling.ParameterSourceInformation>;kotlin.String?;kotlin.collections.List<androidx.compose.runtime.tooling.LocationSourceInformation>;kotlin.String){}[0]
+
+    final val functionName // androidx.compose.runtime.tooling/SourceInformation.functionName|{}functionName[0]
+        final fun <get-functionName>(): kotlin/String? // androidx.compose.runtime.tooling/SourceInformation.functionName.<get-functionName>|<get-functionName>(){}[0]
+    final val isCall // androidx.compose.runtime.tooling/SourceInformation.isCall|{}isCall[0]
+        final fun <get-isCall>(): kotlin/Boolean // androidx.compose.runtime.tooling/SourceInformation.isCall.<get-isCall>|<get-isCall>(){}[0]
+    final val isInline // androidx.compose.runtime.tooling/SourceInformation.isInline|{}isInline[0]
+        final fun <get-isInline>(): kotlin/Boolean // androidx.compose.runtime.tooling/SourceInformation.isInline.<get-isInline>|<get-isInline>(){}[0]
+    final val locations // androidx.compose.runtime.tooling/SourceInformation.locations|{}locations[0]
+        final fun <get-locations>(): kotlin.collections/List<androidx.compose.runtime.tooling/LocationSourceInformation> // androidx.compose.runtime.tooling/SourceInformation.locations.<get-locations>|<get-locations>(){}[0]
+    final val packageHash // androidx.compose.runtime.tooling/SourceInformation.packageHash|{}packageHash[0]
+        final fun <get-packageHash>(): kotlin/String? // androidx.compose.runtime.tooling/SourceInformation.packageHash.<get-packageHash>|<get-packageHash>(){}[0]
+    final val parameters // androidx.compose.runtime.tooling/SourceInformation.parameters|{}parameters[0]
+        final fun <get-parameters>(): kotlin.collections/List<androidx.compose.runtime.tooling/ParameterSourceInformation> // androidx.compose.runtime.tooling/SourceInformation.parameters.<get-parameters>|<get-parameters>(){}[0]
+    final val rawData // androidx.compose.runtime.tooling/SourceInformation.rawData|{}rawData[0]
+        final fun <get-rawData>(): kotlin/String // androidx.compose.runtime.tooling/SourceInformation.rawData.<get-rawData>|<get-rawData>(){}[0]
+    final val sourceFile // androidx.compose.runtime.tooling/SourceInformation.sourceFile|{}sourceFile[0]
+        final fun <get-sourceFile>(): kotlin/String? // androidx.compose.runtime.tooling/SourceInformation.sourceFile.<get-sourceFile>|<get-sourceFile>(){}[0]
+}
+
 final class androidx.compose.runtime/BroadcastFrameClock : androidx.compose.runtime/MonotonicFrameClock { // androidx.compose.runtime/BroadcastFrameClock|null[0]
     constructor <init>(kotlin/Function0<kotlin/Unit>? = ...) // androidx.compose.runtime/BroadcastFrameClock.<init>|<init>(kotlin.Function0<kotlin.Unit>?){}[0]
 
@@ -1042,6 +1091,7 @@ final fun androidx.compose.runtime.internal/composableLambdaInstance(kotlin/Int,
 final fun androidx.compose.runtime.internal/illegalDecoyCallException(kotlin/String): kotlin/Nothing // androidx.compose.runtime.internal/illegalDecoyCallException|illegalDecoyCallException(kotlin.String){}[0]
 final fun androidx.compose.runtime.internal/rememberComposableLambda(kotlin/Int, kotlin/Boolean, kotlin/Any): androidx.compose.runtime.internal/ComposableLambda // androidx.compose.runtime.internal/rememberComposableLambda|rememberComposableLambda(kotlin.Int;kotlin.Boolean;kotlin.Any){}[0]
 final fun androidx.compose.runtime.snapshots/notifyWrite(androidx.compose.runtime.snapshots/Snapshot, androidx.compose.runtime.snapshots/StateObject) // androidx.compose.runtime.snapshots/notifyWrite|notifyWrite(androidx.compose.runtime.snapshots.Snapshot;androidx.compose.runtime.snapshots.StateObject){}[0]
+final fun androidx.compose.runtime.tooling/parseSourceInformation(kotlin/String): androidx.compose.runtime.tooling/SourceInformation? // androidx.compose.runtime.tooling/parseSourceInformation|parseSourceInformation(kotlin.String){}[0]
 final fun androidx.compose.runtime/Composition(androidx.compose.runtime/Applier<*>, androidx.compose.runtime/CompositionContext): androidx.compose.runtime/Composition // androidx.compose.runtime/Composition|Composition(androidx.compose.runtime.Applier<*>;androidx.compose.runtime.CompositionContext){}[0]
 final fun androidx.compose.runtime/CompositionLocalProvider(androidx.compose.runtime/CompositionLocalContext, kotlin/Function0<kotlin/Unit>) // androidx.compose.runtime/CompositionLocalProvider|CompositionLocalProvider(androidx.compose.runtime.CompositionLocalContext;kotlin.Function0<kotlin.Unit>){}[0]
 final fun androidx.compose.runtime/CompositionLocalProvider(androidx.compose.runtime/ProvidedValue<*>, kotlin/Function0<kotlin/Unit>) // androidx.compose.runtime/CompositionLocalProvider|CompositionLocalProvider(androidx.compose.runtime.ProvidedValue<*>;kotlin.Function0<kotlin.Unit>){}[0]

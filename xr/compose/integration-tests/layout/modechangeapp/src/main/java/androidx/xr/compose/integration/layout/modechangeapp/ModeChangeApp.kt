@@ -73,7 +73,6 @@ class ModeChangeApp : ComponentActivity() {
                         (Session.create(this@ModeChangeApp) as SessionCreateSuccess)
                             .session
                             .scene
-                            .spatialEnvironment
                             .requestHomeSpaceMode()
                     }
                 }
@@ -90,7 +89,6 @@ class ModeChangeApp : ComponentActivity() {
             (Session.create(this@ModeChangeApp) as SessionCreateSuccess)
                 .session
                 .scene
-                .spatialEnvironment
                 .requestFullSpaceMode()
         }
     }

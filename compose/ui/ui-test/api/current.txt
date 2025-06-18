@@ -333,7 +333,7 @@ package androidx.compose.ui.test {
   }
 
   public final class IndirectTouchInputHelpersKt {
-    method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean performIndirectTouchEvent(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.input.indirect.IndirectTouchEvent indirectTouchEvent);
+    method @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public static boolean performIndirectTouchEvent(androidx.compose.ui.test.SemanticsNodeInteraction, androidx.compose.ui.input.indirect.IndirectTouchEvent indirectTouchEvent);
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface InjectionScope extends androidx.compose.ui.unit.Density {

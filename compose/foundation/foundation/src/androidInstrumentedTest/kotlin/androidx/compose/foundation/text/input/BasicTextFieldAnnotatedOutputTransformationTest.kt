@@ -57,7 +57,7 @@ internal class BasicTextFieldAnnotatedOutputTransformationTest {
                 state = state,
                 modifier = Modifier.testTag(tag),
                 outputTransformation =
-                    AnnotatedOutputTransformation {
+                    OutputTransformation {
                         addStyle(boldStyle, 0, 1)
                         addStyle(boldStyle, 4, 5)
                     },
@@ -83,14 +83,9 @@ internal class BasicTextFieldAnnotatedOutputTransformationTest {
                 state = state,
                 modifier = Modifier.testTag(tag),
                 outputTransformation =
-                    object : AnnotatedOutputTransformation {
-                        override fun TextFieldBuffer.transformOutput() {
-                            append(" World!")
-                        }
-
-                        override fun OutputTransformationAnnotationScope.annotateOutput() {
-                            addStyle(boldStyle, 0, text.length)
-                        }
+                    OutputTransformation {
+                        append(" World!")
+                        addStyle(boldStyle, 0, length)
                     },
                 textStyle = style,
             )
@@ -111,8 +106,7 @@ internal class BasicTextFieldAnnotatedOutputTransformationTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(tag),
-                outputTransformation =
-                    AnnotatedOutputTransformation { addStyle(spanStyle, 0, text.length) },
+                outputTransformation = OutputTransformation { addStyle(spanStyle, 0, length) },
                 textStyle = style,
             )
         }

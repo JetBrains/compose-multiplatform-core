@@ -43,7 +43,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -112,7 +112,7 @@ fun UpdateFrameRateDemo() {
         Box(
             modifier =
                 Modifier.alpha(box1Alpha) // Use the state variable for alpha
-                    .requestedFrameRate(box1FrameRate) // Use the state variable for frame rate
+                    .preferredFrameRate(box1FrameRate) // Use the state variable for frame rate
                     .width(250.dp)
                     .height(200.dp)
                     .background(animatedBox1Color)
@@ -126,7 +126,7 @@ fun UpdateFrameRateDemo() {
             modifier =
                 Modifier.alpha(box2Alpha) // Use the state variable for alpha
                     .then(
-                        if (isBox2frameRateEnabled) Modifier.requestedFrameRate(120f) else Modifier
+                        if (isBox2frameRateEnabled) Modifier.preferredFrameRate(120f) else Modifier
                     )
                     .width(250.dp)
                     .height(220.dp)

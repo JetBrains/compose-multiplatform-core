@@ -112,8 +112,23 @@ sealed class CompilationMode {
                         reinstallPackage(packageName)
                     }
                 }
+
                 // Write skip file to stop profile installer from interfering with the benchmark
                 writeProfileInstallerSkipFile(scope)
+
+                if (
+                    DeviceInfo.poisonTheRuntimeImage && !poisonedRuntimeImages.contains(packageName)
+                ) {
+                    // Sleep to allow runtime image to be flushed from profile install broadcast
+                    // above, which will produce a near-useless runtime image, and allow us to
+                    // measure worst case `CompilationMode.None`/`verify` perf
+                    DeviceInfo.sleepToAwaitRuntimeImageFlush()
+
+                    // save package name as once it's poisoned, we don't need to re-poison
+                    // unless it's reinstalled
+                    poisonedRuntimeImages.add(packageName)
+                }
+
                 compileImpl(scope, warmupBlock)
             } else {
                 Log.d(TAG, "Compilation is disabled, skipping compilation of $packageName")
@@ -141,6 +156,8 @@ sealed class CompilationMode {
                 Shell.rm(copiedApkPaths)
             }
         }
+        // after reinstall, the runtime image will not be considered poisoned
+        poisonedRuntimeImages.remove(packageName)
     }
 
     /**
@@ -472,6 +489,19 @@ sealed class CompilationMode {
                     ""
                 }
         }
+
+        /**
+         * List of all target packages that have had their runtime image "poisoned" - intentionally
+         * populated with a small set of classes from a broadcast, rather than a full startup.
+         *
+         * This strategy to workaround our inability to reset runtime images on some platforms
+         * avoids us needing to reinstall the target application between iterations when
+         * [CompilationMode.None] is used with [StartupMode.COLD] (or other means of killing the
+         * target app each iter)
+         *
+         * Only needed if [DeviceInfo.poisonTheRuntimeImage] = `true`
+         */
+        private val poisonedRuntimeImages = mutableSetOf<String>()
     }
 }
 

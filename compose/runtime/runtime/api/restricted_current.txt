@@ -1318,6 +1318,9 @@ package androidx.compose.runtime.snapshots.tooling {
 
 package androidx.compose.runtime.tooling {
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is for tooling only and is likely to change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ComposeToolingApi {
+  }
+
   public interface CompositionData {
     method public default androidx.compose.runtime.tooling.CompositionGroup? find(Object identityToFind);
     method public Iterable<androidx.compose.runtime.tooling.CompositionGroup> getCompositionGroups();
@@ -1393,8 +1396,54 @@ package androidx.compose.runtime.tooling {
     property public static androidx.compose.runtime.ProvidableCompositionLocal<java.util.Set<androidx.compose.runtime.tooling.CompositionData>?> LocalInspectionTables;
   }
 
+  @SuppressCompatibility @androidx.compose.runtime.tooling.ComposeToolingApi public final class LocationSourceInformation {
+    ctor public LocationSourceInformation(int lineNumber, int offset, int length, boolean isRepeatable);
+    method public int getLength();
+    method public int getLineNumber();
+    method public int getOffset();
+    method public boolean isRepeatable();
+    property public boolean isRepeatable;
+    property public int length;
+    property public int lineNumber;
+    property public int offset;
+  }
+
   @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeRuntimeApi public interface ObservableComposition {
     method public androidx.compose.runtime.tooling.CompositionObserverHandle setObserver(androidx.compose.runtime.tooling.CompositionObserver observer);
+  }
+
+  @SuppressCompatibility @androidx.compose.runtime.tooling.ComposeToolingApi public final class ParameterSourceInformation {
+    ctor public ParameterSourceInformation(int sortedIndex, optional String? name, optional String? inlineClass);
+    method public String? getInlineClass();
+    method public String? getName();
+    method public int getSortedIndex();
+    property public String? inlineClass;
+    property public String? name;
+    property public int sortedIndex;
+  }
+
+  @SuppressCompatibility @androidx.compose.runtime.tooling.ComposeToolingApi public final class SourceInformation {
+    ctor public SourceInformation(boolean isCall, boolean isInline, String? functionName, String? sourceFile, java.util.List<androidx.compose.runtime.tooling.ParameterSourceInformation> parameters, String? packageHash, java.util.List<androidx.compose.runtime.tooling.LocationSourceInformation> locations, String rawData);
+    method public String? getFunctionName();
+    method public java.util.List<androidx.compose.runtime.tooling.LocationSourceInformation> getLocations();
+    method public String? getPackageHash();
+    method public java.util.List<androidx.compose.runtime.tooling.ParameterSourceInformation> getParameters();
+    method public String getRawData();
+    method public String? getSourceFile();
+    method public boolean isCall();
+    method public boolean isInline();
+    property public String? functionName;
+    property public boolean isCall;
+    property public boolean isInline;
+    property public java.util.List<androidx.compose.runtime.tooling.LocationSourceInformation> locations;
+    property public String? packageHash;
+    property public java.util.List<androidx.compose.runtime.tooling.ParameterSourceInformation> parameters;
+    property public String rawData;
+    property public String? sourceFile;
+  }
+
+  public final class SourceInformationKt {
+    method @SuppressCompatibility @androidx.compose.runtime.tooling.ComposeToolingApi public static androidx.compose.runtime.tooling.SourceInformation? parseSourceInformation(String data);
   }
 
 }

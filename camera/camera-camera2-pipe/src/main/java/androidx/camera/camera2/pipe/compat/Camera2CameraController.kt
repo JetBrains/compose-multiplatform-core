@@ -475,13 +475,9 @@ constructor(
                     }
                 ControllerState.ERROR ->
                     // If the camera is available, we should restart, provided that we didn't get
-                    // an error during graph (session) configuration or the user lacks camera
-                    // permission, since we'd be unlikely to succeed under these scenarios.
-                    if (
-                        cameraAvailable &&
-                            lastCameraError != CameraError.ERROR_GRAPH_CONFIG &&
-                            lastCameraError != CameraError.ERROR_SECURITY_EXCEPTION
-                    ) {
+                    // an error during graph (session) configuration, since restarting here would
+                    // likely not help if it's a problem with graph configuration settings.
+                    if (cameraAvailable && lastCameraError != CameraError.ERROR_GRAPH_CONFIG) {
                         return true
                     }
             }

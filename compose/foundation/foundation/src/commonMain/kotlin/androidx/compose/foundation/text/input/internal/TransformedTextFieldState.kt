@@ -17,9 +17,7 @@
 package androidx.compose.foundation.text.input.internal
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.text.input.AnnotatedOutputTransformation
 import androidx.compose.foundation.text.input.InputTransformation
-import androidx.compose.foundation.text.input.MutableOutputTransformationAnnotationScope
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldCharSequence
@@ -116,12 +114,6 @@ internal class TransformedTextFieldState(
     private val codepointTransformation: CodepointTransformation? = null,
     private val outputTransformation: OutputTransformation? = null,
 ) {
-    private val annotationScope =
-        if (outputTransformation is AnnotatedOutputTransformation) {
-            MutableOutputTransformationAnnotationScope()
-        } else {
-            null
-        }
 
     private val outputTransformedText: State<TransformedText?>? =
         // Don't allocate a derived state object if we don't need it, they're expensive.
@@ -132,7 +124,6 @@ internal class TransformedTextFieldState(
                     untransformedValue = textFieldState.value,
                     outputTransformation = transformation,
                     wedgeAffinity = selectionWedgeAffinity,
-                    annotationScope = annotationScope,
                 )
             }
         }
@@ -457,7 +448,6 @@ internal class TransformedTextFieldState(
                                     untransformedValue = oldValue,
                                     outputTransformation = outputTransformation,
                                     wedgeAffinity = selectionWedgeAffinity,
-                                    annotationScope = annotationScope,
                                 )
                                 ?.text ?: oldValue,
                         newValue = visualText,
@@ -522,7 +512,6 @@ internal class TransformedTextFieldState(
             untransformedValue: TextFieldCharSequence,
             outputTransformation: OutputTransformation,
             wedgeAffinity: SelectionWedgeAffinity,
-            annotationScope: MutableOutputTransformationAnnotationScope?,
         ): TransformedText? {
             val offsetMappingCalculator = OffsetMappingCalculator()
             val buffer =
@@ -534,23 +523,10 @@ internal class TransformedTextFieldState(
             // This is a call to external code.
             with(outputTransformation) { buffer.transformOutput() }
 
-            val outputAnnotations =
-                if (
-                    outputTransformation is AnnotatedOutputTransformation && annotationScope != null
-                ) {
-                    annotationScope.reset(buffer)
-                    // This is another call to external code.
-                    with(outputTransformation) { annotationScope.annotateOutput() }
-                    // We need to create a new reference to this list because eventually it may
-                    // end up being committed into `TextFieldCharSequence`, then changes to it won't
-                    // trigger any restart scopes.
-                    @Suppress("ListIterator") annotationScope.annotationRangeList.toList()
-                } else {
-                    emptyList()
-                }
+            val outputAnnotations = buffer.outputTransformationAnnotations
 
             // Avoid allocations + mapping if there weren't actually any transformations.
-            if (buffer.changes.changeCount == 0 && outputAnnotations.isEmpty()) {
+            if (buffer.changes.changeCount == 0 && outputAnnotations.isNullOrEmpty()) {
                 return null
             }
 

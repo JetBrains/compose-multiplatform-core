@@ -92,18 +92,6 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
 
     @NonNull
     @Override
-    @Deprecated
-    public Vector3 getPixelDensity() {
-        Vector3 scale = getWorldSpaceScale();
-        float defaultPixelDensity = getDefaultPixelDensity();
-        return new Vector3(
-                defaultPixelDensity / scale.getX(),
-                defaultPixelDensity / scale.getY(),
-                defaultPixelDensity / scale.getZ());
-    }
-
-    @NonNull
-    @Override
     public Dimensions getSize() {
         float pixelDensity = getDefaultPixelDensity();
         return new Dimensions(

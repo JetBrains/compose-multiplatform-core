@@ -28,7 +28,6 @@ import java.util.List;
 /**
  * A Plane is a type of Trackable that maps to a real world plane (e.g. a floor, a wall, or a table)
  */
-// TODO: b/329875042 - Add a utility to convert this to an ARCore plane.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Plane implements Trackable {
     private static final String TAG = "PerceptionPlane";

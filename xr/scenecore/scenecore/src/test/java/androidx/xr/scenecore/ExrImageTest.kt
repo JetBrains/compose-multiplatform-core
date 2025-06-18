@@ -31,6 +31,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Paths
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,7 +63,7 @@ class ExrImageTest {
     }
 
     @Test
-    fun exrImage_create_failsForExrFile() {
+    fun exrImage_createFromZipAsync_failsForExrFile() {
         val mockRtExrImage = mock<RtExrImage>()
         mockPlatformAdapter.stub {
             on { loadExrImageByAssetName("test.exr") }
@@ -85,7 +86,32 @@ class ExrImageTest {
     }
 
     @Test
-    fun exrImage_create_withZipExtension_passes() {
+    fun exrImage_createFromZip_failsForExrFile() {
+        val mockRtExrImage = mock<RtExrImage>()
+        mockPlatformAdapter.stub {
+            on { loadExrImageByAssetName("test.exr") }
+                .thenReturn(Futures.immediateFuture(mockRtExrImage))
+        }
+        val session =
+            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+
+        runBlocking {
+            @Suppress("UNUSED_VARIABLE", "NewApi")
+            val exception =
+                assertFailsWith<IllegalArgumentException> {
+                    val unusedExrImage: ExrImage =
+                        ExrImage.createFromZip(session, Paths.get("test.exr"))
+                }
+
+            assertThat(exception)
+                .hasMessageThat()
+                .contains("Only preprocessed skybox files with the .zip extension are supported.")
+        }
+        verify(mockPlatformAdapter, never()).loadExrImageByAssetName("test.exr")
+    }
+
+    @Test
+    fun exrImage_createFromZipAsync_withZipExtension_passes() {
         val mockRtExrImage = mock<RtExrImage>()
         mockPlatformAdapter.stub {
             on { loadExrImageByAssetName("test.zip") }
@@ -98,6 +124,25 @@ class ExrImageTest {
             ExrImage.createFromZipAsync(session, Paths.get("test.zip"))
 
         assertIs<ExrImage>(exrImage.get())
+        verify(mockPlatformAdapter).loadExrImageByAssetName("test.zip")
+    }
+
+    @Test
+    fun exrImage_createFromZip_withZipExtension_passes() {
+        val mockRtExrImage = mock<RtExrImage>()
+        mockPlatformAdapter.stub {
+            on { loadExrImageByAssetName("test.zip") }
+                .thenReturn(Futures.immediateFuture(mockRtExrImage))
+        }
+        val session =
+            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
+
+        runBlocking {
+            @Suppress("UNUSED_VARIABLE", "NewApi")
+            val exrImage: ExrImage = ExrImage.createFromZip(session, Paths.get("test.zip"))
+
+            assertIs<ExrImage>(exrImage)
+        }
         verify(mockPlatformAdapter).loadExrImageByAssetName("test.zip")
     }
 }

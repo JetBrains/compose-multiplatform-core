@@ -104,7 +104,7 @@ package androidx.ink.brush {
     field public static final androidx.ink.brush.StockBrushes INSTANCE;
   }
 
-  @SuppressCompatibility @androidx.ink.brush.ExperimentalInkCustomBrushApi public fun interface TextureBitmapStore {
+  public fun interface TextureBitmapStore {
     method public operator android.graphics.Bitmap? get(String clientTextureId);
   }
 

@@ -62,6 +62,10 @@ class TransformingLazyColumnScreenshotTest(
     @Test fun transforming_lazy_column_initial_layout() = verifyTransformingLazyColumnScreenshot()
 
     @Test
+    fun transforming_lazy_column_initial_layout_fits_screen() =
+        verifyTransformingLazyColumnScreenshot(itemsCount = 1)
+
+    @Test
     fun transforming_lazy_column_scrollBy() = verifyTransformingLazyColumnScreenshot {
         scrollBy(100f)
     }
@@ -88,7 +92,11 @@ class TransformingLazyColumnScreenshotTest(
         NOT_ANIMATED,
     }
 
-    data class TestContext(val transformationSpec: TransformationSpec, val isAnimated: Boolean) {
+    data class TestContext(
+        val transformationSpec: TransformationSpec,
+        val isAnimated: Boolean,
+        val itemsCount: Int,
+    ) {
         fun Component(type: ComponentType, scope: TransformingLazyColumnScope) {
             when (type) {
                 ComponentType.BUTTON -> Buttons(scope)
@@ -99,7 +107,7 @@ class TransformingLazyColumnScreenshotTest(
 
         private fun Buttons(scope: TransformingLazyColumnScope) =
             with(scope) {
-                items(count = 100) {
+                items(count = itemsCount) {
                     Button(
                         onClick = {},
                         modifier =
@@ -114,7 +122,7 @@ class TransformingLazyColumnScreenshotTest(
 
         private fun BorderedButtons(scope: TransformingLazyColumnScope) =
             with(scope) {
-                items(count = 100) {
+                items(count = itemsCount) {
                     OutlinedButton(
                         onClick = {},
                         modifier =
@@ -129,7 +137,7 @@ class TransformingLazyColumnScreenshotTest(
 
         private fun Cards(scope: TransformingLazyColumnScope) =
             with(scope) {
-                items(count = 100) {
+                items(count = itemsCount) {
                     Card(
                         onClick = {},
                         modifier =
@@ -144,7 +152,8 @@ class TransformingLazyColumnScreenshotTest(
     }
 
     private fun verifyTransformingLazyColumnScreenshot(
-        onIdle: suspend TransformingLazyColumnState.() -> Unit = {}
+        itemsCount: Int = 100,
+        onIdle: suspend TransformingLazyColumnState.() -> Unit = {},
     ) {
         lateinit var state: TransformingLazyColumnState
         lateinit var coroutineScope: CoroutineScope
@@ -159,6 +168,7 @@ class TransformingLazyColumnScreenshotTest(
                         TestContext(
                             transformationSpec,
                             isAnimated = isAnimated == IsAnimated.ANIMATED,
+                            itemsCount = itemsCount,
                         )
                     ) {
                         Component(component, this@TransformingLazyColumn)

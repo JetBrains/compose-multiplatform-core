@@ -20,6 +20,7 @@ import androidx.collection.MutableLongSet
 import androidx.collection.MutableObjectList
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
 import androidx.compose.ui.focus.CustomDestinationResult.None
@@ -398,7 +399,7 @@ internal class FocusOwnerImpl(
         return false
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalIndirectTouchTypeApi::class)
     override fun dispatchIndirectTouchEvent(
         event: IndirectTouchEvent,
         onFocusedItem: () -> Boolean,

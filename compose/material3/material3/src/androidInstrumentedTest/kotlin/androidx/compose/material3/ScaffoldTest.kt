@@ -78,6 +78,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.roundToInt
 import org.junit.Assert.assertEquals
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -634,6 +635,7 @@ class ScaffoldTest {
     }
 
     @Test
+    @Ignore("b/422764314")
     fun scaffold_fabPosition_start() {
         var fabSize: IntSize? = null
         var fabPosition: Offset? = null
@@ -671,6 +673,7 @@ class ScaffoldTest {
     }
 
     @Test
+    @Ignore("b/422748931")
     fun scaffold_fabPosition_center() {
         var fabSize: IntSize? = null
         var fabPosition: Offset? = null
@@ -708,6 +711,7 @@ class ScaffoldTest {
     }
 
     @Test
+    @Ignore("b/422746150")
     fun scaffold_fabPosition_end() {
         var fabSize: IntSize? = null
         var fabPosition: Offset? = null

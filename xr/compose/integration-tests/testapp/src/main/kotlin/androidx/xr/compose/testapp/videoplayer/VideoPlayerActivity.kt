@@ -123,7 +123,6 @@ class VideoPlayerActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         session = (Session.create(this) as SessionCreateSuccess).session
-        session.resume()
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
         session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
 
@@ -305,12 +304,10 @@ class VideoPlayerActivity : ComponentActivity() {
                     val modifier = Modifier.weight(1F)
                     ApiButton("Toggle Passthrough", modifier) { togglePassthrough(session) }
                     ApiButton("Switch to FSM", modifier) {
-                        session.scene.spatialEnvironment.requestFullSpaceMode()
+                        session.scene.requestFullSpaceMode()
                         checkExternalStoragePermission()
                     }
-                    ApiButton("Switch to HSM", modifier) {
-                        session.scene.spatialEnvironment.requestHomeSpaceMode()
-                    }
+                    ApiButton("Switch to HSM", modifier) { session.scene.requestHomeSpaceMode() }
                 }
             }
         }

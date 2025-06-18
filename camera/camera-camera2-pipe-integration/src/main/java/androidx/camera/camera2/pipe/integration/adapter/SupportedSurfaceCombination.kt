@@ -31,6 +31,7 @@ import android.util.Rational
 import android.util.Size
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPreviewStabilization
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination.CheckingMethod.WITHOUT_FEATURE_COMBO
@@ -118,7 +119,7 @@ public class SupportedSurfaceCombination(
     private val isConcurrentCameraModeSupported: Boolean
     private val isStreamUseCaseSupported: Boolean
     private var isUltraHighResolutionSensorSupported = false
-    private var isPreviewStabilizationSupported = false
+    private var isPreviewStabilizationSupported = cameraMetadata.supportsPreviewStabilization
     private var isManualSensorSupported = false
     internal lateinit var surfaceSizeDefinition: SurfaceSizeDefinition
     private val surfaceSizeDefinitionFormats = mutableListOf<Int>()
@@ -353,7 +354,8 @@ public class SupportedSurfaceCombination(
      * @param isFeatureComboInvocation whether the code flow involves CameraX feature combo API
      *   (e.g. [androidx.camera.core.SessionConfig.requiredFeatures]).
      * @param findMaxSupportedFrameRate whether to find the max supported frame rate. If this is
-     *   true, the target frame rate settings will be ignored.
+     *   true, the target frame rate settings will be ignored. If false, the returned value of
+     *   [SurfaceStreamSpecQueryResult.maxSupportedFrameRate] is undetermined.
      * @return a [SurfaceStreamSpecQueryResult].
      * @throws IllegalArgumentException if the suggested solution for newUseCaseConfigs cannot be
      *   found. This may be due to no available output size or no available surface combination.
@@ -394,17 +396,37 @@ public class SupportedSurfaceCombination(
                 newUseCaseConfigs,
                 useCasesPriorityOrder,
             )
+
+        debug { "resolvedDynamicRanges = $resolvedDynamicRanges" }
+
         val isUltraHdrOn = isUltraHdrOn(attachedSurfaces, filteredNewUseCaseConfigsSupportedSizeMap)
 
         // Calculates the target FPS range
-        val targetFpsRange =
+        val (isStrictFpsRequired, targetFpsRange) =
             if (findMaxSupportedFrameRate) {
-                // In finding for maxFps mode, ignore the targetFrameRate setting so that it doesn't
-                // break calculations by any frame rate checks.
-                FRAME_RATE_RANGE_UNSPECIFIED
+                // In finding maxFps mode, ignore targetFpsRange and isStrictFpsRequired so that the
+                // calculations won't be interrupted by any frame rate checks.
+                false to FRAME_RATE_RANGE_UNSPECIFIED
             } else {
-                getTargetFpsRange(attachedSurfaces, newUseCaseConfigs, useCasesPriorityOrder)
+                val isStrictFpsRequired = isStrictFpsRequired(attachedSurfaces, newUseCaseConfigs)
+                val targetFpsRange =
+                    getTargetFpsRange(
+                        attachedSurfaces,
+                        newUseCaseConfigs,
+                        useCasesPriorityOrder,
+                        isStrictFpsRequired,
+                    )
+                isStrictFpsRequired to targetFpsRange
             }
+
+        // Ensure preview stabilization is supported by the camera.
+        if (isPreviewStabilizationOn && !isPreviewStabilizationSupported) {
+            // TODO: b/422055796 - Handle this for non-feature-combo code flows, probably better to
+            //  silently fall back to non-preview-stabilization mode in such case.
+            require(!isFeatureComboInvocation) {
+                "Preview stabilization is not supported by the camera."
+            }
+        }
 
         val featureSettings =
             createFeatureSettings(
@@ -417,6 +439,7 @@ public class SupportedSurfaceCombination(
                 isFeatureComboInvocation = isFeatureComboInvocation,
                 requiresFeatureComboQuery = false,
                 targetFpsRange = targetFpsRange,
+                isStrictFpsRequired = isStrictFpsRequired,
             )
 
         val checkingMethod: CheckingMethod =
@@ -713,6 +736,7 @@ public class SupportedSurfaceCombination(
         isFeatureComboInvocation: Boolean,
         requiresFeatureComboQuery: Boolean,
         targetFpsRange: Range<Int>,
+        isStrictFpsRequired: Boolean,
     ): FeatureSettings {
         val requiredMaxBitDepth = getRequiredMaxBitDepth(resolvedDynamicRanges)
 
@@ -726,6 +750,7 @@ public class SupportedSurfaceCombination(
                 isFeatureComboInvocation = isFeatureComboInvocation,
                 requiresFeatureComboQuery = requiresFeatureComboQuery,
                 targetFpsRange = targetFpsRange,
+                isStrictFpsRequired = isStrictFpsRequired,
             )
             .validateSelf()
     }
@@ -952,6 +977,7 @@ public class SupportedSurfaceCombination(
         attachedSurfaces: List<AttachedSurfaceInfo>,
         newUseCaseConfigs: List<UseCaseConfig<*>>,
         useCasesPriorityOrder: List<Int>,
+        isStrictFpsRequired: Boolean,
     ): Range<Int> {
         var targetFrameRateForConfig: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED
         for (attachedSurfaceInfo in attachedSurfaces) {
@@ -960,6 +986,7 @@ public class SupportedSurfaceCombination(
                 getUpdatedTargetFrameRate(
                     attachedSurfaceInfo.targetFrameRate,
                     targetFrameRateForConfig,
+                    isStrictFpsRequired,
                 )
         }
         // update target fps for new configs using new use cases' priority order
@@ -968,9 +995,33 @@ public class SupportedSurfaceCombination(
                 getUpdatedTargetFrameRate(
                     newUseCaseConfigs[index].getTargetFrameRate(FRAME_RATE_RANGE_UNSPECIFIED)!!,
                     targetFrameRateForConfig,
+                    isStrictFpsRequired,
                 )
         }
         return targetFrameRateForConfig
+    }
+
+    private fun isStrictFpsRequired(
+        attachedSurfaces: List<AttachedSurfaceInfo>,
+        newUseCaseConfigs: List<UseCaseConfig<*>>,
+    ): Boolean {
+        var isStrictFpsRequired: Boolean? = null
+        for (attachedSurfaceInfo in attachedSurfaces) {
+            isStrictFpsRequired =
+                getAndValidateIsStrictFpsRequired(
+                    attachedSurfaceInfo.isStrictFrameRateRequired,
+                    isStrictFpsRequired,
+                )
+        }
+
+        for (newUseCaseConfigs in newUseCaseConfigs) {
+            isStrictFpsRequired =
+                getAndValidateIsStrictFpsRequired(
+                    newUseCaseConfigs.isStrictFrameRateRequired,
+                    isStrictFpsRequired,
+                )
+        }
+        return isStrictFpsRequired ?: false
     }
 
     private fun getMaxSupportedFpsFromAttachedSurfaces(
@@ -1324,7 +1375,7 @@ public class SupportedSurfaceCombination(
                     availableFpsRanges,
                 )
 
-            if (featureSettings.isFeatureComboInvocation) {
+            if (featureSettings.isFeatureComboInvocation || featureSettings.isStrictFpsRequired) {
                 require(targetFrameRateForDevice == featureSettings.targetFpsRange) {
                     "Target FPS range ${featureSettings.targetFpsRange} is not supported." +
                         " Max FPS supported by the calculated best combination:" +
@@ -1638,32 +1689,67 @@ public class SupportedSurfaceCombination(
      * Calculates the updated target frame rate based on a new target frame rate and a previously
      * stored target frame rate.
      *
-     * <p>If the two ranges are both nonnull and disjoint of each other, then the range that was
-     * already stored will be used
+     * If strict fps is required and both new and stored frame rates are not unspecified, they must
+     * be the same or an `IllegalStateException` will be thrown.
+     *
+     * If strict fps is not required and both new and stored target frame rate are not unspecified,
+     * the intersection of ranges will be adopted. If the ranges are disjoint, the stored frame rate
+     * will be used.
      *
      * @param newTargetFrameRate an incoming frame rate range
      * @param storedTargetFrameRate a stored frame rate range to be modified
+     * @param isStrictFpsRequired whether strict fps is required
      * @return adjusted target frame rate
      */
     private fun getUpdatedTargetFrameRate(
         newTargetFrameRate: Range<Int>,
         storedTargetFrameRate: Range<Int>,
+        isStrictFpsRequired: Boolean,
     ): Range<Int> {
-        var updatedTargetFrameRate = storedTargetFrameRate
-        if (storedTargetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED) {
-            // if stored value was null before, set it to the new value
-            updatedTargetFrameRate = newTargetFrameRate
-        } else if (newTargetFrameRate != FRAME_RATE_RANGE_UNSPECIFIED) {
-            updatedTargetFrameRate =
-                try {
+        if (
+            storedTargetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED &&
+                newTargetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED
+        ) {
+            return FRAME_RATE_RANGE_UNSPECIFIED
+        } else if (storedTargetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED) {
+            return newTargetFrameRate
+        } else if (newTargetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED) {
+            return storedTargetFrameRate
+        } else {
+            if (isStrictFpsRequired) {
+                // An IllegalStateException is thrown here because this is an implementation error
+                // rather than an unsupported combination. Currently isStrictFpsRequired is true
+                // only when SessionConfig frame rate API is used.
+                Preconditions.checkState(
+                    newTargetFrameRate == storedTargetFrameRate,
+                    "All targetFrameRate should be the same if strict fps is required",
+                )
+                return newTargetFrameRate
+            } else {
+                return try {
                     // get intersection of existing target fps
                     storedTargetFrameRate.intersect(newTargetFrameRate)
-                } catch (_: java.lang.IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     // no intersection, keep the previously stored value
                     storedTargetFrameRate
                 }
+            }
         }
-        return updatedTargetFrameRate
+    }
+
+    private fun getAndValidateIsStrictFpsRequired(
+        newIsStrictFpsRequired: Boolean,
+        storedIsStrictFpsRequired: Boolean?,
+    ): Boolean {
+        if (
+            storedIsStrictFpsRequired != null && storedIsStrictFpsRequired != newIsStrictFpsRequired
+        ) {
+            // An IllegalStateException is thrown here because this is an implementation error
+            // rather than an unsupported combination. Currently isStrictFpsRequired is true
+            // only when SessionConfig frame rate API is used.
+            throw IllegalStateException("All isStrictFpsRequired should be the same")
+        }
+        return newIsStrictFpsRequired
     }
 
     /**
@@ -1774,19 +1860,6 @@ public class SupportedSurfaceCombination(
                 )
             isManualSensorSupported =
                 contains(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR)
-        }
-
-        // Preview Stabilization
-        val availablePreviewStabilizationModes: IntArray? =
-            cameraMetadata.get<IntArray>(
-                CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES
-            )
-
-        availablePreviewStabilizationModes?.apply {
-            isPreviewStabilizationSupported =
-                contains(
-                    CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-                )
         }
     }
 
@@ -2218,6 +2291,7 @@ public class SupportedSurfaceCombination(
         val isFeatureComboInvocation: Boolean = false,
         val requiresFeatureComboQuery: Boolean = false,
         val targetFpsRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
+        val isStrictFpsRequired: Boolean = false,
     )
 
     public data class BestSizesAndMaxFpsForConfigs(

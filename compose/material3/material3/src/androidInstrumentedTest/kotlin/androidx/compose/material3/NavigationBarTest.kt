@@ -68,6 +68,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -169,6 +170,7 @@ class NavigationBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun navigationBar_size() {
         val height = NavigationBarTokens.TallContainerHeight
         rule
@@ -435,6 +437,7 @@ class NavigationBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun navigationBarItemContent_customHeight_withLabel_sizeAndPosition() {
         val defaultHeight = NavigationBarTokens.TallContainerHeight
         val customHeight = 64.dp

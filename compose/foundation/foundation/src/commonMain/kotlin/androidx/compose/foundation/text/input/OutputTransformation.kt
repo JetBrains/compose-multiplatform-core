@@ -16,12 +16,8 @@
 
 package androidx.compose.foundation.text.input
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ParagraphStyle
-import androidx.compose.ui.text.SpanStyle
 
 /**
  * A function ([transformOutput]) that transforms the text presented to a user by a
@@ -44,81 +40,19 @@ fun interface OutputTransformation {
      *
      * Selection and cursor positions are managed internally by [BasicTextField]. If there's a range
      * of inserted characters via this [OutputTransformation], selection or cursor never goes in
-     * between these inserted characters.
+     * between these inserted characters. Furthermore, changing the selection or cursor position of
+     * this [TextFieldBuffer] does not have any affect. Please use [InputTransformation] or
+     * [TextFieldState.edit] to manipulate the current selection placement.
      *
      * Note that this transformation is called every time a new text needs to be displayed. This
      * implies that the contents of [TextFieldBuffer] will always be what the [TextFieldState] holds
      * currently. All the changes made here are discarded after text is presented to the user.
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldOutputTransformationSample
+     *
+     * You can call [TextFieldBuffer.addStyle] to add partial styling to the presented text.
+     *
+     * @sample androidx.compose.foundation.samples.BasicTextFieldAnnotatedOutputTransformationSample
      */
     fun TextFieldBuffer.transformOutput()
-}
-
-/**
- * A special type of [OutputTransformation] that enables adding styling and annotations to the
- * rendered text.
- *
- * @sample androidx.compose.foundation.samples.BasicTextFieldAnnotatedOutputTransformationSample
- */
-fun interface AnnotatedOutputTransformation : OutputTransformation {
-
-    // this is not necessary but it gives a better order to automatically added required override
-    // functions. We want to emphasize that transformOutput is executed before annotateOutput.
-    override fun TextFieldBuffer.transformOutput() = Unit
-
-    /**
-     * Provides the ability to style and annotate the final rendered text. This always runs after
-     * [OutputTransformation.transformOutput].
-     */
-    fun OutputTransformationAnnotationScope.annotateOutput()
-}
-
-sealed interface OutputTransformationAnnotationScope {
-
-    /** The text content of the buffer after [OutputTransformation.transformOutput] is called. */
-    val text: CharSequence
-
-    /**
-     * Adds the given [spanStyle] to the text range between [start] (inclusive) and [end]
-     * (exclusive).
-     */
-    fun addStyle(spanStyle: SpanStyle, start: Int, end: Int)
-
-    /**
-     * Adds the given [paragraphStyle] to the text range between [start] (inclusive) and [end]
-     * (exclusive).
-     */
-    fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int)
-}
-
-/**
- * This class is responsible for defining an [OutputTransformationAnnotationScope] for
- * [AnnotatedOutputTransformation] without requiring an allocation everytime a transform is called.
- */
-@OptIn(ExperimentalFoundationApi::class)
-internal class MutableOutputTransformationAnnotationScope : OutputTransformationAnnotationScope {
-
-    val annotationRangeList = mutableListOf<PlacedAnnotation>()
-
-    override var text: CharSequence = ""
-
-    private fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int) {
-        annotationRangeList.add(AnnotatedString.Range(annotation, start, end))
-    }
-
-    override fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) =
-        addAnnotation(spanStyle, start, end)
-
-    override fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) =
-        addAnnotation(paragraphStyle, start, end)
-
-    /**
-     * Call this function after [OutputTransformation.transformOutput], before
-     * [AnnotatedOutputTransformation.annotateOutput].
-     */
-    fun reset(buffer: TextFieldBuffer) {
-        annotationRangeList.clear()
-        this.text = buffer.asCharSequence()
-    }
 }

@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.text.input.AnnotatedOutputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.PlacedAnnotation
 import androidx.compose.foundation.text.input.TextFieldCharSequence
@@ -70,9 +69,9 @@ class TransformedTextFieldStateTest {
     }
 
     @Test
-    fun annotatedOutputTransformation_noChanges_emptyOutputAnnotations() {
+    fun outputTransformation_noChanges_emptyOutputAnnotations() {
         val state = TextFieldState()
-        val outputTransformation = AnnotatedOutputTransformation {}
+        val outputTransformation = OutputTransformation {}
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
@@ -83,11 +82,9 @@ class TransformedTextFieldStateTest {
     }
 
     @Test
-    fun annotatedOutputTransformation_addingAnnotation_showsOutputAnnotations() {
+    fun outputTransformation_addingAnnotation_showsOutputAnnotations() {
         val state = TextFieldState("Hello")
-        val outputTransformation = AnnotatedOutputTransformation {
-            addStyle(SpanStyle(Color.Red), 0, 3)
-        }
+        val outputTransformation = OutputTransformation { addStyle(SpanStyle(Color.Red), 0, 3) }
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,

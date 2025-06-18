@@ -31,7 +31,7 @@ class InnerShadowPainterTest {
 
     @Test
     fun testInnerShadowPainterWithColor() {
-        val innerShadow = InnerShadowPainter(RectangleShape, ShadowParams(20.dp, Color.Red))
+        val innerShadow = InnerShadowPainter(RectangleShape, Shadow(20.dp, Color.Red))
         shadowTest(
             block = {
                 drawRect(Color.Blue)
@@ -51,7 +51,7 @@ class InnerShadowPainterTest {
 
     @Test
     fun testInnerShadowPainterWithPathAndColor() {
-        val innerShadow = InnerShadowPainter(RectangleShape, ShadowParams(20.dp, Color.Red))
+        val innerShadow = InnerShadowPainter(RectangleShape, Shadow(20.dp, Color.Red))
         shadowTest(
             block = {
                 drawRect(Color.Blue)

@@ -706,6 +706,7 @@ class StreamUseCaseTest() {
                 /*implementationOptions=*/ null,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
         TestCase.assertTrue(
             StreamUseCaseUtil.areCaptureTypesEligible(
@@ -744,6 +745,7 @@ class StreamUseCaseTest() {
                 /*implementationOptions=*/ null,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
         TestCase.assertFalse(
             StreamUseCaseUtil.areCaptureTypesEligible(
@@ -903,6 +905,7 @@ class StreamUseCaseTest() {
             StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig),
             SESSION_TYPE_REGULAR,
             FRAME_RATE_RANGE_UNSPECIFIED,
+            /*isStrictFrameRateRequired=*/ false,
         )
     }
 

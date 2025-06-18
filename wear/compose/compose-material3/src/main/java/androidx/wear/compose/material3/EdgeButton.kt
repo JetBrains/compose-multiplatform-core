@@ -456,15 +456,13 @@ internal class EdgeButtonShape(private val helper: ShapeHelper) : Shape {
                 with(helper) {
                     val t1Factor = 1f
 
+                    val screenRadius = (helper.lastSize ?: size).width / 2 - helper.bottomPaddingPx
                     val ellipsisCenter = Offset(size.width / 2, size.height - ellipsisHeight / 2)
                     val ellipsisRadiusY = ellipsisHeight / 2
+                    // Pick the maximum ellipsisRadiusX so that it is still fully contained in the
+                    // container (shrunk by padding).
                     val ellipsisRadiusX =
-                        findEllipsisRadiusX(
-                            circleRadius =
-                                (helper.lastSize ?: size).width / 2 - helper.bottomPaddingPx,
-                            radiusY = ellipsisRadiusY,
-                            target = 0f,
-                        )
+                        sqrt(ellipsisRadiusY * screenRadius).coerceAtMost(screenRadius)
 
                     // We use an ellipsis function as a function of t, this is the point at which we
                     // will transition between circle and ellipsis.
@@ -531,45 +529,6 @@ internal class EdgeButtonShape(private val helper: ShapeHelper) : Shape {
             }
 
         return Outline.Generic(path)
-    }
-
-    // Does a binary search to find the maximum possible horizontal radius of the ellipsis ensuring
-    // that the distance to the circle is the target.
-    // The ellipsis and circle share a point at the bottom.
-    private fun findEllipsisRadiusX(circleRadius: Float, radiusY: Float, target: Float): Float {
-        if (radiusY >= circleRadius) return circleRadius // !?
-
-        // Initial range of the binary search.
-        var radiusXMin = radiusY
-        var radiusXMax = circleRadius
-
-        // Distance between the center of the circle and the center of the ellipsis.
-        val d = circleRadius - radiusY
-
-        // Do a binary search with 10 steps, that makes the error on the found value less than 0.1%
-        repeat(10) {
-            val radiusX = (radiusXMin + radiusXMax) / 2
-
-            // Sin of the angle, so that the point in the ellipsis that is closest to the
-            // circle is in that direction, as seen from the center of the circle.
-            val sinAlpha = (radiusY * d / (sqr(radiusX) - sqr(radiusY)))
-            if (sinAlpha > 1f) {
-                // If there is no minimum point, it means the ellipsis is too small.
-                radiusXMin = radiusX
-            } else {
-                val cosAlpha = sqrt(1 - sqr(sinAlpha))
-
-                // Closest point to the circle on the ellipse.
-                val p = Offset(radiusX * cosAlpha, d + radiusY * sinAlpha)
-
-                // Distance between the circle and the ellipsis.
-                val ecd = circleRadius - p.getDistance()
-
-                // Update the range we are searching on.
-                if (ecd > target) radiusXMin = radiusX else radiusXMax = radiusX
-            }
-        }
-        return (radiusXMin + radiusXMax) / 2
     }
 }
 

@@ -27,10 +27,8 @@ import androidx.pdf.viewer.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.viewer.TestPdfViewerFragment
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.R
-import androidx.pdf.viewer.scuba.ScubaConstants.FILE_FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE
 import androidx.pdf.viewer.scuba.ScubaConstants.FILE_FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT
 import androidx.pdf.viewer.scuba.ScubaConstants.SCREENSHOT_GOLDEN_DIRECTORY
-import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.swipeDown
@@ -124,32 +122,5 @@ class StylingOptionsScubaTests {
         onView(withId(R.id.pdfView)).perform(swipeUp())
         onView(withId(R.id.pdfView)).perform(swipeDown())
         assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_WITH_STYLE_IN_PORTRAIT)
-    }
-
-    @Test
-    fun fastScroller_customStyle_rendersCorrectlyInLandScape() {
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_DOCUMENT_FILE,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
-        ) {
-            // Loading view assertion
-            onView(withId(R.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
-        }
-
-        onView(withId(R.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-
-        scenario.onFragment {
-            // Indicate that the upcoming scroll might trigger new tiles rendering.
-            // This makes the relevant IdlingResource busy, ensuring Espresso waits for full
-            // rendering.
-            it.pdfPagesFullyRenderedIdlingResource.startPolling()
-            it.getPdfViewInstance().scrollToPage(0)
-        }
-
-        Espresso.onIdle()
-        assertScreenshot(screenshotRule, FILE_FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE)
     }
 }

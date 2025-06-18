@@ -59,7 +59,6 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
         // Create session
         session = createSession(this)
         if (session == null) this.finish()
-        session!!.resume()
         session!!.scene.addSpatialCapabilitiesChangedListener { capabilities ->
             tryToCreateActivityPanel(capabilities)
         }

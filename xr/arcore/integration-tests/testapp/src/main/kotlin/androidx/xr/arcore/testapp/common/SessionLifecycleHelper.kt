@@ -21,8 +21,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureConfigurationNotSupported
@@ -34,8 +32,6 @@ import androidx.xr.runtime.SessionCreatePermissionsNotGranted
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
-import androidx.xr.runtime.SessionResumePermissionsNotGranted
-import androidx.xr.runtime.SessionResumeSuccess
 
 /**
  * Observer class to manage the lifecycle of the JXR Runtime Session based on the lifecycle owner
@@ -46,42 +42,14 @@ class SessionLifecycleHelper(
     val config: Config = Config(),
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
-) : DefaultLifecycleObserver {
+) {
 
     /** Accessed through the [onSessionAvailable] callback. */
     private lateinit var session: Session
     private lateinit var requestPermissionLauncher: ActivityResultLauncher<Array<String>>
 
-    override fun onCreate(owner: LifecycleOwner) {
+    init {
         registerRequestPermissionLauncher(activity)
-
-        tryCreateSession()
-    }
-
-    override fun onResume(owner: LifecycleOwner) {
-        if (!this::session.isInitialized) {
-            return
-        }
-        when (val result = session.resume()) {
-            is SessionResumeSuccess -> {}
-            is SessionResumePermissionsNotGranted -> {
-                requestPermissionLauncher.launch(result.permissions.toTypedArray())
-            }
-        }
-    }
-
-    override fun onPause(owner: LifecycleOwner) {
-        if (!this::session.isInitialized) {
-            return
-        }
-        session.pause()
-    }
-
-    override fun onDestroy(owner: LifecycleOwner) {
-        if (!this::session.isInitialized) {
-            return
-        }
-        session.destroy()
     }
 
     private fun registerRequestPermissionLauncher(activity: ComponentActivity) {
@@ -104,7 +72,7 @@ class SessionLifecycleHelper(
             }
     }
 
-    public fun tryCreateSession() {
+    internal fun tryCreateSession() {
         when (val result = Session.create(activity)) {
             is SessionCreateSuccess -> {
                 session = result.session

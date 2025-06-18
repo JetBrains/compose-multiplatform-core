@@ -18,7 +18,6 @@ package androidx.compose.foundation.text.input.internal
 
 import android.graphics.Typeface
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.AnnotatedOutputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setSelectionCoerced
@@ -121,15 +120,12 @@ class TextFieldLayoutStateCacheTest {
     }
 
     @Test
-    fun updateNonMeasureInputs_invalidatesSnapshot_whenAnnotatedOutputTransformation_readChanges() {
+    fun updateNonMeasureInputs_invalidatesSnapshot_whenStyledOutputTransformation_readChanges() {
         var color by mutableStateOf(Color.Red)
         transformedTextFieldState =
             TransformedTextFieldState(
                 textFieldState = textFieldState,
-                outputTransformation =
-                    AnnotatedOutputTransformation {
-                        addStyle(SpanStyle(color = color), 0, text.length)
-                    },
+                outputTransformation = { addStyle(SpanStyle(color = color), 0, length) },
             )
         assertInvalidationsOnChange(1) { color = Color.Blue }
     }

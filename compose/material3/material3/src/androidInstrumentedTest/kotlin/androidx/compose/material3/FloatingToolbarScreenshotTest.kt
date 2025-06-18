@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -34,6 +35,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
@@ -711,6 +713,50 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
     }
 
     @Test
+    fun horizontalFloatingToolbar_withFab_customFabShape_expanded() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(Modifier.testTag(FloatingToolbarTestTag)) {
+                HorizontalFloatingToolbar(
+                    expanded = true,
+                    floatingActionButton = { ToolbarFab(isVibrant = false, shape = CircleShape) },
+                ) {
+                    ToolbarContent()
+                }
+            }
+        }
+
+        rule
+            .onNodeWithTag(FloatingToolbarTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "horizontalFloatingToolbar_withFab_customFabShape_expanded${scheme.name}",
+            )
+    }
+
+    @Test
+    fun horizontalFloatingToolbar_withFab_customFabShape_collapsed() {
+        rule.setMaterialContent(scheme.colorScheme) {
+            Box(Modifier.testTag(FloatingToolbarTestTag)) {
+                HorizontalFloatingToolbar(
+                    expanded = false,
+                    floatingActionButton = { ToolbarFab(isVibrant = false, shape = CircleShape) },
+                ) {
+                    ToolbarContent()
+                }
+            }
+        }
+
+        rule
+            .onNodeWithTag(FloatingToolbarTestTag)
+            .captureToImage()
+            .assertAgainstGolden(
+                screenshotRule,
+                "horizontalFloatingToolbar_withFab_customFabShape_collapsed${scheme.name}",
+            )
+    }
+
+    @Test
     fun horizontalFloatingToolbar_withFab_collapsed_customShadowElevation() {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
@@ -720,8 +766,8 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 HorizontalFloatingToolbar(
                     expanded = false,
                     floatingActionButton = { ToolbarFab(isVibrant = false) },
-                    expandedShadowElevation = ElevationTokens.Level2,
-                    collapsedShadowElevation = ElevationTokens.Level4,
+                    expandedShadowElevation = ElevationTokens.Level4,
+                    collapsedShadowElevation = ElevationTokens.Level2,
                 ) {
                     ToolbarContent()
                 }
@@ -904,14 +950,18 @@ class FloatingToolbarScreenshotTest(private val scheme: ColorSchemeWrapper) {
     }
 
     @Composable
-    private fun ToolbarFab(isVibrant: Boolean) {
+    private fun ToolbarFab(isVibrant: Boolean, shape: Shape = FloatingActionButtonDefaults.shape) {
         if (isVibrant) {
-            FloatingToolbarDefaults.VibrantFloatingActionButton(onClick = { /* doSomething() */ }) {
+            FloatingToolbarDefaults.VibrantFloatingActionButton(
+                onClick = { /* doSomething() */ },
+                shape = shape,
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Localized description")
             }
         } else {
             FloatingToolbarDefaults.StandardFloatingActionButton(
-                onClick = { /* doSomething() */ }
+                onClick = { /* doSomething() */ },
+                shape = shape,
             ) {
                 Icon(Icons.Filled.Add, contentDescription = "Localized description")
             }

@@ -380,60 +380,21 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                 state?.showCursorHandle =
                     collapsed && isSelectionHandleInVisibleBound(isStartHandle = true)
 
-                maybeSuggestSelectionForLongPressOrDoubleClick()
-                dragBeginSelection = null
-            }
-
-            private fun maybeSuggestSelectionForLongPressOrDoubleClick() {
-                val platformSelectionBehaviors =
-                    this@TextFieldSelectionManager.platformSelectionBehaviors ?: return
-                // Note that even if we called onValueChange when selection is updated,
-                // value is only updated when the TextField is recomposed.
-                // So we have to use dragBeginSelection as the current selection.
-                val initialSelection = dragBeginSelection ?: return
-                val text = transformedText?.text ?: return
-                val offsetMapping = this@TextFieldSelectionManager.offsetMapping
-                val transformedSelection =
-                    TextRange(
-                        offsetMapping.originalToTransformed(initialSelection.start),
-                        offsetMapping.originalToTransformed(initialSelection.end),
-                    )
-
-                if (
-                    isLongPressSelectionOnly && text.isNotEmpty() && !transformedSelection.collapsed
-                ) {
-                    coroutineScope?.launch {
-                        val newSelection =
-                            platformSelectionBehaviors
-                                .suggestSelectionForLongPressOrDoubleClick(
-                                    text,
-                                    transformedSelection,
-                                )
-                                ?.let {
-                                    TextRange(
-                                        offsetMapping.transformedToOriginal(it.start),
-                                        offsetMapping.transformedToOriginal(it.end),
-                                    )
-                                } ?: return@launch
-                        if (
-                            newSelection != initialSelection &&
-                                value.text == text &&
-                                offsetMapping === this@TextFieldSelectionManager.offsetMapping
-                        ) {
-                            onValueChange(
-                                createTextFieldValue(
-                                    annotatedString = value.annotatedString,
-                                    selection = newSelection,
-                                )
-                            )
-                        }
-                    }
+                if (isLongPressSelectionOnly) {
+                    // Note that even if we called onValueChange when selection is updated,
+                    // value is only updated when the TextField is recomposed.
+                    // So we have to use dragBeginSelection as the current selection.
+                    maybeSuggestSelection(dragBeginSelection)
                 }
+                dragBeginSelection = null
             }
         }
 
     internal val mouseSelectionObserver =
         object : MouseSelectionObserver {
+            var isDoubleOrTripleClickSelectionOnly = true
+            var initialSelection: TextRange? = null
+
             override fun onExtend(downPosition: Offset): Boolean {
                 // can't update selection without a layoutResult, so don't consume
                 state?.layoutResult ?: return false
@@ -462,8 +423,13 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                 return true
             }
 
-            override fun onStart(downPosition: Offset, adjustment: SelectionAdjustment): Boolean {
+            override fun onStart(
+                downPosition: Offset,
+                adjustment: SelectionAdjustment,
+                clickCount: Int,
+            ): Boolean {
                 if (!enabled || value.text.isEmpty()) return false
+
                 // can't update selection without a layoutResult, so don't consume
                 state?.layoutResult ?: return false
 
@@ -471,12 +437,17 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                 dragBeginPosition = downPosition
                 previousRawDragOffset = -1
                 enterSelectionMode()
-                updateMouseSelection(
-                    value = value,
-                    currentPosition = dragBeginPosition,
-                    isStartOfSelection = true,
-                    adjustment = adjustment,
-                )
+                val newSelection =
+                    updateMouseSelection(
+                        value = value,
+                        currentPosition = dragBeginPosition,
+                        isStartOfSelection = true,
+                        adjustment = adjustment,
+                    )
+                if (clickCount >= 2) {
+                    isDoubleOrTripleClickSelectionOnly = true
+                    this.initialSelection = newSelection
+                }
                 return true
             }
 
@@ -499,7 +470,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                 currentPosition: Offset,
                 isStartOfSelection: Boolean,
                 adjustment: SelectionAdjustment,
-            ) {
+            ): TextRange {
                 val newSelection =
                     updateSelection(
                         value = value,
@@ -509,13 +480,58 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                         adjustment = adjustment,
                         isTouchBasedSelection = false,
                     )
+                if (newSelection != initialSelection) {
+                    isDoubleOrTripleClickSelectionOnly = false
+                }
                 setHandleState(if (newSelection.collapsed) Cursor else Selection)
+                return newSelection
             }
 
             override fun onDragDone() {
-                /* Nothing to do */
+                if (isDoubleOrTripleClickSelectionOnly) {
+                    maybeSuggestSelection(initialSelection)
+                }
             }
         }
+
+    private fun maybeSuggestSelection(selection: TextRange?) {
+        if (selection == null) return
+        val platformSelectionBehaviors =
+            this@TextFieldSelectionManager.platformSelectionBehaviors ?: return
+        val text = transformedText?.text ?: return
+        val offsetMapping = this@TextFieldSelectionManager.offsetMapping
+        val transformedSelection =
+            TextRange(
+                offsetMapping.originalToTransformed(selection.start),
+                offsetMapping.originalToTransformed(selection.end),
+            )
+
+        if (text.isNotEmpty() && !transformedSelection.collapsed) {
+            coroutineScope?.launch {
+                val newSelection =
+                    platformSelectionBehaviors
+                        .suggestSelectionForLongPressOrDoubleClick(text, transformedSelection)
+                        ?.let {
+                            TextRange(
+                                offsetMapping.transformedToOriginal(it.start),
+                                offsetMapping.transformedToOriginal(it.end),
+                            )
+                        } ?: return@launch
+                if (
+                    newSelection != selection &&
+                        value.text == text &&
+                        offsetMapping === this@TextFieldSelectionManager.offsetMapping
+                ) {
+                    onValueChange(
+                        createTextFieldValue(
+                            annotatedString = value.annotatedString,
+                            selection = newSelection,
+                        )
+                    )
+                }
+            }
+        }
+    }
 
     /**
      * [TextDragObserver] for dragging the selection handles to change the selection in TextField.

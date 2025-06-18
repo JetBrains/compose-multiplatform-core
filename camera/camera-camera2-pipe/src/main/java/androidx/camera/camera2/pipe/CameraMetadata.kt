@@ -27,6 +27,7 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
 import androidx.annotation.RestrictTo
+import androidx.camera.camera2.pipe.compat.Api33Compat
 import androidx.camera.camera2.pipe.compat.Api34Compat
 import androidx.camera.camera2.pipe.compat.Api35Compat
 
@@ -96,6 +97,12 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         public val CameraMetadata.availableCapabilities: IntArray
             @JvmStatic
             get() = this[CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES] ?: EMPTY_INT_ARRAY
+
+        public val CameraMetadata.availableVideoStabilizationModes: IntArray
+            @JvmStatic
+            get() =
+                this[CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES]
+                    ?: EMPTY_INT_ARRAY
 
         public val CameraMetadata.isHardwareLevelExternal: Boolean
             @JvmStatic
@@ -256,12 +263,23 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
                 else 1
 
         public val CameraMetadata.supportsLowLightBoost: Boolean
+            @JvmStatic
             get() {
                 val availableAeModes =
                     this[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES] ?: return false
                 return availableAeModes.contains(
                     AeMode.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
                 )
+            }
+
+        public val CameraMetadata.supportsPreviewStabilization: Boolean
+            @JvmStatic
+            get() {
+                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    Api33Compat.supportsPreviewStabilization(this)
+                } else {
+                    false
+                }
             }
     }
 }

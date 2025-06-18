@@ -35,7 +35,7 @@ index df41397197c..b3e51525fbf 100644
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
-index 4814e86b29f..1380774a52b 100644
+index 64ca70606b5..c948188bbf1 100644
 --- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 +++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/BinaryCompatibilityChecker.kt
 @@ -36,6 +36,7 @@ import org.jetbrains.kotlin.library.abi.AbiTypeNullability
@@ -46,7 +46,7 @@ index 4814e86b29f..1380774a52b 100644
  import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
  import org.jetbrains.kotlin.library.abi.LibraryAbi
  
-@@ -756,6 +757,8 @@ private fun File.asBaselineErrors(): Set<String> =
+@@ -759,6 +760,8 @@ private fun File.asBaselineErrors(): Set<String> =
  private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
      AbiValueParameter by param
  
@@ -243,10 +243,10 @@ index 3f6716c183a..87db4f06894 100644
  
  private fun Project.configureKotlinJsTests() {
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt b/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt
-index 1c18f43889b..ae6b89a8a20 100644
+index 625b034dc52..a60edaad68f 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/ListTaskOutputsTask.kt
-@@ -136,6 +136,15 @@ val taskNamesKnownToDuplicateOutputs =
+@@ -139,6 +139,15 @@ val taskNamesKnownToDuplicateOutputs =
          "kotlinStorePackageLock",
          "kotlinStoreYarnLock",
  
@@ -262,7 +262,7 @@ index 1c18f43889b..ae6b89a8a20 100644
          // The following tasks have the same output configFile file:
          // projectBuildDir/js/packages/projectName-wasm-js/webpack.config.js
          // Remove when https://youtrack.jetbrains.com/issue/KT-70029 / b/361319689 is resolved
-@@ -147,7 +156,15 @@ val taskNamesKnownToDuplicateOutputs =
+@@ -150,7 +159,15 @@ val taskNamesKnownToDuplicateOutputs =
          "jsTestTestDevelopmentExecutableCompileSync",
  
          // TODO file a bug
@@ -279,10 +279,10 @@ index 1c18f43889b..ae6b89a8a20 100644
  
  fun shouldValidateTaskOutput(task: Task): Boolean {
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt b/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt
-index ca622cb9784..05010e19cd8 100644
+index 2fee9360105..3b062eef551 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt
-@@ -151,7 +151,7 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
+@@ -152,7 +152,7 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
                          debug = false,
                          kind = parameters.linkerOutputKind.get(),
                          outputDsymBundle = "unused",
@@ -369,17 +369,19 @@ index 4a1bc0f1812..25646accd8d 100644
  package androidx.compose.runtime.internal
  
 diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
-index 4da80d4cc2d..c0c33defb6a 100644
+index 715f5f44888..28196a6bf58 100644
 --- a/gradle/libs.versions.toml
 +++ b/gradle/libs.versions.toml
-@@ -52,6 +52,7 @@ kotlin19 = "1.9.24"
+@@ -52,7 +52,8 @@ kotlin19 = "1.9.24"
  # Use the most up-to-date patch
  kotlin20 = "2.0.21"
  kotlin21 = "2.1.20"
-+kotlin22 = "2.2.20"
- kotlin = "2.1.21"
+-kotlin = "2.1.21"
++kotlin22 = "2.2.0-RC2"
++kotlin = "2.2.0-RC2"
  kotlinBenchmark = "0.4.11"
  kotlinGradlePluginAnnotations = "1.9.24"
+ kotlinGradlePluginApi = "1.9.24"
 diff --git a/gradle/verification-keyring.keys b/gradle/verification-keyring.keys
 index 50231c427df..bcddb57893b 100644
 --- a/gradle/verification-keyring.keys
@@ -467,6 +469,68 @@ index 83ef4c2bae4..b11cc8b2049 100644
 +      </component>
     </components>
  </verification-metadata>
+diff --git a/navigation/navigation-compose/samples/build.gradle b/navigation/navigation-compose/samples/build.gradle
+index 60b7c22d955..580f15ee249 100644
+--- a/navigation/navigation-compose/samples/build.gradle
++++ b/navigation/navigation-compose/samples/build.gradle
+@@ -65,7 +65,7 @@ androidx {
+     type = SoftwareType.SAMPLES
+     inceptionYear = "2020"
+     description = "Samples for Compose integration with Navigation"
+-    kotlinTarget = KotlinTarget.KOTLIN_2_1
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+ 
+ android {
+diff --git a/privacysandbox/ui/ui-client-compose/build.gradle b/privacysandbox/ui/ui-client-compose/build.gradle
+index 9904e3f1337..d8b7f1a14b4 100644
+--- a/privacysandbox/ui/ui-client-compose/build.gradle
++++ b/privacysandbox/ui/ui-client-compose/build.gradle
+@@ -22,6 +22,8 @@
+  * modifying its settings.
+  */
+ 
++
++import androidx.build.KotlinTarget
+ import androidx.build.SoftwareType
+ 
+ plugins {
+@@ -68,4 +70,5 @@ androidx {
+     type = SoftwareType.PUBLISHED_LIBRARY
+     inceptionYear = "2025"
+     description = "Show Compose UI from a Runtime-aware SDK"
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+diff --git a/privacysandbox/ui/ui-client/build.gradle b/privacysandbox/ui/ui-client/build.gradle
+index 0495ea8244d..a933575e679 100644
+--- a/privacysandbox/ui/ui-client/build.gradle
++++ b/privacysandbox/ui/ui-client/build.gradle
+@@ -21,6 +21,8 @@
+  * Please use that script when creating a new project, rather than copying an existing project and
+  * modifying its settings.
+  */
++
++import androidx.build.KotlinTarget
+ import androidx.build.SoftwareType
+ 
+ plugins {
+@@ -66,4 +68,5 @@ androidx {
+     inceptionYear = "2022"
+     description = "show UI from a Runtime-aware SDK"
+     legacyDisableKotlinStrictApiMode = true
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+diff --git a/room/room-compiler-processing-testing/build.gradle b/room/room-compiler-processing-testing/build.gradle
+index f0cc0bb8dd3..d031e84bf90 100644
+--- a/room/room-compiler-processing-testing/build.gradle
++++ b/room/room-compiler-processing-testing/build.gradle
+@@ -97,5 +97,5 @@ androidx {
+     type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
+     inceptionYear = "2020"
+     description = "Testing helpers for Room XProcessing APIs"
+-    kotlinTarget = KotlinTarget.KOTLIN_2_1
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
 diff --git a/room/room-compiler-processing-testing/src/main/java/androidx/room/compiler/processing/util/compiler/TestDefaultOptions.kt b/room/room-compiler-processing-testing/src/main/java/androidx/room/compiler/processing/util/compiler/TestDefaultOptions.kt
 index 919bd8ace17..f28cea3ad44 100644
 --- a/room/room-compiler-processing-testing/src/main/java/androidx/room/compiler/processing/util/compiler/TestDefaultOptions.kt
@@ -494,3 +558,65 @@ index 4dfd3279019..d3a3e783d1b 100644
  
  /** Runs KAPT to run Java annotation processors. */
  internal class KaptCompilationStep(
+diff --git a/room/room-compiler-processing/build.gradle b/room/room-compiler-processing/build.gradle
+index 01071b4cb30..87872c941af 100644
+--- a/room/room-compiler-processing/build.gradle
++++ b/room/room-compiler-processing/build.gradle
+@@ -78,5 +78,5 @@ androidx {
+     type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
+     inceptionYear = "2020"
+     description = "Processing Environment Abstraction for AndroidX Room"
+-    kotlinTarget = KotlinTarget.KOTLIN_2_1
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+diff --git a/room/room-compiler/build.gradle b/room/room-compiler/build.gradle
+index d92247fc0e7..35eab41004d 100644
+--- a/room/room-compiler/build.gradle
++++ b/room/room-compiler/build.gradle
+@@ -241,5 +241,5 @@ androidx {
+     type = SoftwareType.ANNOTATION_PROCESSOR
+     inceptionYear = "2017"
+     description = "Android Room annotation processor"
+-    kotlinTarget = KotlinTarget.KOTLIN_2_1
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+diff --git a/tracing/tracing-ktx/build.gradle b/tracing/tracing-ktx/build.gradle
+index 81c257c6b5c..6085ce6d9c9 100644
+--- a/tracing/tracing-ktx/build.gradle
++++ b/tracing/tracing-ktx/build.gradle
+@@ -21,6 +21,8 @@
+  * Please use that script when creating a new project, rather than copying an existing project and
+  * modifying its settings.
+  */
++
++import androidx.build.KotlinTarget
+ import androidx.build.SoftwareType
+ 
+ plugins {
+@@ -39,6 +41,7 @@ androidx {
+     inceptionYear = "2020"
+     description = "Android Tracing"
+     legacyDisableKotlinStrictApiMode = true
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }
+ 
+ android {
+diff --git a/tracing/tracing/build.gradle b/tracing/tracing/build.gradle
+index 16e9a18d6a6..34205a72f01 100644
+--- a/tracing/tracing/build.gradle
++++ b/tracing/tracing/build.gradle
+@@ -21,6 +21,8 @@
+  * Please use that script when creating a new project, rather than copying an existing project and
+  * modifying its settings.
+  */
++
++import androidx.build.KotlinTarget
+ import androidx.build.SoftwareType
+ import androidx.build.PlatformIdentifier
+ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+@@ -105,4 +107,5 @@ androidx {
+     deviceTests {
+         enableAlsoRunningOnPhysicalDevices = true
+     }
++    kotlinTarget = KotlinTarget.KOTLIN_2_2
+ }

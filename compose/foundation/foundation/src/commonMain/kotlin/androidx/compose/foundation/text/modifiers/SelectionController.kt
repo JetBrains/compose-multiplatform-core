@@ -309,7 +309,11 @@ internal fun SelectionRegistrar.makeDefaultSelectionModifier(
                 return true
             }
 
-            override fun onStart(downPosition: Offset, adjustment: SelectionAdjustment): Boolean {
+            override fun onStart(
+                downPosition: Offset,
+                adjustment: SelectionAdjustment,
+                clickCount: Int,
+            ): Boolean {
                 layoutCoordinates()?.let {
                     if (!it.isAttached) return false
 

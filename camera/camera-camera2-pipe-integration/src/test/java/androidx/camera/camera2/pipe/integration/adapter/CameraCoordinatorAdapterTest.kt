@@ -28,11 +28,14 @@ import androidx.camera.camera2.pipe.integration.testing.FakeCameraInfoAdapterCre
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_SINGLE
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_UNSPECIFIED
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.CameraRepository
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
+import androidx.camera.testing.impl.fakes.FakeCameraFactory
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -136,9 +139,14 @@ class CameraCoordinatorAdapterTest {
             .thenReturn(FakeCameraInfoInternal("1"))
         whenever(mockCameraInternalAdapter2.cameraInfoInternal)
             .thenReturn(FakeCameraInfoInternal("2"))
-        cameraCoordinatorAdapter.registerCamera("0", mockCameraInternalAdapter0)
-        cameraCoordinatorAdapter.registerCamera("1", mockCameraInternalAdapter1)
-        cameraCoordinatorAdapter.registerCamera("2", mockCameraInternalAdapter2)
+        val fakeCameraFactory =
+            FakeCameraFactory().apply {
+                insertCamera(CameraSelector.LENS_FACING_BACK, "0", { mockCameraInternalAdapter0 })
+                insertCamera(CameraSelector.LENS_FACING_BACK, "1", { mockCameraInternalAdapter1 })
+                insertCamera(CameraSelector.LENS_FACING_BACK, "2", { mockCameraInternalAdapter2 })
+            }
+        val cameraRepository = CameraRepository().apply { init(fakeCameraFactory) }
+        cameraCoordinatorAdapter.init(cameraRepository)
     }
 
     @Test
@@ -259,7 +267,7 @@ class CameraCoordinatorAdapterTest {
 
         cameraCoordinatorAdapter.shutdown()
 
-        assertThat(cameraCoordinatorAdapter.cameraInternalMap).isEmpty()
+        assertThat(cameraCoordinatorAdapter.cameraRepository).isNull()
         assertThat(cameraCoordinatorAdapter.activeConcurrentCameraInfos).isEmpty()
         assertThat(cameraCoordinatorAdapter.concurrentCameraIdMap).isEmpty()
         assertThat(cameraCoordinatorAdapter.concurrentCameraIdsSet).isEmpty()

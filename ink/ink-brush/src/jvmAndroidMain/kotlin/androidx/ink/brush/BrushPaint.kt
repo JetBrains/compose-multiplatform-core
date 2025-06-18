@@ -77,9 +77,12 @@ private constructor(
     }
 
     /** Delete native BrushPaint memory. */
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
-        BrushPaintNative.free(nativePointer)
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            BrushPaintNative.free(nativePointer)
+        }
     }
 
     /** Specification of how the texture should apply to the stroke. */
@@ -433,8 +436,18 @@ private constructor(
          * @param opacity Overall layer opacity in the range [0,1], where 0 is transparent and 1 is
          *   opaque.
          * @param animationFrames The number of animation frames in this texture, or 1 for no
-         *   animation. If greater than 1, then the texture image is treated as a vertical strip of
-         *   this many frame images, in order from top to bottom.
+         *   animation. If greater than 1, then the texture image is treated as a grid of animation
+         *   frame images, with dimensions of [animationRows] by [animationColumns] frames. The
+         *   frames will be indexed in row-major order, where row=0 and column=0 is frame index 0,
+         *   then row=0 and column=1 is frame index 1, and so on. [animationFrames] must be at most
+         *   the product of [animationRows] and [animationColumns], and there may be unused frame
+         *   cells in the final row.
+         * @param animationRows The number of frame rows in this texture. See [animationFrames] for
+         *   more detail. When constructing an animation texture image, avoid making it too large in
+         *   any one dimension by choosing values for [animationRows] and [animationColumns] that
+         *   are close to each other, but just large enough such that [animationFrames] <=
+         *   [animationRows] * [animationColumns].
+         * @param animationColumns Like [animationRows], but for columns.
          * @param sizeUnit The units used to specify [sizeX] and [sizeY].
          * @param origin The origin point to be used for texture space.
          * @param mapping The method by which the coordinates of the [clientTextureId] image will
@@ -454,7 +467,9 @@ private constructor(
             offsetY: Float = 0f,
             @AngleRadiansFloat rotation: Float = 0F,
             @FloatRange(from = 0.0, to = 1.0) opacity: Float = 1f,
-            @IntRange(from = 1) animationFrames: Int = 1,
+            @IntRange(from = 1, to = 1 shl 24) animationFrames: Int = 1,
+            @IntRange(from = 1, to = 1 shl 12) animationRows: Int = 1,
+            @IntRange(from = 1, to = 1 shl 12) animationColumns: Int = 1,
             sizeUnit: TextureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
             origin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             mapping: TextureMapping = TextureMapping.TILING,
@@ -471,6 +486,8 @@ private constructor(
                 rotation,
                 opacity,
                 animationFrames,
+                animationRows,
+                animationColumns,
                 sizeUnit.value,
                 origin.value,
                 mapping.value,
@@ -502,8 +519,14 @@ private constructor(
         @FloatRange(from = 0.0, to = 1.0)
         public val opacity: Float = TextureLayerNative.getOpacity(nativePointer)
 
-        @IntRange(from = 1)
+        @IntRange(from = 1, to = 1 shl 24)
         public val animationFrames: Int = TextureLayerNative.getAnimationFrames(nativePointer)
+
+        @IntRange(from = 1, to = 1 shl 12)
+        public val animationRows: Int = TextureLayerNative.getAnimationRows(nativePointer)
+
+        @IntRange(from = 1, to = 1 shl 12)
+        public val animationColumns: Int = TextureLayerNative.getAnimationColumns(nativePointer)
 
         public val sizeUnit: TextureSizeUnit = TextureLayerNative.getSizeUnit(nativePointer)
 
@@ -516,6 +539,13 @@ private constructor(
         public val wrapY: TextureWrap = TextureLayerNative.getWrapY(nativePointer)
 
         public val blendMode: BlendMode = TextureLayerNative.getBlendMode(nativePointer)
+
+        init {
+            require(animationFrames <= animationRows * animationColumns) {
+                "$animationFrames frames cannot fit into a grid with $animationRows and " +
+                    "$animationColumns (up to ${animationRows * animationColumns} frames)"
+            }
+        }
 
         /**
          * Creates a copy of `this` and allows named properties to be altered while keeping the rest
@@ -532,7 +562,9 @@ private constructor(
             offsetY: Float = this.offsetY,
             @AngleRadiansFloat rotation: Float = this.rotation,
             @FloatRange(from = 0.0, to = 1.0) opacity: Float = this.opacity,
-            @IntRange(from = 1) animationFrames: Int = this.animationFrames,
+            @IntRange(from = 1, to = 1 shl 24) animationFrames: Int = this.animationFrames,
+            @IntRange(from = 1, to = 1 shl 12) animationRows: Int = this.animationRows,
+            @IntRange(from = 1, to = 1 shl 12) animationColumns: Int = this.animationColumns,
             sizeUnit: TextureSizeUnit = this.sizeUnit,
             origin: TextureOrigin = this.origin,
             mapping: TextureMapping = this.mapping,
@@ -549,6 +581,8 @@ private constructor(
                     rotation == this.rotation &&
                     opacity == this.opacity &&
                     animationFrames == this.animationFrames &&
+                    animationRows == this.animationRows &&
+                    animationColumns == this.animationColumns &&
                     sizeUnit == this.sizeUnit &&
                     origin == this.origin &&
                     mapping == this.mapping &&
@@ -567,6 +601,8 @@ private constructor(
                 rotation,
                 opacity,
                 animationFrames,
+                animationRows,
+                animationColumns,
                 sizeUnit,
                 origin,
                 mapping,
@@ -590,6 +626,8 @@ private constructor(
                 rotation = this.rotation,
                 opacity = this.opacity,
                 animationFrames = this.animationFrames,
+                animationRows = this.animationRows,
+                animationColumns = this.animationColumns,
                 sizeUnit = this.sizeUnit,
                 origin = this.origin,
                 mapping = this.mapping,
@@ -608,6 +646,8 @@ private constructor(
                 rotation == other.rotation &&
                 opacity == other.opacity &&
                 animationFrames == other.animationFrames &&
+                animationRows == other.animationRows &&
+                animationColumns == other.animationColumns &&
                 sizeUnit == other.sizeUnit &&
                 origin == other.origin &&
                 mapping == other.mapping &&
@@ -619,7 +659,8 @@ private constructor(
         override fun toString(): String =
             "BrushPaint.TextureLayer(clientTextureId=$clientTextureId, sizeX=$sizeX, " +
                 "sizeY=$sizeY, offset=[$offsetX, $offsetY], rotation=$rotation, opacity=$opacity, " +
-                "animationFrames=$animationFrames, sizeUnit=$sizeUnit, origin=$origin, " +
+                "animationFrames=$animationFrames, animationRows=$animationRows, " +
+                "animationColumns=$animationColumns, sizeUnit=$sizeUnit, origin=$origin, " +
                 "mapping=$mapping, wrapX=$wrapX, wrapY=$wrapY, blendMode=$blendMode)"
 
         override fun hashCode(): Int {
@@ -631,6 +672,8 @@ private constructor(
             result = 31 * result + rotation.hashCode()
             result = 31 * result + opacity.hashCode()
             result = 31 * result + animationFrames.hashCode()
+            result = 31 * result + animationRows.hashCode()
+            result = 31 * result + animationColumns.hashCode()
             result = 31 * result + sizeUnit.hashCode()
             result = 31 * result + origin.hashCode()
             result = 31 * result + mapping.hashCode()
@@ -641,9 +684,13 @@ private constructor(
         }
 
         /** Delete native TextureLayer memory. */
+        // NOMUTANTS -- Not tested post garbage collection.
         protected fun finalize() {
-            // NOMUTANTS -- Not tested post garbage collection.
-            TextureLayerNative.free(nativePointer)
+            // TODO: b/423019041 - Investigate why this is failing in native code with
+            // nativePointer=0
+            if (nativePointer != 0L) {
+                TextureLayerNative.free(nativePointer)
+            }
         }
 
         /**
@@ -665,7 +712,9 @@ private constructor(
             private var offsetY: Float = 0f,
             @AngleRadiansFloat private var rotation: Float = 0F,
             @FloatRange(from = 0.0, to = 1.0) private var opacity: Float = 1f,
-            @IntRange(from = 1) private var animationFrames: Int = 1,
+            @IntRange(from = 1, to = 1 shl 24) private var animationFrames: Int = 1,
+            @IntRange(from = 1, to = 1 shl 12) private var animationRows: Int = 1,
+            @IntRange(from = 1, to = 1 shl 12) private var animationColumns: Int = 1,
             private var sizeUnit: TextureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
             private var origin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             private var mapping: TextureMapping = TextureMapping.TILING,
@@ -698,10 +747,17 @@ private constructor(
                     this.opacity = opacity
                 }
 
-            public fun setAnimationFrames(@IntRange(from = 1) animationFrames: Int): Builder =
-                apply {
-                    this.animationFrames = animationFrames
-                }
+            public fun setAnimationFrames(
+                @IntRange(from = 1, to = 1 shl 24) animationFrames: Int
+            ): Builder = apply { this.animationFrames = animationFrames }
+
+            public fun setAnimationRows(
+                @IntRange(from = 1, to = 1 shl 12) animationRows: Int
+            ): Builder = apply { this.animationRows = animationRows }
+
+            public fun setAnimationColumns(
+                @IntRange(from = 1, to = 1 shl 12) animationColumns: Int
+            ): Builder = apply { this.animationColumns = animationColumns }
 
             public fun setSizeUnit(sizeUnit: TextureSizeUnit): Builder = apply {
                 this.sizeUnit = sizeUnit
@@ -731,6 +787,8 @@ private constructor(
                     rotation,
                     opacity,
                     animationFrames,
+                    animationRows,
+                    animationColumns,
                     sizeUnit,
                     origin,
                     mapping,
@@ -829,6 +887,8 @@ private object TextureLayerNative {
         rotation: Float,
         opacity: Float,
         animationFrames: Int,
+        animationRows: Int,
+        animationColumns: Int,
         sizeUnit: Int,
         origin: Int,
         mapping: Int,
@@ -852,6 +912,10 @@ private object TextureLayerNative {
     @UsedByNative external fun getOpacity(nativePointer: Long): Float
 
     @UsedByNative external fun getAnimationFrames(nativePointer: Long): Int
+
+    @UsedByNative external fun getAnimationRows(nativePointer: Long): Int
+
+    @UsedByNative external fun getAnimationColumns(nativePointer: Long): Int
 
     fun getSizeUnit(nativePointer: Long): BrushPaint.TextureSizeUnit =
         BrushPaint.TextureSizeUnit(getSizeUnitInt(nativePointer))

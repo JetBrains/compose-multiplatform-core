@@ -29,12 +29,20 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.navigation"
+        androidResources.enable = true
+        // Needed for api tasks and docs generation
+        sourceSets {
+            androidMain {
+                kotlin.srcDirs += 'src/androidMain/java'
+            }
+        }
+    }
     desktop()
     mac()
     linux()
@@ -200,10 +208,6 @@ androidXMultiplatform {
 
 dependencies {
     lintPublish(project(":navigation:navigation-runtime-lint"))
-}
-
-android {
-    namespace = "androidx.navigation"
 }
 
 androidx {

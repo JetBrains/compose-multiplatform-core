@@ -49,9 +49,11 @@ public abstract class AttachedSurfaceInfo {
             @NonNull List<UseCaseConfigFactory.CaptureType> captureTypes,
             @Nullable Config implementationOptions,
             int sessionType,
-            @NonNull Range<Integer> targetFrameRate) {
+            @NonNull Range<Integer> targetFrameRate,
+            boolean isStrictFrameRateRequired) {
         return new AutoValue_AttachedSurfaceInfo(surfaceConfig, imageFormat, size,
-                dynamicRange, captureTypes, implementationOptions, sessionType, targetFrameRate);
+                dynamicRange, captureTypes, implementationOptions, sessionType, targetFrameRate,
+                isStrictFrameRateRequired);
     }
 
     /**
@@ -94,6 +96,9 @@ public abstract class AttachedSurfaceInfo {
 
     /** Returns the configuration target frame rate. */
     public abstract @NonNull Range<Integer> getTargetFrameRate();
+
+    /** Returns whether strict frame rate is required. */
+    public abstract boolean isStrictFrameRateRequired();
 }
 
 

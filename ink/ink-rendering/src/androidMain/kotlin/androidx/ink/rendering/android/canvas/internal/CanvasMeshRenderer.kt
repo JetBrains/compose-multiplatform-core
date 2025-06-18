@@ -198,7 +198,7 @@ internal class CanvasMeshRenderer(
         strokeToScreenTransform: Matrix,
         textureAnimationProgress: Float,
     ) {
-        require(strokeToScreenTransform.isAffine) { "strokeToScreenTransform must be affine" }
+        strokeToScreenTransform.assertIsAffine()
         if (stroke.inputs.isEmpty()) return // nothing to draw
         stroke.inputs.populate(0, scratchFirstInput)
         stroke.inputs.populate(stroke.inputs.size - 1, scratchLastInput)
@@ -208,6 +208,8 @@ internal class CanvasMeshRenderer(
             val brushPaint = stroke.brush.family.coats[coatIndex].paint
             val textureMapping = getTextureMapping(brushPaint)
             val numTextureAnimationFrames = getNumTextureAnimationFrames(brushPaint)
+            val numTextureAnimationRows = getNumTextureAnimationRows(brushPaint)
+            val numTextureAnimationColumns = getNumTextureAnimationColumns(brushPaint)
             val blendMode = finalBlendMode(brushPaint)
             // A white paint color ensures that the paint color doesn't affect how the paint texture
             // is blended with the mesh coloring.
@@ -224,10 +226,12 @@ internal class CanvasMeshRenderer(
                     canvas,
                     mesh,
                     strokeToScreenTransform,
-                    stroke.brush.composeColor,
+                    stroke.brush.internalColor,
                     textureMapping,
                     textureAnimationProgress,
                     numTextureAnimationFrames,
+                    numTextureAnimationRows,
+                    numTextureAnimationColumns,
                     blendMode,
                     androidPaint,
                 )
@@ -244,6 +248,8 @@ internal class CanvasMeshRenderer(
         textureMapping: BrushPaint.TextureMapping,
         textureAnimationProgress: Float,
         numTextureAnimationFrames: Int,
+        numTextureAnimationRows: Int,
+        numTextureAnimationColumns: Int,
         blendMode: BlendMode,
         paint: Paint,
     ) {
@@ -262,6 +268,8 @@ internal class CanvasMeshRenderer(
                             objectToCanvasLinearComponentScratch,
                             textureAnimationProgress,
                             numTextureAnimationFrames,
+                            numTextureAnimationRows,
+                            numTextureAnimationColumns,
                         ))
             ) {
                 val newMesh =
@@ -275,6 +283,8 @@ internal class CanvasMeshRenderer(
                     textureMapping,
                     textureAnimationProgress,
                     numTextureAnimationFrames,
+                    numTextureAnimationRows,
+                    numTextureAnimationColumns,
                 )
                 inkMeshToAndroidMesh[inkMesh] =
                     MeshData.create(
@@ -283,6 +293,8 @@ internal class CanvasMeshRenderer(
                         objectToCanvasLinearComponentScratch,
                         textureAnimationProgress,
                         numTextureAnimationFrames,
+                        numTextureAnimationRows,
+                        numTextureAnimationColumns,
                     )
                 newMesh
             } else {
@@ -301,6 +313,8 @@ internal class CanvasMeshRenderer(
                         textureMapping,
                         textureAnimationProgress,
                         numTextureAnimationFrames,
+                        numTextureAnimationRows,
+                        numTextureAnimationColumns,
                     )
                 }
                 cachedMeshData.androidMesh
@@ -346,7 +360,7 @@ internal class CanvasMeshRenderer(
             checkNotNull(inProgressStroke.brush) {
                 "Attempting to draw an InProgressStroke that has not been started."
             }
-        require(strokeToScreenTransform.isAffine) { "strokeToScreenTransform must be affine" }
+        strokeToScreenTransform.assertIsAffine()
         val inputCount = inProgressStroke.getInputCount()
         if (inputCount == 0) return // nothing to draw
         inProgressStroke.populateInput(scratchFirstInput, 0)
@@ -360,6 +374,8 @@ internal class CanvasMeshRenderer(
             val brushPaint = brush.family.coats[coatIndex].paint
             val textureMapping = getTextureMapping(brushPaint)
             val numTextureAnimationFrames = getNumTextureAnimationFrames(brushPaint)
+            val numTextureAnimationRows = getNumTextureAnimationRows(brushPaint)
+            val numTextureAnimationColumns = getNumTextureAnimationColumns(brushPaint)
             val blendMode = finalBlendMode(brushPaint)
             val androidPaint =
                 paintCache.obtain(
@@ -376,14 +392,34 @@ internal class CanvasMeshRenderer(
                     androidMesh,
                     inProgressStroke.getMeshFormat(coatIndex, meshIndex),
                     objectToCanvasLinearComponentScratch,
-                    brush.composeColor,
+                    brush.internalColor,
                     attributeUnpackingParams = null,
                     textureMapping,
                     textureAnimationProgress,
                     numTextureAnimationFrames,
+                    numTextureAnimationRows,
+                    numTextureAnimationColumns,
                 )
                 canvas.drawMesh(androidMesh, blendMode, androidPaint)
             }
+        }
+    }
+
+    /** Assert that the given [Matrix] is affine. */
+    private fun Matrix.assertIsAffine() {
+        if (isAffine) return
+        // Don't throw yet - there seem to be cases where Matrix.isAffine returns false, but the
+        // Matrix
+        // is actually affine when examined directly. The above check is fast for the normal case.
+        // See b/418261442 for more context.
+        val vals = matrixValuesScratchArray
+        getValues(vals)
+        require(
+            vals[Matrix.MPERSP_0] == 0F &&
+                vals[Matrix.MPERSP_1] == 0F &&
+                vals[Matrix.MPERSP_2] == 1F
+        ) {
+            "The matrix must be affine."
         }
     }
 
@@ -415,6 +451,8 @@ internal class CanvasMeshRenderer(
         textureMapping: BrushPaint.TextureMapping,
         textureAnimationProgress: Float,
         numTextureAnimationFrames: Int,
+        numTextureAnimationRows: Int,
+        numTextureAnimationColumns: Int,
     ) {
         val isPacked = attributeUnpackingParams != null
         var colorUniformName = INVALID_NAME
@@ -428,6 +466,8 @@ internal class CanvasMeshRenderer(
         var textureMappingName = INVALID_NAME
         var textureAnimationProgressName = INVALID_NAME
         var numTextureAnimationFramesName = INVALID_NAME
+        var numTextureAnimationRowsName = INVALID_NAME
+        var numTextureAnimationColumnsName = INVALID_NAME
 
         for ((id, name, unpackingIndex) in
             obtainShaderMetadata(meshFormat, isPacked).uniformMetadata) {
@@ -459,6 +499,8 @@ internal class CanvasMeshRenderer(
                 UniformId.TEXTURE_MAPPING -> textureMappingName = name
                 UniformId.TEXTURE_ANIMATION_PROGRESS -> textureAnimationProgressName = name
                 UniformId.NUM_TEXTURE_ANIMATION_FRAMES -> numTextureAnimationFramesName = name
+                UniformId.NUM_TEXTURE_ANIMATION_ROWS -> numTextureAnimationRowsName = name
+                UniformId.NUM_TEXTURE_ANIMATION_COLUMNS -> numTextureAnimationColumnsName = name
             }
         }
         // Color and object-to-canvas uniforms are required for all meshes.
@@ -499,10 +541,12 @@ internal class CanvasMeshRenderer(
         androidMesh.setIntUniform(textureMappingName, textureMapping.value)
         androidMesh.setFloatUniform(textureAnimationProgressName, textureAnimationProgress)
         androidMesh.setIntUniform(numTextureAnimationFramesName, numTextureAnimationFrames)
+        androidMesh.setIntUniform(numTextureAnimationRowsName, numTextureAnimationRows)
+        androidMesh.setIntUniform(numTextureAnimationColumnsName, numTextureAnimationColumns)
 
         if (!isPacked) return
 
-        attributeUnpackingParams!!.let {
+        attributeUnpackingParams.let {
             val positionParams = it[positionAttributeIndex]
             androidMesh.setFloatUniform(
                 positionUnpackingParamsUniformName,
@@ -536,7 +580,7 @@ internal class CanvasMeshRenderer(
         objectToCanvasTransform: Matrix,
         @Size(min = 4) objectToCanvasLinearComponent: FloatArray,
     ) {
-        require(objectToCanvasTransform.isAffine) { "objectToCanvasTransform must be affine" }
+        objectToCanvasTransform.assertIsAffine()
         objectToCanvasTransform.getValues(matrixValuesScratchArray)
         objectToCanvasLinearComponent.let {
             it[0] = matrixValuesScratchArray[Matrix.MSCALE_X]
@@ -823,6 +867,8 @@ internal class CanvasMeshRenderer(
         @Size(4) val objectToCanvasLinearComponent: FloatArray,
         val textureAnimationProgress: Float,
         val numTextureAnimationFrames: Int,
+        val numTextureAnimationRows: Int,
+        val numTextureAnimationColumns: Int,
     ) {
 
         fun areUniformsEquivalent(
@@ -830,10 +876,14 @@ internal class CanvasMeshRenderer(
             @Size(4) otherObjectToCanvasLinearComponent: FloatArray,
             otherTextureAnimationProgress: Float,
             otherNumTextureAnimationFrames: Int,
+            otherNumTextureAnimationRows: Int,
+            otherNumTextureAnimationColumns: Int,
         ): Boolean {
             return otherBrushColor == brushColor &&
                 otherObjectToCanvasLinearComponent.contentEquals(objectToCanvasLinearComponent) &&
                 otherNumTextureAnimationFrames == numTextureAnimationFrames &&
+                otherNumTextureAnimationRows == numTextureAnimationRows &&
+                otherNumTextureAnimationColumns == numTextureAnimationColumns &&
                 // Ignore animation progress if there's only one frame (no animation).
                 (numTextureAnimationFrames == 1 ||
                     // We intentionally compare animation progress floats by equality. The apparent
@@ -854,6 +904,8 @@ internal class CanvasMeshRenderer(
                 @Size(4) objectToCanvasLinearComponent: FloatArray,
                 textureAnimationProgress: Float,
                 numTextureAnimationFrames: Int,
+                numTextureAnimationRows: Int,
+                numTextureAnimationColumns: Int,
             ): MeshData {
                 val copied = FloatArray(4)
                 System.arraycopy(
@@ -869,6 +921,8 @@ internal class CanvasMeshRenderer(
                     copied,
                     textureAnimationProgress,
                     numTextureAnimationFrames,
+                    numTextureAnimationRows,
+                    numTextureAnimationColumns,
                 )
             }
         }
@@ -993,7 +1047,9 @@ internal class CanvasMeshRenderer(
              * The number of frames in the texture animation. It is an `int`, and must be at
              * least 1.
              */
-            NUM_TEXTURE_ANIMATION_FRAMES(7);
+            NUM_TEXTURE_ANIMATION_FRAMES(7),
+            NUM_TEXTURE_ANIMATION_ROWS(8),
+            NUM_TEXTURE_ANIMATION_COLUMNS(9);
 
             companion object {
                 const val INVALID_NATIVE_VALUE = -1
@@ -1019,7 +1075,7 @@ internal class CanvasMeshRenderer(
         // this
         // value is just the size we choose to use for our array. Currently it is set to the actual
         // number of uniforms we happen to use right now.
-        private const val MAX_UNIFORMS = 8
+        private const val MAX_UNIFORMS = 10
 
         private const val INVALID_OFFSET = -1
         private const val INVALID_VERTEX_STRIDE = -1
@@ -1091,7 +1147,13 @@ internal class CanvasMeshRenderer(
          * in the same paint to have the same number of animation frames.)
          */
         private fun getNumTextureAnimationFrames(brushPaint: BrushPaint): Int =
-            brushPaint.textureLayers.firstOrNull()?.let { it.animationFrames } ?: 1
+            brushPaint.textureLayers.firstOrNull()?.animationFrames ?: 1
+
+        private fun getNumTextureAnimationRows(brushPaint: BrushPaint): Int =
+            brushPaint.textureLayers.firstOrNull()?.animationRows ?: 1
+
+        private fun getNumTextureAnimationColumns(brushPaint: BrushPaint): Int =
+            brushPaint.textureLayers.firstOrNull()?.animationColumns ?: 1
 
         private val MeshAttributeUnpackingParams.xOffset
             get() = components[0].offset

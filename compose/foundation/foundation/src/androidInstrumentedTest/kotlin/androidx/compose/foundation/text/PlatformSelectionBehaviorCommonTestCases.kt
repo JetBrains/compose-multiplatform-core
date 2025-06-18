@@ -28,9 +28,17 @@ import androidx.compose.foundation.text.selection.gestures.util.longPress
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.InjectionScope
+import androidx.compose.ui.test.MouseButton
+import androidx.compose.ui.test.MouseInjectionScope
+import androidx.compose.ui.test.TouchInjectionScope
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -54,6 +62,8 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
     internal val defaultTextStyle = TextStyle(fontFamily = TEST_FONT_FAMILY, fontSize = fontSize)
 
     internal var testPlatformSelectionBehaviors: TestPlatformSelectionBehaviors? = null
+
+    internal abstract val testLongPress: Boolean
 
     companion object {
         @BeforeClass
@@ -88,7 +98,7 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
     abstract val selection: TextRange
 
     @Test
-    fun longPress_singleLine_callsSuggestSelectionForLongPressOrDoubleClick() {
+    fun singleLine_callsSuggestSelectionForLongPressOrDoubleClick() {
         rule.setTextFieldTestContent {
             Content(
                 text = "abc def ghi",
@@ -97,10 +107,7 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
             )
         }
 
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = 5 * fontSize.toPx(), y = fontSize.toPx() / 2))
-            up()
-        }
+        performLongPressOrDoubleClick { Offset(x = 5 * fontSize.toPx(), y = fontSize.toPx() / 2) }
 
         rule.waitForIdle()
 
@@ -110,7 +117,7 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
     }
 
     @Test
-    fun longPress_multiline_callsSuggestSelectionForLongPressOrDoubleClick() {
+    fun multiline_callsSuggestSelectionForLongPressOrDoubleClick() {
         rule.setTextFieldTestContent {
             Content(
                 text = "abc def ghi",
@@ -119,10 +126,7 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
             )
         }
 
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = 5 * fontSize.toPx(), y = fontSize.toPx() / 2))
-            up()
-        }
+        performLongPressOrDoubleClick { Offset(x = 5 * fontSize.toPx(), y = fontSize.toPx() / 2) }
 
         rule.waitForIdle()
 
@@ -132,7 +136,7 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
     }
 
     @Test
-    fun longPress_dragToChangeSelection_notCallSuggestSelectionForLongPressOrDoubleClick() {
+    fun dragToChangeSelection_notCallSuggestSelectionForLongPressOrDoubleClick() {
         rule.setTextFieldTestContent {
             Content(
                 text = "abc def ghi",
@@ -141,12 +145,11 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
             )
         }
 
-        // Long press to select "abc" first and then drag to select " def",
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 2, y = fontSize.toPx() / 2))
-            moveTo(Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2))
-            up()
-        }
+        // Select "abc" first and then drag to select " def",
+        performLongPressOrDoubleClickThenDrag(
+            position = { Offset(x = fontSize.toPx() * 2, y = fontSize.toPx() / 2) },
+            moveTo = { Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2) },
+        )
 
         rule.waitForIdle()
 
@@ -156,7 +159,7 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
     }
 
     @Test
-    fun longPress_dragButNotChangeSelection_callSuggestSelectionForLongPressOrDoubleClick() {
+    fun dragButNotChangeSelection_callSuggestSelectionForLongPressOrDoubleClick() {
         rule.setTextFieldTestContent {
             Content(
                 text = "abc def ghi",
@@ -165,13 +168,12 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
             )
         }
 
-        // Long press to select "abc" first and then drag to the offset after character "c", the
+        // Select "abc" first and then drag to the offset after character "c", the
         // selection shouldn't update.
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 2, y = fontSize.toPx() / 2))
-            moveTo(Offset(x = fontSize.toPx() * 3, y = fontSize.toPx() / 2))
-            up()
-        }
+        performLongPressOrDoubleClickThenDrag(
+            position = { Offset(x = fontSize.toPx() * 2, y = fontSize.toPx() / 2) },
+            moveTo = { Offset(x = fontSize.toPx() * 3, y = fontSize.toPx() / 2) },
+        )
 
         rule.waitForIdle()
 
@@ -181,7 +183,7 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
     }
 
     @Test
-    fun longPress_doesApplySuggestedRange() {
+    fun doesApplySuggestedRange() {
         val state = TextFieldState("abc def ghi")
         val suggestedSelection = TextRange(1, 5)
         testPlatformSelectionBehaviors?.suggestedSelection = suggestedSelection
@@ -194,17 +196,39 @@ abstract class PlatformSelectionBehaviorCommonTestCases : FocusedWindowTest {
             )
         }
 
-        // Long press to select "abc".
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 2, y = fontSize.toPx() / 2))
-            up()
-        }
-
+        // select "abc".
+        performLongPressOrDoubleClick { Offset(x = fontSize.toPx() * 2, y = fontSize.toPx() / 2) }
         rule.waitForIdle()
 
         assertThat(state.selection).isEqualTo(suggestedSelection)
         assertThat(testPlatformSelectionBehaviors?.text).isEqualTo("abc def ghi")
         assertThat(testPlatformSelectionBehaviors?.selection).isEqualTo(TextRange(0, 3))
+    }
+
+    internal fun performLongPressOrDoubleClick(position: InjectionScope.() -> Offset) {
+        if (testLongPress) {
+            rule.onNodeWithTag(TAG).performTouchInput {
+                longPress(position.invoke(this))
+                up()
+            }
+        } else {
+            rule.onNodeWithTag(TAG).performMouseInput { doubleClick(position.invoke(this)) }
+        }
+    }
+
+    internal fun performLongPressOrDoubleClickThenDrag(
+        position: InjectionScope.() -> Offset,
+        moveTo: InjectionScope.() -> Offset,
+    ) {
+        if (testLongPress) {
+            rule.onNodeWithTag(TAG).performTouchInput {
+                longPressAndDrag(position = position.invoke(this), moveTo = moveTo.invoke(this))
+            }
+        } else {
+            rule.onNodeWithTag(TAG).performMouseInput {
+                doubleClickAndDrag(position = position.invoke(this), moveTo = moveTo.invoke(this))
+            }
+        }
     }
 }
 
@@ -223,3 +247,23 @@ internal class TestPlatformSelectionBehaviors : PlatformSelectionBehaviors {
         return suggestedSelection
     }
 }
+
+private fun TouchInjectionScope.longPressAndDrag(position: Offset, moveTo: Offset) {
+    longPress(position)
+    moveTo(moveTo)
+    up()
+}
+
+private fun MouseInjectionScope.doubleClickAndDrag(position: Offset = center, moveTo: Offset) {
+    click(position, MouseButton.Primary)
+    advanceEventTime(viewConfiguration.defaultDoubleTapDelayMillis)
+    press(MouseButton.Primary)
+    advanceEventTime(SingleClickDelayMillis)
+    moveTo(moveTo)
+    release(MouseButton.Primary)
+}
+
+private val ViewConfiguration.defaultDoubleTapDelayMillis: Long
+    get() = (doubleTapMinTimeMillis + doubleTapTimeoutMillis) / 2
+
+private const val SingleClickDelayMillis = 60L

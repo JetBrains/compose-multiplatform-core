@@ -119,6 +119,7 @@ public final class SurfaceEntityImplTest {
         int stereoMode = SurfaceEntity.StereoMode.MONO;
         Pose pose = Pose.Identity;
         int contentSecurityLevel = 0;
+        int useSuperSampling = 0;
 
         mSurfaceEntity =
                 new SurfaceEntityImpl(
@@ -130,7 +131,8 @@ public final class SurfaceEntityImplTest {
                         executor,
                         stereoMode,
                         canvasShape,
-                        contentSecurityLevel);
+                        contentSecurityLevel,
+                        useSuperSampling);
         mSurfaceEntity.setPose(pose, Space.PARENT);
 
         return mSurfaceEntity;

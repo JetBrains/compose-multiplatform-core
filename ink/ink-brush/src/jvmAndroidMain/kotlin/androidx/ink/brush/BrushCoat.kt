@@ -111,9 +111,12 @@ private constructor(
     override fun toString(): String = "BrushCoat(tip=$tip, paint=$paint)"
 
     /** Deletes native BrushCoat memory. */
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
-        BrushCoatNative.free(nativePointer)
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            BrushCoatNative.free(nativePointer)
+        }
     }
 
     // Companion object gets initialized before anything else.

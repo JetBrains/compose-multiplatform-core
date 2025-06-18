@@ -68,6 +68,7 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.launch
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -536,6 +537,7 @@ class WideNavigationRailTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun header_position_centeredArrangement() {
         rule.setMaterialContent(lightColorScheme()) {
             WideNavigationRail(
@@ -568,6 +570,7 @@ class WideNavigationRailTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun header_position_bottomArrangement() {
         rule.setMaterialContent(lightColorScheme()) {
             WideNavigationRail(

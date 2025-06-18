@@ -37,7 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.dp
 
 internal inline fun <reified T> findOwner(context: Context): T? {
@@ -75,7 +75,7 @@ fun SetFrameRateSample() {
             Text(
                 text = "Click Me for alpha change with 30 Hz frame rate",
                 color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-                modifier = Modifier.requestedFrameRate(30f),
+                modifier = Modifier.preferredFrameRate(30f),
             )
         }
     }

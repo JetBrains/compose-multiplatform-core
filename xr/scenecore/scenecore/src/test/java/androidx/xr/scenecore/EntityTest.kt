@@ -16,13 +16,13 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Build
 import android.view.View
 import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
@@ -86,7 +86,8 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class EntityTest {
     private val fakeRuntimeFactory = FakeRuntimeFactory()
-    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockPlatformAdapter = mock<JxrPlatformAdapter>()
     private val mockGltfModelEntityImpl = mock<RtGltfEntity>()
     private val mockPanelEntityImpl = mock<RtPanelEntity>()
@@ -108,7 +109,7 @@ class EntityTest {
     private lateinit var surfaceEntity: SurfaceEntity
 
     private val entityActivity =
-        Robolectric.buildActivity(Activity::class.java).create().start().get()
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private val mockEntityPlatformAdapter = mock<JxrPlatformAdapter>()
     private lateinit var entitySession: Session
 
@@ -296,7 +297,7 @@ class EntityTest {
             .thenReturn(mockActivityPanelEntity)
         whenever(mockPlatformAdapter.createEntity(any(), any(), any()))
             .thenReturn(mockContentlessEntity)
-        whenever(mockPlatformAdapter.createSurfaceEntity(any(), any(), any(), any(), any()))
+        whenever(mockPlatformAdapter.createSurfaceEntity(any(), any(), any(), any(), any(), any()))
             .thenReturn(mockSurfaceEntity)
         whenever(mockPlatformAdapter.mainPanelEntity).thenReturn(mockPanelEntityImpl)
         session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
@@ -756,7 +757,7 @@ class EntityTest {
 
     @Test
     fun activityPanelEntityLaunchActivity_callsImplLaunchActivity() {
-        val launchIntent = Intent(activity.applicationContext, Activity::class.java)
+        val launchIntent = Intent(activity.applicationContext, ComponentActivity::class.java)
         activityPanelEntity.launchActivity(launchIntent, null)
 
         verify(mockActivityPanelEntity).launchActivity(launchIntent, null)

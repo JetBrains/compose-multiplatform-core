@@ -109,7 +109,7 @@ object ComposeUiFlags {
      * * `SafeContentRulers`
      */
     // off for b/410868572
-    @Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = true
+    @Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = false
 
     /**
      * With this flag on, when an AccessibilityService performs ACTION_FOCUS on a Composable node,
@@ -135,7 +135,7 @@ object ComposeUiFlags {
 
     /**
      * With this flag on, the adaptive refresh rate (ARR) feature will be enabled. A preferred frame
-     * rate can be set on a Composable through frame rate modifier: [Modifier.requestedFrameRate]
+     * rate can be set on a Composable through frame rate modifier: [Modifier.preferredFrameRate]
      */
     @Suppress("MutableBareField") @JvmField var isAdaptiveRefreshRateEnabled: Boolean = true
 

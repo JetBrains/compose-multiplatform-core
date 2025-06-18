@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.width
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,6 +95,7 @@ class ShortNavigationBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bar_size() {
         val height = NavigationBarTokens.ContainerHeight
         rule

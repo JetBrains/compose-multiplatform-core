@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.input.indirect
 
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
@@ -31,7 +31,7 @@ import androidx.compose.ui.platform.InspectorInfo
  *   [IndirectTouchEvent]'s parent.
  * @return true if the event is consumed, false otherwise.
  */
-@ExperimentalComposeUiApi
+@ExperimentalIndirectTouchTypeApi
 fun Modifier.onIndirectTouchEvent(onIndirectTouchEvent: (IndirectTouchEvent) -> Boolean): Modifier =
     this then
         IndirectTouchInputElement(
@@ -50,7 +50,7 @@ fun Modifier.onIndirectTouchEvent(onIndirectTouchEvent: (IndirectTouchEvent) -> 
  *   event and want to stop propagation of this event.
  * @return true if the event is consumed, false otherwise.
  */
-@ExperimentalComposeUiApi
+@ExperimentalIndirectTouchTypeApi
 fun Modifier.onPreIndirectTouchEvent(
     onPreIndirectTouchEvent: (IndirectTouchEvent) -> Boolean
 ): Modifier =
@@ -60,7 +60,7 @@ fun Modifier.onPreIndirectTouchEvent(
             onPreIndirectTouchEvent = onPreIndirectTouchEvent,
         )
 
-@ExperimentalComposeUiApi
+@ExperimentalIndirectTouchTypeApi
 private class IndirectTouchInputElement(
     val onIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?,
     val onPreIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?,
@@ -101,7 +101,7 @@ private class IndirectTouchInputElement(
     }
 }
 
-@ExperimentalComposeUiApi
+@ExperimentalIndirectTouchTypeApi
 private class IndirectTouchInputNode(
     var onEvent: ((IndirectTouchEvent) -> Boolean)?,
     var onPreEvent: ((IndirectTouchEvent) -> Boolean)?,

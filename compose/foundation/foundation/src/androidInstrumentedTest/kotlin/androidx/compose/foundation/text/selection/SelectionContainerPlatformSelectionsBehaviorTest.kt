@@ -19,7 +19,6 @@ package androidx.compose.foundation.text.selection
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.PlatformSelectionBehaviorCommonTestCases
-import androidx.compose.foundation.text.selection.gestures.util.longPress
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -29,23 +28,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 @LargeTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 28)
-class SelectionContainerPlatformSelectionsBehaviorTest() :
+class SelectionContainerPlatformSelectionsBehaviorTest(override val testLongPress: Boolean) :
     PlatformSelectionBehaviorCommonTestCases() {
     private var _selection: MutableState<Selection?>? = null
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "testLongPress={0}")
+        fun params() = arrayOf(true, false)
+    }
 
     @Composable
     override fun Content(text: String, textStyle: TextStyle, modifier: Modifier) {
@@ -63,7 +66,7 @@ class SelectionContainerPlatformSelectionsBehaviorTest() :
         }
 
     @Test
-    fun longPress_multipleBasicText_callSuggestSelectionForLongPressOrDoubleClick() {
+    fun multipleBasicText_callSuggestSelectionForLongPressOrDoubleClick() {
         var selection by mutableStateOf<Selection?>(null)
 
         rule.setTextFieldTestContent {
@@ -80,10 +83,7 @@ class SelectionContainerPlatformSelectionsBehaviorTest() :
             }
         }
 
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(center)
-            up()
-        }
+        performLongPressOrDoubleClick { center }
 
         rule.waitForIdle()
 
@@ -94,7 +94,7 @@ class SelectionContainerPlatformSelectionsBehaviorTest() :
     }
 
     @Test
-    fun longPress_multipleBasicText_doesApplySuggestedRange() {
+    fun multipleBasicText_doesApplySuggestedRange() {
         var selection by mutableStateOf<Selection?>(null)
 
         rule.setTextFieldTestContent {
@@ -113,10 +113,7 @@ class SelectionContainerPlatformSelectionsBehaviorTest() :
 
         testPlatformSelectionBehaviors?.suggestedSelection = TextRange(0, 7)
 
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2))
-            up()
-        }
+        performLongPressOrDoubleClick { Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2) }
 
         rule.waitForIdle()
 

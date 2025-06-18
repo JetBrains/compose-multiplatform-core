@@ -344,7 +344,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             )
         assertThat(result.visibleItems.map { it.index }).isEqualTo(listOf(4, 5, 6, 7))
         assertThat(result.visibleItems.map { it.offset })
-            .isEqualTo(listOf(0, screenHeight / 4, screenHeight / 2, screenHeight * 3 / 4))
+            .isEqualTo(listOf(0, itemSize, 2 * itemSize, 3 * itemSize))
     }
 
     @Test
@@ -370,7 +370,17 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             )
         assertThat(result.visibleItems.map { it.index }).isEqualTo(listOf(0, 1, 2, 3))
         assertThat(result.visibleItems.map { it.offset })
-            .isEqualTo(listOf(0, screenHeight / 4, screenHeight / 2, screenHeight * 3 / 4))
+            .isEqualTo(listOf(0, itemSize, 2 * itemSize, 3 * itemSize))
+    }
+
+    @Test
+    fun initialLayout_contentFitScreen_restoresLayoutCorrectly() {
+        val itemSize = screenHeight / 10
+
+        val result = strategy.measure(listOf(itemSize, itemSize, itemSize, itemSize))
+        assertThat(result.visibleItems.map { it.index }).isEqualTo(listOf(0, 1, 2, 3))
+        assertThat(result.visibleItems.map { it.offset })
+            .isEqualTo(listOf(0, itemSize, 2 * itemSize, 3 * itemSize))
     }
 
     @Test

@@ -16,8 +16,9 @@
 
 package androidx.xr.runtime
 
-import android.app.Activity
-import androidx.test.ext.junit.rules.ActivityScenarioRule
+import android.Manifest
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
@@ -31,87 +32,107 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
 class SessionTest {
-    private lateinit var activity: Activity
+    private lateinit var underTest: Session
+    private lateinit var activityController: ActivityController<ComponentActivity>
+    private lateinit var activity: ComponentActivity
     private lateinit var testDispatcher: TestDispatcher
-    private lateinit var testScope: TestScope
-
-    @get:Rule val activityScenarioRule = ActivityScenarioRule<Activity>(Activity::class.java)
-    @get:Rule val secondActivityScenarioRule = ActivityScenarioRule<Activity>(Activity::class.java)
 
     @Before
     fun setUp() {
-        activityScenarioRule.scenario.onActivity { this.activity = it }
-        shadowOf(activity).grantPermissions(*FakeLifecycleManager.TestPermissions.toTypedArray())
-
         testDispatcher = StandardTestDispatcher()
-        testScope = TestScope(testDispatcher)
+        activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+        activity = activityController.get()
+
+        val shadowApplication = shadowOf(activity.application)
+        FakeLifecycleManager.TestPermissions.forEach { permission ->
+            shadowApplication.grantPermissions(permission)
+        }
+
+        FakeRuntimeFactory.hasCreatePermission = true
+    }
+
+    @After
+    fun tearDown() {
+        if (activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+            activityController.destroy()
+        }
     }
 
     @Test
     fun create_returnsSuccessResultWithNonNullSession() {
-        val result = Session.create(activity) as SessionCreateSuccess
+        activityController.create()
 
-        assertThat(result.session).isNotNull()
+        val result = Session.create(activity)
 
-        // Destroy the session to clean up the static activity map.
-        result.session.destroy()
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+        assertThat((result as SessionCreateSuccess).session).isNotNull()
     }
 
     @Test
     fun create_setsLifecycleToInitialized() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        activityController.create()
+
+        underTest = createSession()
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.INITIALIZED)
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
     }
 
     @Test
     fun create_initializesStateExtender() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        activityController.create()
 
-        // The FakeStateExtender is being loaded in Session here because it is defined as a class in
-        // the
-        // "//third_party/arcore/androidx/java/androidx/xr/testing" dependency.
+        underTest = createSession()
+
         val stateExtender = underTest.stateExtenders.first() as FakeStateExtender
         assertThat(stateExtender.isInitialized).isTrue()
+    }
 
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
+    @Test
+    fun create_initializesPlatformAdapter() {
+        activityController.create()
+
+        underTest = createSession()
+
+        val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
+        assertThat(platformAdapter).isNotNull()
+        assertThat(platformAdapter.state.name).isEqualTo("CREATED")
     }
 
     @Test
     fun create_permissionException_returnsPermissionsNotGrantedResult() {
+        val shadowApplication = shadowOf(activity.application)
+        shadowApplication.denyPermissions(Manifest.permission.CAMERA)
         FakeRuntimeFactory.hasCreatePermission = false
 
-        val result = Session.create(activity)
-        // Reset the flag to true so other tests are not affected.
-        FakeRuntimeFactory.hasCreatePermission = true
+        activityController.create()
 
+        val result = Session.create(activity)
         assertThat(result).isInstanceOf(SessionCreatePermissionsNotGranted::class.java)
     }
 
     @Test
     fun create_arcoreNotInstalledException_returnsApkRequiredResult() {
         FakeRuntimeFactory.lifecycleCreateException = ApkNotInstalledException(ARCORE_PACKAGE_NAME)
+        activityController.create()
 
         val result = Session.create(activity)
 
@@ -122,6 +143,7 @@ class SessionTest {
     @Test
     fun create_arcoreUnsupportedDeviceException_returnsUnsupportedDeviceResult() {
         FakeRuntimeFactory.lifecycleCreateException = UnsupportedDeviceException()
+        activityController.create()
 
         val result = Session.create(activity)
 
@@ -132,6 +154,7 @@ class SessionTest {
     fun create_arcoreCheckAvailabilityInProgressException_returnsApkRequiredResult() {
         FakeRuntimeFactory.lifecycleCreateException =
             ApkCheckAvailabilityInProgressException(ARCORE_PACKAGE_NAME)
+        activityController.create()
 
         val result = Session.create(activity)
 
@@ -143,6 +166,7 @@ class SessionTest {
     fun create_arcoreCheckAvailabilityErrorException_returnsApkRequiredResult() {
         FakeRuntimeFactory.lifecycleCreateException =
             ApkCheckAvailabilityErrorException(ARCORE_PACKAGE_NAME)
+        activityController.create()
 
         val result = Session.create(activity)
 
@@ -151,62 +175,47 @@ class SessionTest {
     }
 
     @Test
-    fun create_initializesPlatformAdapter() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-
-        // The FakeJxrPlatformAdapter is being loaded in Session here because it is defined as a
-        // class
-        // in the "//third_party/arcore/androidx/java/androidx/xr/testing" dependency.
-        val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
-        assertThat(platformAdapter).isNotNull()
-        assertThat(platformAdapter.state.name).isEqualTo("CREATED")
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
-    }
-
-    @Test
     fun configure_destroyed_throwsIllegalStateException() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        underTest.destroy()
+        activityController.create().start().resume()
+        underTest = createSession()
+        activityController.destroy()
 
         assertFailsWith<IllegalStateException> { underTest.configure(Config()) }
     }
 
     @Test
     fun configure_returnsSuccessAndChangesConfig() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        activityController.create().start().resume()
+        underTest = createSession()
         check(
             underTest.config ==
                 Config(
-                    Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    Config.HandTrackingMode.BOTH,
-                    Config.HeadTrackingMode.LAST_KNOWN,
-                    Config.DepthEstimationMode.SMOOTH_AND_RAW,
-                    Config.AnchorPersistenceMode.LOCAL,
+                    planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                    handTracking = Config.HandTrackingMode.BOTH,
+                    headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+                    depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW,
+                    anchorPersistence = Config.AnchorPersistenceMode.LOCAL,
                 )
         )
-        val config =
+        val newConfig =
             Config(
-                Config.PlaneTrackingMode.DISABLED,
-                Config.HandTrackingMode.DISABLED,
-                Config.HeadTrackingMode.DISABLED,
-                Config.DepthEstimationMode.DISABLED,
-                Config.AnchorPersistenceMode.DISABLED,
+                planeTracking = Config.PlaneTrackingMode.DISABLED,
+                handTracking = Config.HandTrackingMode.DISABLED,
+                headTracking = Config.HeadTrackingMode.DISABLED,
+                depthEstimation = Config.DepthEstimationMode.DISABLED,
+                anchorPersistence = Config.AnchorPersistenceMode.DISABLED,
             )
 
-        val result = underTest.configure(config)
+        val result = underTest.configure(newConfig)
 
         assertThat(result).isInstanceOf(SessionConfigureSuccess::class.java)
-        assertThat(underTest.config).isEqualTo(config)
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
+        assertThat(underTest.config).isEqualTo(newConfig)
     }
 
     @Test
     fun configure_permissionNotGranted_returnsPermissionNotGrantedResult() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        activityController.create().start().resume()
+        underTest = createSession()
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         val currentConfig = underTest.config
         check(currentConfig.depthEstimation == Config.DepthEstimationMode.SMOOTH_AND_RAW)
@@ -219,179 +228,157 @@ class SessionTest {
 
         assertThat(result).isInstanceOf(SessionConfigurePermissionsNotGranted::class.java)
         assertThat(underTest.config).isEqualTo(currentConfig)
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
     }
 
     @Test
     fun configure_unsupportedMode_returnsConfigurationNotSupportedResult() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        activityController.create().start().resume()
+        underTest = createSession()
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         val currentConfig = underTest.config
-
         lifecycleManager.shouldSupportPlaneTracking = false
+
         val result =
             underTest.configure(
-                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                currentConfig.copy(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
             )
 
         assertThat(result).isInstanceOf(SessionConfigureConfigurationNotSupported::class.java)
         assertThat(underTest.config).isEqualTo(currentConfig)
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
+        lifecycleManager.shouldSupportPlaneTracking = true
     }
-
-    // TODO(b/349855733): Add a test to verify configure() calls the corresponding LifecycleManager
-    // method once FakeRuntime supports it.
 
     @Test
     fun resume_returnsSuccessAndSetsLifecycleToResumed() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        activityController.create().start()
+        underTest = createSession()
 
-        val result = underTest.resume()
+        activityController.resume()
 
-        assertThat(result).isInstanceOf(SessionResumeSuccess::class.java)
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.RESUMED)
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
     }
 
     @Test
     fun resume_returnsSuccessAndSetsPlatformAdapterToResumed() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        val result = underTest.resume()
+        activityController.create().start()
+        underTest = createSession()
 
-        assertThat(result).isInstanceOf(SessionResumeSuccess::class.java)
-        assertThat((underTest.platformAdapter as FakeJxrPlatformAdapter).state.name)
-            .isEqualTo("STARTED")
+        activityController.resume()
 
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
+        assertThat((underTest.platformAdapter as FakeJxrPlatformAdapter).state)
+            .isEqualTo(FakeJxrPlatformAdapter.State.STARTED) // Corresponds to resumed
     }
 
-    @Test
-    fun resume_destroyed_throwsIllegalStateException() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        underTest.destroy()
-
-        assertFailsWith<IllegalStateException> { underTest.resume() }
-    }
-
-    // TODO(b/349859981): Add a test to verify update() calls the corresponding LifecycleManager
-    // method once FakeRuntime supports it.
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun update_emitsUpdatedState() =
         runTest(testDispatcher) {
-            val underTest =
-                (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+            activityController.create().start()
+            underTest = createSession(coroutineDispatcher = testDispatcher)
             val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
             val timeSource = lifecycleManager.timeSource
             val expectedDuration = 100.milliseconds
+            val initialTimeMark = underTest.state.value.timeMark
 
-            awaitNewCoreState(underTest, this)
+            // First resume and update
+            activityController.resume()
+            advanceUntilIdle()
             val beforeTimeMark = underTest.state.value.timeMark
+            check(beforeTimeMark != initialTimeMark)
+            activityController.pause()
+            advanceUntilIdle()
             timeSource += expectedDuration
-            // By default FakeLifecycleManager will only allow one call to update() to go through.
-            // Since
-            // we are calling update() twice, we need to allow one more call to go through.
-            lifecycleManager.allowOneMoreCallToUpdate()
-            awaitNewCoreState(underTest, this)
-            val afterTimeMark = underTest.state.value.timeMark
 
+            lifecycleManager.allowOneMoreCallToUpdate()
+            activityController.resume()
+            advanceUntilIdle()
+
+            val afterTimeMark = underTest.state.value.timeMark
             val actualDuration = afterTimeMark - beforeTimeMark
             assertThat(actualDuration).isEqualTo(expectedDuration)
-
-            // Destroy the session to clean up the static activity map.
-            underTest.destroy()
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun update_extendsState() =
         runTest(testDispatcher) {
-            val underTest =
-                (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+            activityController.create().start()
+            underTest = createSession(coroutineDispatcher = testDispatcher)
+
+            activityController.resume() // Triggers update
+            advanceUntilIdle()
+
             val stateExtender = underTest.stateExtenders.first() as FakeStateExtender
-            check(stateExtender.extended.isEmpty())
-
-            awaitNewCoreState(underTest, this)
-
             assertThat(stateExtender.extended).isNotEmpty()
-
-            // Destroy the session to clean up the static activity map.
-            underTest.destroy()
         }
 
     @Test
     fun pause_setsLifecycleToPaused() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        underTest.resume()
+        activityController.create().start().resume()
+        underTest = createSession()
 
-        underTest.pause()
+        activityController.pause()
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.PAUSED)
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
     }
 
     @Test
     fun pause_setsPlatformAdapterToPaused() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        underTest.resume()
+        activityController.create().start().resume()
+        underTest = createSession()
 
-        underTest.pause()
+        activityController.pause()
 
         val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
-        assertThat(platformAdapter.state.name).isEqualTo("PAUSED")
-
-        // Destroy the session to clean up the static activity map.
-        underTest.destroy()
-    }
-
-    @Test
-    fun pause_destroyed_throwsIllegalStateException() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        underTest.destroy()
-
-        assertFailsWith<IllegalStateException> { underTest.pause() }
+        assertThat(platformAdapter.state).isEqualTo(FakeJxrPlatformAdapter.State.PAUSED)
     }
 
     @Test
     fun destroy_initialized_setsLifecycleToStopped() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
+        activityController.create() // Session is created here
+        underTest = createSession()
 
-        underTest.destroy()
+        activityController.destroy() // Triggers session destroy
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
     }
 
     @Test
     fun destroy_resumed_setsLifecycleToStopped() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        underTest.resume()
+        activityController.create().start().resume()
+        underTest = createSession()
 
-        underTest.destroy()
+        activityController.destroy()
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
     }
 
     @Test
+    fun destroy_setsPlatformAdapterToStopped() {
+        activityController.create().start().resume()
+        underTest = createSession()
+
+        activityController.destroy()
+
+        val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
+        assertThat(platformAdapter.state).isEqualTo(FakeJxrPlatformAdapter.State.DESTROYED)
+    }
+
     fun destroy_withMultiple_doesNotSetFinalActivity() {
-        var secondActivity: Activity? = null
-        secondActivityScenarioRule.scenario.onActivity { secondActivity = it }
+        val activityController2 = Robolectric.buildActivity(ComponentActivity::class.java)
+        val secondActivity = activityController2.get()
+
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         val secondSession = (Session.create(secondActivity!!) as SessionCreateSuccess).session
-        underTest.resume()
+        activityController.create().start().resume()
+        activityController2.create().start().resume()
 
         // Destroy the session while the other session is still active.
-        underTest.destroy()
+        activityController.destroy()
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
         // This should not be stopped because there is still an active activity but it will update
@@ -399,61 +386,47 @@ class SessionTest {
         assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.PAUSED)
 
         // Destroy the second session to clean up the static activity map.
-        secondSession.destroy()
+        activityController2.destroy()
     }
 
     @Test
     fun destroy_lastDestroyed_setFinalActivityTrue() {
-        var secondActivity: Activity? = null
-        secondActivityScenarioRule.scenario.onActivity { secondActivity = it }
+        val activityController2 = Robolectric.buildActivity(ComponentActivity::class.java)
+        val secondActivity = activityController2.get()
         val underTest = (Session.create(activity) as SessionCreateSuccess).session
         val secondSession = (Session.create(secondActivity!!) as SessionCreateSuccess).session
-        secondSession.resume()
-        secondSession.destroy()
-        underTest.resume()
+        activityController2.create().start().resume()
+        activityController2.destroy()
+        activityController.create().start().resume()
 
         // Destroy the session after the other session was destroyed.
-        underTest.destroy()
+        activityController.destroy()
 
         val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
-        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
-
-        // Destroy the second session to clean up the static activity map.
-        secondSession.destroy()
+        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
     }
 
-    @Test
-    fun destroy_setsPlatformAdapterToStopped() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        underTest.resume()
-
-        underTest.destroy()
-
-        val platformAdapter = underTest.platformAdapter as FakeJxrPlatformAdapter
-        assertThat(platformAdapter.state.name).isEqualTo("STOPPED")
-    }
-
-    @Test
-    fun destroy_cancelsCoroutineScope() {
-        val underTest = (Session.create(activity) as SessionCreateSuccess).session
-        // Creating a job that will not finish by the time destroy is called.
-        val job = underTest.coroutineScope.launch { delay(12.hours) }
-
-        underTest.destroy()
-
-        // The job should be cancelled iff destroy was called and the coroutine scope was cancelled.
-        assertThat(job.isCancelled).isTrue()
-    }
-
-    /** Resumes and pauses the session just enough to emit a new CoreState. */
     @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun awaitNewCoreState(session: Session, testScope: TestScope) {
-        session.resume()
-        testScope.advanceUntilIdle()
-        session.pause()
+    @Test
+    fun destroy_cancelsCoroutineScope() =
+        runTest(testDispatcher) {
+            activityController.create().start().resume()
+            underTest = createSession(coroutineDispatcher = testDispatcher)
+            val job = underTest.coroutineScope.launch { delay(12.hours) }
+
+            activityController.destroy()
+            advanceUntilIdle()
+
+            assertThat(job.isCancelled).isTrue()
+        }
+
+    private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {
+        val result = Session.create(activity, coroutineDispatcher)
+        assertThat(result).isInstanceOf(SessionCreateSuccess::class.java)
+        return (result as SessionCreateSuccess).session
     }
 
     private companion object {
-        const private val ARCORE_PACKAGE_NAME = "com.google.ar.core"
+        private const val ARCORE_PACKAGE_NAME = "com.google.ar.core"
     }
 }

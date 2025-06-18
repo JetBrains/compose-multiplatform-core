@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
@@ -40,7 +40,8 @@ class SpatialUserTest {
     private val fakeRuntimeFactory = FakeRuntimeFactory()
     private val mockRuntime = mock<JxrPlatformAdapter>()
     private val mockActivitySpace = mock<RtActivitySpace>()
-    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private val activity =
+        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
     private lateinit var session: Session
     lateinit var spatialUser: SpatialUser
 

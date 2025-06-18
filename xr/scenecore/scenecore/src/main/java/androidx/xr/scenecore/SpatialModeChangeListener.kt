@@ -24,13 +24,21 @@ import androidx.xr.runtime.math.Pose
  */
 public fun interface SpatialModeChangeListener {
     /**
-     * Called when the activity encounters spatial mode change.
+     * Callback that provides a new recommended pose and scale for placing content.
      *
-     * @param recommendedPose the recommended pose for the center of attention entity. The pose is
-     *   relative to [ActivitySpace] origin, not relative to the center of attention's parent.
-     * @param recommendedScale the recommended scale for the center of attention entity. The scale
-     *   is the accumulated scale for this entity i.e. accumulated scale in [ActivitySpace], not
-     *   scale relative to the center of attention's parent.
+     * This is called whenever the activity encounters a spatial mode change or re-center. The most
+     * common app behavior is to set the pose and scale of an entity relative to the ActivitySpace
+     * origin. The default behavior is equivalent to:
+     * ```
+     * Scene.keyEntity.setPose(recommendedPose, relativeTo = Space.ACTIVITY);
+     * Scene.keyEntity.setScale(recommendedScale, relativeTo = Space.ACTIVITY);
+     * ```
+     *
+     * @param recommendedPose the recommended pose for the keyEntity. The pose is relative to
+     *   [ActivitySpace] origin, not relative to the keyEntity's parent.
+     * @param recommendedScale the recommended scale for the keyEntity. The scale value is the
+     *   accumulated scale for this entity i.e. accumulated scale in [ActivitySpace], not relative
+     *   to the keyEntity's parent.
      */
     public fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Float)
 }

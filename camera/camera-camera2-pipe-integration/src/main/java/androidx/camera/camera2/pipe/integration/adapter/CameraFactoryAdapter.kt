@@ -104,7 +104,6 @@ internal class CameraFactoryAdapter(
                 .streamSpecsCalculator(streamSpecsCalculator)
                 .build()
                 .getCameraInternal()
-        cameraCoordinator.registerCamera(cameraId, cameraInternal)
         return cameraInternal
     }
 

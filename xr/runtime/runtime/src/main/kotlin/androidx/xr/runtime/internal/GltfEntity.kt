@@ -45,7 +45,7 @@ public interface GltfEntity : Entity {
      */
     public fun setMaterialOverride(material: MaterialResource, meshName: String)
 
-    // TODO: b/362368652 - Add an OnAnimationFinished() Listener interface
+    // TODO: b/417750821 - Add an OnAnimationFinished() Listener interface
     //                     Add a getAnimationTimeRemaining() interface
 
     /** Specifies the current animation state of the [GltfEntity]. */

@@ -39,6 +39,9 @@ import androidx.compose.ui.util.fastForEach
  * If multiple frame rates are requested, they will be aggregated to determine a feasible frame
  * rate.
  *
+ * If you no longer want this modifier to influence the frame rate, clear the preference by setting
+ * it to 0.
+ *
  * Keep in mind that the preferred frame rate affects the frame rate for the next frame, so use this
  * method carefully. It's important to note that the preference is valid as long as the Composable
  * is drawn.
@@ -47,7 +50,7 @@ import androidx.compose.ui.util.fastForEach
  * @sample androidx.compose.ui.samples.SetFrameRateSample
  * @see graphicsLayer
  */
-fun Modifier.requestedFrameRate(@FloatRange(from = 0.0, to = 360.0) frameRate: Float) =
+fun Modifier.preferredFrameRate(@FloatRange(from = 0.0, to = 360.0) frameRate: Float) =
     if (@OptIn(ExperimentalComposeUiApi::class) isAdaptiveRefreshRateEnabled) {
         this.graphicsLayer().frameRate(frameRate)
     } else {
@@ -70,7 +73,7 @@ fun Modifier.requestedFrameRate(@FloatRange(from = 0.0, to = 360.0) frameRate: F
  * @sample androidx.compose.ui.samples.SetFrameRateCategorySample
  * @see graphicsLayer
  */
-fun Modifier.requestedFrameRate(frameRateCategory: FrameRateCategory) =
+fun Modifier.preferredFrameRate(frameRateCategory: FrameRateCategory) =
     if (@OptIn(ExperimentalComposeUiApi::class) isAdaptiveRefreshRateEnabled) {
         this.graphicsLayer().frameRate(frameRateCategory.value)
     } else {

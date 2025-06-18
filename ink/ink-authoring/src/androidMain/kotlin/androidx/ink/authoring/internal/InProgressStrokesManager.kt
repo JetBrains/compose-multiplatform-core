@@ -597,8 +597,8 @@ internal class InProgressStrokesManager(
                 check(realInputLatencyDatas.isEmpty())
                 check(predictedInputs.isEmpty())
                 check(predictedInputLatencyDatas.isEmpty())
-                realInputs.addOrIgnore(inputs)
-                predictedInputs.addOrIgnore(prediction)
+                runCatching { realInputs.add(inputs) }
+                runCatching { predictedInputs.add(prediction) }
                 this.strokeId = strokeId
             }
         queueAddActionIfNonEmpty(addAction)
@@ -949,7 +949,7 @@ internal class InProgressStrokesManager(
         predictedInputs: StrokeInputBatch,
     ) {
         try {
-            stroke.enqueueInputsOrThrow(realInputs, predictedInputs)
+            stroke.enqueueInputs(realInputs, predictedInputs)
         } catch (e: RuntimeException) {
             Log.w(
                 InProgressStrokesManager::class.simpleName,
@@ -967,15 +967,15 @@ internal class InProgressStrokesManager(
      * TODO(b/306361370): Throw here once input is more sanitized.
      */
     private fun updateShape(stroke: InProgressStroke, currentElapsedTimeMillis: Long) {
-        try {
-            stroke.updateShapeOrThrow(currentElapsedTimeMillis)
-        } catch (e: RuntimeException) {
-            Log.w(
-                InProgressStrokesManager::class.simpleName,
-                "Error during InProgressStroke.updateShape",
-                e,
-            )
-        }
+        runCatching { stroke.updateShape(currentElapsedTimeMillis) }
+            .exceptionOrNull()
+            ?.let {
+                Log.w(
+                    InProgressStrokesManager::class.simpleName,
+                    "Error during InProgressStroke.updateShape",
+                    it,
+                )
+            }
     }
 
     /** Handle an action that was initiated by [startStroke]. */
@@ -991,7 +991,7 @@ internal class InProgressStrokesManager(
             stroke.start(action.brush, noiseSeed = seed)
             enqueueInputs(
                 stroke,
-                MutableStrokeInputBatch().addOrIgnore(action.strokeInput),
+                MutableStrokeInputBatch().apply { runCatching { add(action.strokeInput) } },
                 ImmutableStrokeInputBatch.EMPTY,
             )
             updateShape(stroke, 0)
@@ -1065,7 +1065,7 @@ internal class InProgressStrokesManager(
         if (action.strokeInput != null) {
             enqueueInputs(
                 strokeState.inProgressStroke,
-                MutableStrokeInputBatch().addOrIgnore(action.strokeInput),
+                MutableStrokeInputBatch().apply { runCatching { add(action.strokeInput) } },
                 ImmutableStrokeInputBatch.EMPTY,
             )
             // We update the finished stroke immediately after enqueueing because we know we are not

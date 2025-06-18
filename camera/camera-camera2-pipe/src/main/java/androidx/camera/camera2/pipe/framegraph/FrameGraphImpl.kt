@@ -88,24 +88,28 @@ constructor(
     }
 
     override suspend fun acquireSession(): FrameGraph.Session {
-        TODO("Not yet implemented")
+        return FrameGraphSessionImpl(cameraGraph.acquireSession())
     }
 
     override fun acquireSessionOrNull(): FrameGraph.Session? {
-        TODO("Not yet implemented")
+        return cameraGraph.acquireSessionOrNull()?.let { FrameGraphSessionImpl(it) }
     }
 
     override suspend fun <T> useSession(
         action: suspend CoroutineScope.(FrameGraph.Session) -> T
     ): T {
-        TODO("Not yet implemented")
+        return cameraGraph.useSession { cameraGraphSession ->
+            FrameGraphSessionImpl(cameraGraphSession).use { action(it) }
+        }
     }
 
     override fun <T> useSessionIn(
         scope: CoroutineScope,
         action: suspend CoroutineScope.(FrameGraph.Session) -> T,
     ): Deferred<T> {
-        TODO("Not yet implemented")
+        return cameraGraph.useSessionIn(scope) { cameraGraphSession ->
+            FrameGraphSessionImpl(cameraGraphSession).use { action(it) }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

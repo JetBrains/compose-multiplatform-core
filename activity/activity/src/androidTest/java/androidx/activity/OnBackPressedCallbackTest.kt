@@ -18,6 +18,7 @@ package androidx.activity
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -69,5 +70,29 @@ class OnBackPressedCallbackTest {
         }
 
         callback.remove()
+    }
+
+    @Test
+    fun all_dispatchers_got_notified_for_enabled_changes() {
+        val callback =
+            object : OnBackPressedCallback(enabled = false) {
+                override fun handleOnBackPressed() {
+                    error("not implemented")
+                }
+            }
+        var changedCount = 0
+
+        repeat(times = 5) {
+            val dispatcher =
+                OnBackPressedDispatcher(
+                    fallbackOnBackPressed = null,
+                    onHasEnabledCallbacksChanged = { changedCount++ },
+                )
+            dispatcher.addCallback(callback)
+        }
+
+        callback.isEnabled = true
+
+        assertThat(changedCount).isEqualTo(5)
     }
 }

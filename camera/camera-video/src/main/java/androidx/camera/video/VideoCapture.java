@@ -1494,7 +1494,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             return;
         }
 
-        DynamicRange requestedDynamicRange = getDynamicRange();
+        DynamicRange requestedDynamicRange = config.getDynamicRange();
         int sessionType = getSessionType(config);
         Range<Integer> targetFrameRate = getTargetFrameRate(config);
         VideoCapabilities videoCapabilities = getVideoCapabilities(cameraInfo, sessionType);

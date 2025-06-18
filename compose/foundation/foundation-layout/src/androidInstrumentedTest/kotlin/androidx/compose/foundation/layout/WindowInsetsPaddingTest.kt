@@ -959,6 +959,8 @@ class WindowInsetsPaddingTest {
             bottomInset = insets.getBottom(LocalDensity.current)
         }
 
+        val insets = WindowInsetsCompat.Builder().build()
+        dispatchApplyWindowInsets(insets)
         rule.waitForIdle()
         assertThat(leftInset).isEqualTo(0)
         assertThat(topInset).isEqualTo(0)

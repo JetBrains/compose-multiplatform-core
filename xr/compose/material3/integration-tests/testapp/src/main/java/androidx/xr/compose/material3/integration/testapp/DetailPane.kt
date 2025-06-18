@@ -45,6 +45,7 @@ internal fun DetailPane(navigator: ThreePaneScaffoldNavigator<Destination>) {
         Surface(Modifier.fillMaxSize().padding(innerPadding)) {
             when (destination) {
                 Destination.Dialog -> DetailPaneDialog()
+                Destination.Toolbar -> DetailPaneToolbar()
             }
         }
     }

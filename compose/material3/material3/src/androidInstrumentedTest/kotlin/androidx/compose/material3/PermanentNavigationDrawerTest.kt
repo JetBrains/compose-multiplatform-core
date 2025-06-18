@@ -35,7 +35,6 @@ import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onParent
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -142,8 +141,8 @@ class PermanentNavigationDrawerTest {
         rule.setMaterialContent(lightColorScheme()) {
             PermanentNavigationDrawer(
                 drawerContent = {
-                    PermanentDrawerSheet {
-                        Box(Modifier.fillMaxSize().testTag("navigationDrawerTag"))
+                    PermanentDrawerSheet(modifier = Modifier.testTag("navigationDrawerTag")) {
+                        Box(Modifier.fillMaxSize())
                     }
                 },
                 content = {},
@@ -153,7 +152,6 @@ class PermanentNavigationDrawerTest {
 
         rule
             .onNodeWithTag("navigationDrawerTag", useUnmergedTree = true)
-            .onParent()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, navigationMenu))
     }
 }

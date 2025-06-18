@@ -289,7 +289,11 @@ class TimePickerTest {
             TimePicker(state)
         }
 
-        rule.onNodeWithContentDescription(contentDescription).onChildren().assertAll(isSelectable())
+        rule
+            .onNodeWithContentDescription(contentDescription)
+            .onChildren()
+            .filter(expectValue(SemanticsProperties.Role, Role.Button))
+            .assertAll(isSelectable())
     }
 
     @Test

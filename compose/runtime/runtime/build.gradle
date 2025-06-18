@@ -30,11 +30,19 @@ import org.jetbrains.kotlin.konan.target.Family
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.compose.runtime"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        compilations.withType(KotlinMultiplatformAndroidHostTestCompilation) {
+            it.returnDefaultValues = true
+        }
+    }
     desktop()
     mingwX64()
     linux()
@@ -234,14 +242,6 @@ androidXMultiplatform {
 dependencies {
     lintChecks(project(":compose:runtime:runtime-lint"))
     lintPublish(project(":compose:runtime:runtime-lint"))
-}
-
-android {
-    defaultConfig {
-        consumerProguardFiles 'proguard-rules.pro'
-    }
-    testOptions.unitTests.returnDefaultValues = true
-    namespace = "androidx.compose.runtime"
 }
 
 androidx {

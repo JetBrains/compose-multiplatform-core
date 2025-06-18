@@ -36,7 +36,8 @@ import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
 
 /**
- * CompositionLocal that enables/disables premeasurement behavior on BasicText when non-null.
+ * CompositionLocal that provides an Executor for background text processing to potentially get run
+ * on.
  *
  * BasicText premeasure is the process of using a background thread to early start metrics
  * calculation for Text composables on Android to warm up the underlying text layout cache. This
@@ -44,9 +45,9 @@ import java.util.concurrent.RejectedExecutionException
  * a frame, which gives the background thread enough time to fully calculate text metrics. This
  * approximately reduces text layout duration on main thread from 50% to 90%.
  *
- * By default this CompositionLocal provides null, which means that prefetch behavior is disabled
- * for `BasicText`. You can provide an executor like `Executors.newSingleThreadExecutor()` for
- * BasicText to schedule background tasks, by doing so also enabling prefetch behavior.
+ * By default this CompositionLocal provides null, which means that any text prefetch behavior will
+ * revert to the system default. You can provide an executor like
+ * `Executors.newSingleThreadExecutor()` for BasicText to schedule background tasks.
  *
  * Please note that prefetch text does not guarantee a net performance increase. It may actually be
  * harmful in certain scenarios where there is not enough time between composition and measurement

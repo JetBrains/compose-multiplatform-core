@@ -165,8 +165,8 @@ public object Intersection {
      */
     @JvmStatic
     public fun Segment.intersects(mesh: PartitionedMesh, meshToSegment: AffineTransform): Boolean {
-        return nativeMeshSegmentIntersects(
-            nativeMeshAddress = mesh.nativePointer,
+        return nativePartitionedMeshSegmentIntersects(
+            partitionedMeshNativePointer = mesh.nativePointer,
             segmentStartX = this.start.x,
             segmentStartY = this.start.y,
             segmentEndX = this.end.x,
@@ -260,8 +260,8 @@ public object Intersection {
         mesh: PartitionedMesh,
         meshToTriangle: AffineTransform,
     ): Boolean {
-        return nativeMeshTriangleIntersects(
-            nativeMeshAddress = mesh.nativePointer,
+        return nativePartitionedMeshTriangleIntersects(
+            partitionedMeshNativePointer = mesh.nativePointer,
             triangleP0X = this.p0.x,
             triangleP0Y = this.p0.y,
             triangleP1X = this.p1.x,
@@ -327,8 +327,8 @@ public object Intersection {
      */
     @JvmStatic
     public fun Box.intersects(mesh: PartitionedMesh, meshToBox: AffineTransform): Boolean {
-        return nativeMeshBoxIntersects(
-            nativeMeshAddress = mesh.nativePointer,
+        return nativePartitionedMeshBoxIntersects(
+            partitionedMeshNativePointer = mesh.nativePointer,
             boxXMin = this.xMin,
             boxYMin = this.yMin,
             boxXMax = this.xMax,
@@ -383,8 +383,8 @@ public object Intersection {
         mesh: PartitionedMesh,
         meshToParallelogram: AffineTransform,
     ): Boolean {
-        return nativeMeshParallelogramIntersects(
-            nativeMeshAddress = mesh.nativePointer,
+        return nativePartitionedMeshParallelogramIntersects(
+            partitionedMeshNativePointer = mesh.nativePointer,
             parallelogramCenterX = this.center.x,
             parallelogramCenterY = this.center.y,
             parallelogramWidth = this.width,
@@ -411,18 +411,18 @@ public object Intersection {
     @JvmStatic
     public fun PartitionedMesh.intersects(
         other: PartitionedMesh,
-        thisToCommonTransForm: AffineTransform,
+        thisToCommonTransform: AffineTransform,
         otherToCommonTransform: AffineTransform,
     ): Boolean {
-        return nativeMeshPartitionedMeshIntersects(
-            thisPartitionedMeshAddress = this.nativePointer,
-            otherPartitionedMeshAddress = other.nativePointer,
-            thisToCommonTransformA = thisToCommonTransForm.m00,
-            thisToCommonTransformB = thisToCommonTransForm.m10,
-            thisToCommonTransformC = thisToCommonTransForm.m20,
-            thisToCommonTransformD = thisToCommonTransForm.m01,
-            thisToCommonTransformE = thisToCommonTransForm.m11,
-            thisToCommonTransformF = thisToCommonTransForm.m21,
+        return nativePartitionedMeshPartitionedMeshIntersects(
+            thisPartitionedMeshNativePointer = this.nativePointer,
+            otherPartitionedMeshNativePointer = other.nativePointer,
+            thisToCommonTransformA = thisToCommonTransform.m00,
+            thisToCommonTransformB = thisToCommonTransform.m10,
+            thisToCommonTransformC = thisToCommonTransform.m20,
+            thisToCommonTransformD = thisToCommonTransform.m01,
+            thisToCommonTransformE = thisToCommonTransform.m11,
+            thisToCommonTransformF = thisToCommonTransform.m21,
             otherToCommonTransformA = otherToCommonTransform.m00,
             otherToCommonTransformB = otherToCommonTransform.m10,
             otherToCommonTransformC = otherToCommonTransform.m20,
@@ -593,8 +593,8 @@ public object Intersection {
         y: Float,
         meshToPoint: AffineTransform,
     ): Boolean =
-        nativeMeshVecIntersects(
-            nativeMeshAddress = nativePointer,
+        nativePartitionedMeshVecIntersects(
+            partitionedMeshNativePointer = nativePointer,
             vecX = x,
             vecY = y,
             meshToVecA = meshToPoint.m00,
@@ -841,8 +841,8 @@ public object Intersection {
     ): Boolean
 
     @UsedByNative
-    private external fun nativeMeshVecIntersects(
-        nativeMeshAddress: Long,
+    private external fun nativePartitionedMeshVecIntersects(
+        partitionedMeshNativePointer: Long,
         vecX: Float,
         vecY: Float,
         meshToVecA: Float,
@@ -854,8 +854,8 @@ public object Intersection {
     ): Boolean
 
     @UsedByNative
-    private external fun nativeMeshSegmentIntersects(
-        nativeMeshAddress: Long,
+    private external fun nativePartitionedMeshSegmentIntersects(
+        partitionedMeshNativePointer: Long,
         segmentStartX: Float,
         segmentStartY: Float,
         segmentEndX: Float,
@@ -869,8 +869,8 @@ public object Intersection {
     ): Boolean
 
     @UsedByNative
-    private external fun nativeMeshTriangleIntersects(
-        nativeMeshAddress: Long,
+    private external fun nativePartitionedMeshTriangleIntersects(
+        partitionedMeshNativePointer: Long,
         triangleP0X: Float,
         triangleP0Y: Float,
         triangleP1X: Float,
@@ -886,8 +886,8 @@ public object Intersection {
     ): Boolean
 
     @UsedByNative
-    private external fun nativeMeshBoxIntersects(
-        nativeMeshAddress: Long,
+    private external fun nativePartitionedMeshBoxIntersects(
+        partitionedMeshNativePointer: Long,
         boxXMin: Float,
         boxYMin: Float,
         boxXMax: Float,
@@ -901,8 +901,8 @@ public object Intersection {
     ): Boolean
 
     @UsedByNative
-    private external fun nativeMeshParallelogramIntersects(
-        nativeMeshAddress: Long,
+    private external fun nativePartitionedMeshParallelogramIntersects(
+        partitionedMeshNativePointer: Long,
         parallelogramCenterX: Float,
         parallelogramCenterY: Float,
         parallelogramWidth: Float,
@@ -918,9 +918,9 @@ public object Intersection {
     ): Boolean
 
     @UsedByNative
-    private external fun nativeMeshPartitionedMeshIntersects(
-        thisPartitionedMeshAddress: Long,
-        otherPartitionedMeshAddress: Long,
+    private external fun nativePartitionedMeshPartitionedMeshIntersects(
+        thisPartitionedMeshNativePointer: Long,
+        otherPartitionedMeshNativePointer: Long,
         thisToCommonTransformA: Float,
         thisToCommonTransformB: Float,
         thisToCommonTransformC: Float,

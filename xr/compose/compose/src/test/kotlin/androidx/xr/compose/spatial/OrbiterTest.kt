@@ -93,7 +93,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup {
                 Parent { Orbiter(ContentEdge.Top) { Text("Main Content") } }
-                LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                LocalSession.current?.scene?.requestHomeSpaceMode()
             }
         }
 
@@ -109,7 +109,7 @@ class OrbiterTest {
                         Text("Main Content")
                     }
                 }
-                LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                LocalSession.current?.scene?.requestHomeSpaceMode()
             }
         }
 
@@ -136,9 +136,9 @@ class OrbiterTest {
     fun orbiter_afterSwitchToFullSpaceMode_isSpatial() {
         composeTestRule.setContent {
             TestSetup {
-                LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                LocalSession.current?.scene?.requestHomeSpaceMode()
                 Parent { Orbiter(position = ContentEdge.Bottom) { Text("Bottom") } }
-                LocalSession.current?.scene?.spatialEnvironment?.requestFullSpaceMode()
+                LocalSession.current?.scene?.requestFullSpaceMode()
             }
         }
 
@@ -182,7 +182,7 @@ class OrbiterTest {
     fun orbiter_orbiterRendered() {
         composeTestRule.setContent {
             TestSetup {
-                LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                LocalSession.current?.scene?.requestHomeSpaceMode()
                 Box {
                     Text("Main Content")
                     Orbiter(ContentEdge.Start) { Text("Orbiter Content") }
@@ -200,7 +200,7 @@ class OrbiterTest {
 
         composeTestRule.setContent {
             TestSetup {
-                LocalSession.current?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                LocalSession.current?.scene?.requestHomeSpaceMode()
                 Box(modifier = Modifier.size(100.dp)) {
                     Text("Main Content")
                     if (showOrbiter) {
@@ -225,9 +225,9 @@ class OrbiterTest {
 
                 LaunchedEffect(isFullSpaceMode) {
                     if (isFullSpaceMode) {
-                        session?.scene?.spatialEnvironment?.requestFullSpaceMode()
+                        session?.scene?.requestFullSpaceMode()
                     } else {
-                        session?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                        session?.scene?.requestHomeSpaceMode()
                     }
                 }
 

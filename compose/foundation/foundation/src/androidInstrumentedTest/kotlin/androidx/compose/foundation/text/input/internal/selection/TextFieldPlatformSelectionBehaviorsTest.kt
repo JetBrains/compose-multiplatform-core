@@ -35,22 +35,30 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 @LargeTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 28)
-class TextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCommonTestCases() {
+class TextFieldPlatformSelectionBehaviorsTest(override val testLongPress: Boolean) :
+    PlatformSelectionBehaviorCommonTestCases() {
 
     private var textFieldState: TextFieldState = TextFieldState()
 
     override val selection: TextRange
         get() = textFieldState.selection
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "testLongPress={0}")
+        fun params() = arrayOf(true, false)
+    }
 
     @Composable
     override fun Content(text: String, textStyle: TextStyle, modifier: Modifier) {
@@ -60,6 +68,7 @@ class TextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCommonT
 
     @Test
     fun longPress_onEmptyRegion_notCallSuggestSelectionForLongPressOrDoubleClick() {
+        assumeTrue(testLongPress)
         rule.setTextFieldTestContent {
             Content(
                 text = "abc def",
@@ -82,7 +91,7 @@ class TextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCommonT
     }
 
     @Test
-    fun longPress_withOutputTransformation() {
+    fun withOutputTransformation() {
         val state = TextFieldState("xxx")
 
         rule.setTextFieldTestContent {
@@ -101,11 +110,8 @@ class TextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCommonT
         }
 
         // The visual text is "abc xxx def"
-        // Long press to select "xxx".
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2))
-            up()
-        }
+        // select "xxx".
+        performLongPressOrDoubleClick { Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2) }
 
         assertThat(state.selection).isEqualTo(TextRange(0, 3))
         assertThat(testPlatformSelectionBehaviors?.text).isEqualTo("abc xxx def")
@@ -114,7 +120,7 @@ class TextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCommonT
     }
 
     @Test
-    fun longPress_withCodePointTransformation() {
+    fun withCodePointTransformation() {
         val state = TextFieldState("abc xxx def")
 
         rule.setTextFieldTestContent {
@@ -131,11 +137,8 @@ class TextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCommonT
         }
 
         // The visual text is "abc xxx def"
-        // Long press to select "xxx".
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2))
-            up()
-        }
+        //  select "xxx".
+        performLongPressOrDoubleClick { Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2) }
 
         assertThat(state.selection).isEqualTo(TextRange(4, 7))
         assertThat(testPlatformSelectionBehaviors?.text).isEqualTo("abc *** def")

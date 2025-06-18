@@ -20,7 +20,7 @@ import androidx.annotation.Sampled
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.data.ProcessTextKey
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponents
+import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -32,12 +32,12 @@ private data object ClearKeyDataObject
 
 @Sampled
 @Composable
-fun AddComponentsToTextContextMenu() {
+fun AppendComponentsToTextContextMenu() {
     val textFieldState = rememberTextFieldState()
     BasicTextField(
         state = textFieldState,
         modifier =
-            Modifier.addTextContextMenuComponents {
+            Modifier.appendTextContextMenuComponents {
                 separator()
                 item(key = ClearKeyDataObject, label = "Clear") {
                     textFieldState.clearText()
@@ -63,13 +63,13 @@ fun AddFilterToTextContextMenu() {
 
 @Sampled
 @Composable
-fun AddItemToTextContextMenuAndroid() {
+fun AppendItemToTextContextMenuAndroid() {
     val textFieldState = rememberTextFieldState()
     val label = stringResource(R.string.context_menu_clear)
     BasicTextField(
         state = textFieldState,
         modifier =
-            Modifier.addTextContextMenuComponents {
+            Modifier.appendTextContextMenuComponents {
                 separator()
                 item(
                     key = ClearKeyDataObject,

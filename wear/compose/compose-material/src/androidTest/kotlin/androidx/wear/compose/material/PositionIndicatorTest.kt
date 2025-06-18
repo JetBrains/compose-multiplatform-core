@@ -800,9 +800,10 @@ public class PositionIndicatorTest {
         assertThat(visibleItemsInfo.first().index).isEqualTo(firstItemIndex)
         assertThat(visibleItemsInfo.last().index).isEqualTo(lastItemIndex)
         assertThat(
-            (viewPortHeight / 2f) >=
-                (visibleItemsInfo.last().offset + (visibleItemsInfo.last().size / 2))
-        )
+                (viewPortHeight / 2f) >=
+                    (visibleItemsInfo.last().offset + (visibleItemsInfo.last().size / 2))
+            )
+            .isTrue()
     }
 }
 
@@ -1063,8 +1064,9 @@ public class PositionIndicatorWithMaterialSLCTest {
         assertThat(visibleItemsInfo.first().index).isEqualTo(firstItemIndex)
         assertThat(visibleItemsInfo.last().index).isEqualTo(lastItemIndex)
         assertThat(
-            (viewPortHeight / 2f) >=
-                (visibleItemsInfo.last().offset + (visibleItemsInfo.last().size / 2))
-        )
+                (viewPortHeight / 2f) >=
+                    (visibleItemsInfo.last().offset + (visibleItemsInfo.last().size / 2))
+            )
+            .isTrue()
     }
 }

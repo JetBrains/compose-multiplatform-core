@@ -58,6 +58,9 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     @ContentSecurityLevel
     private int mContentSecurityLevel = SurfaceEntity.ContentSecurityLevel.NONE;
 
+    @SuperSampling
+    private int mSuperSampling = SurfaceEntity.SuperSampling.DEFAULT;
+
     private CanvasShape mCanvasShape;
     private float mFeatherRadiusX = 0.0f;
     private float mFeatherRadiusY = 0.0f;
@@ -85,6 +88,24 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
         }
     }
 
+    // Converts SurfaceEntity's SuperSampling to a boolean for Impress.
+    private static boolean toImpressSuperSampling(
+            @SuperSampling int superSampling) {
+        switch (superSampling) {
+            case SuperSampling.NONE:
+                return false;
+            case SuperSampling.DEFAULT:
+                return true;
+            default:
+                Log.e(
+                        "SurfaceEntityImpl",
+                        "Unsupported super sampling value: "
+                                + superSampling
+                                + ". Defaulting to true (DEFAULT).");
+                return true;
+        }
+    }
+
     SurfaceEntityImpl(
             Entity parentEntity,
             ImpressApi impressApi,
@@ -94,17 +115,16 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
             ScheduledExecutorService executor,
             @StereoMode int stereoMode,
             CanvasShape canvasShape,
-            @ContentSecurityLevel int contentSecurityLevel) {
+            @ContentSecurityLevel int contentSecurityLevel,
+            @SuperSampling int superSampling) {
         super(extensions.createNode(), extensions, entityManager, executor);
         mImpressApi = impressApi;
         mSplitEngineSubspaceManager = splitEngineSubspaceManager;
         mStereoMode = stereoMode;
         mContentSecurityLevel = contentSecurityLevel;
+        mSuperSampling = superSampling;
         mCanvasShape = canvasShape;
         setParent(parentEntity);
-
-        // TODO(b/377906324): - Punt this logic to the UI thread, so that applications can create
-        // StereoSurface entities from any thread.
 
         // System will only render Impress nodes that are parented by this subspace node.
         mSubspaceImpressNode = impressApi.createImpressNode();
@@ -120,7 +140,9 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
         // This is broken up into two steps to limit the size of the Impress Surface
         mEntityImpressNode =
                 mImpressApi.createStereoSurface(
-                        stereoMode, toImpressContentSecurityLevel(mContentSecurityLevel));
+                        stereoMode,
+                        toImpressContentSecurityLevel(mContentSecurityLevel),
+                        toImpressSuperSampling(mSuperSampling));
         setCanvasShape(mCanvasShape);
 
         // The CPM node hierarchy is: Entity CPM node --- parent of ---> Subspace CPM node.
@@ -136,8 +158,6 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
     @Override
     public void setCanvasShape(CanvasShape canvasShape) {
-        // TODO(b/377906324): - Punt this logic to the UI thread, so that applications can call this
-        // method from any thread.
         mCanvasShape = canvasShape;
 
         if (mCanvasShape instanceof CanvasShape.Quad) {
@@ -159,8 +179,6 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     @SuppressWarnings("ObjectToString")
     @Override
     public void dispose() {
-        // TODO(b/377906324): - Punt this logic to the UI thread, so that applications can destroy
-        // StereoSurface entities from any thread.
         // The subspace impress node will be destroyed when the subspace is deleted.
         mSplitEngineSubspaceManager.deleteSubspace(mSubspace.subspaceId);
         super.dispose();
@@ -209,7 +227,7 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
     @Override
     public Surface getSurface() {
-        // TODO(b/377906324) - Either cache the surface in the constructor, or change this interface
+        // TODO Either cache the surface in the constructor, or change this interface
         // to
         // return a Future.
         return mImpressApi.getSurfaceFromStereoSurface(mEntityImpressNode);

@@ -120,7 +120,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                     }
                 },
             )
-        lifecycle.addObserver(sessionHelper)
+        sessionHelper.tryCreateSession()
     }
 
     private fun createTargetPanel() {

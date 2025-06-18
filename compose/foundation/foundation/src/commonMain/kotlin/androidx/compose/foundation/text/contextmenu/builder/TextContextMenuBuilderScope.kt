@@ -20,13 +20,13 @@ import androidx.collection.mutableObjectListOf
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSeparator
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponents
+import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
 
 /**
  * Scope for building a text context menu in
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents]. See member functions for
- * how to add context menu components to this scope as part of the
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] modifier. The `item`
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents]. See member functions
+ * for how to add context menu components to this scope as part of the
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] modifier. The `item`
  * function is not in the common source set, but is instead defined as an extension function in the
  * platform specific source sets.
  */

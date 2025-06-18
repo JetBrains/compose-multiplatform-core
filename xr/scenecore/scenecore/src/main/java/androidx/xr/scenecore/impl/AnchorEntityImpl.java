@@ -529,7 +529,6 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         }
     }
 
-    // TODO: b/360168321 Use the OpenXrPosableHelper when retrieving the pose in world space.
     @NonNull
     @Override
     public Pose getActivitySpacePose() {

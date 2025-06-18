@@ -115,7 +115,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                     lifecycleScope.launch { session.state.collect { updatePlaneEntity() } }
                 },
             )
-        lifecycle.addObserver(sessionHelper)
+        sessionHelper.tryCreateSession()
     }
 
     private fun createTargetPanel() {

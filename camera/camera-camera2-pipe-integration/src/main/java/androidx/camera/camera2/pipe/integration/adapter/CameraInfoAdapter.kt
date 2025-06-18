@@ -20,7 +20,6 @@ import android.annotation.SuppressLint
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_ON
-import android.hardware.camera2.CameraCharacteristics.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
 import android.os.Build
 import android.util.Range
 import android.util.Size
@@ -32,6 +31,7 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.maxTorchStrengthLev
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsHighSpeedVideo
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLogicalMultiCamera
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPreviewStabilization
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateReprocessing
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
 import androidx.camera.camera2.pipe.CameraPipe
@@ -320,13 +320,7 @@ constructor(
     }
 
     override fun isPreviewStabilizationSupported(): Boolean {
-        val availableVideoStabilizationModes =
-            cameraProperties.metadata[
-                    CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES]
-        return availableVideoStabilizationModes != null &&
-            availableVideoStabilizationModes.contains(
-                CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-            )
+        return cameraProperties.metadata.supportsPreviewStabilization
     }
 
     override fun isVideoStabilizationSupported(): Boolean {
@@ -376,7 +370,6 @@ constructor(
     }
 
     public companion object {
-
         public fun <T : Any> CameraInfo.unwrapAs(type: KClass<T>): T? =
             when (this) {
                 is UnsafeWrapper -> this.unwrapAs(type)

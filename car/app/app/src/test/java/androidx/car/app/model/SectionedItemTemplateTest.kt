@@ -87,6 +87,27 @@ class SectionedItemTemplateTest {
     }
 
     @Test
+    fun getScrollStatePersistenceStrategy() {
+        val template =
+            SectionedItemTemplate.Builder()
+                .setScrollStatePersistenceStrategy(
+                    SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX
+                )
+                .build()
+
+        assertThat(template.scrollStatePersistenceStrategy)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
+    }
+
+    @Test
+    fun getScrollStatePersistenceStrategy_defaultValue_returnsResetToTop() {
+        val template = SectionedItemTemplate.Builder().build()
+
+        assertThat(template.scrollStatePersistenceStrategy)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_RESET_TO_TOP)
+    }
+
+    @Test
     fun build_throwsException_whenLoadingAndContainsSections() {
         try {
             SectionedItemTemplate.Builder()
@@ -199,6 +220,7 @@ class SectionedItemTemplateTest {
             .setHeader(testHeader)
             .setActions(testActions)
             .setAlphabeticalIndexingAllowed(true)
+            .setScrollStatePersistenceStrategy(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
             .build()
 
     private fun buildTemplate(block: SectionedItemTemplate.Builder.() -> Unit = {}) =

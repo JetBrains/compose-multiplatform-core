@@ -254,7 +254,13 @@ class CameraInfoAdapterTest {
                     )
             )
 
-        assertThat(cameraInfo.isPreviewStabilizationSupported).isTrue()
+        assertThat(cameraInfo.isPreviewStabilizationSupported).apply {
+            if (Build.VERSION.SDK_INT >= 33) {
+                isTrue()
+            } else {
+                isFalse()
+            }
+        }
     }
 
     @Test

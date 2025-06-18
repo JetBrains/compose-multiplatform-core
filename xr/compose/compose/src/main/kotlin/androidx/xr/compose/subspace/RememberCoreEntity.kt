@@ -26,12 +26,14 @@ import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.layout.CoreContentlessEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
+import androidx.xr.compose.subspace.layout.CoreSphereSurfaceEntity
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
 import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
+import androidx.xr.scenecore.scene
 
 /**
  * Creates a [CoreContentlessEntity] that is automatically disposed of when it leaves the
@@ -80,6 +82,31 @@ internal inline fun rememberCoreSurfaceEntity(
     val coreEntity by remember {
         disposableValueOf(CoreSurfaceEntity(session.entityFactory(), density)) { it.dispose() }
     }
+    return coreEntity
+}
+
+/**
+ * Creates a [CoreSphereSurfaceEntity] that is automatically disposed of when it leaves the
+ * composition.
+ */
+@Composable
+internal inline fun rememberCoreSphereSurfaceEntity(
+    crossinline entityFactory: @DisallowComposableCalls Session.() -> SurfaceEntity
+): CoreSphereSurfaceEntity {
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val density = LocalDensity.current
+    val coreEntity by remember {
+        disposableValueOf(
+            CoreSphereSurfaceEntity(
+                session.entityFactory(),
+                session.scene.spatialUser.head?.activitySpacePose,
+                density,
+            )
+        ) {
+            it.dispose()
+        }
+    }
+
     return coreEntity
 }
 

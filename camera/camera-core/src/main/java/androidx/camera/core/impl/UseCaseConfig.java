@@ -16,6 +16,8 @@
 
 package androidx.camera.core.impl;
 
+import static java.util.Objects.requireNonNull;
+
 import android.util.Range;
 
 import androidx.camera.core.ExtendableBuilder;
@@ -29,8 +31,6 @@ import androidx.camera.core.internal.TargetConfig;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-
-import java.util.Objects;
 
 /**
  * Configuration containing options for use cases.
@@ -90,6 +90,12 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
      */
     Option<Range<Integer>> OPTION_TARGET_FRAME_RATE =
             Config.Option.create("camerax.core.useCase.targetFrameRate", Range.class);
+
+    /**
+     * Option: camerax.core.useCase.isStrictFrameRateRequired
+     */
+    Option<Boolean> OPTION_IS_STRICT_FRAME_RATE_REQUIRED =
+            Config.Option.create("camerax.core.useCase.isStrictFrameRateRequired", Boolean.class);
 
     /**
      * Option: camerax.core.useCase.zslDisabled
@@ -302,6 +308,10 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
         return retrieveOption(OPTION_TARGET_FRAME_RATE, valueIfMissing);
     }
 
+    default boolean isStrictFrameRateRequired() {
+        return requireNonNull(retrieveOption(OPTION_IS_STRICT_FRAME_RATE_REQUIRED, false));
+    }
+
     /**
      * Retrieves the target frame rate
      *
@@ -362,7 +372,7 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
      * @return The {@link TakePictureManager} implementation for {@link ImageCapture} use case.
      */
     default TakePictureManager.@NonNull Provider getTakePictureManagerProvider() {
-        return Objects.requireNonNull(retrieveOption(OPTION_TAKE_PICTURE_MANAGER_PROVIDER,
+        return requireNonNull(retrieveOption(OPTION_TAKE_PICTURE_MANAGER_PROVIDER,
                 new TakePictureManager.Provider() {
                     @Override
                     public @NonNull TakePictureManager newInstance(

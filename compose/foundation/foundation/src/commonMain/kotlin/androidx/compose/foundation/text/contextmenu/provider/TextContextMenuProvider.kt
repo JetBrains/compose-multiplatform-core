@@ -17,7 +17,7 @@
 package androidx.compose.foundation.text.contextmenu.provider
 
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponents
+import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
@@ -34,7 +34,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
  * [CompositionLocalProvider].
  *
  * If you want to modify the contents of the context menu, see
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] and
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] and
  * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents]
  */
 interface TextContextMenuProvider {

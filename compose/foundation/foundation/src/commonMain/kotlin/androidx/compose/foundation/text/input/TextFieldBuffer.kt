@@ -17,6 +17,7 @@
 package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList
 import androidx.compose.foundation.text.input.internal.ChangeTracker
@@ -25,8 +26,9 @@ import androidx.compose.foundation.text.input.internal.PartialGapBuffer
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.coerceIn
 import androidx.compose.ui.util.fastForEach
 import kotlin.jvm.JvmName
 
@@ -470,6 +472,46 @@ internal constructor(
     private fun requireValidRange(range: TextRange) {
         val validRange = TextRange(0, length)
         requirePrecondition(range in validRange) { "Expected $range to be in $validRange" }
+    }
+
+    internal var outputTransformationAnnotations: MutableList<PlacedAnnotation>? = null
+
+    internal fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int) {
+        checkPrecondition(offsetMappingCalculator != null) {
+            "You can add styling to a [TextFieldBuffer] only from an [OutputTransformation]."
+        }
+        if (outputTransformationAnnotations == null) {
+            outputTransformationAnnotations = mutableListOf()
+        }
+        outputTransformationAnnotations?.add(AnnotatedString.Range(annotation, start, end))
+    }
+
+    /**
+     * Adds the given [spanStyle] to the text between [start] and [end] on this buffer.
+     *
+     * Caution: You should only use this function from an [OutputTransformation]. Styling is not yet
+     * supported by [InputTransformation] or [TextFieldState]. Any added styling by
+     * [OutputTransformation] will be presented to the user without being part of the state.
+     *
+     * Also, the added styling is not tracked by this [TextFieldBuffer] if further edits are made.
+     * Please call this function after text content is finalized.
+     */
+    fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) {
+        addAnnotation(spanStyle, start, end)
+    }
+
+    /**
+     * Adds the given [paragraphStyle] to the text between [start] and [end] on this buffer.
+     *
+     * Caution: You should only use this function from an [OutputTransformation]. Styling is not yet
+     * supported by [InputTransformation] or [TextFieldState]. Any added styling by
+     * [OutputTransformation] will be presented to the user without being part of the state.
+     *
+     * Also, the added styling is not tracked by this [TextFieldBuffer] if further edits are made.
+     * Please call this function after text content is finalized.
+     */
+    fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) {
+        addAnnotation(paragraphStyle, start, end)
     }
 
     /**

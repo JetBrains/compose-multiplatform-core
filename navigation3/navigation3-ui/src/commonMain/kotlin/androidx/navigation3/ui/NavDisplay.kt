@@ -51,6 +51,7 @@ import androidx.navigation3.ui.NavDisplay.DEFAULT_TRANSITION_DURATION_MILLISECON
 import androidx.navigation3.ui.NavDisplay.POP_TRANSITION_SPEC
 import androidx.navigation3.ui.NavDisplay.PREDICTIVE_POP_TRANSITION_SPEC
 import androidx.navigation3.ui.NavDisplay.TRANSITION_SPEC
+import androidx.navigationevent.compose.NavigationEventHandler
 import kotlin.reflect.KClass
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch

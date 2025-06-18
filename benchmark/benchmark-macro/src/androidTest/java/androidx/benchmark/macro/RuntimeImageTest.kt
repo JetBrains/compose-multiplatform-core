@@ -16,24 +16,23 @@
 
 package androidx.benchmark.macro
 
-import android.annotation.SuppressLint
 import androidx.benchmark.DeviceInfo
 import androidx.benchmark.json.BenchmarkData.TestResult.SingleMetricResult
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import kotlin.test.assertTrue
+import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SdkSuppress(minSdkVersion = 35) // Currently can fail on 31-34, see b/372921569
+@SdkSuppress(minSdkVersion = 31)
 @RunWith(AndroidJUnit4::class)
 class RuntimeImageTest {
     private val className = RuntimeImageTest::class.java.name
     private val iterCount = 3
 
-    @SuppressLint("BanThreadSleep")
     private fun captureRecyclerViewListStartupMetrics(
         testName: String
     ): Map<String, SingleMetricResult> =
@@ -58,10 +57,8 @@ class RuntimeImageTest {
                     if (iteration != iterCount - 1) {
                         // For every iter but last we wait for the runtime image flush. Subsequent
                         // iterations will then be able to observe runtime image presence via class
-                        // loading counts. Unfortunately, there's no way to force runtime image
-                        // flush (b/372921569) other than waiting, though we skip it on the last
-                        // iter to save some time
-                        Thread.sleep(5000)
+                        // loading counts. We at least save the delay on last iteration.
+                        DeviceInfo.sleepToAwaitRuntimeImageFlush()
                     }
                 },
             )
@@ -70,6 +67,10 @@ class RuntimeImageTest {
     @LargeTest
     @Test
     fun classLoadCount() {
+        assumeFalse(
+            "Test requires that we don't poison the Runtime image",
+            DeviceInfo.poisonTheRuntimeImage,
+        )
         assumeTrue("Test requires runtime image support", DeviceInfo.supportsRuntimeImages)
         assumeTrue("Test requires class load tracing", DeviceInfo.supportsClassLoadTracing)
 

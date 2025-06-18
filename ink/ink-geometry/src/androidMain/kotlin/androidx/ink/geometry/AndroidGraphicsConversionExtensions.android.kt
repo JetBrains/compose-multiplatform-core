@@ -23,7 +23,6 @@ import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
 import androidx.annotation.IntRange
-import androidx.annotation.RestrictTo
 import androidx.ink.geometry.internal.threadLocal
 
 /** Scratch space to be used as the argument to [Matrix.getValues] and [Matrix.setValues]. */
@@ -41,7 +40,6 @@ private val populateOutlinePositionScratchMutableVec by threadLocal { MutableVec
  * Performance-sensitive code should use the [populateMatrix] overload that takes a pre-allocated
  * [Matrix], so that the instance can be reused across multiple calls.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun AffineTransform.toMatrix(): Matrix {
     getValues(matrixValuesScratchArray)
     matrixValuesScratchArray[Matrix.MPERSP_0] = 0f
@@ -57,7 +55,6 @@ public fun AffineTransform.toMatrix(): Matrix {
  *
  * @return [out]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun AffineTransform.populateMatrix(out: Matrix) {
     getValues(matrixValuesScratchArray)
     matrixValuesScratchArray[Matrix.MPERSP_0] = 0f
@@ -77,7 +74,6 @@ public fun AffineTransform.populateMatrix(out: Matrix) {
  * Java callers should prefer `AndroidGraphicsConverter.createAffineTransform(Matrix)`
  * ([createAffineTransform]).
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun ImmutableAffineTransform.Companion.from(matrix: Matrix): ImmutableAffineTransform? {
     if (!matrix.isAffine) {
         return null
@@ -96,7 +92,6 @@ public fun ImmutableAffineTransform.Companion.from(matrix: Matrix): ImmutableAff
  *
  * Kotlin callers should prefer [ImmutableAffineTransform.Companion.from].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun createAffineTransform(matrix: Matrix): ImmutableAffineTransform? =
     ImmutableAffineTransform.from(matrix)
 
@@ -110,7 +105,6 @@ public fun createAffineTransform(matrix: Matrix): ImmutableAffineTransform? =
  * @return `this`
  * @throws [IllegalArgumentException] if [matrix] is not an affine transform.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun MutableAffineTransform.populateFrom(matrix: Matrix): MutableAffineTransform {
     if (!matrix.isAffine) {
         throw IllegalArgumentException("Matrix is not affine")
@@ -121,7 +115,6 @@ public fun MutableAffineTransform.populateFrom(matrix: Matrix): MutableAffineTra
 }
 
 /** Constructs a [PointF] with the same coordinates as the [Vec] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun Vec.toPointF(): PointF = PointF(x, y)
 
 /**
@@ -131,7 +124,6 @@ public fun Vec.toPointF(): PointF = PointF(x, y)
  *
  * @return [out]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun Vec.populatePointF(out: PointF): PointF {
     out.x = x
     out.y = y
@@ -143,7 +135,6 @@ public fun Vec.populatePointF(out: PointF): PointF {
  *
  * Java callers should prefer `AndroidGraphicsConverter.createVec(PointF)`([createVec]).
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun ImmutableVec.Companion.from(point: PointF): ImmutableVec = ImmutableVec(point.x, point.y)
 
 /**
@@ -151,7 +142,6 @@ public fun ImmutableVec.Companion.from(point: PointF): ImmutableVec = ImmutableV
  *
  * Kotlin callers should prefer [ImmutableVec.Companion.from].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun createVec(point: PointF): ImmutableVec = ImmutableVec(point.x, point.y)
 
 /**
@@ -161,7 +151,6 @@ public fun createVec(point: PointF): ImmutableVec = ImmutableVec(point.x, point.
  *
  * @return `this`
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun MutableVec.populateFrom(point: PointF): MutableVec {
     x = point.x
     y = point.y
@@ -169,7 +158,6 @@ public fun MutableVec.populateFrom(point: PointF): MutableVec {
 }
 
 /** Constructs a [Rect] with the same coordinates as the [Box] */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun Box.toRectF(): RectF = RectF(xMin, yMin, xMax, yMax)
 
 /**
@@ -179,7 +167,6 @@ public fun Box.toRectF(): RectF = RectF(xMin, yMin, xMax, yMax)
  *
  * @return [out]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun Box.populateRectF(out: RectF): RectF {
     out.left = xMin
     out.top = yMin
@@ -195,7 +182,6 @@ public fun Box.populateRectF(out: RectF): RectF {
  *
  * Java callers should prefer `AndroidGraphicsConverter.createBox`([createBox]).
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun ImmutableBox.Companion.from(rect: RectF): ImmutableBox? =
     if (rect.isEmpty) {
         null
@@ -210,7 +196,6 @@ public fun ImmutableBox.Companion.from(rect: RectF): ImmutableBox? =
  *
  * Kotlin callers should prefer [ImmutableBox.Companion.from].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun createBox(rect: RectF): ImmutableBox? = ImmutableBox.from(rect)
 
 /**
@@ -221,7 +206,6 @@ public fun createBox(rect: RectF): ImmutableBox? = ImmutableBox.from(rect)
  *
  * @return `this`
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun BoxAccumulator.add(rect: RectF): BoxAccumulator {
     if (!rect.isEmpty) {
         boxAccumulatorScratchMutableBox.setXBounds(rect.left, rect.right)
@@ -232,7 +216,6 @@ public fun BoxAccumulator.add(rect: RectF): BoxAccumulator {
 }
 
 /** Returns a [Path] containing the outlines in the render group at [renderGroupIndex]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun PartitionedMesh.outlinesToPath(@IntRange(from = 0) renderGroupIndex: Int): Path =
     populateOutlines(renderGroupIndex, Path())
 
@@ -243,7 +226,6 @@ public fun PartitionedMesh.outlinesToPath(@IntRange(from = 0) renderGroupIndex: 
  *
  * @return [out]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public fun PartitionedMesh.populateOutlines(
     @IntRange(from = 0) renderGroupIndex: Int,
     out: Path,

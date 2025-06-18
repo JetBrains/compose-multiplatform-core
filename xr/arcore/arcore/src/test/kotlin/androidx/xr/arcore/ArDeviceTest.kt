@@ -16,21 +16,21 @@
 
 package androidx.xr.arcore
 
-import android.app.Activity
-import android.content.ContentResolver
-import androidx.test.core.app.ActivityScenario
+import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.runtime.testing.FakeLifecycleManager
 import androidx.xr.runtime.testing.FakePerceptionManager
 import androidx.xr.runtime.testing.FakeRuntimeArDevice
+import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -38,60 +38,70 @@ import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
+import org.robolectric.Robolectric
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
 class ArDeviceTest {
 
-    private lateinit var xrResourcesManager: XrResourcesManager
+    private lateinit var activityController: ActivityController<ComponentActivity>
+    private lateinit var activity: ComponentActivity
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var testScope: TestScope
     private lateinit var session: Session
-
-    private lateinit var mockContentResolver: ContentResolver
+    private lateinit var xrResourcesManager: XrResourcesManager
 
     @Before
     fun setUp() {
-        xrResourcesManager = XrResourcesManager()
         testDispatcher = StandardTestDispatcher()
         testScope = TestScope(testDispatcher)
-        mockContentResolver = mock<ContentResolver>()
+        activityController = Robolectric.buildActivity(ComponentActivity::class.java)
+        activity = activityController.get()
+        xrResourcesManager = XrResourcesManager()
+
+        val shadowApplication = shadowOf(activity.application)
+        FakeLifecycleManager.TestPermissions.forEach { permission ->
+            shadowApplication.grantPermissions(permission)
+        }
+
+        FakeRuntimeFactory.hasCreatePermission = true
+        activityController.create()
+
+        session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
+        session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
     }
 
-    @After
-    fun tearDown() {
-        xrResourcesManager.clear()
-    }
-
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun getInstance_returnsHeadPose() =
-        createTestSessionAndRunTest(testDispatcher) {
-            runTest(testDispatcher) {
-                val expectedDevicePose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
-                session.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
-                val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
-                check(ArDevice.getInstance(session).state.value.devicePose == Pose())
+        runTest(testDispatcher) {
+            val expectedDevicePose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
+            val underTest = ArDevice.getInstance(session)
+            check(underTest.state.value.devicePose == Pose())
+            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val runtimeArDevice = perceptionManager.arDevice
 
-                val runtimeArDevice = perceptionManager.arDevice
-                runtimeArDevice.devicePose = expectedDevicePose
-                awaitNewCoreState(session, testScope)
+            runtimeArDevice.devicePose = expectedDevicePose
+            activityController.resume()
+            advanceUntilIdle()
+            activityController.pause()
 
-                assertThat(ArDevice.getInstance(session).state.value.devicePose)
-                    .isEqualTo(expectedDevicePose)
-            }
+            assertThat(underTest.state.value.devicePose).isEqualTo(expectedDevicePose)
         }
 
     @Test
-    fun getInstance_deviceTrackingDisabled_throwsIllegalStateException() =
-        createTestSessionAndRunTest(testDispatcher) {
-            session.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
+    fun getInstance_headTrackingDisabled_throwsIllegalStateException() {
+        val configureResult =
+            session.configure(Config(headTracking = Config.HeadTrackingMode.DISABLED))
+        check(configureResult is SessionConfigureSuccess)
 
-            assertFailsWith<IllegalStateException> { ArDevice.getInstance(session) }
-        }
+        assertFailsWith<IllegalStateException> { ArDevice.getInstance(session) }
+    }
 
     @Test
     fun update_stateMatchesRuntimeArDevice() = runBlocking {
@@ -99,33 +109,10 @@ class ArDeviceTest {
         val runtimeArDevice = FakeRuntimeArDevice()
         val underTest = ArDevice(runtimeArDevice)
         check(underTest.state.value.devicePose == Pose())
-
         runtimeArDevice.devicePose = expectedDevicePose
+
         underTest.update()
 
         assertThat(underTest.state.value.devicePose).isEqualTo(expectedDevicePose)
-    }
-
-    private fun createTestSessionAndRunTest(
-        coroutineDispatcher: CoroutineDispatcher = StandardTestDispatcher(),
-        testBody: () -> Unit,
-    ) {
-        ActivityScenario.launch(Activity::class.java).use {
-            it.onActivity { activity ->
-                session =
-                    (Session.create(activity, coroutineDispatcher) as SessionCreateSuccess).session
-                xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
-
-                testBody()
-            }
-        }
-    }
-
-    /** Resumes and pauses the session just enough to emit a new CoreState. */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun awaitNewCoreState(session: Session, testScope: TestScope) {
-        session.resume()
-        testScope.advanceUntilIdle()
-        session.pause()
     }
 }

@@ -64,6 +64,7 @@ open class IdentityCredentialApiHiddenActivity : Activity() {
             )
 
         if (pendingIntent != null) {
+            mWaitingForActivityResult = true
             startIntentSenderForResult(
                 pendingIntent.intentSender,
                 /* requestCode= */ CredentialProviderBaseController.Companion

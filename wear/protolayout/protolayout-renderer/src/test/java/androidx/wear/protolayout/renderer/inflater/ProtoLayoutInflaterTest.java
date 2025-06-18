@@ -3231,9 +3231,9 @@ public class ProtoLayoutInflaterTest {
         // Manually set more lines because StaticLayout otherwise reports lineCount as 1.
         String textContents =
                 "Text that is very\n"
-                    + "large so it will go to many lines\n"
-                    + " and it will\n"
-                    + " overflow a lot";
+                        + "large so it will go to many lines\n"
+                        + " and it will\n"
+                        + " overflow a lot";
         Text.Builder text1 =
                 Text.newBuilder()
                         .setLineHeight(sp(16)) // Translates to around 35px or more

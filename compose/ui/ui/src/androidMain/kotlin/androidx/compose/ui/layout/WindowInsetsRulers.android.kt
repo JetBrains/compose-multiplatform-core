@@ -22,9 +22,6 @@ import android.graphics.Rect
 import android.os.Build
 import android.view.View
 import android.view.View.OnAttachStateChangeListener
-import android.view.animation.Interpolator
-import androidx.annotation.FloatRange
-import androidx.annotation.IntRange
 import androidx.collection.IntObjectMap
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.MutableObjectList
@@ -67,59 +64,7 @@ import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsAnimationCompat.BoundsCompat
 import androidx.core.view.WindowInsetsCompat
 
-/** Provides properties related to animating [WindowInsetsRulers]. */
-actual sealed interface WindowInsetsAnimationProperties {
-    /**
-     * The starting insets values of the animation when the insets are animating ([isAnimating] is
-     * `true`). When the insets are not animating, no ruler values will be provided.
-     *
-     * @sample androidx.compose.ui.samples.SourceAndTargetInsetsSample
-     */
-    actual val source: RectRulers
-    /**
-     * The ending insets values of the animation when the insets are animating ([isAnimating] is
-     * `true`). When the insets are not animating, no ruler values will be provided.
-     *
-     * @sample androidx.compose.ui.samples.SourceAndTargetInsetsSample
-     */
-    actual val target: RectRulers
-
-    /**
-     * True when the Window Insets are visible. For example, for [StatusBars], when a status bar is
-     * shown, [isVisible] will be `true`. When the status bar is hidden, [isVisible] will be
-     * `false`. [isVisible] remains `true` during animations. When running on devices with API Level
-     * 29 and before, the value is an approximation based on the information available. This is
-     * especially true for the [Ime], which currently only works when running on devices with SDK
-     * level 23 and above.
-     */
-    actual val isVisible: Boolean
-
-    /** True when the Window Insets are currently being animated. */
-    actual val isAnimating: Boolean
-
-    /**
-     * The current fraction of the animation if the Window Insets are being animated or `0` if
-     * [isAnimating] is `false`. When animating, [fraction] typically ranges between `0` at the
-     * start to `1` at the end, but it may go out of that range if an [Interpolator] causes the
-     * fraction to overshoot the range.
-     */
-    actual val fraction: Float
-
-    /** The duration of the animation. */
-    @get:IntRange(from = 0) actual val durationMillis: Long
-
-    /**
-     * The translucency of the animating window. This is used when Window Insets animate by fading
-     * and can be used to have content match the fade.
-     *
-     * @sample androidx.compose.ui.samples.InsetsRulersAlphaSample
-     */
-    @get:FloatRange(from = 0.0, to = 1.0)
-    val alpha: Float
-        get() = 1f
-}
-
-internal class WindowWindowInsetsAnimationValues(name: String) : WindowInsetsAnimationProperties {
+internal class WindowWindowInsetsAnimationValues(name: String) : PlatformWindowInsetsAnimation {
     override var isVisible: Boolean by mutableStateOf(true)
     override var isAnimating: Boolean by mutableStateOf(false)
     override var fraction: Float by mutableFloatStateOf(0f)
@@ -135,7 +80,7 @@ internal class WindowWindowInsetsAnimationValues(name: String) : WindowInsetsAni
      * The value of the Window Insets when they are visible. [WindowInsetsRulers.Ime] never provides
      * this value.
      */
-    var rulersIgnoringVisibility = UnsetValueInsets
+    var maximum = UnsetValueInsets
 
     /** The starting insets value of the animation when [isAnimating] is `true`. */
     var sourceValueInsets = UnsetValueInsets
@@ -160,18 +105,18 @@ internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope)
 internal actual fun findInsetsAnimationProperties(
     placementScope: Placeable.PlacementScope,
     windowInsetsRulers: WindowInsetsRulers,
-): WindowInsetsAnimationProperties {
+): WindowInsetsAnimation {
     var node = placementScope.coordinates?.findRootCoordinates() as? NodeCoordinator
     while (node != null) {
         node.visitNodes(Nodes.Traversable) { traversableNode ->
             if (traversableNode.traverseKey === RulerKey) {
                 return (traversableNode as RulerProviderModifierNode)
-                    .insetsValues[windowInsetsRulers] ?: NoAnimationProperties
+                    .insetsValues[windowInsetsRulers] ?: NoWindowInsetsAnimation
             }
         }
         node = node.wrapped
     }
-    return NoAnimationProperties // nothing set
+    return NoWindowInsetsAnimation // nothing set
 }
 
 /** Applies the rulers for window insets. */
@@ -240,12 +185,7 @@ private class RulerProviderModifierNode(insetsListener: InsetsListener) :
                 provideInsetsValues(values.source, values.sourceValueInsets, width, height)
                 provideInsetsValues(values.target, values.targetValueInsets, width, height)
             }
-            provideInsetsValues(
-                rulers.rulersIgnoringVisibility,
-                values.rulersIgnoringVisibility,
-                width,
-                height,
-            )
+            provideInsetsValues(rulers.maximum, values.maximum, width, height)
         }
         if (cutoutRects.isNotEmpty()) {
             cutoutRects.forEachIndexed { index, rectState ->
@@ -466,7 +406,7 @@ internal class InsetsListener(val composeView: AndroidComposeView) :
             val values = insetsValues[rulers]!!
             if (type != WindowInsetsCompat.Type.ime()) {
                 val insetsValue = ValueInsets(insets.getInsetsIgnoringVisibility(type))
-                values.rulersIgnoringVisibility = insetsValue
+                values.maximum = insetsValue
             }
             values.isVisible = insets.isVisible(type)
         }
@@ -479,7 +419,7 @@ internal class InsetsListener(val composeView: AndroidComposeView) :
             }
         val waterfallInsets = insetsValues[Waterfall]!!
         waterfallInsets.current = waterfall
-        waterfallInsets.rulersIgnoringVisibility = waterfall
+        waterfallInsets.maximum = waterfall
         val cutoutInsets =
             if (cutout == null) {
                 ZeroValueInsets
@@ -490,7 +430,7 @@ internal class InsetsListener(val composeView: AndroidComposeView) :
             }
         val displayCutoutInsets = insetsValues[DisplayCutout]!!
         displayCutoutInsets.current = cutoutInsets
-        displayCutoutInsets.rulersIgnoringVisibility = cutoutInsets
+        displayCutoutInsets.maximum = cutoutInsets
         if (cutout == null) {
             if (displayCutouts.size > 0) {
                 displayCutouts.clear()

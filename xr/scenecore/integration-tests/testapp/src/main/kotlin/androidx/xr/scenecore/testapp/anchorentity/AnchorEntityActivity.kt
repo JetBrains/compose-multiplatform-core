@@ -81,7 +81,6 @@ class AnchorEntityActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        session!!.resume()
     }
 
     private fun createAnchorEntity() {

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.layout
 
+import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.CaptionBar
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.DisplayCutout
@@ -32,13 +33,14 @@ import androidx.compose.ui.layout.WindowInsetsRulers.Companion.Waterfall
 
 /**
  * Contains rulers used for window insets. The [current] values are available as well as values when
- * the insets are [fully visible][rulersIgnoringVisibility].
+ * the insets are [fully visible][maximum].
  *
- * Other animation properties can be retrieved with [getAnimationProperties].
+ * Other animation properties can be retrieved with [getAnimation].
  */
 sealed interface WindowInsetsRulers {
     /**
-     * The current values for the window insets RectRulers.
+     * The current values for the window insets RectRulers. Values for some insets may not be
+     * provided on platforms that don't support specific Window Insets types.
      *
      * @sample androidx.compose.ui.samples.WindowInsetsRulersSample
      */
@@ -46,23 +48,23 @@ sealed interface WindowInsetsRulers {
 
     /**
      * The values for the insets when the insets are fully visible. The value does not change when
-     * the insets are hidden. Values are never provided for [Ime].
+     * the insets are hidden. Values for some insets may not be provided on some platforms. For
+     * example, values are never provided for [Ime] on Android.
      *
-     * When no animations are active, [rulersIgnoringVisibility] and [current] will have the same
-     * value if [WindowInsetsAnimationProperties.isVisible] is `true`. If `false`, then
-     * [rulersIgnoringVisibility]'s will not be changed, while [current] will have values the same
-     * as the Window borders. For example, when a status bar is visible, its height may be intrude
-     * 100 pixels into the Window and [rulersIgnoringVisibility]'s [top][RectRulers.top] will be at
-     * 100 pixels for [StatusBars]. When the status bar is invisible, [rulersIgnoringVisibility]
-     * will have the same [top][RectRulers.top] value at 100 pixels, while [current]'s
-     * [top][RectRulers.top] will be at 0 pixels.
+     * When no animations are active, [maximum] and [current] will have the same value if
+     * [WindowInsetsAnimation.isVisible] is `true`. If `false`, then [maximum] will not be changed,
+     * while [current] will have values the same as the Window borders. For example, when a status
+     * bar is visible, its height may be intrude 100 pixels into the Window and [maximum]'s
+     * [top][RectRulers.top] will be at 100 pixels for [StatusBars]. When the status bar is
+     * invisible, [maximum] will have the same [top][RectRulers.top] value at 100 pixels, while
+     * [current]'s [top][RectRulers.top] will be at 0 pixels.
      *
-     * @sample androidx.compose.ui.samples.RulersIgnoringVisibilitySample
+     * @sample androidx.compose.ui.samples.MaximumSample
      */
-    val rulersIgnoringVisibility: RectRulers
+    val maximum: RectRulers
 
-    /** Additional properties related to animating this InsetsRulers. */
-    fun getAnimationProperties(scope: Placeable.PlacementScope): WindowInsetsAnimationProperties
+    /** Additional properties related to animating this [WindowInsetsRulers]. */
+    fun getAnimation(scope: Placeable.PlacementScope): WindowInsetsAnimation
 
     companion object {
         /**
@@ -77,7 +79,7 @@ sealed interface WindowInsetsRulers {
          * Rulers used for display cutout insets.
          *
          * This is the safe insets that avoid all display cutouts. To get the bounds of the display
-         * cutouts themselves, use [getDisplayCutoutBounds].
+         * cutouts themselves, use [Placeable.PlacementScope.getDisplayCutoutBounds].
          *
          * See
          * [WindowInsetsCompat.Type.displayCutout](https://developer.android.com/reference/androidx/core/view/WindowInsetsCompat.Type#displayCutout())
@@ -198,34 +200,29 @@ sealed interface WindowInsetsRulers {
             )
 
         /**
-         * Returns a List of [RectRulers], one [RectRulers] for each display cutout. Each
-         * [RectRulers] provides values for the bounds of the display cutout. [DisplayCutout]
-         * provides the safe inset values for content avoiding all display cutouts.
-         *
-         * @param scope The [Placeable.PlacementScope] from where the ruler values are to be read
-         *   during placement.
-         */
-        fun getDisplayCutoutBounds(scope: Placeable.PlacementScope): List<RectRulers> {
-            return findDisplayCutouts(scope)
-        }
-
-        /**
          * Merges the rulers in [windowInsetsRulers], providing the innermost values from [current]
-         * and [rulersIgnoringVisibility]. [getAnimationProperties] will return values with only
-         * [WindowInsetsAnimationProperties.isVisible] and
-         * [WindowInsetsAnimationProperties.isAnimating] set to meaningful values.
+         * and [maximum]. [getAnimation] will return values with only
+         * [WindowInsetsAnimation.isVisible] and [WindowInsetsAnimation.isAnimating] set to
+         * meaningful values.
          */
         fun innermostOf(vararg windowInsetsRulers: WindowInsetsRulers): WindowInsetsRulers =
             InnermostInsetsRulers(null, windowInsetsRulers)
     }
 }
 
+/**
+ * Returns a List of [RectRulers], one [RectRulers] for each display cutout. Each [RectRulers]
+ * provides values for the bounds of the display cutout. [WindowInsetsRulers.DisplayCutout] provides
+ * the safe inset values for content avoiding all display cutouts.
+ */
+fun Placeable.PlacementScope.getDisplayCutoutBounds(): List<RectRulers> = findDisplayCutouts(this)
+
 /** Provides properties related to animating [WindowInsetsRulers]. */
-expect sealed interface WindowInsetsAnimationProperties {
+sealed interface WindowInsetsAnimation {
     /**
      * The starting insets values of the animation when the insets are animating
-     * ([WindowInsetsAnimationProperties.isAnimating] is `true`). When the insets are not animating,
-     * no ruler values will be provided.
+     * ([WindowInsetsAnimation.isAnimating] is `true`). When the insets are not animating, no ruler
+     * values will be provided.
      *
      * @sample androidx.compose.ui.samples.SourceAndTargetInsetsSample
      */
@@ -233,8 +230,8 @@ expect sealed interface WindowInsetsAnimationProperties {
 
     /**
      * The ending insets values of the animation when the insets are animating
-     * ([WindowInsetsAnimationProperties.isAnimating] is `true`). When the insets are not animating,
-     * no ruler values will be provided.
+     * ([WindowInsetsAnimation.isAnimating] is `true`). When the insets are not animating, no ruler
+     * values will be provided.
      *
      * @sample androidx.compose.ui.samples.SourceAndTargetInsetsSample
      */
@@ -260,6 +257,14 @@ expect sealed interface WindowInsetsAnimationProperties {
 
     /** The duration of the animation in milliseconds. */
     @get:IntRange(from = 0) val durationMillis: Long
+
+    /**
+     * The translucency of the animating window. This is used when Window Insets animate by fading
+     * and can be used to have content match the fade.
+     *
+     * @sample androidx.compose.ui.samples.InsetsRulersAlphaSample
+     */
+    @get:FloatRange(from = 0.0, to = 1.0) val alpha: Float
 }
 
 internal expect fun findDisplayCutouts(placementScope: Placeable.PlacementScope): List<RectRulers>
@@ -267,17 +272,16 @@ internal expect fun findDisplayCutouts(placementScope: Placeable.PlacementScope)
 internal expect fun findInsetsAnimationProperties(
     placementScope: Placeable.PlacementScope,
     windowInsetsRulers: WindowInsetsRulers,
-): WindowInsetsAnimationProperties
+): WindowInsetsAnimation
 
 private class WindowInsetsRulersImpl(val name: String) : WindowInsetsRulers {
     override val current = RectRulers(name)
 
-    override val rulersIgnoringVisibility = RectRulers("$name ignoring visibility")
+    override val maximum = RectRulers("$name maximum")
 
     /** Additional properties related to animating this InsetsRulers. */
-    override fun getAnimationProperties(
-        scope: Placeable.PlacementScope
-    ): WindowInsetsAnimationProperties = findInsetsAnimationProperties(scope, this)
+    override fun getAnimation(scope: Placeable.PlacementScope): WindowInsetsAnimation =
+        findInsetsAnimationProperties(scope, this)
 
     override fun toString(): String = name
 }
@@ -286,20 +290,25 @@ private class InnermostInsetsRulers(val name: String?, val rulers: Array<out Win
     WindowInsetsRulers {
     override val current: RectRulers =
         RectRulers.innermostOf(*rulers.map { it.current }.toTypedArray())
-    override val rulersIgnoringVisibility: RectRulers =
-        RectRulers.innermostOf(*rulers.map { it.rulersIgnoringVisibility }.toTypedArray())
+    override val maximum: RectRulers =
+        RectRulers.innermostOf(*rulers.map { it.maximum }.toTypedArray())
 
-    override fun getAnimationProperties(
-        scope: Placeable.PlacementScope
-    ): WindowInsetsAnimationProperties = InnermostAnimationProperties(scope, rulers)
+    override fun getAnimation(scope: Placeable.PlacementScope): WindowInsetsAnimation =
+        InnermostAnimationProperties(scope, rulers)
 
     override fun toString(): String =
         name ?: rulers.joinToString(prefix = "innermostOf(", postfix = ")")
 }
 
+/**
+ * This interface is here to work around having the `sealed interface` in common, but having the
+ * implementation in platform-specific code.
+ */
+internal interface PlatformWindowInsetsAnimation : WindowInsetsAnimation
+
 internal val NeverProvidedRectRulers = RectRulers()
 
-internal object NoAnimationProperties : WindowInsetsAnimationProperties {
+internal object NoWindowInsetsAnimation : WindowInsetsAnimation {
     override val source: RectRulers
         get() = NeverProvidedRectRulers
 
@@ -317,12 +326,15 @@ internal object NoAnimationProperties : WindowInsetsAnimationProperties {
 
     override val durationMillis: Long
         get() = 0L
+
+    override val alpha: Float
+        get() = 1f
 }
 
 private class InnermostAnimationProperties(
     val scope: Placeable.PlacementScope,
     val rulers: Array<out WindowInsetsRulers>,
-) : WindowInsetsAnimationProperties {
+) : WindowInsetsAnimation {
     override val source: RectRulers
         get() = NeverProvidedRectRulers
 
@@ -330,14 +342,17 @@ private class InnermostAnimationProperties(
         get() = NeverProvidedRectRulers
 
     override val isVisible: Boolean
-        get() = rulers.any { it.getAnimationProperties(scope).isVisible }
+        get() = rulers.any { it.getAnimation(scope).isVisible }
 
     override val isAnimating: Boolean
-        get() = rulers.any { it.getAnimationProperties(scope).isAnimating }
+        get() = rulers.any { it.getAnimation(scope).isAnimating }
 
     override val fraction: Float
         get() = 0f
 
     override val durationMillis: Long
         get() = 0L
+
+    override val alpha: Float
+        get() = 1f
 }

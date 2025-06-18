@@ -32,11 +32,15 @@ import androidx.work.impl.model.WorkSpec
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -139,6 +143,67 @@ class NetworkRequestConstraintControllerTest {
         val controller = NetworkRequestConstraintController(connectivityManager, 0)
         val workSpec = WorkSpec(id = UUID.randomUUID().toString(), workerClassName = "Foo")
         assertThat(controller.isCurrentlyConstrained(workSpec)).isFalse()
+    }
+
+    @Test
+    @Config(minSdk = 30)
+    fun testSameConstraintDifferentTracker() = runTest {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val controller = NetworkRequestConstraintController(connectivityManager)
+        @Suppress("DEPRECATION") // due to NetworkInfo but that's what Robolectric needs
+        val mobileNetwork = connectivityManager.activeNetworkInfo
+
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+        connManagerShadow.setActiveNetworkInfo(null) // start with no network
+
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+
+        fun buildConstraint() =
+            Constraints.Builder()
+                .setRequiredNetworkRequest(
+                    NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .build(),
+                    NetworkType.CONNECTED,
+                )
+                .build()
+
+        val constraints = listOf(buildConstraint(), buildConstraint())
+        val initialValueBarriers = listOf(CompletableDeferred<Unit>(), CompletableDeferred<Unit>())
+        val asyncResults =
+            constraints.mapIndexed { index, constraint ->
+                async(Dispatchers.IO) {
+                    val result = CompletableDeferred<ConstraintsState>()
+                    controller.track(constraints[index]).take(2).collectIndexed { i, state ->
+                        when (i) {
+                            // initial value is ConstraintNotMet due timeout since there is
+                            // no network
+                            0 -> initialValueBarriers[index].complete(Unit)
+                            // second value is the one we are interested on emitted by the test
+                            // network callback invocation
+                            1 -> result.complete(state)
+                            else -> error("Received too many results")
+                        }
+                    }
+                    result.await()
+                }
+            }
+        initialValueBarriers.awaitAll() // await for async initial values
+
+        connManagerShadow.setActiveNetworkInfo(mobileNetwork)
+        connManagerShadow.networkCallbacks.forEach {
+            it.onCapabilitiesChanged(connectivityManager.activeNetwork!!, capabilities)
+        }
+
+        val results = asyncResults.awaitAll()
+        assertThat(results).containsExactly(ConstraintsMet, ConstraintsMet)
     }
 }
 

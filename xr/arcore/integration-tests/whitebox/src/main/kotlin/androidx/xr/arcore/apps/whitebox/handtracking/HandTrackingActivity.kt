@@ -149,7 +149,7 @@ class HandTrackingActivity : ComponentActivity() {
                     this.session = session
 
                     lifecycleScope.launch {
-                        session.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                             setContent { MainPanel(session) }
                             val xyzModel =
                                 GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
@@ -186,7 +186,7 @@ class HandTrackingActivity : ComponentActivity() {
                     }
                 },
             )
-        lifecycle.addObserver(sessionHelper)
+        sessionHelper.tryCreateSession()
     }
 
     private fun renderHandGizmos(

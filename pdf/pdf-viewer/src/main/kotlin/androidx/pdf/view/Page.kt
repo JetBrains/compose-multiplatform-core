@@ -23,7 +23,6 @@ import android.graphics.Paint.Style
 import android.graphics.Point
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
 import android.graphics.RectF
 import android.os.DeadObjectException
 import androidx.annotation.MainThread
@@ -112,7 +111,7 @@ internal class Page(
         private set
 
     //  Checks if the content of this page within the specified visible area is fully rendered.
-    internal fun isFullyRendered(zoom: Float, viewArea: Rect?): Boolean {
+    internal fun isFullyRendered(zoom: Float, viewArea: RectF?): Boolean {
         return bitmapFetcher?.isFullyRendered(zoom, viewArea) ?: false
     }
 
@@ -127,7 +126,7 @@ internal class Page(
      */
     fun setVisible(
         zoom: Float,
-        viewArea: Rect,
+        viewArea: RectF,
         stablePosition: Boolean = true,
         pauseBitmapFetch: Boolean = false,
     ) {
@@ -160,7 +159,7 @@ internal class Page(
      * @param zoom the current scale
      * @param invalidatedArea visible portion of the page which has been invalidated
      */
-    fun maybeInvalidateAreas(zoom: Float, invalidatedArea: Rect) {
+    fun maybeInvalidateAreas(zoom: Float, invalidatedArea: RectF) {
         bitmapFetcher?.maybeFetchNewBitmaps(zoom, invalidatedArea, hasFormStateChanged = true)
     }
 
@@ -239,7 +238,7 @@ internal class Page(
             }
     }
 
-    fun draw(canvas: Canvas, locationInView: Rect, highlights: List<Highlight>) {
+    fun draw(canvas: Canvas, locationInView: RectF, highlights: List<Highlight>) {
         val pageBitmaps = bitmapFetcher?.pageBitmaps
         if (pageBitmaps == null || pageBitmaps.needsWhiteBackground) {
             canvas.drawRect(locationInView, BLANK_PAINT)
@@ -298,11 +297,11 @@ internal class Page(
                 .also { it.invokeOnCompletion { fetchLinksJob = null } }
     }
 
-    private fun draw(fullPageBitmap: FullPageBitmap, canvas: Canvas, locationInView: Rect) {
+    private fun draw(fullPageBitmap: FullPageBitmap, canvas: Canvas, locationInView: RectF) {
         canvas.drawBitmap(fullPageBitmap.bitmap, /* src= */ null, locationInView, BMP_PAINT)
     }
 
-    private fun draw(tileBoard: TileBoard, canvas: Canvas, locationInView: Rect) {
+    private fun draw(tileBoard: TileBoard, canvas: Canvas, locationInView: RectF) {
         tileBoard.fullPageBitmap?.let {
             canvas.drawBitmap(it, /* src= */ null, locationInView, BMP_PAINT)
         }
@@ -321,7 +320,7 @@ internal class Page(
     private fun locationForTile(
         tile: TileBoard.Tile,
         renderedScale: Float,
-        locationInView: Rect,
+        locationInView: RectF,
     ): RectF {
         val tileOffsetPx = tile.offsetPx
         // The tile describes its own location in pixels, i.e. scaled coordinates, however

@@ -34,7 +34,7 @@ import androidx.xr.runtime.math.Pose
 public class GltfModelEntity
 private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     BaseEntity<RtGltfEntity>(rtEntity, entityManager) {
-    // TODO: b/362368652 - Add an OnAnimationEvent() Listener interface
+    // TODO: b/417750821 - Add an OnAnimationEvent() Listener interface
 
     /** Specifies the current animation state of the GltfModelEntity. */
     @IntDef(AnimationState.PLAYING, AnimationState.STOPPED)

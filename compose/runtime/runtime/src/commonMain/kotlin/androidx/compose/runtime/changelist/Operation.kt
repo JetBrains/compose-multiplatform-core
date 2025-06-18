@@ -41,6 +41,7 @@ import androidx.compose.runtime.removeCurrentGroup
 import androidx.compose.runtime.runtimeCheck
 import androidx.compose.runtime.snapshots.fastForEachIndexed
 import androidx.compose.runtime.tooling.ComposeStackTraceFrame
+import androidx.compose.runtime.tooling.ComposeToolingApi
 import androidx.compose.runtime.tooling.attachComposeStackTrace
 import androidx.compose.runtime.tooling.buildTrace
 import kotlin.jvm.JvmInline
@@ -1107,6 +1108,7 @@ private inline fun withCurrentStackTrace(
     }
 }
 
+@OptIn(ComposeToolingApi::class)
 private fun Throwable.attachComposeStackTrace(
     errorContext: OperationErrorContext?,
     writer: SlotWriter,

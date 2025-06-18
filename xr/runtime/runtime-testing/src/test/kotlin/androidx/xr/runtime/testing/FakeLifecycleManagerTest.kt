@@ -235,7 +235,7 @@ class FakeLifecycleManagerTest {
 
         underTest.stop()
 
-        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
     }
 
     @Test
@@ -246,7 +246,7 @@ class FakeLifecycleManagerTest {
 
         underTest.stop()
 
-        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.STOPPED)
+        assertThat(underTest.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
     }
 
     @Test

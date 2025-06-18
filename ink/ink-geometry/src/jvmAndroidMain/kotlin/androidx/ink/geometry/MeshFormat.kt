@@ -24,7 +24,7 @@ import androidx.ink.nativeloader.UsedByNative
 @Suppress("NotCloseable") // Finalize is only used to free the native peer.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public class MeshFormat
-public constructor(
+private constructor(
     /**
      * Only for use within the ink library. Returns the native address held by this [MeshFormat].
      */

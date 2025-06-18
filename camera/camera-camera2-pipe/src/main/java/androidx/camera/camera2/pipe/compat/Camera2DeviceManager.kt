@@ -541,6 +541,10 @@ constructor(
         isForegroundObserver: (Unit) -> Boolean,
         scope: CoroutineScope,
     ): OpenVirtualCameraResult {
+        // TODO: Figure out how 1-time permissions work, and see if they can be reset without
+        //   causing the application process to restart.
+        check(permissions.hasCameraPermission) { "Missing camera permissions!" }
+
         Log.debug { "Opening $cameraId with retries..." }
         val result =
             retryingCameraStateOpener.openCameraWithRetry(

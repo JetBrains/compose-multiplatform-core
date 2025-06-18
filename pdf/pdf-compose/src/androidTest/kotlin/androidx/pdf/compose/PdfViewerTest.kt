@@ -42,7 +42,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -142,10 +141,8 @@ class PdfViewerTest {
     @Test
     fun pdfViewerState_coordinateTranslation() {
         val pdfDocument = FakePdfDocument(List(10) { Point(425, 225) })
-        val topPageMarginPx =
-            context.resources.getDimension(androidx.pdf.R.dimen.top_page_margin).roundToInt()
-        val pageSpacingPx =
-            context.resources.getDimension(androidx.pdf.R.dimen.page_spacing).roundToInt()
+        val topPageMarginPx = context.resources.getDimension(androidx.pdf.R.dimen.top_page_margin)
+        val pageSpacingPx = context.resources.getDimension(androidx.pdf.R.dimen.page_spacing)
 
         lateinit var pdfViewerState: PdfViewerState
         rule.setContent {
@@ -162,7 +159,7 @@ class PdfViewerTest {
         rule.waitUntil { pdfViewerState.zoom == 2.0F }
 
         // 2 x top margin to account for zoom
-        val pageZeroTop = topPageMarginPx.toFloat() * 2
+        val pageZeroTop = topPageMarginPx * 2
         val pageZeroTopLeft = PdfPoint(pageNum = 0, pagePoint = PointF(0F, 0F))
         val pageZeroTopLeftCompose = Offset(0F, pageZeroTop)
         // Cross check each page coordinate API against each other

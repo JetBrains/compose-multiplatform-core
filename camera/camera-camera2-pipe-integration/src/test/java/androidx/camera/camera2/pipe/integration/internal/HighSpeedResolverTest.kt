@@ -375,6 +375,7 @@ class HighSpeedResolverTest {
         implementationOptions: androidx.camera.core.impl.Config? = null,
         sessionType: Int = SESSION_TYPE_HIGH_SPEED,
         targetFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
+        isStrictFrameRateRequired: Boolean = false,
     ): AttachedSurfaceInfo =
         AttachedSurfaceInfo.create(
             surfaceConfig,
@@ -385,6 +386,7 @@ class HighSpeedResolverTest {
             implementationOptions,
             sessionType,
             targetFrameRate,
+            isStrictFrameRateRequired,
         )
 
     private fun List<List<Size>>.toUseCaseSupportedSizeMap(): Map<UseCaseConfig<*>, List<Size>> {

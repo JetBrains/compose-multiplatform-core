@@ -116,10 +116,7 @@ class AddWatchFaceTest {
             assertThrows(AddWatchFaceException::class.java) {
                 runBlocking {
                     readWatchFace(context, UNSECURE_APK).use { pipe ->
-                        wfp.addWatchFace(
-                            pipe.readFd,
-                            "xK7FaCagHoF1JrN8WZK8JoUOtMwW+HVuO1zyMI6ZFmE=:MS4wLjA=",
-                        )
+                        wfp.addWatchFace(pipe.readFd, UNSECURE_TOKEN)
                     }
                 }
             }

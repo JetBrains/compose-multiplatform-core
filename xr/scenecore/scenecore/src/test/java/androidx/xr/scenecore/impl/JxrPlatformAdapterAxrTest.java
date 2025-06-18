@@ -2313,6 +2313,7 @@ public final class JxrPlatformAdapterAxrTest {
                                 new Pose(),
                                 new SurfaceEntity.CanvasShape.Quad(1.0f, 1.0f),
                                 SurfaceEntity.ContentSecurityLevel.NONE,
+                                SurfaceEntity.SuperSampling.DEFAULT,
                                 mRuntime.getActivitySpaceRootImpl()));
     }
 
@@ -2329,6 +2330,7 @@ public final class JxrPlatformAdapterAxrTest {
                         new Pose(),
                         new SurfaceEntity.CanvasShape.Quad(kTestWidth, kTestHeight),
                         SurfaceEntity.ContentSecurityLevel.NONE,
+                        SurfaceEntity.SuperSampling.DEFAULT,
                         mRuntime.getActivitySpaceRootImpl());
 
         assertThat(surfaceEntityQuad).isNotNull();
@@ -2344,6 +2346,7 @@ public final class JxrPlatformAdapterAxrTest {
                         new Pose(),
                         new SurfaceEntity.CanvasShape.Vr360Sphere(kTestSphereRadius),
                         SurfaceEntity.ContentSecurityLevel.NONE,
+                        SurfaceEntity.SuperSampling.DEFAULT,
                         mRuntime.getActivitySpaceRootImpl());
 
         assertThat(surfaceEntitySphere).isNotNull();
@@ -2359,6 +2362,7 @@ public final class JxrPlatformAdapterAxrTest {
                         new Pose(),
                         new SurfaceEntity.CanvasShape.Vr180Hemisphere(kTestHemisphereRadius),
                         SurfaceEntity.ContentSecurityLevel.NONE,
+                        SurfaceEntity.SuperSampling.DEFAULT,
                         mRuntime.getActivitySpaceRootImpl());
 
         assertThat(surfaceEntityHemisphere).isNotNull();

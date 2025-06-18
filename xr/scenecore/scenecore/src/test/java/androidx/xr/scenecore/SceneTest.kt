@@ -366,7 +366,7 @@ class SceneTest {
     @Test
     fun setSpatialStateChangeHandler_callsRuntimeSetSpatialStateChangeHandler() {
         val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
-        session.scene.SpatialModeChangeListener = mockSpatialModeChangeListener
+        session.scene.spatialModeChangeListener = mockSpatialModeChangeListener
         val captor = argumentCaptor<androidx.xr.runtime.internal.SpatialModeChangeListener>()
         verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
         val rtSpatialStateChangeHandler = captor.firstValue
@@ -383,5 +383,17 @@ class SceneTest {
         val actualCapabilities = session.scene.spatialCapabilities
         verify(mockPlatformAdapter).spatialCapabilities
         assertThat(actualCapabilities).isEqualTo(expectedCapabilities)
+    }
+
+    @Test
+    fun requestFullSpaceMode_callsThrough() {
+        session.scene.requestFullSpaceMode()
+        verify(mockPlatformAdapter).requestFullSpaceMode()
+    }
+
+    @Test
+    fun requestHomeSpaceMode_callsThrough() {
+        session.scene.requestHomeSpaceMode()
+        verify(mockPlatformAdapter).requestHomeSpaceMode()
     }
 }

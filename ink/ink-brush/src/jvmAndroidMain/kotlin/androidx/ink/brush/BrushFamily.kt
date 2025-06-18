@@ -215,9 +215,12 @@ private constructor(
         "BrushFamily(coats=$coats, clientBrushFamilyId=$clientBrushFamilyId, inputModel=$inputModel)"
 
     /** Deletes native BrushFamily memory. */
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
-        BrushFamilyNative.free(nativePointer)
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            BrushFamilyNative.free(nativePointer)
+        }
     }
 
     // Companion object gets initialized before anything else.

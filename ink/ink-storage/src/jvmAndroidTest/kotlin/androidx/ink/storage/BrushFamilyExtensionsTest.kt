@@ -61,7 +61,7 @@ class BrushFamilyExtensionsTest {
         Base64.getDecoder().decode("H4sIAAAAAAAA/1Ni52INZWBo2A8Agg/YJAkAAAA=")
 
     @Test
-    fun encode_decodeOrThrow_roundTrip() {
+    fun encode_decode_roundTrip() {
         // This wraps the native encode/decode, so the details are tested in the tests for the
         // underlying C++ library.
         val original = BrushFamily()
@@ -70,76 +70,39 @@ class BrushFamilyExtensionsTest {
                 original.encode(it)
                 it.toByteArray()
             }
-        ByteArrayInputStream(encoded).use {
-            assertThat(BrushFamily.decodeOrThrow(it)).isEqualTo(original)
-        }
+        ByteArrayInputStream(encoded).use { assertThat(BrushFamily.decode(it)).isEqualTo(original) }
     }
 
     @Test
-    fun encode_decodeOrNull_roundTrip() {
-        // This wraps the native encode/decode, so the details are tested in the tests for the
-        // underlying C++ library.
-        val original = BrushFamily()
-        val encoded =
-            ByteArrayOutputStream().use {
-                original.encode(it)
-                it.toByteArray()
-            }
-        ByteArrayInputStream(encoded).use {
-            assertThat(BrushFamily.decodeOrNull(it)).isEqualTo(original)
-        }
-    }
-
-    @Test
-    fun decodeOrThrow_notGzippedBytes_throws() {
+    fun decode_notGzippedBytes_throws() {
         assertFailsWith<IOException> {
             @Suppress("CheckReturnValue")
-            ByteArrayInputStream(notGzippedBytes).use { BrushFamily.decodeOrThrow(it) }
+            ByteArrayInputStream(notGzippedBytes).use { BrushFamily.decode(it) }
         }
     }
 
     @Test
-    fun decodeOrThrow_gzippedNotProtoBytes_throws() {
+    fun decode_gzippedNotProtoBytes_throws() {
         val exception =
             assertFailsWith<IllegalArgumentException> {
                 @Suppress("CheckReturnValue")
-                ByteArrayInputStream(gzippedNotProtoBytes).use { BrushFamily.decodeOrThrow(it) }
+                ByteArrayInputStream(gzippedNotProtoBytes).use { BrushFamily.decode(it) }
             }
         assertThat(exception).hasMessageThat().contains("Failed to parse ink.proto.BrushFamily")
     }
 
     @Test
-    fun decodeOrThrow_gzippedInvalidProtoBytes_throws() {
+    fun decode_gzippedInvalidProtoBytes_throws() {
         val exception =
             assertFailsWith<IllegalArgumentException> {
                 @Suppress("CheckReturnValue")
-                ByteArrayInputStream(gzippedInvalidProtoBytes).use { BrushFamily.decodeOrThrow(it) }
+                ByteArrayInputStream(gzippedInvalidProtoBytes).use { BrushFamily.decode(it) }
             }
         assertThat(exception).hasMessageThat().contains("particle_gap_duration")
     }
 
     @Test
-    fun decodeOrNull_notGzippedBytes_returnsNull() {
-        assertThat(ByteArrayInputStream(notGzippedBytes).use { BrushFamily.decodeOrNull(it) })
-            .isNull()
-    }
-
-    @Test
-    fun decodeOrNull_gzippedNotProtoBytes_returnsNull() {
-        assertThat(ByteArrayInputStream(gzippedNotProtoBytes).use { BrushFamily.decodeOrNull(it) })
-            .isNull()
-    }
-
-    @Test
-    fun decodeOrNull_gzippedInvalidProtoBytes_returnsNull() {
-        assertThat(
-                ByteArrayInputStream(gzippedInvalidProtoBytes).use { BrushFamily.decodeOrNull(it) }
-            )
-            .isNull()
-    }
-
-    @Test
-    fun encode_decodeOrThrow_roundTrip_staticApi() {
+    fun encode_decode_roundTrip_staticApi() {
         // Kotlin callers should prefer the extension methods, but the static wrappers do work.
         val original = BrushFamily()
         val encoded =
@@ -148,40 +111,15 @@ class BrushFamilyExtensionsTest {
                 it.toByteArray()
             }
         ByteArrayInputStream(encoded).use {
-            assertThat(BrushFamilySerialization.decodeOrThrow(it)).isEqualTo(original)
+            assertThat(BrushFamilySerialization.decode(it)).isEqualTo(original)
         }
     }
 
     @Test
-    fun encode_decodeOrNull_roundTrip_staticApi() {
-        // Kotlin callers should prefer the extension methods, but the static wrappers do work.
-        val original = BrushFamily()
-        val encoded =
-            ByteArrayOutputStream().use {
-                original.encode(it)
-                it.toByteArray()
-            }
-        ByteArrayInputStream(encoded).use {
-            assertThat(BrushFamilySerialization.decodeOrNull(it)).isEqualTo(original)
-        }
-    }
-
-    @Test
-    fun decodeOrNull_gzippedInvalidProtoBytes_returnsNull_staticApi() {
-        // Kotlin callers should prefer the extension methods, but the static wrappers do work.
-        assertThat(
-                ByteArrayInputStream(gzippedInvalidProtoBytes).use {
-                    BrushFamilySerialization.decodeOrNull(it)
-                }
-            )
-            .isNull()
-    }
-
-    @Test
-    fun decodeOrThrow_notGzippedBytes_throws_staticApi() {
+    fun decode_notGzippedBytes_throws_staticApi() {
         assertFailsWith<IOException> {
             @Suppress("CheckReturnValue")
-            ByteArrayInputStream(notGzippedBytes).use { BrushFamilySerialization.decodeOrThrow(it) }
+            ByteArrayInputStream(notGzippedBytes).use { BrushFamilySerialization.decode(it) }
         }
     }
 }

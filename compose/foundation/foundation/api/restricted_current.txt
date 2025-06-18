@@ -2242,7 +2242,7 @@ package androidx.compose.foundation.text.contextmenu.data {
 package androidx.compose.foundation.text.contextmenu.modifier {
 
   public final class TextContextMenuModifierKt {
-    method public static androidx.compose.ui.Modifier addTextContextMenuComponents(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope,kotlin.Unit> builder);
+    method public static androidx.compose.ui.Modifier appendTextContextMenuComponents(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope,kotlin.Unit> builder);
     method public static androidx.compose.ui.Modifier filterTextContextMenuComponents(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent,java.lang.Boolean> filter);
   }
 
@@ -2284,11 +2284,6 @@ package androidx.compose.foundation.text.handwriting {
 
 package androidx.compose.foundation.text.input {
 
-  public fun interface AnnotatedOutputTransformation extends androidx.compose.foundation.text.input.OutputTransformation {
-    method public void annotateOutput(androidx.compose.foundation.text.input.OutputTransformationAnnotationScope);
-    method public default void transformOutput(androidx.compose.foundation.text.input.TextFieldBuffer);
-  }
-
   @androidx.compose.runtime.Stable public fun interface InputTransformation {
     method public default void applySemantics(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
     method public default androidx.compose.foundation.text.KeyboardOptions? getKeyboardOptions();
@@ -2316,14 +2311,9 @@ package androidx.compose.foundation.text.input {
     method public void transformOutput(androidx.compose.foundation.text.input.TextFieldBuffer);
   }
 
-  public sealed interface OutputTransformationAnnotationScope {
+  public final class TextFieldBuffer implements java.lang.Appendable {
     method public void addStyle(androidx.compose.ui.text.ParagraphStyle paragraphStyle, int start, int end);
     method public void addStyle(androidx.compose.ui.text.SpanStyle spanStyle, int start, int end);
-    method public CharSequence getText();
-    property public abstract CharSequence text;
-  }
-
-  public final class TextFieldBuffer implements java.lang.Appendable {
     method public Appendable append(char char);
     method public Appendable append(CharSequence? text);
     method public Appendable append(CharSequence? text, int start, int end);

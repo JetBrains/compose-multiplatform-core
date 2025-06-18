@@ -17,7 +17,7 @@
 package androidx.compose.ui.focus
 
 import androidx.collection.MutableObjectList
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
@@ -151,7 +151,7 @@ internal interface FocusOwner : FocusManager {
     ): Boolean
 
     /** Dispatches an indirect touch event through the compose hierarchy. */
-    @ExperimentalComposeUiApi
+    @OptIn(ExperimentalIndirectTouchTypeApi::class)
     fun dispatchIndirectTouchEvent(
         event: IndirectTouchEvent,
         onFocusedItem: () -> Boolean = { false },

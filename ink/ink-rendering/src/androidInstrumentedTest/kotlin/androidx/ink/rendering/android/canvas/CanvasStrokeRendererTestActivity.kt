@@ -29,7 +29,6 @@ import android.widget.GridLayout
 import android.widget.TextView
 import androidx.core.graphics.withMatrix
 import androidx.core.graphics.withTranslation
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.BoxAccumulator
@@ -40,9 +39,7 @@ import androidx.ink.rendering.test.R
 import androidx.ink.strokes.InProgressStroke
 
 /** An [Activity] to support [CanvasStrokeRendererTest]. */
-@OptIn(ExperimentalInkCustomBrushApi::class)
 class CanvasStrokeRendererTestActivity : Activity() {
-    @OptIn(ExperimentalInkCustomBrushApi::class)
     private val textureStore = TextureBitmapStore { id ->
         when (id) {
             TEXTURE_ID_AIRPLANE_EMOJI -> R.drawable.airplane_emoji
@@ -54,13 +51,11 @@ class CanvasStrokeRendererTestActivity : Activity() {
     }
     private val meshRenderer =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            @OptIn(ExperimentalInkCustomBrushApi::class) CanvasStrokeRenderer.create(textureStore)
+            CanvasStrokeRenderer.create(textureStore)
         } else {
             null
         }
-    private val pathRenderer =
-        @OptIn(ExperimentalInkCustomBrushApi::class)
-        CanvasStrokeRenderer.create(textureStore, forcePathRendering = true)
+    private val pathRenderer = CanvasStrokeRenderer.create(forcePathRendering = true, textureStore)
     private val defaultRenderer = CanvasStrokeRenderer.create()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,7 +71,7 @@ class CanvasStrokeRendererTestActivity : Activity() {
             grid.addView(
                 TextView(this).apply {
                     text = label
-                    setTextSize(10.0F)
+                    textSize = 10.0F
                 },
                 gridLayoutParams(row, col = 0, Gravity.CENTER_VERTICAL),
             )

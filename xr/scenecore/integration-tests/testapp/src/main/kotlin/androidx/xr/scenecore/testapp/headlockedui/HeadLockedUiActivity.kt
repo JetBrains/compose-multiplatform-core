@@ -68,7 +68,6 @@ class HeadLockedUiActivity : AppCompatActivity() {
         // Create session
         session = createSession(this)
         if (session == null) this.finish()
-        session!!.resume()
         session!!.configure(
             Config(
                 planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
@@ -171,7 +170,6 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        session!!.resume()
         // Create the head locked star image panel.
         createHeadLockedPanel()
     }

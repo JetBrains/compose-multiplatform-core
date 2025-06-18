@@ -71,11 +71,8 @@ abstract class BaseActivityPose implements ActivityPose {
     @NonNull
     public Pose transformPoseTo(@NonNull Pose pose, @NonNull ActivityPose destination) {
 
-        // TODO: b/355680575 - Revisit if we need to account for parent rotation when calculating
-        // the
-        // scale. This code might produce unexpected results when non-uniform scale is involved in
-        // the
-        // parent-child entity hierarchy.
+        // This code might produce unexpected results when non-uniform scale
+        // is involved in the parent-child entity hierarchy.
 
         // Compute the inverse scale of the destination entity in the activity space.
         BaseActivityPose baseDestination = (BaseActivityPose) destination;

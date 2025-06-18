@@ -99,8 +99,8 @@ abstract interface androidx.compose.ui.graphics.drawscope/DrawTransform { // and
 
 abstract interface androidx.compose.ui.graphics.shadow/ShadowContext { // androidx.compose.ui.graphics.shadow/ShadowContext|null[0]
     open fun clearCache() // androidx.compose.ui.graphics.shadow/ShadowContext.clearCache|clearCache(){}[0]
-    open fun createDropShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/ShadowParams): androidx.compose.ui.graphics.shadow/DropShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createDropShadowPainter|createDropShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.ShadowParams){}[0]
-    open fun createInnerShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/ShadowParams): androidx.compose.ui.graphics.shadow/InnerShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createInnerShadowPainter|createInnerShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.ShadowParams){}[0]
+    open fun createDropShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui.graphics.shadow/DropShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createDropShadowPainter|createDropShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
+    open fun createInnerShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui.graphics.shadow/InnerShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createInnerShadowPainter|createInnerShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
 }
 
 abstract interface androidx.compose.ui.graphics/Canvas { // androidx.compose.ui.graphics/Canvas|null[0]
@@ -686,41 +686,41 @@ final class androidx.compose.ui.graphics.painter/ColorPainter : androidx.compose
 }
 
 final class androidx.compose.ui.graphics.shadow/DropShadowPainter : androidx.compose.ui.graphics.painter/Painter { // androidx.compose.ui.graphics.shadow/DropShadowPainter|null[0]
-    constructor <init>(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/ShadowParams) // androidx.compose.ui.graphics.shadow/DropShadowPainter.<init>|<init>(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.ShadowParams){}[0]
+    constructor <init>(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow) // androidx.compose.ui.graphics.shadow/DropShadowPainter.<init>|<init>(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
 
     final val intrinsicSize // androidx.compose.ui.graphics.shadow/DropShadowPainter.intrinsicSize|{}intrinsicSize[0]
         final fun <get-intrinsicSize>(): androidx.compose.ui.geometry/Size // androidx.compose.ui.graphics.shadow/DropShadowPainter.intrinsicSize.<get-intrinsicSize>|<get-intrinsicSize>(){}[0]
 }
 
 final class androidx.compose.ui.graphics.shadow/InnerShadowPainter : androidx.compose.ui.graphics.painter/Painter { // androidx.compose.ui.graphics.shadow/InnerShadowPainter|null[0]
-    constructor <init>(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/ShadowParams) // androidx.compose.ui.graphics.shadow/InnerShadowPainter.<init>|<init>(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.ShadowParams){}[0]
+    constructor <init>(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow) // androidx.compose.ui.graphics.shadow/InnerShadowPainter.<init>|<init>(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
 
     final val intrinsicSize // androidx.compose.ui.graphics.shadow/InnerShadowPainter.intrinsicSize|{}intrinsicSize[0]
         final fun <get-intrinsicSize>(): androidx.compose.ui.geometry/Size // androidx.compose.ui.graphics.shadow/InnerShadowPainter.intrinsicSize.<get-intrinsicSize>|<get-intrinsicSize>(){}[0]
 }
 
-final class androidx.compose.ui.graphics.shadow/ShadowParams { // androidx.compose.ui.graphics.shadow/ShadowParams|null[0]
-    constructor <init>(androidx.compose.ui.unit/Dp, androidx.compose.ui.graphics/Brush, androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/DpOffset = ..., kotlin/Float = ..., androidx.compose.ui.graphics/BlendMode = ...) // androidx.compose.ui.graphics.shadow/ShadowParams.<init>|<init>(androidx.compose.ui.unit.Dp;androidx.compose.ui.graphics.Brush;androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.DpOffset;kotlin.Float;androidx.compose.ui.graphics.BlendMode){}[0]
-    constructor <init>(androidx.compose.ui.unit/Dp, androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/DpOffset = ..., kotlin/Float = ..., androidx.compose.ui.graphics/BlendMode = ...) // androidx.compose.ui.graphics.shadow/ShadowParams.<init>|<init>(androidx.compose.ui.unit.Dp;androidx.compose.ui.graphics.Color;androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.DpOffset;kotlin.Float;androidx.compose.ui.graphics.BlendMode){}[0]
+final class androidx.compose.ui.graphics.shadow/Shadow { // androidx.compose.ui.graphics.shadow/Shadow|null[0]
+    constructor <init>(androidx.compose.ui.unit/Dp, androidx.compose.ui.graphics/Brush, androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/DpOffset = ..., kotlin/Float = ..., androidx.compose.ui.graphics/BlendMode = ...) // androidx.compose.ui.graphics.shadow/Shadow.<init>|<init>(androidx.compose.ui.unit.Dp;androidx.compose.ui.graphics.Brush;androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.DpOffset;kotlin.Float;androidx.compose.ui.graphics.BlendMode){}[0]
+    constructor <init>(androidx.compose.ui.unit/Dp, androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.unit/Dp = ..., androidx.compose.ui.unit/DpOffset = ..., kotlin/Float = ..., androidx.compose.ui.graphics/BlendMode = ...) // androidx.compose.ui.graphics.shadow/Shadow.<init>|<init>(androidx.compose.ui.unit.Dp;androidx.compose.ui.graphics.Color;androidx.compose.ui.unit.Dp;androidx.compose.ui.unit.DpOffset;kotlin.Float;androidx.compose.ui.graphics.BlendMode){}[0]
 
-    final val alpha // androidx.compose.ui.graphics.shadow/ShadowParams.alpha|{}alpha[0]
-        final fun <get-alpha>(): kotlin/Float // androidx.compose.ui.graphics.shadow/ShadowParams.alpha.<get-alpha>|<get-alpha>(){}[0]
-    final val blendMode // androidx.compose.ui.graphics.shadow/ShadowParams.blendMode|{}blendMode[0]
-        final fun <get-blendMode>(): androidx.compose.ui.graphics/BlendMode // androidx.compose.ui.graphics.shadow/ShadowParams.blendMode.<get-blendMode>|<get-blendMode>(){}[0]
-    final val brush // androidx.compose.ui.graphics.shadow/ShadowParams.brush|{}brush[0]
-        final fun <get-brush>(): androidx.compose.ui.graphics/Brush? // androidx.compose.ui.graphics.shadow/ShadowParams.brush.<get-brush>|<get-brush>(){}[0]
-    final val color // androidx.compose.ui.graphics.shadow/ShadowParams.color|{}color[0]
-        final fun <get-color>(): androidx.compose.ui.graphics/Color // androidx.compose.ui.graphics.shadow/ShadowParams.color.<get-color>|<get-color>(){}[0]
-    final val offset // androidx.compose.ui.graphics.shadow/ShadowParams.offset|{}offset[0]
-        final fun <get-offset>(): androidx.compose.ui.unit/DpOffset // androidx.compose.ui.graphics.shadow/ShadowParams.offset.<get-offset>|<get-offset>(){}[0]
-    final val radius // androidx.compose.ui.graphics.shadow/ShadowParams.radius|{}radius[0]
-        final fun <get-radius>(): androidx.compose.ui.unit/Dp // androidx.compose.ui.graphics.shadow/ShadowParams.radius.<get-radius>|<get-radius>(){}[0]
-    final val spread // androidx.compose.ui.graphics.shadow/ShadowParams.spread|{}spread[0]
-        final fun <get-spread>(): androidx.compose.ui.unit/Dp // androidx.compose.ui.graphics.shadow/ShadowParams.spread.<get-spread>|<get-spread>(){}[0]
+    final val alpha // androidx.compose.ui.graphics.shadow/Shadow.alpha|{}alpha[0]
+        final fun <get-alpha>(): kotlin/Float // androidx.compose.ui.graphics.shadow/Shadow.alpha.<get-alpha>|<get-alpha>(){}[0]
+    final val blendMode // androidx.compose.ui.graphics.shadow/Shadow.blendMode|{}blendMode[0]
+        final fun <get-blendMode>(): androidx.compose.ui.graphics/BlendMode // androidx.compose.ui.graphics.shadow/Shadow.blendMode.<get-blendMode>|<get-blendMode>(){}[0]
+    final val brush // androidx.compose.ui.graphics.shadow/Shadow.brush|{}brush[0]
+        final fun <get-brush>(): androidx.compose.ui.graphics/Brush? // androidx.compose.ui.graphics.shadow/Shadow.brush.<get-brush>|<get-brush>(){}[0]
+    final val color // androidx.compose.ui.graphics.shadow/Shadow.color|{}color[0]
+        final fun <get-color>(): androidx.compose.ui.graphics/Color // androidx.compose.ui.graphics.shadow/Shadow.color.<get-color>|<get-color>(){}[0]
+    final val offset // androidx.compose.ui.graphics.shadow/Shadow.offset|{}offset[0]
+        final fun <get-offset>(): androidx.compose.ui.unit/DpOffset // androidx.compose.ui.graphics.shadow/Shadow.offset.<get-offset>|<get-offset>(){}[0]
+    final val radius // androidx.compose.ui.graphics.shadow/Shadow.radius|{}radius[0]
+        final fun <get-radius>(): androidx.compose.ui.unit/Dp // androidx.compose.ui.graphics.shadow/Shadow.radius.<get-radius>|<get-radius>(){}[0]
+    final val spread // androidx.compose.ui.graphics.shadow/Shadow.spread|{}spread[0]
+        final fun <get-spread>(): androidx.compose.ui.unit/Dp // androidx.compose.ui.graphics.shadow/Shadow.spread.<get-spread>|<get-spread>(){}[0]
 
-    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.graphics.shadow/ShadowParams.equals|equals(kotlin.Any?){}[0]
-    final fun hashCode(): kotlin/Int // androidx.compose.ui.graphics.shadow/ShadowParams.hashCode|hashCode(){}[0]
-    final fun toString(): kotlin/String // androidx.compose.ui.graphics.shadow/ShadowParams.toString|toString(){}[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.graphics.shadow/Shadow.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.compose.ui.graphics.shadow/Shadow.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // androidx.compose.ui.graphics.shadow/Shadow.toString|toString(){}[0]
 }
 
 final class androidx.compose.ui.graphics.vector/PathBuilder { // androidx.compose.ui.graphics.vector/PathBuilder|null[0]

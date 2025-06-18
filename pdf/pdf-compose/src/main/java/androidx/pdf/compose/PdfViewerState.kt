@@ -17,7 +17,7 @@
 package androidx.pdf.compose
 
 import android.graphics.PointF
-import android.graphics.Rect
+import android.graphics.RectF
 import android.util.SparseArray
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
@@ -222,7 +222,7 @@ public class PdfViewerState(
         override fun onViewportChanged(
             firstVisiblePage: Int,
             visiblePagesCount: Int,
-            pageLocations: SparseArray<Rect>,
+            pageLocations: SparseArray<RectF>,
             zoomLevel: Float,
         ) {
             this@PdfViewerState.firstVisiblePage = firstVisiblePage
@@ -333,4 +333,4 @@ private class UserInteractionSession {
 
 private fun PointF.toOffset() = Offset(this.x, this.y)
 
-private fun Rect.toOffset() = Offset(this.left.toFloat(), this.top.toFloat())
+private fun RectF.toOffset() = Offset(this.left, this.top)

@@ -23,13 +23,12 @@ import android.graphics.BitmapFactory
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
-import androidx.ink.nativeloader.UsedByNative
 import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.zip.GZIPOutputStream
 
+/** A callback to use with [decode] to manage texture image assets. */
 @ExperimentalInkCustomBrushApi
 public fun interface BrushFamilyDecodeCallback {
     /**
@@ -41,14 +40,23 @@ public fun interface BrushFamilyDecodeCallback {
      * @param bitmap the bitmap corresponding to clientTextureId in the serialized form of the
      *   BrushFamily. Null indicates that the serialized form did not store a bitmap for
      *   clientTextureId.
+     * @return The client texture ID for this texture in the in-memory format of the [BrushFamily].
+     *   This will typically match [clientTextureId], but can be different, for example when there
+     *   are naming collisions in the [TextureBitmapStore] and one texture needs to be renamed.
      */
-    @UsedByNative // brush_serialization_jni.cc
     public fun onDecodeTexture(clientTextureId: String, bitmap: Bitmap?): String
 }
 
 /**
- * Write the gzip-compressed serialized representation of the [BrushFamily] to the given
- * [OutputStream].
+ * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the
+ * [BrushFamily] to the given [OutputStream].
+ *
+ * @param output The [OutputStream] to write the gzip-compressed encoded bytes to.
+ * @param textureBitmapStore The [TextureBitmapStore] to use to encode the texture images within the
+ *   encoded [BrushFamily]. If this is not desired behavior, e.g. if the application has a static
+ *   set of texture images that it includes as resources, then this can be a [TextureBitmapStore]
+ *   that always returns `null`.
+ * @receiver The [BrushFamily] object to encode.
  */
 @ExperimentalInkCustomBrushApi
 public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureBitmapStore) {
@@ -78,53 +86,61 @@ public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureB
 
 /**
  * Read a serialized [BrushFamily] from the given [InputStream] and parse it into a [BrushFamily],
- * throwing an exception if parsing was not successful. The serialized representation is
- * gzip-compressed `ink.proto.BrushFamily` binary proto messages, the same as written to
- * [OutputStream] by [BrushFamily.encode]. Java callers should use
- * [AndroidBrushFamilySerialization.decodeOrThrow].
+ * throwing an exception if parsing or validation was not successful. Java callers should use
+ * [AndroidBrushFamilySerialization.decode] instead.
  *
- * [getClientTextureId] is called synchronously as part of this function call, on the same thread.
- *
- * Will throw an appropriate subclass of [RuntimeException] if the input stream does not provide a
- * valid gzip-compressed `ink.proto.BrushFamily` binary proto message.
+ * @param input [InputStream] providing gzip-compressed `ink.proto.BrushFamily` binary proto
+ *   messages, the same as written to [OutputStream] by [encode].
+ * @param getClientTextureId A callback to store the decoded texture image, if one were encoded
+ *   inside the serialized [BrushFamily], into a [TextureBitmapStore]. This is called synchronously
+ *   as part of this function call on the same thread.
+ * @return The [BrushFamily] parsed from the [InputStream].
+ * @throws [java.io.IOException] if gzip-format bytes cannot be read from [input].
+ * @throws [IllegalArgumentException] [input] does not provide a valid `ink.proto.BrushFamily` proto
+ *   message, or the corresponding [BrushFamily] is invalid.
  */
 @SuppressWarnings("ExecutorRegistration")
 @ExperimentalInkCustomBrushApi
-public fun BrushFamily.Companion.decodeOrThrow(
+public fun BrushFamily.Companion.decode(
     input: InputStream,
     getClientTextureId: BrushFamilyDecodeCallback,
-): BrushFamily = decode(input, getClientTextureId, throwOnParseError = true)!!
-
-/**
- * Read a serialized [BrushFamily] from the given [InputStream] and parse it into a [BrushFamily],
- * returning `null` if parsing was not successful. The serialized representation is gzip-compressed
- * `ink.proto.BrushFamily` binary proto messages, the same as written to [OutputStream] by
- * [BrushFamily.encode]. Java callers should use [AndroidBrushFamilySerialization.decodeOrNull].
- *
- * [getClientTextureId] is called synchronously as part of this function call, on the same thread.
- *
- * Will return `null` if the input stream does not provide a valid gzip-compressed
- * `ink.proto.BrushFamily` binary proto message. If failed reads should fall back to some default
- * value, prefer this to [decodeOrThrow].
- */
-@SuppressWarnings("ExecutorRegistration")
-@ExperimentalInkCustomBrushApi
-public fun BrushFamily.Companion.decodeOrNull(
-    input: InputStream,
-    getClientTextureId: BrushFamilyDecodeCallback,
-): BrushFamily? = decode(input, getClientTextureId, throwOnParseError = false)
+): BrushFamily {
+    val decompressed = DecompressedBytes(input)
+    val convertPngBytesToAndroidBitmapAndCallAndroidCallback: (String, ByteArray?) -> String =
+        { textureId: String, pngBytes: ByteArray? ->
+            val bitmap: Bitmap? = pngBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+            getClientTextureId.onDecodeTexture(textureId, bitmap)
+        }
+    val nativePointer =
+        BrushSerializationNative.newBrushFamilyFromProto(
+            brushFamilyDirectByteBuffer = null,
+            brushFamilyByteArray = decompressed.bytes,
+            offset = 0,
+            length = decompressed.size,
+            callback = convertPngBytesToAndroidBitmapAndCallAndroidCallback,
+        )
+    check(nativePointer != 0L) { "Should have thrown exception if decoding failed." }
+    return BrushFamily.wrapNative(nativePointer)
+}
 
 // Using an explicit singleton object instead of @file:JvmName to put the static interface intended
 // for use from Java in a class because otherwise there are multiple top-level functions with the
 // same name and signature on the Kotlin side. If one of those were used from Kotlin, it chooses and
-// overload arbitrarily, which leads to potentially very confusing behavior (e.g. decodeOrNull might
-// work by coincidence at one point and then suddenly stop working when more overloads are added).
+// overload arbitrarily, which leads to potentially very confusing behavior (e.g. decode might work
+// by coincidence at one point and then suddenly stop working when more overloads are added).
 
 @ExperimentalInkCustomBrushApi
 public object AndroidBrushFamilySerialization {
     /**
-     * Write the gzip-compressed serialized representation of the [BrushFamily] to the given
-     * [OutputStream]. Kotlin callers should use [BrushFamily.encode] instead.
+     * Write a gzip-compressed `ink.proto.BrushFamily` binary proto message representing the
+     * [BrushFamily] to the given [OutputStream].
+     *
+     * @param brushFamily The [BrushFamily] object to encode.
+     * @param output The [OutputStream] to write the gzip-compressed encoded bytes to.
+     * @param textureBitmapStore The [TextureBitmapStore] to use to encode the texture images within
+     *   the encoded [BrushFamily]. If this is not desired behavior, e.g. if the application has a
+     *   static set of texture images that it includes as resources, then this can be a
+     *   [TextureBitmapStore] that always returns `null`.
      */
     @JvmStatic
     public fun encode(
@@ -137,92 +153,26 @@ public object AndroidBrushFamilySerialization {
 
     /**
      * Read a serialized [BrushFamily] from the given [InputStream] and parse it into a
-     * [BrushFamily], throwing an exception if parsing was not successful. The serialized
-     * representation is gzip-compressed `ink.proto.BrushFamily` binary proto messages, the same as
-     * written to [OutputStream] by [encode]. Kotlin callers should use
-     * [BrushFamily.Companion.decodeOrThrow] instead.
+     * [BrushFamily], throwing an exception if parsing or validation was not successful. Kotlin
+     * callers should use [BrushFamily.Companion.decode] instead.
      *
      * [getClientTextureId] is called synchronously as part of this function call, on the same
      * thread.
      *
-     * Will throw an appropriate subclass of [RuntimeException] if the input stream does not provide
-     * a valid gzip-compressed `ink.proto.BrushFamily` binary proto message.
+     * @param input [InputStream] providing gzip-compressed `ink.proto.BrushFamily` binary proto
+     *   messages, the same as written to [OutputStream] by [encode].
+     * @param getClientTextureId A callback to store the decoded texture image, if one were encoded
+     *   inside the serialized [BrushFamily], into a [TextureBitmapStore]. This is called
+     *   synchronously as part of this function call on the same thread.
+     * @return The [BrushFamily] parsed from the [InputStream].
+     * @throws [java.io.IOException] if gzip-format bytes cannot be read from [input].
+     * @throws [IllegalArgumentException] [input] does not provide a valid `ink.proto.BrushFamily`
+     *   proto message, or the corresponding [BrushFamily] is invalid.
      */
     @SuppressWarnings("ExecutorRegistration")
     @JvmStatic
-    public fun decodeOrThrow(
+    public fun decode(
         input: InputStream,
         getClientTextureId: BrushFamilyDecodeCallback,
-    ): BrushFamily = BrushFamily.decodeOrThrow(input, getClientTextureId)
-
-    /**
-     * Read a serialized [BrushFamily] from the given [InputStream] and parse it into a
-     * [BrushFamily], returning `null` if parsing was not successful. The serialized representation
-     * is gzip-compressed `ink.proto.BrushFamily` binary proto messages, the same as written to
-     * [OutputStream] by [encode]. Kotlin callers should use [BrushFamily.Companion.decodeOrNull]
-     * instead.
-     *
-     * [getClientTextureId] is called synchronously as part of this function call, on the same
-     * thread.
-     *
-     * Will return `null` if the input stream does not provide a valid gzip-compressed
-     * `ink.proto.BrushFamily` binary proto message. If failed reads should fall back to some
-     * default value, prefer this to [decodeOrThrow].
-     */
-    @SuppressWarnings("ExecutorRegistration")
-    @JvmStatic
-    public fun decodeOrNull(
-        input: InputStream,
-        getClientTextureId: BrushFamilyDecodeCallback,
-    ): BrushFamily? = BrushFamily.decodeOrNull(input, getClientTextureId)
-}
-
-/**
- * A helper for the public functions for decoding a [BrushFamily] from an [InputStream] providing
- * the serialized representation put to an [OutputStream] by [BrushFamily.encode]. The serialized
- * representation is gzip-compressed `ink.proto.BrushFamily` binary proto messages.
- *
- * @param input The [InputStream] to read the serialized [BrushFamily] from.
- * @param getClientTextureId The [BrushFamilyDecodeCallback] to call with the decoded textures.
- * @param throwOnParseError Configuration flag for whether to throw (`true`) or return null
- *   (`false`) when the underlying parsing fails. If an exception is thrown, it should have a
- *   descriptive error message.
- */
-@ExperimentalInkCustomBrushApi
-private fun decode(
-    input: InputStream,
-    getClientTextureId: BrushFamilyDecodeCallback,
-    throwOnParseError: Boolean,
-): BrushFamily? {
-    val decompressed =
-        try {
-            DecompressedBytes(input)
-        } catch (e: IOException) {
-            if (throwOnParseError) {
-                throw e
-            }
-            return null
-        }
-    val convertPngBytesToAndroidBitmapAndCallAndroidCallback: (String, ByteArray?) -> String =
-        { textureId: String, pngBytes: ByteArray? ->
-            val bitmap: Bitmap? = pngBytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-            getClientTextureId.onDecodeTexture(textureId, bitmap)
-        }
-
-    val nativePointer =
-        BrushSerializationNative.newBrushFamilyFromProto(
-            brushFamilyDirectByteBuffer = null,
-            brushFamilyByteArray = decompressed.bytes,
-            offset = 0,
-            length = decompressed.size,
-            throwOnParseError = throwOnParseError,
-            callback = convertPngBytesToAndroidBitmapAndCallAndroidCallback,
-        )
-    if (nativePointer == 0L) {
-        check(!throwOnParseError) {
-            "throwOnParseError is set and the native call returned a zero memory address."
-        }
-        return null
-    }
-    return BrushFamily.wrapNative(nativePointer)
+    ): BrushFamily = BrushFamily.decode(input, getClientTextureId)
 }

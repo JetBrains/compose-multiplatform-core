@@ -17,6 +17,7 @@
 package androidx.navigationevent
 
 import androidx.kruth.assertThat
+import androidx.kruth.assertThrows
 import androidx.navigationevent.NavigationEvent.Companion.EDGE_LEFT
 import kotlin.test.Test
 
@@ -300,7 +301,7 @@ class NavigationEventDispatcherTest {
             NavigationEventDispatcher(fallbackOnBackPressed = { history += "fallback called" })
 
         val callback1 =
-            object : NavigationEventCallback(isEnabled = true) {
+            object : NavigationEventCallback(isEnabled = true, isPassThrough = true) {
                 override fun onEventStarted(event: NavigationEvent) {
                     history += "callback1 onEventStarted"
                 }
@@ -309,12 +310,11 @@ class NavigationEventDispatcherTest {
                     history += "callback1 onEventCompleted"
                 }
             }
-        callback1.isPassThrough = true
 
         dispatcher.addCallback(callback1)
 
         val callback2 =
-            object : NavigationEventCallback(isEnabled = true) {
+            object : NavigationEventCallback(isEnabled = true, isPassThrough = true) {
                 override fun onEventStarted(event: NavigationEvent) {
                     history += "callback2 onEventStarted"
                 }
@@ -323,7 +323,6 @@ class NavigationEventDispatcherTest {
                     history += "callback2 onEventCompleted"
                 }
             }
-        callback2.isPassThrough = true
 
         dispatcher.addCallback(callback2)
 
@@ -373,17 +372,54 @@ class NavigationEventDispatcherTest {
         dispatcher.addCallback(normalCallback, NavigationEventPriority.Default)
 
         val overlayCallback =
-            object : NavigationEventCallback(isEnabled = true) {
+            object : NavigationEventCallback(isEnabled = true, isPassThrough = true) {
                 override fun onEventCompleted() {
                     history += "overlayCallback onEventCompleted"
                 }
             }
-        overlayCallback.isPassThrough = true
         dispatcher.addCallback(overlayCallback, NavigationEventPriority.Overlay)
 
         dispatcher.dispatchOnCompleted()
 
         assertThat(history)
             .containsExactly("overlayCallback onEventCompleted", "normalCallback onEventCompleted")
+    }
+
+    @Test
+    fun adding_a_callback_to_more_dispatchers_throws_exception() {
+        val history = mutableListOf<String>()
+
+        val callback =
+            object : NavigationEventCallback(true) {
+                override fun onEventCompleted() {
+                    history += "onEventCompleted"
+                }
+            }
+
+        val dispatcher1 = NavigationEventDispatcher {}
+        dispatcher1.addCallback(callback)
+
+        val dispatcher2 = NavigationEventDispatcher {}
+        assertThrows(IllegalStateException::class) { dispatcher2.addCallback(callback) }
+            .hasMessageThat()
+            .contains("is already registered with a dispatcher")
+    }
+
+    @Test
+    fun adding_a_callback_to_the_same_dispatcher_twice_throws_exception() {
+        val history = mutableListOf<String>()
+
+        val callback =
+            object : NavigationEventCallback(true) {
+                override fun onEventCompleted() {
+                    history += "onEventCompleted"
+                }
+            }
+
+        val dispatcher = NavigationEventDispatcher {}
+        dispatcher.addCallback(callback)
+        assertThrows(IllegalStateException::class) { dispatcher.addCallback(callback) }
+            .hasMessageThat()
+            .contains("is already registered with a dispatcher")
     }
 }

@@ -139,6 +139,9 @@ internal class KeylineList internal constructor(keylines: List<Keyline>) :
                     "All KeylineLists must have at least one focal keyline"
                 )
 
+    /** The total number of focal keylines. */
+    val focalCount = lastFocalIndex - firstFocalIndex + 1
+
     /**
      * Returns true if the first focal item's left/top is within the visible bounds of the container
      * and is the first non-anchor keyline.

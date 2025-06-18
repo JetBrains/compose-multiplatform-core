@@ -38,7 +38,6 @@ internal object StrokeInputBatchSerializationNative {
         byteArray: ByteArray?,
         offset: Int,
         length: Int,
-        throwOnParseError: Boolean,
     ): Long
 
     @UsedByNative external fun serialize(nativeStrokeInputBatchPointer: Long): ByteArray

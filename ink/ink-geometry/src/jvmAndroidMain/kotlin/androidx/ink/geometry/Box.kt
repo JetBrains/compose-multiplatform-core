@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2024-2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
-import androidx.ink.geometry.internal.BoxNative
+import androidx.ink.nativeloader.NativeLoader
+import androidx.ink.nativeloader.UsedByNative
 import kotlin.math.abs
 
 /**
@@ -56,7 +57,7 @@ public abstract class Box internal constructor() {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun computeCenter(): ImmutableVec {
-        return BoxNative.createCenter(xMin, yMin, xMax, yMax, ImmutableVec::class.java)
+        return BoxNative.createCenter(xMin, yMin, xMax, yMax)
     }
 
     /** Populates [outVec] with the center of the [Box], and returns [outVec]. */
@@ -162,4 +163,51 @@ public abstract class Box internal constructor() {
         fun string(box: Box): String =
             box.run { "Box(xMin=$xMin, yMin=$yMin, xMax=$xMax, yMax=$yMax)" }
     }
+}
+
+@UsedByNative
+internal object BoxNative {
+
+    init {
+        NativeLoader.load()
+    }
+
+    @UsedByNative
+    external fun createCenter(
+        rectXMin: Float,
+        rectYMin: Float,
+        rectXMax: Float,
+        rectYMax: Float,
+    ): ImmutableVec
+
+    @UsedByNative
+    external fun populateCenter(
+        rectXMin: Float,
+        rectYMin: Float,
+        rectXMax: Float,
+        rectYMax: Float,
+        out: MutableVec,
+    )
+
+    @UsedByNative
+    external fun containsPoint(
+        rectXMin: Float,
+        rectYMin: Float,
+        rectXMax: Float,
+        rectYMax: Float,
+        pointX: Float,
+        pointY: Float,
+    ): Boolean
+
+    @UsedByNative
+    external fun containsBox(
+        rectXMin: Float,
+        rectYMin: Float,
+        rectXMax: Float,
+        rectYMax: Float,
+        otherXMin: Float,
+        otherYMin: Float,
+        otherXMax: Float,
+        otherYMax: Float,
+    ): Boolean
 }

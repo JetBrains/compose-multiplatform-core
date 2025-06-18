@@ -18,6 +18,7 @@ package androidx.pdf.view
 
 import android.graphics.Point
 import android.graphics.Rect
+import android.graphics.RectF
 import android.util.Range
 import android.util.SparseArray
 import androidx.core.util.keyIterator
@@ -110,10 +111,10 @@ class PageMetadataLoaderTest {
         visiblePageValues.add(paginationManager.visiblePages)
 
         // Change the viewport twice
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         visiblePageValues.add(paginationManager.visiblePages)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 1000, 500, 2000))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 1000f, 500f, 2000f))
         assertThat(changed2).isTrue()
         visiblePageValues.add(paginationManager.visiblePages)
 
@@ -137,10 +138,10 @@ class PageMetadataLoaderTest {
         visiblePageValues.add(paginationManager.visiblePages)
 
         // Change the viewport twice, but to the same value
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         visiblePageValues.add(paginationManager.visiblePages)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed2).isFalse()
         visiblePageValues.add(paginationManager.visiblePages)
 
@@ -162,7 +163,7 @@ class PageMetadataLoaderTest {
 
         // Update the viewport, for simplicity's sake to a value that fits all the currently
         // measured pages
-        paginationManager.onViewportChanged(Rect(0, 0, 0, 1200))
+        paginationManager.onViewportChanged(RectF(0f, 0f, 0f, 1200f))
 
         // Make sure we've fetched all currently measured & visible pages + the page prefetch radius
         testScope.testScheduler.runCurrent()
@@ -180,10 +181,10 @@ class PageMetadataLoaderTest {
         fullyVisibleValues.add(paginationManager.fullyVisiblePages)
 
         // Change the viewport twice
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         fullyVisibleValues.add(paginationManager.fullyVisiblePages)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 500, 500, 1500))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1500f))
         assertThat(changed2).isTrue()
         fullyVisibleValues.add(paginationManager.fullyVisiblePages)
 
@@ -207,10 +208,10 @@ class PageMetadataLoaderTest {
         fullyVisibleValues.add(paginationManager.fullyVisiblePages)
 
         // Change the viewport twice, to the same value
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         fullyVisibleValues.add(paginationManager.fullyVisiblePages)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed2).isFalse()
         fullyVisibleValues.add(paginationManager.fullyVisiblePages)
 
@@ -225,7 +226,7 @@ class PageMetadataLoaderTest {
 
     @Test
     fun onViewportChanged_updateVisiblePageAreas() = runTest {
-        val visiblePageAreas = mutableListOf<SparseArray<Rect>>()
+        val visiblePageAreas = mutableListOf<SparseArray<RectF>>()
         // Add some pages to the manager and wait for their dimensions to load
         paginationManager.increaseReach(20)
         testScope.testScheduler.runCurrent()
@@ -233,10 +234,10 @@ class PageMetadataLoaderTest {
         visiblePageAreas.add(paginationManager.visiblePageAreas)
 
         // Change the viewport twice
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         visiblePageAreas.add(paginationManager.visiblePageAreas)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 500, 500, 1500))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 500f, 500f, 1500f))
         assertThat(changed2).isTrue()
         visiblePageAreas.add(paginationManager.visiblePageAreas)
 
@@ -264,7 +265,7 @@ class PageMetadataLoaderTest {
 
     @Test
     fun onViewportChanged_updateVisiblePageAreas_noChange() = runTest {
-        val visiblePageAreas = mutableListOf<SparseArray<Rect>>()
+        val visiblePageAreas = mutableListOf<SparseArray<RectF>>()
         // Add some pages to the manager and wait for their dimensions to load
         paginationManager.increaseReach(20)
         testScope.testScheduler.runCurrent()
@@ -272,10 +273,10 @@ class PageMetadataLoaderTest {
         visiblePageAreas.add(paginationManager.visiblePageAreas)
 
         // Change the viewport twice, but to the same value
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         visiblePageAreas.add(paginationManager.visiblePageAreas)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed2).isFalse()
         visiblePageAreas.add(paginationManager.visiblePageAreas)
 
@@ -296,7 +297,7 @@ class PageMetadataLoaderTest {
 
     @Test
     fun onViewportChanged_updatePageLocations() = runTest {
-        val pageLocations = mutableListOf<SparseArray<Rect>>()
+        val pageLocations = mutableListOf<SparseArray<RectF>>()
         // Add some pages to the manager and wait for their dimensions to load
         paginationManager.increaseReach(20)
         testScope.testScheduler.runCurrent()
@@ -304,10 +305,10 @@ class PageMetadataLoaderTest {
         pageLocations.add(paginationManager.pageLocations)
 
         // Change the viewport twice
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         pageLocations.add(paginationManager.pageLocations)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 500, 500, 1500))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 500f, 500f, 1500f))
         assertThat(changed2).isTrue()
         pageLocations.add(paginationManager.pageLocations)
 
@@ -322,7 +323,7 @@ class PageMetadataLoaderTest {
         assertThat(firstLocations.size()).isEqualTo(5)
         assertThat(firstLocations.keyAt(0)).isEqualTo(0)
         assertThat(firstLocations.keyAt(4)).isEqualTo(4)
-        var lastPageTop = -1
+        var lastPageTop = -1f
         for (page in firstLocations.keyIterator()) {
             val thisPageTop = firstLocations.get(page).top
             assertThat(thisPageTop).isGreaterThan(lastPageTop)
@@ -333,7 +334,7 @@ class PageMetadataLoaderTest {
         assertThat(secondLocations.size()).isEqualTo(5)
         assertThat(secondLocations.keyAt(0)).isEqualTo(2)
         assertThat(secondLocations.keyAt(4)).isEqualTo(6)
-        lastPageTop = 0
+        lastPageTop = 0f
         for (page in secondLocations.keyIterator()) {
             val thisPageTop = secondLocations.get(page).top
             assertThat(thisPageTop).isGreaterThan(lastPageTop)
@@ -343,7 +344,7 @@ class PageMetadataLoaderTest {
 
     @Test
     fun onViewportChanged_updatePageLocations_noChange() = runTest {
-        val pageLocations = mutableListOf<SparseArray<Rect>>()
+        val pageLocations = mutableListOf<SparseArray<RectF>>()
         // Add some pages to the manager and wait for their dimensions to load
         paginationManager.increaseReach(20)
         testScope.testScheduler.runCurrent()
@@ -351,10 +352,10 @@ class PageMetadataLoaderTest {
         pageLocations.add(paginationManager.pageLocations)
 
         // Change the viewport twice
-        val changed1 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed1 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed1).isTrue()
         pageLocations.add(paginationManager.pageLocations)
-        val changed2 = paginationManager.onViewportChanged(Rect(0, 0, 500, 1000))
+        val changed2 = paginationManager.onViewportChanged(RectF(0f, 0f, 500f, 1000f))
         assertThat(changed2).isFalse()
         pageLocations.add(paginationManager.pageLocations)
 
@@ -369,7 +370,7 @@ class PageMetadataLoaderTest {
         assertThat(firstLocations.size()).isEqualTo(5)
         assertThat(firstLocations.keyAt(0)).isEqualTo(0)
         assertThat(firstLocations.keyAt(4)).isEqualTo(4)
-        var lastPageTop = -1
+        var lastPageTop = -1f
         for (page in firstLocations.keyIterator()) {
             val thisPageTop = firstLocations.get(page).top
             assertThat(thisPageTop).isGreaterThan(lastPageTop)
@@ -533,7 +534,7 @@ class PageMetadataLoaderTest {
     }
 }
 
-private val Rect.area: Int
+private val RectF.area: Float
     get() = width() * height()
 
 private const val TOTAL_PAGES = 100

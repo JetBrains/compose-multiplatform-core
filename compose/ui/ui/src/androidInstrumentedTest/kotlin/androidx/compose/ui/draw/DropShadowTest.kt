@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.shadow.ShadowParams
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.ValueElement
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
@@ -123,7 +123,7 @@ class DropShadowTest {
                 AtLeastSize(size = 12, modifier = Modifier.background(Color.White)) {
                     val shadow =
                         if (model.value) {
-                            Modifier.dropShadow(RectangleShape, ShadowParams(2.dp))
+                            Modifier.dropShadow(RectangleShape, Shadow(2.dp))
                         } else {
                             Modifier
                         }
@@ -143,13 +143,13 @@ class DropShadowTest {
     fun testInspectorValue() {
         rule.runOnUiThreadIR {
             val modifier =
-                Modifier.dropShadow(RectangleShape, ShadowParams(8.dp)).first() as InspectableValue
+                Modifier.dropShadow(RectangleShape, Shadow(8.dp)).first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("dropShadow")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.asIterable())
                 .containsExactly(
                     ValueElement("shape", RectangleShape),
-                    ValueElement("dropShadow", ShadowParams(8.dp)),
+                    ValueElement("dropShadow", Shadow(8.dp)),
                 )
         }
     }
@@ -162,7 +162,7 @@ class DropShadowTest {
         AtLeastSize(size = 12, modifier = modifier.background(Color.White)) {
             AtLeastSize(
                 size = 10,
-                modifier = Modifier.dropShadow(RectangleShape, ShadowParams(radius.value)),
+                modifier = Modifier.dropShadow(RectangleShape, Shadow(radius.value)),
             ) {}
         }
     }

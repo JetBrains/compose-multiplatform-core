@@ -79,8 +79,8 @@ class HelloArActivity : ComponentActivity() {
 
                     planeRenderer = PlaneRenderer(session, lifecycleScope)
                     anchorRenderer = AnchorRenderer(this, planeRenderer, session, lifecycleScope)
-                    session.lifecycle.addObserver(planeRenderer)
-                    session.lifecycle.addObserver(anchorRenderer)
+                    lifecycle.addObserver(planeRenderer)
+                    lifecycle.addObserver(anchorRenderer)
 
                     setContent {
                         Subspace {
@@ -96,7 +96,7 @@ class HelloArActivity : ComponentActivity() {
                     }
                 },
             )
-        lifecycle.addObserver(sessionHelper)
+        sessionHelper.tryCreateSession()
     }
 }
 

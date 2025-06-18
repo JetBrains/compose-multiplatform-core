@@ -46,6 +46,7 @@ class AttachedSurfaceInfoTest {
     private val inputFormat = ImageFormat.PRIVATE
     private val sessionType = SESSION_TYPE_REGULAR
     private val targetFrameRate = Range(10, 20)
+    private val isStrictFrameRateRequired = true
     private val config =
         FakeUseCaseConfig.Builder(CaptureType.PREVIEW, inputFormat).useCaseConfig.config
 
@@ -61,6 +62,7 @@ class AttachedSurfaceInfoTest {
                 config,
                 sessionType,
                 targetFrameRate,
+                isStrictFrameRateRequired,
             )
     }
 
@@ -120,6 +122,11 @@ class AttachedSurfaceInfoTest {
     }
 
     @Test
+    fun canGetIsStrictFrameRateRequired() {
+        Truth.assertThat(attachedSurfaceInfo!!.isStrictFrameRateRequired).isTrue()
+    }
+
+    @Test
     fun defaultSessionTypeAndFrameRate() {
         val attachedSurfaceInfo2 =
             AttachedSurfaceInfo.create(
@@ -131,6 +138,7 @@ class AttachedSurfaceInfoTest {
                 config,
                 sessionType,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                isStrictFrameRateRequired,
             )
         Truth.assertThat(attachedSurfaceInfo2.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
         Truth.assertThat(attachedSurfaceInfo2.targetFrameRate)

@@ -50,6 +50,7 @@ androidXMultiplatform {
                 implementation(libs.testRunner)
                 implementation(libs.espressoCore)
                 implementation(libs.junit)
+                implementation(libs.kotlinTest)
                 implementation(libs.truth)
                 implementation("androidx.core:core-ktx:1.15.0")
                 implementation(project(":test:screenshot:screenshot"))

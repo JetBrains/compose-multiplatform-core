@@ -27,6 +27,9 @@ plugins {
 
 android {
     namespace = "androidx.test.shell"
+    defaultConfig {
+        minSdk 23
+    }
 }
 
 // This is a kmp library even though it targets only android. The reason is that KonanBuildService

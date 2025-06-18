@@ -29,12 +29,18 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.navigation.common"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+    }
     desktop()
     mac()
     linux()
@@ -118,6 +124,8 @@ androidXMultiplatform {
                 implementation(libs.truth)
                 implementation(libs.kotlinCoroutinesCore)
                 implementation(libs.kotlinCoroutinesTest)
+                runtimeOnly(libs.kotlinTestJunit)
+                runtimeOnly(libs.testCore)
             }
         }
 
@@ -186,17 +194,7 @@ androidXMultiplatform {
     }
 }
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-    namespace = "androidx.navigation.common"
-}
-
 dependencies {
-    androidTestRuntimeOnly(libs.kotlinTestJunit)
-    androidTestRuntimeOnly(libs.testCore)
-
     lintPublish(project(":navigation:navigation-common-lint"))
 }
 

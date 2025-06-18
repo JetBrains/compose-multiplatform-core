@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2024-2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,11 +46,10 @@ private constructor(
 ) {
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public val composeColor: ComposeColor =
+    public val internalColor: ComposeColor =
         // Caching this because the native call is slow. Still doing the round-trip on construction
         // to
-        // ensure this is excercised by tests and that deserialized brushes are consistent with
-        // newly
+        // ensure this is exercised by tests and that deserialized brushes are consistent with newly
         // constructed brushes.
         ComposeColor(BrushNative.computeComposeColorLong(nativePointer).toULong())
 
@@ -147,20 +146,20 @@ private constructor(
      * Display P3.
      */
     public val colorLong: Long
-        @ColorLong get(): Long = composeColor.value.toLong()
+        @ColorLong get(): Long = internalColor.value.toLong()
 
     /**
      * The brush color as a [ColorInt], which can only express colors in the sRGB color space. For
      * clients that want to support wide-gamut colors, use [colorLong].
      */
     public val colorIntArgb: Int
-        @ColorInt get(): Int = composeColor.toArgb()
+        @ColorInt get(): Int = internalColor.toArgb()
 
     // Base implementation of copy() that all public versions call.
     private fun copy(family: BrushFamily, color: ComposeColor, size: Float, epsilon: Float): Brush {
         return if (
             family == this.family &&
-                color == this.composeColor &&
+                color == this.internalColor &&
                 size == this.size &&
                 epsilon == this.epsilon
         ) {
@@ -192,7 +191,7 @@ private constructor(
             toInclusive = false,
         )
         epsilon: Float = this.epsilon,
-    ): Brush = copy(family, this.composeColor, size, epsilon)
+    ): Brush = copy(family, this.internalColor, size, epsilon)
 
     /**
      * Creates a copy of `this` and allows named properties to be altered while keeping the rest
@@ -257,7 +256,7 @@ private constructor(
      * builder to build a copy of a Brush. Kotlin developers, see [copy] method.
      */
     public fun toBuilder(): Builder =
-        Builder().setFamily(family).setComposeColor(composeColor).setSize(size).setEpsilon(epsilon)
+        Builder().setFamily(family).setComposeColor(internalColor).setSize(size).setEpsilon(epsilon)
 
     /**
      * Builder for [Brush].
@@ -370,7 +369,7 @@ private constructor(
         if (other !is Brush) return false
 
         if (family != other.family) return false
-        if (composeColor != other.composeColor) return false
+        if (internalColor != other.internalColor) return false
         if (size != other.size) return false
         if (epsilon != other.epsilon) return false
 
@@ -380,20 +379,23 @@ private constructor(
     // NOMUTANTS -- not testing exact hashCode values, just that equality implies the same hashCode.
     override fun hashCode(): Int {
         var result = family.hashCode()
-        result = 31 * result + composeColor.hashCode()
+        result = 31 * result + internalColor.hashCode()
         result = 31 * result + size.hashCode()
         result = 31 * result + epsilon.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "Brush(family=$family, color=$composeColor, size=$size, epsilon=$epsilon)"
+        return "Brush(family=$family, color=$internalColor, size=$size, epsilon=$epsilon)"
     }
 
     /** Delete native Brush memory. */
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
-        BrushNative.free(nativePointer)
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            BrushNative.free(nativePointer)
+        }
     }
 
     public companion object {
@@ -480,6 +482,7 @@ private object BrushNative {
 
     /** This is a callback used by computeComposeColorLong. */
     @UsedByNative
+    @JvmStatic
     fun composeColorLongFromComponents(
         colorSpaceId: Int,
         redGammaCorrected: Float,

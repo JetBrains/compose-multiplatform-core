@@ -16,13 +16,16 @@
 
 package androidx.test.shell.internal
 
+import android.annotation.SuppressLint
 import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.BufferedReader
+import java.lang.Thread.sleep
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.TimeoutException
 
 internal const val TAG = "Shell"
 
@@ -59,3 +62,22 @@ internal fun randomHexString(len: Int) =
         .array()
         .take(len)
         .joinToString("") { "%02x".format(it) }
+
+internal fun waitFor(
+    timeoutMs: Long = 10000L,
+    poolIntervalMs: Long = 1000L,
+    onError: () -> (Unit) = { throw TimeoutException("Condition was not met.") },
+    condition: () -> (Boolean),
+) {
+    val start = System.nanoTime()
+    while (true) {
+        if ((System.nanoTime() - start) / 1_000_000 >= timeoutMs) {
+            onError()
+            return
+        }
+        if (condition()) {
+            break
+        }
+        @SuppressLint("BanThreadSleep") sleep(poolIntervalMs)
+    }
+}

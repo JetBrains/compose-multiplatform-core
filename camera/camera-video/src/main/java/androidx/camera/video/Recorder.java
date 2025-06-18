@@ -3111,11 +3111,17 @@ public final class Recorder implements VideoOutput {
      * Returns the high-speed {@link VideoCapabilities} of Recorder with respect to input camera
      * information.
      *
+     * <p>The returned {@link VideoCapabilities} provides methods to query supported dynamic
+     * ranges, qualities for high-speed video. For recording high-speed and slow-motion
+     * videos, refer to {@link HighSpeedVideoSessionConfig}.
+     *
      * @param cameraInfo info about the camera.
      * @return high-speed VideoCapabilities with respect to the input camera info, or null if
-     * high-speed recording is not supported.
+     * high-speed video is not supported.
+     * @see HighSpeedVideoSessionConfig
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO(b/404096374): High-speed public API
+    @ExperimentalHighSpeedVideo
     public static @Nullable VideoCapabilities getHighSpeedVideoCapabilities(
             @NonNull CameraInfo cameraInfo) {
         return getHighSpeedVideoCapabilities(cameraInfo,
@@ -3126,12 +3132,22 @@ public final class Recorder implements VideoOutput {
      * Returns the high-speed {@link VideoCapabilities} of Recorder with respect to input camera
      * information and video capabilities source.
      *
+     * <p>The returned {@link VideoCapabilities} provides methods to query supported dynamic
+     * ranges, qualities for high-speed video. For recording high-speed and slow-motion
+     * videos, refer to {@link HighSpeedVideoSessionConfig}.
+     *
+     * <p>The possible video capabilities sources include
+     * {@link #VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE} and
+     * {@link #VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES}.
+     *
      * @param cameraInfo              info about the camera.
      * @param videoCapabilitiesSource the video capabilities source.
      * @return high-speed VideoCapabilities with respect to the input camera info and video
-     * capabilities source, or null if high-speed recording is not supported.
+     * capabilities source, or null if high-speed video is not supported.
+     * @see HighSpeedVideoSessionConfig
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO(b/404096374): High-speed public API
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // Don't expose this API for the initial version.
+    @ExperimentalHighSpeedVideo
     public static @Nullable VideoCapabilities getHighSpeedVideoCapabilities(
             @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {

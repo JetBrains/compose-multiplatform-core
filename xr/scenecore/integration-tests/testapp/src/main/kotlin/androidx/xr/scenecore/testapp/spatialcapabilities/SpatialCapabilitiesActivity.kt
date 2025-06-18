@@ -137,7 +137,7 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
     private fun toggleMode(session: Session): String {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session.scene.spatialEnvironment.requestHomeSpaceMode()
+                session.scene.requestHomeSpaceMode()
                 spatialMode = SpatialMode.HSM
                 addNewSpatialLogEvent(
                     SpatialEventLog(currentTimestamp(), EventType.MODE_CHANGED_TO_HSM.text, "")
@@ -145,7 +145,7 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
                 return getString(R.string.switch_to_fsm_button_text)
             }
             SpatialMode.HSM -> {
-                session.scene.spatialEnvironment.requestFullSpaceMode()
+                session.scene.requestFullSpaceMode()
                 spatialMode = SpatialMode.FSM
                 addNewSpatialLogEvent(
                     SpatialEventLog(currentTimestamp(), EventType.MODE_CHANGED_TO_FSM.text, "")

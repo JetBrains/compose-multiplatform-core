@@ -18,7 +18,7 @@ package androidx.pdf.view
 
 import android.graphics.Canvas
 import android.graphics.Point
-import android.graphics.Rect
+import android.graphics.RectF
 import android.util.Range
 import android.util.SparseArray
 import androidx.core.util.isEmpty
@@ -83,7 +83,7 @@ internal class PageManager(
     internal fun areAllVisiblePagesFullyRendered(
         visiblePageRange: Range<Int>,
         zoom: Float,
-        visiblePageAreas: SparseArray<Rect>?,
+        visiblePageAreas: SparseArray<RectF>?,
     ): Boolean =
         (visiblePageRange.lower..visiblePageRange.upper).all { pageNum ->
             pages[pageNum]?.isFullyRendered(zoom, visiblePageAreas?.get(pageNum)) ?: false
@@ -107,7 +107,7 @@ internal class PageManager(
      *   visibility
      */
     fun updatePageVisibilities(
-        visiblePageAreas: SparseArray<Rect>,
+        visiblePageAreas: SparseArray<RectF>,
         currentZoomLevel: Float,
         stablePosition: Boolean,
         pauseBitmapFetch: Boolean,
@@ -150,9 +150,9 @@ internal class PageManager(
      */
     fun maybeInvalidateAreas(
         pageNum: Int,
-        visibleArea: Rect,
+        visibleArea: RectF,
         currentZoom: Float,
-        areasToUpdate: List<Rect>,
+        areasToUpdate: List<RectF>,
     ) {
         val invalidatedArea = areasToUpdate.union()
         if (invalidatedArea.intersect(visibleArea)) {
@@ -171,7 +171,7 @@ internal class PageManager(
         size: Point,
         currentZoomLevel: Float,
         stablePosition: Boolean,
-        viewArea: Rect? = null,
+        viewArea: RectF? = null,
         pauseBitmapFetch: Boolean,
         pdfFormFillingConfig: PdfFormFillingConfig,
         formWidgetInfos: List<FormWidgetInfo>? = null,
@@ -215,7 +215,7 @@ internal class PageManager(
     }
 
     /** Draws the [Page] at [pageNum] to the canvas at [locationInView] */
-    fun drawPage(pageNum: Int, canvas: Canvas, locationInView: Rect) {
+    fun drawPage(pageNum: Int, canvas: Canvas, locationInView: RectF) {
         val highlightsForPage = highlights.getOrDefault(pageNum, EMPTY_HIGHLIGHTS)
         pages.get(pageNum)?.draw(canvas, locationInView, highlightsForPage)
     }
@@ -238,9 +238,9 @@ internal class PageManager(
         return pages[pdfPoint.pageNum]?.formWidgetInfos
     }
 
-    private fun List<Rect>.union(): Rect {
-        if (isEmpty()) return Rect()
-        val unionRect = Rect()
+    private fun List<RectF>.union(): RectF {
+        if (isEmpty()) return RectF()
+        val unionRect = RectF()
         for (rect in this) {
             unionRect.union(rect)
         }

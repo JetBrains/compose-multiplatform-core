@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
@@ -72,7 +72,7 @@ fun MovingContentDemo() {
         ) {
             Text(
                 shortText,
-                modifier = Modifier.requestedFrameRate(30f).offset { IntOffset(x = offset, y = 0) },
+                modifier = Modifier.preferredFrameRate(30f).offset { IntOffset(x = offset, y = 0) },
             )
         }
     }

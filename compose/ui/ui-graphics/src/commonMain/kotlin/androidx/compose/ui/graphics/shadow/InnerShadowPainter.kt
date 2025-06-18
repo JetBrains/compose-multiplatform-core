@@ -43,29 +43,29 @@ import kotlin.math.max
 
 /**
  * [Painter] implementation that draws an inner shadow with the geometry defined by the specified
- * shape and [ShadowParams].
+ * shape and [Shadow].
  */
 class InnerShadowPainter
 internal constructor(
     private val shape: Shape,
-    private val shadowParams: ShadowParams,
+    private val shadow: Shadow,
     private val renderCreator: InnerShadowRendererProvider = InnerShadowRendererProvider.Default,
 ) : Painter() {
 
     /**
-     * Create an [InnerShadowPainter] with the specified [shape] and [shadowParams]. It is preferred
-     * to obtain an instance of the [InnerShadowPainter] through a [ShadowContext] instance instead,
-     * as the underlying shadow dependencies can be shared across multiple [InnerShadowPainter]
+     * Create an [InnerShadowPainter] with the specified [shape] and [shadow]. It is preferred to
+     * obtain an instance of the [InnerShadowPainter] through a [ShadowContext] instance instead, as
+     * the underlying shadow dependencies can be shared across multiple [InnerShadowPainter]
      * instances. However, creating an instance through this constructor will not share resources
      * with any other [InnerShadowPainter].
      *
      * @param shape Shape of the shadow
-     * @param shadowParams Parameters used to render the shadow
+     * @param shadow Parameters used to render the shadow
      */
     constructor(
         shape: Shape,
-        shadowParams: ShadowParams,
-    ) : this(shape, shadowParams, InnerShadowRendererProvider.Default)
+        shadow: Shadow,
+    ) : this(shape, shadow, InnerShadowRendererProvider.Default)
 
     /* Painter properties */
     private var alpha: Float = 1f
@@ -77,21 +77,15 @@ internal constructor(
 
     override fun DrawScope.onDraw() {
         val renderer =
-            renderCreator.obtainInnerShadowRenderer(
-                shape,
-                size,
-                layoutDirection,
-                this,
-                shadowParams,
-            )
+            renderCreator.obtainInnerShadowRenderer(shape, size, layoutDirection, this, shadow)
         with(renderer) {
             drawShadow(
                 colorFilter,
                 size,
-                shadowParams.color,
-                shadowParams.brush,
-                (alpha * shadowParams.alpha).coerceIn(0f, 1f),
-                shadowParams.blendMode,
+                shadow.color,
+                shadow.brush,
+                (alpha * shadow.alpha).coerceIn(0f, 1f),
+                shadow.blendMode,
             )
         }
     }
@@ -118,7 +112,7 @@ internal fun interface InnerShadowRendererProvider {
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
-        shadowParams: ShadowParams,
+        shadow: Shadow,
     ): InnerShadowRenderer
 
     companion object {
@@ -133,11 +127,11 @@ internal fun interface InnerShadowRendererProvider {
 }
 
 /**
- * Class responsible for rendering an inner shadow with the specified [outline] and [shadowParams].
- * While each call site may have their own [InnerShadowPainter], each instance may share the same
+ * Class responsible for rendering an inner shadow with the specified [outline] and [shadow]. While
+ * each call site may have their own [InnerShadowPainter], each instance may share the same
  * [InnerShadowRenderer] if the generated outline is the same.
  */
-internal class InnerShadowRenderer(private val shadowParams: ShadowParams, outline: Outline) :
+internal class InnerShadowRenderer(private val shadow: Shadow, outline: Outline) :
     ShadowRenderer(outline) {
 
     /** Paint used to draw the shadow with a Blur */
@@ -153,10 +147,10 @@ internal class InnerShadowRenderer(private val shadowParams: ShadowParams, outli
     private fun obtainMatrix(): Matrix = matrix ?: Matrix().also { matrix = it }
 
     override fun DrawScope.buildShadow(size: Size, cornerRadius: CornerRadius, path: Path?) {
-        val radius = shadowParams.radius.toPx()
-        val spread = shadowParams.spread.toPx()
-        val offsetX = shadowParams.offset.x.toPx()
-        val offsetY = shadowParams.offset.y.toPx()
+        val radius = shadow.radius.toPx()
+        val spread = shadow.spread.toPx()
+        val offsetX = shadow.offset.x.toPx()
+        val offsetY = shadow.offset.y.toPx()
         shadowMask =
             if (path != null) {
                 createInnerPathShadowBrush(size, path, radius, spread, offsetX, offsetY)
@@ -190,10 +184,10 @@ internal class InnerShadowRenderer(private val shadowParams: ShadowParams, outli
     ) {
         shadowMask?.let { mask ->
             val targetBrush =
-                if (shadowParams.brush is ShaderBrush) {
+                if (shadow.brush is ShaderBrush) {
                     // If we have a Brush to blend against then create/reuse a ComposeShader with
                     // the shadow texture blended against the gradient
-                    obtainCompositeBrush(mask, shadowParams.brush)
+                    obtainCompositeBrush(mask, shadow.brush)
                 } else {
                     // Otherwise, draw with the BitmapShader of the shadow itself
                     mask
@@ -223,7 +217,7 @@ internal class InnerShadowRenderer(private val shadowParams: ShadowParams, outli
                     cornerRadius = cornerRadius,
                     colorFilter = colorFilter,
                     alpha = alpha,
-                    blendMode = shadowParams.blendMode,
+                    blendMode = shadow.blendMode,
                 )
             }
         }

@@ -104,6 +104,7 @@ class BackHandlerTest {
     @Test
     fun testBackHandlerLifecycle() {
         var interceptedBack = false
+        // The initial state is Started by default.
         val lifecycleOwner = TestLifecycleOwner()
 
         composeTestRule.setContent {

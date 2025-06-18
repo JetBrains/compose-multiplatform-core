@@ -146,11 +146,7 @@ class UpdateWatchFaceTest {
             assertThrows(UpdateWatchFaceException::class.java) {
                 runBlocking {
                     readWatchFace(context, UNSECURE_APK).use { pipe ->
-                        wfp.updateWatchFace(
-                            details.slotId,
-                            pipe.readFd,
-                            "xK7FaCagHoF1JrN8WZK8JoUOtMwW+HVuO1zyMI6ZFmE=:MS4wLjA=",
-                        )
+                        wfp.updateWatchFace(details.slotId, pipe.readFd, UNSECURE_TOKEN)
                     }
                 }
             }

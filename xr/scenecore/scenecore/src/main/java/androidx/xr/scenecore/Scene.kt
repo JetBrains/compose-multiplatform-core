@@ -101,31 +101,31 @@ public class Scene : SessionConnector {
         get() = platformAdapter.spatialCapabilities.toSpatialCapabilities()
 
     /**
-     * When the scene encounters spatial mode change, this [Entity] will be placed at the
-     * recommended location provided by the system. This ensures continuity of the center of
-     * attention between sequential full space mode sessions.
+     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
+     * location provided by the system thinks is an optimal placement for content when the scene
+     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
+     * attention between sequential FULL_SPACE_MANAGED sessions.
      *
-     * Unmovable entities are not allowed to be the center of attention, for example,
-     * [AnchorEntity].
+     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
      */
-    public var centerOfAttention: Entity? = null
+    public var keyEntity: Entity? = null
         private set
 
     /**
-     * The [SpatialModeChangeListener] is used to receive handle scenegraph updates when the spatial
-     * mode for the scene changes.
+     * The [SpatialModeChangeListener] used to handle scenegraph updates when the spatial mode for
+     * the scene changes.
      */
-    public var SpatialModeChangeListener: SpatialModeChangeListener =
+    public var spatialModeChangeListener: SpatialModeChangeListener =
         /**
-         * The default [SpatialModeChangeListener], which translates the center of attention entity
-         * to the recommended pose when the scene encounters spatial mode change, and applies the
+         * The default [spatialModeChangeListener], which translates the key entity to the
+         * recommended pose when the scene encounters spatial mode change, and applies the
          * recommended scale. This default handler can be replaced with the client's own
-         * [SpatialModeChangeListener] by updating the [Scene.SpatialModeChangeListener] property.
+         * [SpatialModeChangeListener] by updating the [Scene.spatialModeChangeListener] property.
          */
         object : SpatialModeChangeListener {
             override fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Float) {
-                centerOfAttention?.setPose(recommendedPose, Space.ACTIVITY)
-                centerOfAttention?.setScale(recommendedScale, Space.ACTIVITY)
+                keyEntity?.setPose(recommendedPose, Space.ACTIVITY)
+                keyEntity?.setScale(recommendedScale, Space.ACTIVITY)
             }
         }
 
@@ -156,7 +156,7 @@ public class Scene : SessionConnector {
                     recommendedPose: Pose,
                     recommendedScale: Vector3,
                 ) {
-                    SpatialModeChangeListener.onSpatialModeChanged(
+                    spatialModeChangeListener.onSpatialModeChanged(
                         recommendedPose,
                         recommendedScale.x,
                     )
@@ -395,24 +395,24 @@ public class Scene : SessionConnector {
         platformAdapter.clearSpatialVisibilityChangedListener()
 
     /**
-     * When the scene encounters spatial mode changes, this [Entity] will be placed at a location
-     * provided by the system. This ensures continuity of the center of attention between sequential
-     * full space mode sessions.
+     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
+     * location provided by the system thinks is an optimal placement for content when the scene
+     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
+     * attention between sequential FULL_SPACE_MANAGED sessions.
      *
-     * Setting null as center of attention is allowed - in which case the default spatial mode
-     * change handler will be no-op.
+     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
      *
-     * Unmovable entities are not allowed to be the center of attention, for example,
-     * [AnchorEntity].
+     * Setting null as key is allowed - in which case the default spatial mode change handler will
+     * be no-op.
      *
-     * @param entity the entity to set as the center of attention.
-     * @return true if the entity was successfully set as the center of attention, false otherwise.
+     * @param entity the entity to set as the key.
+     * @return true if the entity was successfully set as the key, false otherwise.
      */
-    public fun setCenterOfAttention(entity: Entity?): Boolean {
+    public fun setKeyEntity(entity: Entity?): Boolean {
         when (entity) {
             is AnchorEntity -> return false
             else -> {
-                centerOfAttention = entity
+                keyEntity = entity
                 return true
             }
         }
@@ -499,4 +499,16 @@ public class Scene : SessionConnector {
             },
         )
     }
+
+    /**
+     * If the primary Activity in a [Session] has focus, causes the Session to be placed in
+     * FullSpace Mode. Otherwise, this call does nothing.
+     */
+    public fun requestFullSpaceMode(): Unit = platformAdapter.requestFullSpaceMode()
+
+    /**
+     * If the primary Activity in a [Session] has focus, causes the Session to be placed in
+     * HomeSpace Mode. Otherwise, this call does nothing.
+     */
+    public fun requestHomeSpaceMode(): Unit = platformAdapter.requestHomeSpaceMode()
 }

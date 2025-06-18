@@ -61,9 +61,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
         mSplitEngineSubspaceManager = splitEngineSubspaceManager;
         setParent(parentEntity);
 
-        // TODO(b/377907379): - Punt this logic to the UI thread, so that applications can create
-        // Gltf entities from any thread.
-
         // System will only render Impress nodes that are parented by this subspace node.
         mSubspaceImpressNode = impressApi.createImpressNode();
         String subspaceName = "gltf_entity_subspace_" + mSubspaceImpressNode;
@@ -90,11 +87,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
         // notified that the animation has stopped, been cancelled (by starting another animation)
         // and / or shown an error state if something went wrong.
 
-        // TODO(b/377907379): - Punt this logic to the UI thread.
-
-        // Note that at the moment this future will be garbage collected, since we don't return it
-        // from
-        // this method.
         ListenableFuture<Void> future =
                 mImpressApi.animateGltfModel(mModelImpressNode, animationName, looping);
         mAnimationState = AnimationState.PLAYING;
@@ -128,7 +120,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
 
     @Override
     public void stopAnimation() {
-        // TODO(b/377907379): - Punt this logic to the UI thread.
         if (mAnimationState == AnimationState.PLAYING) {
             mImpressApi.stopGltfModelAnimation(mModelImpressNode);
             mAnimationState = AnimationState.STOPPED;
@@ -153,7 +144,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     @SuppressWarnings("ObjectToString")
     @Override
     public void dispose() {
-        // TODO(b/377907379): - Punt this logic to the UI thread.
         // Destroying the subspace will also destroy the underlying Impress nodes.
         if (mSubspace != null) {
             mSplitEngineSubspaceManager.deleteSubspace(mSubspace.subspaceId);
@@ -162,7 +152,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     }
 
     public void setColliderEnabled(boolean enableCollider) {
-        // TODO(b/377907379): - Punt this logic to the UI thread
         mImpressApi.setGltfModelColliderEnabled(mModelImpressNode, enableCollider);
     }
 }

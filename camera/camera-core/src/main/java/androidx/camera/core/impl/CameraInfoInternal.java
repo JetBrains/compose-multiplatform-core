@@ -17,6 +17,7 @@
 package androidx.camera.core.impl;
 
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
+import static androidx.camera.core.impl.utils.RangeUtil.filterFixedRanges;
 import static androidx.core.util.Preconditions.checkArgument;
 
 import static java.util.Collections.emptySet;
@@ -38,7 +39,6 @@ import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
-import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
 import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination;
 import androidx.camera.core.internal.CalculatedUseCaseInfo;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
@@ -196,7 +196,7 @@ public interface CameraInfoInternal extends CameraInfo {
 
         Set<Range<Integer>> allSupportedFrameRates =
                 sessionConfig.getSessionType() == SESSION_TYPE_HIGH_SPEED
-                        ? getSupportedHighSpeedFrameRateRanges()
+                        ? filterFixedRanges(getSupportedHighSpeedFrameRateRanges())
                         : getSupportedFrameRateRanges();
 
         if (allSupportedFrameRates.isEmpty()) {
@@ -310,8 +310,7 @@ public interface CameraInfoInternal extends CameraInfo {
     }
 
     /** {@inheritDoc} */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
-    @ExperimentalFeatureCombination
+    @ExperimentalSessionConfig
     @Override
     default boolean isFeatureCombinationSupported(@NonNull SessionConfig sessionConfig) {
         try {
@@ -341,7 +340,6 @@ public interface CameraInfoInternal extends CameraInfo {
      * not been called yet.
      */
     @OptIn(markerClass = ExperimentalSessionConfig.class)
-    @ExperimentalFeatureCombination
     default boolean isResolvedFeatureCombinationSupported(
             @NonNull ResolvedFeatureCombination resolvedFeatureCombination,
             @NonNull SessionConfig sessionConfig) {

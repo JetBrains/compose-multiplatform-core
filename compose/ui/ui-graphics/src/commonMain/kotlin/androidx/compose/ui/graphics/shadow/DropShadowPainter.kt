@@ -41,29 +41,29 @@ import kotlin.math.ceil
 
 /**
  * [Painter] implementation that draws a drop shadow with the geometry defined by the specified
- * shape and [ShadowParams].
+ * shape and [Shadow].
  */
 class DropShadowPainter
 internal constructor(
     private val shape: Shape,
-    private val shadowParams: ShadowParams,
+    private val shadow: Shadow,
     private val renderCreator: DropShadowRendererProvider,
 ) : Painter() {
 
     /**
-     * Create a [DropShadowPainter] with the specified [shape] and [shadowParams]. It is preferred
-     * to obtain an instance of the [DropShadowPainter] through a [ShadowContext] instance instead,
-     * as the underlying shadow dependencies can be shared across multiple [DropShadowPainter]
+     * Create a [DropShadowPainter] with the specified [shape] and [shadow]. It is preferred to
+     * obtain an instance of the [DropShadowPainter] through a [ShadowContext] instance instead, as
+     * the underlying shadow dependencies can be shared across multiple [DropShadowPainter]
      * instances. However, creating an instance through this constructor will not share resources
      * with any other [DropShadowPainter].
      *
      * @param shape Shape of the shadow
-     * @param shadowParams Parameters used to render the shadow
+     * @param shadow Parameters used to render the shadow
      */
     constructor(
         shape: Shape,
-        shadowParams: ShadowParams,
-    ) : this(shape, shadowParams, DropShadowRendererProvider.Default)
+        shadow: Shadow,
+    ) : this(shape, shadow, DropShadowRendererProvider.Default)
 
     /* Painter properties */
     private var alpha: Float = 1f
@@ -75,16 +75,16 @@ internal constructor(
 
     override fun DrawScope.onDraw() {
         val renderer =
-            renderCreator.obtainDropShadowRenderer(shape, size, layoutDirection, this, shadowParams)
-        translate(shadowParams.offset.x.toPx(), shadowParams.offset.y.toPx()) {
+            renderCreator.obtainDropShadowRenderer(shape, size, layoutDirection, this, shadow)
+        translate(shadow.offset.x.toPx(), shadow.offset.y.toPx()) {
             with(renderer) {
                 drawShadow(
                     colorFilter,
                     size,
-                    shadowParams.color,
-                    shadowParams.brush,
-                    (alpha * shadowParams.alpha).coerceIn(0f, 1f),
-                    shadowParams.blendMode,
+                    shadow.color,
+                    shadow.brush,
+                    (alpha * shadow.alpha).coerceIn(0f, 1f),
+                    shadow.blendMode,
                 )
             }
         }
@@ -112,7 +112,7 @@ internal fun interface DropShadowRendererProvider {
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
-        shadowParams: ShadowParams,
+        shadow: Shadow,
     ): DropShadowRenderer
 
     companion object {
@@ -128,21 +128,20 @@ internal fun interface DropShadowRendererProvider {
  * may have their own [DropShadowPainter], each instance may share the same [DropShadowRenderer] if
  * the generated outline is the same.
  *
- * Note that the offset in the [ShadowParams] is ignored. This is an optimisation since the same
+ * Note that the offset in the [Shadow] is ignored. This is an optimisation since the same
  * [DropShadowRenderer] may be reused as long as the outline and the other shadow parameters are the
  * same. The [DropShadowPainter] or other user of [DropShadowRenderer] is responsible for applying
  * the offset.
  */
-internal class DropShadowRenderer(val shadowParams: ShadowParams, outline: Outline) :
-    ShadowRenderer(outline) {
+internal class DropShadowRenderer(val shadow: Shadow, outline: Outline) : ShadowRenderer(outline) {
 
     private val paint = Paint()
     private var shadowBitmap: ImageBitmap? = null
     private var compositeShader: CompositeShaderBrush? = null
 
     override fun DrawScope.buildShadow(size: Size, cornerRadius: CornerRadius, path: Path?) {
-        val radius = shadowParams.radius.toPx()
-        val spread = shadowParams.spread.toPx()
+        val radius = shadow.radius.toPx()
+        val spread = shadow.spread.toPx()
         shadowBitmap =
             if (path != null) {
                 createOuterShadowBitmap(size, path, radius, spread)
@@ -188,24 +187,24 @@ internal class DropShadowRenderer(val shadowParams: ShadowParams, outline: Outli
         brush: Brush?,
         blendMode: BlendMode,
     ) {
-        shadowBitmap?.let { shadow ->
-            val offset = -(shadowParams.radius.toPx() + shadowParams.spread.toPx())
+        shadowBitmap?.let { shadowBitmap ->
+            val offset = -(shadow.radius.toPx() + shadow.spread.toPx())
             if (brush != null && colorFilter == null) {
-                val shaderBrush = obtainCompositeBrush(shadow, brush)
+                val shaderBrush = obtainCompositeBrush(shadowBitmap, brush)
                 // Explicitly translate the DrawScope and draw a rectangle with the
                 // size of the shadow including the additional padding for the shadow radius
                 // and spread in order to ensure that the ShaderBrush is not clipped
                 translate(offset, offset) {
                     drawRect(
                         brush = shaderBrush,
-                        size = Size(shadow.width.toFloat(), shadow.height.toFloat()),
+                        size = Size(shadowBitmap.width.toFloat(), shadowBitmap.height.toFloat()),
                         alpha = alpha,
                         blendMode = blendMode,
                     )
                 }
             } else {
                 drawImage(
-                    shadow,
+                    shadowBitmap,
                     topLeft = Offset(offset, offset),
                     alpha = alpha,
                     colorFilter = colorFilter,

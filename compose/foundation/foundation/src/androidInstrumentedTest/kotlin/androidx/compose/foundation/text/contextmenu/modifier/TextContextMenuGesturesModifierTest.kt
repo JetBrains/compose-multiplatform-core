@@ -83,7 +83,8 @@ class TextContextMenuGesturesModifierTest {
     @Test
     fun whenRightClick_dataProviderTriggers() =
         runTest(
-            preGestureModifier = Modifier.addTextContextMenuComponents { testItem(TestItem.One) },
+            preGestureModifier =
+                Modifier.appendTextContextMenuComponents { testItem(TestItem.One) },
             postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp),
         ) {
             val clickOffset = IntOffset(10, 10)
@@ -146,7 +147,7 @@ class TextContextMenuGesturesModifierTest {
     fun whenDataProviderDataUpdates_dataResultUpdates() {
         var item by mutableStateOf(TestItem.One)
         runTest(
-            preGestureModifier = Modifier.addTextContextMenuComponents { testItem(item) },
+            preGestureModifier = Modifier.appendTextContextMenuComponents { testItem(item) },
             postGestureModifier = Modifier.background(Color.LightGray).size(baseLengthDp),
         ) {
             rightClick()

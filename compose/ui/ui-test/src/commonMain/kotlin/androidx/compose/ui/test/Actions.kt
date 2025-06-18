@@ -275,15 +275,33 @@ private fun SemanticsNodeInteraction.scrollToMatchingDescendantOrReturnScrollabl
     matcher: SemanticsMatcher
 ): SemanticsNode? {
     var node = fetchSemanticsNode("Failed: performScrollToNode(${matcher.description})")
-    var matchedNode = matcher.scrollToMatchingDescendantOrReturnScrollable(node)
+    var matchedNode = matcher.matchDescendant(node)
     while (matchedNode != null) {
         val shouldContinueScroll = matchedNode.scrollToNode(testContext.testOwner)
         if (!shouldContinueScroll) return null
         node = fetchSemanticsNode("Failed: performScrollToNode(${matcher.description})")
-        matchedNode = matcher.scrollToMatchingDescendantOrReturnScrollable(node)
+        matchedNode = matcher.matchDescendant(node)
     }
 
     return node
+}
+
+private fun SemanticsMatcher.matchDescendant(root: SemanticsNode): SemanticsNode? {
+    root.children.forEach { child ->
+        val matchedNode = matchNodeOrDescendant(child)
+        if (matchedNode != null) return matchedNode
+    }
+    return null
+}
+
+private fun SemanticsMatcher.matchNodeOrDescendant(root: SemanticsNode?): SemanticsNode? {
+    if (root == null || !root.layoutInfo.isPlaced) return null
+    if (matches(root)) return root
+    root.children.forEach { child ->
+        val matchedNode = matchNodeOrDescendant(child)
+        if (matchedNode != null) return matchedNode
+    }
+    return null
 }
 
 /**
@@ -785,15 +803,4 @@ private fun SemanticsNodeInteraction.requireSemantics(
             }]"
         throw AssertionError(buildGeneralErrorMessage(msg, selector, node))
     }
-}
-
-@Suppress("NOTHING_TO_INLINE") // Avoids doubling the stack depth for recursive search
-private inline fun SemanticsMatcher.scrollToMatchingDescendantOrReturnScrollable(
-    root: SemanticsNode
-): SemanticsNode? {
-    return root.children.firstOrNull { it.layoutInfo.isPlaced && findMatchInHierarchy(it) != null }
-}
-
-private fun SemanticsMatcher.findMatchInHierarchy(node: SemanticsNode): SemanticsNode? {
-    return if (matches(node)) node else scrollToMatchingDescendantOrReturnScrollable(node)
 }

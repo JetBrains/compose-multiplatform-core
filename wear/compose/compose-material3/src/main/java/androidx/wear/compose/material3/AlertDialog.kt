@@ -49,8 +49,6 @@ import androidx.wear.compose.material3.PaddingDefaults.verticalContentPadding
 import androidx.wear.compose.material3.internal.Icons
 import androidx.wear.compose.material3.internal.Strings
 import androidx.wear.compose.material3.internal.getString
-import androidx.wear.compose.materialcore.screenHeightDp
-import androidx.wear.compose.materialcore.screenWidthDp
 
 /**
  * AlertDialogs provide important prompts in a user flow. They can require an action, communicate
@@ -587,7 +585,7 @@ public object AlertDialogDefaults {
         val horizontalPadding = horizontalContentPadding()
         return PaddingValues(
             top = calculateTopPadding(hasIcon = false),
-            bottom = screenHeightDp().dp * noEdgeButtonBottomPaddingFraction,
+            bottom = screenHeightFraction(noEdgeButtonBottomPaddingFraction),
             start = horizontalPadding,
             end = horizontalPadding,
         )
@@ -602,7 +600,7 @@ public object AlertDialogDefaults {
         val horizontalPadding = horizontalContentPadding()
         return PaddingValues(
             top = calculateTopPadding(hasIcon = true),
-            bottom = screenHeightDp().dp * noEdgeButtonBottomPaddingFraction,
+            bottom = screenHeightFraction(noEdgeButtonBottomPaddingFraction),
             start = horizontalPadding,
             end = horizontalPadding,
         )
@@ -639,7 +637,7 @@ public object AlertDialogDefaults {
 
     @Composable
     private fun calculateTopPadding(hasIcon: Boolean): Dp {
-        return if (hasIcon) screenHeightDp().dp * iconTopPaddingFraction
+        return if (hasIcon) screenHeightFraction(iconTopPaddingFraction)
         else verticalContentPadding()
     }
 
@@ -677,7 +675,7 @@ private fun IconAlert(content: @Composable () -> Unit) {
 
 @Composable
 private fun Title(content: @Composable () -> Unit) {
-    val horizontalPadding = screenWidthDp().dp * TitlePaddingFraction
+    val horizontalPadding = screenWidthFraction(TitlePaddingFraction)
     Column(modifier = Modifier.padding(horizontal = horizontalPadding)) {
         CompositionLocalProvider(
             LocalContentColor provides MaterialTheme.colorScheme.onBackground,
@@ -708,21 +706,21 @@ private fun ConfirmDismissButtons(
             dismissButton(this)
             Spacer(
                 modifier =
-                    Modifier.width(screenWidthDp().dp * ConfirmDismissBetweenButtonsPaddingFraction)
+                    Modifier.width(screenWidthFraction(ConfirmDismissBetweenButtonsPaddingFraction))
             )
             confirmButton(this)
             Spacer(modifier = Modifier.width(2.dp))
         }
         Spacer(
             modifier =
-                Modifier.height(screenHeightDp().dp * ConfirmDismissButtonsBottomSpacingFraction)
+                Modifier.height(screenHeightFraction(ConfirmDismissButtonsBottomSpacingFraction))
         )
     }
 }
 
 @Composable
 private fun TextMessage(content: @Composable () -> Unit) {
-    val horizontalPadding = screenWidthDp().dp * TextPaddingFraction
+    val horizontalPadding = screenWidthFraction(TextPaddingFraction)
     Column(modifier = Modifier.padding(horizontal = horizontalPadding)) {
         Spacer(Modifier.height(AlertTextMessageTopSpacing))
         CompositionLocalProvider(

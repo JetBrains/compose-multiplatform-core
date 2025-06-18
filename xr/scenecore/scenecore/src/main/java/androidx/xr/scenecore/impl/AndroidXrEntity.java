@@ -97,7 +97,6 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
 
     @Override
     public void setPose(@NonNull Pose pose, @SpaceValue int relativeTo) {
-        // TODO: b/321268237 - Minimize the number of node transactions
         Pose localPose;
         switch (relativeTo) {
             case Space.PARENT:
@@ -145,11 +144,8 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     /** Returns the pose for this entity, relative to the activity space root. */
     @Override
     public Pose getPoseInActivitySpace() {
-        // TODO: b/355680575 - Revisit if we need to account for parent rotation when calculating
-        // the
-        // scale. This code might produce unexpected results when non-uniform scale is involved in
-        // the
-        // parent-child entity hierarchy.
+        // This code might produce unexpected results when non-uniform scale
+        // is involved in the parent-child entity hierarchy.
 
         // Any parentless "space" entities (such as the root and anchor entities) are expected to
         // override this method non-recursively so that this error is never thrown.

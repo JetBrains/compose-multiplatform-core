@@ -247,7 +247,8 @@ public class StreamUseCaseTest {
                 /*isHighSpeedOn=*/ false,
                 /*isFeatureComboInvocation=*/ false,
                 /*requiresFeatureComboQuery=*/ false,
-                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED);
+                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false);
         assertFalse(shouldUseStreamUseCase(featureSettings));
     }
 
@@ -262,7 +263,8 @@ public class StreamUseCaseTest {
                 /*isHighSpeedOn=*/ false,
                 /*isFeatureComboInvocation=*/ false,
                 /*requiresFeatureComboQuery=*/ false,
-                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED);
+                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false);
         assertFalse(shouldUseStreamUseCase(featureSettings));
     }
 
@@ -277,7 +279,8 @@ public class StreamUseCaseTest {
                 /*isHighSpeedOn=*/ true,
                 /*isFeatureComboInvocation=*/ false,
                 /*requiresFeatureComboQuery=*/ false,
-                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED);
+                /*targetFpsRange=*/ FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false);
         assertFalse(shouldUseStreamUseCase(featureSettings));
     }
 
@@ -543,7 +546,8 @@ public class StreamUseCaseTest {
                         captureTypes,
                         /*implementationOptions=*/null,
                         SESSION_TYPE_REGULAR,
-                        FRAME_RATE_RANGE_UNSPECIFIED));
+                        FRAME_RATE_RANGE_UNSPECIFIED,
+                        /*isStrictFrameRateRequired=*/false));
 
         assertTrue(StreamUseCaseUtil.areCaptureTypesEligible(surfaceConfigAttachedSurfaceInfoMap,
                 surfaceConfigUseCaseConfigMap, surfaceConfigsWithStreamUseCase));
@@ -574,7 +578,8 @@ public class StreamUseCaseTest {
                         captureTypes,
                         /*implementationOptions=*/null,
                         SESSION_TYPE_REGULAR,
-                        FRAME_RATE_RANGE_UNSPECIFIED));
+                        FRAME_RATE_RANGE_UNSPECIFIED,
+                        /*isStrictFrameRateRequired=*/false));
 
         assertFalse(StreamUseCaseUtil.areCaptureTypesEligible(surfaceConfigAttachedSurfaceInfoMap,
                 surfaceConfigUseCaseConfigMap, surfaceConfigsWithStreamUseCase));
@@ -693,7 +698,8 @@ public class StreamUseCaseTest {
                 captureTypes,
                 StreamUseCaseUtil.getStreamSpecImplementationOptions(useCaseConfig),
                 SESSION_TYPE_REGULAR,
-                FRAME_RATE_RANGE_UNSPECIFIED);
+                FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/false);
     }
 
     private StreamSpec getFakeStreamSpecFromFakeUseCaseConfig(UseCaseConfig<?> fakeUseCaseConfig) {

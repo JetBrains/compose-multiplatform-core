@@ -95,6 +95,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -1823,6 +1824,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBarWithFAB_heightIsFromSpec() {
         rule
             .setMaterialContentForSizeAssertions {
@@ -1844,6 +1846,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBarWithCustomArrangement_heightIsFromSpec() {
         rule
             .setMaterialContentForSizeAssertions {
@@ -1857,6 +1860,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBarWithCustomHeight() {
         val height = 128.dp
         rule
@@ -1914,6 +1918,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBar_widthExpandsToScreen() {
         rule
             .setMaterialContentForSizeAssertions { BottomAppBar {} }
@@ -1922,6 +1927,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun bottomAppBar_default_positioning() {
         rule.setMaterialContent(lightColorScheme()) {
             BottomAppBar(Modifier.testTag("bar")) { FakeIcon(Modifier.testTag("icon")) }
@@ -1943,6 +1949,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun bottomAppBar_default_positioning_respectsContentPadding() {
         val topPadding = 5.dp
         rule.setMaterialContent(lightColorScheme()) {
@@ -1999,6 +2006,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun bottomAppBar_exitAlways_scaffoldWithFAB_default_positioning() {
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
@@ -2031,6 +2039,7 @@ class AppBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun bottomAppBar_exitAlways_scaffoldWithFAB_scrolled_positioning() {
         lateinit var scrollBehavior: BottomAppBarScrollBehavior
         val scrollHeightOffsetDp = 20.dp

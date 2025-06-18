@@ -22,7 +22,6 @@ import android.graphics.Bitmap
  * Interface for a callback to allow the caller to provide a particular [Bitmap] corresponding to a
  * client-provided texture ID.
  */
-@ExperimentalInkCustomBrushApi
 public fun interface TextureBitmapStore {
     /**
      * Retrieve a [Bitmap] for the given texture id. This may be called synchronously during

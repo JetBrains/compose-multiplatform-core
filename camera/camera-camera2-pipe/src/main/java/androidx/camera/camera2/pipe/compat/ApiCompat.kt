@@ -24,6 +24,7 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraExtensionCharacteristics
 import android.hardware.camera2.CameraExtensionSession
 import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
@@ -40,6 +41,7 @@ import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.availableVideoStabilizationModes
 import java.util.concurrent.Executor
 
 @RequiresApi(23)
@@ -465,6 +467,12 @@ internal object Api33Compat {
         extension: Int,
     ): Set<CaptureResult.Key<Any>> =
         extensionCharacteristics.getAvailableCaptureResultKeys(extension)
+
+    fun supportsPreviewStabilization(cameraMetadata: CameraMetadata): Boolean {
+        return cameraMetadata.availableVideoStabilizationModes.contains(
+            CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+        )
+    }
 
     @JvmStatic
     fun newImageReaderFromImageReaderBuilder(

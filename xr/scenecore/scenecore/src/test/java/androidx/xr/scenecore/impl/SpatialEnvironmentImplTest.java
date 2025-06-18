@@ -469,8 +469,7 @@ public final class SpatialEnvironmentImplTest {
 
         // Ensure that an environment is set a first time.
         mEnvironment.setSpatialEnvironmentPreference(
-                new SpatialEnvironmentPreference(
-                        null, new GltfModelResourceImpl(gltf)));
+                new SpatialEnvironmentPreference(null, new GltfModelResourceImpl(gltf)));
 
         assertThat(timesCalled.get()).isEqualTo(1);
     }

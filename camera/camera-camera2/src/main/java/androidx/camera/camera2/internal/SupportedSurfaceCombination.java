@@ -31,11 +31,11 @@ import static androidx.camera.core.impl.SurfaceConfig.ConfigSource.FEATURE_COMBI
 import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P;
 import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_480P;
 import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_VGA;
+import static androidx.core.util.Preconditions.checkArgument;
 import static androidx.core.util.Preconditions.checkState;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
@@ -66,7 +66,6 @@ import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
-import androidx.camera.core.featurecombination.ExperimentalFeatureCombination;
 import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery;
 import androidx.camera.core.featurecombination.impl.feature.FpsRangeFeature;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
@@ -145,6 +144,7 @@ final class SupportedSurfaceCombination {
     private final boolean mIsStreamUseCaseSupported;
     private boolean mIsUltraHighResolutionSensorSupported = false;
     private boolean mIsManualSensorSupported = false;
+    private final boolean mIsPreviewStabilizationSupported;
     @VisibleForTesting
     SurfaceSizeDefinition mSurfaceSizeDefinition;
     List<Integer> mSurfaceSizeDefinitionFormats = new ArrayList<>();
@@ -155,16 +155,12 @@ final class SupportedSurfaceCombination {
     private final DynamicRangeResolver mDynamicRangeResolver;
     private final HighSpeedResolver mHighSpeedResolver;
 
-    @SuppressLint("NullAnnotationGroup")
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
     private final FeatureCombinationQuery mFeatureCombinationQuery;
 
     @IntDef({DynamicRange.BIT_DEPTH_8_BIT, DynamicRange.BIT_DEPTH_10_BIT})
     @Retention(RetentionPolicy.SOURCE)
     @interface RequiredMaxBitDepth {}
 
-    @SuppressLint("NullAnnotationGroup")
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
     SupportedSurfaceCombination(@NonNull Context context, @NonNull String cameraId,
             @NonNull CameraManagerCompat cameraManagerCompat,
             @NonNull CamcorderProfileHelper camcorderProfileHelper,
@@ -230,9 +226,9 @@ final class SupportedSurfaceCombination {
             generateStreamUseCaseSupportedCombinationList();
         }
 
-        boolean isPreviewStabilizationSupported =
-                VideoStabilizationUtil.isPreviewStabilizationSupported(mCharacteristics);
-        if (isPreviewStabilizationSupported) {
+        mIsPreviewStabilizationSupported = VideoStabilizationUtil.isPreviewStabilizationSupported(
+                mCharacteristics);
+        if (mIsPreviewStabilizationSupported) {
             generatePreviewStabilizationSupportedCombinationList();
         }
 
@@ -252,8 +248,6 @@ final class SupportedSurfaceCombination {
      *                                     for feature combination query.
      * @return the check result that whether it could be supported
      */
-    @SuppressLint("NullAnnotationGroup")
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
     boolean checkSupported(
             @NonNull FeatureSettings featureSettings,
             List<SurfaceConfig> surfaceConfigList,
@@ -288,8 +282,6 @@ final class SupportedSurfaceCombination {
         return isSupported;
     }
 
-    @SuppressLint("NullAnnotationGroup")
-    @OptIn(markerClass = ExperimentalFeatureCombination.class)
     private SessionConfig createFeatureComboSessionConfig(
             FeatureSettings featureSettings,
             List<SurfaceConfig> surfaceConfigList,
@@ -639,30 +631,60 @@ final class SupportedSurfaceCombination {
      * Calculates the updated target frame rate based on a new target frame rate and a
      * previously stored target frame rate.
      *
-     * <p>If the two ranges are both nonnull and disjoint of each other, then the range that was
-     * already stored will be used
+     * <p>If strict fps is required and both new and stored frame rates are not unspecified, they
+     * must be the same or an `IllegalStateException` will be thrown.
+     *
+     * <p>If strict fps is not required and both new and stored target frame rate are not
+     * unspecified, the intersection of ranges will be adopted. If the ranges are disjoint, the
+     * stored frame rate will be used.
      *
      * @param newTargetFrameRate    an incoming frame rate range
      * @param storedTargetFrameRate a stored frame rate range to be modified
+     * @param isStrictFpsRequired   whether strict fps is required
      * @return adjusted target frame rate
      */
     @NonNull
     private Range<Integer> getUpdatedTargetFrameRate(@NonNull Range<Integer> newTargetFrameRate,
-            @NonNull Range<Integer> storedTargetFrameRate) {
-        Range<Integer> updatedTargetFrameRate = storedTargetFrameRate;
-
-        if (FRAME_RATE_RANGE_UNSPECIFIED.equals(storedTargetFrameRate)) {
-            // if stored value was null before, set it to the new value
-            updatedTargetFrameRate = newTargetFrameRate;
-        } else if (!FRAME_RATE_RANGE_UNSPECIFIED.equals(newTargetFrameRate)) {
-            try {
-                // get intersection of existing target fps
-                updatedTargetFrameRate = storedTargetFrameRate.intersect(newTargetFrameRate);
-            } catch (IllegalArgumentException e) {
-                // no intersection, keep the previously stored value
+            @NonNull Range<Integer> storedTargetFrameRate, boolean isStrictFpsRequired) {
+        if (FRAME_RATE_RANGE_UNSPECIFIED.equals(storedTargetFrameRate)
+                && FRAME_RATE_RANGE_UNSPECIFIED.equals(newTargetFrameRate)) {
+            return FRAME_RATE_RANGE_UNSPECIFIED;
+        } else if (FRAME_RATE_RANGE_UNSPECIFIED.equals(storedTargetFrameRate)) {
+            return newTargetFrameRate;
+        } else if (FRAME_RATE_RANGE_UNSPECIFIED.equals(newTargetFrameRate)) {
+            return storedTargetFrameRate;
+        } else {
+            if (isStrictFpsRequired) {
+                // An IllegalStateException is thrown here because this is an implementation error
+                // rather than an unsupported combination. Currently isStrictFpsRequired is true
+                // only when SessionConfig frame rate API is used.
+                Preconditions.checkState(
+                        newTargetFrameRate == storedTargetFrameRate,
+                        "All targetFrameRate should be the same if strict fps is required"
+                );
+                return newTargetFrameRate;
+            } else {
+                try {
+                    // get intersection of existing target fps
+                    return storedTargetFrameRate.intersect(newTargetFrameRate);
+                } catch (IllegalArgumentException e) {
+                    // no intersection, keep the previously stored value
+                    return storedTargetFrameRate;
+                }
             }
         }
-        return updatedTargetFrameRate;
+    }
+
+    private boolean getAndValidateIsStrictFpsRequired(boolean newIsStrictFpsRequired,
+            @Nullable Boolean storedIsStrictFpsRequired) {
+        if (storedIsStrictFpsRequired != null
+                && storedIsStrictFpsRequired != newIsStrictFpsRequired) {
+            // An IllegalStateException is thrown here because this is an implementation error
+            // rather than an unsupported combination. Currently isStrictFpsRequired is true
+            // only when SessionConfig frame rate API is used.
+            throw new IllegalStateException("All isStrictFpsRequired should be the same");
+        }
+        return newIsStrictFpsRequired;
     }
 
     /**
@@ -692,6 +714,10 @@ final class SupportedSurfaceCombination {
      * @param findMaxSupportedFrameRate          whether to find the max supported frame rate. If
      *                                           this is true, the target frame rate settings
      *                                           will be ignored when calculating the stream spec.
+     *                                           If false, the returned value of
+     *                                    {@link SurfaceStreamSpecQueryResult#maxSupportedFrameRate}
+     *                                           is undetermined.
+     *
      * @return a {@link SurfaceStreamSpecQueryResult}.
      * @throws IllegalArgumentException if the suggested solution for newUseCaseConfigs cannot be
      *                                  found. This may be due to no available output size, no
@@ -729,22 +755,39 @@ final class SupportedSurfaceCombination {
                 mDynamicRangeResolver.resolveAndValidateDynamicRanges(attachedSurfaces,
                         newUseCaseConfigs, useCasesPriorityOrder);
 
+        Logger.d(TAG, "resolvedDynamicRanges = " + resolvedDynamicRanges);
+
         boolean isUltraHdrOn = isUltraHdrOn(attachedSurfaces, newUseCaseConfigsSupportedSizeMap);
 
         // Calculates the target FPS range
         Range<Integer> targetFpsRange;
+        boolean isStrictFpsRequired;
         if (findMaxSupportedFrameRate) {
-            // In finding for maxFps mode, ignore the targetFrameRate setting so that it doesn't
-            // break calculations by any frame rate checks.
+            // In finding maxFps mode, ignore targetFpsRange and isStrictFpsRequired so that the
+            // calculations won't be interrupted by any frame rate checks.
+            isStrictFpsRequired = false;
             targetFpsRange = FRAME_RATE_RANGE_UNSPECIFIED;
         } else {
+            isStrictFpsRequired = isStrictFpsRequired(attachedSurfaces, newUseCaseConfigs);
             targetFpsRange = getTargetFpsRange(attachedSurfaces, newUseCaseConfigs,
-                    useCasesPriorityOrder);
+                    useCasesPriorityOrder, isStrictFpsRequired);
+        }
+
+        // Ensure preview stabilization is supported by the camera.
+        if (isPreviewStabilizationOn && !mIsPreviewStabilizationSupported) {
+            // TODO: b/422055796 - Handle this for non-feature-combo code flows, probably better to
+            //  silently fall back to non-preview-stabilization mode in such case.
+
+            if (isFeatureComboInvocation) {
+                throw new IllegalArgumentException(
+                        "Preview stabilization is not supported by the camera.");
+            }
         }
 
         FeatureSettings featureSettings = createFeatureSettings(cameraMode, hasVideoCapture,
                 resolvedDynamicRanges, isPreviewStabilizationOn, isUltraHdrOn, isHighSpeedOn,
-                isFeatureComboInvocation, /* requiresFeatureComboQuery = */  false, targetFpsRange);
+                isFeatureComboInvocation, /* requiresFeatureComboQuery = */  false, targetFpsRange,
+                isStrictFpsRequired);
 
         CheckingMethod checkingMethod = getCheckingMethod(
                 resolvedDynamicRanges.values(), targetFpsRange, isPreviewStabilizationOn,
@@ -805,7 +848,8 @@ final class SupportedSurfaceCombination {
                         featureSettings.isUltraHdrOn(), featureSettings.isHighSpeedOn(),
                         featureSettings.isFeatureComboInvocation(),
                         /* requiresFeatureComboQuery = */ true,
-                        featureSettings.getTargetFpsRange());
+                        featureSettings.getTargetFpsRange(),
+                        featureSettings.isStrictFpsRequired());
 
                 return resolveSpecsBySettings(fcqFeatureSettings,
                         attachedSurfaces, newUseCaseConfigsSupportedSizeMap,
@@ -828,7 +872,8 @@ final class SupportedSurfaceCombination {
                             featureSettings.isUltraHdrOn(), featureSettings.isHighSpeedOn(),
                             featureSettings.isFeatureComboInvocation(),
                             /* requiresFeatureComboQuery = */ true,
-                            featureSettings.getTargetFpsRange());
+                            featureSettings.getTargetFpsRange(),
+                            featureSettings.isStrictFpsRequired());
 
                     return resolveSpecsBySettings(fcqFeatureSettings,
                             attachedSurfaces, newUseCaseConfigsSupportedSizeMap,
@@ -980,8 +1025,9 @@ final class SupportedSurfaceCombination {
                         availableFpsRanges);
 
                 if (featureSettings.isFeatureComboInvocation()
-                        && !targetFrameRateForDevice.equals(featureSettings.getTargetFpsRange())) {
-                    throw new IllegalArgumentException(
+                        || featureSettings.isStrictFpsRequired()) {
+                    checkArgument(
+                            targetFrameRateForDevice.equals(featureSettings.getTargetFpsRange()),
                             "Target FPS range " + featureSettings.getTargetFpsRange()
                                     + " is not supported. Max FPS supported by the calculated best"
                                     + " combination: " + savedConfigMaxFps + ". Calculated best FPS"
@@ -1274,7 +1320,8 @@ final class SupportedSurfaceCombination {
             @NonNull Map<UseCaseConfig<?>, DynamicRange> resolvedDynamicRanges,
             boolean isPreviewStabilizationOn, boolean isUltraHdrOn, boolean isHighSpeedOn,
             boolean isFeatureComboInvocation, boolean requiresFeatureComboQuery,
-            @NonNull Range<Integer> targetFpsRange) {
+            @NonNull Range<Integer> targetFpsRange,
+            boolean isStrictFrameRateRequired) {
         int requiredMaxBitDepth = getRequiredMaxBitDepth(resolvedDynamicRanges);
 
         if (cameraMode != CameraMode.DEFAULT && isUltraHdrOn) {
@@ -1311,7 +1358,7 @@ final class SupportedSurfaceCombination {
 
         return FeatureSettings.of(cameraMode, hasVideoCapture, requiredMaxBitDepth,
                 isPreviewStabilizationOn, isUltraHdrOn, isHighSpeedOn, isFeatureComboInvocation,
-                requiresFeatureComboQuery, targetFpsRange);
+                requiresFeatureComboQuery, targetFpsRange, isStrictFrameRateRequired);
     }
 
     /**
@@ -1376,14 +1423,15 @@ final class SupportedSurfaceCombination {
     private @NonNull Range<Integer> getTargetFpsRange(
             @NonNull List<AttachedSurfaceInfo> attachedSurfaces,
             @NonNull List<UseCaseConfig<?>> newUseCaseConfigs,
-            @NonNull List<Integer> useCasesPriorityOrder) {
+            @NonNull List<Integer> useCasesPriorityOrder,
+            boolean isStrictFpsRequired) {
         Range<Integer> targetFrameRateForConfig = FRAME_RATE_RANGE_UNSPECIFIED;
 
         for (AttachedSurfaceInfo attachedSurfaceInfo : attachedSurfaces) {
             // init target fps range for new configs from existing surfaces
             targetFrameRateForConfig = getUpdatedTargetFrameRate(
                     attachedSurfaceInfo.getTargetFrameRate(),
-                    targetFrameRateForConfig);
+                    targetFrameRateForConfig, isStrictFpsRequired);
         }
 
         // update target fps for new configs using new use cases' priority order
@@ -1391,10 +1439,25 @@ final class SupportedSurfaceCombination {
             Range<Integer> newTargetFrameRate = requireNonNull(newUseCaseConfigs.get(index)
                     .getTargetFrameRate(FRAME_RATE_RANGE_UNSPECIFIED));
             targetFrameRateForConfig = getUpdatedTargetFrameRate(newTargetFrameRate,
-                    targetFrameRateForConfig);
+                    targetFrameRateForConfig, isStrictFpsRequired);
         }
 
         return targetFrameRateForConfig;
+    }
+
+    private boolean isStrictFpsRequired(@NonNull List<AttachedSurfaceInfo> attachedSurfaces,
+            @NonNull List<UseCaseConfig<?>> newUseCaseConfigs) {
+        Boolean isStrictFpsRequired = null;
+        for (AttachedSurfaceInfo attachedSurfaceInfo : attachedSurfaces) {
+            isStrictFpsRequired = getAndValidateIsStrictFpsRequired(
+                    attachedSurfaceInfo.isStrictFrameRateRequired(), isStrictFpsRequired);
+        }
+
+        for (UseCaseConfig<?> useCaseConfig : newUseCaseConfigs) {
+            isStrictFpsRequired = getAndValidateIsStrictFpsRequired(
+                    useCaseConfig.isStrictFrameRateRequired(), isStrictFpsRequired);
+        }
+        return isStrictFpsRequired != null ? isStrictFpsRequired : false;
     }
 
     private int getMaxSupportedFpsFromAttachedSurfaces(
@@ -2116,11 +2179,11 @@ final class SupportedSurfaceCombination {
                 boolean hasVideoCapture, @RequiredMaxBitDepth int requiredMaxBitDepth,
                 boolean isPreviewStabilizationOn, boolean isUltraHdrOn, boolean isHighSpeedOn,
                 boolean isFeatureComboInvocation, boolean requiresFeatureComboQuery,
-                @NonNull Range<Integer> targetFpsRange) {
+                @NonNull Range<Integer> targetFpsRange, boolean isStrictFpsRequired) {
             return new AutoValue_SupportedSurfaceCombination_FeatureSettings(cameraMode,
                     hasVideoCapture, requiredMaxBitDepth, isPreviewStabilizationOn, isUltraHdrOn,
                     isHighSpeedOn, isFeatureComboInvocation, requiresFeatureComboQuery,
-                    targetFpsRange);
+                    targetFpsRange, isStrictFpsRequired);
         }
 
         /**
@@ -2186,5 +2249,8 @@ final class SupportedSurfaceCombination {
 
         /** Gets the target FPS range, null if none. */
         abstract @NonNull Range<Integer> getTargetFpsRange();
+
+        /** Whether strict frame rate is required. */
+        abstract boolean isStrictFpsRequired();
     }
 }

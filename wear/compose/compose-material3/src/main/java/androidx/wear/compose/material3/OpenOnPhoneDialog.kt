@@ -63,12 +63,9 @@ import androidx.wear.compose.foundation.CurvedScope
 import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.foundation.LocalReduceMotion
 import androidx.wear.compose.foundation.padding
-import androidx.wear.compose.material3.internal.getString
 import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationLong2
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationShort3
-import androidx.wear.compose.materialcore.screenHeightDp
-import androidx.wear.compose.materialcore.screenWidthDp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -226,12 +223,12 @@ public fun OpenOnPhoneDialogContent(
         )
 
     Box(modifier = modifier.fillMaxSize()) {
-        val topPadding = screenHeightDp() * HeightPaddingFraction
-        val size = screenWidthDp() * SizeFraction
+        val topPadding = screenHeightFraction(HeightPaddingFraction)
+        val size = screenWidthFraction(SizeFraction)
         Box(
             modifier =
-                Modifier.padding(top = topPadding.dp)
-                    .size(size.dp)
+                Modifier.padding(top = topPadding)
+                    .size(size)
                     .align(Alignment.TopCenter)
                     .clearAndSetSemantics {},
             contentAlignment = Alignment.Center,
@@ -485,9 +482,10 @@ private fun IconContainerProgressIndicator(
     )
 }
 
-private const val WidthPaddingFraction = 0.176f
 private const val HeightPaddingFraction = 0.157f
-private const val SizeFraction = 1 - WidthPaddingFraction * 2
+
+private const val WidthPaddingFraction = 0.176f
+private const val SizeFraction = (1 - WidthPaddingFraction * 2)
 private val progressIndicatorStrokeWidth = 5.dp
 private val progressIndicatorPadding = 5.dp
 private const val OpenOnPhoneMaxSweepAngle = 130f

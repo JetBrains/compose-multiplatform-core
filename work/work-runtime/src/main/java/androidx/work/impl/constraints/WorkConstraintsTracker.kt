@@ -264,12 +264,12 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
 
     private val requestsLock = Any()
     @GuardedBy("requestsLock")
-    private val requests = mutableMapOf<NetworkRequest, OnConstraintState>()
+    private val requests = mutableMapOf<OnConstraintState, NetworkRequest>()
 
     override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
         Logger.get().debug(TAG, "NetworkRequestConstraintController onCapabilitiesChanged callback")
         synchronized(requestsLock) { requests.entries.toList() }
-            .forEach { (request, onConstraintState) ->
+            .forEach { (onConstraintState, request) ->
                 onConstraintState(
                     if (request.canBeSatisfiedBy(networkCapabilities)) {
                         ConstraintsMet
@@ -282,7 +282,7 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
 
     override fun onLost(network: Network) {
         Logger.get().debug(TAG, "NetworkRequestConstraintController onLost callback")
-        synchronized(requestsLock) { requests.values.toList() }
+        synchronized(requestsLock) { requests.keys.toList() }
             .forEach { it(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY)) }
     }
 
@@ -293,7 +293,7 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
     ): () -> Unit {
         synchronized(requestsLock) {
             val registerCallback = requests.isEmpty()
-            requests.put(networkRequest, onConstraintState)
+            requests.put(onConstraintState, networkRequest)
             if (registerCallback) {
                 Logger.get()
                     .debug(TAG, "NetworkRequestConstraintController register shared callback")
@@ -302,7 +302,7 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
         }
         return {
             synchronized(requestsLock) {
-                requests.remove(networkRequest)
+                requests.remove(onConstraintState)
                 if (requests.isEmpty()) {
                     Logger.get()
                         .debug(TAG, "NetworkRequestConstraintController unregister shared callback")

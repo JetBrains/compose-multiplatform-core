@@ -36,18 +36,26 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 @LargeTest
-@RunWith(AndroidJUnit4::class)
+@RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 28)
-class CoreTextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCommonTestCases() {
+class CoreTextFieldPlatformSelectionBehaviorsTest(override val testLongPress: Boolean) :
+    PlatformSelectionBehaviorCommonTestCases() {
     private var textFieldValue = mutableStateOf(TextFieldValue())
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "testLongPress={0}")
+        fun params() = arrayOf(true, false)
+    }
 
     @Composable
     override fun Content(text: String, textStyle: TextStyle, modifier: Modifier) {
@@ -68,6 +76,7 @@ class CoreTextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCom
 
     @Test
     fun longPress_onEmptyRegion_notCallSuggestSelectionForLongPressOrDoubleClick() {
+        assumeTrue(testLongPress)
         rule.setTextFieldTestContent {
             Content(
                 text = "abc def",
@@ -90,7 +99,7 @@ class CoreTextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCom
     }
 
     @Test
-    fun longPress_withVisualTransformation() {
+    fun withVisualTransformation() {
         var value by mutableStateOf(TextFieldValue("xxx"))
 
         rule.setTextFieldTestContent {
@@ -121,11 +130,8 @@ class CoreTextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCom
         }
 
         // The visual text is "abc xxx def"
-        // Long press to select "xxx".
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2))
-            up()
-        }
+        // select "xxx".
+        performLongPressOrDoubleClick { Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2) }
 
         assertThat(value.selection).isEqualTo(TextRange(0, 3))
         assertThat(testPlatformSelectionBehaviors?.text).isEqualTo("abc xxx def")
@@ -133,7 +139,7 @@ class CoreTextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCom
     }
 
     @Test
-    fun longPress_withVisualTransformation_codepointOnly() {
+    fun withVisualTransformation_codepointOnly() {
         var value by mutableStateOf(TextFieldValue("abc xxx ghi"))
 
         rule.setTextFieldTestContent {
@@ -162,11 +168,8 @@ class CoreTextFieldPlatformSelectionBehaviorsTest : PlatformSelectionBehaviorCom
         }
 
         // The visual text is "abc xxx def"
-        // Long press to select "xxx".
-        rule.onNodeWithTag(TAG).performTouchInput {
-            longPress(Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2))
-            up()
-        }
+        // select "xxx".
+        performLongPressOrDoubleClick { Offset(x = fontSize.toPx() * 5, y = fontSize.toPx() / 2) }
 
         assertThat(value.selection).isEqualTo(TextRange(4, 7))
         assertThat(testPlatformSelectionBehaviors?.text).isEqualTo("abc def ghi")

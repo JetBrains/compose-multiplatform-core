@@ -119,6 +119,21 @@ private constructor(
         public const val PROTECTED: Int = 1
     }
 
+    @IntDef(SuperSampling.NONE, SuperSampling.DEFAULT)
+    @Retention(AnnotationRetention.SOURCE)
+    internal annotation class SuperSamplingValue
+
+    /**
+     * Specifies whether super sampling should be enabled for this surface. Super sampling can
+     * improve text clarity at a performance cost.
+     */
+    public object SuperSampling {
+        // Super sampling is disabled.
+        public const val NONE: Int = 0
+        // Super sampling is enabled. This is the default.
+        public const val DEFAULT: Int = 1
+    }
+
     /**
      * Specifies how the surface content will be routed for stereo viewing. Applications must render
      * into the surface in accordance with what is specified here in order for the compositor to
@@ -292,6 +307,14 @@ private constructor(
             }
         }
 
+        private fun getRtSuperSampling(superSampling: Int): Int {
+            return when (superSampling) {
+                SuperSampling.NONE -> RtSurfaceEntity.SuperSampling.NONE
+                SuperSampling.DEFAULT -> RtSurfaceEntity.SuperSampling.DEFAULT
+                else -> RtSurfaceEntity.SuperSampling.DEFAULT
+            }
+        }
+
         /**
          * Factory method for SurfaceEntity.
          *
@@ -304,6 +327,8 @@ private constructor(
          * @param contentSecurityLevel The [ContentSecurityLevel] which describes whether DRM is
          *   enabled for the surface.
          * @param contentColorMetadata The [ContentColorMetadata] of the content (nullable).
+         * @param superSampling The [SuperSampling] which describes whether super sampling is
+         *   enabled for the surface.
          * @return a SurfaceEntity instance
          */
         internal fun create(
@@ -315,6 +340,7 @@ private constructor(
             canvasShape: CanvasShape = CanvasShape.Quad(1.0f, 1.0f),
             contentSecurityLevel: Int = ContentSecurityLevel.NONE,
             contentColorMetadata: ContentColorMetadata? = null,
+            superSampling: Int = SuperSampling.DEFAULT,
         ): SurfaceEntity {
             val rtCanvasShape =
                 when (canvasShape) {
@@ -334,6 +360,7 @@ private constructor(
                         pose,
                         rtCanvasShape,
                         getRtContentSecurityLevel(contentSecurityLevel),
+                        getRtSuperSampling(superSampling),
                         adapter.activitySpaceRootImpl,
                     ),
                     entityManager,
@@ -356,6 +383,8 @@ private constructor(
          * @param contentSecurityLevel The [ContentSecurityLevel] which describes whether DRM is
          *   enabled for the surface.
          * @param contentColorMetadata The [ContentColorMetadata] of the content (nullable).
+         * @param superSampling The [SuperSampling] which describes whether super sampling is
+         *   enabled for the surface.
          * @return a SurfaceEntity instance
          */
         @MainThread
@@ -368,6 +397,7 @@ private constructor(
             canvasShape: CanvasShape = CanvasShape.Quad(1.0f, 1.0f),
             contentSecurityLevel: Int = ContentSecurityLevel.NONE,
             contentColorMetadata: ContentColorMetadata? = null,
+            superSampling: Int = SuperSampling.DEFAULT,
         ): SurfaceEntity =
             SurfaceEntity.create(
                 session.runtime.lifecycleManager,
@@ -378,6 +408,7 @@ private constructor(
                 canvasShape,
                 contentSecurityLevel,
                 contentColorMetadata,
+                superSampling,
             )
     }
 

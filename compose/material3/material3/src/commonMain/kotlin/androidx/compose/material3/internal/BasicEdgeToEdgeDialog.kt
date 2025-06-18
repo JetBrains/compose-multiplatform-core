@@ -71,6 +71,7 @@ internal sealed interface BackEventProgress {
 internal enum class SwipeEdge {
     Left,
     Right,
+    None,
 }
 
 @Composable
@@ -105,7 +106,7 @@ internal fun PredictiveBackStateHandler(
                             when (backEvent.swipeEdge) {
                                 BackEventCompat.EDGE_LEFT -> SwipeEdge.Left
                                 BackEventCompat.EDGE_RIGHT -> SwipeEdge.Right
-                                else -> error("Unknown swipe edge")
+                                else -> SwipeEdge.None
                             },
                         )
                 }

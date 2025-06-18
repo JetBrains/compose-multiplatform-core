@@ -85,6 +85,10 @@ expect class GraphicsLayer {
      * layer are overlapping. Similarly leveraging [CompositingStrategy.Offscreen] is useful in
      * situations where creating an offscreen buffer is preferred usually in conjunction with
      * [BlendMode] usage.
+     *
+     * When [blendMode] is anything other than [BlendMode.SrcOver] or [colorFilter] is non-null,
+     * [compositingStrategy]'s value will be overridden and is forced to
+     * [CompositingStrategy.Offscreen].
      */
     var compositingStrategy: CompositingStrategy
 

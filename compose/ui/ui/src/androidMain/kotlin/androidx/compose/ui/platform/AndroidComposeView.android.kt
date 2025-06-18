@@ -78,6 +78,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ComposeUiFlags.isAdaptiveRefreshRateEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.R
@@ -128,8 +129,9 @@ import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.InputModeManagerImpl
+import androidx.compose.ui.input.indirect.AndroidIndirectTouchEvent
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.input.indirect.IndirectTouchEventType
+import androidx.compose.ui.input.indirect.convertActionToIndirectTouchEventType
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
 import androidx.compose.ui.input.key.onKeyEvent
@@ -1193,7 +1195,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             focusOwner.dispatchKeyEvent(keyEvent)
 
     /** This function is used by the testing framework to send indirect touch events. */
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalIndirectTouchTypeApi::class)
     override fun sendIndirectTouchEvent(indirectTouchEvent: IndirectTouchEvent): Boolean {
         return focusOwner.dispatchIndirectTouchEvent(indirectTouchEvent)
     }
@@ -2203,13 +2205,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     handleMotionEvent(motionEvent).dispatchedToAPointerInputModifier
                 }
             else -> {
-                @OptIn(ExperimentalComposeUiApi::class)
+                @OptIn(ExperimentalIndirectTouchTypeApi::class)
                 if (!motionEvent.isFromSource(SOURCE_CLASS_POINTER)) {
                     val indirectTouchEvent =
-                        IndirectTouchEvent(
+                        AndroidIndirectTouchEvent(
                             position = Offset(motionEvent.x, motionEvent.y),
-                            eventTimeMillis = motionEvent.eventTime,
+                            uptimeMillis = motionEvent.eventTime,
                             type = convertActionToIndirectTouchEventType(motionEvent.actionMasked),
+                            nativeEvent = motionEvent,
                         )
                     val handled =
                         focusOwner.dispatchIndirectTouchEvent(indirectTouchEvent) {
@@ -2222,16 +2225,6 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 // If focus owner did not handle, rely on ViewGroup to handle.
                 super.dispatchGenericMotionEvent(motionEvent)
             }
-        }
-    }
-
-    @OptIn(ExperimentalComposeUiApi::class)
-    private fun convertActionToIndirectTouchEventType(actionMasked: Int): IndirectTouchEventType {
-        return when (actionMasked) {
-            ACTION_UP -> IndirectTouchEventType.Release
-            ACTION_DOWN -> IndirectTouchEventType.Press
-            ACTION_MOVE -> IndirectTouchEventType.Move
-            else -> IndirectTouchEventType.Unknown
         }
     }
 

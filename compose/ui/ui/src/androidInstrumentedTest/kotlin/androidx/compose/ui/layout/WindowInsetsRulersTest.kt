@@ -88,7 +88,7 @@ class WindowInsetsRulersTest {
     private var fraction = 0f
     private var durationMillis = 0L
     private var alpha = 0f
-    private var ignoringVisibilityRect: IntRect? = null
+    private var maximumRect: IntRect? = null
     private var contentWidth = 0
     private var contentHeight = 0
     private val displayCutoutRects = mutableObjectListOf<IntRect?>()
@@ -124,17 +124,17 @@ class WindowInsetsRulersTest {
                         fraction = 0f
                         alpha = 1f
                         durationMillis = 0L
-                        ignoringVisibilityRect = null
+                        maximumRect = null
                         displayCutoutRects.clear()
 
                         val rulers = rulerState.value
                         if (rulers == DisplayCutout) {
-                            val cutouts = WindowInsetsRulers.getDisplayCutoutBounds(this)
+                            val cutouts = getDisplayCutoutBounds()
                             cutouts.forEach { cutoutRulers ->
                                 displayCutoutRects.add(readRulers(cutoutRulers))
                             }
                         }
-                        val animationProperties = rulers.getAnimationProperties(this)
+                        val animationProperties = rulers.getAnimation(this)
                         sourceRect = readRulers(animationProperties.source)
                         targetRect = readRulers(animationProperties.target)
                         isAnimating = animationProperties.isAnimating
@@ -142,7 +142,7 @@ class WindowInsetsRulersTest {
                         fraction = animationProperties.fraction
                         alpha = animationProperties.alpha
                         durationMillis = animationProperties.durationMillis
-                        ignoringVisibilityRect = readRulers(rulers.rulersIgnoringVisibility)
+                        maximumRect = readRulers(rulers.maximum)
                     }
             )
         }
@@ -230,11 +230,9 @@ class WindowInsetsRulersTest {
                     val message = "$visibleRulers / $rulers"
                     assertWithMessage(message).that(insetsRect).isEqualTo(expectedRect)
                     if (visibleRulers === Ime) {
-                        assertWithMessage(message).that(ignoringVisibilityRect).isNull()
+                        assertWithMessage(message).that(maximumRect).isNull()
                     } else {
-                        assertWithMessage(message)
-                            .that(ignoringVisibilityRect)
-                            .isEqualTo(expectedRect)
+                        assertWithMessage(message).that(maximumRect).isEqualTo(expectedRect)
                     }
                     assertNotAnimating(rulers)
                     assertWithMessage(message).that(isVisible).isEqualTo(visibleRulers === rulers)
@@ -244,11 +242,11 @@ class WindowInsetsRulersTest {
     }
 
     @Test
-    fun ignoringVisibility() {
+    fun maximum() {
         Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         val rulerState = mutableStateOf(CaptionBar)
         setSimpleRulerContent(rulerState)
-        val ignoringVisibilityRulersList =
+        val maximumRulersList =
             listOf(
                 TappableElement,
                 StatusBars,
@@ -257,7 +255,7 @@ class WindowInsetsRulersTest {
                 MandatorySystemGestures,
                 SystemGestures,
             )
-        ignoringVisibilityRulersList.forEach { rulers ->
+        maximumRulersList.forEach { rulers ->
             rulerState.value = rulers
             rule.waitForIdle()
 
@@ -270,7 +268,7 @@ class WindowInsetsRulersTest {
                     .that(insetsRect)
                     .isEqualTo(IntRect(0, 0, contentWidth, contentHeight))
                 assertWithMessage(rulers.toString())
-                    .that(ignoringVisibilityRect)
+                    .that(maximumRect)
                     .isEqualTo(IntRect(1, 2, contentWidth - 3, contentHeight - 5))
             }
         }
@@ -519,14 +517,14 @@ class WindowInsetsRulersTest {
             )
         val rulerName = animatableRulers.toString()
         assertWithMessage(rulerName).that(insetsRect).isEqualTo(expectedRect)
-        val ignoringVisibilityRect =
+        val maximumRect =
             IntRect(
                 source.left,
                 source.top,
                 contentWidth - source.right,
                 contentHeight - source.bottom,
             )
-        assertWithMessage(rulerName).that(ignoringVisibilityRect).isEqualTo(ignoringVisibilityRect)
+        assertWithMessage(rulerName).that(maximumRect).isEqualTo(maximumRect)
 
         assertWithMessage(rulerName).that(sourceRect).isNull()
         assertWithMessage(rulerName).that(targetRect).isNull()
@@ -844,7 +842,7 @@ class WindowInsetsRulersTest {
             assertThat(sourceRect).isNull()
             assertThat(targetRect).isNull()
             assertThat(insetsRect).isEqualTo(IntRect(10, 20, contentWidth - 30, contentHeight - 50))
-            assertThat(ignoringVisibilityRect)
+            assertThat(maximumRect)
                 .isEqualTo(IntRect(10, 20, contentWidth - 30, contentHeight - 50))
             assertThat(isVisible).isTrue()
             assertThat(isAnimating).isFalse()

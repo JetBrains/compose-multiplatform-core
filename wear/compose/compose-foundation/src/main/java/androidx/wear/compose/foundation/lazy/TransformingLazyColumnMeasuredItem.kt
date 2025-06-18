@@ -122,6 +122,31 @@ internal data class TransformingLazyColumnMeasuredItem(
         isInMeasure = false
     }
 
+    fun moveBy(delta: Int, measurementDirection: MeasurementDirection) {
+        when (measurementDirection) {
+            MeasurementDirection.UPWARD -> {
+                val bottomOffset = offset + transformedHeight + delta
+                measureScrollProgress =
+                    upwardMeasuredItemScrollProgress(
+                        offset = bottomOffset,
+                        height = measuredHeight,
+                        containerHeight = containerConstraints.maxHeight,
+                    )
+                offset = bottomOffset - transformedHeight // transformed height is updated
+            }
+            MeasurementDirection.DOWNWARD -> {
+                offset += delta
+                measureScrollProgress =
+                    downwardMeasuredItemScrollProgress(
+                        offset = offset,
+                        height = measuredHeight,
+                        containerHeight = containerConstraints.maxHeight,
+                    )
+            }
+        }
+        this.measurementDirection = measurementDirection
+    }
+
     fun moveAbove(offset: Int) {
         measureScrollProgress =
             upwardMeasuredItemScrollProgress(
@@ -129,12 +154,13 @@ internal data class TransformingLazyColumnMeasuredItem(
                 height = measuredHeight,
                 containerHeight = containerConstraints.maxHeight,
             )
-
+        measurementDirection = MeasurementDirection.UPWARD
         this.offset = offset - transformedHeight
     }
 
     fun moveBelow(offset: Int) {
         this.offset = offset
+        measurementDirection = MeasurementDirection.DOWNWARD
         measureScrollProgress =
             downwardMeasuredItemScrollProgress(
                 offset = offset,

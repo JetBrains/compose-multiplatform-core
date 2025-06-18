@@ -399,18 +399,6 @@ public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
         rtEnvironment.removeOnSpatialEnvironmentChangedListener(listener)
     }
 
-    /**
-     * If the primary Activity in a [Session] spatial environment has focus, causes the [Session] to
-     * be placed in FullSpace Mode. Otherwise, this call does nothing.
-     */
-    public fun requestFullSpaceMode(): Unit = runtime.requestFullSpaceMode()
-
-    /**
-     * If the primary Activity in a [Session] spatial environment has focus, causes the [Session] to
-     * be placed in HomeSpace Mode. Otherwise, this call does nothing.
-     */
-    public fun requestHomeSpaceMode(): Unit = runtime.requestHomeSpaceMode()
-
     /** Result values for calls to [setPassthroughOpacityPreference] */
     public sealed class SetPassthroughOpacityPreferenceResult()
 

@@ -101,7 +101,7 @@ internal constructor(
         @JvmStatic
         @JvmOverloads
         public fun create(
-            baseTcpPort: Int = Random.nextInt(from = 10240, until = 65536 - 1),
+            baseTcpPort: Int = Random.nextInt(from = 10240, until = 65536 - 3),
             stdOutBufferSize: Int = DEFAULT_STDOUT_BUFFER_SIZE,
             stdErrBufferSize: Int = DEFAULT_STDERR_BUFFER_SIZE,
             connectToNativeProcessTimeoutMs: Int = 1000,

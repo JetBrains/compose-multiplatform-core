@@ -77,6 +77,18 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             return createExrImageFuture(platformAdapter.loadExrImageByAssetName(name), session)
         }
 
+        internal suspend fun createFromZip(
+            platformAdapter: JxrPlatformAdapter,
+            name: String,
+            session: Session,
+        ): ExrImage {
+            require(name.endsWith(".zip", ignoreCase = true)) {
+                "Only preprocessed skybox files with the .zip extension are supported."
+            }
+
+            return createExrImage(platformAdapter.loadExrImageByAssetName(name), session)
+        }
+
         internal fun createFromZipAsync(
             platformAdapter: JxrPlatformAdapter,
             byteArray: ByteArray,
@@ -84,6 +96,19 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             session: Session,
         ): ListenableFuture<ExrImage> {
             return createExrImageFuture(
+                platformAdapter.loadExrImageByByteArray(byteArray, assetKey),
+                session,
+            )
+        }
+
+        @SuppressWarnings("RestrictTo")
+        internal suspend fun createFromZip(
+            platformAdapter: JxrPlatformAdapter,
+            byteArray: ByteArray,
+            assetKey: String,
+            session: Session,
+        ): ExrImage {
+            return createExrImage(
                 platformAdapter.loadExrImageByByteArray(byteArray, assetKey),
                 session,
             )
@@ -119,6 +144,32 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
 
         /**
          * Public factory for an ExrImage, asynchronously loading a preprocessed skybox from a
+         * [Path] relative to the application's `assets/` folder.
+         *
+         * The input `.zip` file should contain the preprocessed image-based lighting (IBL) data,
+         * typically generated from an `.exr` or `.hdr` environment map using a tool like Filament's
+         * `cmgen`. See: https://github.com/google/filament/tree/main/tools/cmgen
+         *
+         * @param session The [Session] to use for loading the asset.
+         * @param path The Path of the preprocessed `.zip` skybox file to be loaded, relative to the
+         *   application's `assets/` folder.
+         * @return a [ExrImage] upon completion.
+         *     @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method
+         *       requires a relative path, or if the path does not specify a `.zip` file.
+         */
+        @MainThread
+        @JvmStatic
+        // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
+        @SuppressLint("NewApi")
+        public suspend fun createFromZip(session: Session, path: Path): ExrImage {
+            require(!path.isAbsolute) {
+                "ExrImage.createFromZipAsync() expects a path relative to `assets/`, received absolute path $path."
+            }
+            return createFromZip(session.platformAdapter, path.toString(), session)
+        }
+
+        /**
+         * Public factory for an ExrImage, asynchronously loading a preprocessed skybox from a
          * [Uri].
          *
          * The input `.zip` file should contain the preprocessed image-based lighting (IBL) data,
@@ -136,6 +187,24 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
         @JvmStatic
         public fun createFromZipAsync(session: Session, uri: Uri): ListenableFuture<ExrImage> =
             createFromZipAsync(session.platformAdapter, uri.toString(), session)
+
+        /**
+         * Public factory for an ExrImage, asynchronously loading a preprocessed skybox from a
+         * [Uri].
+         *
+         * The input `.zip` file should contain the preprocessed image-based lighting (IBL) data,
+         * typically generated from an `.exr` or `.hdr` environment map using a tool like Filament's
+         * `cmgen`. See: https://github.com/google/filament/tree/main/tools/cmgen
+         *
+         * @param session The [Session] to use for loading the asset.
+         * @param uri The Uri of the preprocessed `.zip` skybox file to be loaded.
+         * @return a [ExrImage] upon completion.
+         *     @throws IllegalArgumentException if the Uri does not specify a `.zip` file.
+         */
+        @MainThread
+        @JvmStatic
+        public suspend fun createFromZip(session: Session, uri: Uri): ExrImage =
+            createFromZip(session.platformAdapter, uri.toString(), session)
 
         /**
          * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
@@ -163,6 +232,30 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             return createFromZipAsync(session.platformAdapter, assetData, assetKey, session)
         }
 
+        /**
+         * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
+         * asynchronously loaded.
+         *
+         * This method must be called from the main thread.
+         * https://developer.android.com/guide/components/processes-and-threads
+         *
+         * @param session The [Session] to use for loading the asset.
+         * @param assetData The byte array of the preprocessed EXR image to be loaded.
+         * @param assetKey The key of the preprocessed EXR image to be loaded. This is used to
+         *   identify the asset in the SceneCore cache.
+         * @return a [ExrImage] upon completion.
+         */
+        @MainThread
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public suspend fun createFromZip(
+            session: Session,
+            assetData: ByteArray,
+            assetKey: String,
+        ): ExrImage {
+            return createFromZip(session.platformAdapter, assetData, assetKey, session)
+        }
+
         private fun createExrImageFuture(
             exrImageResourceFuture: ListenableFuture<RtExrImage>,
             session: Session,
@@ -182,6 +275,14 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             )
 
             return exrImageFuture
+        }
+
+        private suspend fun createExrImage(
+            exrImageResourceFuture: ListenableFuture<RtExrImage>,
+            session: Session,
+        ): ExrImage {
+            val image = exrImageResourceFuture.awaitSuspending()
+            return ExrImage(image, session)
         }
     }
 

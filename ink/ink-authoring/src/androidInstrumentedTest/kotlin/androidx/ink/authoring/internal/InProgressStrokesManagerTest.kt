@@ -1297,7 +1297,7 @@ internal class InProgressStrokesManagerTest {
         val moveInputs =
             MutableStrokeInputBatch()
                 .apply {
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 30f,
                             y = 40f,
@@ -1936,6 +1936,8 @@ internal class InProgressStrokesManagerTest {
                 sizeX = 10f,
                 sizeY = 10f,
                 animationFrames = 8,
+                animationRows = 3,
+                animationColumns = 3,
             )
         val family = BrushFamily(paint = BrushPaint(listOf(texture)))
         val brush = Brush(family = family, size = brushSize, epsilon = 0.1f)
@@ -1996,6 +1998,8 @@ internal class InProgressStrokesManagerTest {
                 sizeX = 10f,
                 sizeY = 10f,
                 animationFrames = 8,
+                animationRows = 3,
+                animationColumns = 3,
             )
         val family = BrushFamily(paint = BrushPaint(listOf(texture)))
         val brush = Brush(family = family, size = brushSize, epsilon = 0.1f)
@@ -2081,6 +2085,8 @@ internal class InProgressStrokesManagerTest {
                 sizeX = 10f,
                 sizeY = 10f,
                 animationFrames = 8,
+                animationRows = 3,
+                animationColumns = 3,
             )
         val family = BrushFamily(paint = BrushPaint(listOf(texture)))
         val brush = Brush(family = family, size = brushSize, epsilon = 0.1f)
@@ -2150,6 +2156,8 @@ internal class InProgressStrokesManagerTest {
                 sizeX = 10f,
                 sizeY = 10f,
                 animationFrames = 8,
+                animationRows = 3,
+                animationColumns = 3,
             )
         val family = BrushFamily(paint = BrushPaint(listOf(texture)))
         val brush = Brush(family = family, size = brushSize, epsilon = 0.1f)

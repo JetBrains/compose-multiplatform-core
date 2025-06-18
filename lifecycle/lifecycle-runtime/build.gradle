@@ -12,11 +12,26 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("androidx.baselineprofile")
 }
+
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.runtime"
+        withJava()
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+        // TODO(b/345531033)
+        experimentalProperties["android.lint.useK2Uast"] = false
+        // Needed for api tasks and docs generation
+        sourceSets {
+            androidMain {
+                kotlin.srcDirs += 'src/androidMain/java'
+            }
+        }
+    }
     desktop()
     mingwX64()
     linux()
@@ -75,6 +90,7 @@ androidXMultiplatform {
             dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
+                api(libs.jspecify)
                 implementation("androidx.core:core-viewtree:1.0.0")
                 implementation("androidx.arch.core:core-runtime:2.2.0")
                 implementation("androidx.profileinstaller:profileinstaller:1.4.0")
@@ -149,21 +165,7 @@ androidXMultiplatform {
 }
 
 dependencies {
-    api(libs.jspecify)
     lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
-}
-
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-
-    // Include `*.java` files into the build
-    sourceSets["main"].java.srcDir("src/androidMain/java")
-    sourceSets["test"].java.srcDir("src/androidUnitTest/kotlin")
-    namespace = "androidx.lifecycle.runtime"
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {

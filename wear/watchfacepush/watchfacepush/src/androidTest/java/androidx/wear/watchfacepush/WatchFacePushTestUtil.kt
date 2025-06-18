@@ -40,6 +40,7 @@ internal const val INVALID_TOKEN = "an invalid token"
 internal const val VALID_APK = "androidxsample.apk"
 internal const val MALFORMED_APK = "androidxample_notanapk.apk"
 internal const val UNSECURE_APK = "androidxsample_unsecure.apk"
+internal const val UNSECURE_TOKEN = "pu+5Swdd17qXMZNIryy3qSahtjiDPMunisx4BVzpClc=:MS4wLjA="
 internal const val INVALID_PACKAGE_NAME_APK = "androidxsample_invalid_package_name.apk"
 
 internal fun CoroutineScope.readWatchFace(context: Context, packagePath: String): FdPipe {

@@ -188,15 +188,13 @@ class SplitEngine : ComponentActivity() {
                     val modifier = Modifier.weight(1F)
                     ApiButton("Toggle Passthrough", modifier) { togglePassthrough(session) }
                     ApiButton("Switch to FSM", modifier) {
-                        session.scene.spatialEnvironment.requestFullSpaceMode()
+                        session.scene.requestFullSpaceMode()
                         if (movableComponentMP.value == null) {
                             movableComponentMP.value = MovableComponent.create(session)
                             session.scene.mainPanelEntity.addComponent(movableComponentMP.value!!)
                         }
                     }
-                    ApiButton("Switch to HSM", modifier) {
-                        session.scene.spatialEnvironment.requestHomeSpaceMode()
-                    }
+                    ApiButton("Switch to HSM", modifier) { session.scene.requestHomeSpaceMode() }
                 }
             }
         }

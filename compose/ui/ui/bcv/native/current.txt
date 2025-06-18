@@ -397,6 +397,11 @@ abstract interface androidx.compose.ui.hapticfeedback/HapticFeedback { // androi
     abstract fun performHapticFeedback(androidx.compose.ui.hapticfeedback/HapticFeedbackType) // androidx.compose.ui.hapticfeedback/HapticFeedback.performHapticFeedback|performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType){}[0]
 }
 
+abstract interface androidx.compose.ui.input.indirect/IndirectTouchInputModifierNode : androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.input.indirect/IndirectTouchInputModifierNode|null[0]
+    abstract fun onIndirectTouchEvent(androidx.compose.ui.input.indirect/IndirectTouchEvent): kotlin/Boolean // androidx.compose.ui.input.indirect/IndirectTouchInputModifierNode.onIndirectTouchEvent|onIndirectTouchEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent){}[0]
+    abstract fun onPreIndirectTouchEvent(androidx.compose.ui.input.indirect/IndirectTouchEvent): kotlin/Boolean // androidx.compose.ui.input.indirect/IndirectTouchInputModifierNode.onPreIndirectTouchEvent|onPreIndirectTouchEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent){}[0]
+}
+
 abstract interface androidx.compose.ui.input.key/KeyInputModifierNode : androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.input.key/KeyInputModifierNode|null[0]
     abstract fun onKeyEvent(androidx.compose.ui.input.key/KeyEvent): kotlin/Boolean // androidx.compose.ui.input.key/KeyInputModifierNode.onKeyEvent|onKeyEvent(androidx.compose.ui.input.key.KeyEvent){}[0]
     abstract fun onPreKeyEvent(androidx.compose.ui.input.key/KeyEvent): kotlin/Boolean // androidx.compose.ui.input.key/KeyInputModifierNode.onPreKeyEvent|onPreKeyEvent(androidx.compose.ui.input.key.KeyEvent){}[0]
@@ -874,6 +879,7 @@ abstract interface androidx.compose.ui.node/RootForTest { // androidx.compose.ui
     abstract fun sendKeyEvent(androidx.compose.ui.input.key/KeyEvent): kotlin/Boolean // androidx.compose.ui.node/RootForTest.sendKeyEvent|sendKeyEvent(androidx.compose.ui.input.key.KeyEvent){}[0]
     open fun forceAccessibilityForTesting(kotlin/Boolean) // androidx.compose.ui.node/RootForTest.forceAccessibilityForTesting|forceAccessibilityForTesting(kotlin.Boolean){}[0]
     open fun measureAndLayoutForTest() // androidx.compose.ui.node/RootForTest.measureAndLayoutForTest|measureAndLayoutForTest(){}[0]
+    open fun sendIndirectTouchEvent(androidx.compose.ui.input.indirect/IndirectTouchEvent): kotlin/Boolean // androidx.compose.ui.node/RootForTest.sendIndirectTouchEvent|sendIndirectTouchEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent){}[0]
     open fun setAccessibilityEventBatchIntervalMillis(kotlin/Long) // androidx.compose.ui.node/RootForTest.setAccessibilityEventBatchIntervalMillis|setAccessibilityEventBatchIntervalMillis(kotlin.Long){}[0]
     open fun setUncaughtExceptionHandler(androidx.compose.ui.node/RootForTest.UncaughtExceptionHandler?) // androidx.compose.ui.node/RootForTest.setUncaughtExceptionHandler|setUncaughtExceptionHandler(androidx.compose.ui.node.RootForTest.UncaughtExceptionHandler?){}[0]
 
@@ -1208,6 +1214,15 @@ sealed interface androidx.compose.ui.focus/FocusTargetModifierNode : androidx.co
     abstract fun requestFocus(androidx.compose.ui.focus/FocusDirection = ...): kotlin/Boolean // androidx.compose.ui.focus/FocusTargetModifierNode.requestFocus|requestFocus(androidx.compose.ui.focus.FocusDirection){}[0]
 }
 
+sealed interface androidx.compose.ui.input.indirect/IndirectTouchEvent { // androidx.compose.ui.input.indirect/IndirectTouchEvent|null[0]
+    abstract val position // androidx.compose.ui.input.indirect/IndirectTouchEvent.position|{}position[0]
+        abstract fun <get-position>(): androidx.compose.ui.geometry/Offset // androidx.compose.ui.input.indirect/IndirectTouchEvent.position.<get-position>|<get-position>(){}[0]
+    abstract val type // androidx.compose.ui.input.indirect/IndirectTouchEvent.type|{}type[0]
+        abstract fun <get-type>(): androidx.compose.ui.input.indirect/IndirectTouchEventType // androidx.compose.ui.input.indirect/IndirectTouchEvent.type.<get-type>|<get-type>(){}[0]
+    abstract val uptimeMillis // androidx.compose.ui.input.indirect/IndirectTouchEvent.uptimeMillis|{}uptimeMillis[0]
+        abstract fun <get-uptimeMillis>(): kotlin/Long // androidx.compose.ui.input.indirect/IndirectTouchEvent.uptimeMillis.<get-uptimeMillis>|<get-uptimeMillis>(){}[0]
+}
+
 sealed interface androidx.compose.ui.input.pointer/SuspendingPointerInputModifierNode : androidx.compose.ui.node/PointerInputModifierNode { // androidx.compose.ui.input.pointer/SuspendingPointerInputModifierNode|null[0]
     abstract var pointerInputHandler // androidx.compose.ui.input.pointer/SuspendingPointerInputModifierNode.pointerInputHandler|{}pointerInputHandler[0]
         abstract fun <get-pointerInputHandler>(): kotlin.coroutines/SuspendFunction1<androidx.compose.ui.input.pointer/PointerInputScope, kotlin/Unit> // androidx.compose.ui.input.pointer/SuspendingPointerInputModifierNode.pointerInputHandler.<get-pointerInputHandler>|<get-pointerInputHandler>(){}[0]
@@ -1228,28 +1243,30 @@ sealed interface androidx.compose.ui.layout/ApproachIntrinsicMeasureScope : andr
 
 sealed interface androidx.compose.ui.layout/ApproachMeasureScope : androidx.compose.ui.layout/ApproachIntrinsicMeasureScope, androidx.compose.ui.layout/MeasureScope // androidx.compose.ui.layout/ApproachMeasureScope|null[0]
 
-sealed interface androidx.compose.ui.layout/WindowInsetsAnimationProperties { // androidx.compose.ui.layout/WindowInsetsAnimationProperties|null[0]
-    abstract val durationMillis // androidx.compose.ui.layout/WindowInsetsAnimationProperties.durationMillis|{}durationMillis[0]
-        abstract fun <get-durationMillis>(): kotlin/Long // androidx.compose.ui.layout/WindowInsetsAnimationProperties.durationMillis.<get-durationMillis>|<get-durationMillis>(){}[0]
-    abstract val fraction // androidx.compose.ui.layout/WindowInsetsAnimationProperties.fraction|{}fraction[0]
-        abstract fun <get-fraction>(): kotlin/Float // androidx.compose.ui.layout/WindowInsetsAnimationProperties.fraction.<get-fraction>|<get-fraction>(){}[0]
-    abstract val isAnimating // androidx.compose.ui.layout/WindowInsetsAnimationProperties.isAnimating|{}isAnimating[0]
-        abstract fun <get-isAnimating>(): kotlin/Boolean // androidx.compose.ui.layout/WindowInsetsAnimationProperties.isAnimating.<get-isAnimating>|<get-isAnimating>(){}[0]
-    abstract val isVisible // androidx.compose.ui.layout/WindowInsetsAnimationProperties.isVisible|{}isVisible[0]
-        abstract fun <get-isVisible>(): kotlin/Boolean // androidx.compose.ui.layout/WindowInsetsAnimationProperties.isVisible.<get-isVisible>|<get-isVisible>(){}[0]
-    abstract val source // androidx.compose.ui.layout/WindowInsetsAnimationProperties.source|{}source[0]
-        abstract fun <get-source>(): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/WindowInsetsAnimationProperties.source.<get-source>|<get-source>(){}[0]
-    abstract val target // androidx.compose.ui.layout/WindowInsetsAnimationProperties.target|{}target[0]
-        abstract fun <get-target>(): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/WindowInsetsAnimationProperties.target.<get-target>|<get-target>(){}[0]
+sealed interface androidx.compose.ui.layout/WindowInsetsAnimation { // androidx.compose.ui.layout/WindowInsetsAnimation|null[0]
+    abstract val alpha // androidx.compose.ui.layout/WindowInsetsAnimation.alpha|{}alpha[0]
+        abstract fun <get-alpha>(): kotlin/Float // androidx.compose.ui.layout/WindowInsetsAnimation.alpha.<get-alpha>|<get-alpha>(){}[0]
+    abstract val durationMillis // androidx.compose.ui.layout/WindowInsetsAnimation.durationMillis|{}durationMillis[0]
+        abstract fun <get-durationMillis>(): kotlin/Long // androidx.compose.ui.layout/WindowInsetsAnimation.durationMillis.<get-durationMillis>|<get-durationMillis>(){}[0]
+    abstract val fraction // androidx.compose.ui.layout/WindowInsetsAnimation.fraction|{}fraction[0]
+        abstract fun <get-fraction>(): kotlin/Float // androidx.compose.ui.layout/WindowInsetsAnimation.fraction.<get-fraction>|<get-fraction>(){}[0]
+    abstract val isAnimating // androidx.compose.ui.layout/WindowInsetsAnimation.isAnimating|{}isAnimating[0]
+        abstract fun <get-isAnimating>(): kotlin/Boolean // androidx.compose.ui.layout/WindowInsetsAnimation.isAnimating.<get-isAnimating>|<get-isAnimating>(){}[0]
+    abstract val isVisible // androidx.compose.ui.layout/WindowInsetsAnimation.isVisible|{}isVisible[0]
+        abstract fun <get-isVisible>(): kotlin/Boolean // androidx.compose.ui.layout/WindowInsetsAnimation.isVisible.<get-isVisible>|<get-isVisible>(){}[0]
+    abstract val source // androidx.compose.ui.layout/WindowInsetsAnimation.source|{}source[0]
+        abstract fun <get-source>(): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/WindowInsetsAnimation.source.<get-source>|<get-source>(){}[0]
+    abstract val target // androidx.compose.ui.layout/WindowInsetsAnimation.target|{}target[0]
+        abstract fun <get-target>(): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/WindowInsetsAnimation.target.<get-target>|<get-target>(){}[0]
 }
 
 sealed interface androidx.compose.ui.layout/WindowInsetsRulers { // androidx.compose.ui.layout/WindowInsetsRulers|null[0]
     abstract val current // androidx.compose.ui.layout/WindowInsetsRulers.current|{}current[0]
         abstract fun <get-current>(): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/WindowInsetsRulers.current.<get-current>|<get-current>(){}[0]
-    abstract val rulersIgnoringVisibility // androidx.compose.ui.layout/WindowInsetsRulers.rulersIgnoringVisibility|{}rulersIgnoringVisibility[0]
-        abstract fun <get-rulersIgnoringVisibility>(): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/WindowInsetsRulers.rulersIgnoringVisibility.<get-rulersIgnoringVisibility>|<get-rulersIgnoringVisibility>(){}[0]
+    abstract val maximum // androidx.compose.ui.layout/WindowInsetsRulers.maximum|{}maximum[0]
+        abstract fun <get-maximum>(): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/WindowInsetsRulers.maximum.<get-maximum>|<get-maximum>(){}[0]
 
-    abstract fun getAnimationProperties(androidx.compose.ui.layout/Placeable.PlacementScope): androidx.compose.ui.layout/WindowInsetsAnimationProperties // androidx.compose.ui.layout/WindowInsetsRulers.getAnimationProperties|getAnimationProperties(androidx.compose.ui.layout.Placeable.PlacementScope){}[0]
+    abstract fun getAnimation(androidx.compose.ui.layout/Placeable.PlacementScope): androidx.compose.ui.layout/WindowInsetsAnimation // androidx.compose.ui.layout/WindowInsetsRulers.getAnimation|getAnimation(androidx.compose.ui.layout.Placeable.PlacementScope){}[0]
 
     final object Companion { // androidx.compose.ui.layout/WindowInsetsRulers.Companion|null[0]
         final val CaptionBar // androidx.compose.ui.layout/WindowInsetsRulers.Companion.CaptionBar|{}CaptionBar[0]
@@ -1279,7 +1296,6 @@ sealed interface androidx.compose.ui.layout/WindowInsetsRulers { // androidx.com
         final val Waterfall // androidx.compose.ui.layout/WindowInsetsRulers.Companion.Waterfall|{}Waterfall[0]
             final fun <get-Waterfall>(): androidx.compose.ui.layout/WindowInsetsRulers // androidx.compose.ui.layout/WindowInsetsRulers.Companion.Waterfall.<get-Waterfall>|<get-Waterfall>(){}[0]
 
-        final fun getDisplayCutoutBounds(androidx.compose.ui.layout/Placeable.PlacementScope): kotlin.collections/List<androidx.compose.ui.layout/RectRulers> // androidx.compose.ui.layout/WindowInsetsRulers.Companion.getDisplayCutoutBounds|getDisplayCutoutBounds(androidx.compose.ui.layout.Placeable.PlacementScope){}[0]
         final fun innermostOf(kotlin/Array<out androidx.compose.ui.layout/WindowInsetsRulers>...): androidx.compose.ui.layout/WindowInsetsRulers // androidx.compose.ui.layout/WindowInsetsRulers.Companion.innermostOf|innermostOf(kotlin.Array<out|androidx.compose.ui.layout.WindowInsetsRulers>...){}[0]
     }
 }
@@ -2393,6 +2409,23 @@ final value class androidx.compose.ui.hapticfeedback/HapticFeedbackType { // and
     }
 }
 
+final value class androidx.compose.ui.input.indirect/IndirectTouchEventType { // androidx.compose.ui.input.indirect/IndirectTouchEventType|null[0]
+    final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.input.indirect/IndirectTouchEventType.equals|equals(kotlin.Any?){}[0]
+    final fun hashCode(): kotlin/Int // androidx.compose.ui.input.indirect/IndirectTouchEventType.hashCode|hashCode(){}[0]
+    final fun toString(): kotlin/String // androidx.compose.ui.input.indirect/IndirectTouchEventType.toString|toString(){}[0]
+
+    final object Companion { // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion|null[0]
+        final val Move // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Move|{}Move[0]
+            final fun <get-Move>(): androidx.compose.ui.input.indirect/IndirectTouchEventType // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Move.<get-Move>|<get-Move>(){}[0]
+        final val Press // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Press|{}Press[0]
+            final fun <get-Press>(): androidx.compose.ui.input.indirect/IndirectTouchEventType // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Press.<get-Press>|<get-Press>(){}[0]
+        final val Release // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Release|{}Release[0]
+            final fun <get-Release>(): androidx.compose.ui.input.indirect/IndirectTouchEventType // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Release.<get-Release>|<get-Release>(){}[0]
+        final val Unknown // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Unknown|{}Unknown[0]
+            final fun <get-Unknown>(): androidx.compose.ui.input.indirect/IndirectTouchEventType // androidx.compose.ui.input.indirect/IndirectTouchEventType.Companion.Unknown.<get-Unknown>|<get-Unknown>(){}[0]
+    }
+}
+
 final value class androidx.compose.ui.input.key/Key { // androidx.compose.ui.input.key/Key|null[0]
     constructor <init>(kotlin/Long) // androidx.compose.ui.input.key/Key.<init>|<init>(kotlin.Long){}[0]
 
@@ -3209,8 +3242,6 @@ final value class androidx.compose.ui/FrameRateCategory { // androidx.compose.ui
             final fun <get-Default>(): androidx.compose.ui/FrameRateCategory // androidx.compose.ui/FrameRateCategory.Companion.Default.<get-Default>|<get-Default>(){}[0]
         final val High // androidx.compose.ui/FrameRateCategory.Companion.High|{}High[0]
             final fun <get-High>(): androidx.compose.ui/FrameRateCategory // androidx.compose.ui/FrameRateCategory.Companion.High.<get-High>|<get-High>(){}[0]
-        final val NoPreference // androidx.compose.ui/FrameRateCategory.Companion.NoPreference|{}NoPreference[0]
-            final fun <get-NoPreference>(): androidx.compose.ui/FrameRateCategory // androidx.compose.ui/FrameRateCategory.Companion.NoPreference.<get-NoPreference>|<get-NoPreference>(){}[0]
         final val Normal // androidx.compose.ui/FrameRateCategory.Companion.Normal|{}Normal[0]
             final fun <get-Normal>(): androidx.compose.ui/FrameRateCategory // androidx.compose.ui/FrameRateCategory.Companion.Normal.<get-Normal>|<get-Normal>(){}[0]
     }
@@ -3728,6 +3759,7 @@ final fun (androidx.compose.ui.layout/LayoutCoordinates).androidx.compose.ui.lay
 final fun (androidx.compose.ui.layout/LayoutCoordinates).androidx.compose.ui.layout/positionInRoot(): androidx.compose.ui.geometry/Offset // androidx.compose.ui.layout/positionInRoot|positionInRoot@androidx.compose.ui.layout.LayoutCoordinates(){}[0]
 final fun (androidx.compose.ui.layout/LayoutCoordinates).androidx.compose.ui.layout/positionInWindow(): androidx.compose.ui.geometry/Offset // androidx.compose.ui.layout/positionInWindow|positionInWindow@androidx.compose.ui.layout.LayoutCoordinates(){}[0]
 final fun (androidx.compose.ui.layout/LayoutCoordinates).androidx.compose.ui.layout/positionOnScreen(): androidx.compose.ui.geometry/Offset // androidx.compose.ui.layout/positionOnScreen|positionOnScreen@androidx.compose.ui.layout.LayoutCoordinates(){}[0]
+final fun (androidx.compose.ui.layout/Placeable.PlacementScope).androidx.compose.ui.layout/getDisplayCutoutBounds(): kotlin.collections/List<androidx.compose.ui.layout/RectRulers> // androidx.compose.ui.layout/getDisplayCutoutBounds|getDisplayCutoutBounds@androidx.compose.ui.layout.Placeable.PlacementScope(){}[0]
 final fun (androidx.compose.ui.layout/RectRulers.Companion).androidx.compose.ui.layout/innermostOf(kotlin/Array<out androidx.compose.ui.layout/RectRulers>...): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/innermostOf|innermostOf@androidx.compose.ui.layout.RectRulers.Companion(kotlin.Array<out|androidx.compose.ui.layout.RectRulers>...){}[0]
 final fun (androidx.compose.ui.layout/RectRulers.Companion).androidx.compose.ui.layout/outermostOf(kotlin/Array<out androidx.compose.ui.layout/RectRulers>...): androidx.compose.ui.layout/RectRulers // androidx.compose.ui.layout/outermostOf|outermostOf@androidx.compose.ui.layout.RectRulers.Companion(kotlin.Array<out|androidx.compose.ui.layout.RectRulers>...){}[0]
 final fun (androidx.compose.ui.layout/ScaleFactor).androidx.compose.ui.layout/times(androidx.compose.ui.geometry/Size): androidx.compose.ui.geometry/Size // androidx.compose.ui.layout/times|times@androidx.compose.ui.layout.ScaleFactor(androidx.compose.ui.geometry.Size){}[0]
@@ -3800,9 +3832,9 @@ final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/clipToBounds()
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/drawBehind(kotlin/Function1<androidx.compose.ui.graphics.drawscope/DrawScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/drawBehind|drawBehind@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.graphics.drawscope.DrawScope,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/drawWithCache(kotlin/Function1<androidx.compose.ui.draw/CacheDrawScope, androidx.compose.ui.draw/DrawResult>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/drawWithCache|drawWithCache@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.draw.CacheDrawScope,androidx.compose.ui.draw.DrawResult>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/drawWithContent(kotlin/Function1<androidx.compose.ui.graphics.drawscope/ContentDrawScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/drawWithContent|drawWithContent@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.graphics.drawscope.ContentDrawScope,kotlin.Unit>){}[0]
-final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/dropShadow(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/ShadowParams): androidx.compose.ui/Modifier // androidx.compose.ui.draw/dropShadow|dropShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.ShadowParams){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/dropShadow(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui/Modifier // androidx.compose.ui.draw/dropShadow|dropShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/dropShadow(androidx.compose.ui.graphics/Shape, kotlin/Function1<androidx.compose.ui.draw/DropShadowScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/dropShadow|dropShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;kotlin.Function1<androidx.compose.ui.draw.DropShadowScope,kotlin.Unit>){}[0]
-final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/innerShadow(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/ShadowParams): androidx.compose.ui/Modifier // androidx.compose.ui.draw/innerShadow|innerShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.ShadowParams){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/innerShadow(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui/Modifier // androidx.compose.ui.draw/innerShadow|innerShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/innerShadow(androidx.compose.ui.graphics/Shape, kotlin/Function1<androidx.compose.ui.draw/InnerShadowScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.draw/innerShadow|innerShadow@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.Shape;kotlin.Function1<androidx.compose.ui.draw.InnerShadowScope,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/paint(androidx.compose.ui.graphics.painter/Painter, kotlin/Boolean = ..., androidx.compose.ui/Alignment = ..., androidx.compose.ui.layout/ContentScale = ..., kotlin/Float = ..., androidx.compose.ui.graphics/ColorFilter? = ...): androidx.compose.ui/Modifier // androidx.compose.ui.draw/paint|paint@androidx.compose.ui.Modifier(androidx.compose.ui.graphics.painter.Painter;kotlin.Boolean;androidx.compose.ui.Alignment;androidx.compose.ui.layout.ContentScale;kotlin.Float;androidx.compose.ui.graphics.ColorFilter?){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.draw/rotate(kotlin/Float): androidx.compose.ui/Modifier // androidx.compose.ui.draw/rotate|rotate@androidx.compose.ui.Modifier(kotlin.Float){}[0]
@@ -3827,6 +3859,8 @@ final fun (androidx.compose.ui/Modifier).androidx.compose.ui.graphics/graphicsLa
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.graphics/graphicsLayer(kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., kotlin/Float = ..., androidx.compose.ui.graphics/TransformOrigin = ..., androidx.compose.ui.graphics/Shape = ..., kotlin/Boolean = ..., androidx.compose.ui.graphics/RenderEffect? = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/Color = ..., androidx.compose.ui.graphics/CompositingStrategy = ..., androidx.compose.ui.graphics/BlendMode = ..., androidx.compose.ui.graphics/ColorFilter? = ...): androidx.compose.ui/Modifier // androidx.compose.ui.graphics/graphicsLayer|graphicsLayer@androidx.compose.ui.Modifier(kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;androidx.compose.ui.graphics.TransformOrigin;androidx.compose.ui.graphics.Shape;kotlin.Boolean;androidx.compose.ui.graphics.RenderEffect?;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.Color;androidx.compose.ui.graphics.CompositingStrategy;androidx.compose.ui.graphics.BlendMode;androidx.compose.ui.graphics.ColorFilter?){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.graphics/graphicsLayer(kotlin/Function1<androidx.compose.ui.graphics/GraphicsLayerScope, kotlin/Unit>): androidx.compose.ui/Modifier // androidx.compose.ui.graphics/graphicsLayer|graphicsLayer@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.graphics.GraphicsLayerScope,kotlin.Unit>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.graphics/toolingGraphicsLayer(): androidx.compose.ui/Modifier // androidx.compose.ui.graphics/toolingGraphicsLayer|toolingGraphicsLayer@androidx.compose.ui.Modifier(){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.input.indirect/onIndirectTouchEvent(kotlin/Function1<androidx.compose.ui.input.indirect/IndirectTouchEvent, kotlin/Boolean>): androidx.compose.ui/Modifier // androidx.compose.ui.input.indirect/onIndirectTouchEvent|onIndirectTouchEvent@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.input.indirect.IndirectTouchEvent,kotlin.Boolean>){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui.input.indirect/onPreIndirectTouchEvent(kotlin/Function1<androidx.compose.ui.input.indirect/IndirectTouchEvent, kotlin/Boolean>): androidx.compose.ui/Modifier // androidx.compose.ui.input.indirect/onPreIndirectTouchEvent|onPreIndirectTouchEvent@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.input.indirect.IndirectTouchEvent,kotlin.Boolean>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.input.key/onInterceptKeyBeforeSoftKeyboard(kotlin/Function1<androidx.compose.ui.input.key/KeyEvent, kotlin/Boolean>): androidx.compose.ui/Modifier // androidx.compose.ui.input.key/onInterceptKeyBeforeSoftKeyboard|onInterceptKeyBeforeSoftKeyboard@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.input.key.KeyEvent,kotlin.Boolean>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.input.key/onKeyEvent(kotlin/Function1<androidx.compose.ui.input.key/KeyEvent, kotlin/Boolean>): androidx.compose.ui/Modifier // androidx.compose.ui.input.key/onKeyEvent|onKeyEvent@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.input.key.KeyEvent,kotlin.Boolean>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui.input.key/onPreInterceptKeyBeforeSoftKeyboard(kotlin/Function1<androidx.compose.ui.input.key/KeyEvent, kotlin/Boolean>): androidx.compose.ui/Modifier // androidx.compose.ui.input.key/onPreInterceptKeyBeforeSoftKeyboard|onPreInterceptKeyBeforeSoftKeyboard@androidx.compose.ui.Modifier(kotlin.Function1<androidx.compose.ui.input.key.KeyEvent,kotlin.Boolean>){}[0]
@@ -3864,8 +3898,8 @@ final fun (androidx.compose.ui/Modifier).androidx.compose.ui/composed(kotlin/Str
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui/composed(kotlin/String, kotlin/Any?, kotlin/Function1<androidx.compose.ui.platform/InspectorInfo, kotlin/Unit> = ..., kotlin/Function1<androidx.compose.ui/Modifier, androidx.compose.ui/Modifier>): androidx.compose.ui/Modifier // androidx.compose.ui/composed|composed@androidx.compose.ui.Modifier(kotlin.String;kotlin.Any?;kotlin.Function1<androidx.compose.ui.platform.InspectorInfo,kotlin.Unit>;kotlin.Function1<androidx.compose.ui.Modifier,androidx.compose.ui.Modifier>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui/composed(kotlin/String, kotlin/Array<out kotlin/Any?>..., kotlin/Function1<androidx.compose.ui.platform/InspectorInfo, kotlin/Unit> = ..., kotlin/Function1<androidx.compose.ui/Modifier, androidx.compose.ui/Modifier>): androidx.compose.ui/Modifier // androidx.compose.ui/composed|composed@androidx.compose.ui.Modifier(kotlin.String;kotlin.Array<out|kotlin.Any?>...;kotlin.Function1<androidx.compose.ui.platform.InspectorInfo,kotlin.Unit>;kotlin.Function1<androidx.compose.ui.Modifier,androidx.compose.ui.Modifier>){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui/keepScreenOn(): androidx.compose.ui/Modifier // androidx.compose.ui/keepScreenOn|keepScreenOn@androidx.compose.ui.Modifier(){}[0]
-final fun (androidx.compose.ui/Modifier).androidx.compose.ui/requestedFrameRate(androidx.compose.ui/FrameRateCategory): androidx.compose.ui/Modifier // androidx.compose.ui/requestedFrameRate|requestedFrameRate@androidx.compose.ui.Modifier(androidx.compose.ui.FrameRateCategory){}[0]
-final fun (androidx.compose.ui/Modifier).androidx.compose.ui/requestedFrameRate(kotlin/Float): androidx.compose.ui/Modifier // androidx.compose.ui/requestedFrameRate|requestedFrameRate@androidx.compose.ui.Modifier(kotlin.Float){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui/preferredFrameRate(androidx.compose.ui/FrameRateCategory): androidx.compose.ui/Modifier // androidx.compose.ui/preferredFrameRate|preferredFrameRate@androidx.compose.ui.Modifier(androidx.compose.ui.FrameRateCategory){}[0]
+final fun (androidx.compose.ui/Modifier).androidx.compose.ui/preferredFrameRate(kotlin/Float): androidx.compose.ui/Modifier // androidx.compose.ui/preferredFrameRate|preferredFrameRate@androidx.compose.ui.Modifier(kotlin.Float){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui/sensitiveContent(kotlin/Boolean = ...): androidx.compose.ui/Modifier // androidx.compose.ui/sensitiveContent|sensitiveContent@androidx.compose.ui.Modifier(kotlin.Boolean){}[0]
 final fun (androidx.compose.ui/Modifier).androidx.compose.ui/zIndex(kotlin/Float): androidx.compose.ui/Modifier // androidx.compose.ui/zIndex|zIndex@androidx.compose.ui.Modifier(kotlin.Float){}[0]
 final fun <#A: androidx.compose.ui.node/ObserverModifierNode & androidx.compose.ui/Modifier.Node> (#A).androidx.compose.ui.node/observeReads(kotlin/Function0<kotlin/Unit>) // androidx.compose.ui.node/observeReads|observeReads@0:0(kotlin.Function0<kotlin.Unit>){0§<androidx.compose.ui.Modifier.Node&androidx.compose.ui.node.ObserverModifierNode>}[0]

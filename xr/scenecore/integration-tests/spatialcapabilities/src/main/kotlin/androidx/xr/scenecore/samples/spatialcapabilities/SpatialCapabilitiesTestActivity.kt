@@ -48,11 +48,11 @@ class SpatialCapabilitiesTestActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.toggle_fsm_hsm).setOnClickListener { _ ->
             if (isFsm) {
-                session.scene.spatialEnvironment.requestHomeSpaceMode()
+                session.scene.requestHomeSpaceMode()
                 isFsm = false
                 debugTextString.append("Toggled to HSM\n")
             } else {
-                session.scene.spatialEnvironment.requestFullSpaceMode()
+                session.scene.requestFullSpaceMode()
                 isFsm = true
                 debugTextString.append("Toggled to FSM\n")
             }

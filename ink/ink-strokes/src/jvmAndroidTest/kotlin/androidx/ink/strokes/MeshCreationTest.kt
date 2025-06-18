@@ -34,7 +34,7 @@ class MeshCreationTest {
         val strokeInputBatch = MutableStrokeInputBatch()
         var count = 0
         for (point in points) {
-            strokeInputBatch.addOrThrow(
+            strokeInputBatch.add(
                 type = InputToolType.STYLUS,
                 x = point.x,
                 y = point.y,

@@ -38,6 +38,7 @@ import androidx.sqlite.throwSQLiteException
 import kotlin.collections.removeLast as removeLastKt
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.sync.Mutex
@@ -57,11 +58,12 @@ internal class ConnectionPoolImpl : ConnectionPool {
     private val isClosed: Boolean
         get() = _isClosed.get()
 
-    // Amount of time to wait to acquire a connection before throwing, Android uses 30 seconds in
-    // its pool, so we do too here, but IDK if that is a good number. This timeout is unrelated to
-    // the busy handler.
+    // Amount of time to wait to acquire a connection before logging, Android uses 30 seconds in
+    // its pool, so we do too here, but IDK if that is a good number. This timeout is unrelated
+    // to the busy handler.
     // TODO(b/404380974): Allow public configuration
     internal var timeout = 30.seconds
+    internal var throwOnTimeout = false
 
     constructor(driver: SQLiteDriver, fileName: String) {
         this.driver = driver
@@ -129,20 +131,14 @@ internal class ConnectionPoolImpl : ConnectionPool {
         var connection: PooledConnectionImpl? = null
         try {
             val currentContext = coroutineContext
-            val (acquiredConnection, acquireError) = pool.acquireWithTimeout()
-            // Always try to create a wrapper even if an error occurs, so it can be recycled.
             connection =
-                acquiredConnection?.let {
-                    PooledConnectionImpl(
-                        delegate = it.markAcquired(currentContext),
-                        isReadOnly = readers !== writers && isReadOnly,
-                    )
-                }
-            if (acquireError is TimeoutCancellationException) {
-                throwTimeoutException(isReadOnly)
-            } else if (acquireError != null) {
-                throw acquireError
-            }
+                PooledConnectionImpl(
+                    delegate =
+                        pool
+                            .acquireWithTimeout(timeout) { onTimeout(isReadOnly) }
+                            .markAcquired(currentContext),
+                    isReadOnly = readers !== writers && isReadOnly,
+                )
             requireNotNull(connection)
             result = withContext(createConnectionContext(connection)) { block.invoke(connection) }
         } catch (ex: Throwable) {
@@ -162,23 +158,10 @@ internal class ConnectionPoolImpl : ConnectionPool {
         return result
     }
 
-    private suspend inline fun Pool.acquireWithTimeout(): Pair<ConnectionWithLock?, Throwable?> {
-        // Following async timeout with resources recommendation:
-        // https://kotlinlang.org/docs/cancellation-and-timeouts.html#asynchronous-timeout-and-resources
-        var connection: ConnectionWithLock? = null
-        var exceptionThrown: Throwable? = null
-        try {
-            withTimeout(timeout) { connection = this@acquireWithTimeout.acquire() }
-        } catch (ex: Throwable) {
-            exceptionThrown = ex
-        }
-        return connection to exceptionThrown
-    }
-
     private fun createConnectionContext(connection: PooledConnectionImpl) =
         ConnectionElement(connection) + threadLocal.asContextElement(connection)
 
-    private fun throwTimeoutException(isReadOnly: Boolean): Nothing {
+    private fun onTimeout(isReadOnly: Boolean) {
         val readOrWrite = if (isReadOnly) "reader" else "writer"
         val message = buildString {
             appendLine("Timed out attempting to acquire a $readOrWrite connection.")
@@ -188,7 +171,15 @@ internal class ConnectionPoolImpl : ConnectionPool {
             appendLine("Reader pool:")
             readers.dump(this)
         }
-        throwSQLiteException(SQLITE_BUSY, message)
+        try {
+            throwSQLiteException(SQLITE_BUSY, message)
+        } catch (ex: SQLiteException) {
+            if (throwOnTimeout) {
+                throw ex
+            } else {
+                ex.printStackTrace()
+            }
+        }
     }
 
     // TODO: (b/319657104): Make suspending so pool closes when all connections are recycled.
@@ -207,6 +198,34 @@ private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnect
     private val connections = arrayOfNulls<ConnectionWithLock>(capacity)
     private val connectionPermits = Semaphore(permits = capacity)
     private val availableConnections = CircularArray<ConnectionWithLock>(capacity)
+
+    suspend fun acquireWithTimeout(timeout: Duration, onTimeout: () -> Unit): ConnectionWithLock {
+        while (true) {
+            // Following async timeout with resources recommendation:
+            // https://kotlinlang.org/docs/cancellation-and-timeouts.html#asynchronous-timeout-and-resources
+            var connection: ConnectionWithLock? = null
+            var exceptionThrown: Throwable? = null
+            try {
+                withTimeout(timeout) { connection = acquire() }
+            } catch (ex: Throwable) {
+                exceptionThrown = ex
+            }
+            try {
+                if (exceptionThrown is TimeoutCancellationException) {
+                    onTimeout.invoke() // might throw
+                } else if (exceptionThrown != null) {
+                    throw exceptionThrown
+                } else if (connection != null) {
+                    return connection
+                }
+            } catch (ex: Throwable) {
+                // If any error occurs before returning from this function and acquire() returned
+                // such that a connection != null, then we need to recycle it.
+                connection?.let { recycle(it) }
+                throw ex
+            }
+        }
+    }
 
     suspend fun acquire(): ConnectionWithLock {
         connectionPermits.acquire()

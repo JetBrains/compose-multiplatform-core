@@ -55,7 +55,7 @@ private class AndroidShadowContext :
         var size: Size = Size.Zero,
         var layoutDirection: LayoutDirection = LayoutDirection.Ltr,
         var density: Float = 1f,
-        var shadowParams: ShadowParams? = null,
+        var shadow: Shadow? = null,
     )
 
     override fun obtainDropShadowRenderer(
@@ -63,7 +63,7 @@ private class AndroidShadowContext :
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
-        shadowParams: ShadowParams,
+        shadow: Shadow,
     ): DropShadowRenderer {
         synchronized(this) {
             val key =
@@ -73,12 +73,12 @@ private class AndroidShadowContext :
                     this.layoutDirection = layoutDirection
                     this.density = density.density
                     // The renderer does not use the offset
-                    this.shadowParams = shadowParams.copyWithoutOffset()
+                    this.shadow = shadow.copyWithoutOffset()
                 }
             var renderer = obtainDropShadowCache()[key]
             if (renderer == null) {
                 val outline = shape.createOutline(size, layoutDirection, density)
-                renderer = DropShadowRenderer(shadowParams, outline)
+                renderer = DropShadowRenderer(shadow, outline)
                 obtainDropShadowCache()[key.copy()] = renderer
             }
             return renderer
@@ -90,7 +90,7 @@ private class AndroidShadowContext :
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
-        shadowParams: ShadowParams,
+        shadow: Shadow,
     ): InnerShadowRenderer {
         synchronized(this) {
             val key =
@@ -99,27 +99,23 @@ private class AndroidShadowContext :
                     this.size = size
                     this.layoutDirection = layoutDirection
                     this.density = density.density
-                    this.shadowParams = shadowParams
+                    this.shadow = shadow
                 }
             var renderer = obtainInnerShadowCache()[key]
             if (renderer == null) {
                 val outline = shape.createOutline(size, layoutDirection, density)
-                renderer = InnerShadowRenderer(shadowParams, outline)
+                renderer = InnerShadowRenderer(shadow, outline)
                 obtainInnerShadowCache()[key.copy()] = renderer
             }
             return renderer
         }
     }
 
-    override fun createDropShadowPainter(
-        shape: Shape,
-        shadowParams: ShadowParams,
-    ): DropShadowPainter = DropShadowPainter(shape, shadowParams, this)
+    override fun createDropShadowPainter(shape: Shape, shadow: Shadow): DropShadowPainter =
+        DropShadowPainter(shape, shadow, this)
 
-    override fun createInnerShadowPainter(
-        shape: Shape,
-        shadowParams: ShadowParams,
-    ): InnerShadowPainter = InnerShadowPainter(shape, shadowParams, this)
+    override fun createInnerShadowPainter(shape: Shape, shadow: Shadow): InnerShadowPainter =
+        InnerShadowPainter(shape, shadow, this)
 
     override fun clearCache() {
         synchronized(this) {

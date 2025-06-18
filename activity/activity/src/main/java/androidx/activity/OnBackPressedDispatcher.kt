@@ -24,6 +24,7 @@ import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.navigationevent.NavigationEventCallback
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationInputHandler
 
@@ -70,13 +71,14 @@ class OnBackPressedDispatcher(
      *
      * @see [OnBackPressedCallback.eventCallback]
      */
-    internal var eventDispatcher: NavigationEventDispatcher =
+    internal val eventDispatcher: NavigationEventDispatcher by lazy {
         NavigationEventDispatcher(
             fallbackOnBackPressed = { fallbackOnBackPressed?.run() },
             onHasEnabledCallbacksChanged = { enabled ->
                 onHasEnabledCallbacksChanged?.accept(enabled)
             },
         )
+    }
 
     @JvmOverloads
     constructor(fallbackOnBackPressed: Runnable? = null) : this(fallbackOnBackPressed, null)
@@ -105,7 +107,7 @@ class OnBackPressedDispatcher(
      */
     @MainThread
     fun addCallback(onBackPressedCallback: OnBackPressedCallback) {
-        eventDispatcher.addCallback(onBackPressedCallback.eventCallback)
+        eventDispatcher.addCallback(onBackPressedCallback.createNavigationEventCallback())
     }
 
     /**
@@ -137,12 +139,11 @@ class OnBackPressedDispatcher(
             return // Do not add the callback if the lifecycle is already destroyed.
         }
 
-        // This observer manages the callback's lifecycle-aware registration. Because `remove()` and
-        // `addCallback()` are called on every STOP/START, the callback is effectively moved to the
-        // top of the dispatching stack within its lifecycle group each time. This ensures the
-        // dispatching ordering follows the lifecycle state.
+        // This observer manages the callback's lifecycle-aware registration.
         val lifecycleObserver =
             object : LifecycleEventObserver, AutoCloseable {
+                private val eventCallback: NavigationEventCallback =
+                    onBackPressedCallback.createNavigationEventCallback()
 
                 /**
                  * Manages lifecycle-aware registration of an [OnBackPressedCallback].
@@ -161,29 +162,21 @@ class OnBackPressedDispatcher(
                     if (event === Lifecycle.Event.ON_START) {
                         // Register the INNER callback only when the lifecycle enters STARTED.
                         // NOTE: This ADDS the callback to the top of the dispatching stack.
-                        eventDispatcher.addCallback(onBackPressedCallback.eventCallback)
+                        eventDispatcher.addCallback(eventCallback)
                     } else if (event === Lifecycle.Event.ON_STOP) {
-                        // Remove the INNER callback without triggering this `close()`. This avoids
-                        // stopping lifecycle tracking and keeps this observer active.
-                        // NOTE: This REMOVES the callback from the dispatching stack.
-                        onBackPressedCallback.eventCallback.remove()
+                        // Removes the callback from the dispatching stack.
+                        eventCallback.remove()
                     } else if (event === Lifecycle.Event.ON_DESTROY) {
-                        // Remove the OUTER callback, which also triggers its cleanup, including
-                        // closing this lifecycle observer.
-                        onBackPressedCallback.remove()
+                        // Removes the callback from the dispatching stack.
+                        eventCallback.remove()
+                        // Stop lifecycle tracking if destroyed.
+                        lifecycle.removeObserver(observer = this)
                     }
                 }
 
-                /**
-                 * Detaches this observer from the [Lifecycle] and removes it from
-                 * [OnBackPressedCallback.closeables].
-                 *
-                 * Called when the [LifecycleOwner] is destroyed or the callback is manually
-                 * removed, ensuring lifecycle events stop and resources are cleaned up.
-                 */
+                // Stop lifecycle tracking when the callback is removed manually.
                 override fun close() {
                     lifecycle.removeObserver(observer = this)
-                    onBackPressedCallback.removeCloseable(closeable = this)
                 }
             }
 

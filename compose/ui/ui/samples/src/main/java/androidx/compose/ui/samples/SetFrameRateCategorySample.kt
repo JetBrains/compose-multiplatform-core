@@ -36,7 +36,7 @@ import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.dp
 
 @Sampled
@@ -63,7 +63,7 @@ fun SetFrameRateCategorySample() {
             Text(
                 text = "Click Me for alpha change with frame rate category High",
                 color = LocalContentColor.current.copy(alpha = alpha),
-                modifier = Modifier.requestedFrameRate(FrameRateCategory.High),
+                modifier = Modifier.preferredFrameRate(FrameRateCategory.High),
             )
         }
     }

@@ -80,16 +80,16 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
         CREATED,
         STARTED,
         PAUSED,
-        STOPPED,
+        DESTROYED,
     }
 
     private var _state: Enum<State> = State.CREATED
 
     /**
      * The current state of the adapter will transition based on the lifecycle of the adapter. It
-     * starts off as State.CREATED and transitions to State.STARTED when startRenderer is called.
-     * When stopRenderer is called, it transitions to State.PAUSED. When dispose is called, it
-     * transitions to State.STOPPED.
+     * starts off as [State.CREATED] and transitions to [State.STARTED] when startRenderer is
+     * called. When stopRenderer is called, it transitions to [State.PAUSED]. When dispose is
+     * called, it transitions to [State.DESTROYED].
      */
     public val state: Enum<State>
         get() = _state
@@ -359,6 +359,7 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
         pose: Pose,
         canvasShape: SurfaceEntity.CanvasShape,
         contentSecurityLevel: Int,
+        superSampling: Int,
         parentEntity: Entity,
     ): SurfaceEntity = FakeSurfaceEntity()
 
@@ -487,6 +488,6 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     }
 
     override fun dispose() {
-        _state = State.STOPPED
+        _state = State.DESTROYED
     }
 }

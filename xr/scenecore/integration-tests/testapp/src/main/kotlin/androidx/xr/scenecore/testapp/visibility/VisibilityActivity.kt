@@ -185,11 +185,11 @@ class VisibilityActivity : AppCompatActivity() {
     private fun toggleMode() {
         when (spatialMode) {
             SpatialMode.FSM -> {
-                session!!.scene.spatialEnvironment.requestHomeSpaceMode()
+                session!!.scene.requestHomeSpaceMode()
                 spatialMode = SpatialMode.HSM
             }
             SpatialMode.HSM -> {
-                session!!.scene.spatialEnvironment.requestFullSpaceMode()
+                session!!.scene.requestFullSpaceMode()
                 spatialMode = SpatialMode.FSM
             }
         }

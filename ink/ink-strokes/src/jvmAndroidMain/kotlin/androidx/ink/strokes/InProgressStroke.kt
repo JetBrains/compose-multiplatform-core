@@ -37,17 +37,15 @@ import java.nio.ShortBuffer
  * To use an [InProgressStroke], you would typically:
  * 1. Begin a stroke by calling [start] with a chosen [Brush].
  * 2. Repeatedly update the stroke:
- *     1. Call [enqueueInputsOrThrow] (or [enqueueInputsOrIgnore]) with any new real and predicted
- *        stroke inputs.
- *     2. Call [updateShapeOrThrow] (or [updateShapeOrIgnore]) when [isUpdateNeeded] is `true` and
- *        new geometry is needed for rendering.
+ *     1. Call [enqueueInputs] with any new real and predicted stroke inputs.
+ *     2. Call [updateShape] when [isUpdateNeeded] is `true` and new geometry is needed for
+ *        rendering.
  *     3. Render the current stroke mesh or outlines, either via a provided renderer that accepts an
  *        [InProgressStroke] or by using the various getters on this type with a custom renderer.
  * 3. Call [finishInput] once there are no more inputs for this stroke (e.g. the user lifts the
  *    stylus from the screen).
- * 4. Continue to call [updateShapeOrThrow] (or [updateShapeOrIgnore]) and render after
- *    [finishInput] until [isUpdateNeeded] returns false (to allow any lingering brush shape
- *    animations to complete).
+ * 4. Continue to call [updateShape] and render after [finishInput] until [isUpdateNeeded] returns
+ *    false (to allow any lingering brush shape animations to complete).
  * 5. Extract the completed stroke by calling [toImmutable].
  * 6. For best performance, reuse this object and go back to step 1 rather than allocating a new
  *    instance.
@@ -89,8 +87,7 @@ public class InProgressStroke {
      *
      * This includes clearing or resetting any existing inputs, mesh data, and updated region. This
      * method must be called at least once after construction before making any calls to
-     * [enqueueInputsOrThrow] or [updateShapeOrThrow]. ([enqueueInputsOrIgnore] and
-     * [updateShapeOrIgnore] will also not do anything before this has been called.)
+     * [enqueueInputs] or [updateShape].
      */
     @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun start(brush: Brush): Unit = start(brush, noiseSeed = 0)
@@ -101,8 +98,7 @@ public class InProgressStroke {
      *
      * This includes clearing or resetting any existing inputs, mesh data, and updated region. This
      * method must be called at least once after construction before making any calls to
-     * [enqueueInputsOrThrow] or [updateShapeOrThrow]. ([enqueueInputsOrIgnore] and
-     * [updateShapeOrIgnore] will also not do anything before this has been called.)
+     * [enqueueInputs] or [updateShape].
      */
     @ExperimentalInkCustomBrushApi
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
@@ -115,7 +111,7 @@ public class InProgressStroke {
     /**
      * Enqueues the incremental [realInputs] and sets the prediction to [predictedInputs],
      * overwriting any previous prediction. Queued inputs will be processed on the next call to
-     * [updateShapeOrThrow] (or [updateShapeOrIgnore]).
+     * [updateShape].
      *
      * This method requires that:
      * * [start] has been previously called to set the current [Brush].
@@ -129,112 +125,79 @@ public class InProgressStroke {
      *
      * Either one or both of [realInputs] and [predictedInputs] may be empty.
      *
-     * Throws an appopriate subclass of [RuntimeException] if the input is invalid.
+     * @throws [IllegalStateException] If [start] has not been called since construction or the last
+     *   call to [finishInput].
+     * @throws [IllegalArgumentException] If the input is not valid. Note that this can be a common
+     *   occurrence with real user input on certain devices, in particular due to duplicate or
+     *   out-of-order inputs. Therefore, users should either catch and handle this exception or
+     *   sanitize the input to avoid ensure validity before passing it to this function.
      */
-    public fun enqueueInputsOrThrow(
-        realInputs: StrokeInputBatch,
-        predictedInputs: StrokeInputBatch,
-    ): Unit = enqueueInputs(realInputs, predictedInputs, throwOnError = true)
-
-    /**
-     * Same as [enqueueInputsOrThrow], but ignores invalid inputs without raising an exception. Use
-     * this method when skipping invalid inputs (e.g. out of order or duplicate inputs) is the
-     * desired behavior.
-     */
-    public fun enqueueInputsOrIgnore(
-        realInputs: StrokeInputBatch,
-        predictedInputs: StrokeInputBatch,
-    ): Unit = enqueueInputs(realInputs, predictedInputs, throwOnError = false)
-
-    private fun enqueueInputs(
-        realInputs: StrokeInputBatch,
-        predictedInputs: StrokeInputBatch,
-        throwOnError: Boolean,
-    ) {
+    public fun enqueueInputs(realInputs: StrokeInputBatch, predictedInputs: StrokeInputBatch) {
         val success =
             InProgressStrokeNative.enqueueInputs(
                 nativePointer,
                 realInputs.nativePointer,
                 predictedInputs.nativePointer,
-                throwOnError,
             )
-        check(success || !throwOnError) {
-            "Should have thrown an exception if enqueueInputs failed."
-        }
-        if (success) version++
+        check(success) { "Should have thrown an exception if enqueueInputs failed." }
+        version++
     }
 
     /**
      * Indicates that the inputs for the current stroke are finished. After calling this, it is an
-     * error to call [enqueueInputsOrThrow] until [start] is called again to start a new stroke.
-     * This method is idempotent; it has no effect if [start] was never called, or if this method
-     * has already been called since the last call to [start]. This method is synchronous, but the
+     * error to call [enqueueInputs] until [start] is called again to start a new stroke. This
+     * method is idempotent; it has no effect if [start] was never called, or if this method has
+     * already been called since the last call to [start]. This method is synchronous, but the
      * stroke may not be fully finished changing shape due to brush shape animations until
-     * [isUpdateNeeded] returns false. Until that condition is met, keep calling
-     * [updateShapeOrThrow] (or [updateShapeOrIgnore]) periodically and rendering the result.
+     * [isUpdateNeeded] returns false. Until that condition is met, keep calling [updateShape]
+     * periodically and rendering the result.
      */
     public fun finishInput(): Unit =
         InProgressStrokeNative.finishInput(nativePointer).also { version++ }
 
     /**
      * Updates the stroke geometry up to the given duration since the start of the stroke. This will
-     * consume any inputs queued up by calls to [enqueueInputsOrThrow] (or [enqueueInputsOrIgnore]),
-     * and cause brush shape animations (if any) to progress up to the specified time. Any stroke
-     * geometry resulting from previously-predicted input from before the previous call to this
-     * method will be cleared.
+     * consume any inputs queued up by calls to [enqueueInputs], and cause brush shape animations
+     * (if any) to progress up to the specified time. Any stroke geometry resulting from
+     * previously-predicted input from before the previous call to this method will be cleared.
      *
      * This method requires that:
      * * [start] has been previously called to set the current [brush].
      * * If passed, the value of [currentElapsedTimeMillis] passed into this method over the course
      *   of a single stroke must be non-decreasing and non-negative. To have shape animations
      *   progress at their intended rate, pass in values for this field that are in the same time
-     *   base as the [StrokeInput.elapsedTimeMillis] values being passed to [enqueueInputsOrThrow],
+     *   base as the [StrokeInput.elapsedTimeMillis] values being passed to [enqueueInputs],
      *   repeatedly until [isInputFinished] returns `true`.
      *
      * Clients that do not use brushes with shape animation behaviors can omit
-     * [currentElapsedTimeMillis]. Doing so with brushes with shape animation beaviors will cause
-     * the animation to be completed immediately.
+     * [currentElapsedTimeMillis]. Doing so when using brushes with shape animation beaviors will
+     * cause the animation to be completed immediately.
      *
-     * Throws an appropriate subclass of [RuntimeException] if the update fails.
+     * @throws [IllegalStateException] If [start] has not been called.
+     * @throws [IllegalArgumentException] If [currentElapsedTimeMillis] is negative or decreased
+     *   from a previous call to this method for the same in-progress stroke.
      */
-    public fun updateShapeOrThrow(currentElapsedTimeMillis: Long = Long.MAX_VALUE): Unit =
-        updateShape(currentElapsedTimeMillis, throwOnError = true)
-
-    /**
-     * Same as [updateShapeOrThrow], but ignores failures without raising an exception. Use this
-     * method when doing nothing if an update fails (e.g. the elapsed time is out of order or the
-     * stroke has not yet been started) is the desired behavior.
-     */
-    public fun updateShapeOrIgnore(currentElapsedTimeMillis: Long = Long.MAX_VALUE): Unit =
-        updateShape(currentElapsedTimeMillis, throwOnError = false)
-
-    private fun updateShape(currentElapsedTimeMillis: Long, throwOnError: Boolean) {
-        val success =
-            InProgressStrokeNative.updateShape(
-                nativePointer,
-                currentElapsedTimeMillis,
-                throwOnError,
-            )
-        check(success || !throwOnError) { "Should have thrown an exception if updateShape failed." }
-        if (success) version++
+    public fun updateShape(currentElapsedTimeMillis: Long = Long.MAX_VALUE) {
+        val success = InProgressStrokeNative.updateShape(nativePointer, currentElapsedTimeMillis)
+        check(success) { "Should have thrown an exception if updateShape failed." }
+        version++
     }
 
     /**
      * Returns `true` if [finishInput] has been called since the last call to [start], or if [start]
-     * hasn't been called yet. If this returns `true`, it is an error to call
-     * [enqueueInputsOrThrow].
+     * hasn't been called yet. If this returns `true`, it is an error to call [enqueueInputs].
      */
     public fun isInputFinished(): Boolean = InProgressStrokeNative.isInputFinished(nativePointer)
 
     /**
-     * Returns `true` if calling [updateShapeOrThrow] (or [updateShapeOrIgnore]) would have any
-     * effect on the stroke (and should thus be called before the next render), or `false` if no
-     * calls to [updateShapeOrThrow] are currently needed. Specifically:
+     * Returns `true` if calling [updateShape] would have any effect on the stroke (and should thus
+     * be called before the next render), or `false` if no calls to [updateShape] are currently
+     * needed. Specifically:
      * * If the brush has one or more timed shape animation behavior that are still active (which
      *   can be true even after inputs are finished), returns `true`.
      * * If there are no active shape animation behaviors, but there are pending inputs from an
-     *   [enqueueInputsOrThrow] (or [enqueueInputsOrIgnore]) call that have not yet been consumed by
-     *   a call to [updateShapeOrThrow], returns `true`.
+     *   [enqueueInputs] call that have not yet been consumed by a call to [updateShape], returns
+     *   `true`.
      * * Otherwise, returns `false`.
      *
      * Once [isInputFinished] returns `true` and this method returns `false`, the stroke is
@@ -243,8 +206,8 @@ public class InProgressStroke {
     public fun isUpdateNeeded(): Boolean = InProgressStrokeNative.isUpdateNeeded(nativePointer)
 
     /**
-     * Copies the current input, brush, and geometry as of the last call to [start] or
-     * [updateShapeOrThrow] (or [updateShapeOrIgnore]) to a new [Stroke].
+     * Copies the current input, brush, and geometry as of the last call to [start] or [updateShape]
+     * to a new [Stroke].
      *
      * The resulting [Stroke] will not be modified if further inputs are added to this
      * [InProgressStroke], and a [Stroke] created by another call to this method will not modify or
@@ -351,8 +314,7 @@ public class InProgressStroke {
 
     /**
      * Returns the bounding rectangle of mesh positions added, modified, or removed by calls to
-     * [updateShapeOrThrow] (or [updateShapeOrIgnore]) since the most recent call to [start] or
-     * [resetUpdatedRegion].
+     * [updateShape] since the most recent call to [start] or [resetUpdatedRegion].
      *
      * Returns the passed in [BoxAccumulator] to make it easier to chain calls.
      *
@@ -549,7 +511,7 @@ public class InProgressStroke {
         require(partitionIndex in 0 until getMeshPartitionCount(coatIndex)) {
             "Cannot get mesh format at partitionIndex $partitionIndex out of range [0, ${getMeshPartitionCount(coatIndex)})."
         }
-        return MeshFormat(
+        return MeshFormat.wrapNative(
             InProgressStrokeNative.newCopyOfMeshFormat(nativePointer, coatIndex, partitionIndex)
         )
     }
@@ -582,16 +544,10 @@ private object InProgressStrokeNative {
         nativePointer: Long,
         realInputsPointer: Long,
         predictedInputsPointer: Long,
-        throwOnError: Boolean,
     ): Boolean
 
     /** Returns whether the shape was successfully updated. */
-    @UsedByNative
-    external fun updateShape(
-        nativePointer: Long,
-        currentElapsedTime: Long,
-        throwOnError: Boolean,
-    ): Boolean
+    @UsedByNative external fun updateShape(nativePointer: Long, currentElapsedTime: Long): Boolean
 
     @UsedByNative external fun finishInput(nativePointer: Long)
 

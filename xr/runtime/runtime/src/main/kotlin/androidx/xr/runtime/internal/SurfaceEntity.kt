@@ -193,6 +193,19 @@ public interface SurfaceEntity : Entity {
     }
 
     /**
+     * Specifies whether super sampling should be enabled for this surface. Super sampling can
+     * improve text clarity at a performance cost.
+     */
+    public annotation class SuperSampling {
+        public companion object {
+            // Super sampling is disabled.
+            public const val NONE: Int = 0
+            // Super sampling is enabled. This is the default.
+            public const val DEFAULT: Int = 1
+        }
+    }
+
+    /**
      * Specifies the color space of the media asset drawn on the surface.
      *
      * Enum members cover the color spaces available in android::ADataSpace.

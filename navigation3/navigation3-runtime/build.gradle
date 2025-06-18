@@ -26,13 +26,17 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.navigation3.runtime"
+        androidResources.enable = true
+
+    }
     jvmStubs()
     linuxX64Stubs()
 
@@ -90,11 +94,6 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
     }
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.navigation3.runtime"
 }
 
 androidx {

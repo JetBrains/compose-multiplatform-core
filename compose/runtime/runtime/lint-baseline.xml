@@ -1,256 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+<issues format="6" by="lint 8.12.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha02)" variant="all" version="8.12.0-alpha02">
 
     <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="    if (suppressedExceptions.none { it is DiagnosticComposeException }) {"
-        errorLine2="                             ~~~~">
+        id="BanThreadSleep"
+        message="Uses Thread.sleep()"
+        errorLine1="                Thread.sleep(0)"
+        errorLine2="                       ~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/tooling/ComposeStackTrace.kt"/>
+            file="src/nonEmulatorJvmTest/kotlin/androidx/compose/runtime/snapshots/SnapshotTestsJvm.kt"/>
     </issue>
 
     <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                .map { it.substringBefore(&apos;@&apos;).substringAfter(&apos;*&apos;).toInt() + 1 }"
-        errorLine2="                 ~~~">
+        id="RememberInComposition"
+        message="Calling a @RememberInComposition annotated declaration inside composition without using `remember`"
+        errorLine1="                    val content = movableContentOf {"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/tooling/ComposeStackTraceBuilder.kt"/>
+            file="src/nonEmulatorCommonTest/kotlin/androidx/compose/runtime/MovableContentTests.kt"/>
     </issue>
 
     <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="    getCurrentCompositionErrors().mapNotNull { (cause, recoverable) ->"
-        errorLine2="                                  ~~~~~~~~~~">
+        id="RememberReturnType"
+        message="`remember` calls must not return `Unit`"
+        errorLine1="            remember {"
+        errorLine2="            ~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/HotReloader.kt"/>
+            file="src/nonEmulatorCommonTest/kotlin/androidx/compose/runtime/CompositionTests.kt"/>
     </issue>
 
     <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                    val tail = it.drop(1)"
-        errorLine2="                                  ~~~~">
+        id="RememberReturnType"
+        message="`remember` calls must not return `Unit`"
+        errorLine1="            remember {"
+        errorLine2="            ~~~~~~~~">
         <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/changelist/Operation.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="            knownCompositionsLocked().forEach { composition ->"
-        errorLine2="                                      ~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/Recomposer.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                                    pairs.map { pair ->"
-        errorLine2="                                          ~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/Recomposer.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable useDefault with type List&lt;? extends Integer>: replace with IntList"
-        errorLine1="                val useDefault ="
-        errorLine2="                ^">
-        <location
-            file="src/jvmMain/kotlin/androidx/compose/runtime/reflect/ComposableMethod.jvm.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="field objParams with type List&lt;ObjectParameter&lt;Object>>: replace with IntList"
-        errorLine1="        val objParams = List(objects) { index -> ObjectParameter&lt;Any?>(index) }"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/changelist/Operation.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;ObjectParameter&lt;Object>> of getObjParams: replace with IntList"
-        errorLine1="        val objParams = List(objects) { index -> ObjectParameter&lt;Any?>(index) }"
-        errorLine2="            ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/changelist/Operation.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of keys: replace with IntList"
-        errorLine1="    @Suppress(&quot;unused&quot;) private fun keys() = groups.keys(groupsSize * Group_Fields_Size)"
-        errorLine2="                                    ~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of nodes: replace with IntList"
-        errorLine1="    @Suppress(&quot;unused&quot;) private fun nodes() = groups.nodeCounts(groupsSize * Group_Fields_Size)"
-        errorLine2="                                    ~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of parentIndexes: replace with IntList"
-        errorLine1="    private fun parentIndexes() = groups.parentAnchors(groupsSize * Group_Fields_Size)"
-        errorLine2="                ~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of dataIndexes: replace with IntList"
-        errorLine1="    private fun dataIndexes() = groups.dataAnchors(groupsSize * Group_Fields_Size)"
-        errorLine2="                ~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of groupSizes: replace with IntList"
-        errorLine1="    @Suppress(&quot;unused&quot;) private fun groupSizes() = groups.groupSizes(groupsSize * Group_Fields_Size)"
-        errorLine2="                                    ~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of dataIndexes: replace with IntList"
-        errorLine1="    private fun IntArray.dataIndexes() ="
-        errorLine2="                         ~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of keys: replace with IntList"
-        errorLine1="    private fun keys() ="
-        errorLine2="                ~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of keys: replace with IntList"
-        errorLine1="private fun IntArray.keys(len: Int = size) = slice(Key_Offset until len step Group_Fields_Size)"
-        errorLine2="                     ~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of nodeCounts: replace with IntList"
-        errorLine1="private fun IntArray.nodeCounts(len: Int = size) ="
-        errorLine2="                     ~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of parentAnchors: replace with IntList"
-        errorLine1="private fun IntArray.parentAnchors(len: Int = size) ="
-        errorLine2="                     ~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of slice: replace with IntList"
-        errorLine1="private fun IntArray.slice(indices: Iterable&lt;Int>): List&lt;Int> {"
-        errorLine2="                                                    ~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="variable list with type List&lt;Integer>: replace with IntList"
-        errorLine1="    val list = mutableListOf&lt;Int>()"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of groupSizes: replace with IntList"
-        errorLine1="private fun IntArray.groupSizes(len: Int = size) ="
-        errorLine2="                     ~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type List&lt;Integer> of dataAnchors: replace with IntList"
-        errorLine1="private fun IntArray.dataAnchors(len: Int = size) ="
-        errorLine2="                     ~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/SlotTable.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type ImmutableList&lt;Character> of toImmutableList: replace with IntList"
-        errorLine1="internal fun CharSequence.toImmutableList(): ImmutableList&lt;Char> = toPersistentList()"
-        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/external/kotlinx/collections/immutable/extensions.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type PersistentList&lt;Character> of toPersistentList: replace with IntList"
-        errorLine1="internal fun CharSequence.toPersistentList(): PersistentList&lt;Char> ="
-        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/external/kotlinx/collections/immutable/extensions.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type PersistentSet&lt;Character> of toImmutableSet: replace with IntSet"
-        errorLine1="internal fun CharSequence.toImmutableSet(): PersistentSet&lt;Char> = toPersistentSet()"
-        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/external/kotlinx/collections/immutable/extensions.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type PersistentSet&lt;Character> of toPersistentSet: replace with IntSet"
-        errorLine1="internal fun CharSequence.toPersistentSet(): PersistentSet&lt;Char> ="
-        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/external/kotlinx/collections/immutable/extensions.kt"/>
-    </issue>
-
-    <issue
-        id="PrimitiveInCollection"
-        message="return type PersistentSet&lt;Character> of toPersistentHashSet: replace with IntSet"
-        errorLine1="internal fun CharSequence.toPersistentHashSet(): PersistentSet&lt;Char> ="
-        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/androidx/compose/runtime/external/kotlinx/collections/immutable/extensions.kt"/>
+            file="src/nonEmulatorCommonTest/kotlin/androidx/compose/runtime/CompositionTests.kt"/>
     </issue>
 
 </issues>

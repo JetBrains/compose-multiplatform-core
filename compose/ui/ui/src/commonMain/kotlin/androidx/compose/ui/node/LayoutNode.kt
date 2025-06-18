@@ -651,7 +651,7 @@ internal class LayoutNode(
 
     override fun toString(): String {
         return "${simpleIdentityToString(this, null)} children: ${children.size} " +
-            "measurePolicy: $measurePolicy"
+            "measurePolicy: $measurePolicy deactivated: $isDeactivated"
     }
 
     internal val hasFixedInnerContentConstraints: Boolean

@@ -33,9 +33,7 @@ import androidx.compose.ui.test.swipeRight
 import androidx.wear.compose.material3.RevealDirection.Companion.RightToLeft
 import androidx.wear.compose.material3.RevealState.SingleSwipeCoordinator
 import androidx.wear.compose.material3.RevealValue.Companion.Covered
-import androidx.wear.compose.material3.RevealValue.Companion.LeftRevealed
 import androidx.wear.compose.material3.RevealValue.Companion.LeftRevealing
-import androidx.wear.compose.material3.RevealValue.Companion.RightRevealed
 import androidx.wear.compose.material3.RevealValue.Companion.RightRevealing
 import androidx.wear.compose.material3.SwipeToRevealDefaults.DoubleActionAnchorWidth
 import androidx.wear.compose.material3.SwipeToRevealDefaults.SingleActionAnchorWidth
@@ -211,7 +209,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
                         actions = Actions.One(hasPartiallyRevealedState = true),
                         initialRevealValue = Covered,
                         swipeDirection = SwipeDirection.Left(COVERED_TO_AFTER_ANCHOR_WITHIN_BUFFER),
-                        expectedRevealValue = Covered,
+                        expectedRevealValue = RightRevealing,
                     ),
                     TestParams.RTL(
                         actions = Actions.One(hasPartiallyRevealedState = false),
@@ -251,7 +249,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
                         actions = Actions.Two,
                         initialRevealValue = Covered,
                         swipeDirection = SwipeDirection.Left(COVERED_TO_AFTER_ANCHOR_WITHIN_BUFFER),
-                        expectedRevealValue = RightRevealed,
+                        expectedRevealValue = RightRevealing,
                     ),
                     TestParams.Bidirectional(
                         actions = Actions.One(hasPartiallyRevealedState = true),
@@ -271,7 +269,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
                         actions = Actions.One(hasPartiallyRevealedState = true),
                         initialRevealValue = Covered,
                         swipeDirection = SwipeDirection.Left(COVERED_TO_AFTER_ANCHOR_WITHIN_BUFFER),
-                        expectedRevealValue = Covered,
+                        expectedRevealValue = RightRevealing,
                     ),
                     TestParams.Bidirectional(
                         actions = Actions.One(hasPartiallyRevealedState = false),
@@ -311,7 +309,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
                         actions = Actions.Two,
                         initialRevealValue = Covered,
                         swipeDirection = SwipeDirection.Left(COVERED_TO_AFTER_ANCHOR_WITHIN_BUFFER),
-                        expectedRevealValue = RightRevealed,
+                        expectedRevealValue = RightRevealing,
                     ),
                     TestParams.Bidirectional(
                         actions = Actions.One(hasPartiallyRevealedState = true),
@@ -332,7 +330,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
                         initialRevealValue = Covered,
                         swipeDirection =
                             SwipeDirection.Right(COVERED_TO_AFTER_ANCHOR_WITHIN_BUFFER),
-                        expectedRevealValue = Covered,
+                        expectedRevealValue = LeftRevealing,
                     ),
                     TestParams.Bidirectional(
                         actions = Actions.One(hasPartiallyRevealedState = false),
@@ -374,7 +372,7 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
                         initialRevealValue = Covered,
                         swipeDirection =
                             SwipeDirection.Right(COVERED_TO_AFTER_ANCHOR_WITHIN_BUFFER),
-                        expectedRevealValue = LeftRevealed,
+                        expectedRevealValue = LeftRevealing,
                     ),
                     TestParams.RTL(
                         actions = Actions.One(hasPartiallyRevealedState = true),

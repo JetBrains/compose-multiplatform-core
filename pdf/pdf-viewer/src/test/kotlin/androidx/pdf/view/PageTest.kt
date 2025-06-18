@@ -122,7 +122,7 @@ class PageTest {
         // Notably we don't call testDispatcher.scheduler.runCurrent(), so we start, but do not
         // finish, fetching a Bitmap
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
-        val locationInView = Rect(-60, 125, -60 + PAGE_SIZE.x, 125 + PAGE_SIZE.y)
+        val locationInView = RectF(-60f, 125f, -60f + PAGE_SIZE.x, 125f + PAGE_SIZE.y)
 
         page.draw(canvasSpy, locationInView, listOf())
 
@@ -133,7 +133,7 @@ class PageTest {
     fun draw_withBitmap() {
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
-        val locationInView = Rect(50, -100, 50 + PAGE_SIZE.x, -100 + PAGE_SIZE.y)
+        val locationInView = RectF(50f, -100f, 50f + PAGE_SIZE.x, -100f + PAGE_SIZE.y)
 
         page.draw(canvasSpy, locationInView, listOf())
 
@@ -153,10 +153,10 @@ class PageTest {
     fun draw_withHighlight() {
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
-        val leftEdgeInView = 650
-        val topEdgeInView = -320
+        val leftEdgeInView = 650f
+        val topEdgeInView = -320f
         val locationInView =
-            Rect(
+            RectF(
                 leftEdgeInView,
                 topEdgeInView,
                 leftEdgeInView + PAGE_SIZE.x,
@@ -233,7 +233,7 @@ class PageTest {
 }
 
 val PAGE_SIZE = Point(100, 150)
-val FULL_PAGE_RECT = Rect(0, 0, PAGE_SIZE.x, PAGE_SIZE.y)
+val FULL_PAGE_RECT = RectF(0f, 0f, PAGE_SIZE.x.toFloat(), PAGE_SIZE.y.toFloat())
 val MAX_BITMAP_SIZE = Point(500, 500)
 val UPDATED_PAGE_WIDGET_INFOS =
     listOf(

@@ -28,10 +28,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.input.AnnotatedOutputTransformation
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
-import androidx.compose.foundation.text.input.OutputTransformationAnnotationScope
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldDecorator
 import androidx.compose.foundation.text.input.TextFieldState
@@ -244,29 +242,25 @@ private fun BoldItalicEveryOtherChar() {
         state = rememberTextFieldState(),
         modifier = demoTextFieldModifiers,
         outputTransformation =
-            object : AnnotatedOutputTransformation {
-                override fun TextFieldBuffer.transformOutput() {
-                    var i = 1
-                    repeat(length - 1) {
-                        insert(i, "-")
-                        i += 2
-                    }
+            OutputTransformation {
+                var i = 1
+                repeat(length - 1) {
+                    insert(i, "-")
+                    i += 2
                 }
 
-                override fun OutputTransformationAnnotationScope.annotateOutput() {
-                    // now the text is like "H-E-L-L-O".
-                    // we are going to make the first character bold, the second italic, third bold
-                    // and
-                    // so on, skipping the decorations.
-                    var i = 0
-                    val bold = SpanStyle(fontWeight = FontWeight.Bold)
-                    val italic = SpanStyle(fontStyle = FontStyle.Italic)
-                    var toggle = true
-                    repeat(text.length / 2 + 1) {
-                        addStyle(if (toggle) bold else italic, i, i + 1)
-                        toggle = !toggle
-                        i += 2
-                    }
+                // now the text is like "H-E-L-L-O".
+                // we are going to make the first character bold, the second italic, third bold
+                // and
+                // so on, skipping the decorations.
+                i = 0
+                val bold = SpanStyle(fontWeight = FontWeight.Bold)
+                val italic = SpanStyle(fontStyle = FontStyle.Italic)
+                var toggle = true
+                repeat(length / 2 + 1) {
+                    addStyle(if (toggle) bold else italic, i, i + 1)
+                    toggle = !toggle
+                    i += 2
                 }
             },
         decorator = demoDecorationBox,
@@ -282,7 +276,7 @@ private fun ColorAnimationDemo() {
         state = rememberTextFieldState(),
         modifier = demoTextFieldModifiers,
         outputTransformation =
-            AnnotatedOutputTransformation { addStyle(SpanStyle(color = color), 0, text.length) },
+            OutputTransformation { addStyle(SpanStyle(color = color), 0, length) },
         decorator = demoDecorationBox,
     )
 }

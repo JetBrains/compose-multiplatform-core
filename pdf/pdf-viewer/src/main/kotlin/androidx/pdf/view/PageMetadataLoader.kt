@@ -18,7 +18,6 @@ package androidx.pdf.view
 
 import android.graphics.Point
 import android.graphics.PointF
-import android.graphics.Rect
 import android.graphics.RectF
 import android.os.DeadObjectException
 import android.util.Range
@@ -28,7 +27,6 @@ import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
 import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
-import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,8 +45,8 @@ import kotlinx.coroutines.withContext
 internal class PageMetadataLoader(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
-    topPageMarginPx: Int = 0,
-    pageSpacingPx: Int = DEFAULT_PAGE_SPACING_PX,
+    topPageMarginPx: Float = 0f,
+    pageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     internal val paginationModel: PaginationModel =
         PaginationModel(pageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
     private val errorFlow: MutableSharedFlow<Throwable>,
@@ -91,11 +89,11 @@ internal class PageMetadataLoader(
         private set
 
     /** The portions of each visible page that are visible, in page coordinate space */
-    var visiblePageAreas = SparseArray<Rect>(1)
+    var visiblePageAreas = SparseArray<RectF>(1)
         private set
 
     /** The locations of each visible page, in content coordinate space */
-    var pageLocations = SparseArray<Rect>(1)
+    var pageLocations = SparseArray<RectF>(1)
         private set
 
     /** The 0-indexed maximum page whose dimensions have been requested */
@@ -130,7 +128,7 @@ internal class PageMetadataLoader(
     }
 
     /** Returns the current content coordinate location of a 0-indexed [pageNum] */
-    fun getPageLocation(pageNum: Int, viewport: Rect): Rect {
+    fun getPageLocation(pageNum: Int, viewport: RectF): RectF {
         return pageLocations.get(pageNum) ?: paginationModel.getPageLocation(pageNum, viewport)
     }
 
@@ -153,7 +151,7 @@ internal class PageMetadataLoader(
      */
     fun getPdfPointAt(
         contentCoordinates: PointF,
-        viewport: Rect,
+        viewport: RectF,
         scanAllPages: Boolean = false,
     ): PdfPoint? {
         for (pageIndex in visiblePages.lower..visiblePages.upper) {
@@ -173,16 +171,11 @@ internal class PageMetadataLoader(
 
     private fun findPointOnPage(
         pageNum: Int,
-        viewport: Rect,
+        viewport: RectF,
         contentCoordinates: PointF,
     ): PdfPoint? {
         val pageBounds = getPageLocation(pageNum, viewport)
-        if (
-            pageBounds.contains(
-                contentCoordinates.x.roundToInt(),
-                contentCoordinates.y.roundToInt(),
-            )
-        ) {
+        if (pageBounds.contains(contentCoordinates.x, contentCoordinates.y)) {
             return PdfPoint(
                 pageNum,
                 PointF(
@@ -198,7 +191,7 @@ internal class PageMetadataLoader(
      * Returns a View-relative [RectF] corresponding to a page-relative [PdfRect], or null if the
      * page hasn't been laid out
      */
-    fun getViewRect(pdfRect: PdfRect, viewport: Rect): RectF? {
+    fun getViewRect(pdfRect: PdfRect, viewport: RectF): RectF? {
         if (pdfRect.pageNum > paginationModel.reach) return null
         val pageBounds = getPageLocation(pdfRect.pageNum, viewport)
         val out = RectF(pdfRect.pageRect)
@@ -212,7 +205,7 @@ internal class PageMetadataLoader(
      *
      * @param viewport the visible region of [PdfView] in unscaled / content coordinates
      */
-    fun onViewportChanged(viewport: Rect): Boolean {
+    fun onViewportChanged(viewport: RectF): Boolean {
         // Order of operations is important, each of these computations depends on the previous one
         val visiblePagesChanged = computeVisiblePages(viewport)
         val pageLocationsChanged = computePageLocationsInView(viewport)
@@ -243,7 +236,7 @@ internal class PageMetadataLoader(
      * Updates [visiblePages] and [fullyVisiblePages] on viewport changes, and returns true if the
      * value of either one did change
      */
-    private fun computeVisiblePages(viewport: Rect): Boolean {
+    private fun computeVisiblePages(viewport: RectF): Boolean {
         val prevVisible = visiblePages
         val prevFullyVisible = fullyVisiblePages
         val newPagesInViewport = paginationModel.getPagesInViewport(viewport.top, viewport.bottom)
@@ -271,9 +264,9 @@ internal class PageMetadataLoader(
      *
      * [visiblePages] must be updated first
      */
-    private fun computePageLocationsInView(viewport: Rect): Boolean {
+    private fun computePageLocationsInView(viewport: RectF): Boolean {
         val prevLocations = pageLocations
-        val pageLocations = SparseArray<Rect>(visiblePages.upper - visiblePages.lower + 1)
+        val pageLocations = SparseArray<RectF>(visiblePages.upper - visiblePages.lower + 1)
         for (i in visiblePages.lower..visiblePages.upper) {
             pageLocations.put(i, paginationModel.getPageLocation(i, viewport))
         }
@@ -286,17 +279,17 @@ internal class PageMetadataLoader(
      *
      * [visiblePages] and [pageLocations] must be updated first
      */
-    private fun computeVisiblePageAreas(viewport: Rect): Boolean {
+    private fun computeVisiblePageAreas(viewport: RectF): Boolean {
         val prevAreas = visiblePageAreas
-        val visibleAreas = SparseArray<Rect>(visiblePages.upper - visiblePages.lower + 1)
+        val visibleAreas = SparseArray<RectF>(visiblePages.upper - visiblePages.lower + 1)
         for (i in visiblePages.lower..visiblePages.upper) {
             val pageLocation = pageLocations.get(i)
             val pageWidth = pageLocation.right - pageLocation.left
             val pageHeight = pageLocation.bottom - pageLocation.top
             val area =
-                Rect(
-                    maxOf(viewport.left - pageLocation.left, 0),
-                    maxOf(viewport.top - pageLocation.top, 0),
+                RectF(
+                    maxOf(viewport.left - pageLocation.left, 0f),
+                    maxOf(viewport.top - pageLocation.top, 0f),
                     minOf(viewport.right - pageLocation.left, pageWidth),
                     minOf(viewport.bottom - pageLocation.top, pageHeight),
                 )
@@ -352,6 +345,6 @@ internal class PageMetadataLoader(
 
     companion object {
         internal const val DEFAULT_PREFETCH_RADIUS = 4
-        private const val DEFAULT_PAGE_SPACING_PX = 20
+        private const val DEFAULT_PAGE_SPACING_PX = 20f
     }
 }

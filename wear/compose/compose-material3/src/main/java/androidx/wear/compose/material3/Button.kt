@@ -1623,11 +1623,7 @@ public object ButtonDefaults {
                 disabledAlpha = OutlinedButtonTokens.DisabledContainerBorderOpacity
             ),
         borderWidth: Dp = OutlinedButtonTokens.ContainerBorderWidth,
-    ): BorderStroke {
-        return remember {
-            BorderStroke(borderWidth, if (enabled) borderColor else disabledBorderColor)
-        }
-    }
+    ): BorderStroke = BorderStroke(borderWidth, if (enabled) borderColor else disabledBorderColor)
 
     /**
      * Creates a [ButtonColors] that represents the default background and content colors used in a

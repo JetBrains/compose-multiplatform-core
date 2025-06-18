@@ -79,8 +79,8 @@ internal class PdfViewAccessibilityManager(
             return fastScrollPageIndicatorBackgroundDrawableId
         }
 
-        val contentX = pdfView.toContentX(x).toInt()
-        val contentY = pdfView.toContentY(y).toInt()
+        val contentX = pdfView.toContentX(x)
+        val contentY = pdfView.toContentY(y)
 
         if (!isLinksLoaded) {
             loadPageLinks()

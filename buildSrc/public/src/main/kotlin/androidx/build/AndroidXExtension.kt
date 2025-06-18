@@ -16,7 +16,8 @@
 
 package androidx.build
 
-import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.HasAndroidTest
 import groovy.lang.Closure
 import java.io.File
 import javax.inject.Inject
@@ -414,10 +415,11 @@ abstract class AndroidXExtension(
 
     /** Adds golden image assets to Android test APKs to use for screenshot tests. */
     fun addGoldenImageAssets() {
-        project.extensions.findByType(LibraryAndroidComponentsExtension::class.java)?.onVariants {
-            variant ->
+        project.extensions.findByType(AndroidComponentsExtension::class.java)?.onVariants { variant
+            ->
             val subdirectory = project.path.replace(":", "/")
-            variant.androidTest
+            (variant as? HasAndroidTest)
+                ?.androidTest
                 ?.sources
                 ?.assets
                 ?.addStaticSourceDirectory(

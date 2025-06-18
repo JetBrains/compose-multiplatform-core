@@ -47,7 +47,6 @@ import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.core.animation.addListener
-import androidx.core.graphics.toRectF
 import androidx.core.os.HandlerCompat
 import androidx.core.util.Pools
 import androidx.core.util.keyIterator
@@ -213,7 +212,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * A [Pools.Pool] of [Rect] for dispatching to [OnViewportChangedListener] to avoid excessive
      * per-frame allocations
      */
-    private val pageLocationsPool = Pools.SimplePool<Rect>(maxPoolSize = 100)
+    private val pageLocationsPool = Pools.SimplePool<RectF>(maxPoolSize = 100)
 
     /**
      * Listener interface to receive callbacks when the PdfView starts and stops being affected by
@@ -249,7 +248,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         public fun onViewportChanged(
             firstVisiblePage: Int,
             visiblePagesCount: Int,
-            pageLocations: SparseArray<Rect>,
+            pageLocations: SparseArray<RectF>,
             zoomLevel: Float,
         )
     }
@@ -396,7 +395,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
     // To avoid allocations during drawing
-    private val visibleAreaRect = Rect()
+    private val visibleAreaRect = RectF()
 
     private val fastScrollGestureHandler =
         object : FastScrollGestureDetector.FastScrollGestureHandler {
@@ -414,8 +413,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         it.viewScrollPositionFromFastScroller(
                             scrollY = eventY,
                             viewHeight = height,
-                            estimatedFullHeight =
-                                toViewCoord(contentHeight.toFloat(), zoom, scroll = 0),
+                            estimatedFullHeight = toViewCoord(contentHeight, zoom, scroll = 0),
                         )
                     scrollTo(scrollX, updatedY)
                     invalidate()
@@ -660,7 +658,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             ZoomUtils.calculateZoomToFit(
                 viewportWidth.toFloat(),
                 viewportHeight.toFloat(),
-                pageRect.width().toFloat(),
+                pageRect.width(),
                 1f,
             )
         val x = round((pageRect.left + pageRect.width() / 2f) * zoom - (viewportWidth / 2f))
@@ -748,7 +746,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 viewHeight = height,
                 visiblePages = fullyVisiblePages,
                 estimatedFullHeight =
-                    toViewCoord(contentCoord = contentHeight.toFloat(), zoom = zoom, scroll = 0),
+                    toViewCoord(contentCoord = contentHeight, zoom = zoom, scroll = 0),
             )
         }
     }
@@ -1053,7 +1051,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     @VisibleForTesting
     internal fun getDefaultZoom(): Float {
-        if (contentWidth == 0 || viewportWidth <= 0) {
+        if (contentWidth == 0f || viewportWidth <= 0) {
             if (awaitingFirstLayout) pendingZoomRecalculation = true
             return DEFAULT_INIT_ZOOM
         }
@@ -1081,8 +1079,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             PageMetadataLoader(
                     localPdfDocument,
                     backgroundScope,
-                    topPageMarginPx = context.getDimensions(R.dimen.top_page_margin).roundToInt(),
-                    pageSpacingPx = context.getDimensions(R.dimen.page_spacing).roundToInt(),
+                    topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
+                    pageSpacingPx = context.getDimensions(R.dimen.page_spacing),
                     paginationModel = requireNotNull(localStateToRestore.paginationModel),
                     errorFlow = errorFlow,
                     isFormFillingEnabled = isFormFillingEnabled,
@@ -1317,9 +1315,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 PageMetadataLoader(
                         localPdfDocument,
                         backgroundScope,
-                        topPageMarginPx =
-                            context.getDimensions(R.dimen.top_page_margin).roundToInt(),
-                        pageSpacingPx = context.getDimensions(R.dimen.page_spacing).roundToInt(),
+                        topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
+                        pageSpacingPx = context.getDimensions(R.dimen.page_spacing),
                         errorFlow = errorFlow,
                         isFormFillingEnabled = isFormFillingEnabled,
                     )
@@ -1371,11 +1368,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         // Copy each page location into the SparseArray dispatched to listeners, i.e. to avoid
         // developers mutating our source of truth. Use a Pool to populate the SparseArray
         // dispatched to listeners, i.e. to avoid excessive Rect allocations at low zoom levels
-        val dispatchedLocations = SparseArray<Rect>(pageLocations.size())
+        val dispatchedLocations = SparseArray<RectF>(pageLocations.size())
         for (page in pageLocations.keyIterator()) {
-            val dispatchedLocation = pageLocationsPool.acquire() ?: Rect()
+            val dispatchedLocation = pageLocationsPool.acquire() ?: RectF()
             dispatchedLocation.set(pageLocations.get(page))
-            dispatchedLocations.put(page, dispatchedLocation.asViewRect())
+            dispatchedLocations.put(page, dispatchedLocation.asViewRectF())
         }
 
         for (listener in onViewportChangedListeners) {
@@ -1555,12 +1552,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * Computes the part of the content visible within the outer part of this view (including this
      * view's padding) in co-ordinates of the content.
      */
-    internal fun getVisibleAreaInContentCoords(): Rect {
+    internal fun getVisibleAreaInContentCoords(): RectF {
         visibleAreaRect.set(
-            toContentX(0F).toInt(),
-            toContentY(0F).toInt(),
-            toContentX(viewportWidth.toFloat() + paddingRight + paddingLeft).toInt(),
-            toContentY(viewportHeight.toFloat() + paddingBottom + paddingTop).toInt(),
+            toContentX(0F),
+            toContentY(0F),
+            toContentX(viewportWidth.toFloat() + paddingRight + paddingLeft),
+            toContentY(viewportHeight.toFloat() + paddingBottom + paddingTop),
         )
         return visibleAreaRect
     }
@@ -1605,11 +1602,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         return toContentCoord(viewY, zoom, scrollY)
     }
 
-    private val contentWidth: Int
-        get() = pageMetadataLoader?.paginationModel?.maxWidth ?: 0
+    private val contentWidth: Float
+        get() = pageMetadataLoader?.paginationModel?.maxWidth ?: 0f
 
-    internal val contentHeight: Int
-        get() = pageMetadataLoader?.paginationModel?.totalEstimatedHeight ?: 0
+    internal val contentHeight: Float
+        get() = pageMetadataLoader?.paginationModel?.totalEstimatedHeight ?: 0f
 
     /** The default [ActionMode.Callback2] for selection */
     public open class DefaultSelectionActionModeCallback(private val pdfView: PdfView) :
@@ -1662,7 +1659,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             val localPageLayoutManager =
                 pdfView.pageMetadataLoader ?: return super.onGetContentRect(mode, view, outRect)
             val viewport = pdfView.getVisibleAreaInContentCoords()
-            val viewportF = viewport.toRectF()
             val firstSelection = pdfView.currentSelection?.bounds?.firstOrNull()
             val lastSelection = pdfView.currentSelection?.bounds?.lastOrNull()
 
@@ -1672,7 +1668,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 val boundsInView = localPageLayoutManager.getViewRect(firstSelection, viewport)
                 if (
                     boundsInView?.let {
-                        viewportF.intersects(it.left, it.top, it.right, it.bottom)
+                        viewport.intersects(it.left, it.top, it.right, it.bottom)
                     } == true
                 ) {
                     outRect.set(pdfView.toViewRect(boundsInView))
@@ -1686,7 +1682,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 val boundsInView = localPageLayoutManager.getViewRect(lastSelection, viewport)
                 if (
                     boundsInView?.let {
-                        viewportF.intersects(it.left, it.top, it.right, it.bottom)
+                        viewport.intersects(it.left, it.top, it.right, it.bottom)
                     } == true
                 ) {
                     outRect.set(pdfView.toViewRect(boundsInView))
@@ -1718,13 +1714,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         )
     }
 
-    /** Converts an existing [Rect] in content coordinates to View coordinates */
-    private fun Rect.asViewRect(): Rect {
+    /** Converts an existing [RectF] in content coordinates to View coordinates */
+    private fun RectF.asViewRectF(): RectF {
         this.set(
-            toViewCoord(left.toFloat(), zoom, scrollX).roundToInt(),
-            toViewCoord(top.toFloat(), zoom, scrollY).roundToInt(),
-            toViewCoord(right.toFloat(), zoom, scrollX).roundToInt(),
-            toViewCoord(bottom.toFloat(), zoom, scrollY).roundToInt(),
+            toViewCoord(left, zoom, scrollX),
+            toViewCoord(top, zoom, scrollY),
+            toViewCoord(right, zoom, scrollX),
+            toViewCoord(bottom, zoom, scrollY),
         )
         return this
     }

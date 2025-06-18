@@ -16,6 +16,7 @@
 
 package androidx.benchmark
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
@@ -325,6 +326,22 @@ object DeviceInfo {
         Build.VERSION.SDK_INT >= 35 ||
             (Build.VERSION.SDK_INT == 34 &&
                 artMainlineVersion >= ART_MAINLINE_MIN_VERSION_VERIFY_CLEARS_RUNTIME_IMAGE)
+
+    @SuppressLint("BanThreadSleep") // see b/372921569
+    fun sleepToAwaitRuntimeImageFlush() {
+        // Unfortunately, there's no way to force runtime image flush to disk other than waiting,
+        // see (b/372921569)
+        InstrumentationResults.scheduleIdeWarningOnNextReport("Delay to await runtime image flush")
+        Thread.sleep(5000L)
+    }
+
+    /**
+     * If true, runtime images are supported on device, but can't be cleared without reinstallation.
+     *
+     * So instead of reinstalling (which wreaks havoc in benchmark control of target app state) we
+     * poison it - intentionally create a runtime image with extremely few relevant classes within.
+     */
+    val poisonTheRuntimeImage = !verifyClearsRuntimeImage && supportsRuntimeImages
 
     val supportsCpuEventCounters =
         Build.VERSION.SDK_INT < CpuEventCounter.MIN_API_ROOT_REQUIRED || isRooted

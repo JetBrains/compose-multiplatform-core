@@ -632,11 +632,19 @@ internal class TextFieldSelectionState(
         private var dragBeginOffsetInText = -1
         private var dragBeginPosition: Offset = Offset.Unspecified
 
-        override fun onStart(downPosition: Offset, adjustment: SelectionAdjustment): Boolean {
+        private var isDoubleOrTripleClickOnly = true
+
+        override fun onStart(
+            downPosition: Offset,
+            adjustment: SelectionAdjustment,
+            clickCount: Int,
+        ): Boolean {
             val layoutResult = textLayoutState.layoutResult
             if (!enabled || layoutResult == null || textFieldState.visualText.isEmpty()) {
                 return false
             }
+
+            isDoubleOrTripleClickOnly = clickCount >= 2
 
             logDebug { "Mouse.onStart" }
             directDragGestureInitiator = InputType.Mouse
@@ -661,7 +669,13 @@ internal class TextFieldSelectionState(
             }
 
             logDebug { "Mouse.onDrag $dragPosition" }
-            updateSelection(dragPosition, adjustment, layoutResult, isStartOfSelection = false)
+            val prevSelection = textFieldState.visualText.selection
+            val newSelection =
+                updateSelection(dragPosition, adjustment, layoutResult, isStartOfSelection = false)
+
+            if (prevSelection != newSelection) {
+                isDoubleOrTripleClickOnly = false
+            }
             return true
         }
 
@@ -725,6 +739,9 @@ internal class TextFieldSelectionState(
         override fun onDragDone() {
             logDebug { "Mouse.onDragDone" }
             directDragGestureInitiator = InputType.None
+            if (isDoubleOrTripleClickOnly) {
+                maybeSuggestSelectionRange()
+            }
         }
 
         override fun onExtend(downPosition: Offset): Boolean {
@@ -758,34 +775,8 @@ internal class TextFieldSelectionState(
 
                 directDragGestureInitiator = InputType.None
                 requestFocus()
-
-                val platformSelectionBehaviors =
-                    this@TextFieldSelectionState.platformSelectionBehaviors ?: return
-                val text = textFieldState.visualText.text
-                val selection = textFieldState.visualText.selection
-                if (isLongPressSelectionOnly && text.isNotEmpty() && !selection.collapsed) {
-                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                        val suggestedSelection =
-                            platformSelectionBehaviors.suggestSelectionForLongPressOrDoubleClick(
-                                text,
-                                selection,
-                            )
-
-                        // Ideally, the selection suggestion job should be cancelled whenever the
-                        // selection or text is updated. However, implementing this for all
-                        // selection/editing options is unmaintainable. Therefore, we only require
-                        // that the text and selection remain unchanged since the selection
-                        // suggestion was made.
-                        if (
-                            !isPassword &&
-                                suggestedSelection != null &&
-                                textFieldState.visualText.text == text &&
-                                textFieldState.visualText.selection == selection &&
-                                suggestedSelection != textFieldState.visualText.selection
-                        ) {
-                            textFieldState.selectCharsIn(suggestedSelection)
-                        }
-                    }
+                if (isLongPressSelectionOnly) {
+                    maybeSuggestSelectionRange()
                 }
             }
         }
@@ -972,6 +963,37 @@ internal class TextFieldSelectionState(
                 textFieldState.selectCharsIn(newSelection)
             }
             updateHandleDragging(handle = actingHandle, position = currentDragPosition)
+        }
+    }
+
+    fun maybeSuggestSelectionRange() {
+        val platformSelectionBehaviors =
+            this@TextFieldSelectionState.platformSelectionBehaviors ?: return
+        val text = textFieldState.visualText.text
+        val selection = textFieldState.visualText.selection
+        if (text.isNotEmpty() && !selection.collapsed) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                val suggestedSelection =
+                    platformSelectionBehaviors.suggestSelectionForLongPressOrDoubleClick(
+                        text,
+                        selection,
+                    )
+
+                // Ideally, the selection suggestion job should be cancelled whenever the
+                // selection or text is updated. However, implementing this for all
+                // selection/editing options is unmaintainable. Therefore, we only require
+                // that the text and selection remain unchanged since the selection
+                // suggestion was made.
+                if (
+                    !isPassword &&
+                        suggestedSelection != null &&
+                        textFieldState.visualText.text == text &&
+                        textFieldState.visualText.selection == selection &&
+                        suggestedSelection != textFieldState.visualText.selection
+                ) {
+                    textFieldState.selectCharsIn(suggestedSelection)
+                }
+            }
         }
     }
 

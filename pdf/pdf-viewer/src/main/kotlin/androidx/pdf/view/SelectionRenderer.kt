@@ -24,7 +24,6 @@ import android.graphics.PointF
 import android.graphics.PorterDuff.Mode
 import android.graphics.PorterDuffColorFilter
 import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import androidx.annotation.VisibleForTesting
@@ -64,7 +63,7 @@ internal class SelectionRenderer(
         model: SelectionModel,
         pageNum: Int,
         canvas: Canvas,
-        locationInView: Rect,
+        locationInView: RectF,
         currentZoom: Float,
     ) {
         // Draw the bounds first so the handles appear on top of them
@@ -123,7 +122,7 @@ internal class SelectionRenderer(
         drawable.draw(canvas)
     }
 
-    private fun drawBoundsOnPage(canvas: Canvas, bounds: PdfRect, pageLocationInView: Rect) {
+    private fun drawBoundsOnPage(canvas: Canvas, bounds: PdfRect, pageLocationInView: RectF) {
         val boundsRect = RectF(bounds.pageRect)
         boundsRect.offset(pageLocationInView.left.toFloat(), pageLocationInView.top.toFloat())
         canvas.drawRect(boundsRect, BOUNDS_PAINT)

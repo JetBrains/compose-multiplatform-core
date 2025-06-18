@@ -97,4 +97,5 @@ androidx {
             "consistent and reliable camera foundation that enables great camera driven " +
             "experiences across all of Android."
     enableRobolectric()
+    samples(project(":camera:camera-video:camera-video-samples"))
 }

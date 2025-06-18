@@ -16,12 +16,14 @@
 
 package androidx.compose.ui.input.focus
 
+import android.os.SystemClock
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.KeyEvent.ACTION_DOWN
 import android.view.KeyEvent.KEYCODE_A
+import android.view.MotionEvent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -32,6 +34,7 @@ import androidx.compose.ui.input.focus.FocusAwareEventPropagationTest.NodeType.I
 import androidx.compose.ui.input.focus.FocusAwareEventPropagationTest.NodeType.InterruptedSoftKeyboardInput
 import androidx.compose.ui.input.focus.FocusAwareEventPropagationTest.NodeType.KeyInput
 import androidx.compose.ui.input.focus.FocusAwareEventPropagationTest.NodeType.RotaryInput
+import androidx.compose.ui.input.indirect.AndroidIndirectTouchEvent
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
 import androidx.compose.ui.input.indirect.IndirectTouchEventType
 import androidx.compose.ui.input.indirect.onIndirectTouchEvent
@@ -62,7 +65,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /** Focus-aware event propagation test. */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
 @MediumTest
 @RunWith(Parameterized::class)
 class FocusAwareEventPropagationTest(private val nodeType: NodeType) {
@@ -73,7 +76,20 @@ class FocusAwareEventPropagationTest(private val nodeType: NodeType) {
             KeyInput,
             InterruptedSoftKeyboardInput -> KeyEvent(AndroidKeyEvent(ACTION_DOWN, KEYCODE_A))
             RotaryInput -> RotaryScrollEvent(1f, 1f, 0L, findRotaryInputDevice())
-            IndirectTouchInput -> IndirectTouchEvent(Offset.Zero, 0L, IndirectTouchEventType.Press)
+            IndirectTouchInput ->
+                AndroidIndirectTouchEvent(
+                    Offset.Zero,
+                    0L,
+                    IndirectTouchEventType.Press,
+                    MotionEvent.obtain(
+                        SystemClock.uptimeMillis(), // downTime,
+                        SystemClock.uptimeMillis(), // eventTime,
+                        MotionEvent.ACTION_DOWN,
+                        Offset.Zero.x,
+                        Offset.Zero.y,
+                        0, // metaState
+                    ),
+                )
         }
     private var receivedEvent: Any? = null
     private val initialFocus = FocusRequester()

@@ -110,7 +110,6 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         Log.i(TAG, "onCreate")
 
         val session = (Session.create(this) as SessionCreateSuccess).session
-        session.resume()
         session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
 
@@ -552,10 +551,10 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 Button(onClick = { togglePassthrough(session) }) {
                     Text(text = "Toggle Passthrough", fontSize = 30.sp)
                 }
-                Button(onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }) {
+                Button(onClick = { session.scene.requestFullSpaceMode() }) {
                     Text(text = "Request FSM", fontSize = 30.sp)
                 }
-                Button(onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }) {
+                Button(onClick = { session.scene.requestHomeSpaceMode() }) {
                     Text(text = "Request HSM", fontSize = 30.sp)
                 }
                 Button(onClick = { ActivityCompat.recreate(activity) }) {

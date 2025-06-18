@@ -90,7 +90,7 @@ public interface CameraDeviceSurfaceManager {
      *                                           and the target frame rate settings in use cases
      *                                           will be ignored while calculating the stream spec.
      *                                           If {@code false}, the value of
-     *                                @link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}
+     *                               {@link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}
      *                                           is undetermined.
      * @return a {@link SurfaceStreamSpecQueryResult}.
      * @throws IllegalStateException    if not initialized

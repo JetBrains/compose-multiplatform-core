@@ -20,7 +20,9 @@ import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
 import android.os.DeadObjectException
+import androidx.core.graphics.toRect
 import androidx.pdf.PdfDocument
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.models.FormEditRecord
@@ -97,7 +99,7 @@ class FormWidgetInteractionHandlerTest {
 
     @Test
     fun handleInteractionWithClickTypeWidget_successfulApplyEdit() = runTest {
-        val invalidatedRectValues = mutableListOf<Pair<Int, List<Rect>>>()
+        val invalidatedRectValues = mutableListOf<Pair<Int, List<RectF>>>()
         backgroundScope.launch(testDispatcher) {
             handler.invalidatedAreas.toList(invalidatedRectValues)
         }
@@ -127,12 +129,12 @@ class FormWidgetInteractionHandlerTest {
         verify(pdfDocument).applyEdit(pageNum, expectedEditRecord)
         assertThat(invalidatedRectValues.size).isEqualTo(1)
         assertThat(invalidatedRectValues[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedRectValues[0].second).isEqualTo(invalidatedRects)
+        assertThat(invalidatedRectValues[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
     }
 
     @Test
     fun handleInteraction_radioButtonWidget_applyEdit() = runTest {
-        val invalidatedAreas = mutableListOf<Pair<Int, List<Rect>>>()
+        val invalidatedAreas = mutableListOf<Pair<Int, List<RectF>>>()
         backgroundScope.launch(testDispatcher) { handler.invalidatedAreas.toList(invalidatedAreas) }
 
         val pageNum = 0
@@ -160,12 +162,12 @@ class FormWidgetInteractionHandlerTest {
         verify(pdfDocument).applyEdit(pageNum, expectedEditRecord)
         assertThat(invalidatedAreas.size).isEqualTo(1)
         assertThat(invalidatedAreas[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedAreas[0].second).isEqualTo(invalidatedRects)
+        assertThat(invalidatedAreas[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
     }
 
     @Test
     fun handleInteraction_pushButtonWidget_callsApplyEdit() = runTest {
-        val invalidatedAreas = mutableListOf<Pair<Int, List<Rect>>>()
+        val invalidatedAreas = mutableListOf<Pair<Int, List<RectF>>>()
         backgroundScope.launch(testDispatcher) { handler.invalidatedAreas.toList(invalidatedAreas) }
 
         val pageNum = 0
@@ -196,12 +198,12 @@ class FormWidgetInteractionHandlerTest {
         verify(pdfDocument).applyEdit(pageNum, expectedEditRecord)
         assertThat(invalidatedAreas.size).isEqualTo(1)
         assertThat(invalidatedAreas[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedAreas[0].second).isEqualTo(invalidatedRects)
+        assertThat(invalidatedAreas[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
     }
 
     @Test
     fun applyEditRecord_emitsInvalidatedAreasOnSuccess() = runTest {
-        val invalidatedAreas = mutableListOf<Pair<Int, List<Rect>>>()
+        val invalidatedAreas = mutableListOf<Pair<Int, List<RectF>>>()
         backgroundScope.launch(testDispatcher) { handler.invalidatedAreas.toList(invalidatedAreas) }
         val pageNum = 1
         val widgetIndex = 0
@@ -215,7 +217,7 @@ class FormWidgetInteractionHandlerTest {
 
         assertThat(invalidatedAreas.size).isEqualTo(1)
         assertThat(invalidatedAreas[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedAreas[0].second).isEqualTo(invalidatedRects)
+        assertThat(invalidatedAreas[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
     }
 
     @Test

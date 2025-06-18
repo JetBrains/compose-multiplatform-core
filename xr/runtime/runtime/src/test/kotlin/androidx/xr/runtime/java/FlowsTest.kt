@@ -17,6 +17,8 @@
 package androidx.xr.runtime.java
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.Session
@@ -43,7 +45,9 @@ class FlowsTest {
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var testScope: TestScope
 
-    @get:Rule val activityScenarioRule = ActivityScenarioRule<Activity>(Activity::class.java)
+    @get:Rule
+    val activityScenarioRule =
+        ActivityScenarioRule<ComponentActivity>(ComponentActivity::class.java)
 
     @Before
     fun setUp() {
@@ -76,7 +80,7 @@ class FlowsTest {
                     )
                     .doOnTerminate() { isTerminated = true }
             observable.subscribe()
-            session.destroy()
+            activityScenarioRule.scenario.moveToState(Lifecycle.State.DESTROYED)
             testScope.advanceUntilIdle()
 
             assertThat(isTerminated).isTrue()

@@ -17,6 +17,8 @@
 package androidx.camera.core.featurecombination.impl
 
 import android.graphics.ImageFormat
+import android.graphics.SurfaceTexture
+import android.view.SurfaceHolder
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
@@ -24,6 +26,7 @@ import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FOR
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
+import androidx.camera.core.streamsharing.StreamSharing
 
 /**
  * Enum class representing the different types of use cases supported by CameraX.
@@ -42,7 +45,7 @@ public enum class UseCaseType(
     // TODO: b/400852239 - Check if the surface class types are appropriate
 
     /** Represents [Preview] use case. */
-    PREVIEW(android.view.SurfaceHolder::class.java, INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE),
+    PREVIEW(SurfaceHolder::class.java, INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE),
 
     /** Represents [ImageCapture] use case. */
     IMAGE_CAPTURE(null, ImageFormat.JPEG),
@@ -54,6 +57,9 @@ public enum class UseCaseType(
      * VideoCapture use case directly.
      */
     VIDEO_CAPTURE(android.media.MediaCodec::class.java, INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE),
+
+    /** Represents [StreamSharing] use case. */
+    STREAM_SHARING(SurfaceTexture::class.java, INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE),
 
     /** Represents an undefined/unknown use case. */
     UNDEFINED(null, INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);
@@ -72,6 +78,7 @@ public enum class UseCaseType(
             PREVIEW -> "Preview"
             IMAGE_CAPTURE -> "ImageCapture"
             VIDEO_CAPTURE -> "VideoCapture"
+            STREAM_SHARING -> "StreamSharing"
             UNDEFINED -> "Undefined"
         }
     }
@@ -93,6 +100,8 @@ public enum class UseCaseType(
                 IMAGE_CAPTURE
             } else if (isVideoCapture(this)) {
                 VIDEO_CAPTURE
+            } else if (this is StreamSharing) {
+                STREAM_SHARING
             } else {
                 UNDEFINED
             }
@@ -114,6 +123,7 @@ public enum class UseCaseType(
                 CaptureType.IMAGE_CAPTURE -> IMAGE_CAPTURE
                 CaptureType.PREVIEW -> PREVIEW
                 CaptureType.VIDEO_CAPTURE -> VIDEO_CAPTURE
+                CaptureType.STREAM_SHARING -> STREAM_SHARING
                 else -> UNDEFINED
             }
         }

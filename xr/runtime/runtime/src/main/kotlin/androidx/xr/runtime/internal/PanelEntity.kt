@@ -17,7 +17,6 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.math.Vector3
 
 /** Interface for a XR Runtime Panel entity */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -31,15 +30,6 @@ public interface PanelEntity : Entity {
 
     /** Sets a corner radius on all four corners of this PanelEntity. */
     public var cornerRadius: Float
-
-    /**
-     * Gets the number of pixels per meter for this panel. This value reflects changes to scale,
-     * including parent scale.
-     *
-     * @return Vector3 scale applied to pixels within the Panel. (Z will be 0)
-     * @deprecated This method will be removed in a future release.
-     */
-    public val pixelDensity: Vector3
 
     /**
      * Returns the spatial size of this Panel in meters. This includes any scaling applied to this

@@ -448,6 +448,8 @@ public interface JxrPlatformAdapter {
      *   the canvas.
      * @param contentSecurityLevel The [SurfaceEntity.ContentSecurityLevel] which describes whether
      *   DRM is enabled.
+     * @param superSampling The [SurfaceEntity.SuperSampling] which describes whether super sampling
+     *   is enabled. Whether to use super sampling for the surface.
      * @param parentEntity The parent entity of this entity.
      * @return A [SurfaceEntity] which is a child of the parent entity.
      */
@@ -456,6 +458,7 @@ public interface JxrPlatformAdapter {
         pose: Pose,
         canvasShape: SurfaceEntity.CanvasShape,
         contentSecurityLevel: Int,
+        superSampling: Int,
         parentEntity: Entity,
     ): SurfaceEntity
 

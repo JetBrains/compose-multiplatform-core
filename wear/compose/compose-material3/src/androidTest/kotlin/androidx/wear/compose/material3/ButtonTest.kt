@@ -33,7 +33,9 @@ import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.testutils.assertShape
 import androidx.compose.ui.Modifier
@@ -695,6 +697,44 @@ class ButtonTest {
                         ),
                 ) {}
             },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun outlined_button_border_updates_color_when_state_changes() {
+        var enabled by mutableStateOf(true)
+        val enabledBorderColor = Color.Green
+        val disabledBorderColor = Color.Red
+        val testBackground = Color.Black
+
+        rule.setContent {
+            MaterialTheme {
+                Box(Modifier.background(testBackground)) {
+                    OutlinedButton(
+                        onClick = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                        enabled = enabled,
+                        border =
+                            ButtonDefaults.outlinedButtonBorder(
+                                enabled = enabled,
+                                borderColor = enabledBorderColor,
+                                disabledBorderColor = disabledBorderColor,
+                            ),
+                    ) {}
+                }
+            }
+        }
+        rule.verifyBorderColor(
+            contentBorderColor = enabledBorderColor,
+            backgroundColor = testBackground,
+        )
+
+        rule.runOnIdle { enabled = false }
+
+        rule.verifyBorderColor(
+            contentBorderColor = disabledBorderColor,
+            backgroundColor = testBackground,
         )
     }
 
@@ -1562,6 +1602,15 @@ private fun ComposeContentTestRule.verifyCompactButtonColors(
         .assertContainsColor(
             if (containerColor != Color.Transparent) containerColor else testBackgroundColor
         )
+}
+
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+private fun ComposeContentTestRule.verifyBorderColor(
+    contentBorderColor: Color,
+    backgroundColor: Color,
+) {
+    val expectedColor = contentBorderColor.compositeOver(backgroundColor)
+    onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(expectedColor)
 }
 
 val MinimumButtonTapSize = 48.dp

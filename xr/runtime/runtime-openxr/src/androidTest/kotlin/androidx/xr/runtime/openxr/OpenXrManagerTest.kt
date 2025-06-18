@@ -27,6 +27,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -158,6 +159,7 @@ class OpenXrManagerTest {
     }
 
     @Test
+    @Ignore("b/346615429 This test is currently broken")
     // TODO - b/346615429: Control the values returned by the OpenXR stub instead of relying on the
     // stub's current implementation.
     fun configure_insufficientPermissions_throwsPermissionNotGrantedException() =

@@ -38,6 +38,7 @@ import kotlin.test.Test
 import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -580,7 +581,7 @@ abstract class BaseConnectionPoolTest {
     }
 
     @Test
-    fun stressCancelCoroutineAcquiringConnection() = runBlocking {
+    fun stressCancelCoroutineAcquiringConnection() = runTest {
         val multiThreadContext = newFixedThreadPoolContext(3, "Test-Threads")
         val driver = setupDriver()
         val pool =
@@ -592,32 +593,34 @@ abstract class BaseConnectionPoolTest {
             )
         // This stress test is very non-deterministic, on purpose. It launches three coroutines, two
         // of them attempt to use the connection, but one of the coroutines is canceled shortly
-        // after by the third coroutines. The goal of this test is to validate the
-        // onUndeliveredElement callback of the Pool's Channel. If this test fails it will likely be
-        // due to a 'Timed out attempting to acquire a connection'.
+        // after by the third coroutines. The goal of this test is to validate the Pool's semaphore
+        // behaviour does not leave a lingering connection.
         val jobsToWaitFor = mutableListOf<Job>()
         repeat(1000) {
             val jobToCancel =
-                launch(multiThreadContext) {
+                launch(multiThreadContext + CoroutineName("TheOneWhichIsCancelled")) {
                     pool.useWriterConnection { delay(Random.nextLong(5)) }
                 }
             jobsToWaitFor.add(
-                launch(multiThreadContext) {
+                launch(multiThreadContext + CoroutineName("TheExtraOne")) {
                     pool.useWriterConnection { delay(Random.nextLong(5)) }
                 }
             )
             jobsToWaitFor.add(
-                launch(multiThreadContext) {
+                launch(multiThreadContext + CoroutineName("TheOneWhoCancels")) {
                     delay(Random.nextLong(5))
                     jobToCancel.cancel()
                 }
             )
         }
         jobsToWaitFor.joinAll()
+
+        pool.close()
+        multiThreadContext.close()
     }
 
     @Test
-    fun timeoutCoroutineWaitingForConnection() = runTest {
+    fun timeoutExceptionWaitingForConnection() = runTest {
         val multiThreadContext = newFixedThreadPoolContext(2, "Test-Threads")
         val driver = setupDriver()
         val pool =
@@ -627,6 +630,8 @@ abstract class BaseConnectionPoolTest {
                 maxNumOfReaders = 1,
                 maxNumOfWriters = 1,
             )
+        check(pool is ConnectionPoolImpl)
+        pool.throwOnTimeout = true
         val coroutineStartedMutex = Mutex(locked = true)
         var acquiredSecondConnection = false
         val testContext = coroutineContext
@@ -656,7 +661,7 @@ abstract class BaseConnectionPoolTest {
     }
 
     @Test
-    fun timeoutCoroutineAndRetryUsingConnection() = runTest {
+    fun timeoutExceptionAndRetryUsingConnection() = runTest {
         val multiThreadContext = newFixedThreadPoolContext(2, "Test-Threads")
         val driver = setupDriver()
         val pool =
@@ -667,6 +672,7 @@ abstract class BaseConnectionPoolTest {
                 maxNumOfWriters = 1,
             )
         check(pool is ConnectionPoolImpl)
+        pool.throwOnTimeout = true
         pool.timeout = 100.milliseconds
 
         val firstBarrier = CompletableDeferred<Unit>()
@@ -699,6 +705,41 @@ abstract class BaseConnectionPoolTest {
             // Can use connection after a timeout
         }
 
+        pool.close()
+        multiThreadContext.close()
+    }
+
+    @Test
+    fun timeoutWithoutException() = runTest {
+        val multiThreadContext = newFixedThreadPoolContext(2, "Test-Threads")
+        val driver = setupDriver()
+        val pool =
+            newConnectionPool(
+                driver = driver,
+                fileName = fileName,
+                maxNumOfReaders = 1,
+                maxNumOfWriters = 1,
+            )
+        check(pool is ConnectionPoolImpl)
+        pool.throwOnTimeout = false
+        pool.timeout = 100.milliseconds
+
+        val items = mutableListOf<String>()
+        coroutineScope {
+            val busyBarrier = CompletableDeferred<Unit>()
+            launch(multiThreadContext) {
+                pool.useReaderConnection {
+                    busyBarrier.complete(Unit)
+                    delay(200)
+                    items.add("BusyJob")
+                }
+            }
+            launch(multiThreadContext) {
+                busyBarrier.await()
+                pool.useReaderConnection { items.add("TimeoutJob") }
+            }
+        }
+        assertThat(items).containsExactly("BusyJob", "TimeoutJob").inOrder()
         pool.close()
         multiThreadContext.close()
     }
@@ -755,6 +796,7 @@ abstract class BaseConnectionPoolTest {
         // with resources correctly as recommended in
         // https://kotlinlang.org/docs/cancellation-and-timeouts.html#asynchronous-timeout-and-resources
         check(pool is ConnectionPoolImpl)
+        pool.throwOnTimeout = true
         pool.timeout = 20.milliseconds
         coroutineScope {
             repeat(10_000) {
@@ -784,7 +826,7 @@ abstract class BaseConnectionPoolTest {
     }
 
     @Test
-    fun timeoutWhileUsingConnection() = runTest {
+    fun withTimeoutUsingConnection() = runTest {
         val driver = setupDriver()
         val pool =
             newConnectionPool(

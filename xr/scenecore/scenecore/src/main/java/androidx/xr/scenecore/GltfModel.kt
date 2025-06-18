@@ -33,10 +33,12 @@ import java.nio.file.Path
  */
 // TODO: b/319269278 - Make this and ExrImage derive from a common Resource base class which has
 //                     async helpers.
-// TODO: b/362368652 - Add an interface which returns an integer animation IDX given a string
-//                     animation name for a loaded glTF, as well as an interface for selecting the
+// TODO: b/417750821 - Add an interface which returns an integer animation IDX given a string
+//                     animation name for a loaded glTF.
+//                   - an interface for selecting the
 //                     playback animation from the integer index.
-// TODO: b/362368652 - Add an interface which returns a list of available animation names
+//                   - an interface which returns a list of available animation names
+
 public class GltfModel internal constructor(internal val model: RtGltfModel) {
 
     public companion object {

@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -381,7 +381,7 @@ class AnchorTest {
         }
 
     private fun createTestSessionAndRunTest(testBody: () -> Unit) {
-        ActivityScenario.launch(Activity::class.java).use {
+        ActivityScenario.launch(ComponentActivity::class.java).use {
             it.onActivity { activity ->
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)

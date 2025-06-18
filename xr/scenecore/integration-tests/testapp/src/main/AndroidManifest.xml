@@ -50,6 +50,9 @@
             android:name=".anchorentity.AnchorEntityActivity"
             android:exported="true" />
         <activity
+            android:name=".fieldofviewvisibility.FieldOfViewVisibilityActivity"
+            android:exported="true" />
+        <activity
             android:name=".activitypanel.ActivityPanel"
             android:exported="true" />
         <activity
@@ -75,6 +78,9 @@
             android:exported="true" />
         <activity
             android:name=".spatialaudio.SpatialAudioActivity"
+            android:exported="true" />
+        <activity
+            android:name=".hittest.HitTestActivity"
             android:exported="true" />
         <property
             android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"

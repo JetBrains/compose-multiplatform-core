@@ -20,11 +20,8 @@ import kotlin.jvm.JvmInline
 
 /**
  * A type-safe representation of a frame rate category for a display or application.
- *
- * Using this class avoids primitive obsession by providing a clear and constrained set of possible
- * frame rate preferences instead of relying on raw float values.
- * - Default: Default value.
- * - NoPreference: It will explicitly not influence the frame rate.
+ * - Default: Default value. This value can also be set to return to default behavior, indicating
+ *   that this component has no data for the frame rate.
  * - Normal: Indicates a middle frame rate suitable for animations that do not require higher frame
  *   rates. This is normally 60 Hz or close to it.
  * - High: Indicates a frame rate suitable for animations that require a high frame rate.
@@ -33,7 +30,6 @@ import kotlin.jvm.JvmInline
 value class FrameRateCategory private constructor(internal val value: Float) {
     companion object {
         val Default = FrameRateCategory(Float.NaN)
-        val NoPreference = FrameRateCategory(-1f)
         val Normal = FrameRateCategory(-3f)
         val High = FrameRateCategory(-4f)
     }
@@ -41,7 +37,6 @@ value class FrameRateCategory private constructor(internal val value: Float) {
     override fun toString(): String {
         val text =
             when (value) {
-                -1f -> "NoPreference"
                 -3f -> "Normal"
                 -4f -> "High"
                 else -> "Default"

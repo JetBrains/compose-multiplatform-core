@@ -39,6 +39,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk
@@ -214,7 +215,7 @@ class CaptureOptionSubmissionTest(
         val targetFpsRange = getAeFpsRangeFromQuirks()
         assumeFalse(
             "AeFpsRange workaround is applied only on LEGACY level devices.",
-            targetFpsRange == null,
+            targetFpsRange == null || FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFpsRange),
         )
 
         var lastSubmittedFpsRange: Range<Int>? = null

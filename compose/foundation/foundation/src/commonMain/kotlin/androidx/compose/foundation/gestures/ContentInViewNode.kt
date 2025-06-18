@@ -205,7 +205,7 @@ internal class ContentInViewNode(
         }
 
         if (DEBUG) println("[$TAG] launchAnimation")
-        val animationState = UpdatableAnimationState(BringIntoViewSpec.DefaultScrollAnimationSpec)
+        val animationState = UpdatableAnimationState(requireBringIntoViewSpec().scrollAnimationSpec)
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             var cancellationException: CancellationException? = null
             val animationJob = coroutineContext.job

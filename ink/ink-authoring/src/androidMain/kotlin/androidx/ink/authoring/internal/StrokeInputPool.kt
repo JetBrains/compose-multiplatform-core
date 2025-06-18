@@ -180,11 +180,8 @@ internal class StrokeInputPool(preAllocatedInstances: Int = 15) {
                     strokeStartTimeMillis,
                     strokeUnitLengthCm,
                 )
-            try {
-                outBatch.addOrIgnore(input)
-            } finally {
-                recycle(input)
-            }
+            runCatching { outBatch.add(input) }
+            recycle(input)
         }
     }
 

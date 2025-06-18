@@ -43,7 +43,7 @@ public class FakeLifecycleManager(
         INITIALIZED,
         RESUMED,
         PAUSED,
-        STOPPED,
+        DESTROYED,
     }
 
     /** The current state of the runtime. */
@@ -67,7 +67,7 @@ public class FakeLifecycleManager(
         if (FakeRuntimeFactory.lifecycleCreateException != null) {
             // FakeRuntimeFactory will continue to throw exception on subsequent tests unless
             // cleared.
-            var exceptionToThrow = FakeRuntimeFactory.lifecycleCreateException!!
+            val exceptionToThrow = FakeRuntimeFactory.lifecycleCreateException!!
             FakeRuntimeFactory.lifecycleCreateException = null
             throw exceptionToThrow
         }
@@ -130,6 +130,6 @@ public class FakeLifecycleManager(
 
     override fun stop() {
         check(state == State.PAUSED || state == State.INITIALIZED)
-        state = State.STOPPED
+        state = State.DESTROYED
     }
 }

@@ -259,13 +259,13 @@ class FrameRateTest {
             onClick = { targetAlpha = if (targetAlpha == 1f) 0.2f else 1f },
             modifier =
                 Modifier.testTag("frameRateTag")
-                    .requestedFrameRate(secondFrameRate)
+                    .preferredFrameRate(secondFrameRate)
                     .background(LocalContentColor.current.copy(alpha = alpha)),
         ) {
             Text(
                 text = "Click Me for alpha change $firstFrameRate",
                 color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-                modifier = Modifier.requestedFrameRate(firstFrameRate),
+                modifier = Modifier.preferredFrameRate(firstFrameRate),
             )
         }
     }
@@ -313,7 +313,7 @@ class FrameRateTest {
             Text(
                 text = "Click for $frameRate fps",
                 color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-                modifier = Modifier.requestedFrameRate(frameRate),
+                modifier = Modifier.preferredFrameRate(frameRate),
             )
         }
     }
@@ -372,7 +372,7 @@ class FrameRateTest {
 
         Button(
             onClick = { expanded = !expanded },
-            modifier = Modifier.testTag("ContentResizing").requestedFrameRate(frameRate).width(size),
+            modifier = Modifier.testTag("ContentResizing").preferredFrameRate(frameRate).width(size),
         ) {
             Text("Click Me for size change $frameRate")
         }

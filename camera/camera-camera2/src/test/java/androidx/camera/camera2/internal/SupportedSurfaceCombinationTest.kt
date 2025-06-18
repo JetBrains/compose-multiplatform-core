@@ -2507,6 +2507,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
         val attachedAnalysis =
             AttachedSurfaceInfo.create(
@@ -2518,6 +2519,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -2552,6 +2554,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
         val attachedPriv2 =
             AttachedSurfaceInfo.create(
@@ -2563,6 +2566,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
 
         // These constraints say HDR10 and HDR10_PLUS can be combined, but not HLG
@@ -2612,6 +2616,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
         val attachedPriv2 =
             AttachedSurfaceInfo.create(
@@ -2623,6 +2628,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 FRAME_RATE_RANGE_UNSPECIFIED,
+                /*isStrictFrameRateRequired=*/ false,
             )
 
         getSuggestedSpecsAndVerify(
@@ -2835,6 +2841,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 Range(40, 50),
+                /*isStrictFrameRateRequired=*/ false,
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
@@ -2864,6 +2871,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 Range(40, 50),
+                /*isStrictFrameRateRequired=*/ false,
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
@@ -2893,6 +2901,7 @@ class SupportedSurfaceCombinationTest {
                 useCase.currentConfig,
                 SESSION_TYPE_REGULAR,
                 Range(40, 50),
+                /*isStrictFrameRateRequired=*/ false,
             )
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
@@ -2918,6 +2927,72 @@ class SupportedSurfaceCombinationTest {
     }
 
     @Test
+    fun getSuggestedStreamSpec_isStrictFpsRequiredButFpsNotSupported_throwException() {
+        val useCase1 =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range<Int>(15, 25),
+                isStrictFpsRequired = true,
+            )
+        val useCaseExpectedResultMap =
+            mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(4032, 3024)) }
+        assertThrows(IllegalArgumentException::class.java) {
+            getSuggestedSpecsAndVerify(
+                useCaseExpectedResultMap,
+                hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            )
+        }
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_differentIsStrictFpsRequired_throwException() {
+        val useCase1 =
+            createUseCase(
+                CaptureType.VIDEO_CAPTURE,
+                targetFrameRate = Range(22, 22),
+                isStrictFpsRequired = true,
+            )
+        val useCase2 =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range(22, 22),
+                isStrictFpsRequired = false,
+            )
+        val useCaseExpectedResultMap =
+            mapOf(useCase1 to Size(3840, 2160), useCase2 to Size(1280, 720))
+        assertThrows(IllegalStateException::class.java) {
+            getSuggestedSpecsAndVerify(
+                useCaseExpectedResultMap,
+                hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            )
+        }
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_isStrictFpsRequiredAndDifferentFrameRates_throwException() {
+        val useCase1 =
+            createUseCase(
+                CaptureType.VIDEO_CAPTURE,
+                targetFrameRate = Range(22, 22),
+                isStrictFpsRequired = true,
+            )
+        val useCase2 =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range(10, 22),
+                isStrictFpsRequired = true,
+            )
+        val useCaseExpectedResultMap =
+            mapOf(useCase1 to Size(3840, 2160), useCase2 to Size(1280, 720))
+        assertThrows(IllegalStateException::class.java) {
+            getSuggestedSpecsAndVerify(
+                useCaseExpectedResultMap,
+                hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            )
+        }
+    }
+
+    @Test
     fun getSuggestedStreamSpec_has_exact_device_supported_expectedFrameRateRange() {
         // use case with target fps
         val useCase1 = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(30, 30))
@@ -2930,6 +3005,46 @@ class SupportedSurfaceCombinationTest {
             compareExpectedFps = Range(30, 30),
         )
         // expected fps 30,30 because it is an exact intersection
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_isStrictFpsRequiredAndFpsSupported_frameRateMatches() {
+        // use case with target fps
+        val useCase1 =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range<Int>(30, 30),
+                isStrictFpsRequired = true,
+            )
+        val useCaseExpectedResultMap =
+            mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(1920, 1440)) }
+        getSuggestedSpecsAndVerify(
+            useCaseExpectedResultMap,
+            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            compareWithAtMost = true,
+            compareExpectedFps = Range(30, 30),
+        )
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_isStrictFpsRequiredButOverMaxFps_throwException() {
+        // use case with target fps
+        val useCase1 =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range<Int>(30, 30),
+                isStrictFpsRequired = true,
+            )
+        val useCasesOutputSizesMap = mapOf(useCase1 to listOf(Size(3840, 2160))) // MaxFps = 25
+        val useCaseExpectedResultMap =
+            mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(3840, 2160)) }
+        assertThrows(IllegalArgumentException::class.java) {
+            getSuggestedSpecsAndVerify(
+                useCaseExpectedResultMap,
+                useCasesOutputSizesMap = useCasesOutputSizesMap,
+                hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            )
+        }
     }
 
     @Test
@@ -3023,6 +3138,19 @@ class SupportedSurfaceCombinationTest {
         // unspecified: (0,0)
     }
 
+    @Test
+    fun getSuggestedStreamSpec_isStrictFpsRequiredAndFpsUnspecified_noExpectedFrameRate() {
+        val useCase1 = createUseCase(CaptureType.PREVIEW, isStrictFpsRequired = true)
+
+        val useCaseExpectedResultMap =
+            mutableMapOf<UseCase, Size>().apply { put(useCase1, Size(4032, 3024)) }
+        getSuggestedSpecsAndVerify(
+            useCaseExpectedResultMap,
+            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            compareExpectedFps = FRAME_RATE_RANGE_UNSPECIFIED,
+        )
+    }
+
     /** Helper function that returns whether size is <= maxSize */
     private fun sizeIsAtMost(size: Size, maxSize: Size): Boolean {
         return (size.height * size.width) <= (maxSize.height * maxSize.width)
@@ -3062,6 +3190,41 @@ class SupportedSurfaceCombinationTest {
     fun getSuggestedStreamSpec_singleUseCaseWithTargetFpsSet_returnMaxSupportedFrameRate() {
         // Arrange.
         val useCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range(30, 30))
+
+        val useCasesOutputSizesMap =
+            mapOf(
+                useCase to
+                    listOf(
+                        Size(3840, 2160), // MaxFps = 25
+                        Size(1920, 1080), // MaxFps = 35
+                    )
+            )
+
+        // targetFps will be ignored, so the first combination will be adopted.
+        val useCaseExpectedResultMap = mapOf(useCase to Size(3840, 2160))
+
+        // Act.
+        val result =
+            getSuggestedSpecsAndVerify(
+                useCaseExpectedResultMap,
+                hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+                useCasesOutputSizesMap = useCasesOutputSizesMap,
+                findMaxSupportedFrameRate = true,
+            )
+
+        // Verify.
+        assertThat(result.maxSupportedFrameRate).isEqualTo(35)
+    }
+
+    @Test
+    fun getSuggestedStreamSpec_singleUseCaseWithStrictFpsSet_returnMaxSupportedFrameRate() {
+        // Arrange.
+        val useCase =
+            createUseCase(
+                CaptureType.PREVIEW,
+                targetFrameRate = Range(30, 30),
+                isStrictFpsRequired = true,
+            )
 
         val useCasesOutputSizesMap =
             mapOf(
@@ -4178,7 +4341,7 @@ class SupportedSurfaceCombinationTest {
             useCasesOutputSizesMap = useCasesOutputSizesMap,
             dynamicRangeProfiles = if (Build.VERSION.SDK_INT >= 33) HLG10_CONSTRAINED else null,
             capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
-            isPreviewStabilizationOn = true,
+            isPreviewStabilizationOn = Build.VERSION.SDK_INT >= 33,
             isFeatureComboInvocation = true,
             featureCombinationQuery = fakeFeatureCombinationQuery.apply { isSupported = true },
             maxFpsBySizeMap = mapOf(RESOLUTION_1080P to 60, RESOLUTION_1440P_16_9 to 60),
@@ -4189,6 +4352,9 @@ class SupportedSurfaceCombinationTest {
         // Same dynamic range should be resolved to all use cases, HLG_10 is not supported before
         // API 33
         val expectedDynamicRange = if (Build.VERSION.SDK_INT >= 33) HLG_10_BIT else SDR
+
+        val expectedPreviewStabilization =
+            if (Build.VERSION.SDK_INT >= 33) StabilizationMode.ON else StabilizationMode.UNSPECIFIED
 
         fakeFeatureCombinationQuery.queriedConfigs.forEach { sessionConfig ->
             // Verify surface parameters of each output config, each config dynamic range should be
@@ -4223,7 +4389,7 @@ class SupportedSurfaceCombinationTest {
 
             // Verify Preview Stabilization
             assertThat(sessionConfig.repeatingCaptureConfig.previewStabilizationMode)
-                .isEqualTo(StabilizationMode.ON)
+                .isEqualTo(expectedPreviewStabilization)
         }
     }
 
@@ -4648,6 +4814,7 @@ class SupportedSurfaceCombinationTest {
         captureType: CaptureType,
         sessionType: Int? = null,
         targetFrameRate: Range<Int>? = null,
+        isStrictFpsRequired: Boolean = false,
         dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED,
         surfaceOccupancyPriority: Int? = null,
     ): UseCase {
@@ -4655,6 +4822,7 @@ class SupportedSurfaceCombinationTest {
             captureType,
             sessionType,
             targetFrameRate,
+            isStrictFpsRequired,
             dynamicRange,
             streamUseCaseOverride = false,
             surfaceOccupancyPriority = surfaceOccupancyPriority,
@@ -4665,6 +4833,7 @@ class SupportedSurfaceCombinationTest {
         captureType: CaptureType,
         sessionType: Int? = null,
         targetFrameRate: Range<Int>? = null,
+        isStrictFpsRequired: Boolean? = null,
         dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED,
         streamUseCaseOverride: Boolean = false,
         imageFormat: Int? = null,
@@ -4690,6 +4859,13 @@ class SupportedSurfaceCombinationTest {
 
         targetFrameRate?.let {
             builder.mutableConfig.insertOption(UseCaseConfig.OPTION_TARGET_FRAME_RATE, it)
+        }
+
+        isStrictFpsRequired?.let {
+            builder.mutableConfig.insertOption(
+                UseCaseConfig.OPTION_IS_STRICT_FRAME_RATE_REQUIRED,
+                it,
+            )
         }
 
         builder.mutableConfig.insertOption(
@@ -4727,6 +4903,7 @@ class SupportedSurfaceCombinationTest {
         isFeatureComboInvocation: Boolean = false,
         requiresFeatureComboQuery: Boolean = false,
         targetFpsRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
+        isStrictFpsRequired: Boolean = false,
     ): FeatureSettings {
         return FeatureSettings.of(
             cameraMode,
@@ -4738,6 +4915,7 @@ class SupportedSurfaceCombinationTest {
             isFeatureComboInvocation,
             requiresFeatureComboQuery,
             targetFpsRange,
+            isStrictFpsRequired,
         )
     }
 

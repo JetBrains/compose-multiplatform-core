@@ -71,16 +71,14 @@ class SupportSQLiteDriverTest : BaseConformanceTest() {
             .hasMessageThat()
             .isEqualTo(
                 "This driver is configured to open a database named " +
-                    "'/data/user/0/androidx.sqlite.driver.test.test/databases/file_database.db' " +
-                    "but ':memory:' was requested."
+                    "'$path' but ':memory:' was requested."
             )
 
         assertThrows<IllegalArgumentException> { fileDriver.open("/bad/path") }
             .hasMessageThat()
             .isEqualTo(
                 "This driver is configured to open a database named " +
-                    "'/data/user/0/androidx.sqlite.driver.test.test/databases/file_database.db' " +
-                    "but '/bad/path' was requested."
+                    "'$path' but '/bad/path' was requested."
             )
 
         fileDriver.open(path).close()

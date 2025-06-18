@@ -73,7 +73,7 @@ internal interface MouseSelectionObserver {
      * @return if event will be consumed
      */
     // if returns true event will be consumed
-    fun onStart(downPosition: Offset, adjustment: SelectionAdjustment): Boolean
+    fun onStart(downPosition: Offset, adjustment: SelectionAdjustment, clickCount: Int): Boolean
 
     /**
      * Invoked when dragging (without shift).
@@ -185,7 +185,8 @@ private suspend fun AwaitPointerEventScope.mouseSelection(
                 else -> SelectionAdjustment.Paragraph
             }
 
-        val started = observer.onStart(downChange.position, selectionAdjustment)
+        val started =
+            observer.onStart(downChange.position, selectionAdjustment, clicksCounter.clicks)
         if (started) {
             var dragConsumed = selectionAdjustment != SelectionAdjustment.None
             val shouldConsumeUp =
@@ -384,7 +385,8 @@ internal suspend fun AwaitPointerEventScope.mouseSelectionBtf2(
                 else -> SelectionAdjustment.Paragraph
             }
 
-        val started = observer.onStart(downChange.position, selectionAdjustment)
+        val started =
+            observer.onStart(downChange.position, selectionAdjustment, clicksCounter.clicks)
         if (started) {
             try {
                 downChange.consume()

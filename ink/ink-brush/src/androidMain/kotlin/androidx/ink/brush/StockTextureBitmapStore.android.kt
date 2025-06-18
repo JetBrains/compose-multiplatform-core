@@ -27,7 +27,6 @@ import androidx.annotation.RestrictTo
  * Pass this to your stroke renderer (e.g. [CanvasStrokeRenderer] and/or [InProgressStrokesView]) to
  * give it access to the textures.
  */
-@ExperimentalInkCustomBrushApi
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
 public class StockTextureBitmapStore(private val resources: Resources) : TextureBitmapStore {
     private val idToBitmap = mutableMapOf<String, Bitmap>()
@@ -43,8 +42,8 @@ public class StockTextureBitmapStore(private val resources: Resources) : Texture
      * each textured brush family, as it needs to load and decode a bitmap from [resources]. To
      * prevent this, call [preloadStockBrushesTextures] in advance.
      */
-    override public fun get(clientTextureId: String): Bitmap? =
-        idToBitmap.get(clientTextureId)
+    public override operator fun get(clientTextureId: String): Bitmap? =
+        idToBitmap[clientTextureId]
             ?: when (clientTextureId) {
                 StockBrushes.pencilUnstableBackgroundTextureId -> R.drawable.pencil_background_v1
                 else -> null
@@ -62,6 +61,7 @@ public class StockTextureBitmapStore(private val resources: Resources) : Texture
      * This does not modify the store if the [BrushFamily] does not use any [StockBrushes] textures,
      * or if the textures are already loaded.
      */
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun preloadStockBrushesTextures(brushFamily: BrushFamily) {
         for (coat in brushFamily.coats) {
             for (layer in coat.paint.textureLayers) {

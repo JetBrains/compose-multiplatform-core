@@ -114,7 +114,8 @@ public class FakeCameraDeviceSurfaceManagerTest {
                         singletonList(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS),
                         preview,
                         SESSION_TYPE_REGULAR,
-                        new Range<>(30, 30));
+                        new Range<>(30, 30),
+                        false);
         mFakeCameraDeviceSurfaceManager.getSuggestedStreamSpecs(
                 CameraMode.DEFAULT,
                 FAKE_CAMERA_ID0,

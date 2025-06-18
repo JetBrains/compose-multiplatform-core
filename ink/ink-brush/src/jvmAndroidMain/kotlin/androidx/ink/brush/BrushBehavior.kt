@@ -223,9 +223,12 @@ private constructor(
     override fun toString(): String = "BrushBehavior($terminalNodes)"
 
     /** Delete native BrushBehavior memory. */
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
-        BrushBehaviorNative.free(nativePointer)
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            BrushBehaviorNative.free(nativePointer)
+        }
     }
 
     public companion object {
@@ -986,8 +989,13 @@ private constructor(
         public val inputs: List<ValueNode>,
     ) {
 
+        // NOMUTANTS -- Not tested post garbage collection.
         protected fun finalize() {
-            BrushBehaviorNodeNative.free(nativePointer)
+            // TODO: b/423019041 - Investigate why this is failing in native code with
+            // nativePointer=0
+            if (nativePointer != 0L) {
+                BrushBehaviorNodeNative.free(nativePointer)
+            }
         }
 
         public companion object {

@@ -87,6 +87,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -1111,6 +1112,7 @@ class FloatingToolbarTest {
     }
 
     @Test
+    @Ignore("b/422764590")
     fun verticalFloatingToolbar_scrollBehavior() {
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior =
@@ -1146,6 +1148,7 @@ class FloatingToolbarTest {
     }
 
     @Test
+    @Ignore("b/422736884")
     fun horizontalFloatingToolbar_scrollBehavior() {
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior =

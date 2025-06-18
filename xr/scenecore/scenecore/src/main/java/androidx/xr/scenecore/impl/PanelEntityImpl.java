@@ -30,6 +30,8 @@ import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ViewTreeLifecycleOwner;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
 import androidx.xr.runtime.internal.PixelDimensions;
@@ -115,6 +117,10 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
         }
         try {
             FrameLayout frameLayout = new FrameLayout(context);
+            LifecycleOwner contentLifecycleOwner = ViewTreeLifecycleOwner.get(contentView);
+            if (contentLifecycleOwner != null) {
+                ViewTreeLifecycleOwner.set(frameLayout, contentLifecycleOwner);
+            }
             frameLayout.setLayoutParams(
                     new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
             frameLayout.addView(contentView);

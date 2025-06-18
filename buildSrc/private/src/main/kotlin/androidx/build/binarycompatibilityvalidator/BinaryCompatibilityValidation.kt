@@ -32,7 +32,6 @@ import androidx.build.version
 import com.android.utils.appendCapitalized
 import java.lang.IllegalStateException
 import kotlinx.validation.KlibDumpMetadata
-import kotlinx.validation.KotlinKlibAbiBuildTask
 import kotlinx.validation.KotlinKlibExtractAbiTask
 import kotlinx.validation.KotlinKlibMergeAbiTask
 import kotlinx.validation.api.klib.KlibSignatureVersion

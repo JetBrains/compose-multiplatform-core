@@ -18,13 +18,25 @@
 
 package androidx.compose.runtime
 
+import androidx.collection.IntList
+import androidx.collection.ObjectList
 import androidx.collection.emptyScatterSet
 import androidx.collection.mutableIntListOf
 import androidx.collection.mutableObjectListOf
+import androidx.compose.runtime.RecordingApplier.Companion.APPLY
+import androidx.compose.runtime.RecordingApplier.Companion.CLEAR
+import androidx.compose.runtime.RecordingApplier.Companion.DOWN
+import androidx.compose.runtime.RecordingApplier.Companion.INSERT_BOTTOM_UP
+import androidx.compose.runtime.RecordingApplier.Companion.INSERT_TOP_DOWN
+import androidx.compose.runtime.RecordingApplier.Companion.MOVE
+import androidx.compose.runtime.RecordingApplier.Companion.REMOVE
+import androidx.compose.runtime.RecordingApplier.Companion.REUSE
+import androidx.compose.runtime.RecordingApplier.Companion.UP
 import androidx.compose.runtime.internal.AtomicReference
 import androidx.compose.runtime.internal.RememberEventDispatcher
 import androidx.compose.runtime.platform.SynchronizedObject
 import androidx.compose.runtime.platform.synchronized
+import kotlin.math.min
 
 /**
  * A [PausableComposition] is a sub-composition that can be composed incrementally as it supports
@@ -386,6 +398,7 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
         val operations = operations
         val size = operations.size
         val instances = instances
+        val reused = mutableObjectListOf<Any?>()
         applier.onBeginChanges()
         try {
             while (currentOperation < size) {
@@ -435,6 +448,7 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
                         if (current is ComposeNodeLifecycleCallback) {
                             rememberManager.dispatchOnDeactivateIfNecessary(current)
                         }
+                        reused.add(current)
                         applier.reuse()
                     }
                 }
@@ -442,6 +456,14 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
             runtimeCheck(currentInstance == instances.size) { "Applier operation size mismatch" }
             instances.clear()
             operations.clear()
+        } catch (e: Exception) {
+            throw ComposePausableCompositionException(
+                instances,
+                reused,
+                operations,
+                currentOperation,
+                e,
+            )
         } finally {
             applier.onEndChanges()
         }
@@ -460,4 +482,82 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
         const val APPLY = INSERT_TOP_DOWN + 1
         const val REUSE = APPLY + 1
     }
+}
+
+private class ComposePausableCompositionException(
+    val instances: ObjectList<Any?>,
+    val reused: ObjectList<Any?>,
+    val operations: IntList,
+    val lastOperation: Int,
+    cause: Throwable?,
+) : Exception(cause) {
+
+    fun operations(): Sequence<String> = sequence {
+        var currentOperation = 0
+        var currentInstance = 0
+        var currentReused = 0
+        while (currentOperation < min(lastOperation, operations.size)) {
+            val index = currentOperation
+            val operation = operations[currentOperation++]
+            val stringValue =
+                when (operation) {
+                    UP -> {
+                        "up"
+                    }
+                    DOWN -> {
+                        @Suppress("UNCHECKED_CAST") val node = instances[currentInstance++]
+                        "down $node"
+                    }
+                    REMOVE -> {
+                        val index = operations[currentOperation++]
+                        val count = operations[currentOperation++]
+                        "remove $index $count"
+                    }
+                    MOVE -> {
+                        val from = operations[currentOperation++]
+                        val to = operations[currentOperation++]
+                        val count = operations[currentOperation++]
+                        "move $from $to $count"
+                    }
+                    CLEAR -> {
+                        "clear"
+                    }
+                    INSERT_TOP_DOWN -> {
+                        val index = operations[currentOperation++]
+
+                        @Suppress("UNCHECKED_CAST") val instance = instances[currentInstance++]
+                        "insertTopDown $index $instance"
+                    }
+                    INSERT_BOTTOM_UP -> {
+                        val index = operations[currentOperation++]
+
+                        @Suppress("UNCHECKED_CAST") val instance = instances[currentInstance++]
+                        "insertBottomUp $index $instance"
+                    }
+                    APPLY -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val block = instances[currentInstance++] as Any?.(Any?) -> Unit
+                        val value = instances[currentInstance++]
+                        "apply $block $value"
+                    }
+                    REUSE -> {
+                        "reuse ${reused[currentReused++]}"
+                    }
+                    else -> {
+                        "unknown op: $operation"
+                    }
+                }
+
+            yield("$index: $stringValue")
+        }
+    }
+
+    @Suppress("ListIterator")
+    override val message: String?
+        get() =
+            """
+            |Exception while applying pausable composition. Last 10 operations:
+            |${operations().toList().takeLast(10).joinToString("\n")}
+            """
+                .trimMargin()
 }

@@ -18,7 +18,7 @@ package androidx.pdf.view
 
 import android.graphics.Bitmap
 import android.graphics.Point
-import android.graphics.Rect
+import android.graphics.RectF
 import androidx.pdf.PdfDocument
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
@@ -51,7 +51,7 @@ class BitmapFetcherTest {
 
     private val maxBitmapSizePx = Point(2048, 2048)
     private val pageSize = Point(512, 512)
-    private val fullPageViewArea = Rect(0, 0, pageSize.x, pageSize.y)
+    private val fullPageViewArea = RectF(0f, 0f, pageSize.x.toFloat(), pageSize.y.toFloat())
 
     private lateinit var bitmapFetcher: BitmapFetcher
     private lateinit var tileSizePx: Point
@@ -115,7 +115,8 @@ class BitmapFetcherTest {
         // 1.5 scale, viewing the lower right half of the page
         bitmapFetcher.maybeFetchNewBitmaps(
             1.5f,
-            viewArea = Rect(pageSize.x / 2, pageSize.y / 2, pageSize.x, pageSize.y),
+            viewArea =
+                RectF(pageSize.x / 2f, pageSize.y / 2f, pageSize.x.toFloat(), pageSize.y.toFloat()),
         )
 
         testDispatcher.scheduler.runCurrent()
@@ -170,7 +171,8 @@ class BitmapFetcherTest {
         // View area is lower right half of the page.
         bitmapFetcher.maybeFetchNewBitmaps(
             5.0f,
-            viewArea = Rect(pageSize.x / 2, pageSize.y / 2, pageSize.x, pageSize.y),
+            viewArea =
+                RectF(pageSize.x / 2f, pageSize.y / 2f, pageSize.x.toFloat(), pageSize.y.toFloat()),
         )
         testDispatcher.scheduler.runCurrent()
 
@@ -190,7 +192,7 @@ class BitmapFetcherTest {
         // No scale change, form state change invalidated top left half of the page.
         bitmapFetcher.maybeFetchNewBitmaps(
             5.0f,
-            viewArea = Rect(0, 0, pageSize.x / 2, pageSize.y / 2),
+            viewArea = RectF(0f, 0f, pageSize.x / 2f, pageSize.y / 2f),
             hasFormStateChanged = true,
         )
         testDispatcher.scheduler.runCurrent()
@@ -227,7 +229,8 @@ class BitmapFetcherTest {
         // 1.5 scale, viewing the lower right half of the page
         bitmapFetcher.maybeFetchNewBitmaps(
             5.0f,
-            viewArea = Rect(pageSize.x / 2, pageSize.y / 2, pageSize.x, pageSize.y),
+            viewArea =
+                RectF(pageSize.x / 2f, pageSize.y / 2f, pageSize.x.toFloat(), pageSize.y.toFloat()),
         )
 
         testDispatcher.scheduler.runCurrent()
@@ -320,7 +323,7 @@ class BitmapFetcherTest {
         // 5.0 scale, viewing the lower right half of the page
         bitmapFetcher.maybeFetchNewBitmaps(
             5.0f,
-            Rect(pageSize.x / 2, pageSize.y / 2, pageSize.x, pageSize.y),
+            RectF(pageSize.x / 2f, pageSize.y / 2f, pageSize.x.toFloat(), pageSize.y.toFloat()),
         )
         testDispatcher.scheduler.runCurrent()
         val originalTileBoard = bitmapFetcher.pageBitmaps
@@ -343,7 +346,7 @@ class BitmapFetcherTest {
         // 5.0 scale, viewing the middle of the page offset by 1/4 of the page's dimensions
         bitmapFetcher.maybeFetchNewBitmaps(
             5.0f,
-            Rect(pageSize.x / 4, pageSize.y / 4, pageSize.x * 3 / 4, pageSize.y * 3 / 4),
+            RectF(pageSize.x / 4f, pageSize.y / 4f, pageSize.x * 3 / 4f, pageSize.y * 3 / 4f),
         )
         testDispatcher.scheduler.runCurrent()
         val newTileBoard = bitmapFetcher.pageBitmaps

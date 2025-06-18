@@ -93,6 +93,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.testCoreKtx)
+    testImplementation(libs.kotlinCoroutinesTest)
     lintPublish(project(":work:work-runtime-lint"))
 }
 

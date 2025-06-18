@@ -45,7 +45,6 @@ class HitTestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.hittest_activity)
-        session.resume()
         session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
 
         // Create a single panel with text

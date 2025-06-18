@@ -17,8 +17,11 @@
 package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.input.internal.OffsetMappingCalculator
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.sp
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.text.ParseException
@@ -612,6 +615,52 @@ class TextFieldBufferTest {
 
         assertThat(buffer.asCharSequence().toString()).isEqualTo("World")
         assertThat(state.text.toString()).isEqualTo("Hello")
+    }
+
+    @Test
+    fun addStyle_addsToOutputAnnotations_ifCreatedForOutputTransformation() {
+        val buffer =
+            TextFieldBuffer(
+                TextFieldCharSequence("hello"),
+                offsetMappingCalculator = OffsetMappingCalculator(),
+            )
+        // Act
+        val style = SpanStyle(fontSize = 12.sp)
+        buffer.addStyle(style, 0, buffer.length)
+
+        // Assert
+        assertThat(buffer.outputTransformationAnnotations).hasSize(1)
+        assertThat(buffer.outputTransformationAnnotations?.get(0)?.item).isEqualTo(style)
+        assertThat(buffer.outputTransformationAnnotations?.get(0)?.start).isEqualTo(0)
+        assertThat(buffer.outputTransformationAnnotations?.get(0)?.end).isEqualTo(5)
+        assertThat(buffer.changes.changeCount).isEqualTo(0)
+    }
+
+    @Test
+    fun addStyle_crashes_ifNotCreatedForOutputTransformation() {
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
+        val style = SpanStyle(fontSize = 12.sp)
+        assertFailsWith<IllegalStateException>(
+            "You can add styling to a [TextFieldBuffer] only from an [OutputTransformation]."
+        ) {
+            buffer.addStyle(style, 0, buffer.length)
+        }
+    }
+
+    @Test
+    fun addStyle_notRangeTracked() {
+        val buffer =
+            TextFieldBuffer(
+                TextFieldCharSequence("hello"),
+                offsetMappingCalculator = OffsetMappingCalculator(),
+            )
+        val style = SpanStyle(fontSize = 12.sp)
+
+        buffer.addStyle(style, 0, buffer.length)
+        buffer.insert(2, "world") // expand where style is applied
+
+        assertThat(buffer.outputTransformationAnnotations?.get(0)?.start).isEqualTo(0)
+        assertThat(buffer.outputTransformationAnnotations?.get(0)?.end).isEqualTo(5)
     }
 
     private fun testSelectionAdjustment(

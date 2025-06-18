@@ -194,20 +194,17 @@ package androidx.compose.ui {
     method @BytecodeOnly public float getDefault-NSsRyOo();
     method public float getHigh();
     method @BytecodeOnly public float getHigh-NSsRyOo();
-    method public float getNoPreference();
-    method @BytecodeOnly public float getNoPreference-NSsRyOo();
     method public float getNormal();
     method @BytecodeOnly public float getNormal-NSsRyOo();
     property public float Default;
     property public float High;
-    property public float NoPreference;
     property public float Normal;
   }
 
   public final class FrameRateKt {
-    method public static androidx.compose.ui.Modifier requestedFrameRate(androidx.compose.ui.Modifier, @FloatRange(from=0.0, to=360.0) float frameRate);
-    method public static androidx.compose.ui.Modifier requestedFrameRate(androidx.compose.ui.Modifier, float frameRateCategory);
-    method @BytecodeOnly public static androidx.compose.ui.Modifier requestedFrameRate-kI47g10(androidx.compose.ui.Modifier, float);
+    method public static androidx.compose.ui.Modifier preferredFrameRate(androidx.compose.ui.Modifier, @FloatRange(from=0.0, to=360.0) float frameRate);
+    method public static androidx.compose.ui.Modifier preferredFrameRate(androidx.compose.ui.Modifier, float frameRateCategory);
+    method @BytecodeOnly public static androidx.compose.ui.Modifier preferredFrameRate-kI47g10(androidx.compose.ui.Modifier, float);
   }
 
   public final class KeepScreenOnKt {
@@ -644,9 +641,9 @@ package androidx.compose.ui.draw {
   }
 
   public final class ShadowKt {
-    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier dropShadow(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.ShadowParams shadowParams);
+    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier dropShadow(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.Shadow shadow);
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier dropShadow(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape, kotlin.jvm.functions.Function1<? super androidx.compose.ui.draw.DropShadowScope,kotlin.Unit> block);
-    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier innerShadow(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.ShadowParams shadowParams);
+    method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier innerShadow(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape, androidx.compose.ui.graphics.shadow.Shadow shadow);
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier innerShadow(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape, kotlin.jvm.functions.Function1<? super androidx.compose.ui.draw.InnerShadowScope,kotlin.Unit> block);
     method @Deprecated @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier shadow(androidx.compose.ui.Modifier, float elevation, optional androidx.compose.ui.graphics.Shape shape, optional boolean clip);
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier shadow(androidx.compose.ui.Modifier, float elevation, optional androidx.compose.ui.graphics.Shape shape, optional boolean clip, optional long ambientColor, optional long spotColor);
@@ -1468,19 +1465,24 @@ package androidx.compose.ui.input {
 
 package androidx.compose.ui.input.indirect {
 
-  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public final class IndirectTouchEvent {
-    ctor public IndirectTouchEvent(long position, long eventTimeMillis, int type);
-    method public long getEventTimeMillis();
+  public final class AndroidIndirectTouchEvent_androidKt {
+    method @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public static androidx.compose.ui.input.indirect.IndirectTouchEvent IndirectTouchEvent(android.view.MotionEvent motionEvent);
+    method @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public static android.view.MotionEvent getNativeEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent);
+    property @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public static android.view.MotionEvent androidx.compose.ui.input.indirect.IndirectTouchEvent.nativeEvent;
+  }
+
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public sealed interface IndirectTouchEvent {
     method public long getPosition();
     method @BytecodeOnly public long getPosition-F1C5BW0();
     method public int getType();
     method @BytecodeOnly public int getType-LxEHWp8();
-    property public long eventTimeMillis;
-    property public long position;
-    property public int type;
+    method public long getUptimeMillis();
+    property public abstract long position;
+    property public abstract int type;
+    property public abstract long uptimeMillis;
   }
 
-  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi @kotlin.jvm.JvmInline public final value class IndirectTouchEventType {
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi @kotlin.jvm.JvmInline public final value class IndirectTouchEventType {
     method @BytecodeOnly public static androidx.compose.ui.input.indirect.IndirectTouchEventType! box-impl(int);
     method @BytecodeOnly public int unbox-impl();
     field public static final androidx.compose.ui.input.indirect.IndirectTouchEventType.Companion Companion;
@@ -1502,11 +1504,11 @@ package androidx.compose.ui.input.indirect {
   }
 
   public final class IndirectTouchInputModifierKt {
-    method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static androidx.compose.ui.Modifier onIndirectTouchEvent(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.input.indirect.IndirectTouchEvent,java.lang.Boolean> onIndirectTouchEvent);
-    method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static androidx.compose.ui.Modifier onPreIndirectTouchEvent(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.input.indirect.IndirectTouchEvent,java.lang.Boolean> onPreIndirectTouchEvent);
+    method @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public static androidx.compose.ui.Modifier onIndirectTouchEvent(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.input.indirect.IndirectTouchEvent,java.lang.Boolean> onIndirectTouchEvent);
+    method @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public static androidx.compose.ui.Modifier onPreIndirectTouchEvent(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.input.indirect.IndirectTouchEvent,java.lang.Boolean> onPreIndirectTouchEvent);
   }
 
-  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public interface IndirectTouchInputModifierNode extends androidx.compose.ui.node.DelegatableNode {
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public interface IndirectTouchInputModifierNode extends androidx.compose.ui.node.DelegatableNode {
     method public boolean onIndirectTouchEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent event);
     method public boolean onPreIndirectTouchEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent event);
   }
@@ -3637,15 +3639,15 @@ package androidx.compose.ui.layout {
     method public androidx.compose.ui.layout.VerticalRuler minOf(androidx.compose.ui.layout.VerticalRuler... rulers);
   }
 
-  public sealed interface WindowInsetsAnimationProperties {
-    method @FloatRange(from=0.0, to=1.0) public default float getAlpha();
+  public sealed interface WindowInsetsAnimation {
+    method @FloatRange(from=0.0, to=1.0) public float getAlpha();
     method @IntRange(from=0L) public long getDurationMillis();
     method public float getFraction();
     method public androidx.compose.ui.layout.RectRulers getSource();
     method public androidx.compose.ui.layout.RectRulers getTarget();
     method public boolean isAnimating();
     method public boolean isVisible();
-    property @FloatRange(from=0.0, to=1.0) public default float alpha;
+    property @FloatRange(from=0.0, to=1.0) public abstract float alpha;
     property @IntRange(from=0L) public abstract long durationMillis;
     property public abstract float fraction;
     property public abstract boolean isAnimating;
@@ -3655,18 +3657,17 @@ package androidx.compose.ui.layout {
   }
 
   public sealed interface WindowInsetsRulers {
-    method public androidx.compose.ui.layout.WindowInsetsAnimationProperties getAnimationProperties(androidx.compose.ui.layout.Placeable.PlacementScope scope);
+    method public androidx.compose.ui.layout.WindowInsetsAnimation getAnimation(androidx.compose.ui.layout.Placeable.PlacementScope scope);
     method public androidx.compose.ui.layout.RectRulers getCurrent();
-    method public androidx.compose.ui.layout.RectRulers getRulersIgnoringVisibility();
+    method public androidx.compose.ui.layout.RectRulers getMaximum();
     property public abstract androidx.compose.ui.layout.RectRulers current;
-    property public abstract androidx.compose.ui.layout.RectRulers rulersIgnoringVisibility;
+    property public abstract androidx.compose.ui.layout.RectRulers maximum;
     field public static final androidx.compose.ui.layout.WindowInsetsRulers.Companion Companion;
   }
 
   public static final class WindowInsetsRulers.Companion {
     method public androidx.compose.ui.layout.WindowInsetsRulers getCaptionBar();
     method public androidx.compose.ui.layout.WindowInsetsRulers getDisplayCutout();
-    method public java.util.List<androidx.compose.ui.layout.RectRulers> getDisplayCutoutBounds(androidx.compose.ui.layout.Placeable.PlacementScope scope);
     method public androidx.compose.ui.layout.WindowInsetsRulers getIme();
     method public androidx.compose.ui.layout.WindowInsetsRulers getMandatorySystemGestures();
     method public androidx.compose.ui.layout.WindowInsetsRulers getNavigationBars();
@@ -3692,6 +3693,10 @@ package androidx.compose.ui.layout {
     property public androidx.compose.ui.layout.WindowInsetsRulers SystemGestures;
     property public androidx.compose.ui.layout.WindowInsetsRulers TappableElement;
     property public androidx.compose.ui.layout.WindowInsetsRulers Waterfall;
+  }
+
+  public final class WindowInsetsRulersKt {
+    method public static java.util.List<androidx.compose.ui.layout.RectRulers> getDisplayCutoutBounds(androidx.compose.ui.layout.Placeable.PlacementScope);
   }
 
 }
@@ -3973,7 +3978,7 @@ package androidx.compose.ui.node {
     method public androidx.compose.ui.semantics.SemanticsOwner getSemanticsOwner();
     method @Deprecated public androidx.compose.ui.text.input.TextInputService getTextInputService();
     method public default void measureAndLayoutForTest();
-    method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public default boolean sendIndirectTouchEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent indirectTouchEvent);
+    method @SuppressCompatibility @androidx.compose.ui.ExperimentalIndirectTouchTypeApi public default boolean sendIndirectTouchEvent(androidx.compose.ui.input.indirect.IndirectTouchEvent indirectTouchEvent);
     method public boolean sendKeyEvent(android.view.KeyEvent keyEvent);
     method @BytecodeOnly public boolean sendKeyEvent-ZmokQxo(android.view.KeyEvent);
     method public default void setAccessibilityEventBatchIntervalMillis(long intervalMillis);

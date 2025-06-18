@@ -21,7 +21,6 @@ import androidx.xr.runtime.internal.Dimensions
 import androidx.xr.runtime.internal.PanelEntity
 import androidx.xr.runtime.internal.PerceivedResolutionResult
 import androidx.xr.runtime.internal.PixelDimensions
-import androidx.xr.runtime.math.Vector3
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [PanelEntity] */
@@ -30,8 +29,6 @@ public open class FakePanelEntity : PanelEntity, FakeEntity() {
     override var sizeInPixels: PixelDimensions = PixelDimensions(0, 0)
 
     override var cornerRadius: Float = 0.0f
-
-    override val pixelDensity: Vector3 = Vector3()
 
     override var size: Dimensions = Dimensions(0.0f, 0.0f, 0.0f)
 

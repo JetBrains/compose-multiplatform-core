@@ -36,7 +36,6 @@ class SecondActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val session = (Session.create(this) as SessionCreateSuccess).session
-        session.resume()
 
         setContent { ActivityContent(session) }
     }
@@ -47,10 +46,10 @@ class SecondActivity : ComponentActivity() {
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Button(onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }) {
+            Button(onClick = { session.scene.requestFullSpaceMode() }) {
                 Text(text = "Request FSM", fontSize = 30.sp)
             }
-            Button(onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }) {
+            Button(onClick = { session.scene.requestHomeSpaceMode() }) {
                 Text(text = "Request HSM", fontSize = 30.sp)
             }
         }

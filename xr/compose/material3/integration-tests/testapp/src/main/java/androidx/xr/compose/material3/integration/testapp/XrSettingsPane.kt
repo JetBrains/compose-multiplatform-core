@@ -79,9 +79,9 @@ private fun XrModeButton() {
         enabled = isDeviceXr,
         onClick = {
             if (isFullSpaceMode) {
-                session?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                session?.scene?.requestHomeSpaceMode()
             } else {
-                session?.scene?.spatialEnvironment?.requestFullSpaceMode()
+                session?.scene?.requestFullSpaceMode()
             }
         },
     ) {
@@ -94,14 +94,30 @@ private fun XrModeButton() {
 
 @Composable
 private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit) {
-    var navSuiteType: MutableState<NavigationSuiteType?> = remember { mutableStateOf(null) }
-    var expanded = remember { mutableStateOf(false) }
+    val navSuiteType: MutableState<NavigationSuiteType?> = remember { mutableStateOf(null) }
+    val expanded = remember { mutableStateOf(false) }
     SimpleDropdown(
         dropdownLabel = "NavigationSuiteType",
-        items = listOf(null, NavigationSuiteType.NavigationRail, NavigationSuiteType.NavigationBar),
+        items =
+            listOf(
+                null,
+                NavigationSuiteType.NavigationRail,
+                NavigationSuiteType.NavigationBar,
+                NavigationSuiteType.ShortNavigationBarCompact,
+                NavigationSuiteType.ShortNavigationBarMedium,
+            ),
         selectedItem = navSuiteType,
         expanded = expanded,
-        itemLabel = { it?.toString() ?: "Default" },
+        itemLabel = {
+            when (it) {
+                null -> "Default"
+                NavigationSuiteType.NavigationRail -> "Rail"
+                NavigationSuiteType.NavigationBar -> "Bar"
+                NavigationSuiteType.ShortNavigationBarCompact -> "Expressive Bar (Compact)"
+                NavigationSuiteType.ShortNavigationBarMedium -> "Expressive Bar (Medium)"
+                else -> error("Unexpected NavigationSuiteType: $it")
+            }
+        },
         onSelectedChange = onNavSuiteTypeChanged,
     )
 }

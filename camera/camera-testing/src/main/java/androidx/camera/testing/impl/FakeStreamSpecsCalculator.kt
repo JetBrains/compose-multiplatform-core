@@ -174,6 +174,6 @@ public class FakeStreamSpecsCalculator : StreamSpecsCalculator {
 
     public companion object {
         private const val TAG = "FakeStreamSpecsCalculator"
-        private const val MAX_SUPPORTED_FRAME_RATE = 60
+        private const val MAX_SUPPORTED_FRAME_RATE = Int.MAX_VALUE
     }
 }

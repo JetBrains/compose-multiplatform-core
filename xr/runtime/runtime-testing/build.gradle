@@ -44,6 +44,8 @@ dependencies {
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(project(":kruth:kruth"))
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
+
 }
 
 android {

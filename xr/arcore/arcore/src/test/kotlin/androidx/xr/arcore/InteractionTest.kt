@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -46,7 +46,6 @@ import org.junit.runner.RunWith
 class InteractionTest {
 
     private lateinit var session: Session
-    private lateinit var activity: Activity
     private lateinit var timeSource: TestTimeSource
     private lateinit var perceptionStateExtender: PerceptionStateExtender
     private lateinit var perceptionManager: FakePerceptionManager
@@ -100,7 +99,7 @@ class InteractionTest {
     }
 
     private fun createTestSessionAndRunTest(testBody: () -> Unit) {
-        ActivityScenario.launch(Activity::class.java).use {
+        ActivityScenario.launch(ComponentActivity::class.java).use {
             it.onActivity { activity ->
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)

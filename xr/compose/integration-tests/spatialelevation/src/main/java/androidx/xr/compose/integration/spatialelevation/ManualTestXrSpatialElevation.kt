@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -84,15 +84,10 @@ import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.SpatialPopup
-import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.scene
 import kotlinx.coroutines.launch
 
 class ManualTestXrSpatialElevationActivity : ComponentActivity() {
-
-    val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(android.R.style.Theme_Translucent_NoTitleBar)
         super.onCreate(savedInstanceState)
@@ -156,17 +151,14 @@ private fun App() {
             horizontalArrangement = Arrangement.End,
         ) {
             if (shouldExpand) {
-                Card(
-                    modifier =
-                        Modifier.size(width = 360.dp, height = 100.dp)
-                            .wrapContentSize(Alignment.Center)
-                ) {
+                Card(Modifier.widthIn(max = 320.dp)) {
                     Text(
                         text = contentText,
                         modifier = Modifier.padding(16.dp),
                         textAlign = TextAlign.Center,
                     )
                 }
+                Spacer(Modifier.size(16.dp))
             }
             IconMenuOrnament(
                 onClick = {
@@ -196,15 +188,11 @@ private fun App() {
                     }
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                        Button(
-                            onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }
-                        ) {
+                        Button(onClick = { session.scene.requestHomeSpaceMode() }) {
                             Text("Enter Home Space Mode")
                         }
                     } else {
-                        Button(
-                            onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }
-                        ) {
+                        Button(onClick = { session.scene.requestFullSpaceMode() }) {
                             Text("Enter Full Space Mode")
                         }
                     }

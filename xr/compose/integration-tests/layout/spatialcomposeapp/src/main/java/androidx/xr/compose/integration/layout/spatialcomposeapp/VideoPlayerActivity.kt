@@ -25,13 +25,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.AndroidExternalSurface
 import androidx.compose.foundation.background
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ExperimentalComposeApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -60,18 +68,25 @@ import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialExternalSurface
+import androidx.xr.compose.subspace.SpatialExternalSurface180Hemisphere
+import androidx.xr.compose.subspace.SpatialExternalSurface360Sphere
+import androidx.xr.compose.subspace.SpatialExternalSurfaceDefaults
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.StereoMode
 import androidx.xr.compose.subspace.layout.SpatialAlignment
+import androidx.xr.compose.subspace.layout.SpatialFeatheringEffect
 import androidx.xr.compose.subspace.layout.SpatialSmoothFeatheringEffect
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.fillMaxSize
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.onPointSourceParams
 import androidx.xr.compose.subspace.layout.resizable
+import androidx.xr.compose.subspace.layout.rotate
+import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
@@ -127,13 +142,13 @@ class VideoPlayerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        session.resume()
         session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
         setContent { Subspace { VideoOptionsContent(session) } }
     }
 
     /** Sets up the surface entity */
+    @OptIn(ExperimentalComposeApi::class)
     @Composable
     private fun VideoOptionsContent(session: Session) {
         var isAudioSpatialized by remember { mutableStateOf(true) }
@@ -143,211 +158,329 @@ class VideoPlayerActivity : ComponentActivity() {
         var stereoMode by remember { mutableStateOf(StereoMode.Mono) }
         var featheringType by remember { mutableStateOf(FeatheringType.PERCENT) }
         var featheringValue by remember { mutableFloatStateOf(0f) }
+        var surfaceType by remember { mutableStateOf(SpatialExternalSurfaceType.QUAD) }
 
-        SpatialColumn {
-            SpatialPanel(SubspaceModifier.height(600.dp).width(600.dp).movable()) {
-                Column(modifier = Modifier.background(Color.LightGray).fillMaxSize()) {
-                    BackHandler {
-                        Log.i(
-                            "BackHandler",
-                            "Gnav BACK is being handled by Surface Entity back handler",
-                        )
-                        releaseMediaPlayer()
-                        finish()
+        if (videoPlaying && surfaceType == SpatialExternalSurfaceType.HEMISPHERE) {
+            // Size and offset shouldn't get passed down from the box to the sphere, they are here
+            // just for verification purposes and should be a no-op.
+            SpatialBox(modifier = SubspaceModifier.size(500.dp).offset(x = 20000.dp)) {
+                // Simple animation to verify radius and layout recomposition.
+                val animatedRadius = remember { Animatable(500f) }
+                val animatedOffset = remember { Animatable(initialValue = -1000f) }
+                LaunchedEffect(Unit) {
+                    animatedRadius.animateTo(
+                        targetValue = SpatialExternalSurfaceDefaults.sphereRadius.value,
+                        animationSpec = tween(durationMillis = 2000, easing = FastOutLinearInEasing),
+                    )
+                }
+                // An initial offset is necessary to perceive the radius animation.
+                LaunchedEffect(Unit) {
+                    animatedOffset.animateTo(
+                        targetValue = 0f,
+                        animationSpec = tween(durationMillis = 2000, easing = FastOutLinearInEasing),
+                    )
+                }
+                SpatialExternalSurface180Hemisphere(
+                    modifier = SubspaceModifier.offset(z = animatedOffset.value.dp),
+                    stereoMode = stereoMode,
+                    radius = animatedRadius.value.dp,
+                    featheringEffect = getFeatheringEffect(featheringValue, featheringType),
+                ) {
+                    onSurfaceCreated {
+                        mediaPlayer = MediaPlayer()
+                        mediaPlayer.setDataSource(this@VideoPlayerActivity, mediaUriState.value!!)
+                        mediaPlayer.isLooping = true
+                        mediaPlayer.setOnPreparedListener { mediaPlayer.start() }
+                        mediaPlayer.setSurface(it)
+                        mediaPlayer.prepareAsync()
                     }
 
-                    when (menu) {
-                        VideoMenuState.HOME -> {
-                            Column(modifier = Modifier.padding(24.dp)) {
-                                Button(
-                                    onClick = {
-                                        val intent =
-                                            Intent(Intent.ACTION_PICK).apply { type = "video/*" }
-                                        pickMedia.launch(intent)
-                                    }
-                                ) {
-                                    Text("Select media")
-                                }
+                    onSurfaceDestroyed { mediaPlayer.release() }
 
-                                Button(
-                                    modifier = Modifier.padding(vertical = 8.dp),
-                                    enabled = videoUri != null,
-                                    onClick = {
-                                        menuState.value = VideoMenuState.VIDEO_IN_SPATIAL_PANEL
-                                    },
-                                ) {
-                                    Text("Video in Spatial Panel (non-stereoscopic)")
-                                }
+                    SphereVideoControlPanel(includeAnimationPanel = true)
+                }
+            }
+        } else if (videoPlaying && surfaceType == SpatialExternalSurfaceType.SPHERE) {
+            SpatialExternalSurface360Sphere(
+                stereoMode = stereoMode,
+                featheringEffect = getFeatheringEffect(featheringValue, featheringType),
+            ) {
+                onSurfaceCreated {
+                    mediaPlayer = MediaPlayer()
+                    mediaPlayer.setDataSource(this@VideoPlayerActivity, mediaUriState.value!!)
+                    mediaPlayer.isLooping = true
+                    mediaPlayer.setOnPreparedListener { mediaPlayer.start() }
+                    mediaPlayer.setSurface(it)
+                    mediaPlayer.prepareAsync()
+                }
 
-                                Button(
-                                    modifier = Modifier.padding(bottom = 8.dp),
-                                    enabled = videoUri != null,
-                                    onClick = {
-                                        menuState.value =
-                                            VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE
-                                    },
-                                ) {
-                                    Text("Video in Spatial External Surface")
-                                }
-
-                                Button(
-                                    enabled = videoUri != null,
-                                    onClick = {
-                                        menuState.value = VideoMenuState.VIDEO_IN_SURFACE_ENTITY
-                                    },
-                                ) {
-                                    Text("Video in Surface Entity")
-                                }
-                            }
+                onSurfaceDestroyed { mediaPlayer.release() }
+                SphereVideoControlPanel()
+            }
+        } else {
+            SpatialColumn {
+                SpatialPanel(SubspaceModifier.height(600.dp).width(600.dp).movable()) {
+                    Column(modifier = Modifier.background(Color.LightGray).fillMaxSize()) {
+                        BackHandler {
+                            Log.i(
+                                "BackHandler",
+                                "Gnav BACK is being handled by Surface Entity back handler",
+                            )
+                            releaseMediaPlayer()
+                            finish()
                         }
-                        VideoMenuState.VIDEO_IN_SPATIAL_PANEL -> {
-                            Column(modifier = Modifier.padding(24.dp)) {
-                                Button(
-                                    onClick = {
-                                        videoPlayingState.value = false
-                                        menuState.value = VideoMenuState.HOME
-                                    }
-                                ) {
-                                    Text("Main Menu")
-                                }
 
-                                Button(onClick = { videoPlayingState.value = !videoPlaying }) {
-                                    if (videoPlaying) {
-                                        Text("Stop Video")
-                                    } else {
-                                        Text("Start Video")
+                        when (menu) {
+                            VideoMenuState.HOME -> {
+                                Column(modifier = Modifier.padding(24.dp)) {
+                                    Button(
+                                        onClick = {
+                                            val intent =
+                                                Intent(Intent.ACTION_PICK).apply {
+                                                    type = "video/*"
+                                                }
+                                            pickMedia.launch(intent)
+                                        }
+                                    ) {
+                                        Text("Select media")
                                     }
-                                }
 
-                                Row(
-                                    modifier = Modifier.padding(vertical = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        modifier = Modifier.padding(8.dp),
-                                        text = "Spatialize audio with Video",
-                                    )
-                                    Switch(
-                                        checked = isAudioSpatialized,
-                                        enabled = !videoPlaying,
-                                        onCheckedChange = {
-                                            isAudioSpatialized = !isAudioSpatialized
+                                    Button(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        enabled = videoUri != null,
+                                        onClick = {
+                                            menuState.value = VideoMenuState.VIDEO_IN_SPATIAL_PANEL
                                         },
-                                    )
+                                    ) {
+                                        Text("Video in Spatial Panel (non-stereoscopic)")
+                                    }
+
+                                    Button(
+                                        modifier = Modifier.padding(bottom = 8.dp),
+                                        enabled = videoUri != null,
+                                        onClick = {
+                                            menuState.value =
+                                                VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE
+                                        },
+                                    ) {
+                                        Text("Video in Spatial External Surface")
+                                    }
+
+                                    Button(
+                                        enabled = videoUri != null,
+                                        onClick = {
+                                            menuState.value = VideoMenuState.VIDEO_IN_SURFACE_ENTITY
+                                        },
+                                    ) {
+                                        Text("Video in Surface Entity")
+                                    }
                                 }
                             }
-                        }
-                        VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE -> {
-                            Column(modifier = Modifier.padding(24.dp)) {
-                                Button(
-                                    onClick = {
-                                        videoPlayingState.value = false
-                                        menuState.value = VideoMenuState.HOME
+                            VideoMenuState.VIDEO_IN_SPATIAL_PANEL -> {
+                                Column(modifier = Modifier.padding(24.dp)) {
+                                    Button(
+                                        onClick = {
+                                            videoPlayingState.value = false
+                                            menuState.value = VideoMenuState.HOME
+                                        }
+                                    ) {
+                                        Text("Main Menu")
                                     }
-                                ) {
-                                    Text("Main Menu")
-                                }
 
-                                Button(onClick = { videoPlayingState.value = !videoPlaying }) {
-                                    if (videoPlaying) {
-                                        Text("Stop Video")
-                                    } else {
-                                        Text("Start Video")
+                                    Button(onClick = { videoPlayingState.value = !videoPlaying }) {
+                                        if (videoPlaying) {
+                                            Text("Stop Video")
+                                        } else {
+                                            Text("Start Video")
+                                        }
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            modifier = Modifier.padding(8.dp),
+                                            text = "Spatialize audio with Video",
+                                        )
+                                        Switch(
+                                            checked = isAudioSpatialized,
+                                            enabled = !videoPlaying,
+                                            onCheckedChange = {
+                                                isAudioSpatialized = !isAudioSpatialized
+                                            },
+                                        )
                                     }
                                 }
+                            }
+                            VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE -> {
+                                Column(modifier = Modifier.padding(24.dp)) {
+                                    Button(
+                                        onClick = {
+                                            videoPlayingState.value = false
+                                            menuState.value = VideoMenuState.HOME
+                                            surfaceType = SpatialExternalSurfaceType.QUAD
+                                        }
+                                    ) {
+                                        Text("Main Menu")
+                                    }
 
-                                val text =
-                                    "Current stereo mode: " +
-                                        when (stereoMode) {
-                                            StereoMode.Mono -> {
-                                                "Mono"
+                                    Button(onClick = { videoPlayingState.value = !videoPlaying }) {
+                                        if (videoPlaying) {
+                                            Text("Stop Video")
+                                        } else {
+                                            Text("Start Video")
+                                        }
+                                    }
+
+                                    val text =
+                                        "Current stereo mode: " +
+                                            when (stereoMode) {
+                                                StereoMode.Mono -> {
+                                                    "Mono"
+                                                }
+                                                StereoMode.TopBottom -> {
+                                                    "Top Bottom"
+                                                }
+                                                else -> {
+                                                    "Side by Side"
+                                                }
                                             }
-                                            StereoMode.TopBottom -> {
-                                                "Top Bottom"
+
+                                    Text(text)
+
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Button(onClick = { stereoMode = StereoMode.Mono }) {
+                                            Text("Mono")
+                                        }
+                                        Button(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            onClick = { stereoMode = StereoMode.TopBottom },
+                                        ) {
+                                            Text("Top Bottom")
+                                        }
+                                        Button(onClick = { stereoMode = StereoMode.SideBySide }) {
+                                            Text("Side by Side")
+                                        }
+                                    }
+
+                                    val surfaceText =
+                                        when (surfaceType) {
+                                            SpatialExternalSurfaceType.QUAD -> {
+                                                "Quad"
+                                            }
+                                            SpatialExternalSurfaceType.HEMISPHERE -> {
+                                                "Hemisphere"
                                             }
                                             else -> {
-                                                "Side by Side"
+                                                "Sphere"
                                             }
                                         }
 
-                                Text(text)
+                                    Text("Current Surface Type: $surfaceText")
 
-                                Row(
-                                    modifier = Modifier.padding(vertical = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Button(onClick = { stereoMode = StereoMode.Mono }) {
-                                        Text("Mono")
-                                    }
-                                    Button(
-                                        modifier = Modifier.padding(horizontal = 16.dp),
-                                        onClick = { stereoMode = StereoMode.TopBottom },
+                                    Row(
+                                        modifier = Modifier.padding(vertical = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Text("Top Bottom")
+                                        Button(
+                                            onClick = {
+                                                surfaceType = SpatialExternalSurfaceType.QUAD
+                                            }
+                                        ) {
+                                            Text("Quad")
+                                        }
+                                        Button(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            onClick = {
+                                                surfaceType = SpatialExternalSurfaceType.HEMISPHERE
+                                            },
+                                        ) {
+                                            Text("Hemisphere")
+                                        }
+                                        Button(
+                                            onClick = {
+                                                surfaceType = SpatialExternalSurfaceType.SPHERE
+                                            }
+                                        ) {
+                                            Text("Sphere")
+                                        }
                                     }
-                                    Button(onClick = { stereoMode = StereoMode.SideBySide }) {
-                                        Text("Side by Side")
-                                    }
-                                }
 
-                                Text(
-                                    modifier = Modifier.padding(top = 24.dp),
-                                    fontSize = 20.sp,
-                                    text = "Feathering",
-                                )
-                                Text(
-                                    "Clicking on a button will apply that feathering type with the value specified. " +
-                                        "The value selected at the end of the slider drag will be animated. Large " +
-                                        "values are coerced to 50 percent of width/height."
-                                )
+                                    Text(
+                                        modifier = Modifier.padding(top = 24.dp),
+                                        fontSize = 20.sp,
+                                        text = "Feathering",
+                                    )
+                                    Text(
+                                        "Clicking on a button will apply that feathering type with the value specified. " +
+                                            "The value selected at the end of the slider drag will be animated. Large " +
+                                            "values are coerced to 50 percent of width/height."
+                                    )
 
-                                val floatRange = 0f..250f
-                                var sliderValue by remember { mutableFloatStateOf(0f) }
+                                    val floatRange = 0f..250f
+                                    var sliderValue by remember { mutableFloatStateOf(0f) }
 
-                                Text(text = "Selected Value: ${sliderValue.roundToInt()}")
-                                Slider(
-                                    value = sliderValue,
-                                    onValueChange = { newValue -> sliderValue = newValue },
-                                    onValueChangeFinished = { featheringValue = sliderValue },
-                                    valueRange = floatRange,
-                                    steps =
-                                        ((floatRange.endInclusive - floatRange.start) / 5).toInt() -
-                                            1,
-                                )
+                                    Text(text = "Selected Value: ${sliderValue.roundToInt()}")
+                                    Slider(
+                                        value = sliderValue,
+                                        onValueChange = { newValue -> sliderValue = newValue },
+                                        onValueChangeFinished = { featheringValue = sliderValue },
+                                        valueRange = floatRange,
+                                        steps =
+                                            ((floatRange.endInclusive - floatRange.start) / 5)
+                                                .toInt() - 1,
+                                    )
 
-                                Row {
-                                    Button(onClick = { featheringType = FeatheringType.PERCENT }) {
-                                        Text("Percent")
-                                    }
-                                    Button(
-                                        modifier = Modifier.padding(horizontal = 16.dp),
-                                        onClick = { featheringType = FeatheringType.DP },
-                                    ) {
-                                        Text("Dp")
-                                    }
-                                    Button(onClick = { featheringType = FeatheringType.PIXEL }) {
-                                        Text("Pixel")
+                                    Row {
+                                        Button(
+                                            onClick = { featheringType = FeatheringType.PERCENT }
+                                        ) {
+                                            Text("Percent")
+                                        }
+                                        Button(
+                                            modifier = Modifier.padding(horizontal = 16.dp),
+                                            onClick = { featheringType = FeatheringType.DP },
+                                        ) {
+                                            Text("Dp")
+                                        }
+                                        Button(
+                                            onClick = { featheringType = FeatheringType.PIXEL }
+                                        ) {
+                                            Text("Pixel")
+                                        }
                                     }
                                 }
                             }
-                        }
-                        VideoMenuState.VIDEO_IN_SURFACE_ENTITY -> {
-                            SurfaceEntityUI(session)
+                            VideoMenuState.VIDEO_IN_SURFACE_ENTITY -> {
+                                SurfaceEntityUI(session)
+                            }
                         }
                     }
                 }
-            }
 
-            SpatialLayoutSpacer(SubspaceModifier.height(20.dp))
+                SpatialLayoutSpacer(SubspaceModifier.height(20.dp))
 
-            if (videoPlaying && menu == VideoMenuState.VIDEO_IN_SPATIAL_PANEL) {
-                VideoInSpatialPanel(isAudioSpatialized = isAudioSpatialized)
-            } else if (videoPlaying && menu == VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE) {
-                VideoInSpatialExternalSurface(stereoMode, featheringType, featheringValue)
-            } else {
-                SpatialLayoutSpacer(SubspaceModifier.height(600.dp))
+                if (videoPlaying && menu == VideoMenuState.VIDEO_IN_SPATIAL_PANEL) {
+                    VideoInSpatialPanel(isAudioSpatialized = isAudioSpatialized)
+                } else if (
+                    videoPlaying && menu == VideoMenuState.VIDEO_IN_SPATIAL_EXTERNAL_SURFACE
+                ) {
+                    VideoInSpatialExternalSurface(stereoMode, featheringType, featheringValue)
+                } else {
+                    SpatialLayoutSpacer(SubspaceModifier.height(600.dp))
+                }
             }
         }
+    }
+
+    enum class SpatialExternalSurfaceType {
+        QUAD,
+        HEMISPHERE,
+        SPHERE,
     }
 
     @Composable
@@ -375,6 +508,62 @@ class VideoPlayerActivity : ComponentActivity() {
 
             AndroidExternalSurface {
                 onSurface { surface, _, _ -> mediaPlayer.setSurface(surface) }
+            }
+        }
+    }
+
+    @Composable
+    fun SphereVideoControlPanel(includeAnimationPanel: Boolean = false) {
+        SpatialBox(modifier = SubspaceModifier.fillMaxSize()) {
+            val interactionSource = remember { MutableInteractionSource() }
+            val isHovered by interactionSource.collectIsHoveredAsState()
+
+            // Having an alpha helps reduce depth perception issues with stereo video.
+            SpatialPanel(
+                modifier =
+                    SubspaceModifier.width(400.dp)
+                        .height(120.dp)
+                        .alpha(if (isHovered) 0.9f else 0.3f)
+            ) {
+                Row(
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .background(Color.Black)
+                            .hoverable(interactionSource = interactionSource)
+                            .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Button(
+                        onClick = {
+                            if (mediaPlayer.isPlaying) {
+                                mediaPlayer.pause()
+                            } else {
+                                mediaPlayer.start()
+                            }
+                        }
+                    ) {
+                        Text("Toggle Play/Pause")
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Button(onClick = { videoPlayingState.value = false }) { Text("End Video") }
+                }
+            }
+            if (includeAnimationPanel) {
+                SpatialPanel(
+                    modifier =
+                        SubspaceModifier.size(1000.dp)
+                            .align(SpatialAlignment.CenterLeft)
+                            .rotate(axisAngle = Vector3(y = 1.0f), 90f)
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.5f))
+                                .padding(16.dp)
+                    ) {
+                        Text(text = "Animation\nTest", color = Color.White, fontSize = 200.sp)
+                    }
+                }
             }
         }
     }
@@ -464,25 +653,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     .movable()
                     .resizable(),
             stereoMode = stereoMode,
-            featheringEffect =
-                when (featheringType) {
-                    FeatheringType.PERCENT ->
-                        SpatialSmoothFeatheringEffect(
-                            percentHorizontal =
-                                animatedFeatheringValue.roundToInt().coerceAtMost(50),
-                            percentVertical = animatedFeatheringValue.roundToInt().coerceAtMost(50),
-                        )
-                    FeatheringType.PIXEL ->
-                        SpatialSmoothFeatheringEffect(
-                            horizontal = animatedFeatheringValue,
-                            vertical = animatedFeatheringValue,
-                        )
-                    FeatheringType.DP ->
-                        SpatialSmoothFeatheringEffect(
-                            horizontal = animatedFeatheringValue.dp,
-                            vertical = animatedFeatheringValue.dp,
-                        )
-                },
+            featheringEffect = getFeatheringEffect(animatedFeatheringValue, featheringType),
         ) {
             onSurfaceCreated {
                 mediaPlayer = MediaPlayer()
@@ -520,6 +691,20 @@ class VideoPlayerActivity : ComponentActivity() {
                     Text(text = if (isPaused) "Play" else "Pause")
                 }
             }
+        }
+    }
+
+    fun getFeatheringEffect(value: Float, featheringType: FeatheringType): SpatialFeatheringEffect {
+        return when (featheringType) {
+            FeatheringType.PERCENT ->
+                SpatialSmoothFeatheringEffect(
+                    percentHorizontal = value.roundToInt().coerceAtMost(50),
+                    percentVertical = value.roundToInt().coerceAtMost(50),
+                )
+            FeatheringType.PIXEL ->
+                SpatialSmoothFeatheringEffect(horizontal = value, vertical = value)
+            FeatheringType.DP ->
+                SpatialSmoothFeatheringEffect(horizontal = value.dp, vertical = value.dp)
         }
     }
 

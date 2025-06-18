@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.Session
@@ -83,7 +83,7 @@ class EarthTest {
         coroutineDispatcher: CoroutineDispatcher = StandardTestDispatcher(),
         testBody: () -> Unit,
     ) {
-        ActivityScenario.launch(Activity::class.java).use { scenario ->
+        ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 session =
                     (Session.create(activity, coroutineDispatcher) as SessionCreateSuccess).session

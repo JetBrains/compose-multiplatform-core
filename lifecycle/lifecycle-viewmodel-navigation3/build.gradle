@@ -28,11 +28,13 @@ import androidx.build.PlatformIdentifier
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 36
+        namespace = "androidx.lifecycle.viewmodel.navigation3"
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -94,11 +96,6 @@ androidXMultiplatform {
             }
         }
     }
-}
-
-android {
-    compileSdk = 36
-    namespace = "androidx.lifecycle.viewmodel.navigation3"
 }
 
 androidx {

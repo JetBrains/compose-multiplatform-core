@@ -36,7 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -77,7 +77,7 @@ private fun AlphaButton(frameRate: Float) {
         Text(
             text = "Click Me for alpha change $frameRate",
             color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-            modifier = Modifier.requestedFrameRate(frameRate),
+            modifier = Modifier.preferredFrameRate(frameRate),
         )
     }
 }

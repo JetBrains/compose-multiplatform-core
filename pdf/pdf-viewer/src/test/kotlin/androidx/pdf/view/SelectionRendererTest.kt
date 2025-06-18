@@ -79,7 +79,7 @@ class SelectionRendererTest {
                 startBoundary,
                 endBoundary,
             )
-        val locationInView = Rect(30, 50, 230, 250)
+        val locationInView = RectF(30f, 50f, 230f, 250f)
         val currentZoom = 2F
 
         renderer.drawSelectionOnPage(selection, pageNum = 0, canvasSpy, locationInView, currentZoom)
@@ -155,7 +155,7 @@ class SelectionRendererTest {
                 startBoundary,
                 endBoundary,
             )
-        val locationInView = Rect(30, 50, 230, 250)
+        val locationInView = RectF(30f, 50f, 230f, 250f)
         val currentZoom = 2F
 
         renderer.drawSelectionOnPage(selection, pageNum = 0, canvasSpy, locationInView, currentZoom)

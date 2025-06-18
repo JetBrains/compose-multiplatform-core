@@ -50,7 +50,14 @@ int createSocket(uint16_t port) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1) {
         LOGE("socket(AF_INET, SOCK_STREAM) failed: %s", strerror(errno));
-        // Mimic throw: return error code
+        return -1;
+    }
+
+    // Allow immediate reuse of the port
+    int reuse = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
+        LOGE("setsockopt(SO_REUSEADDR) failed: %s", strerror(errno));
+        close(fd);
         return -1;
     }
 

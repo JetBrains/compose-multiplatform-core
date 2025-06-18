@@ -31,8 +31,10 @@ import androidx.xr.scenecore.testapp.activitypanel.ActivityPanelActivity
 import androidx.xr.scenecore.testapp.anchorentity.AnchorEntityActivity
 import androidx.xr.scenecore.testapp.common.createSession
 import androidx.xr.scenecore.testapp.environment.EnvironmentActivity
+import androidx.xr.scenecore.testapp.fieldofviewvisibility.FieldOfViewVisibilityActivity
 import androidx.xr.scenecore.testapp.fsmhsmtransition.FsmHsmTransitionActivity
 import androidx.xr.scenecore.testapp.headlockedui.HeadLockedUiActivity
+import androidx.xr.scenecore.testapp.hittest.HitTestActivity
 import androidx.xr.scenecore.testapp.inputmoveresize.InputMoveResizeTestActivity
 import androidx.xr.scenecore.testapp.movable.MovableActivity
 import androidx.xr.scenecore.testapp.panelroundedcorner.PanelRoundedCornerActivity
@@ -99,6 +101,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_standalone_test),
                 getString(R.string.cuj_environment_test),
                 getString(R.string.cuj_anchor_test),
+                getString(R.string.cuj_field_of_view_visibility_test),
                 getString(R.string.cuj_transformation_test),
                 getString(R.string.cuj_head_locked_ui_test),
                 getString(R.string.cuj_scene_viewer_test),
@@ -113,7 +116,9 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_spatial_capabilities_test),
                 getString(R.string.cuj_spatial_audio_test),
                 getString(R.string.cuj_spatial_audio_ambisonic_test),
+                getString(R.string.cuj_spatial_audio_setting_pointsourceparams_test),
                 getString(R.string.cuj_panel_rounded_corner),
+                getString(R.string.cuj_hit_test),
             )
         val customAdapter = TestCasesRecyclerViewAdapter(dataset)
         val recyclerView: RecyclerView = findViewById(R.id.cuj_buttons_recycler)
@@ -133,6 +138,9 @@ class MainActivity : AppCompatActivity() {
             Tests.ACTIVITY_PANEL_TEST.test -> startActivity(createIntent<ActivityPanelActivity>())
 
             Tests.ANCHOR_TEST.test -> startActivity(createIntent<AnchorEntityActivity>())
+
+            Tests.FIELD_OF_VIEW_VISIBILITY_TEST.test ->
+                startActivity(createIntent<FieldOfViewVisibilityActivity>())
 
             Tests.SPATIAL_CAPABILITIES_TEST.test ->
                 startActivity(createIntent<SpatialCapabilitiesActivity>())
@@ -195,8 +203,19 @@ class MainActivity : AppCompatActivity() {
                 startActivity(intent)
             }
 
+            Tests.SPATIAL_AUDIO_3_TEST.test -> {
+                val intent = createIntent<SpatialAudioActivity>()
+                intent.putExtra(
+                    "MAIN_PANEL_TITLE",
+                    getString(R.string.cuj_spatial_audio_setting_pointsourceparams_test),
+                )
+                startActivity(intent)
+            }
+
             Tests.PANEL_ROUNDED_CORNER_TEST.test ->
                 startActivity(createIntent<PanelRoundedCornerActivity>())
+
+            Tests.DIGITAL_HIT_TEST.test -> startActivity(createIntent<HitTestActivity>())
 
             else -> {
                 Log.i(ACTIVITY_NAME, "DO_NOTHING")
@@ -214,20 +233,23 @@ class MainActivity : AppCompatActivity() {
         STANDALONE_TEST(0),
         ENVIRONMENT_TEST(1),
         ANCHOR_TEST(2),
-        TRANSFORMATION_TEST(3),
-        HEAD_LOCKED_UI_TEST(4),
-        SCENE_VIEWER_TEST(5),
-        FSM_HSM_TRANSITION_TEST(6),
-        ACTIVITY_PANEL_TEST(7),
-        INPUT_MOVE_RESIZE_1_TEST(8),
-        INPUT_MOVE_RESIZE_2_TEST(9),
-        INPUT_MOVE_RESIZE_3_TEST(10),
-        MOVABLE_PANEL_TEST(11),
-        SPATIAL_USER_TEST(12),
-        VISIBILITY_TEST(13),
-        SPATIAL_CAPABILITIES_TEST(14),
-        SPATIAL_AUDIO_1_TEST(15),
-        SPATIAL_AUDIO_2_TEST(16),
-        PANEL_ROUNDED_CORNER_TEST(17),
+        FIELD_OF_VIEW_VISIBILITY_TEST(3),
+        TRANSFORMATION_TEST(4),
+        HEAD_LOCKED_UI_TEST(5),
+        SCENE_VIEWER_TEST(6),
+        FSM_HSM_TRANSITION_TEST(7),
+        ACTIVITY_PANEL_TEST(8),
+        INPUT_MOVE_RESIZE_1_TEST(9),
+        INPUT_MOVE_RESIZE_2_TEST(10),
+        INPUT_MOVE_RESIZE_3_TEST(11),
+        MOVABLE_PANEL_TEST(12),
+        SPATIAL_USER_TEST(13),
+        VISIBILITY_TEST(14),
+        SPATIAL_CAPABILITIES_TEST(15),
+        SPATIAL_AUDIO_1_TEST(16),
+        SPATIAL_AUDIO_2_TEST(17),
+        SPATIAL_AUDIO_3_TEST(18),
+        PANEL_ROUNDED_CORNER_TEST(19),
+        DIGITAL_HIT_TEST(20),
     }
 }

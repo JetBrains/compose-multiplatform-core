@@ -66,8 +66,6 @@ import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationShort2
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationShort3
 import androidx.wear.compose.material3.tokens.ShapeTokens
-import androidx.wear.compose.materialcore.screenHeightDp
-import androidx.wear.compose.materialcore.screenWidthDp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -260,7 +258,7 @@ public fun ConfirmationDialogContent(
     }
 
     Box(modifier.fillMaxSize()) {
-        val horizontalPadding = screenWidthDp().dp * HorizontalLinearContentPaddingFraction
+        val horizontalPadding = screenWidthFraction(HorizontalLinearContentPaddingFraction)
         Column(
             modifier = Modifier.align(Alignment.Center).padding(horizontal = horizontalPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -862,7 +860,7 @@ private fun BoxScope.IconContainer(
 private fun iconContainer(curvedContent: Boolean, color: Color): @Composable BoxScope.() -> Unit = {
     val width =
         if (curvedContent) {
-            (screenWidthDp() * ConfirmationSizeFraction).dp
+            screenWidthFraction(ConfirmationSizeFraction)
         } else ConfirmationLinearIconContainerSize
 
     val startShape = ShapeTokens.CornerFull
@@ -901,18 +899,18 @@ private fun iconContainer(curvedContent: Boolean, color: Color): @Composable Box
 }
 
 private fun successIconContainer(color: Color): @Composable BoxScope.() -> Unit = {
-    val width = screenWidthDp() * SuccessWidthFraction
+    val width = screenWidthFraction(SuccessWidthFraction)
+    val targetHeight = screenHeightFraction(SuccessHeightFraction)
 
-    val targetHeight = screenHeightDp() * SuccessHeightFraction.toFloat()
-    val heightAnimatable = remember { Animatable(width) }
+    val heightAnimatable = remember { Animatable(width.value) }
     val reduceMotionEnabled = LocalReduceMotion.current
 
     LaunchedEffect(Unit) {
         animatedDelay(DurationShort2.toLong(), reduceMotionEnabled)
-        heightAnimatable.animateTo(targetHeight, SuccessContainerAnimationSpec)
+        heightAnimatable.animateTo(targetHeight.value, SuccessContainerAnimationSpec)
     }
     Box(
-        Modifier.size(width.dp, heightAnimatable.value.dp)
+        Modifier.size(width, heightAnimatable.value.dp)
             .graphicsLayer {
                 rotationZ = 45f
                 shape = CircleShape
@@ -923,7 +921,7 @@ private fun successIconContainer(color: Color): @Composable BoxScope.() -> Unit 
 }
 
 private fun failureIconContainer(color: Color): @Composable BoxScope.() -> Unit = {
-    val size = screenWidthDp() * FailureSizeFraction
+    val size = screenWidthFraction(FailureSizeFraction)
 
     val startShape = ShapeTokens.CornerFull
     val targetShape = MaterialTheme.shapes.extraLarge as RoundedCornerShape
@@ -942,7 +940,7 @@ private fun failureIconContainer(color: Color): @Composable BoxScope.() -> Unit 
     }
 
     Box(
-        Modifier.size(size.dp)
+        Modifier.size(size)
             .graphicsLayer {
                 this.shape = shape
                 clip = true
@@ -951,22 +949,19 @@ private fun failureIconContainer(color: Color): @Composable BoxScope.() -> Unit 
     )
 }
 
+private const val DialogWidthPaddingFraction = 0.2315f
+private const val DialogHeightPaddingFraction = 0.176f
+private const val HorizontalLinearContentPaddingFraction = 0.12f
+
 internal val ConfirmationLinearIconContainerSize = 80.dp
 internal val LinearContentSpacing = 8.dp
 
-private const val SuccessWidthPaddingFraction = 0.2315f
-private const val SuccessHeightPaddingFraction = 0.176
-private const val SuccessWidthFraction = 1 - SuccessWidthPaddingFraction * 2
-private const val SuccessHeightFraction = 1 - SuccessHeightPaddingFraction * 2
-
-private const val FailureSizePaddingFraction = 0.213f
-private const val FailureSizeFraction = 1 - FailureSizePaddingFraction * 2
-
-private const val ConfirmationSizePaddingFraction = 0.213f
-private const val ConfirmationSizeFraction = 1 - ConfirmationSizePaddingFraction * 2
+private const val SuccessHeightFraction = (1 - DialogHeightPaddingFraction * 2)
+private const val SuccessWidthFraction = (1 - DialogWidthPaddingFraction * 2)
+private const val FailureSizeFraction = (1 - DialogWidthPaddingFraction * 2)
+private const val ConfirmationSizeFraction = (1 - DialogWidthPaddingFraction * 2)
 
 private const val LinearContentMaxLines = 3
-private const val HorizontalLinearContentPaddingFraction = 0.12f
 
 private const val ConfirmationIconInitialAngle = -45f
 
