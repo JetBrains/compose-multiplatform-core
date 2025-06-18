@@ -112,4 +112,67 @@ class PointerEventResultTest {
             assertTrue(result.anyChangeConsumed)
         }
     }
+
+    @Test
+    fun testMergingWithMultipleParams() {
+        // Test with two parameters (this, result1)
+        PointerEventResult(value = 1).merging(
+            result1 = PointerEventResult(value = 2)
+        ).let { result ->
+            assertEquals(3, result.value)
+        }
+
+        // Test with three parameters (this, result1, result2)
+        PointerEventResult(value = 1).merging(
+            result1 = PointerEventResult(value = 2),
+            result2 = PointerEventResult(value = 4)
+        ).let { result ->
+            assertEquals(7, result.value)
+        }
+
+        // Test with four parameters (this, result1, result2, result3)
+        PointerEventResult(value = 1).merging(
+            result1 = PointerEventResult(value = 2),
+            result2 = PointerEventResult(value = 4),
+            result3 = PointerEventResult(value = 7)
+        ).let { result ->
+            assertEquals(7, result.value)
+        }
+
+        // Test with null parameters
+        PointerEventResult(value = 1).merging(
+            result1 = PointerEventResult(value = 2),
+            result2 = null,
+            result3 = null
+        ).let { result ->
+            assertEquals(3, result.value)
+        }
+
+        PointerEventResult(value = 1).merging(
+            result1 = PointerEventResult(value = 2),
+            result2 = PointerEventResult(value = 4),
+            result3 = null
+        ).let { result ->
+            assertEquals(7, result.value)
+        }
+
+        // Test with zero values
+        PointerEventResult(value = 0).merging(
+            result1 = PointerEventResult(value = 0),
+            result2 = PointerEventResult(value = 0),
+            result3 = PointerEventResult(value = 0)
+        ).let { result ->
+            assertEquals(0, result.value)
+        }
+
+        // Test with a mix of values
+        PointerEventResult(value = 1).merging(
+            result1 = PointerEventResult(value = 0),
+            result2 = PointerEventResult(value = 2),
+            result3 = PointerEventResult(value = 1)
+        ).let { result ->
+            assertEquals(3, result.value)
+        }
+    }
+
 }
