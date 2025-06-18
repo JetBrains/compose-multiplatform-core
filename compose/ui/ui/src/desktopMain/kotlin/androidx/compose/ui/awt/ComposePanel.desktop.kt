@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
+import androidx.compose.ui.awt.RenderSettings.SkiaSurface
+import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -46,9 +49,28 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  */
 class ComposePanel @ExperimentalComposeUiApi constructor(
     private val skiaLayerAnalytics: SkiaLayerAnalytics,
-    private val renderSettings: RenderSettings = RenderSettings.Default
+    private val renderSettings: RenderSettings = DefaultRenderSettings
 ) : JLayeredPane() {
-    constructor() : this(SkiaLayerAnalytics.Empty, RenderSettings.Default)
+    constructor() : this(
+        skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+        renderSettings = DefaultRenderSettings
+    )
+
+    companion object {
+        /**
+         * [RenderSettings] based on the current environment variable configuration.
+         *
+         * @see ComposeFeatureFlags.useSwingGraphicsInComposePanel
+         */
+        @ExperimentalComposeUiApi
+        val DefaultRenderSettings: RenderSettings by lazy {
+            if (ComposeFeatureFlags.useSwingGraphicsInComposePanel) {
+                SwingGraphics()
+            } else {
+                SkiaSurface()
+            }
+        }
+    }
 
     init {
         check(isEventDispatchThread()) {

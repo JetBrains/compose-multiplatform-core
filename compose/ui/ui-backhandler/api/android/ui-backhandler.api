@@ -1,5 +1,0 @@
-public final class androidx/compose/ui/backhandler/BackHandler_androidKt {
-	public static final fun BackHandler (ZLkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)V
-	public static final fun PredictiveBackHandler (ZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-}
-

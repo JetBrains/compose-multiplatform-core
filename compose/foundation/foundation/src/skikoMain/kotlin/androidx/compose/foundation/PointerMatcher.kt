@@ -21,6 +21,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastAny
 
 /**
  * [PointerMatcher] represents a single condition or a set of conditions which a [PointerEvent] has to match
@@ -100,7 +101,7 @@ fun interface PointerMatcher {
 
         private class CombinedPointerMatcher(val sources: List<PointerMatcher>) : PointerMatcher {
             override fun matches(event: PointerEvent): Boolean {
-                return sources.any { it.matches(event) }
+                return sources.fastAny { it.matches(event) }
             }
         }
 

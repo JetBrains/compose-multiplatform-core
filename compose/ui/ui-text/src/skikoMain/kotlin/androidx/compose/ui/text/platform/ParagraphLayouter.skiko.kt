@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.util.fastAny
 import kotlin.math.abs
 import org.jetbrains.skia.paragraph.LineMetrics
 import org.jetbrains.skia.paragraph.Paragraph
@@ -151,7 +152,7 @@ internal class ParagraphLayouter(
             // but we have to invalidate it because it's backed into skia's paragraph.
             // Since it affects only [ShaderBrush] we can keep the cache if it's not used.
             if (builder.textStyle.brush is ShaderBrush ||
-                builder.annotations.any {
+                builder.annotations.fastAny {
                     it.item is SpanStyle && // TODO(ivan): Verify that we need only [SpanStyle] here
                     it.item.brush is ShaderBrush }) {
                 invalidateParagraph(onlyForeground = true)

@@ -29,11 +29,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 
 class PreventDefaultTest : OnCanvasTests {
 
     @Test
-    fun testPreventDefault() {
+    fun testPreventDefault() = runTest {
         val fr = FocusRequester()
         var changedValue = ""
         createComposeWindow {

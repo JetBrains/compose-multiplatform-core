@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.PlatformFocusOwner
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.SkiaGraphicsContext
 import androidx.compose.ui.graphics.layer.GraphicsLayer
@@ -93,6 +94,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.toIntRect
 import androidx.compose.ui.unit.toRect
 import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastMap
+import androidx.compose.ui.util.fastMaxOfOrDefault
+import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -155,6 +160,7 @@ internal class RootNodeOwner(
     private val pointerInputEventProcessor = PointerInputEventProcessor(owner.root)
     private val measureAndLayoutDelegate = MeasureAndLayoutDelegate(owner.root)
     private var isDisposed = false
+    private var currentCornersOnScreen: List<Offset>? = cornersOnScreen()
 
     init {
         snapshotObserver.startObserving()
@@ -201,8 +207,8 @@ internal class RootNodeOwner(
             // Don't use mainOwner.root.width here, as it strictly coerced by [constraints]
             val children = owner.root.children
             return IntSize(
-                width = children.maxOfOrNull { it.outerCoordinator.measuredWidth } ?: 0,
-                height = children.maxOfOrNull { it.outerCoordinator.measuredHeight } ?: 0,
+                width = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredWidth },
+                height = children.fastMaxOfOrDefault(0) { it.outerCoordinator.measuredHeight },
             )
         } finally {
             measureAndLayoutDelegate.updateRootConstraintsWithInfinityCheck(constraints)
@@ -219,8 +225,29 @@ internal class RootNodeOwner(
         onLightingInfoChanged()
     }
 
+    private fun cornersOnScreen() = size?.let { size ->
+        val width = size.width.toFloat()
+        val height = size.height.toFloat()
+        val corners =
+            listOf(
+                Offset.Zero,
+                Offset(x = width, y = 0f),
+                Offset(x = 0f, y = height),
+                Offset(x = width, y = height)
+            ).fastMap {
+                platformContext.convertLocalToScreenPosition(it)
+            }
+        if (corners.fastAny { it.isUnspecified }) null else corners
+    }
+
     fun invalidatePositionOnScreen() {
-        measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = true)
+        // Look at all corners, because platformContext.convertLocalToScreenPosition can also
+        // rotate, skew etc.
+        val cornersOnScreen = cornersOnScreen()
+        if (cornersOnScreen != currentCornersOnScreen) {
+            measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = true)
+            currentCornersOnScreen = cornersOnScreen
+        }
     }
 
     fun draw(canvas: Canvas) = trace("RootNodeOwner:draw") {

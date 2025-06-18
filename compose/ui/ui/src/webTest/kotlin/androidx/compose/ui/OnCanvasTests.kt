@@ -21,10 +21,12 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.window.ComposeViewport
+import kotlin.coroutines.suspendCoroutine
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -74,8 +76,17 @@ internal interface OnCanvasTests {
         return canvas
     }
 
-    fun createComposeWindow(content: @Composable () -> Unit) {
+    suspend fun createComposeWindow(content: @Composable () -> Unit) {
         ComposeViewport(containerId, content = content)
+
+        suspendCoroutine { continuation ->
+            // This helps reduce the flakiness.
+            // A potential cause of flakiness: the default Coroutine Dispatcher regularly postpones
+            // the resumption of the tasks in its queue to the next frame.
+            // (it does so to let the event loop run / release the single thread)
+            // I don't expect any issue from doing this, since a test will suspend and won't do anything.
+            window.requestAnimationFrame { continuation.resumeWith(Result.success(it)) }
+        }
     }
 
     fun dispatchEvents(vararg events: Event) {

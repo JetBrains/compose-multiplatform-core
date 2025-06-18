@@ -54,9 +54,16 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
         interopContainer = interopContainer,
         interopWrapper =
             (document.createElement("div") as HTMLDivElement)
-                .apply { style.position = "absolute" },
+                .apply {
+                    style.position = "absolute"
+                    // hide it until it's properly positioned,
+                    // otherwise it can briefly flash at 0,0
+                    toggleVisibility(this, isHidden = true)
+                },
         compositeKeyHash = compositeKeyHash
     )
+
+    private var isPositioned = false
 
     private var isHidden: Boolean = false
 
@@ -88,14 +95,18 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
         if (!clippedRect.isEmpty) {
             setSizeAndPosition(
                 interopWrapper,
-                newPosition.x.toDouble(),
-                newPosition.y.toDouble(),
+                newPosition.x.toDouble() / density.density,
+                newPosition.y.toDouble() / density.density,
                 unclippedRect.width,
                 unclippedRect.height
             )
             updateClipPath(clippedRect, unclippedRect)
+            if (!isPositioned) {
+                isPositioned = true
+                toggleVisibility(interopWrapper, isHidden = false)
+            }
         } else if (!isHidden) {
-            toggleVisibility(interopWrapper, true)
+            toggleVisibility(interopWrapper, isHidden = true)
             isHidden = true
         }
     }

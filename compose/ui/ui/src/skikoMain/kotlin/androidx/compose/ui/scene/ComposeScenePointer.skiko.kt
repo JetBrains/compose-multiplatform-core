@@ -28,6 +28,7 @@ import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerInputEventData
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.util.fastMap
 import kotlin.jvm.JvmInline
 
 /**
@@ -127,7 +128,7 @@ internal fun PointerInputEvent(
 ) = PointerInputEvent(
     eventType = eventType,
     uptime = timeMillis,
-    pointers = pointers.map {
+    pointers = pointers.fastMap {
         PointerInputEventData(
             id = it.id,
             uptime = timeMillis,

@@ -264,4 +264,32 @@ class ApplicationTest {
         exitTestApplication()
     }
 
+    @Test
+    fun `onGloballyPositioned is not called repeatedly with same position on screen`() = runApplicationTest(useDelay = true) {
+        lateinit var window: ComposeWindow
+        val positionsOnScreen = mutableListOf<Offset>()
+        launchTestApplication {
+            Window(onCloseRequest = {}) {
+                window = this@Window.window
+                Box(
+                    Modifier
+                        .size(100.dp)
+                        .onGloballyPositioned {
+                            positionsOnScreen.add(it.positionOnScreen())
+                        }
+                )
+            }
+        }
+        awaitIdle()
+
+        window.location = Point(window.x + 100, window.y + 100)
+        awaitIdle()
+
+        assertTrue(
+            positionsOnScreen.zipWithNext().none { it.first == it.second },
+            message = "onGloballyPositioned is called repeatedly with same positionOnScreen: $positionsOnScreen"
+        )
+    }
+
+
 }

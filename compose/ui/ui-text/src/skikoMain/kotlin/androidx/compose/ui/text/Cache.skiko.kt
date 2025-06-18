@@ -54,11 +54,12 @@ internal class ExpireAfterAccessCache<K, V>(
 
     private fun checkEvicted(now: Long) {
         val expireTime = now - expireAfterNanos
-        accessTime.keys.takeWhile {
-            accessTime[it]!! < expireTime
-        }.forEach {
-            map.remove(it)
-            accessTime.remove(it)
+        val iterator = accessTime.entries.iterator()
+        for (entry in iterator) {
+            if (entry.value < expireTime) {
+                map.remove(entry.key)
+                iterator.remove()
+            } else break
         }
     }
 }

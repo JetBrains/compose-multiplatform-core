@@ -39,11 +39,12 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.runTest
 
 class KeyEventTests : OnCanvasTests {
     @Test
     // https://github.com/JetBrains/compose-multiplatform/issues/3644
-    fun keyMappingIsValid() {
+    fun keyMappingIsValid() = runTest {
         val fr = FocusRequester()
         var mapping = ""
         var k: Key? = null
@@ -89,7 +90,7 @@ class KeyEventTests : OnCanvasTests {
 
     @Test
     // https://github.com/JetBrains/compose-multiplatform/issues/2296
-    fun onPreviewKeyEventShouldWork() {
+    fun onPreviewKeyEventShouldWork() = runTest {
 
         val fr = FocusRequester()
         val textValue = mutableStateOf("")

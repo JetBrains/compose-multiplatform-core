@@ -16,6 +16,7 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 
@@ -44,7 +45,7 @@ internal enum class LayerType {
 
 /**
  * The helper singleton object that provides the access to feature flags that
- * configure Compose behaviour.
+ * configure Compose behavior.
  */
 internal object ComposeFeatureFlags {
 
@@ -53,19 +54,26 @@ internal object ComposeFeatureFlags {
      * The default value is `OnSameCanvas`, implying that new layers
      * (such as for [Popup] and [Dialog]) are created within the initial canvas.
      */
-    val layerType: LayerType
-        get() = LayerType.parse(System.getProperty("compose.layers.type"))
+    val layerType: LayerType by lazy {
+        LayerType.parse(System.getProperty("compose.layers.type"))
+    }
 
     /**
-     * Indicates whether the Compose should use Swing graphics for rendering.
-     * This prevents transitional rendering issues when panels are being shown, hidden, or resized.
+     * Indicates whether [androidx.compose.ui.awt.ComposePanel] should use Swing graphics for rendering.
+     * This prevents transitional rendering issues when panels are being shown, hidden or resized.
      * It also enables proper layering when combining Swing components and compose panels.
+     * This variable has no effect when used with [androidx.compose.ui.awt.ComposeWindow] or
+     * [androidx.compose.ui.awt.ComposeDialog].
      *
-     * Please note that it requires additional copy from offscreen texture to Swing graphics,
-     * so it has some performance penalty.
+     * Note: This approach requires an additional copy from offscreen texture to Swing graphics
+     * on each re-draw, which may result in some performance penalty (proportional to the size)
+     * compared to [SkiaSurface].
+     *
+     * @see androidx.compose.ui.awt.RenderSettings.SwingGraphics
      */
-    val useSwingGraphics: Boolean
-        get() = System.getProperty("compose.swing.render.on.graphics").toBoolean()
+    val useSwingGraphicsInComposePanel: Boolean by lazy {
+        System.getProperty("compose.swing.render.on.graphics").toBoolean()
+    }
 
     /**
      * Indicates whether interop blending is enabled.
@@ -77,6 +85,7 @@ internal object ComposeFeatureFlags {
      * - On macOS, render and event dispatching order differs. It means that interop view might
      *   catch the mouse event even if visually it renders below Compose content
      */
-    val useInteropBlending: Boolean
-        get() = System.getProperty("compose.interop.blending").toBoolean()
+    val useInteropBlending: Boolean by lazy {
+        System.getProperty("compose.interop.blending").toBoolean()
+    }
 }

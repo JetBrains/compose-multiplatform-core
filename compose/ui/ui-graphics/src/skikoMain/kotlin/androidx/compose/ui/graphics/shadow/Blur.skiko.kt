@@ -16,16 +16,20 @@
 
 package androidx.compose.ui.graphics.shadow
 
+import androidx.compose.ui.graphics.BlurEffect.Companion.convertRadiusToSigma
 import androidx.compose.ui.graphics.Paint
-
-// TODO https://youtrack.jetbrains.com/issue/CMP-7912
+import org.jetbrains.skia.FilterBlurMode
+import org.jetbrains.skia.MaskFilter
 
 internal actual fun BlurFilter(radius: Float): BlurFilter {
-    TODO("Not yet implemented")
+    val sigma = convertRadiusToSigma(radius);
+    return MaskFilter.makeBlur(FilterBlurMode.NORMAL, sigma)
 }
 
-internal actual class BlurFilter
+// TODO: Do not expose skiko types to common
+//  https://youtrack.jetbrains.com/issue/CMP-219
+internal actual typealias BlurFilter = MaskFilter // Only the base type is available
 
 internal actual fun Paint.setBlurFilter(blur: BlurFilter?) {
-    TODO("Not yet implemented")
+    asFrameworkPaint().maskFilter = blur
 }

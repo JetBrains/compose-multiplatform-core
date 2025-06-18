@@ -51,7 +51,7 @@ import kotlinx.coroutines.withContext
  * It provides a base implementation for managing composition, input events, and rendering.
  *
  * @property composeSceneContext the object that used to share "context" between multiple scenes
- * on the screen. Also, it provides a way for platform interaction that required within a scene.
+ * on the screen. Also, it provides a way for platform interaction that is required within a scene.
  */
 @OptIn(InternalComposeUiApi::class)
 internal abstract class BaseComposeScene(
@@ -228,7 +228,6 @@ internal abstract class BaseComposeScene(
         }
     }
 
-    // TODO(demin): return Boolean (when it is consumed)
     // TODO(demin) verify that pressure is the same on Android and iOS
     override fun sendPointerEvent(
         eventType: PointerEventType,

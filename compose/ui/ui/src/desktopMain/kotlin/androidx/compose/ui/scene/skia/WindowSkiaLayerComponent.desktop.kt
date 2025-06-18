@@ -34,14 +34,19 @@ import org.jetbrains.skiko.SkikoRenderDelegate
  * Provides a heavyweight AWT [contentComponent] used to render content
  * (provided by [SkikoRenderDelegate]) on-screen with Skia.
  *
- * If smooth interop with Swing is needed, consider using [SwingSkiaLayerComponent]
+ * This component renders content directly to a Skia surface for better performance,
+ * using the configuration specified in [renderSettings]. It configures the vsync behavior
+ * based on the [RenderSettings.SkiaSurface.isVsyncEnabled] property.
+ *
+ * If smooth interop with Swing is needed, consider using [SwingSkiaLayerComponent] instead,
+ * which is created when using [RenderSettings.SwingGraphics].
  */
 internal class WindowSkiaLayerComponent(
     private val mediator: ComposeSceneMediator,
     private val windowContext: PlatformWindowContext,
     renderDelegate: SkikoRenderDelegate,
     skiaLayerAnalytics: SkiaLayerAnalytics,
-    private val renderSettings: RenderSettings,
+    private val renderSettings: RenderSettings.SkiaSurface,
 ) : SkiaLayerComponent {
     /**
      * See also backend layer for swing interop in [SwingSkiaLayerComponent]

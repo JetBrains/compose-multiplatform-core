@@ -30,7 +30,7 @@ import androidx.compose.runtime.ComposeCompilerApi
  */
 @ComposeCompilerApi
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.BINARY)
+@Retention(AnnotationRetention.RUNTIME)
 @Repeatable
 annotation class FunctionKeyMeta(val key: Int, val startOffset: Int, val endOffset: Int)
 

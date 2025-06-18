@@ -16,29 +16,6 @@ public final class androidx/compose/foundation/BasicMarqueeKt {
 	public static synthetic fun basicMarquee-1Mj1MLw$default (Landroidx/compose/ui/Modifier;IIIILandroidx/compose/foundation/MarqueeSpacing;FILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
-public final class androidx/compose/foundation/BasicTooltipDefaults {
-	public static final field $stable I
-	public static final field INSTANCE Landroidx/compose/foundation/BasicTooltipDefaults;
-	public static final field TooltipDuration J
-	public final fun getGlobalMutatorMutex ()Landroidx/compose/foundation/MutatorMutex;
-}
-
-public final class androidx/compose/foundation/BasicTooltipKt {
-	public static final fun BasicTooltipBox (Landroidx/compose/ui/window/PopupPositionProvider;Lkotlin/jvm/functions/Function2;Landroidx/compose/foundation/BasicTooltipState;Landroidx/compose/ui/Modifier;ZZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-	public static final fun BasicTooltipState (ZZLandroidx/compose/foundation/MutatorMutex;)Landroidx/compose/foundation/BasicTooltipState;
-	public static synthetic fun BasicTooltipState$default (ZZLandroidx/compose/foundation/MutatorMutex;ILjava/lang/Object;)Landroidx/compose/foundation/BasicTooltipState;
-	public static final fun rememberBasicTooltipState (ZZLandroidx/compose/foundation/MutatorMutex;Landroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/BasicTooltipState;
-}
-
-public abstract interface class androidx/compose/foundation/BasicTooltipState {
-	public abstract fun dismiss ()V
-	public abstract fun isPersistent ()Z
-	public abstract fun isVisible ()Z
-	public abstract fun onDispose ()V
-	public abstract fun show (Landroidx/compose/foundation/MutatePriority;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun show$default (Landroidx/compose/foundation/BasicTooltipState;Landroidx/compose/foundation/MutatePriority;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-}
-
 public final class androidx/compose/foundation/BorderKt {
 	public static final fun border (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/BorderStroke;Landroidx/compose/ui/graphics/Shape;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun border$default (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/BorderStroke;Landroidx/compose/ui/graphics/Shape;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
@@ -91,27 +68,8 @@ public final class androidx/compose/foundation/ClickableKt {
 	public static synthetic fun combinedClickable-hoGz1lA$default (Landroidx/compose/ui/Modifier;ZLjava/lang/String;Landroidx/compose/ui/semantics/Role;Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ZLandroidx/compose/foundation/interaction/MutableInteractionSource;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
-public final class androidx/compose/foundation/Clickable_desktopKt {
-	public static final fun mouseClickable-XHw0xAI (Landroidx/compose/ui/Modifier;ZLjava/lang/String;Landroidx/compose/ui/semantics/Role;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
-	public static synthetic fun mouseClickable-XHw0xAI$default (Landroidx/compose/ui/Modifier;ZLjava/lang/String;Landroidx/compose/ui/semantics/Role;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
-}
-
 public final class androidx/compose/foundation/ClipScrollableContainerKt {
 	public static final fun clipScrollableContainer (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/gestures/Orientation;)Landroidx/compose/ui/Modifier;
-}
-
-public final class androidx/compose/foundation/ComposeFoundationFlags {
-	public static final field $stable I
-	public static field DragGesturePickUpEnabled Z
-	public static final field INSTANCE Landroidx/compose/foundation/ComposeFoundationFlags;
-	public static field isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled Z
-	public static field isAutomaticNestedPrefetchEnabled Z
-	public static field isDetectTapGesturesImmediateCoroutineDispatchEnabled Z
-	public static field isNewContextMenuEnabled Z
-	public static field isNonComposedClickableEnabled Z
-	public static field isOnScrollChangedCallbackEnabled Z
-	public static field isPausableCompositionInPrefetchEnabled Z
-	public static field isSmartSelectionEnabled Z
 }
 
 public final class androidx/compose/foundation/ContextMenuData {
@@ -136,8 +94,6 @@ public class androidx/compose/foundation/ContextMenuItem {
 public final class androidx/compose/foundation/ContextMenuProvider_desktopKt {
 	public static final fun ContextMenuArea (Lkotlin/jvm/functions/Function0;Landroidx/compose/foundation/ContextMenuState;ZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 	public static final fun ContextMenuDataProvider (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
-	public static final fun contextMenuOpenDetector (Landroidx/compose/ui/Modifier;Ljava/lang/Object;ZLkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
-	public static synthetic fun contextMenuOpenDetector$default (Landroidx/compose/ui/Modifier;Ljava/lang/Object;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 	public static final fun getLocalContextMenuData ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun getLocalContextMenuRepresentation ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 }
@@ -232,13 +188,6 @@ public abstract interface class androidx/compose/foundation/IndicationNodeFactor
 public abstract interface annotation class androidx/compose/foundation/InternalFoundationApi : java/lang/annotation/Annotation {
 }
 
-public final class androidx/compose/foundation/JPopupContextMenuRepresentation : androidx/compose/foundation/ContextMenuRepresentation {
-	public static final field $stable I
-	public fun <init> (Ljava/awt/Component;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/awt/Component;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun Representation (Landroidx/compose/foundation/ContextMenuState;Lkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;I)V
-}
-
 public final class androidx/compose/foundation/MarqueeAnimationMode {
 	public static final field Companion Landroidx/compose/foundation/MarqueeAnimationMode$Companion;
 	public static final synthetic fun box-impl (I)Landroidx/compose/foundation/MarqueeAnimationMode;
@@ -275,13 +224,6 @@ public final class androidx/compose/foundation/MarqueeSpacing$Companion {
 	public final fun fractionOfContainer (F)Landroidx/compose/foundation/MarqueeSpacing;
 }
 
-public final class androidx/compose/foundation/MouseClickScope {
-	public static final field $stable I
-	public synthetic fun <init> (IILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getButtons-ry648PA ()I
-	public final fun getKeyboardModifiers-k7X9c1A ()I
-}
-
 public final class androidx/compose/foundation/MutatePriority : java/lang/Enum {
 	public static final field Default Landroidx/compose/foundation/MutatePriority;
 	public static final field PreventUserInput Landroidx/compose/foundation/MutatePriority;
@@ -301,13 +243,6 @@ public final class androidx/compose/foundation/MutatorMutex {
 	public final fun tryLock ()Z
 	public final fun tryMutate (Lkotlin/jvm/functions/Function0;)Z
 	public final fun unlock ()V
-}
-
-public final class androidx/compose/foundation/OnClick_skikoKt {
-	public static final fun onClick (Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)Landroidx/compose/ui/Modifier;
-	public static final fun onClick (Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)Landroidx/compose/ui/Modifier;
-	public static synthetic fun onClick$default (Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
-	public static synthetic fun onClick$default (Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
 public abstract interface class androidx/compose/foundation/OverscrollEffect {
@@ -332,22 +267,7 @@ public final class androidx/compose/foundation/OverscrollKt {
 	public static final fun withoutVisualEffect (Landroidx/compose/foundation/OverscrollEffect;)Landroidx/compose/foundation/OverscrollEffect;
 }
 
-public abstract interface class androidx/compose/foundation/PointerMatcher {
-	public static final field Companion Landroidx/compose/foundation/PointerMatcher$Companion;
-	public abstract fun matches (Landroidx/compose/ui/input/pointer/PointerEvent;)Z
-	public fun plus (Landroidx/compose/foundation/PointerMatcher;)Landroidx/compose/foundation/PointerMatcher;
-}
-
 public final class androidx/compose/foundation/PointerMatcher$Companion {
-	public final fun getEraser ()Landroidx/compose/foundation/PointerMatcher;
-	public final fun getPrimary ()Landroidx/compose/foundation/PointerMatcher;
-	public final fun getStylus ()Landroidx/compose/foundation/PointerMatcher;
-	public final fun getTouch ()Landroidx/compose/foundation/PointerMatcher;
-	public final fun mouse-txVtsXU (I)Landroidx/compose/foundation/PointerMatcher;
-	public final fun pointer-XkepSOE (ILandroidx/compose/ui/input/pointer/PointerButton;)Landroidx/compose/foundation/PointerMatcher;
-	public static synthetic fun pointer-XkepSOE$default (Landroidx/compose/foundation/PointerMatcher$Companion;ILandroidx/compose/ui/input/pointer/PointerButton;ILjava/lang/Object;)Landroidx/compose/foundation/PointerMatcher;
-	public final fun stylus-_2OYLqQ (Landroidx/compose/ui/input/pointer/PointerButton;)Landroidx/compose/foundation/PointerMatcher;
-	public static synthetic fun stylus-_2OYLqQ$default (Landroidx/compose/foundation/PointerMatcher$Companion;Landroidx/compose/ui/input/pointer/PointerButton;ILjava/lang/Object;)Landroidx/compose/foundation/PointerMatcher;
 }
 
 public final class androidx/compose/foundation/ProgressSemanticsKt {
@@ -428,7 +348,6 @@ public final class androidx/compose/foundation/Scrollbar_desktopKt {
 	public static final fun ScrollbarAdapter2 (Landroidx/compose/foundation/ScrollState;)Landroidx/compose/foundation/v2/ScrollbarAdapter;
 	public static final fun ScrollbarAdapter2 (Landroidx/compose/foundation/lazy/LazyListState;)Landroidx/compose/foundation/v2/ScrollbarAdapter;
 	public static final fun ScrollbarAdapter2 (Landroidx/compose/foundation/lazy/grid/LazyGridState;)Landroidx/compose/foundation/v2/ScrollbarAdapter;
-	public static final fun ScrollbarAdapter2 (Landroidx/compose/foundation/text/TextFieldScrollState;)Landroidx/compose/foundation/v2/ScrollbarAdapter;
 	public static final fun VerticalScrollbar (Landroidx/compose/foundation/ScrollbarAdapter;Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/ScrollbarStyle;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/runtime/Composer;II)V
 	public static final fun VerticalScrollbar (Landroidx/compose/foundation/v2/ScrollbarAdapter;Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/ScrollbarStyle;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/runtime/Composer;II)V
 	public static final fun defaultScrollbarStyle ()Landroidx/compose/foundation/ScrollbarStyle;
@@ -438,38 +357,11 @@ public final class androidx/compose/foundation/Scrollbar_desktopKt {
 	public static final fun rememberScrollbarAdapter2 (Landroidx/compose/foundation/ScrollState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/v2/ScrollbarAdapter;
 	public static final fun rememberScrollbarAdapter2 (Landroidx/compose/foundation/lazy/LazyListState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/v2/ScrollbarAdapter;
 	public static final fun rememberScrollbarAdapter2 (Landroidx/compose/foundation/lazy/grid/LazyGridState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/v2/ScrollbarAdapter;
-	public static final fun rememberScrollbarAdapter2 (Landroidx/compose/foundation/text/TextFieldScrollState;Landroidx/compose/runtime/Composer;I)Landroidx/compose/foundation/v2/ScrollbarAdapter;
 }
 
 public final class androidx/compose/foundation/TooltipArea_desktopKt {
 	public static final fun BoxWithTooltip (Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/Alignment;ZILandroidx/compose/foundation/TooltipPlacement;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 	public static final fun TooltipArea (Lkotlin/jvm/functions/Function2;Landroidx/compose/ui/Modifier;ILandroidx/compose/foundation/TooltipPlacement;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-}
-
-public abstract interface class androidx/compose/foundation/TooltipPlacement {
-	public abstract fun positionProvider-9KIMszo (JLandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/window/PopupPositionProvider;
-}
-
-public final class androidx/compose/foundation/TooltipPlacement$ComponentRect : androidx/compose/foundation/TooltipPlacement {
-	public static final field $stable I
-	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Landroidx/compose/ui/Alignment;JILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Landroidx/compose/ui/Alignment;JLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun positionProvider-9KIMszo (JLandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/window/PopupPositionProvider;
-}
-
-public final class androidx/compose/foundation/TooltipPlacement$CursorPoint : androidx/compose/foundation/TooltipPlacement {
-	public static final field $stable I
-	public synthetic fun <init> (JLandroidx/compose/ui/Alignment;FILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLandroidx/compose/ui/Alignment;FLkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun positionProvider-9KIMszo (JLandroidx/compose/runtime/Composer;I)Landroidx/compose/ui/window/PopupPositionProvider;
-}
-
-public final class androidx/compose/foundation/content/MediaType {
-	public static final field $stable I
-	public static final field Companion Landroidx/compose/foundation/content/MediaType$Companion;
-	public fun <init> (Ljava/lang/String;)V
-	public final fun getRepresentation ()Ljava/lang/String;
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class androidx/compose/foundation/content/MediaType$Companion {
@@ -480,52 +372,10 @@ public final class androidx/compose/foundation/content/MediaType$Companion {
 	public final fun getText ()Landroidx/compose/foundation/content/MediaType;
 }
 
-public final class androidx/compose/foundation/content/PlatformTransferableContent {
-	public static final field $stable I
-}
-
-public final class androidx/compose/foundation/content/ReceiveContentKt {
-	public static final fun contentReceiver (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/content/ReceiveContentListener;)Landroidx/compose/ui/Modifier;
-}
-
-public abstract interface class androidx/compose/foundation/content/ReceiveContentListener {
-	public fun onDragEnd ()V
-	public fun onDragEnter ()V
-	public fun onDragExit ()V
-	public fun onDragStart ()V
-	public abstract fun onReceive (Landroidx/compose/foundation/content/TransferableContent;)Landroidx/compose/foundation/content/TransferableContent;
-}
-
-public final class androidx/compose/foundation/content/TransferableContent {
-	public static final field $stable I
-	public synthetic fun <init> (Landroidx/compose/ui/platform/ClipEntry;Landroidx/compose/ui/platform/ClipMetadata;ILandroidx/compose/foundation/content/PlatformTransferableContent;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun getClipEntry ()Landroidx/compose/ui/platform/ClipEntry;
-	public final fun getClipMetadata ()Landroidx/compose/ui/platform/ClipMetadata;
-	public final fun getPlatformTransferableContent ()Landroidx/compose/foundation/content/PlatformTransferableContent;
-	public final fun getSource-kB6V9T0 ()I
-}
-
-public final class androidx/compose/foundation/content/TransferableContent$Source {
-	public static final field Companion Landroidx/compose/foundation/content/TransferableContent$Source$Companion;
-	public static final synthetic fun box-impl (I)Landroidx/compose/foundation/content/TransferableContent$Source;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (ILjava/lang/Object;)Z
-	public static final fun equals-impl0 (II)Z
-	public fun hashCode ()I
-	public static fun hashCode-impl (I)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (I)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()I
-}
-
 public final class androidx/compose/foundation/content/TransferableContent$Source$Companion {
 	public final fun getClipboard-kB6V9T0 ()I
 	public final fun getDragAndDrop-kB6V9T0 ()I
 	public final fun getKeyboard-kB6V9T0 ()I
-}
-
-public final class androidx/compose/foundation/content/TransferableContent_skikoKt {
-	public static final fun hasMediaType (Landroidx/compose/foundation/content/TransferableContent;Landroidx/compose/foundation/content/MediaType;)Z
 }
 
 public final class androidx/compose/foundation/draganddrop/DragAndDropSourceKt {
@@ -621,10 +471,6 @@ public abstract interface class androidx/compose/foundation/gestures/BringIntoVi
 public final class androidx/compose/foundation/gestures/BringIntoViewSpec$Companion {
 }
 
-public final class androidx/compose/foundation/gestures/BringIntoViewSpec_skikoKt {
-	public static final fun getLocalBringIntoViewSpec ()Landroidx/compose/runtime/ProvidableCompositionLocal;
-}
-
 public abstract interface class androidx/compose/foundation/gestures/Drag2DScope {
 	public abstract fun dragBy-k-4lQ0M (J)V
 }
@@ -652,13 +498,6 @@ public final class androidx/compose/foundation/gestures/DragGestureDetectorKt {
 	public static final fun drag-jO51t88 (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun horizontalDrag-jO51t88 (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun verticalDrag-jO51t88 (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;JLkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-}
-
-public final class androidx/compose/foundation/gestures/DragGesture_skikoKt {
-	public static final fun detectDragGestures (Landroidx/compose/ui/input/pointer/PointerInputScope;Landroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun detectDragGestures$default (Landroidx/compose/ui/input/pointer/PointerInputScope;Landroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static final fun onDrag (Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
-	public static synthetic fun onDrag$default (Landroidx/compose/ui/Modifier;ZLandroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
 }
 
 public abstract interface class androidx/compose/foundation/gestures/DragScope {
@@ -846,8 +685,6 @@ public final class androidx/compose/foundation/gestures/TapGestureDetectorKt {
 	public static synthetic fun awaitFirstDown$default (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;ZLkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public static final fun detectTapGestures (Landroidx/compose/ui/input/pointer/PointerInputScope;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun detectTapGestures$default (Landroidx/compose/ui/input/pointer/PointerInputScope;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static final fun getDetectTapGesturesEnableNewDispatchingBehavior ()Z
-	public static final fun setDetectTapGesturesEnableNewDispatchingBehavior (Z)V
 	public static final fun waitForUpOrCancellation (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;Landroidx/compose/ui/input/pointer/PointerEventPass;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final synthetic fun waitForUpOrCancellation (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun waitForUpOrCancellation$default (Landroidx/compose/ui/input/pointer/AwaitPointerEventScope;Landroidx/compose/ui/input/pointer/PointerEventPass;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
@@ -855,11 +692,6 @@ public final class androidx/compose/foundation/gestures/TapGestureDetectorKt {
 
 public final class androidx/compose/foundation/gestures/TapGestureDetector_skikoKt {
 	public static final fun isDeepPress (Landroidx/compose/ui/input/pointer/PointerEvent;)Z
-}
-
-public final class androidx/compose/foundation/gestures/TapGesturesDetector_skikoKt {
-	public static final fun detectTapGestures (Landroidx/compose/ui/input/pointer/PointerInputScope;Landroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun detectTapGestures$default (Landroidx/compose/ui/input/pointer/PointerInputScope;Landroidx/compose/foundation/PointerMatcher;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class androidx/compose/foundation/gestures/TargetedFlingBehavior : androidx/compose/foundation/gestures/FlingBehavior {
@@ -1145,28 +977,6 @@ public final class androidx/compose/foundation/lazy/LazyListLayoutInfo$DefaultIm
 	public static fun getViewportSize-YbymL2g (Landroidx/compose/foundation/lazy/LazyListLayoutInfo;)J
 }
 
-public abstract interface class androidx/compose/foundation/lazy/LazyListPrefetchResultScope {
-	public abstract fun getIndex ()I
-	public abstract fun getMainAxisSize ()I
-}
-
-public abstract interface class androidx/compose/foundation/lazy/LazyListPrefetchScope {
-	public abstract fun schedulePrefetch (ILkotlin/jvm/functions/Function1;)Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState$PrefetchHandle;
-	public static synthetic fun schedulePrefetch$default (Landroidx/compose/foundation/lazy/LazyListPrefetchScope;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState$PrefetchHandle;
-}
-
-public abstract interface class androidx/compose/foundation/lazy/LazyListPrefetchStrategy {
-	public fun getPrefetchScheduler ()Landroidx/compose/foundation/lazy/layout/PrefetchScheduler;
-	public abstract fun onNestedPrefetch (Landroidx/compose/foundation/lazy/layout/NestedPrefetchScope;I)V
-	public abstract fun onScroll (Landroidx/compose/foundation/lazy/LazyListPrefetchScope;FLandroidx/compose/foundation/lazy/LazyListLayoutInfo;)V
-	public abstract fun onVisibleItemsUpdated (Landroidx/compose/foundation/lazy/LazyListPrefetchScope;Landroidx/compose/foundation/lazy/LazyListLayoutInfo;)V
-}
-
-public final class androidx/compose/foundation/lazy/LazyListPrefetchStrategyKt {
-	public static final fun LazyListPrefetchStrategy (I)Landroidx/compose/foundation/lazy/LazyListPrefetchStrategy;
-	public static synthetic fun LazyListPrefetchStrategy$default (IILjava/lang/Object;)Landroidx/compose/foundation/lazy/LazyListPrefetchStrategy;
-}
-
 public abstract interface class androidx/compose/foundation/lazy/LazyListScope {
 	public fun item (Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function3;)V
 	public synthetic fun item (Ljava/lang/Object;Lkotlin/jvm/functions/Function3;)V
@@ -1204,13 +1014,8 @@ public final class androidx/compose/foundation/lazy/LazyListScrollScopeKt {
 public final class androidx/compose/foundation/lazy/LazyListState : androidx/compose/foundation/gestures/ScrollableState {
 	public static final field $stable I
 	public static final field Companion Landroidx/compose/foundation/lazy/LazyListState$Companion;
-	public fun <init> ()V
 	public fun <init> (II)V
 	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (IILandroidx/compose/foundation/lazy/LazyListPrefetchStrategy;)V
-	public synthetic fun <init> (IILandroidx/compose/foundation/lazy/LazyListPrefetchStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;II)V
-	public synthetic fun <init> (Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun animateScrollToItem (IILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun animateScrollToItem$default (Landroidx/compose/foundation/lazy/LazyListState;IILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun dispatchRawDelta (F)F
@@ -1235,9 +1040,7 @@ public final class androidx/compose/foundation/lazy/LazyListState$Companion {
 }
 
 public final class androidx/compose/foundation/lazy/LazyListStateKt {
-	public static final fun rememberLazyListState (IILandroidx/compose/foundation/lazy/LazyListPrefetchStrategy;Landroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/lazy/LazyListState;
 	public static final fun rememberLazyListState (IILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/lazy/LazyListState;
-	public static final fun rememberLazyListState (Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;IILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/lazy/LazyListState;
 }
 
 public abstract interface annotation class androidx/compose/foundation/lazy/LazyScopeMarker : java/lang/annotation/Annotation {
@@ -1342,29 +1145,6 @@ public abstract interface class androidx/compose/foundation/lazy/grid/LazyGridLa
 	public abstract fun getVisibleItemsInfo ()Ljava/util/List;
 }
 
-public abstract interface class androidx/compose/foundation/lazy/grid/LazyGridPrefetchResultScope {
-	public abstract fun getLineIndex ()I
-	public abstract fun getLineItemCount ()I
-	public abstract fun getMainAxisSize (I)I
-}
-
-public abstract interface class androidx/compose/foundation/lazy/grid/LazyGridPrefetchScope {
-	public abstract fun scheduleLinePrefetch (I)Ljava/util/List;
-	public fun scheduleLinePrefetch (ILkotlin/jvm/functions/Function1;)Ljava/util/List;
-}
-
-public abstract interface class androidx/compose/foundation/lazy/grid/LazyGridPrefetchStrategy {
-	public fun getPrefetchScheduler ()Landroidx/compose/foundation/lazy/layout/PrefetchScheduler;
-	public abstract fun onNestedPrefetch (Landroidx/compose/foundation/lazy/layout/NestedPrefetchScope;I)V
-	public abstract fun onScroll (Landroidx/compose/foundation/lazy/grid/LazyGridPrefetchScope;FLandroidx/compose/foundation/lazy/grid/LazyGridLayoutInfo;)V
-	public abstract fun onVisibleItemsUpdated (Landroidx/compose/foundation/lazy/grid/LazyGridPrefetchScope;Landroidx/compose/foundation/lazy/grid/LazyGridLayoutInfo;)V
-}
-
-public final class androidx/compose/foundation/lazy/grid/LazyGridPrefetchStrategyKt {
-	public static final fun LazyGridPrefetchStrategy (I)Landroidx/compose/foundation/lazy/grid/LazyGridPrefetchStrategy;
-	public static synthetic fun LazyGridPrefetchStrategy$default (IILjava/lang/Object;)Landroidx/compose/foundation/lazy/grid/LazyGridPrefetchStrategy;
-}
-
 public abstract interface class androidx/compose/foundation/lazy/grid/LazyGridScope {
 	public abstract fun item (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Ljava/lang/Object;Lkotlin/jvm/functions/Function3;)V
 	public static synthetic fun item$default (Landroidx/compose/foundation/lazy/grid/LazyGridScope;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Ljava/lang/Object;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
@@ -1388,13 +1168,8 @@ public final class androidx/compose/foundation/lazy/grid/LazyGridSpanKt {
 public final class androidx/compose/foundation/lazy/grid/LazyGridState : androidx/compose/foundation/gestures/ScrollableState {
 	public static final field $stable I
 	public static final field Companion Landroidx/compose/foundation/lazy/grid/LazyGridState$Companion;
-	public fun <init> ()V
 	public fun <init> (II)V
 	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (IILandroidx/compose/foundation/lazy/grid/LazyGridPrefetchStrategy;)V
-	public synthetic fun <init> (IILandroidx/compose/foundation/lazy/grid/LazyGridPrefetchStrategy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;II)V
-	public synthetic fun <init> (Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun animateScrollToItem (IILkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static synthetic fun animateScrollToItem$default (Landroidx/compose/foundation/lazy/grid/LazyGridState;IILkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 	public fun dispatchRawDelta (F)F
@@ -1419,9 +1194,7 @@ public final class androidx/compose/foundation/lazy/grid/LazyGridState$Companion
 }
 
 public final class androidx/compose/foundation/lazy/grid/LazyGridStateKt {
-	public static final fun rememberLazyGridState (IILandroidx/compose/foundation/lazy/grid/LazyGridPrefetchStrategy;Landroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/lazy/grid/LazyGridState;
 	public static final fun rememberLazyGridState (IILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/lazy/grid/LazyGridState;
-	public static final fun rememberLazyGridState (Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;IILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/lazy/grid/LazyGridState;
 }
 
 public abstract interface class androidx/compose/foundation/lazy/layout/IntervalList {
@@ -1436,18 +1209,6 @@ public final class androidx/compose/foundation/lazy/layout/IntervalList$Interval
 	public final fun getSize ()I
 	public final fun getStartIndex ()I
 	public final fun getValue ()Ljava/lang/Object;
-}
-
-public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow {
-	public fun calculateAheadWindow (Landroidx/compose/ui/unit/Density;I)I
-	public fun calculateBehindWindow (Landroidx/compose/ui/unit/Density;I)I
-}
-
-public final class androidx/compose/foundation/lazy/layout/LazyLayoutCacheWindowKt {
-	public static final fun LazyLayoutCacheWindow (FF)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
-	public static synthetic fun LazyLayoutCacheWindow$default (FFILjava/lang/Object;)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
-	public static final fun LazyLayoutCacheWindow-YgX7TsA (FF)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
-	public static synthetic fun LazyLayoutCacheWindow-YgX7TsA$default (FFILjava/lang/Object;)Landroidx/compose/foundation/lazy/layout/LazyLayoutCacheWindow;
 }
 
 public abstract class androidx/compose/foundation/lazy/layout/LazyLayoutIntervalContent {
@@ -1475,7 +1236,6 @@ public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayo
 
 public final class androidx/compose/foundation/lazy/layout/LazyLayoutKt {
 	public static final fun LazyLayout (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState;Landroidx/compose/foundation/lazy/layout/LazyLayoutMeasurePolicy;Landroidx/compose/runtime/Composer;II)V
-	public static final synthetic fun LazyLayout (Lkotlin/jvm/functions/Function0;Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
 public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayoutMeasurePolicy {
@@ -1484,7 +1244,6 @@ public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayo
 
 public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayoutMeasureScope : androidx/compose/ui/layout/MeasureScope {
 	public abstract fun compose (I)Ljava/util/List;
-	public abstract fun measure-0kLqBqw (IJ)Ljava/util/List;
 }
 
 public final class androidx/compose/foundation/lazy/layout/LazyLayoutPinnableItemKt {
@@ -1538,10 +1297,6 @@ public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayo
 public final class androidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Landroidx/compose/foundation/lazy/layout/PrefetchScheduler;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Landroidx/compose/foundation/lazy/layout/PrefetchScheduler;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun <init> (Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun schedulePrecomposition (I)Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState$PrefetchHandle;
 	public final fun schedulePrecompositionAndPremeasure-VKLhPVY (IJLkotlin/jvm/functions/Function1;)Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState$PrefetchHandle;
 	public static synthetic fun schedulePrecompositionAndPremeasure-VKLhPVY$default (Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState;IJLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/foundation/lazy/layout/LazyLayoutPrefetchState$PrefetchHandle;
@@ -1569,10 +1324,6 @@ public abstract interface class androidx/compose/foundation/lazy/layout/LazyLayo
 	public static synthetic fun snapToItem$default (Landroidx/compose/foundation/lazy/layout/LazyLayoutScrollScope;IIILjava/lang/Object;)V
 }
 
-public final class androidx/compose/foundation/lazy/layout/Lazy_desktopKt {
-	public static final fun getDefaultLazyLayoutKey (I)Ljava/lang/Object;
-}
-
 public final class androidx/compose/foundation/lazy/layout/MutableIntervalList : androidx/compose/foundation/lazy/layout/IntervalList {
 	public static final field $stable I
 	public fun <init> ()V
@@ -1580,26 +1331,6 @@ public final class androidx/compose/foundation/lazy/layout/MutableIntervalList :
 	public fun forEach (IILkotlin/jvm/functions/Function1;)V
 	public fun get (I)Landroidx/compose/foundation/lazy/layout/IntervalList$Interval;
 	public fun getSize ()I
-}
-
-public abstract interface class androidx/compose/foundation/lazy/layout/NestedPrefetchScope {
-	public fun getNestedPrefetchItemCount ()I
-	public abstract fun schedulePrecomposition (I)V
-	public abstract fun schedulePrecompositionAndPremeasure-0kLqBqw (IJ)V
-	public fun schedulePrefetch (I)V
-	public fun schedulePrefetch-0kLqBqw (IJ)V
-}
-
-public abstract interface class androidx/compose/foundation/lazy/layout/PrefetchRequest {
-	public abstract fun execute (Landroidx/compose/foundation/lazy/layout/PrefetchRequestScope;)Z
-}
-
-public abstract interface class androidx/compose/foundation/lazy/layout/PrefetchRequestScope {
-	public abstract fun availableTimeNanos ()J
-}
-
-public abstract interface class androidx/compose/foundation/lazy/layout/PrefetchScheduler {
-	public abstract fun schedulePrefetch (Landroidx/compose/foundation/lazy/layout/PrefetchRequest;)V
 }
 
 public final class androidx/compose/foundation/lazy/staggeredgrid/LazyStaggeredGridDslKt {
@@ -2024,11 +1755,6 @@ public final class androidx/compose/foundation/text/BasicTextFieldKt {
 	public static final synthetic fun BasicTextField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/KeyboardActions;ZILandroidx/compose/ui/text/input/VisualTransformation;Lkotlin/jvm/functions/Function1;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;III)V
 }
 
-public final class androidx/compose/foundation/text/BasicTextField_desktopKt {
-	public static final fun BasicTextField (Landroidx/compose/ui/text/input/TextFieldValue;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/KeyboardActions;ZIILandroidx/compose/ui/text/input/VisualTransformation;Lkotlin/jvm/functions/Function1;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Lkotlin/jvm/functions/Function3;Landroidx/compose/foundation/text/TextFieldScrollState;Landroidx/compose/runtime/Composer;III)V
-	public static final fun BasicTextField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Landroidx/compose/ui/Modifier;ZZLandroidx/compose/ui/text/TextStyle;Landroidx/compose/foundation/text/KeyboardOptions;Landroidx/compose/foundation/text/KeyboardActions;ZIILandroidx/compose/ui/text/input/VisualTransformation;Lkotlin/jvm/functions/Function1;Landroidx/compose/foundation/interaction/MutableInteractionSource;Landroidx/compose/ui/graphics/Brush;Lkotlin/jvm/functions/Function3;Landroidx/compose/foundation/text/TextFieldScrollState;Landroidx/compose/runtime/Composer;III)V
-}
-
 public final class androidx/compose/foundation/text/BasicTextKt {
 	public static final synthetic fun BasicText-4YKlhWE (Landroidx/compose/ui/text/AnnotatedString;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZILjava/util/Map;Landroidx/compose/runtime/Composer;II)V
 	public static final synthetic fun BasicText-4YKlhWE (Ljava/lang/String;Landroidx/compose/ui/Modifier;Landroidx/compose/ui/text/TextStyle;Lkotlin/jvm/functions/Function1;IZIILandroidx/compose/runtime/Composer;II)V
@@ -2066,11 +1792,6 @@ public final class androidx/compose/foundation/text/ComposableSingletons$CoreTex
 	public final fun getLambda$559628295$foundation ()Lkotlin/jvm/functions/Function3;
 }
 
-public final class androidx/compose/foundation/text/ContextMenu_desktopKt {
-	public static final fun TextContextMenuArea (Landroidx/compose/foundation/text/TextContextMenu$TextManager;Lkotlin/jvm/functions/Function0;Landroidx/compose/foundation/ContextMenuState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
-	public static final fun getLocalTextContextMenu ()Landroidx/compose/runtime/ProvidableCompositionLocal;
-}
-
 public final class androidx/compose/foundation/text/InlineTextContent {
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/ui/text/Placeholder;Lkotlin/jvm/functions/Function3;)V
@@ -2084,12 +1805,6 @@ public final class androidx/compose/foundation/text/InlineTextContentKt {
 }
 
 public abstract interface annotation class androidx/compose/foundation/text/InternalFoundationTextApi : java/lang/annotation/Annotation {
-}
-
-public final class androidx/compose/foundation/text/JPopupTextMenu : androidx/compose/foundation/text/TextContextMenu {
-	public static final field $stable I
-	public fun <init> (Ljava/awt/Component;Lkotlin/jvm/functions/Function2;)V
-	public fun Area (Landroidx/compose/foundation/text/TextContextMenu$TextManager;Landroidx/compose/foundation/ContextMenuState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 }
 
 public abstract interface class androidx/compose/foundation/text/KeyboardActionScope {
@@ -2177,45 +1892,11 @@ public final class androidx/compose/foundation/text/TextAutoSizeDefaults {
 	public final fun getMinFontSize-XSAIIZE ()J
 }
 
-public abstract interface class androidx/compose/foundation/text/TextContextMenu {
-	public static final field Companion Landroidx/compose/foundation/text/TextContextMenu$Companion;
-	public abstract fun Area (Landroidx/compose/foundation/text/TextContextMenu$TextManager;Landroidx/compose/foundation/ContextMenuState;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
-}
-
 public final class androidx/compose/foundation/text/TextContextMenu$Companion {
-	public final fun getDefault ()Landroidx/compose/foundation/text/TextContextMenu;
-}
-
-public abstract interface class androidx/compose/foundation/text/TextContextMenu$TextManager {
-	public abstract fun getCopy ()Lkotlin/jvm/functions/Function0;
-	public abstract fun getCut ()Lkotlin/jvm/functions/Function0;
-	public abstract fun getPaste ()Lkotlin/jvm/functions/Function0;
-	public abstract fun getSelectAll ()Lkotlin/jvm/functions/Function0;
-	public abstract fun getSelectedText ()Landroidx/compose/ui/text/AnnotatedString;
-	public abstract fun selectWordAtPositionIfNotAlreadySelected-k-4lQ0M (J)V
 }
 
 public final class androidx/compose/foundation/text/TextFieldKeyInput_desktopKt {
 	public static final fun isTypedEvent-ZmokQxo (Ljava/lang/Object;)Z
-}
-
-public final class androidx/compose/foundation/text/TextFieldScrollState : androidx/compose/foundation/gestures/ScrollableState {
-	public static final field $stable I
-	public fun <init> (Landroidx/compose/foundation/gestures/Orientation;I)V
-	public synthetic fun <init> (Landroidx/compose/foundation/gestures/Orientation;IILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun dispatchRawDelta (F)F
-	public final fun getMaxOffset ()F
-	public final fun getOffset ()F
-	public final fun getViewportSize ()I
-	public fun isScrollInProgress ()Z
-	public fun scroll (Landroidx/compose/foundation/MutatePriority;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public final fun setOffset (F)V
-}
-
-public final class androidx/compose/foundation/text/TextFieldScrollState_desktop_ktKt {
-	public static final fun rememberTextFieldHorizontalScrollState (ILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/text/TextFieldScrollState;
-	public static final fun rememberTextFieldScrollState (Landroidx/compose/foundation/gestures/Orientation;ILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/text/TextFieldScrollState;
-	public static final fun rememberTextFieldVerticalScrollState (ILandroidx/compose/runtime/Composer;II)Landroidx/compose/foundation/text/TextFieldScrollState;
 }
 
 public final class androidx/compose/foundation/text/contextmenu/builder/TextContextMenuBuilderScope {
@@ -2323,7 +2004,6 @@ public final class androidx/compose/foundation/text/input/TextFieldBuffer : java
 	public fun append (Ljava/lang/CharSequence;II)Ljava/lang/Appendable;
 	public final fun asCharSequence ()Ljava/lang/CharSequence;
 	public final fun charAt (I)C
-	public final fun getChanges ()Landroidx/compose/foundation/text/input/TextFieldBuffer$ChangeList;
 	public final fun getLength ()I
 	public final fun getOriginalSelection-d9O1mEE ()J
 	public final fun getOriginalText ()Ljava/lang/CharSequence;
@@ -2345,8 +2025,6 @@ public abstract interface class androidx/compose/foundation/text/input/TextField
 
 public final class androidx/compose/foundation/text/input/TextFieldBufferKt {
 	public static final fun delete (Landroidx/compose/foundation/text/input/TextFieldBuffer;II)V
-	public static final fun forEachChange (Landroidx/compose/foundation/text/input/TextFieldBuffer$ChangeList;Lkotlin/jvm/functions/Function2;)V
-	public static final fun forEachChangeReversed (Landroidx/compose/foundation/text/input/TextFieldBuffer$ChangeList;Lkotlin/jvm/functions/Function2;)V
 	public static final fun insert (Landroidx/compose/foundation/text/input/TextFieldBuffer;ILjava/lang/String;)V
 	public static final fun placeCursorAtEnd (Landroidx/compose/foundation/text/input/TextFieldBuffer;)V
 	public static final fun selectAll (Landroidx/compose/foundation/text/input/TextFieldBuffer;)V
@@ -2392,7 +2070,6 @@ public final class androidx/compose/foundation/text/input/TextFieldState {
 	public final fun getComposition-MzsxiRA ()Landroidx/compose/ui/text/TextRange;
 	public final fun getSelection-d9O1mEE ()J
 	public final fun getText ()Ljava/lang/CharSequence;
-	public final fun getUndoState ()Landroidx/compose/foundation/text/input/UndoState;
 	public final fun startEdit ()Landroidx/compose/foundation/text/input/TextFieldBuffer;
 	public fun toString ()Ljava/lang/String;
 }
