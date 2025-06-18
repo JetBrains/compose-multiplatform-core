@@ -41,8 +41,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.shadow.DropShadow
-import androidx.compose.ui.graphics.shadow.InnerShadow
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -83,15 +82,15 @@ fun BrushAndShadows() {
                     val sweepBrush =
                         Brush.sweepGradient(listOf(Color.Red, Color.Blue, Color.Cyan, Color.Green))
                     val compositeBrush =
-                        Brush.compositeShaderBrush(bitmapBrush, sweepBrush, BlendMode.SrcIn)
+                        Brush.composite(bitmapBrush, sweepBrush, BlendMode.SrcIn)
                     onDrawBehind { drawRect(brush = compositeBrush) }
                 }
         )
 
         Box(Modifier.size(120.dp).shadow(12.dp, RectangleShape).background(Color.White))
 
-        Box(Modifier.size(120.dp).dropShadow(RectangleShape, DropShadow(12.dp)).background(Color.White))
+        Box(Modifier.size(120.dp).dropShadow(RectangleShape, Shadow(12.dp)).background(Color.White))
 
-        Box(Modifier.size(120.dp).innerShadow(RectangleShape, InnerShadow(12.dp)))
+        Box(Modifier.size(120.dp).innerShadow(RectangleShape, Shadow(12.dp)))
     }
 }

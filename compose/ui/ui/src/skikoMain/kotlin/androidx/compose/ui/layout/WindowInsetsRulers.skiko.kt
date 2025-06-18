@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.compose.material3.adaptive
+package androidx.compose.ui.layout
 
-import androidx.compose.runtime.Composable
+// TODO https://youtrack.jetbrains.com/issue/CMP-8086
 
-@Composable
-internal actual fun calculatePosture(): Posture =
-    Posture()  // Postures and hinges are relevant to android devices only
+internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope): List<RectRulers> =
+    emptyList()
+
+internal actual fun findInsetsAnimationProperties(
+    placementScope: Placeable.PlacementScope,
+    windowInsetsRulers: WindowInsetsRulers
+): WindowInsetsAnimation = NoWindowInsetsAnimation
