@@ -20,19 +20,20 @@ import android.graphics.RectF
 import android.util.Size
 import android.util.SizeF
 import android.view.Surface
+import androidx.camera.viewfinder.compose.internal.ViewfinderEmbeddedExternalSurface
+import androidx.camera.viewfinder.compose.internal.ViewfinderExternalSurface
+import androidx.camera.viewfinder.compose.internal.ViewfinderExternalSurfaceScope
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.TransformationInfo
 import androidx.camera.viewfinder.core.TransformationInfo.Companion.DEFAULT
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import androidx.camera.viewfinder.core.ViewfinderSurfaceSessionScope
+import androidx.camera.viewfinder.core.impl.ImplementationModeCompat
 import androidx.camera.viewfinder.core.impl.OffsetF
 import androidx.camera.viewfinder.core.impl.RefCounted
 import androidx.camera.viewfinder.core.impl.ScaleFactorF
 import androidx.camera.viewfinder.core.impl.Transformations
 import androidx.camera.viewfinder.core.impl.ViewfinderSurfaceSessionImpl
-import androidx.compose.foundation.AndroidEmbeddedExternalSurface
-import androidx.compose.foundation.AndroidExternalSurface
-import androidx.compose.foundation.AndroidExternalSurfaceScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -61,14 +62,17 @@ import kotlinx.coroutines.coroutineScope
  * [ViewfinderSurfaceSessionScope] of the callback registered via
  * [ViewfinderInitScope.onSurfaceSession] in [onInit].
  *
- * This has two underlying implementations either using an [AndroidEmbeddedExternalSurface] for
- * [ImplementationMode.EMBEDDED] or an [AndroidExternalSurface] for [ImplementationMode.EXTERNAL].
- * These can be set by the [ImplementationMode] argument in the [surfaceRequest] constructor. If the
- * implementation mode is `null`, then [ImplementationMode.EXTERNAL] will be used.
+ * This has two underlying implementations based on
+ * [androidx.compose.foundation.AndroidEmbeddedExternalSurface] for [ImplementationMode.EMBEDDED] or
+ * on [androidx.compose.foundation.AndroidExternalSurface] for [ImplementationMode.EXTERNAL]. These
+ * can be set by the [ImplementationMode] argument in the [surfaceRequest] constructor. If
+ * `implementationMode` is `null`, [ImplementationMode.EXTERNAL] is chosen by default, switching to
+ * [ImplementationMode.EMBEDDED] on API levels 24 and below, or on devices with known compatibility
+ * issues with the `EXTERNAL` mode.
  *
  * The [onInit] lambda, and the callback registered with [ViewfinderInitScope.onSurfaceSession], are
  * always called from the main thread. [onInit] will be called every time a new [surfaceRequest] is
- * provided.
+ * provided, or if the [ImplementationMode] changes.
  *
  * @param surfaceRequest Details about the surface being requested
  * @param transformationInfo Specifies the required transformations for the media being displayed.
@@ -104,7 +108,8 @@ fun Viewfinder(
                 surfaceHeight = surfaceRequest.height,
                 transformationInfo = transformationInfo,
                 implementationMode =
-                    surfaceRequest.implementationMode ?: ImplementationMode.EXTERNAL,
+                    surfaceRequest.implementationMode
+                        ?: ImplementationModeCompat.chooseCompatibleMode(),
                 coordinateTransformer = coordinateTransformer,
                 alignment = alignment,
                 contentScale = contentScale,
@@ -115,18 +120,11 @@ fun Viewfinder(
                 // Register callback from onInit()
                 onInit.invoke(viewfinderInitScope)
 
-                onSurface { newSurface, _, _ ->
-                    val refCountedSurface = RefCounted<Surface> { it.release() }
-                    refCountedSurface.initialize(newSurface)
-
-                    // TODO(b/390508238): Stop underlying View from releasing the Surface
-                    // automatically. It should wait for the RefCount to get to 0.
-                    newSurface.onDestroyed { refCountedSurface.release() }
-
-                    // TODO(b/322420176): Properly handle onSurfaceChanged()
-
+                onSurface { viewfinderSurfaceHolder ->
                     // Dispatch surface to registered onSurfaceSession callback
-                    viewfinderInitScope.dispatchOnSurfaceSession(refCountedSurface)
+                    viewfinderInitScope.dispatchOnSurfaceSession(
+                        viewfinderSurfaceHolder.refCountedSurface
+                    )
                 }
             }
         }
@@ -142,7 +140,7 @@ private fun TransformedSurface(
     coordinateTransformer: MutableCoordinateTransformer?,
     alignment: Alignment,
     contentScale: ContentScale,
-    onInit: AndroidExternalSurfaceScope.() -> Unit,
+    onInit: ViewfinderExternalSurfaceScope.() -> Unit,
 ) {
     val layoutDirection = LocalConfiguration.current.layoutDirection
     val surfaceModifier =
@@ -191,7 +189,7 @@ private fun TransformedSurface(
 
     when (implementationMode) {
         ImplementationMode.EXTERNAL -> {
-            AndroidExternalSurface(modifier = surfaceModifier, onInit = onInit)
+            ViewfinderExternalSurface(modifier = surfaceModifier, onInit = onInit)
         }
         ImplementationMode.EMBEDDED -> {
             val displayRotationDegrees =
@@ -214,7 +212,7 @@ private fun TransformedSurface(
                 )
             }
 
-            AndroidEmbeddedExternalSurface(
+            ViewfinderEmbeddedExternalSurface(
                 modifier = surfaceModifier,
                 transform = correctionMatrix,
                 onInit = onInit,

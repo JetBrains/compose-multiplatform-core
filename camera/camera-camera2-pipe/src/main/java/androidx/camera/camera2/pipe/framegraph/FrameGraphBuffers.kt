@@ -106,7 +106,7 @@ internal constructor(
         return modified
     }
 
-    private fun invalidate() {
+    fun invalidate() {
         if (buffers.isEmpty()) {
             Log.warn { "No available buffer, invoke stop repeating." }
             cameraGraph.useSessionIn(frameGraphCoroutineScope) { session ->

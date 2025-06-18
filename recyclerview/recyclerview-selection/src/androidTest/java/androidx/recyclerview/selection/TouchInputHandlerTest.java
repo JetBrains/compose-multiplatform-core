@@ -87,7 +87,15 @@ public final class TouchInputHandlerTest {
     }
 
     private boolean singleTap(MotionEvent e) {
-        return mInputDelegate.onSingleTapUp(e) || mInputDelegate.onSingleTapConfirmed(e);
+        MotionEvent downEvent = e;
+        // Strictly speaking, it would be more realistic if the upEvent's getAction() was
+        // MotionEvent.ACTION_UP, in contrast to e.getAction(), which is MotionEvent.ACTION_DOWN.
+        // But the code under test doesn't care about the action. It's simpler to just re-use e.
+        MotionEvent upEvent = e;
+
+        return mInputDelegate.onDown(downEvent)
+                || mInputDelegate.onSingleTapUp(upEvent)
+                || mInputDelegate.onSingleTapConfirmed(downEvent);
     }
 
     @Test

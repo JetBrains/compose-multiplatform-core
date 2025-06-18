@@ -16,19 +16,23 @@
 
 package androidx.appfunctions.internal
 
+import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionManagerCompat
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
 
 /** Provides the backend to the [android.app.appfunctions.AppFunctionManager] API. */
-internal interface AppFunctionManagerApi {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface AppFunctionManagerApi {
     /**
      * Execute the app function.
      *
      * @param request the app function details and the arguments.
      * @return the result of the attempt to execute the function.
      */
-    suspend fun executeAppFunction(request: ExecuteAppFunctionRequest): ExecuteAppFunctionResponse
+    public suspend fun executeAppFunction(
+        request: ExecuteAppFunctionRequest
+    ): ExecuteAppFunctionResponse
 
     /**
      * Checks if [functionId] in [packageName] is enabled.
@@ -37,7 +41,7 @@ internal interface AppFunctionManagerApi {
      * @param functionId The identifier of the app function.
      * @throws IllegalArgumentException If the [functionId] is not available under [packageName].
      */
-    suspend fun isAppFunctionEnabled(packageName: String, functionId: String): Boolean
+    public suspend fun isAppFunctionEnabled(packageName: String, functionId: String): Boolean
 
     /**
      * Sets [newEnabledState] to an app function [functionId] owned by the calling package.
@@ -46,7 +50,7 @@ internal interface AppFunctionManagerApi {
      * @param newEnabledState The new state of the app function.
      * @throws IllegalArgumentException If the [functionId] is not available.
      */
-    suspend fun setAppFunctionEnabled(
+    public suspend fun setAppFunctionEnabled(
         functionId: String,
         @AppFunctionManagerCompat.EnabledState newEnabledState: Int,
     )

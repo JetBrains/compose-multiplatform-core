@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.framegraph
 
 import android.content.Context
+import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
 import android.hardware.camera2.CaptureRequest
@@ -31,6 +32,7 @@ import androidx.camera.camera2.pipe.GraphState.GraphStateStarting
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
 import androidx.camera.camera2.pipe.GraphState.GraphStateStopping
 import androidx.camera.camera2.pipe.Metadata
+import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.graph.CameraGraphImpl
@@ -79,12 +81,10 @@ class FrameGraphImplTest {
         )
     private val fakeGraphProcessor = FakeGraphProcessor()
     private val cameraSurfaceManager = CameraSurfaceManager()
-
     private val stream1Config =
         CameraStream.Config.create(Size(1280, 720), StreamFormat.YUV_420_888)
     private val stream2Config =
         CameraStream.Config.create(Size(1920, 1080), StreamFormat.YUV_420_888)
-
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
         CameraGraph.Config(camera = metadata.camera, streams = listOf(stream1Config, stream2Config))
@@ -137,7 +137,6 @@ class FrameGraphImplTest {
     private val frameGraphBuffers = FrameGraphBuffers(cameraGraph, testScope)
     private val frameGraph: FrameGraph =
         FrameGraphImpl(cameraGraph, frameDistributor, frameGraphBuffers, testScope.backgroundScope)
-
     private val streamId1: StreamId = StreamId(1)
     private val streamId2: StreamId = StreamId(2)
 
@@ -251,6 +250,7 @@ class FrameGraphImplTest {
 
             // Closing an active session should allow a new session instance to be created.
             session.close()
+            advanceUntilIdle()
 
             val session2 = frameGraph.acquireSessionOrNull()
             assertThat(session2).isNotNull()
@@ -277,6 +277,77 @@ class FrameGraphImplTest {
             job2.await()
 
             assertThat(events.size).isEqualTo(2)
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_revertsCaptureStreams() =
+        testScope.runTest {
+            val initialStreams = listOf(streamId1)
+            val repeatingRequestStreams = listOf(streamId2)
+
+            frameGraph.start()
+            frameGraph.captureWith(initialStreams.toSet())
+            advanceUntilIdle()
+            frameGraph.useSession {
+                it.startRepeating(Request(streams = repeatingRequestStreams))
+                assertThat(fakeGraphProcessor.repeatingRequest?.streams)
+                    .isEqualTo(repeatingRequestStreams)
+            }
+            advanceUntilIdle()
+
+            assertThat(fakeGraphProcessor.repeatingRequest?.streams).isEqualTo(initialStreams)
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_revertsParameters() =
+        testScope.runTest {
+            val repeatingRequestParameters =
+                mapOf<CaptureRequest.Key<*>, Any>(CaptureRequest.SCALER_CROP_REGION to Rect())
+
+            frameGraph.start()
+            frameGraph.captureWith(streamIds = setOf(streamId1))
+            advanceUntilIdle()
+            frameGraph.useSession {
+                it.startRepeating(
+                    Request(streams = listOf(streamId1), parameters = repeatingRequestParameters)
+                )
+                assertThat(fakeGraphProcessor.repeatingRequest?.parameters)
+                    .isEqualTo(repeatingRequestParameters)
+            }
+            advanceUntilIdle()
+
+            assertThat(fakeGraphProcessor.repeatingRequest?.parameters)
+                .isEqualTo(emptyMap<CaptureRequest.Key<*>, Any>())
+        }
+
+    @Test
+    fun useSession_invalidatesSessionAfterClosure_revertsBothStreamsAndParameters() =
+        testScope.runTest {
+            val initialStreams = listOf(streamId1)
+            val initialParameters = emptyMap<CaptureRequest.Key<*>, Any>()
+            val repeatingRequestStreams = listOf(streamId2)
+            val repeatingRequestParameters =
+                mapOf<CaptureRequest.Key<*>, Any>(CaptureRequest.SCALER_CROP_REGION to Rect())
+
+            frameGraph.start()
+            frameGraph.captureWith(initialStreams.toSet(), initialParameters.toMap())
+            advanceUntilIdle()
+            frameGraph.useSession {
+                it.startRepeating(
+                    Request(
+                        streams = repeatingRequestStreams,
+                        parameters = repeatingRequestParameters,
+                    )
+                )
+                assertThat(fakeGraphProcessor.repeatingRequest?.parameters)
+                    .isEqualTo(repeatingRequestParameters)
+                assertThat(fakeGraphProcessor.repeatingRequest?.streams)
+                    .isEqualTo(repeatingRequestStreams)
+            }
+            advanceUntilIdle()
+
+            assertThat(fakeGraphProcessor.repeatingRequest?.parameters).isEqualTo(initialParameters)
+            assertThat(fakeGraphProcessor.repeatingRequest?.streams).isEqualTo(initialStreams)
         }
 
     companion object {

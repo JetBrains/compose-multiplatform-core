@@ -33,7 +33,7 @@ import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.camera2.internal.compat.CameraManagerCompat
 import androidx.camera.camera2.internal.compat.params.DynamicRangeConversions
 import androidx.camera.camera2.internal.compat.params.DynamicRangesCompat
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.stabilization.StabilizationMode
 import androidx.camera.core.impl.utils.executor.CameraXExecutors

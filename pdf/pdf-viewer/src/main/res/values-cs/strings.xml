@@ -63,6 +63,5 @@
     <string name="cannot_edit_pdf" msgid="7677598370087228978">"Soubor PDF nejde upravit"</string>
     <string name="clipboard_label" msgid="8943155331324944981">"Obsah byl zkopírován ze souboru PDF"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Posuvník"</string>
-    <!-- no translation found for confirm_selection (7020926320719465164) -->
-    <skip />
+    <string name="confirm_selection" msgid="7020926320719465164">"Potvrdit"</string>
 </resources>

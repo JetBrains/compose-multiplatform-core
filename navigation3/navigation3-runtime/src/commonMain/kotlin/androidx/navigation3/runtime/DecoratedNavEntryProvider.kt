@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -52,27 +51,16 @@ public fun <T : Any> DecoratedNavEntryProvider(
     // Kotlin does not know these things are compatible so we need this explicit cast
     // to ensure our lambda below takes the correct type
     entryProvider as (T) -> NavEntry<T>
+    val entries =
+        backStack.mapIndexed { index, key ->
+            val entry = entryProvider.invoke(key)
+            decorateEntry(entry, entryDecorators as List<NavEntryDecorator<T>>)
+        }
 
-    /**
-     * We scope the block to a backStack to support multiple backStack / backStack swapping with
-     * hoisted states. The DisposableEffects/onDispose for a particular backStack will only trigger
-     * for operations on the same backStack i.e. navigate / pop. This is so that when we swap
-     * between two lists, i.e. from listOf[A, B] to listOf[C, D], A and B will not be considered as
-     * pop, meaning their state will be preserved and recovered when returning to the first list.
-     */
-    key(backStack) {
-        // Generates a list of entries that are wrapped with the given providers
-        val entries =
-            backStack.mapIndexed { index, key ->
-                val entry = entryProvider.invoke(key)
-                decorateEntry(entry, entryDecorators as List<NavEntryDecorator<T>>)
-            }
+    // Provides the entire backstack to the previously wrapped entries
+    val initial: @Composable () -> Unit = remember(entries) { { content(entries) } }
 
-        // Provides the entire backstack to the previously wrapped entries
-        val initial: @Composable () -> Unit = remember(entries) { { content(entries) } }
-
-        PrepareBackStack(entries, entryDecorators, initial)
-    }
+    PrepareBackStack(entries, entryDecorators, initial)
 }
 
 /**
@@ -151,8 +139,10 @@ internal fun <T : Any> PrepareBackStack(
 
         DisposableEffect(contentKey) {
             onDispose {
+                val originalRoot = entries.first().contentKey
+                val sameBackStack = originalRoot == latestBackStack.first()
                 val popped =
-                    if (!latestBackStack.contains(contentKey)) {
+                    if (sameBackStack && !latestBackStack.contains(contentKey)) {
                         contentKeys.remove(contentKey)
                     } else false
                 // run onPop callback

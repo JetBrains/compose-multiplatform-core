@@ -24,6 +24,7 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.konan.target.Family
 
@@ -58,7 +59,7 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
+                implementation(libs.kotlinStdlibCommon)
                 api(libs.kotlinCoroutinesCore)
                 api(project(":compose:runtime:runtime-annotation"))
                 implementation("androidx.collection:collection:1.5.0")
@@ -92,6 +93,9 @@ androidXMultiplatform {
 
         jvmMain {
             dependsOn(nonEmulatorJvmMain)
+            dependencies {
+                implementation(libs.kotlinStdlib)
+            }
         }
 
         jvmTest {
@@ -172,22 +176,32 @@ androidXMultiplatform {
         }
 
         jsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
             dependsOn(webMain)
+            dependencies {
+                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinStdlibJs)
+            }
         }
 
         jsTest {
             dependsOn(webTest)
             dependencies {
+                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinStdlibJs)
                 implementation(libs.kotlinTestJs)
             }
         }
 
         wasmJsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
             dependsOn(webMain)
             dependencies {
+                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinStdlibWasm)
                 implementation(libs.kotlinXw3c)
+                implementation(libs.kotlinTestWasm)
             }
         }
 

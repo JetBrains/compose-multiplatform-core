@@ -19,7 +19,6 @@ package androidx.xr.compose.testing
 import android.app.Activity
 import android.view.Display
 import androidx.activity.ComponentActivity
-import androidx.annotation.NonNull
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
@@ -48,7 +47,7 @@ public class SubspaceTestingActivity : ComponentActivity() {
     @Suppress("MutableBareField") public var session: Session? = null
 
     /** Throws an exception by default under test; return Robolectric Display impl instead. */
-    @NonNull override fun getDisplay(): Display = ShadowDisplay.getDefaultDisplay()
+    override fun getDisplay(): Display = ShadowDisplay.getDefaultDisplay()
 
     override fun onStart() {
         SceneManager.start()

@@ -21,11 +21,13 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresPermission
+import androidx.annotation.RestrictTo
 import androidx.appfunctions.internal.AppFunctionManagerApi
 import androidx.appfunctions.internal.AppFunctionReader
 import androidx.appfunctions.internal.AppSearchAppFunctionReader
 import androidx.appfunctions.internal.Dependencies
 import androidx.appfunctions.internal.ExtensionAppFunctionManagerApi
+import androidx.appfunctions.internal.NullTranslatorSelector
 import androidx.appfunctions.internal.PlatformAppFunctionManagerApi
 import androidx.appfunctions.internal.TranslatorSelector
 import androidx.appfunctions.metadata.AppFunctionMetadata
@@ -37,11 +39,12 @@ import kotlinx.coroutines.flow.Flow
  * platform class [android.app.appfunctions.AppFunctionManager].
  */
 public class AppFunctionManagerCompat
-internal constructor(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public constructor(
     private val context: Context,
-    private val translatorSelector: TranslatorSelector,
     private val appFunctionReader: AppFunctionReader,
     private val appFunctionManagerApi: AppFunctionManagerApi,
+    private val translatorSelector: TranslatorSelector = NullTranslatorSelector(),
 ) {
 
     /**
@@ -183,7 +186,8 @@ internal constructor(
             [APP_FUNCTION_STATE_DEFAULT, APP_FUNCTION_STATE_ENABLED, APP_FUNCTION_STATE_DISABLED]
     )
     @Retention(AnnotationRetention.SOURCE)
-    internal annotation class EnabledState
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public annotation class EnabledState
 
     public companion object {
         /**
@@ -240,24 +244,24 @@ internal constructor(
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA -> {
                     AppFunctionManagerCompat(
                         context,
-                        Dependencies.translatorSelector,
                         AppSearchAppFunctionReader(
                             context,
                             Dependencies.schemaAppFunctionInventory,
                         ),
                         PlatformAppFunctionManagerApi(context),
+                        Dependencies.translatorSelector,
                     )
                 }
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     isExtensionLibraryAvailable() -> {
                     AppFunctionManagerCompat(
                         context,
-                        Dependencies.translatorSelector,
                         AppSearchAppFunctionReader(
                             context,
                             Dependencies.schemaAppFunctionInventory,
                         ),
                         ExtensionAppFunctionManagerApi(context),
+                        Dependencies.translatorSelector,
                     )
                 }
                 else -> {

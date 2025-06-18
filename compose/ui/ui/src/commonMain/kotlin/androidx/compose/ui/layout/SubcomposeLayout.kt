@@ -724,7 +724,6 @@ internal class LayoutNodeSubcompositionsState(
             slotReusePolicy.getSlotsToRetain(reusableSlotIdsSet)
             // iterating backwards so it is easier to remove items
             var i = lastReusableIndex
-            val outOfFrameExecutor = outOfFrameExecutor
             Snapshot.withoutReadObservation {
                 while (i >= startIndex) {
                     val node = foldedChildren[i]
@@ -734,15 +733,10 @@ internal class LayoutNodeSubcompositionsState(
                         reusableCount++
                         if (nodeState.active) {
                             node.resetLayoutState()
-                            if (outOfFrameExecutor != null) {
-                                nodeState.deactivateOutOfFrame(outOfFrameExecutor)
-                            } else {
-                                nodeState.active = false
-                                if (nodeState.composedWithReusableContentHost) {
-                                    needApplyNotification = true
-                                } else {
-                                    nodeState.composition?.deactivate()
-                                }
+                            nodeState.reuseComposition(forceDeactivate = false)
+
+                            if (nodeState.composedWithReusableContentHost) {
+                                needApplyNotification = true
                             }
                         }
                     } else {
@@ -767,7 +761,6 @@ internal class LayoutNodeSubcompositionsState(
     }
 
     private fun NodeState.deactivateOutOfFrame(executor: OutOfFrameExecutor) {
-        active = false
         executor.schedule {
             if (!active) {
                 composition?.deactivate()
@@ -783,27 +776,13 @@ internal class LayoutNodeSubcompositionsState(
         val childCount = foldedChildren.size
         if (reusableCount != childCount) {
             reusableCount = childCount
-            val outOfFrameExecutor = outOfFrameExecutor
             Snapshot.withoutReadObservation {
                 for (i in 0 until childCount) {
                     val node = foldedChildren[i]
                     val nodeState = nodeToNodeState[node]
                     if (nodeState != null && nodeState.active) {
                         node.resetLayoutState()
-                        if (deactivate) {
-                            nodeState.composition?.deactivate()
-                            nodeState.activeState = mutableStateOf(false)
-                        } else {
-                            if (outOfFrameExecutor != null) {
-                                nodeState.deactivateOutOfFrame(outOfFrameExecutor)
-                            } else {
-                                nodeState.active = false
-                                if (!nodeState.composedWithReusableContentHost) {
-                                    nodeState.composition?.deactivate()
-                                }
-                            }
-                        }
-                        // create a new instance to avoid change notifications
+                        nodeState.reuseComposition(forceDeactivate = deactivate)
                         nodeState.slotId = ReusedSlotId
                     }
                 }
@@ -1005,6 +984,32 @@ internal class LayoutNodeSubcompositionsState(
                     }
                 }
             subcompose(node, slotId, pausable = pausable, content)
+        }
+    }
+
+    private fun NodeState.reuseComposition(forceDeactivate: Boolean) {
+        if (!forceDeactivate && composedWithReusableContentHost) {
+            // Deactivation through ReusableContentHost is controlled with the active flag
+            active = false
+        } else {
+            // Otherwise, create a new instance to avoid state change notifications
+            activeState = mutableStateOf(false)
+        }
+
+        if (pausedComposition != null) {
+            // Cancelling disposes composition, so no additional work is needed.
+            cancelPausedPrecomposition()
+        } else if (forceDeactivate) {
+            composition?.deactivate()
+        } else {
+            val outOfFrameExecutor = outOfFrameExecutor
+            if (outOfFrameExecutor != null) {
+                deactivateOutOfFrame(outOfFrameExecutor)
+            } else {
+                if (!composedWithReusableContentHost) {
+                    composition?.deactivate()
+                }
+            }
         }
     }
 

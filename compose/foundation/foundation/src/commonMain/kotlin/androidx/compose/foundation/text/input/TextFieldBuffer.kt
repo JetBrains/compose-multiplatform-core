@@ -474,10 +474,15 @@ internal constructor(
         requirePrecondition(range in validRange) { "Expected $range to be in $validRange" }
     }
 
+    // TODO(135556699): Remove this when [TextFieldBuffer.addStyle] is supported by all
+    //  TextFieldBuffer instances when multi styled editing is implemented.
+    // Context; b/424167352
+    internal var canCallAddStyle: Boolean = false
+
     internal var outputTransformationAnnotations: MutableList<PlacedAnnotation>? = null
 
     internal fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int) {
-        checkPrecondition(offsetMappingCalculator != null) {
+        checkPrecondition(canCallAddStyle) {
             "You can add styling to a [TextFieldBuffer] only from an [OutputTransformation]."
         }
         if (outputTransformationAnnotations == null) {

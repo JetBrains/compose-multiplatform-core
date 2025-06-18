@@ -242,7 +242,7 @@ class HighSpeedVideoVerificationTest(
         // Arrange.
         val highSpeedVideoConfig =
             HighSpeedVideoSessionConfig(
-                frameRate = captureFrameRate,
+                frameRateRange = captureFrameRate,
                 videoCapture = videoCapture,
                 preview = preview,
                 isSlowMotionEnabled = isSlowMotionEnabled,

@@ -20,11 +20,35 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.SystemSpaceEntity
 import java.util.concurrent.Executor
 
-// TODO: b/405218432 - Implement this correctly instead of stubbing it out.
-/** Test-only implementation of [SystemSpaceEntity] */
+/** A test double for [SystemSpaceEntity], designed for use in unit or integration tests. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public open class FakeSystemSpaceEntity : SystemSpaceEntity, FakeEntity() {
+public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
+    private var onSpaceUpdatedListener: Runnable? = null
+    private var onSpaceUpdatedExecutor: Executor? = null
 
+    /**
+     * Registers a listener to be called when the underlying space has moved or changed.
+     *
+     * @param listener The listener to register if non-null, else stops listening if null.
+     * @param executor The executor to run the listener on. The listener will be called on the main
+     *   thread if null.
+     */
     @Suppress("ExecutorRegistration")
-    override fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor?) {}
+    override fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor?) {
+        onSpaceUpdatedListener = listener
+        onSpaceUpdatedExecutor = executor
+    }
+
+    /**
+     * Test function to invoke the onSpaceUpdated listener callback.
+     *
+     * This function is used to simulate the update of the underlying space, triggering the
+     * registered listener. In tests, you can call this function to manually trigger the listener
+     * and verify that your code responds correctly to space updates.
+     */
+    public fun onSpaceUpdated() {
+        onSpaceUpdatedListener?.let { listener ->
+            onSpaceUpdatedExecutor?.execute(listener) ?: listener.run()
+        }
+    }
 }

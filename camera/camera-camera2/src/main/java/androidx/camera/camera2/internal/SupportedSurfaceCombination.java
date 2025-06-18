@@ -65,9 +65,10 @@ import androidx.camera.camera2.internal.compat.workaround.TargetAspectRatio;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery;
-import androidx.camera.core.featurecombination.impl.feature.FpsRangeFeature;
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery;
+import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraMode;
 import androidx.camera.core.impl.DeferrableSurface;
@@ -117,7 +118,7 @@ import java.util.Set;
  * support for this camera device.
  */
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
-final class SupportedSurfaceCombination {
+public final class SupportedSurfaceCombination {
     private static final String TAG = "SupportedSurfaceCombination";
     private static final int FRAME_RATE_UNLIMITED = Integer.MAX_VALUE;
     private final List<SurfaceCombination> mSurfaceCombinations = new ArrayList<>();
@@ -415,10 +416,10 @@ final class SupportedSurfaceCombination {
             int imageFormat,
             Size size) {
         return SurfaceConfig.transformSurfaceConfig(
-                cameraMode,
                 imageFormat,
                 size,
                 getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                cameraMode,
                 // FEATURE_COMBINATION_TABLE N/A for the code flows leading to this call
                 CAPTURE_SESSION_TABLES);
     }
@@ -707,10 +708,9 @@ final class SupportedSurfaceCombination {
      *                                          sizes map.
      * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
      * @param hasVideoCapture                   whether the use cases has video capture.
-     * @param isFeatureComboInvocation          whether the code flow involves CameraX feature combo
-     *                                          API (e.g. {@link
-     *                                          androidx.camera.core.SessionConfig#requiredFeatures}
-     *                                          ).
+     * @param isFeatureComboInvocation whether the code flow involves CameraX feature combo
+     *                                 API (e.g. {@link
+     *                                 androidx.camera.core.SessionConfig#requiredFeatureGroup}).
      * @param findMaxSupportedFrameRate          whether to find the max supported frame rate. If
      *                                           this is true, the target frame rate settings
      *                                           will be ignored when calculating the stream spec.
@@ -828,6 +828,7 @@ final class SupportedSurfaceCombination {
      *                                  of {@link DynamicRange}, or requiring an
      *                                  unsupported combination of camera features.
      */
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @NonNull
     private SurfaceStreamSpecQueryResult resolveSpecsByCheckingMethod(
             @NonNull CheckingMethod checkingMethod,
@@ -917,7 +918,7 @@ final class SupportedSurfaceCombination {
                     "No supported surface combination is found for camera device - Id : "
                             + mCameraId + ".  May be attempting to bind too many use cases. "
                             + "Existing surfaces: " + attachedSurfaces + ". New configs: "
-                            + newUseCaseConfigs + ". Feature settings: "
+                            + newUseCaseConfigs + ". GroupableFeature settings: "
                             + featureSettings);
         }
 
@@ -1271,14 +1272,14 @@ final class SupportedSurfaceCombination {
             @NonNull Range<Integer> targetFpsRange, int currentConfigFrameRateCeiling) {
         boolean isConfigFrameRateAcceptable = true;
         if (!FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFpsRange)) {
-            // currentConfigFrameRateCeiling < targetFpsRange.getLower() means that
-            // 'targetFpsRange.getLower() < currentConfigFrameRateCeiling  < upper' is also
-            // acceptable i.e. partially supporting a target FPS range is acceptable.
+            // currentConfigFrameRateCeiling < targetFpsRange.getUpper() to return false means that
+            // there should still be other better choice because currentConfigFrameRateCeiling is
+            // still smaller than both maxSupportedFps and targetFpsRange.getUpper().
             // For feature combo cases, fps ranges need to be fully supported, but sizes not
             // supporting target FPS range fully are already filtered out in
             // filterSupportedSizes API.
-            if (maxSupportedFps > currentConfigFrameRateCeiling
-                    && currentConfigFrameRateCeiling < targetFpsRange.getLower()) {
+            if (currentConfigFrameRateCeiling < maxSupportedFps
+                    && currentConfigFrameRateCeiling < targetFpsRange.getUpper()) {
                 // if the max fps before adding new use cases supports our target fps range
                 // BUT the max fps of the new configuration is below
                 // our target fps range, we'll want to check the next configuration until we
@@ -1356,6 +1357,13 @@ final class SupportedSurfaceCombination {
                     "High-speed session is not supported on this device.");
         }
 
+        // Use FpsRangeFeature.DEFAULT_FPS_RANGE when Camera2 FCQ checking is required
+        if (isFeatureComboInvocation && targetFpsRange == FRAME_RATE_RANGE_UNSPECIFIED) {
+            if (requiresFeatureComboQuery) {
+                targetFpsRange = FpsRangeFeature.DEFAULT_FPS_RANGE;
+            }
+        }
+
         return FeatureSettings.of(cameraMode, hasVideoCapture, requiredMaxBitDepth,
                 isPreviewStabilizationOn, isUltraHdrOn, isHighSpeedOn, isFeatureComboInvocation,
                 requiresFeatureComboQuery, targetFpsRange, isStrictFrameRateRequired);
@@ -1405,10 +1413,10 @@ final class SupportedSurfaceCombination {
             int imageFormat = useCaseConfig.getInputFormat();
             surfaceConfigs.add(
                     SurfaceConfig.transformSurfaceConfig(
-                            featureSettings.getCameraMode(),
                             imageFormat,
                             minSize,
                             getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                            featureSettings.getCameraMode(),
                             // Feature combo src not needed for the code flows leading to this call
                             CAPTURE_SESSION_TABLES));
         }
@@ -1511,8 +1519,8 @@ final class SupportedSurfaceCombination {
             @NonNull Map<ConfigSize, Set<Integer>> configSizeToUniqueMaxFpsMap,
             @NonNull List<Size> reducedSizeList) {
         ConfigSize configSize = SurfaceConfig.transformSurfaceConfig(
-                featureSettings.getCameraMode(), imageFormat, size,
-                getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                imageFormat, size, getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                featureSettings.getCameraMode(),
                 featureSettings.requiresFeatureComboQuery() ? FEATURE_COMBINATION_TABLE
                         : CAPTURE_SESSION_TABLES).getConfigSize();
 
@@ -1601,10 +1609,10 @@ final class SupportedSurfaceCombination {
                     featureSettings.requiresFeatureComboQuery() ? FEATURE_COMBINATION_TABLE
                             : CAPTURE_SESSION_TABLES;
             SurfaceConfig surfaceConfig = SurfaceConfig.transformSurfaceConfig(
-                    featureSettings.getCameraMode(),
                     imageFormat,
                     size,
                     getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                    featureSettings.getCameraMode(),
                     configSource);
             surfaceConfigList.add(surfaceConfig);
             if (surfaceConfigIndexUseCaseConfigMap != null) {
@@ -2174,7 +2182,7 @@ final class SupportedSurfaceCombination {
      * by {@link PackageManager#hasSystemFeature(String)}.
      */
     @AutoValue
-    abstract static class FeatureSettings {
+    public abstract static class FeatureSettings {
         static @NonNull FeatureSettings of(@CameraMode.Mode int cameraMode,
                 boolean hasVideoCapture, @RequiredMaxBitDepth int requiredMaxBitDepth,
                 boolean isPreviewStabilizationOn, boolean isUltraHdrOn, boolean isHighSpeedOn,
@@ -2235,9 +2243,9 @@ final class SupportedSurfaceCombination {
         /**
          * Whether the code invocation is started through CameraX feature combination APIs.
          *
-         * @see androidx.camera.core.CameraInfo#isFeatureCombinationSupported
-         * @see androidx.camera.core.SessionConfig#requiredFeatures
-         * @see androidx.camera.core.SessionConfig#preferredFeatures
+         * @see androidx.camera.core.CameraInfo#isFeatureGroupSupported
+         * @see androidx.camera.core.SessionConfig#requiredFeatureGroup
+         * @see androidx.camera.core.SessionConfig#preferredFeatureGroup
          */
         abstract boolean isFeatureComboInvocation();
 

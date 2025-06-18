@@ -16,9 +16,11 @@
 
 package androidx.appfunctions.internal
 
+import androidx.annotation.RestrictTo
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 
 /** Disables translation by always returning a null translator. */
-internal class NullTranslatorSelector : TranslatorSelector {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class NullTranslatorSelector : TranslatorSelector {
     override fun getTranslator(schemaMetadata: AppFunctionSchemaMetadata): Translator? = null
 }

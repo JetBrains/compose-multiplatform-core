@@ -20,10 +20,15 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.testutils.first
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.AtLeastSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +36,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.platform.InspectableValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ValueElement
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.runOnUiThreadIR
@@ -82,7 +88,39 @@ class DropShadowTest {
         rule.runOnUiThreadIR { activity.setContent { ShadowContainer() } }
 
         assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
-        takeScreenShot(12).apply { hasShadow() }
+        takeScreenShot(14).apply { hasShadow() }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun shadowRedrawnWhenValueChanges() {
+        var radiusPixels by mutableStateOf(14)
+        rule.runOnUiThread {
+            activity.setContent {
+                with(LocalDensity.current) {
+                    Box(modifier = Modifier.size(14.toDp()).background(Color.White)) {
+                        Box(
+                            Modifier.align(Alignment.Center)
+                                .size(10.toDp())
+                                .dropShadow(RectangleShape) { radius = radiusPixels.toFloat() }
+                                .background(Color.Red)
+                                .drawBehind { drawLatch.countDown() }
+                        )
+                    }
+                }
+            }
+        }
+
+        assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
+        takeScreenShot(14).apply { hasShadow() }
+        drawLatch = CountDownLatch(1)
+        radiusPixels = 0
+        assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
+        takeScreenShot(14).apply { hasNoShadow() }
+        drawLatch = CountDownLatch(1)
+        radiusPixels = 14
+        assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
+        takeScreenShot(14).apply { hasShadow() }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -93,7 +131,7 @@ class DropShadowTest {
         }
 
         assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
-        takeScreenShot(12).apply { hasShadow() }
+        takeScreenShot(14).apply { hasShadow() }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -110,7 +148,7 @@ class DropShadowTest {
 
         rule.runOnUiThreadIR { radius.value = 2.dp }
 
-        takeScreenShot(12).apply { hasShadow() }
+        takeScreenShot(14).apply { hasShadow() }
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -120,7 +158,7 @@ class DropShadowTest {
 
         rule.runOnUiThreadIR {
             activity.setContent {
-                AtLeastSize(size = 12, modifier = Modifier.background(Color.White)) {
+                AtLeastSize(size = 14, modifier = Modifier.background(Color.White)) {
                     val shadow =
                         if (model.value) {
                             Modifier.dropShadow(RectangleShape, Shadow(2.dp))
@@ -136,7 +174,7 @@ class DropShadowTest {
         drawLatch = CountDownLatch(1)
         rule.runOnUiThreadIR { model.value = true }
 
-        takeScreenShot(12).apply { hasShadow() }
+        takeScreenShot(14).apply { hasShadow() }
     }
 
     @Test
@@ -159,7 +197,7 @@ class DropShadowTest {
         modifier: Modifier = Modifier,
         radius: State<Dp> = mutableStateOf(2.dp),
     ) {
-        AtLeastSize(size = 12, modifier = modifier.background(Color.White)) {
+        AtLeastSize(size = 14, modifier = modifier.background(Color.White)) {
             AtLeastSize(
                 size = 10,
                 modifier = Modifier.dropShadow(RectangleShape, Shadow(radius.value)),
@@ -168,7 +206,11 @@ class DropShadowTest {
     }
 
     private fun Bitmap.hasShadow() {
-        assertNotEquals(Color.White, color(width / 2, height - 1))
+        assertNotEquals(Color.White, color(width / 2, height - 2))
+    }
+
+    private fun Bitmap.hasNoShadow() {
+        assertEquals(Color.White, color(width / 2, height - 2))
     }
 
     private fun Modifier.background(color: Color): Modifier = drawBehind {

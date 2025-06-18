@@ -81,7 +81,10 @@ internal class CredentialProviderFactory(val context: Context) {
                     return tryCreateClosedSourceProviderFromManifest()
                 }
             }
-        } else if (request is CreatePublicKeyCredentialRequest && request.isConditional) {
+        } else if (
+            request is SignalCredentialStateRequest ||
+                (request is CreatePublicKeyCredentialRequest && request.isConditional)
+        ) {
             return tryCreateClosedSourceProviderFromManifest()
         } else if (request is CreateDigitalCredentialRequest) {
             return tryCreateClosedSourceProviderFromManifest()

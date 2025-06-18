@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.focused
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -222,7 +223,8 @@ public fun TimePicker(
                                     PaddingDefaults.horizontalContentPadding(textPaddingPercentage)
                             )
                             .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally),
+                            .align(Alignment.CenterHorizontally)
+                            .semantics(mergeDescendants = true) { heading() },
                     color = colors.pickerLabelColor,
                     style = styles.labelTextStyle,
                     maxLines = maxTextLines,

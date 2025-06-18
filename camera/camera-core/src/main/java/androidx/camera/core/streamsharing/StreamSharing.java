@@ -43,6 +43,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.CompositionSettings;
+import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Logger;
 import androidx.camera.core.MirrorMode;
@@ -160,20 +161,20 @@ public class StreamSharing extends UseCase {
                     }
                 });
 
-        updateFeatureCombination(children);
+        updateFeatureGroup(children);
     }
 
     /**
-     * Updates the feature combination of the StreamSharing based on its children.
+     * Updates the feature group of the StreamSharing based on its children.
      *
-     * <p>The feature combination is used to determine which features are available for this
+     * <p>The feature group is used to determine which features are available for this
      * UseCase. By design, it should be consistent across all children already.
      *
-     * @param children The set of child UseCases from which to derive the feature combination.
+     * @param children The set of child UseCases from which to derive the feature group.
      */
-    public void updateFeatureCombination(@NonNull Set<UseCase> children) {
-        // All use cases should have same FeatureCombination, so using only the first child
-        setFeatureCombination(children.iterator().next().getFeatureCombination());
+    public void updateFeatureGroup(@NonNull Set<UseCase> children) {
+        // All use cases should have same feature group, so using only the first child
+        setFeatureGroup(children.iterator().next().getFeatureGroup());
     }
 
     @Override
@@ -706,5 +707,36 @@ public class StreamSharing extends UseCase {
     @VisibleForTesting
     public @Nullable SurfaceEdge getSharingInputEdge() {
         return mSharingInputEdge;
+    }
+
+    @Override
+    public @Nullable Set<@NonNull DynamicRange> getSupportedDynamicRanges(
+            @NonNull CameraInfoInternal cameraInfo) {
+        Set<UseCase> children = getChildren();
+
+        if (children.isEmpty()) {
+            return null;
+        }
+
+        Set<DynamicRange> intersectedRanges = null;
+
+        for (UseCase child : children) {
+            Set<DynamicRange> childSupportedRanges = child.getSupportedDynamicRanges(cameraInfo);
+
+            if (childSupportedRanges == null) {
+                continue;
+            }
+
+            if (intersectedRanges == null) {
+                // For the first child, initialize the set with the child supported ranges.
+                intersectedRanges = new HashSet<>(childSupportedRanges);
+            } else {
+                // For subsequent children, retain only the ranges also supported by this child.
+                intersectedRanges.retainAll(childSupportedRanges);
+            }
+        }
+
+        // If intersectedRanges is null here, it means all child also returned null.
+        return intersectedRanges;
     }
 }

@@ -47,9 +47,9 @@ class AppFunctionManagerCompatUnitTest {
         appFunctionManagerCompat =
             AppFunctionManagerCompat(
                 context,
-                fakeTranslateSelector,
                 fakeAppFunctionReader,
                 fakeAppFunctionApi,
+                fakeTranslateSelector,
             )
     }
 

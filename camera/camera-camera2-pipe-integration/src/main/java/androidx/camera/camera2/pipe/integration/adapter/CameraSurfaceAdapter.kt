@@ -29,7 +29,7 @@ import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.integration.config.CameraAppComponent
 import androidx.camera.camera2.pipe.integration.config.CameraModule
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraDeviceSurfaceManager
 import androidx.camera.core.impl.SurfaceConfig

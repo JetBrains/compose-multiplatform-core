@@ -115,3 +115,9 @@ RemovedFromKotlin: androidx.compose.runtime.snapshots.SnapshotStateSet#toArray()
     Source breaking change: method androidx.compose.runtime.snapshots.SnapshotStateSet.toArray() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.compose.runtime.snapshots.SnapshotStateSet#toArray(T[]):
     Source breaking change: method androidx.compose.runtime.snapshots.SnapshotStateSet.toArray(T[]) can no longer be resolved from Kotlin source
+
+
+RemovedMethod: androidx.compose.runtime.snapshots.MutableSnapshot#getReadObserver():
+    Binary breaking change: Removed method androidx.compose.runtime.snapshots.MutableSnapshot.getReadObserver()
+RemovedMethod: androidx.compose.runtime.snapshots.MutableSnapshot#getWriteObserver():
+    Binary breaking change: Removed method androidx.compose.runtime.snapshots.MutableSnapshot.getWriteObserver()

@@ -18,8 +18,6 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.GltfEntity;
 import androidx.xr.runtime.internal.MaterialResource;
@@ -31,6 +29,9 @@ import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.androidxr.splitengine.SubspaceNode;
 import com.google.ar.imp.apibindings.ImpressApi;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
 

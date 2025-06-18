@@ -93,9 +93,8 @@ object KonanPrebuiltsSetup {
     }
 
     private fun Project.overrideKotlinNativeDistributionUrlToLocalDirectory() {
-        val relativePath =
-            getKonanPrebuiltsFolder().resolve("nativeCompilerPrebuilts").relativeTo(projectDir).path
-        val url = "file:$relativePath"
+        val url =
+            "file:${getKonanPrebuiltsFolder().resolve("nativeCompilerPrebuilts").absolutePath}"
         extensions.extraProperties["kotlin.native.distribution.baseDownloadUrl"] = url
     }
 }

@@ -56,8 +56,6 @@ androidx {
     type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2024"
     description = "Test app that demonstrates a headlocked UI."
-    // TODO: b/326456246
-    optOutJSpecify = true
 }
 
 dependencies {

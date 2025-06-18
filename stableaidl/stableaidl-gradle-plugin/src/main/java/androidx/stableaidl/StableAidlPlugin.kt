@@ -102,6 +102,7 @@ abstract class StableAidlPlugin : Plugin<Project> {
             // we'll need to use manually-defined stubs.
             val compileSdkProvider =
                 project.provider {
+                    @Suppress("deprecation") // TODO(aurimas): migrate to new API
                     project.extensions.findByType(CommonExtension::class.java)?.compileSdk
                         ?: project.extensions
                             .findByType(KotlinMultiplatformExtension::class.java)

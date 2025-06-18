@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -35,12 +36,20 @@ import androidx.compose.testutils.toList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component1
+import androidx.compose.ui.focus.FocusRequester.Companion.FocusRequesterFactory.component2
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.compositeOver
@@ -69,7 +78,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -609,6 +620,317 @@ class SurfaceTest {
     }
 
     @Test
+    fun focusableSurface_changeShape_borderChanges() {
+        var roundedCorners by mutableStateOf(true)
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(40f.toDp())
+                        .background(Color.Blue)
+                        .surface(
+                            shape = if (roundedCorners) RoundedCornerShape(5f) else RectangleShape,
+                            border = BorderStroke(1f.toDp(), Color.Red),
+                        )
+                        .testTag("surface")
+                )
+            }
+        }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should be rounded, so the top and bottom of the left edge will be blue, and the
+            // center will be red
+            assertThat(Color.Blue).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Blue).isEqualTo(map[0, height - 1])
+        }
+
+        rule.runOnIdle { roundedCorners = false }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should no longer be rounded, so left edge should be fully red
+            assertThat(Color.Red).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Red).isEqualTo(map[0, height - 1])
+        }
+    }
+
+    @Test
+    fun clickableSurface_changeShape_borderChanges() {
+        var roundedCorners by mutableStateOf(true)
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(40f.toDp())
+                        .background(Color.Blue)
+                        .surface(
+                            shape = if (roundedCorners) RoundedCornerShape(5f) else RectangleShape,
+                            border = BorderStroke(1f.toDp(), Color.Red),
+                            onClick = {},
+                        )
+                        .testTag("surface")
+                )
+            }
+        }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should be rounded, so the top and bottom of the left edge will be blue, and the
+            // center will be red
+            assertThat(Color.Blue).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Blue).isEqualTo(map[0, height - 1])
+        }
+
+        rule.runOnIdle { roundedCorners = false }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should no longer be rounded, so left edge should be fully red
+            assertThat(Color.Red).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Red).isEqualTo(map[0, height - 1])
+        }
+    }
+
+    @Test
+    fun focusableSurface_observableShape_roundedOutline_borderChanges() {
+        var roundedCorners by mutableStateOf(true)
+        val roundedCornersShape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline {
+                    val roundRect =
+                        if (roundedCorners) {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius(5f))
+                        } else {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius.Zero)
+                        }
+                    return Outline.Rounded(roundRect)
+                }
+            }
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(40f.toDp())
+                        .background(Color.Blue)
+                        .surface(
+                            shape = roundedCornersShape,
+                            border = BorderStroke(1f.toDp(), Color.Red),
+                        )
+                        .testTag("surface")
+                )
+            }
+        }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should be rounded, so the top and bottom of the left edge will be blue, and the
+            // center will be red
+            assertThat(Color.Blue).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Blue).isEqualTo(map[0, height - 1])
+        }
+
+        rule.runOnIdle { roundedCorners = false }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should no longer be rounded, so left edge should be fully red
+            assertThat(Color.Red).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Red).isEqualTo(map[0, height - 1])
+        }
+    }
+
+    @Test
+    fun clickableSurface_observableShape_roundedOutline_borderChanges() {
+        var roundedCorners by mutableStateOf(true)
+        val roundedCornersShape =
+            object : Shape {
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline {
+                    val roundRect =
+                        if (roundedCorners) {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius(5f))
+                        } else {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius.Zero)
+                        }
+                    return Outline.Rounded(roundRect)
+                }
+            }
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(40f.toDp())
+                        .background(Color.Blue)
+                        .surface(
+                            shape = roundedCornersShape,
+                            border = BorderStroke(1f.toDp(), Color.Red),
+                            onClick = {},
+                        )
+                        .testTag("surface")
+                )
+            }
+        }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should be rounded, so the top and bottom of the left edge will be blue, and the
+            // center will be red
+            assertThat(Color.Blue).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Blue).isEqualTo(map[0, height - 1])
+        }
+
+        rule.runOnIdle { roundedCorners = false }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should no longer be rounded, so left edge should be fully red
+            assertThat(Color.Red).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            assertThat(Color.Red).isEqualTo(map[0, height - 1])
+        }
+    }
+
+    @Test
+    fun focusableSurface_observableShape_genericOutline_samePath_borderChanges() {
+        var roundedCorners by mutableStateOf(true)
+        val roundedCornersShape =
+            object : Shape {
+                val path = Path()
+
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline {
+                    val roundRect =
+                        if (roundedCorners) {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius(50f))
+                        } else {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius.Zero)
+                        }
+                    path.reset()
+                    path.addRoundRect(roundRect)
+                    return Outline.Generic(path)
+                }
+            }
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(400f.toDp())
+                        .background(Color.Blue)
+                        .surface(
+                            shape = roundedCornersShape,
+                            border = BorderStroke(1f.toDp(), Color.Red),
+                        )
+                        .testTag("surface")
+                )
+            }
+        }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should be rounded, so the top and bottom of the left edge will be blue, and the
+            // center will be red
+            assertThat(Color.Blue).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            // The last pixel fails to render properly on some emulators, so just assert the one
+            // before instead - b/267371353
+            assertThat(Color.Blue).isEqualTo(map[0, height - 2])
+        }
+
+        rule.runOnIdle { roundedCorners = false }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should no longer be rounded, so left edge should be fully red
+            assertThat(Color.Red).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            // The last pixel fails to render properly on some emulators, so just assert the one
+            // before instead - b/267371353
+            assertThat(Color.Red).isEqualTo(map[0, height - 2])
+        }
+    }
+
+    @Test
+    fun clickableSurface_observableShape_genericOutline_samePath_borderChanges() {
+        var roundedCorners by mutableStateOf(true)
+        val roundedCornersShape =
+            object : Shape {
+                val path = Path()
+
+                override fun createOutline(
+                    size: Size,
+                    layoutDirection: LayoutDirection,
+                    density: Density,
+                ): Outline {
+                    val roundRect =
+                        if (roundedCorners) {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius(50f))
+                        } else {
+                            RoundRect(Rect(Offset.Zero, size), cornerRadius = CornerRadius.Zero)
+                        }
+                    path.reset()
+                    path.addRoundRect(roundRect)
+                    return Outline.Generic(path)
+                }
+            }
+
+        rule.setContent {
+            with(LocalDensity.current) {
+                Box(
+                    Modifier.size(400f.toDp())
+                        .background(Color.Blue)
+                        .surface(
+                            shape = roundedCornersShape,
+                            border = BorderStroke(1f.toDp(), Color.Red),
+                            onClick = {},
+                        )
+                        .testTag("surface")
+                )
+            }
+        }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should be rounded, so the top and bottom of the left edge will be blue, and the
+            // center will be red
+            assertThat(Color.Blue).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            // The last pixel fails to render properly on some emulators, so just assert the one
+            // before instead - b/267371353
+            assertThat(Color.Blue).isEqualTo(map[0, height - 2])
+        }
+
+        rule.runOnIdle { roundedCorners = false }
+
+        rule.onNodeWithTag("surface").captureToImage().run {
+            val map = toPixelMap()
+            // We should no longer be rounded, so left edge should be fully red
+            assertThat(Color.Red).isEqualTo(map[0, 0])
+            assertThat(Color.Red).isEqualTo(map[0, (height - 1) / 2])
+            // The last pixel fails to render properly on some emulators, so just assert the one
+            // before instead - b/267371353
+            assertThat(Color.Red).isEqualTo(map[0, height - 2])
+        }
+    }
+
+    @Test
     fun focusableSurface_providesContentColor_default() {
         var color: Color = Color.Unspecified
         rule.setGlimmerThemeContent {
@@ -953,13 +1275,18 @@ class SurfaceTest {
 
         rule.runOnIdle { focusRequester.requestFocus() }
 
-        // Capture the first frame of the focused animation - the focused highlight should show,
-        // so the start of the border will not be fully red
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        // The focused highlight should show, so the start of the border will not be fully red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
             assertThat(get(1, 1)).isNotEqualTo(Color.Red)
         }
 
         rule.runOnIdle { otherFocusRequester.requestFocus() }
+
+        // Advance past the exit animation
+        rule.mainClock.advanceTimeBy(500)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
@@ -996,13 +1323,18 @@ class SurfaceTest {
 
         rule.runOnIdle { focusRequester.requestFocus() }
 
-        // Capture the first frame of the focused animation - the focused highlight should show,
-        // so the start of the border will not be fully red
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        // The focused highlight should show, so the start of the border will not be fully red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
             assertThat(get(1, 1)).isNotEqualTo(Color.Red)
         }
 
         rule.runOnIdle { otherFocusRequester.requestFocus() }
+
+        // Advance past the exit animation
+        rule.mainClock.advanceTimeBy(500)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
@@ -1068,25 +1400,15 @@ class SurfaceTest {
         val afterAnimation2 = rule.onNodeWithTag("surface").captureToImage()
 
         rule.runOnIdle {
-            // The initial state should be equal to the state after the animation
+            // Both images after the animation has finished should be the same
             val afterAnimationResult =
                 matcher.compareBitmaps(
-                    initialFrame.toIntArray(),
                     afterAnimation.toIntArray(),
-                    initialFrame.width,
-                    initialFrame.height,
+                    afterAnimation2.toIntArray(),
+                    afterAnimation.width,
+                    afterAnimation.height,
                 )
             assertThat(afterAnimationResult.matches).isTrue()
-            // The initial state should be equal to the second state after the animation, since
-            // no further animation is happening
-            val afterAnimation2Result =
-                matcher.compareBitmaps(
-                    initialFrame.toIntArray(),
-                    afterAnimation2.toIntArray(),
-                    initialFrame.width,
-                    initialFrame.height,
-                )
-            assertThat(afterAnimation2Result.matches).isTrue()
         }
     }
 
@@ -1152,25 +1474,15 @@ class SurfaceTest {
         val afterAnimation2 = rule.onNodeWithTag("surface").captureToImage()
 
         rule.runOnIdle {
-            // The initial state should be equal to the state after the animation
+            // Both images after the animation has finished should be the same
             val afterAnimationResult =
                 matcher.compareBitmaps(
-                    initialFrame.toIntArray(),
                     afterAnimation.toIntArray(),
-                    initialFrame.width,
-                    initialFrame.height,
+                    afterAnimation2.toIntArray(),
+                    afterAnimation.width,
+                    afterAnimation.height,
                 )
             assertThat(afterAnimationResult.matches).isTrue()
-            // The initial state should be equal to the second state after the animation, since
-            // no further animation is happening
-            val afterAnimation2Result =
-                matcher.compareBitmaps(
-                    initialFrame.toIntArray(),
-                    afterAnimation2.toIntArray(),
-                    initialFrame.width,
-                    initialFrame.height,
-                )
-            assertThat(afterAnimation2Result.matches).isTrue()
         }
     }
 
@@ -1370,8 +1682,10 @@ class SurfaceTest {
 
         rule.runOnIdle { focusRequester.requestFocus() }
 
-        // Capture the first frame of the focused animation - the focused highlight should show,
-        // so the start of the border will not be fully red
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        // The focused highlight should show, so the start of the border will not be fully red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
             assertThat(get(1, 1)).isNotEqualTo(Color.Red)
         }
@@ -1380,7 +1694,9 @@ class SurfaceTest {
         // should reset the highlight as the interaction source changed. In the future if we
         // directly delegate to focusable we would be able to maintain focus in that case
         rule.runOnIdle { interactionSource = MutableInteractionSource() }
-        rule.mainClock.advanceTimeByFrame()
+
+        // Advance past the exit animation
+        rule.mainClock.advanceTimeBy(500)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
@@ -1391,8 +1707,11 @@ class SurfaceTest {
         rule.runOnIdle { otherFocusRequester.requestFocus() }
         rule.runOnIdle { focusRequester.requestFocus() }
 
-        // The new interaction source will see the new focus, so the first frame of the focused
-        // highlight should show again
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        // The new interaction source will see the new focus, so the focused highlight should show
+        // again
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
             assertThat(get(1, 1)).isNotEqualTo(Color.Red)
         }
@@ -1429,8 +1748,10 @@ class SurfaceTest {
 
         rule.runOnIdle { focusRequester.requestFocus() }
 
-        // Capture the first frame of the focused animation - the focused highlight should show,
-        // so the start of the border will not be fully red
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        // The focused highlight should show, so the start of the border will not be fully red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
             assertThat(get(1, 1)).isNotEqualTo(Color.Red)
         }
@@ -1439,7 +1760,9 @@ class SurfaceTest {
         // should reset the highlight as the interaction source changed. In the future if we
         // directly delegate to clickable we would be able to maintain focus in that case
         rule.runOnIdle { interactionSource = MutableInteractionSource() }
-        rule.mainClock.advanceTimeByFrame()
+
+        // Advance past the exit animation
+        rule.mainClock.advanceTimeBy(500)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
@@ -1450,8 +1773,11 @@ class SurfaceTest {
         rule.runOnIdle { otherFocusRequester.requestFocus() }
         rule.runOnIdle { focusRequester.requestFocus() }
 
-        // The new interaction source will see the new focus, so the first frame of the focused
-        // highlight should show again
+        // There is an enter animation, so advance a small time after the animation starts
+        rule.mainClock.advanceTimeBy(50)
+
+        // The new interaction source will see the new focus, so the focused highlight should show
+        // again
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
             assertThat(get(1, 1)).isNotEqualTo(Color.Red)
         }
@@ -1685,6 +2011,45 @@ class SurfaceTest {
         rule.mainClock.advanceTimeBy(5000)
 
         // The press overlay should disappear, so the center of the surface should be black again
+        rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
+            assertThat(get(width / 2, height / 2)).isEqualTo(Color.Black)
+        }
+    }
+
+    @Test
+    fun clickableSurface_pressedOverlay_hasAMinimumDuration() {
+        rule.mainClock.autoAdvance = false
+
+        rule.setGlimmerThemeContent {
+            Column { Box(Modifier.size(100.dp).surface(onClick = {}).testTag("surface")) }
+        }
+
+        // The center of the surface should be black
+        rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
+            assertThat(get(width / 2, height / 2)).isEqualTo(Color.Black)
+        }
+
+        // Start a press, and immediately release
+        rule.onNodeWithTag("surface").performTouchInput {
+            down(center)
+            up()
+        }
+
+        // Advance a short amount of time
+        rule.mainClock.advanceTimeBy(150)
+
+        // The press overlay should continue to animate for a minimum duration, and then fade out.
+        // If there was no minimum duration, the animation would have ended already - so
+        // make sure the color is not equal to the base color.
+        rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
+            assertThat(get(width / 2, height / 2)).isNotEqualTo(Color.Black)
+        }
+
+        // Advance until after the animation has finished
+        rule.mainClock.advanceTimeBy(5000)
+
+        // The press overlay should disappear after the minimum duration, so the center of the
+        // surface should be black again
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
             assertThat(get(width / 2, height / 2)).isEqualTo(Color.Black)
         }

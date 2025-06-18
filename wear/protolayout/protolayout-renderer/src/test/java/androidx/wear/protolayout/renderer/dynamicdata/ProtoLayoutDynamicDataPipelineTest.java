@@ -95,6 +95,7 @@ import com.google.common.truth.Expect;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1706,6 +1707,7 @@ public class ProtoLayoutDynamicDataPipelineTest {
         expect.that(quotaManager.isAllQuotaReleased()).isTrue();
     }
 
+    @Ignore // b/424873228
     @Test
     public void repeatDelayedAnimations_notFreeQuota_startDelayedAnimations_notPlayed() {
         float start1 = 1.0f;

@@ -129,8 +129,8 @@ class SelectionViewActions {
                 val screenPos = IntArray(2)
                 view.getLocationOnScreen(screenPos)
 
-                val screenX = (screenPos[0] + x).toFloat()
-                val screenY = (screenPos[1] + y).toFloat()
+                val screenX = (screenPos[0] + x)
+                val screenY = (screenPos[1] + y)
 
                 floatArrayOf(screenX, screenY)
             },

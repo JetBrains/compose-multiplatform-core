@@ -1,1 +1,15 @@
 // Signature format: 4.0
+package androidx.xr.projected {
+
+  public final class ProjectedContext {
+    method public static android.content.Intent addProjectedFlags(android.content.Intent intent);
+    method public static android.content.Context createHostDeviceContext(android.content.Context context);
+    method public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
+    method public static android.content.Context createProjectedDeviceContext(android.content.Context context);
+    method public static String? getProjectedDeviceName(android.content.Context context);
+    method public static boolean isProjectedDeviceContext(android.content.Context context);
+    field public static final androidx.xr.projected.ProjectedContext INSTANCE;
+  }
+
+}
+

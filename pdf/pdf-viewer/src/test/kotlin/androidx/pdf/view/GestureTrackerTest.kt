@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/424870507
+
 package androidx.pdf.view
 
 import android.content.Context

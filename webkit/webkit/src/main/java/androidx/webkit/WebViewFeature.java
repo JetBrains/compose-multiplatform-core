@@ -745,6 +745,14 @@ public class WebViewFeature {
     public static final String WARM_UP_RENDERER_PROCESS = "WARM_UP_RENDERER_PROCESS";
 
     /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
+     * {@link Profile#clearOriginMatchedHeader(String)}, and {@link Profile#clearAllOriginMatchedHeaders()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
+
+    /**
      * Return whether a feature is supported at run-time. This will check whether a feature is
      * supported, depending on the combination of the desired feature, the Android version of
      * device, and the WebView APK on the device.

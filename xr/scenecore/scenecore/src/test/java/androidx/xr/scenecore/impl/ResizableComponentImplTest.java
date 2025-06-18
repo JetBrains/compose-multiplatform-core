@@ -16,6 +16,13 @@
 
 package androidx.xr.scenecore.impl;
 
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_END;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_START;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_TYPE_MOVE;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_TYPE_RESIZE;
+import static com.android.extensions.xr.node.ReformOptions.ALLOW_MOVE;
+import static com.android.extensions.xr.node.ReformOptions.ALLOW_RESIZE;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
@@ -68,18 +75,6 @@ import org.robolectric.android.controller.ActivityController;
 
 @RunWith(RobolectricTestRunner.class)
 public class ResizableComponentImplTest {
-    // TODO(b/402408284): Remove once the constants are available in the host version of
-    // ReformOptions
-    public static final int ALLOW_MOVE = 1;
-    public static final int ALLOW_RESIZE = 2;
-    // TODO(b/402408284): Remove once the constants are available in the host version of ReformEvent
-    public static final int REFORM_STATE_UNKNOWN = 0;
-    public static final int REFORM_STATE_START = 1;
-    public static final int REFORM_STATE_ONGOING = 2;
-    public static final int REFORM_STATE_END = 3;
-    public static final int REFORM_TYPE_UNKNOWN = 0;
-    public static final int REFORM_TYPE_MOVE = 1;
-    public static final int REFORM_TYPE_RESIZE = 2;
 
     private static final Dimensions kMinDimensions = new Dimensions(0f, 0f, 0f);
     private static final Dimensions kMaxDimensions = new Dimensions(10f, 10f, 10f);

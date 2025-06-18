@@ -20,12 +20,12 @@ import android.os.Build
 import android.util.Range
 import android.util.Rational
 import android.view.Surface
-import androidx.camera.core.featurecombination.Feature
-import androidx.camera.core.featurecombination.Feature.Companion.FPS_60
-import androidx.camera.core.featurecombination.Feature.Companion.HDR_HLG10
-import androidx.camera.core.featurecombination.Feature.Companion.IMAGE_ULTRA_HDR
-import androidx.camera.core.featurecombination.Feature.Companion.PREVIEW_STABILIZATION
-import androidx.camera.core.featurecombination.impl.feature.FeatureTypeInternal
+import androidx.camera.core.featuregroup.GroupableFeature
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.FPS_60
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.HDR_HLG10
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.IMAGE_ULTRA_HDR
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.PREVIEW_STABILIZATION
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
@@ -61,8 +61,8 @@ class SessionConfigTest {
         assertThat(sessionConfig.effects).isEqualTo(effects)
         assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
         assertThat(sessionConfig.frameRateRange).isEqualTo(frameRateRange)
-        assertThat(sessionConfig.requiredFeatures).isEmpty()
-        assertThat(sessionConfig.preferredFeatures).isEmpty()
+        assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
+        assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
     }
 
@@ -83,8 +83,8 @@ class SessionConfigTest {
         assertThat(sessionConfig.effects).isEqualTo(effects)
         assertThat(sessionConfig.frameRateRange).isEqualTo(frameRateRange)
         assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_HIGH_SPEED)
-        assertThat(sessionConfig.requiredFeatures).isEmpty()
-        assertThat(sessionConfig.preferredFeatures).isEmpty()
+        assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
+        assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
     }
 
@@ -97,8 +97,8 @@ class SessionConfigTest {
         assertThat(sessionConfig.effects).isEmpty()
         assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
         assertThat(sessionConfig.frameRateRange).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
-        assertThat(sessionConfig.requiredFeatures).isEmpty()
-        assertThat(sessionConfig.preferredFeatures).isEmpty()
+        assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
+        assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
     }
 
@@ -128,14 +128,13 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_builderAddsRequiredFeatures() {
+    fun sessionConfig_builderSetsRequiredFeatures() {
         val sessionConfig =
             SessionConfig.Builder(useCases)
-                .addRequiredFeatures(HDR_HLG10, FPS_60)
-                .addRequiredFeatures(PREVIEW_STABILIZATION)
+                .setRequiredFeatureGroup(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
                 .build()
 
-        assertThat(sessionConfig.requiredFeatures)
+        assertThat(sessionConfig.requiredFeatureGroup)
             .containsExactly(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
     }
 
@@ -143,10 +142,10 @@ class SessionConfigTest {
     fun sessionConfig_builderSetsPreferredFeatures() {
         val sessionConfig =
             SessionConfig.Builder(useCases)
-                .setPreferredFeatures(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
+                .setPreferredFeatureGroup(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
                 .build()
 
-        assertThat(sessionConfig.preferredFeatures)
+        assertThat(sessionConfig.preferredFeatureGroup)
             .containsExactly(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
             .inOrder()
     }
@@ -166,8 +165,8 @@ class SessionConfigTest {
         assertThat(sessionConfig.effects).containsExactly(effect)
         assertThat(sessionConfig.frameRateRange).isEqualTo(frameRateRange)
         assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
-        assertThat(sessionConfig.requiredFeatures).isEmpty()
-        assertThat(sessionConfig.preferredFeatures).isEmpty()
+        assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
+        assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
     }
 
@@ -189,8 +188,8 @@ class SessionConfigTest {
         assertThat(sessionConfig.effects).containsExactly(effect)
         assertThat(sessionConfig.frameRateRange).isEqualTo(frameRateRange)
         assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
-        assertThat(sessionConfig.requiredFeatures).isEmpty()
-        assertThat(sessionConfig.preferredFeatures).isEmpty()
+        assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
+        assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
     }
 
@@ -207,7 +206,7 @@ class SessionConfigTest {
         val sessionConfig = builder.build()
         builder.addEffect(effect2)
         builder.setViewPort(viewPort2)
-        builder.addRequiredFeatures(HDR_HLG10)
+        builder.setRequiredFeatureGroup(HDR_HLG10)
         mutableUseCasesList.add(ImageAnalysis.Builder().build())
 
         assertThat(sessionConfig.useCases).isEqualTo(useCases)
@@ -224,21 +223,21 @@ class SessionConfigTest {
             SessionConfig.Builder(mutableUseCasesList)
                 .setViewPort(viewPort)
                 .setFrameRateRange(frameRateRange)
-                .addRequiredFeatures(FPS_60)
-                .setPreferredFeatures(IMAGE_ULTRA_HDR, PREVIEW_STABILIZATION)
+                .setRequiredFeatureGroup(FPS_60)
+                .setPreferredFeatureGroup(IMAGE_ULTRA_HDR, PREVIEW_STABILIZATION)
 
         val sessionConfig = builder.build()
         builder.setViewPort(viewPort2)
         builder.setFrameRateRange(Range(60, 60))
-        builder.addRequiredFeatures(HDR_HLG10)
-        builder.setPreferredFeatures(PREVIEW_STABILIZATION)
+        builder.setRequiredFeatureGroup(HDR_HLG10)
+        builder.setPreferredFeatureGroup(PREVIEW_STABILIZATION)
         mutableUseCasesList.add(ImageAnalysis.Builder().build())
 
         assertThat(sessionConfig.useCases).isEqualTo(useCases)
         assertThat(sessionConfig.viewPort).isEqualTo(viewPort)
         assertThat(sessionConfig.frameRateRange).isEqualTo(frameRateRange)
-        assertThat(sessionConfig.requiredFeatures).containsExactly(FPS_60)
-        assertThat(sessionConfig.preferredFeatures)
+        assertThat(sessionConfig.requiredFeatureGroup).containsExactly(FPS_60)
+        assertThat(sessionConfig.preferredFeatureGroup)
             .containsExactly(IMAGE_ULTRA_HDR, PREVIEW_STABILIZATION)
     }
 
@@ -271,8 +270,8 @@ class SessionConfigTest {
         assertThat(sessionConfig.effects).isEmpty()
         assertThat(sessionConfig.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
         assertThat(sessionConfig.frameRateRange).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
-        assertThat(sessionConfig.requiredFeatures).isEmpty()
-        assertThat(sessionConfig.preferredFeatures).isEmpty()
+        assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
+        assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
     }
 
@@ -289,7 +288,7 @@ class SessionConfigTest {
         // Act & assert
         val exception =
             try {
-                SessionConfig(useCases = useCases, requiredFeatures = requiredFeatures)
+                SessionConfig(useCases = useCases, requiredFeatureGroup = requiredFeatures)
                 null
             } catch (e: Exception) {
                 e
@@ -307,7 +306,7 @@ class SessionConfigTest {
         val requiredFeatures = setOf(FPS_60, IMAGE_ULTRA_HDR, PREVIEW_STABILIZATION)
 
         // Act & assert
-        SessionConfig(useCases = useCases, requiredFeatures = requiredFeatures)
+        SessionConfig(useCases = useCases, requiredFeatureGroup = requiredFeatures)
     }
 
     @Test
@@ -317,7 +316,7 @@ class SessionConfigTest {
 
         // Act & assert
         assertThrows<IllegalArgumentException> {
-            SessionConfig(useCases = useCases, preferredFeatures = features)
+            SessionConfig(useCases = useCases, preferredFeatureGroup = features)
         }
     }
 
@@ -327,8 +326,8 @@ class SessionConfigTest {
         assertThrows<IllegalArgumentException> {
             SessionConfig(
                 useCases = useCases,
-                requiredFeatures = setOf(FPS_60),
-                preferredFeatures = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION),
+                requiredFeatureGroup = setOf(FPS_60),
+                preferredFeatureGroup = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION),
             )
         }
     }
@@ -342,7 +341,7 @@ class SessionConfigTest {
         assertThrows<IllegalArgumentException> {
             SessionConfig(
                 useCases = listOf(ImageAnalysis.Builder().build()),
-                preferredFeatures = features,
+                preferredFeatureGroup = features,
             )
         }
     }
@@ -360,7 +359,7 @@ class SessionConfigTest {
 
         // Act & assert
         assertThrows<IllegalArgumentException> {
-            SessionConfig(useCases = useCases, preferredFeatures = features, effects = effects)
+            SessionConfig(useCases = useCases, preferredFeatureGroup = features, effects = effects)
         }
     }
 
@@ -415,7 +414,8 @@ class SessionConfigTest {
         assertThat(legacySessionConfig.isLegacy).isTrue()
     }
 
-    data class FakeDynamicRangeFeature(private val dynamicRange: DynamicRange) : Feature() {
+    data class FakeDynamicRangeFeature(private val dynamicRange: DynamicRange) :
+        GroupableFeature() {
         override val featureTypeInternal: FeatureTypeInternal = FeatureTypeInternal.DYNAMIC_RANGE
     }
 }

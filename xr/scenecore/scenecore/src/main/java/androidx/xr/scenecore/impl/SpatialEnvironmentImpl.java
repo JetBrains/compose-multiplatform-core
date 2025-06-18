@@ -21,8 +21,6 @@ import android.app.Activity;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.xr.runtime.internal.ExrImageResource;
 import androidx.xr.runtime.internal.GltfModelResource;
@@ -48,6 +46,9 @@ import com.google.ar.imp.apibindings.ImpressApi;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -68,14 +69,14 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
     @VisibleForTesting final Node mPassthroughNode;
     private final XrExtensions mXrExtensions;
     private final boolean mUseSplitEngine;
-    @Nullable private Activity mActivity;
+    private @Nullable Activity mActivity;
     private Node mRootEnvironmentNode;
-    @Nullable private Consumer<Node> mOnBeforeNodeAttachedListener = null;
+    private @Nullable Consumer<Node> mOnBeforeNodeAttachedListener = null;
     private SubspaceNode mGeometrySubspaceSplitEngine;
     private int mGeometrySubspaceImpressNode;
     private boolean mIsSpatialEnvironmentPreferenceActive = false;
 
-    @Nullable private SpatialEnvironmentPreference mSpatialEnvironmentPreference = null;
+    private @Nullable SpatialEnvironmentPreference mSpatialEnvironmentPreference = null;
 
     // The active passthrough opacity value is updated with every opacity change event. A null value
     // indicates it has not yet been initialized and the value should be read from the
@@ -229,7 +230,6 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
         // to 0.0f if it is set below 1% opacity and it clamps to 1.0f if it is set above 99%
         // opacity.
 
-        @Nullable
         Float newPassthroughOpacityPreference =
                 opacity == null
                         ? null
@@ -272,8 +272,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
     }
 
     @Override
-    @Nullable
-    public Float getPassthroughOpacityPreference() {
+    public @Nullable Float getPassthroughOpacityPreference() {
         return mPassthroughOpacityPreference;
     }
 
@@ -518,8 +517,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, Consumer<Consu
     }
 
     @Override
-    @Nullable
-    public SpatialEnvironmentPreference getSpatialEnvironmentPreference() {
+    public @Nullable SpatialEnvironmentPreference getSpatialEnvironmentPreference() {
         return mSpatialEnvironmentPreference;
     }
 

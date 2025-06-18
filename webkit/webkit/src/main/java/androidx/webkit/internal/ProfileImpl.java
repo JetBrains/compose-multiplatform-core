@@ -34,6 +34,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 
@@ -42,15 +43,10 @@ import java.util.concurrent.Executor;
  */
 public class ProfileImpl implements Profile {
 
-    private final ProfileBoundaryInterface mProfileImpl;
+    private final @NonNull ProfileBoundaryInterface mProfileImpl;
 
     ProfileImpl(@NonNull ProfileBoundaryInterface profileImpl) {
         mProfileImpl = profileImpl;
-    }
-
-    // Use ProfileStore to create a Profile instance.
-    private ProfileImpl() {
-        mProfileImpl = null;
     }
 
     @Override
@@ -173,6 +169,42 @@ public class ProfileImpl implements Profile {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.WARM_UP_RENDERER_PROCESS;
         if (feature.isSupportedByWebView()) {
             mProfileImpl.warmUpRendererProcess();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void setOriginMatchedHeader(@NonNull String headerName,
+            @NonNull String headerValue, @NonNull Set<String> originRules) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            if (mProfileImpl.hasOriginMatchedHeader(headerName)) {
+                throw new IllegalStateException(
+                        "Profile " + mProfileImpl.getName() + " already has origin-matched header: "
+                                + headerName);
+            }
+            mProfileImpl.setOriginMatchedHeader(headerName, headerValue, originRules);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void clearOriginMatchedHeader(@NonNull String headerName) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.clearOriginMatchedHeader(headerName);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @Override
+    public void clearAllOriginMatchedHeaders() {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.ORIGIN_MATCHED_HEADERS;
+        if (feature.isSupportedByWebView()) {
+            mProfileImpl.clearAllOriginMatchedHeaders();
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }

@@ -126,9 +126,7 @@ class SelectionRendererTest {
 
         for (bound in textSelection.bounds.map { it.pageRect }) {
             val expectedBounds =
-                RectF(bound).apply {
-                    offset(locationInView.left.toFloat(), locationInView.top.toFloat())
-                }
+                RectF(bound).apply { offset(locationInView.left, locationInView.top) }
             verify(canvasSpy).drawRect(eq(expectedBounds), eq(BOUNDS_PAINT))
         }
     }
@@ -202,9 +200,7 @@ class SelectionRendererTest {
 
         for (bound in textSelection.bounds.map { it.pageRect }) {
             val expectedBounds =
-                RectF(bound).apply {
-                    offset(locationInView.left.toFloat(), locationInView.top.toFloat())
-                }
+                RectF(bound).apply { offset(locationInView.left, locationInView.top) }
             verify(canvasSpy).drawRect(eq(expectedBounds), eq(BOUNDS_PAINT))
         }
     }

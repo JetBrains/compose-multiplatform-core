@@ -83,7 +83,8 @@ public interface CameraDeviceSurfaceManager {
      * @param isPreviewStabilizationOn           whether the preview stabilization is enabled.
      * @param hasVideoCapture                    whether the use cases has video capture.
      * @param isFeatureComboInvocation           whether a code flow invoked through feature combo
-     *                                           APIs (e.g. {@link SessionConfig#requiredFeatures}).
+     *                                           APIs (e.g. {@link
+     *                                           SessionConfig#requiredFeatureGroup}).
      * @param findMaxSupportedFrameRate          if {@code true}, the maximum supported frame
      *                                           rate will be calculated and returned in
      *                              {@link SurfaceStreamSpecQueryResult#getMaxSupportedFrameRate()}

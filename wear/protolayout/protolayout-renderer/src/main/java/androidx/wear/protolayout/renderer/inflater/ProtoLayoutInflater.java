@@ -4705,7 +4705,8 @@ public final class ProtoLayoutInflater {
         }
         if (groupMutation.isNoOp()) {
             // Nothing to do.
-            return immediateFuture(RenderingArtifact.create(mInflaterStatsLogger));
+            return immediateFuture(
+                    RenderingArtifact.create(mInflaterStatsLogger, prevInflatedParent));
         }
 
         if (groupMutation.mPipelineMaker.isPresent()) {
@@ -4719,7 +4720,9 @@ public final class ProtoLayoutInflater {
                             () -> {
                                 try {
                                     applyMutationInternal(prevInflatedParent, groupMutation);
-                                    result.set(RenderingArtifact.create(mInflaterStatsLogger));
+                                    result.set(
+                                            RenderingArtifact.create(
+                                                    mInflaterStatsLogger, prevInflatedParent));
                                 } catch (ViewMutationException ex) {
                                     result.setException(ex);
                                 }
@@ -4728,7 +4731,8 @@ public final class ProtoLayoutInflater {
         } else {
             try {
                 applyMutationInternal(prevInflatedParent, groupMutation);
-                return immediateFuture(RenderingArtifact.create(mInflaterStatsLogger));
+                return immediateFuture(
+                        RenderingArtifact.create(mInflaterStatsLogger, prevInflatedParent));
             } catch (ViewMutationException ex) {
                 return immediateFailedFuture(ex);
             }

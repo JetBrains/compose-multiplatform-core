@@ -206,10 +206,17 @@ private fun PagerState.isScrollingForward(velocity: Float): Boolean {
         if (isNotGestureAction()) {
             -velocity
         } else {
-            dragGestureDelta
+            dragGestureDelta()
         } > 0
     return (isForward && reverseScrollDirection || !isForward && !reverseScrollDirection)
 }
+
+private fun PagerState.dragGestureDelta() =
+    if (layoutInfo.orientation == Orientation.Horizontal) {
+        upDownDifference.x
+    } else {
+        upDownDifference.y
+    }
 
 private inline fun debugLog(generateMsg: () -> String) {
     if (PagerDebugConfig.PagerSnapLayoutInfoProvider) {
@@ -251,7 +258,7 @@ internal fun calculateFinalSnappingBound(
         if (pageSize == 0) {
             0f
         } else {
-            pagerState.dragGestureDelta / pageSize.toFloat()
+            pagerState.dragGestureDelta() / pageSize.toFloat()
         }
 
     // we're only interested in the decimal part of the offset.

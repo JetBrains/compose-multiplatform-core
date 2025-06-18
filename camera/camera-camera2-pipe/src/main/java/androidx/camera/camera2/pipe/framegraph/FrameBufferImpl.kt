@@ -21,8 +21,12 @@ import androidx.camera.camera2.pipe.FrameBuffer
 import androidx.camera.camera2.pipe.FrameReference
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.internal.FrameDistributor
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 internal class FrameBufferImpl(
@@ -38,6 +42,14 @@ internal class FrameBufferImpl(
 
     @GuardedBy("lock") private var closed = false
 
+    private val _frameFlow =
+        MutableSharedFlow<FrameReference>(
+            replay = 0,
+            extraBufferCapacity = FRAME_FLOW_EXTRA_BUFFER_CAPACITY,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
+    override val frameFlow: SharedFlow<FrameReference> = _frameFlow.asSharedFlow()
+
     init {
         require(capacity > 0) { "FrameBuffer capacity must be greater than 0" }
     }
@@ -51,15 +63,16 @@ internal class FrameBufferImpl(
             if (closed) {
                 return
             }
-
             // Add new frame reference to the queue, and remove the oldest one if queue is at its
             // capacity.
             // TODO: b/421957369 - add the ability to customize this eviction policy.
             while (frameQueue.size >= capacity) {
                 frameQueue.removeFirst()
             }
+            // TODO: b/424797841 - Acquire the ownership of the frame received in FrameBuffer
             frameQueue.add(frameReference)
             _size.value = frameQueue.size
+            _frameFlow.tryEmit(frameReference)
         }
     }
 
@@ -115,5 +128,9 @@ internal class FrameBufferImpl(
             _size.value = 0
         }
         frameGraphBuffers.detach(this)
+    }
+
+    private companion object {
+        const val FRAME_FLOW_EXTRA_BUFFER_CAPACITY = 4
     }
 }

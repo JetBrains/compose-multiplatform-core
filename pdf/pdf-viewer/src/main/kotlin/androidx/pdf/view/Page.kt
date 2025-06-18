@@ -252,7 +252,7 @@ internal class Page(
             // Highlight locations are defined in content coordinates, compute their location
             // in View coordinates using locationInView
             highlightRect.set(highlight.area.pageRect)
-            highlightRect.offset(locationInView.left.toFloat(), locationInView.top.toFloat())
+            highlightRect.offset(locationInView.left, locationInView.top)
             highlightPaint.color = highlight.color
             canvas.drawRect(highlightRect, highlightPaint)
         }
@@ -263,10 +263,7 @@ internal class Page(
                 ?.filter { it.widgetType == FormWidgetInfo.WIDGET_TYPE_TEXTFIELD }
                 ?.forEach {
                     formWidgetHighlightRect.set(it.widgetRect)
-                    formWidgetHighlightRect.offset(
-                        locationInView.left.toFloat(),
-                        locationInView.top.toFloat(),
-                    )
+                    formWidgetHighlightRect.offset(locationInView.left, locationInView.top)
                     highlightPaint.color = pdfFormFillingConfig.formFieldsHighlightColor
                     canvas.drawRect(formWidgetHighlightRect, highlightPaint)
                 }

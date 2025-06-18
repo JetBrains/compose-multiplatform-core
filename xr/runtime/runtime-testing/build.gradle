@@ -61,7 +61,5 @@ androidx {
     type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2024"
     description = "A fake implementation of the XR runtime used in unit tests."
-    // TODO: b/326456246
-    optOutJSpecify = true
     enableRobolectric()
 }

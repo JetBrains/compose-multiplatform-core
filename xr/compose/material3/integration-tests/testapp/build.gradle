@@ -68,11 +68,6 @@ android {
     }
 }
 
-androidx {
-    // TODO: b/326456246
-    optOutJSpecify = true
-}
-
 // Making this APK available via Android Build so the QA team can
 // access it in a convenient manner.
 ApkCopyHelperKt.setupAppApkCopy(project, "release")

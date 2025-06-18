@@ -17,6 +17,7 @@
 package androidx.xr.glimmer.samples
 
 import androidx.annotation.Sampled
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,9 +31,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.SurfaceDefaults
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.surface
 
@@ -45,6 +49,35 @@ fun SurfaceSampleUsage() {
         item { SurfaceSample() }
         item { ClickableSurfaceSample() }
         item { ToggleableSurfaceSample() }
+        item {
+            Box(
+                Modifier.surface(
+                        border = SurfaceDefaults.border(color = GlimmerTheme.colors.positive),
+                        onClick = {},
+                    )
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+            ) {
+                Text("This is a positive surface")
+            }
+        }
+        item {
+            Box(
+                Modifier.surface(
+                        border =
+                            BorderStroke(
+                                width = 2.dp,
+                                brush =
+                                    Brush.sweepGradient(
+                                        listOf(Color.Red, Color.Green, Color.Blue, Color.Red)
+                                    ),
+                            ),
+                        onClick = {},
+                    )
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+            ) {
+                Text("Sweep gradient")
+            }
+        }
     }
 }
 

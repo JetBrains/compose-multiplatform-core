@@ -18,7 +18,6 @@ package androidx.camera.integration.core
 import android.Manifest
 import android.content.ContentValues
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.hardware.camera2.CameraCaptureSession
@@ -85,6 +84,8 @@ import androidx.camera.testing.impl.ExtensionsUtil
 import androidx.camera.testing.impl.InternalTestConvenience.ignoreTestForCameraPipe
 import androidx.camera.testing.impl.StreamSharingForceEnabledEffect
 import androidx.camera.testing.impl.SurfaceTextureProvider
+import androidx.camera.testing.impl.UltraHdrImageVerification.assertImageFileIsUltraHdr
+import androidx.camera.testing.impl.UltraHdrImageVerification.assertJpegUltraHdr
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeOnImageCapturedCallback
@@ -582,9 +583,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         callback.awaitCapturesAndAssert(savedImagesCount = 1)
 
         // Check gainmap is existed.
-        val bitmap = BitmapFactory.decodeFile(saveLocation.absolutePath)
-        assertThat(bitmap).isNotNull()
-        assertThat(bitmap.hasGainmap()).isTrue()
+        assertImageFileIsUltraHdr(saveLocation.absolutePath)
     }
 
     @Test
@@ -1854,17 +1853,7 @@ class ImageCaptureTest(private val implName: String, private val cameraXConfig: 
         val callback =
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
-                    val imageFormat = image.format
-                    val bitmap = image.toBitmap()
-                    image.close()
-
-                    // Check the image format is correct and the gainmap exists.
-                    if (imageFormat != ImageFormat.JPEG_R) {
-                        error = Exception("INCORRECT_IMAGE_FORMAT")
-                    } else if (!bitmap.hasGainmap()) {
-                        error = Exception("NO_GAINMAP")
-                    }
-
+                    image.assertJpegUltraHdr()
                     latch.countDown()
                 }
 

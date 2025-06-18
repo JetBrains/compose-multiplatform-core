@@ -28,6 +28,7 @@ import androidx.annotation.RestrictTo
 import androidx.core.os.OutcomeReceiverCompat
 import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.exceptions.CreateCredentialException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import androidx.credentials.providerevents.CredentialEventsProvider
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToGmsResponse
 import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToJetpackRequest
@@ -39,6 +40,7 @@ import com.google.android.gms.identitycredentials.ExportCredentialsToDeviceSetup
 import com.google.android.gms.identitycredentials.GetCredentialTransferCapabilitiesRequest
 import com.google.android.gms.identitycredentials.ImportCredentialsForDeviceSetupRequest
 import com.google.android.gms.identitycredentials.SignalCredentialStateRequest
+import com.google.android.gms.identitycredentials.SignalCredentialStateResponse
 import com.google.android.gms.identitycredentials.provider.ICreateCredentialCallbacks
 import com.google.android.gms.identitycredentials.provider.ICredentialProviderService
 import com.google.android.gms.identitycredentials.provider.ICredentialTransferCapabilitiesCallbacks
@@ -152,10 +154,64 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
         ) {}
 
         override fun onSignalCredentialStateRequest(
-            p0: SignalCredentialStateRequest,
-            p1: CallingAppInfoParcelable,
-            p2: ISignalCredentialStateCallbacks,
-        ) {}
+            request: SignalCredentialStateRequest,
+            callingAppInfo: CallingAppInfoParcelable,
+            callback: ISignalCredentialStateCallbacks,
+        ) {
+            if (!UidVerifier.isGooglePlayServicesUid(context, getCallingUid())) {
+                return
+            }
+
+            val jetpackRequest =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    convertToJetpackRequest(request)
+                } else {
+                    null
+                }
+            if (jetpackRequest == null) {
+                callback.onFailure(
+                    com.google.android.gms.identitycredentials.SignalCredentialStateException
+                        .ERROR_TYPE_UNKNOWN,
+                    "Request could not be constructed",
+                )
+                return
+            }
+
+            handler.post {
+                val service = serviceRef.get()
+                if (service == null) {
+                    return@post
+                }
+
+                service.onSignalCredentialStateRequest(
+                    jetpackRequest,
+                    object :
+                        OutcomeReceiverCompat<
+                            androidx.credentials.SignalCredentialStateResponse,
+                            SignalCredentialStateException,
+                        > {
+                        override fun onResult(
+                            result: androidx.credentials.SignalCredentialStateResponse?
+                        ) {
+                            if (result != null) {
+                                callback.onSuccess(SignalCredentialStateResponse())
+                            } else {
+                                callback.onFailure(
+                                    com.google.android.gms.identitycredentials
+                                        .SignalCredentialStateException
+                                        .ERROR_TYPE_UNKNOWN,
+                                    "Response could not be constructed",
+                                )
+                            }
+                        }
+
+                        override fun onError(error: SignalCredentialStateException) {
+                            callback.onFailure(error.type, error.message.toString())
+                        }
+                    },
+                )
+            }
+        }
     }
 
     private companion object {

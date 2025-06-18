@@ -18,8 +18,6 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
@@ -53,6 +51,9 @@ import com.android.extensions.xr.node.Quatf;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.VisibilityState;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 final class RuntimeUtils {
     private RuntimeUtils() {}
@@ -119,9 +120,8 @@ final class RuntimeUtils {
         }
     }
 
-    @Nullable
     @VisibleForTesting
-    static HitInfo getHitInfo(
+    static @Nullable HitInfo getHitInfo(
             com.android.extensions.xr.node.InputEvent.HitInfo xrHitInfo,
             EntityManager entityManager) {
         if (xrHitInfo == null
@@ -152,7 +152,7 @@ final class RuntimeUtils {
      *     input event.
      */
     static InputEvent getInputEvent(
-            @NonNull com.android.extensions.xr.node.InputEvent xrInputEvent,
+            com.android.extensions.xr.node.@NonNull InputEvent xrInputEvent,
             @NonNull EntityManager entityManager) {
         Vector3 origin = getVector3(xrInputEvent.getOrigin());
         Vector3 direction = getVector3(xrInputEvent.getDirection());

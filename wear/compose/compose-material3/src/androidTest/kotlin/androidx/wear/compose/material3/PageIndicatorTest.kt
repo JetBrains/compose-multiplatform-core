@@ -220,12 +220,13 @@ class PageIndicatorTest {
         }
         rule.waitForIdle()
 
-        // Selected color should occupy 1 dot, which
-        // approximately equals to 11.5%
+        // Selected color should occupy 1 dot, which approximately equals to 11.5% on Medium Phone
+        // emulator (2.625f density), 9.8% on Small Phone emulator (2.0f density) and 10.7% on
+        // Pixel 9 Pro XL (3.0f density).
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 10f..13f)
+            .assertColorInPercentageRange(selectedColor, 9f..12f)
         // Unselected dots shouldn't be visible on the screen because we only have one page
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(unselectedColor)
 

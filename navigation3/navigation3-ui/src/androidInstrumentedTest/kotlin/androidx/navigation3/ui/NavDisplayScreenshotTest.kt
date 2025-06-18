@@ -38,12 +38,11 @@ import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onParent
 import androidx.compose.ui.unit.dp
 import androidx.kruth.assertThat
 import androidx.navigation3.runtime.NavEntry
@@ -61,8 +60,6 @@ class NavDisplayScreenshotTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule("navigation3/navigation3-ui")
-
-    private val navHostTag = "NavHostTag"
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -82,7 +79,6 @@ class NavDisplayScreenshotTest {
                 predictivePopTransitionSpec = {
                     slideInHorizontally { -it / 2 } togetherWith slideOutHorizontally { it / 2 }
                 },
-                modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
                     first -> NavEntry(first) { Text(first) }
@@ -119,7 +115,8 @@ class NavDisplayScreenshotTest {
         composeTestRule.waitForIdle()
 
         composeTestRule
-            .onNodeWithTag(navHostTag)
+            .onNodeWithText(second)
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavDisplayPredictiveBackAnimations")
     }
@@ -137,7 +134,6 @@ class NavDisplayScreenshotTest {
                 transitionSpec = {
                     slideInHorizontally { -it / 2 } togetherWith slideOutHorizontally { it }
                 },
-                modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
                     first ->
@@ -174,7 +170,8 @@ class NavDisplayScreenshotTest {
 
         // second screen should be on top with "second" text visible
         composeTestRule
-            .onNodeWithTag(navHostTag)
+            .onNodeWithText(second)
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavigateZIndex")
     }
@@ -186,7 +183,7 @@ class NavDisplayScreenshotTest {
         val duration = 500
         composeTestRule.setContent {
             backStack = remember { mutableStateListOf(first, second) }
-            NavDisplay(backStack, modifier = Modifier.testTag(navHostTag)) { key ->
+            NavDisplay(backStack) { key ->
                 when (key) {
                     first ->
                         NavEntry(first) {
@@ -229,7 +226,8 @@ class NavDisplayScreenshotTest {
 
         // second screen should be on top with "second" text visible
         composeTestRule
-            .onNodeWithTag(navHostTag)
+            .onNodeWithText(second)
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testPopZIndex")
     }
@@ -247,7 +245,6 @@ class NavDisplayScreenshotTest {
                 transitionSpec = {
                     slideInHorizontally { -it / 2 } togetherWith slideOutHorizontally { it }
                 },
-                modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
                     first -> NavEntry(first) {}
@@ -296,7 +293,8 @@ class NavDisplayScreenshotTest {
 
         // should be a navigate to third screen, with "third" text visible and on top
         composeTestRule
-            .onNodeWithTag(navHostTag)
+            .onNodeWithText(third)
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testPopNavigateDuplicateZIndex")
     }
@@ -314,7 +312,6 @@ class NavDisplayScreenshotTest {
                 transitionSpec = {
                     slideInHorizontally { -it / 2 } togetherWith slideOutHorizontally { it }
                 },
-                modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
                     first ->
@@ -366,7 +363,8 @@ class NavDisplayScreenshotTest {
 
         // forth screen should be on top with "forth" text visible
         composeTestRule
-            .onNodeWithTag(navHostTag)
+            .onNodeWithText(forth)
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testPopNavigateZIndex")
     }
@@ -384,7 +382,6 @@ class NavDisplayScreenshotTest {
                 transitionSpec = {
                     slideInHorizontally { -it / 2 } togetherWith slideOutHorizontally { it }
                 },
-                modifier = Modifier.testTag(navHostTag),
             ) {
                 when (it) {
                     first ->
@@ -424,7 +421,8 @@ class NavDisplayScreenshotTest {
 
         // first screen should be on top with "first" text visible
         composeTestRule
-            .onNodeWithTag(navHostTag)
+            .onNodeWithText(first)
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavigateDuplicateZIndex")
     }
@@ -442,7 +440,6 @@ class NavDisplayScreenshotTest {
                 transitionSpec = {
                     slideInHorizontally { -it / 2 } togetherWith slideOutHorizontally { it }
                 },
-                modifier = Modifier.testTag(navHostTag),
             ) { key ->
                 when (key) {
                     first ->
@@ -510,7 +507,8 @@ class NavDisplayScreenshotTest {
         // so that popping this duplicate would still go from a higher zIndex to lower zIndex,
         // meaning we should see the exiting screen on top with "second" text visible
         composeTestRule
-            .onNodeWithTag(navHostTag)
+            .onNodeWithText(third)
+            .onParent()
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testPopDuplicateZIndex2")
     }

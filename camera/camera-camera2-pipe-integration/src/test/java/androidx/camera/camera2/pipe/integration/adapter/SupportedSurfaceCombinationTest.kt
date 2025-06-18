@@ -77,9 +77,9 @@ import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.UseCase
 import androidx.camera.core.concurrent.CameraCoordinator
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery.Companion.NO_OP_FEATURE_COMBINATION_QUERY
-import androidx.camera.core.featurecombination.impl.UseCaseType
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery.Companion.NO_OP_FEATURE_COMBINATION_QUERY
+import androidx.camera.core.featuregroup.impl.UseCaseType
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.CameraThreadConfig
@@ -129,6 +129,7 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
+import kotlin.collections.addAll
 import kotlin.math.floor
 import org.junit.After
 import org.junit.Assert
@@ -216,6 +217,18 @@ class SupportedSurfaceCombinationTest {
                     Range.create(30, 480),
                     Range.create(480, 480),
                 ),
+        )
+
+    private val defaultFpsRanges: Array<Range<Int>> =
+        arrayOf(
+            Range(10, 22),
+            Range(22, 22),
+            Range(30, 30),
+            Range(30, 50),
+            Range(30, 40),
+            Range(30, 60),
+            Range(50, 60),
+            Range(60, 60),
         )
 
     private val streamUseCaseOverrideValue = 3L
@@ -1825,6 +1838,7 @@ class SupportedSurfaceCombinationTest {
         maxFpsBySizeMap: Map<Size, Int> = emptyMap(),
         isFeatureComboInvocation: Boolean = false,
         featureCombinationQuery: FeatureCombinationQuery = NO_OP_FEATURE_COMBINATION_QUERY,
+        deviceFPSRanges: Array<Range<Int>> = defaultFpsRanges,
     ): SurfaceStreamSpecQueryResult {
         setupCamera(
             hardwareLevel = hardwareLevel,
@@ -1834,6 +1848,7 @@ class SupportedSurfaceCombinationTest {
             supportedFormats = supportedOutputFormats,
             supportedHighSpeedSizeAndFpsMap = supportedHighSpeedSizeAndFpsMap,
             maxFpsBySizeMap = maxFpsBySizeMap,
+            deviceFPSRanges = deviceFPSRanges,
         )
         val supportedSurfaceCombination =
             SupportedSurfaceCombination(
@@ -2752,7 +2767,7 @@ class SupportedSurfaceCombinationTest {
         // a valid target means the device is capable of that fps
         val useCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(25, 30))
         val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply { put(useCase, Size(3840, 2160)) }
+            mutableMapOf<UseCase, Size>().apply { put(useCase, Size(1920, 1440)) }
         getSuggestedSpecsAndVerify(
             useCaseExpectedResultMap,
             hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
@@ -3116,7 +3131,7 @@ class SupportedSurfaceCombinationTest {
             useCaseExpectedResultMap,
             hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
             compareWithAtMost = true,
-            compareExpectedFps = Range(30, 40),
+            compareExpectedFps = Range(30, 50),
         )
         // expected size will give a maximum of 40 fps
         // expected range 30,40. another range with the same intersection size was 30,50, but 30,40
@@ -4294,6 +4309,26 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
+    @Test
+    fun getSuggestedStreamSpecs_canSelectMaxUpperBoundFps() {
+        val useCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range<Int>(15, 60))
+        val useCaseExpectedResultMap = mutableMapOf(useCase to Size(800, 450))
+
+        getSuggestedSpecsAndVerify(
+            useCaseExpectedResultMap,
+            hardwareLevel = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            compareExpectedFps = Range(15, 60),
+            deviceFPSRanges =
+                mutableListOf<Range<Int>>()
+                    .apply {
+                        addAll(defaultFpsRanges)
+                        add(Range.create(15, 30))
+                        add(Range.create(15, 60))
+                    }
+                    .toTypedArray(),
+        )
+    }
+
     private fun createSupportedSurfaceCombinationWithSetup(
         hardwareLevel: Int = CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
     ): SupportedSurfaceCombination {
@@ -4336,6 +4371,7 @@ class SupportedSurfaceCombinationTest {
         capabilities: IntArray? = null,
         cameraId: CameraId = CameraId.fromCamera1Id(0),
         maxFpsBySizeMap: Map<Size, Int> = emptyMap(),
+        deviceFPSRanges: Array<Range<Int>> = defaultFpsRanges,
     ) {
         cameraFactory = FakeCameraFactory()
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
@@ -4370,18 +4406,6 @@ class SupportedSurfaceCombinationTest {
             } else {
                 null
             }
-
-        val deviceFPSRanges: Array<Range<Int>?> =
-            arrayOf(
-                Range(10, 22),
-                Range(22, 22),
-                Range(30, 30),
-                Range(30, 50),
-                Range(30, 40),
-                Range(30, 60),
-                Range(50, 60),
-                Range(60, 60),
-            )
 
         val characteristicsMap =
             mutableMapOf(

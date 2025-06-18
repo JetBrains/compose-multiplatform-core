@@ -97,12 +97,6 @@ abstract interface androidx.compose.ui.graphics.drawscope/DrawTransform { // and
     abstract fun translate(kotlin/Float = ..., kotlin/Float = ...) // androidx.compose.ui.graphics.drawscope/DrawTransform.translate|translate(kotlin.Float;kotlin.Float){}[0]
 }
 
-abstract interface androidx.compose.ui.graphics.shadow/ShadowContext { // androidx.compose.ui.graphics.shadow/ShadowContext|null[0]
-    open fun clearCache() // androidx.compose.ui.graphics.shadow/ShadowContext.clearCache|clearCache(){}[0]
-    open fun createDropShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui.graphics.shadow/DropShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createDropShadowPainter|createDropShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
-    open fun createInnerShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui.graphics.shadow/InnerShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createInnerShadowPainter|createInnerShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
-}
-
 abstract interface androidx.compose.ui.graphics/Canvas { // androidx.compose.ui.graphics/Canvas|null[0]
     abstract fun clipPath(androidx.compose.ui.graphics/Path, androidx.compose.ui.graphics/ClipOp = ...) // androidx.compose.ui.graphics/Canvas.clipPath|clipPath(androidx.compose.ui.graphics.Path;androidx.compose.ui.graphics.ClipOp){}[0]
     abstract fun clipRect(kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, androidx.compose.ui.graphics/ClipOp = ...) // androidx.compose.ui.graphics/Canvas.clipRect|clipRect(kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;androidx.compose.ui.graphics.ClipOp){}[0]
@@ -314,6 +308,12 @@ abstract interface androidx.compose.ui.graphics/PathMeasure { // androidx.compos
 
 abstract interface androidx.compose.ui.graphics/Shape { // androidx.compose.ui.graphics/Shape|null[0]
     abstract fun createOutline(androidx.compose.ui.geometry/Size, androidx.compose.ui.unit/LayoutDirection, androidx.compose.ui.unit/Density): androidx.compose.ui.graphics/Outline // androidx.compose.ui.graphics/Shape.createOutline|createOutline(androidx.compose.ui.geometry.Size;androidx.compose.ui.unit.LayoutDirection;androidx.compose.ui.unit.Density){}[0]
+}
+
+sealed interface androidx.compose.ui.graphics.shadow/ShadowContext { // androidx.compose.ui.graphics.shadow/ShadowContext|null[0]
+    open fun clearCache() // androidx.compose.ui.graphics.shadow/ShadowContext.clearCache|clearCache(){}[0]
+    open fun createDropShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui.graphics.shadow/DropShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createDropShadowPainter|createDropShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
+    open fun createInnerShadowPainter(androidx.compose.ui.graphics/Shape, androidx.compose.ui.graphics.shadow/Shadow): androidx.compose.ui.graphics.shadow/InnerShadowPainter // androidx.compose.ui.graphics.shadow/ShadowContext.createInnerShadowPainter|createInnerShadowPainter(androidx.compose.ui.graphics.Shape;androidx.compose.ui.graphics.shadow.Shadow){}[0]
 }
 
 abstract class androidx.compose.ui.graphics.colorspace/Adaptation { // androidx.compose.ui.graphics.colorspace/Adaptation|null[0]

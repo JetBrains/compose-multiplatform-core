@@ -23,8 +23,6 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.AnchorEntity;
 import androidx.xr.runtime.internal.AnchorEntity.OnStateChangedListener;
@@ -44,6 +42,9 @@ import androidx.xr.scenecore.impl.perception.Plane.PlaneData;
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -283,8 +284,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         }
     }
 
-    @Nullable
-    private static Long getAnchorDeadline(Duration anchorSearchTimeout) {
+    private static @Nullable Long getAnchorDeadline(Duration anchorSearchTimeout) {
         // If the timeout is zero or null then we return null here and the anchor search will
         // continue
         // indefinitely.
@@ -418,8 +418,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     // Tries to find a plane that matches the semantic anchor requirements. This creates an anchor
     // on
     // the plane if found.
-    @Nullable
-    private Anchor findPlaneAnchor(AnchorCreationData anchorCreationData) {
+    private @Nullable Anchor findPlaneAnchor(AnchorCreationData anchorCreationData) {
         for (Plane plane : mPerceptionLibrary.getSession().getAllPlanes()) {
             long timeNow = SystemClock.uptimeMillis() * 1000000;
             PlaneData planeData = plane.getData(timeNow);
@@ -491,9 +490,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         return mAnchor.getAnchorId();
     }
 
-    @NonNull
     @Override
-    public Pose getPose(@SpaceValue int relativeTo) {
+    public @NonNull Pose getPose(@SpaceValue int relativeTo) {
         throw new UnsupportedOperationException("Cannot get 'pose' on an AnchorEntity.");
     }
 
@@ -529,9 +527,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         }
     }
 
-    @NonNull
     @Override
-    public Pose getActivitySpacePose() {
+    public @NonNull Pose getActivitySpacePose() {
         if (mOpenXrActivityPoseHelper == null) {
             throw new IllegalStateException(
                     "Cannot get pose in Activity Space. Anchor initialized in Error state.");
@@ -539,9 +536,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         return mOpenXrActivityPoseHelper.getActivitySpacePose(getPoseInOpenXrReferenceSpace());
     }
 
-    @NonNull
     @Override
-    public Vector3 getActivitySpaceScale() {
+    public @NonNull Vector3 getActivitySpaceScale() {
         return mOpenXrActivityPoseHelper.getActivitySpaceScale(getWorldSpaceScale());
     }
 

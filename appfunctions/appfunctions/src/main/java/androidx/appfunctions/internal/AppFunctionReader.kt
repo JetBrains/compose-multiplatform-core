@@ -16,13 +16,15 @@
 
 package androidx.appfunctions.internal
 
+import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import kotlinx.coroutines.flow.Flow
 
 /** Searches AppFunctions. */
-internal interface AppFunctionReader {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface AppFunctionReader {
 
     /**
      * Searches for app functions based on the provided search specification.
@@ -32,7 +34,7 @@ internal interface AppFunctionReader {
      * @return A flow emitting a list of app function metadata matching the search criteria.
      * @see androidx.appfunctions.AppFunctionSearchSpec
      */
-    fun searchAppFunctions(
+    public fun searchAppFunctions(
         searchFunctionSpec: AppFunctionSearchSpec
     ): Flow<List<AppFunctionMetadata>>
 
@@ -43,7 +45,7 @@ internal interface AppFunctionReader {
      * @throws androidx.appfunctions.AppFunctionFunctionNotFoundException if the function does not
      *   exist.
      */
-    suspend fun getAppFunctionSchemaMetadata(
+    public suspend fun getAppFunctionSchemaMetadata(
         functionId: String,
         packageName: String,
     ): AppFunctionSchemaMetadata?

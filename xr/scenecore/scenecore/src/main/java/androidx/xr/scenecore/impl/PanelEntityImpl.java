@@ -29,7 +29,6 @@ import android.widget.FrameLayout;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewTreeLifecycleOwner;
 import androidx.xr.runtime.internal.Dimensions;
@@ -39,6 +38,8 @@ import androidx.xr.runtime.internal.PixelDimensions;
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;

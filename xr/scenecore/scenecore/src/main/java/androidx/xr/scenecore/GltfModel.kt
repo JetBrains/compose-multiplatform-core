@@ -43,11 +43,23 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
 
     public companion object {
 
+        private suspend fun create(platformAdapter: JxrPlatformAdapter, name: String): GltfModel {
+            return createModel(platformAdapter.loadGltfByAssetName(name))
+        }
+
         private fun createAsync(
             platformAdapter: JxrPlatformAdapter,
             name: String,
         ): ListenableFuture<GltfModel> {
             return createModelFuture(platformAdapter.loadGltfByAssetName(name))
+        }
+
+        private suspend fun create(
+            platformAdapter: JxrPlatformAdapter,
+            assetData: ByteArray,
+            assetKey: String,
+        ): GltfModel {
+            return createModel(platformAdapter.loadGltfByByteArray(assetData, assetKey))
         }
 
         private fun createAsync(
@@ -56,6 +68,29 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
             assetKey: String,
         ): ListenableFuture<GltfModel> {
             return createModelFuture(platformAdapter.loadGltfByByteArray(assetData, assetKey))
+        }
+
+        /**
+         * Public factory for a GltfModel, where the glTF is asynchronously loaded from a [Path]
+         * relative to the application's `assets/` folder.
+         *
+         * Currently, only binary glTF (.glb) files are supported.
+         *
+         * @param session The [Session] to use for loading the model.
+         * @param path The Path of the binary glTF (.glb) model to be loaded, relative to the
+         *   application's `assets/` folder.
+         * @return a [GltfModel] upon completion.
+         * @throws IllegalArgumentException if [path.isAbsolute] is true, as this method requires a
+         *   relative path.
+         */
+        @MainThread
+        @JvmStatic
+        @SuppressLint("NewApi")
+        public suspend fun create(session: Session, path: Path): GltfModel {
+            require(!path.isAbsolute) {
+                "GltfModel.create() expects a path relative to `assets/`, received absolute path $path."
+            }
+            return create(session.platformAdapter, path.toString())
         }
 
         /**
@@ -90,6 +125,20 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
          *
          * @param session The [Session] to use for loading the model.
          * @param uri The Uri for a binary glTF (.glb) model to be loaded.
+         * @return a [GltfModel] upon completion.
+         */
+        @MainThread
+        @JvmStatic
+        public suspend fun create(session: Session, uri: Uri): GltfModel =
+            create(session.platformAdapter, uri.toString())
+
+        /**
+         * Public factory for a GltfModel, where the glTF is asynchronously loaded from a [Uri].
+         *
+         * Currently, only binary glTF (.glb) files are supported.
+         *
+         * @param session The [Session] to use for loading the model.
+         * @param uri The Uri for a binary glTF (.glb) model to be loaded.
          * @return a ListenableFuture<GltfModel>. Listeners will be called on the main thread if
          *   Runnable::run is supplied when adding a listener to the [ListenableFuture].
          */
@@ -97,6 +146,28 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
         @JvmStatic
         public fun createAsync(session: Session, uri: Uri): ListenableFuture<GltfModel> =
             createAsync(session.platformAdapter, uri.toString())
+
+        /**
+         * Public factory for a GltfModel, where the glTF is asynchronously loaded.
+         *
+         * Currently, only binary glTF files are supported.
+         *
+         * @param session The [Session] to use for loading the model.
+         * @param assetData The byte array data of a binary glTF (`.glb`) model to be loaded.
+         * @param assetKey The key to use for the model. This is used to identify the model in the
+         *   SceneCore cache.
+         * @return a [GltfModel] upon completion.
+         */
+        @MainThread
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        public suspend fun create(
+            session: Session,
+            assetData: ByteArray,
+            assetKey: String,
+        ): GltfModel {
+            return GltfModel.create(session.platformAdapter, assetData, assetKey)
+        }
 
         /**
          * Public factory for a GltfModel, where the glTF is asynchronously loaded.
@@ -119,6 +190,12 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
             assetKey: String,
         ): ListenableFuture<GltfModel> {
             return createAsync(session.platformAdapter, assetData, assetKey)
+        }
+
+        private suspend fun createModel(
+            gltfResourceFuture: ListenableFuture<RtGltfModel>
+        ): GltfModel {
+            return GltfModel(gltfResourceFuture.awaitSuspending())
         }
 
         private fun createModelFuture(

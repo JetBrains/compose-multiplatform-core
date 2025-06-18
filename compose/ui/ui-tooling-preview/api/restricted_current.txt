@@ -136,19 +136,6 @@ package androidx.compose.ui.tooling.preview {
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Repeatable @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public static @interface Preview.Container {
     method public abstract androidx.compose.ui.tooling.preview.Preview[] value();
-    property @IntRange(from=1L) public abstract int apiLevel;
-    property public abstract long backgroundColor;
-    property public abstract String device;
-    property @FloatRange(from=0.01) public abstract float fontScale;
-    property public abstract String group;
-    property public abstract int heightDp;
-    property public abstract String locale;
-    property public abstract String name;
-    property public abstract boolean showBackground;
-    property public abstract boolean showSystemUi;
-    property public abstract int uiMode;
-    property public abstract int wallpaper;
-    property public abstract int widthDp;
   }
 
   @androidx.compose.ui.tooling.preview.Preview(name="Red", wallpaper=androidx.compose.ui.tooling.preview.Wallpapers.RED_DOMINATED_EXAMPLE) @androidx.compose.ui.tooling.preview.Preview(name="Blue", wallpaper=androidx.compose.ui.tooling.preview.Wallpapers.BLUE_DOMINATED_EXAMPLE) @androidx.compose.ui.tooling.preview.Preview(name="Green", wallpaper=androidx.compose.ui.tooling.preview.Wallpapers.GREEN_DOMINATED_EXAMPLE) @androidx.compose.ui.tooling.preview.Preview(name="Yellow", wallpaper=androidx.compose.ui.tooling.preview.Wallpapers.YELLOW_DOMINATED_EXAMPLE) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface PreviewDynamicColors {
@@ -164,7 +151,7 @@ package androidx.compose.ui.tooling.preview {
     method public abstract int limit() default kotlin.jvm.internal.IntCompanionObject.MAX_VALUE;
     method public abstract Class<? extends androidx.compose.ui.tooling.preview.PreviewParameterProvider<? extends java.lang.Object?>> provider();
     property public abstract int limit;
-    property public abstract Class<? extends androidx.compose.ui.tooling.preview.PreviewParameterProvider<? extends java.lang.Object?>> provider;
+    property public abstract kotlin.reflect.KClass<? extends androidx.compose.ui.tooling.preview.PreviewParameterProvider<? extends java.lang.Object?>> provider;
   }
 
   @kotlin.jvm.JvmDefaultWithCompatibility public interface PreviewParameterProvider<T> {

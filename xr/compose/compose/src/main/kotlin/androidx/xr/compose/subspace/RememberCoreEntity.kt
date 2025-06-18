@@ -29,7 +29,9 @@ import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.CoreSphereSurfaceEntity
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
 import androidx.xr.compose.subspace.layout.SpatialShape
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
@@ -96,13 +98,18 @@ internal inline fun rememberCoreSphereSurfaceEntity(
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val density = LocalDensity.current
     val coreEntity by remember {
-        disposableValueOf(
-            CoreSphereSurfaceEntity(
-                session.entityFactory(),
-                session.scene.spatialUser.head?.activitySpacePose,
-                density,
-            )
-        ) {
+        val headPose =
+            if (
+                session.config.headTracking == HeadTrackingMode.LAST_KNOWN ||
+                    session.configure(
+                        config = session.config.copy(headTracking = HeadTrackingMode.LAST_KNOWN)
+                    ) is SessionConfigureSuccess
+            ) {
+                session.scene.spatialUser.head?.activitySpacePose
+            } else {
+                null
+            }
+        disposableValueOf(CoreSphereSurfaceEntity(session.entityFactory(), headPose, density)) {
             it.dispose()
         }
     }

@@ -85,7 +85,7 @@ class RememberSaveableTest {
     fun restoreWithSerializer() {
         var holder: Holder? = null
         restorationTester.setContent {
-            holder = rememberSaveable(serializer = HolderSerializer) { Holder(0) }
+            holder = rememberSerializable(serializer = HolderSerializer) { Holder(0) }
         }
 
         assertThat(holder).isEqualTo(Holder(0))

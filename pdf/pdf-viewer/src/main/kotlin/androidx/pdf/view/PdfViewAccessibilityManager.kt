@@ -87,17 +87,13 @@ internal class PdfViewAccessibilityManager(
         }
 
         gotoLinks.entries
-            .find { (_, wrapper) ->
-                wrapper.linkBounds.contains(contentX.toFloat(), contentY.toFloat())
-            }
+            .find { (_, wrapper) -> wrapper.linkBounds.contains(contentX, contentY) }
             ?.let {
                 return it.key
             }
 
         urlLinks.entries
-            .find { (_, wrapper) ->
-                wrapper.linkBounds.contains(contentX.toFloat(), contentY.toFloat())
-            }
+            .find { (_, wrapper) -> wrapper.linkBounds.contains(contentX, contentY) }
             ?.let {
                 return it.key
             }

@@ -17,7 +17,6 @@
 package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.text.input.internal.OffsetMappingCalculator
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -619,13 +618,10 @@ class TextFieldBufferTest {
 
     @Test
     fun addStyle_addsToOutputAnnotations_ifCreatedForOutputTransformation() {
-        val buffer =
-            TextFieldBuffer(
-                TextFieldCharSequence("hello"),
-                offsetMappingCalculator = OffsetMappingCalculator(),
-            )
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
         // Act
         val style = SpanStyle(fontSize = 12.sp)
+        buffer.canCallAddStyle = true
         buffer.addStyle(style, 0, buffer.length)
 
         // Assert
@@ -649,13 +645,10 @@ class TextFieldBufferTest {
 
     @Test
     fun addStyle_notRangeTracked() {
-        val buffer =
-            TextFieldBuffer(
-                TextFieldCharSequence("hello"),
-                offsetMappingCalculator = OffsetMappingCalculator(),
-            )
+        val buffer = TextFieldBuffer(TextFieldCharSequence("hello"))
         val style = SpanStyle(fontSize = 12.sp)
 
+        buffer.canCallAddStyle = true
         buffer.addStyle(style, 0, buffer.length)
         buffer.insert(2, "world") // expand where style is applied
 

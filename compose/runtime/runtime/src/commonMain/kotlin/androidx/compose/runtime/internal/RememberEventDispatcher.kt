@@ -18,6 +18,7 @@ package androidx.compose.runtime.internal
 
 import androidx.collection.MutableScatterMap
 import androidx.collection.MutableScatterSet
+import androidx.collection.ScatterSet
 import androidx.collection.mutableScatterMapOf
 import androidx.collection.mutableScatterSetOf
 import androidx.compose.runtime.ComposeNodeLifecycleCallback
@@ -61,7 +62,7 @@ internal class RememberEventDispatcher() : RememberManager {
     private var abandoning: MutableSet<RememberObserver>? = null
     private var traceContext: CompositionErrorContext? = null
     private val remembering = mutableVectorOf<RememberObserverHolder>()
-    private val rememberSet = mutableScatterSetOf<RememberObserverHolder>()
+    private var rememberSet = mutableScatterSetOf<RememberObserverHolder>()
     private var currentRememberingList = remembering
     private val leaving = mutableVectorOf<Any>()
     private val sideEffects = mutableVectorOf<() -> Unit>()
@@ -70,6 +71,7 @@ internal class RememberEventDispatcher() : RememberManager {
         MutableScatterMap<RecomposeScopeImpl, PausedCompositionRemembers>? =
         null
     private var nestedRemembersLists: Stack<MutableVector<RememberObserverHolder>>? = null
+    private var ignoreLeavingSet: ScatterSet<RememberObserverHolder>? = null
 
     fun prepare(abandoning: MutableSet<RememberObserver>, traceContext: CompositionErrorContext?) {
         clear()
@@ -134,7 +136,10 @@ internal class RememberEventDispatcher() : RememberManager {
             val abandoning = abandoning ?: return
             abandoning.add(instance.wrapped)
         }
-        recordLeaving(instance)
+        val ignoreSet = ignoreLeavingSet
+        if (ignoreSet == null || instance !in ignoreSet) {
+            recordLeaving(instance)
+        }
     }
 
     override fun sideEffect(effect: () -> Unit) {
@@ -188,6 +193,7 @@ internal class RememberEventDispatcher() : RememberManager {
 
     fun dispatchRememberObservers() {
         val abandoning = abandoning ?: return
+        ignoreLeavingSet = null
 
         // Send forgets and node callbacks
         if (leaving.isNotEmpty()) {
@@ -226,6 +232,18 @@ internal class RememberEventDispatcher() : RememberManager {
             instance.onDeactivate()
         }
     }
+
+    fun ignoreForgotten(ignoreSet: ScatterSet<RememberObserverHolder>) {
+        ignoreLeavingSet = ignoreSet
+    }
+
+    fun extractRememberSet(): ScatterSet<RememberObserverHolder>? =
+        if (rememberSet.isNotEmpty()) {
+            rememberSet.also {
+                rememberSet = mutableScatterSetOf()
+                remembering.clear()
+            }
+        } else null
 
     private fun dispatchRememberList(list: MutableVector<RememberObserverHolder>) {
         val abandoning = abandoning ?: return

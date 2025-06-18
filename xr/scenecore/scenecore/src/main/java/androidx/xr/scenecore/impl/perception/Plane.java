@@ -18,9 +18,10 @@ package androidx.xr.scenecore.impl.perception;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,8 +52,7 @@ public class Plane implements Trackable {
      *     current time will be used.
      */
     @Override
-    @Nullable
-    public Anchor createAnchor(
+    public @Nullable Anchor createAnchor(
             @NonNull Pose pose, @SuppressWarnings("AutoBoxing") @Nullable Long timeNs) {
         Anchor.AnchorData anchorData =
                 createAnchorOnPlane(mPlaneId, pose, timeNs == null ? -1 : timeNs);
@@ -73,15 +73,13 @@ public class Plane implements Trackable {
      *     uptimeNanos() at which to get the pose, in nanoseconds. If time is null or negative, the
      *     current time will be used.
      */
-    @Nullable
-    public PlaneData getData(@SuppressWarnings("AutoBoxing") @Nullable Long timeNs) {
+    public @Nullable PlaneData getData(@SuppressWarnings("AutoBoxing") @Nullable Long timeNs) {
         return getPlaneData(mPlaneId, mReferenceSpaceType, timeNs == null ? -1 : timeNs);
     }
 
     /** Returns all anchors attached to this trackable. */
-    @NonNull
     @Override
-    public List<Anchor> getAnchors() {
+    public @NonNull List<Anchor> getAnchors() {
         return mAttachedAnchors;
     }
 
@@ -161,7 +159,7 @@ public class Plane implements Trackable {
          * The pose of the center of the plane. The positive y-axis of the pose will point
          * perpendicular out of the plane's surface.
          */
-        @NonNull public final Pose centerPose;
+        public final @NonNull Pose centerPose;
 
         /** The width of the plane. */
         public final float extentWidth;
@@ -170,10 +168,10 @@ public class Plane implements Trackable {
         public final float extentHeight;
 
         /** The direction of the plane. */
-        @NonNull public final Plane.Type type;
+        public final Plane.@NonNull Type type;
 
         /** A label that can be used to determine the type of object that the plane is. */
-        @NonNull public final Plane.Label label;
+        public final Plane.@NonNull Label label;
 
         public PlaneData(
                 @NonNull Pose centerPose,

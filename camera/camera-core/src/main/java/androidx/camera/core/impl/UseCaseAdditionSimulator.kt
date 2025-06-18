@@ -19,8 +19,8 @@ package androidx.camera.core.impl
 import androidx.camera.core.CameraUseCaseAdapterProvider
 import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.SessionConfig
-import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination
-import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination.Companion.resolveFeatureCombination
+import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup
+import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup.Companion.resolveFeatureGroup
 import androidx.camera.core.impl.UseCaseAdditionSimulator.cameraUseCaseAdapterProvider
 import androidx.camera.core.impl.UseCaseAdditionSimulator.simulateAddUseCases
 import androidx.camera.core.internal.CalculatedUseCaseInfo
@@ -58,7 +58,7 @@ public object UseCaseAdditionSimulator {
      * @param cameraInfoInternal The internal information of the underlying camera to simulate on.
      * @param sessionConfig The session configuration containing the use cases and other settings.
      *   If there are any unresolved configurations in the session config (e.g.
-     *   [SessionConfig.preferredFeatures]]), they will be resolved in the same manner as actual
+     *   [SessionConfig.preferredFeatureGroup]]), they will be resolved in the same manner as actual
      *   binding flow.
      * @param findMaxSupportedFrameRate Whether to find the maximum supported frame rate during the
      *   simulation, false by default to improve latency in cases where this info is not required.
@@ -79,7 +79,7 @@ public object UseCaseAdditionSimulator {
         cameraInfoInternal: CameraInfoInternal,
         sessionConfig: SessionConfig,
         findMaxSupportedFrameRate: Boolean = false,
-        resolvedFeatureCombination: ResolvedFeatureCombination? = null,
+        resolvedFeatureGroup: ResolvedFeatureGroup? = null,
     ): CalculatedUseCaseInfo {
         check(::cameraUseCaseAdapterProvider.isInitialized) {
             "mCameraUseCaseAdapterProvider must be initialized first!"
@@ -93,8 +93,7 @@ public object UseCaseAdditionSimulator {
 
         return cameraUseCaseAdapter.simulateAddUseCases(
             sessionConfig.useCases,
-            resolvedFeatureCombination
-                ?: sessionConfig.resolveFeatureCombination(cameraInfoInternal),
+            resolvedFeatureGroup ?: sessionConfig.resolveFeatureGroup(cameraInfoInternal),
             /*findMaxSupportedFrameRate=*/ findMaxSupportedFrameRate,
         )
     }

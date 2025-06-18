@@ -105,6 +105,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             when (plugin) {
                 is LibraryPlugin -> {
                     val libraryExtension = project.extensions.getByType<LibraryExtension>()
+                    @Suppress("deprecation") // TODO(aurimas): migrate to new API
                     libraryExtension.compileSdk =
                         project.defaultAndroidConfig.latestStableCompileSdk
                     libraryExtension.buildToolsVersion =

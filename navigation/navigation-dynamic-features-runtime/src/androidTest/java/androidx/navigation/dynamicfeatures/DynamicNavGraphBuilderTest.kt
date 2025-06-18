@@ -71,6 +71,7 @@ public class DynamicNavGraphBuilderTest {
         val graph = provider.navigation(startDestination = DESTINATION_ID) {}
         assertWithMessage("Without a moduleName the graph should be a NavGraph")
             .that(graph !is DynamicGraphNavigator.DynamicNavGraph)
+            .isTrue()
     }
 
     @Suppress("DEPRECATION")
@@ -209,6 +210,7 @@ public class DynamicNavGraphBuilderTest {
         val graph = provider.navigation(startDestination = DESTINATION_ROUTE) {}
         assertWithMessage("Without a moduleName the graph should be a NavGraph")
             .that(graph !is DynamicGraphNavigator.DynamicNavGraph)
+            .isTrue()
     }
 
     @Test

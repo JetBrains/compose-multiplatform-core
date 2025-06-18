@@ -33,9 +33,8 @@ plugins {
 
 androidXMultiplatform {
     jvm()
-    mingwX64()
-    linux()
     mac()
+    linux()
     ios()
     watchos()
     tvos()

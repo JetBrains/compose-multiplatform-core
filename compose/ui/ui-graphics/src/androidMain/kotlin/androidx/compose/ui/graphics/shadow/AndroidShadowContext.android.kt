@@ -33,7 +33,7 @@ private typealias InnerShadowCache =
 fun ShadowContext(): ShadowContext = AndroidShadowContext()
 
 private class AndroidShadowContext :
-    ShadowContext, DropShadowRendererProvider, InnerShadowRendererProvider {
+    PlatformShadowContext, DropShadowRendererProvider, InnerShadowRendererProvider {
 
     private var dropShadowCache: DropShadowCache? = null
     private var innerShadowCache: InnerShadowCache? = null

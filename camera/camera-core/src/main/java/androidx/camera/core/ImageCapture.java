@@ -91,8 +91,8 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
-import androidx.camera.core.featurecombination.Feature;
-import androidx.camera.core.featurecombination.impl.feature.ImageFormatFeature;
+import androidx.camera.core.featuregroup.GroupableFeature;
+import androidx.camera.core.featuregroup.impl.feature.ImageFormatFeature;
 import androidx.camera.core.imagecapture.ImageCaptureControl;
 import androidx.camera.core.imagecapture.ImagePipeline;
 import androidx.camera.core.imagecapture.PostviewSettings;
@@ -511,37 +511,37 @@ public final class ImageCapture extends UseCase {
             }
         }
 
-        applyFeatureCombinationToConfig(builder);
+        applyFeatureGroupToConfig(builder);
 
         return builder.getUseCaseConfig();
     }
 
     /**
-     * Applies {@link #mFeatureCombination} to the config for ImageCapture specific changes.
+     * Applies {@link #mFeatureGroup} to the config for ImageCapture specific changes.
      *
-     * <p> When the feature combination mode is enabled (i.e. not null), the default for all config
-     * options should use the same default as of Feature Combination API.
+     * <p> When the feature group mode is enabled (i.e. not null), the default for all config
+     * options should use the same default as of feature group API.
      *
-     * <p> Note that feature combination mode may be enabled with zero or single feature (e.g.
+     * <p> Note that feature group mode may be enabled with zero or single feature (e.g.
      * when the preferred features user set are not supported). In such case, it is still better to
-     * configure the camera with feature combination mode and its defaults since
+     * configure the camera with feature group mode and its defaults since
      * <ul>
-     *   <li>this is more consistent with other feature combination results</li>
+     *   <li>this is more consistent with other feature group results</li>
      *   <li>may give more accurate query result</li>
-     *   <li>may also support additional resolution combinations</li>
+     *   <li>may also support additional resolution group</li>
      * </ul>
      *
-     * @see #setFeatureCombination
+     * @see #setFeatureGroup
      */
     @OptIn(markerClass = ExperimentalSessionConfig.class)
-    private void applyFeatureCombinationToConfig(UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
-        Set<@NonNull Feature> featureCombination = getFeatureCombination();
+    private void applyFeatureGroupToConfig(UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
+        Set<@NonNull GroupableFeature> featureGroup = getFeatureGroup();
 
-        if (featureCombination != null) {
+        if (featureGroup != null) {
             @OutputFormat int imageCaptureOutputFormat =
                     ImageFormatFeature.DEFAULT_IMAGE_CAPTURE_OUTPUT_FORMAT;
 
-            for (Feature feature : featureCombination) {
+            for (GroupableFeature feature : featureGroup) {
                 if (feature instanceof ImageFormatFeature) {
                     imageCaptureOutputFormat =
                             ((ImageFormatFeature) feature).getImageCaptureOutputFormat();

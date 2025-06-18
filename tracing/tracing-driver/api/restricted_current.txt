@@ -67,7 +67,7 @@ package androidx.tracing.driver {
     method public void reset();
     property public Double? counterDoubleValue;
     property public Long? counterLongValue;
-    property public java.util.List<? extends java.lang.Long> flowIds;
+    property public java.util.List<java.lang.Long> flowIds;
     property public String? name;
     property public long timestamp;
     property public androidx.tracing.driver.TrackDescriptor? trackDescriptor;

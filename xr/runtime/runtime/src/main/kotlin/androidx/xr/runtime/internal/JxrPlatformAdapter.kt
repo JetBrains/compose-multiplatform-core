@@ -457,7 +457,7 @@ public interface JxrPlatformAdapter {
         stereoMode: Int,
         pose: Pose,
         canvasShape: SurfaceEntity.CanvasShape,
-        contentSecurityLevel: Int,
+        @SurfaceEntity.ContentSecurityLevel contentSecurityLevel: Int,
         superSampling: Int,
         parentEntity: Entity,
     ): SurfaceEntity

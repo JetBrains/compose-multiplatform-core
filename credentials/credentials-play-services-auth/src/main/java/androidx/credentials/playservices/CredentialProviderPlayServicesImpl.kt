@@ -38,6 +38,8 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.GetDigitalCredentialOption
 import androidx.credentials.GetRestoreCredentialOption
+import androidx.credentials.SignalCredentialStateRequest
+import androidx.credentials.SignalCredentialStateResponse
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.ClearCredentialProviderConfigurationException
 import androidx.credentials.exceptions.ClearCredentialUnknownException
@@ -45,6 +47,7 @@ import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.CreateCredentialProviderConfigurationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import androidx.credentials.playservices.controllers.blockstore.createrestorecredential.CredentialProviderCreateRestoreCredentialController
 import androidx.credentials.playservices.controllers.blockstore.getrestorecredential.CredentialProviderGetRestoreCredentialController
 import androidx.credentials.playservices.controllers.identityauth.beginsignin.CredentialProviderBeginSignInController
@@ -56,6 +59,7 @@ import androidx.credentials.playservices.controllers.identitycredentials.createp
 import androidx.credentials.playservices.controllers.identitycredentials.createpublickeycredential.CreatePublicKeyCredentialController
 import androidx.credentials.playservices.controllers.identitycredentials.getcredential.GetCredentialController
 import androidx.credentials.playservices.controllers.identitycredentials.getdigitalcredential.CredentialProviderGetDigitalCredentialController
+import androidx.credentials.playservices.controllers.identitycredentials.signalcredentialstate.SignalCredentialStateController
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.blockstore.restorecredential.RestoreCredential
 import com.google.android.gms.auth.blockstore.restorecredential.RestoreCredentialStatusCodes
@@ -300,6 +304,16 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                     }
                 }
         }
+    }
+
+    override fun onSignalCredentialState(
+        request: SignalCredentialStateRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
+    ) {
+        SignalCredentialStateController.getInstance(context)
+            .invokePlayServices(request, callback, executor)
     }
 
     companion object {

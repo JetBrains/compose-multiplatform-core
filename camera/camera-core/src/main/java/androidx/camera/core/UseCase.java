@@ -49,10 +49,10 @@ import androidx.annotation.IntRange;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
-import androidx.camera.core.featurecombination.Feature;
-import androidx.camera.core.featurecombination.impl.feature.DynamicRangeFeature;
-import androidx.camera.core.featurecombination.impl.feature.FpsRangeFeature;
-import androidx.camera.core.featurecombination.impl.feature.VideoStabilizationFeature;
+import androidx.camera.core.featuregroup.GroupableFeature;
+import androidx.camera.core.featuregroup.impl.feature.DynamicRangeFeature;
+import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature;
+import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature;
 import androidx.camera.core.impl.CameraControlInternal;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
@@ -122,7 +122,7 @@ public abstract class UseCase {
     private @NonNull UseCaseConfig<?> mUseCaseConfig;
 
     @OptIn(markerClass = ExperimentalSessionConfig.class)
-    private @Nullable Set<@NonNull Feature> mFeatureCombination;
+    private @Nullable Set<@NonNull GroupableFeature> mFeatureGroup;
 
     /**
      * The currently used Config.
@@ -291,7 +291,7 @@ public abstract class UseCase {
             mergedConfig.insertOption(UseCaseConfig.OPTION_ZSL_DISABLED, true);
         }
 
-        applyFeatureCombinationToConfig(mergedConfig);
+        applyFeatureGroupToConfig(mergedConfig);
 
         return onMergeConfig(cameraInfo, getUseCaseConfigBuilder(mergedConfig));
     }
@@ -1132,74 +1132,86 @@ public abstract class UseCase {
     }
 
     /**
-     * Sets a set of explicit features denoting that the feature combination mode is being used.
+     * Sets a set of explicit features denoting that the feature group mode is being used.
      *
-     * <p> Since different values of features may be set through Feature Combination API compared to
+     * <p> Since different values of features may be set through feature group API compared to
      * the values directly settable to the use case for the same feature, we want to keep the
-     * feature values separate. This allows the direct values to be ignored when Feature Combination
-     * API is used and used/re-used when Feature Combination API is not being used.
+     * feature values separate. This allows the direct values to be ignored when feature group
+     * API is used and used/re-used when feature group API is not being used.
      *
      * <p> For example, consider the scenario
      * {@code useCase.setTargetFrameRate(45)} -> {@code bind(useCase, requiredFeatures = FPS_60)}.
      * In this case, the final camera configuration will use 60 FPS.
      *
-     * <p> If the Feature Combination API is not used afterwards, i.e.
+     * <p> If the Feature Group API is not used afterwards, i.e.
      * {@code useCase.setTargetFrameRate(45)} -> {@code bind(useCase, requiredFeatures = FPS_60)}
      * -> {@code bind(useCase)}, 45 FPS should be used again. So, user-defined values must not be
      * overwritten due to the feature combination in order to ensure they are used as normal again
-     * when feature combination API is no longer used.
+     * when feature group API is no longer used.
      *
-     * <p> During the bind flow, a null value should be set if feature combination is not being used
-     * and proper non-null set of features should be set when feature combination is being used.
+     * <p> During the bind flow, a null value should be set if feature group is not being used
+     * and proper non-null set of features should be set when feature group is being used.
      *
      * @param features The set of explicit features to use, a null value can be used to disable
-     *   the feature combination mode.
-     * @see androidx.camera.core.SessionConfig#getRequiredFeatures()
-     * @see androidx.camera.core.SessionConfig#getPreferredFeatures()
+     *   the feature group mode.
+     * @see androidx.camera.core.SessionConfig#getRequiredFeatureGroup()
+     * @see androidx.camera.core.SessionConfig#getPreferredFeatureGroup()
      */
     @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public void setFeatureCombination(@Nullable Set<@NonNull Feature> features) {
-        mFeatureCombination = features != null ? new HashSet<>(features) : null;
+    public void setFeatureGroup(@Nullable Set<@NonNull GroupableFeature> features) {
+        mFeatureGroup = features != null ? new HashSet<>(features) : null;
     }
 
     @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public @Nullable Set<@NonNull Feature> getFeatureCombination() {
-        return mFeatureCombination;
+    public @Nullable Set<@NonNull GroupableFeature> getFeatureGroup() {
+        return mFeatureGroup;
     }
 
     /**
-     * Applies {@link #mFeatureCombination} to a config.
+     * Applies {@link #mFeatureGroup} to a config.
      *
-     * <p> When the feature combination mode is enabled (i.e. not null), the default for all config
-     * options should use the same default as of Feature Combination API.
+     * <p> When the feature group mode is enabled (i.e. not null), the default for all config
+     * options should use the same default as of feature group API.
      *
-     * <p> Note that feature combination mode may be enabled with zero or single feature (e.g.
+     * <p> Note that feature group mode may be enabled with zero or single feature (e.g.
      * when the preferred features user set are not supported). In such case, it is still better to
-     * configure the camera with feature combination mode and its defaults since
+     * configure the camera with feature group mode and its defaults since
      * <ul>
-     *   <li>this is more consistent with other feature combination results</li>
+     *   <li>this is more consistent with other feature group results</li>
      *   <li>may give more accurate query result</li>
-     *   <li>may also support additional resolution combinations</li>
+     *   <li>may also support additional resolution group</li>
      * </ul>
      *
-     * @see #setFeatureCombination
+     * @see #setFeatureGroup
      */
-    private void applyFeatureCombinationToConfig(MutableOptionsBundle config) {
+    private void applyFeatureGroupToConfig(MutableOptionsBundle config) {
         Logger.d(TAG,
-                "applyFeaturesToConfig: mFeatures = " + mFeatureCombination + ", this = " + this);
+                "applyFeaturesToConfig: mFeatureGroup = " + mFeatureGroup + ", this = " + this);
 
-        if (mFeatureCombination == null) {
+        if (mFeatureGroup == null) {
             return;
         }
 
         DynamicRange dynamicRange = DynamicRangeFeature.DEFAULT_DYNAMIC_RANGE;
-        Range<Integer> fpsRange = FpsRangeFeature.DEFAULT_FPS_RANGE;
+
+        // FpsRangeFeature.DEFAULT_FPS_RANGE is used only when using Camera2 FCQ API since max FPS
+        // is not always available and thus not always possible to be certain that a certain FPS is
+        // supported
+        Range<Integer> fpsRange = FRAME_RATE_RANGE_UNSPECIFIED;
+
         VideoStabilizationFeature.StabilizationMode stabilizationMode =
                 VideoStabilizationFeature.DEFAULT_STABILIZATION_MODE;
 
-        for (Feature feature : mFeatureCombination) {
+        // TODO: Use UNSPECIFIED default values for all features by default and switch to
+        //  FCQ-specific default values only when the Camera2 FCQ API is required. However,
+        //  this probably requires a good amount of refactoring (e.g. the values should be set in
+        //  SupportedSurfaceCombination based on CheckingMethod instead of here and stabilization
+        //  mode should become a part of StreamSpec so that the config doesn't have to be directly
+        //  overwritten, ImageFormat might have similar difficulties too)
+
+        for (GroupableFeature feature : mFeatureGroup) {
             if (feature instanceof DynamicRangeFeature) {
                 dynamicRange = ((DynamicRangeFeature) feature).getDynamicRange();
             } else if (feature instanceof FpsRangeFeature) {
@@ -1240,6 +1252,26 @@ public abstract class UseCase {
                 // docs
                 break;
         }
+    }
+
+    /**
+     * Returns a set of supported dynamic ranges supported by this use case for the given camera.
+     *
+     * <p> A dynamic range not supported by the camera should never be supported by the use case.
+     * Furthermore, use cases may not support some dynamic ranges even if they are supported by the
+     * camera.
+     *
+     * <p> Returning a null value represents that this use case does not specify which dynamic
+     * ranges it supports and doesn't have any constraint for dynamic ranges.
+     *
+     * @param cameraInfo The {@link CameraInfoInternal} instance of a camera.
+     * @return A set of supported dynamic ranges, or {@code null} if this use case doesn't have any
+     * constraint about what dynamic ranges it can support.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @Nullable Set<@NonNull DynamicRange> getSupportedDynamicRanges(
+            @NonNull CameraInfoInternal cameraInfo) {
+        return null;
     }
 
     enum State {

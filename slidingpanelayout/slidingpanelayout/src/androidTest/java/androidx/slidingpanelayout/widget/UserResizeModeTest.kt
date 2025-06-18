@@ -42,6 +42,8 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlin.math.max
+import kotlin.math.roundToInt
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -198,7 +200,7 @@ class UserResizeModeTest {
     }
 
     @Test
-    fun dragDividerUpdatesUserDivierDrawableState() {
+    fun dragDividerUpdatesUserDividerDrawableState() {
         val context = InstrumentationRegistry.getInstrumentation().context
         val spl = createTestSpl(context, childPanesAcceptTouchEvents = true)
 
@@ -677,6 +679,152 @@ class UserResizeModeTest {
         spl.dispatchGenericMotionEvent(mouseEvent(MotionEvent.ACTION_DOWN, x, y))
         assertThat(android.R.attr.state_hovered in testDrawable.drawableState).isFalse()
     }
+
+    @Test
+    fun dividerVisualOffsetHorizontal_updatesTouchBounds() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val touchTargetMinSize = (context.resources.displayMetrics.density * 48).roundToInt()
+
+        val dividerWidth = max(100, touchTargetMinSize)
+        val dividerHeight = max(200, touchTargetMinSize)
+
+        val spl =
+            createTestSpl(
+                context,
+                childPanesAcceptTouchEvents = true,
+                dividerWidth = dividerWidth,
+                dividerHeight = dividerHeight,
+            )
+
+        spl.measureAndLayoutForTest(width = 800, height = 600)
+
+        val left = 400 - dividerWidth / 2
+        val top = 300 - dividerHeight / 2
+
+        val initialTouchBounds = Rect(left, top, left + dividerWidth, top + dividerHeight)
+        // Gut check that the initial touch bounds is correct.
+        spl.assertDividerTouchBounds(initialTouchBounds)
+
+        spl.dividerVisualOffsetHorizontal = 10
+        spl.assertDividerTouchBounds(Rect(initialTouchBounds).apply { offset(10, 0) })
+
+        spl.dividerVisualOffsetHorizontal = -50
+        spl.assertDividerTouchBounds(Rect(initialTouchBounds).apply { offset(-50, 0) })
+    }
+
+    @Test
+    fun dividerVisualOffsetVertical_updatesTouchBounds() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        val touchTargetMinSize = (context.resources.displayMetrics.density * 48).roundToInt()
+
+        val dividerWidth = max(100, touchTargetMinSize)
+        val dividerHeight = max(200, touchTargetMinSize)
+
+        val spl =
+            createTestSpl(
+                context,
+                childPanesAcceptTouchEvents = true,
+                dividerWidth = dividerWidth,
+                dividerHeight = dividerHeight,
+            )
+
+        spl.measureAndLayoutForTest(width = 800, height = 600)
+
+        val left = 400 - dividerWidth / 2
+        val top = 300 - dividerHeight / 2
+
+        val initialTouchBounds = Rect(left, top, left + dividerWidth, top + dividerHeight)
+        // Gut check that the initial touch bounds is correct.
+        spl.assertDividerTouchBounds(initialTouchBounds)
+
+        spl.dividerVisualOffsetVertical = 10
+        spl.assertDividerTouchBounds(Rect(initialTouchBounds).apply { offset(0, 10) })
+
+        spl.dividerVisualOffsetVertical = -50
+        spl.assertDividerTouchBounds(Rect(initialTouchBounds).apply { offset(0, -50) })
+    }
+
+    @Test
+    fun dividerVisualOffsetHorizontal_updatesDrawBounds() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+
+        val spl =
+            createTestSpl(
+                context,
+                childPanesAcceptTouchEvents = true,
+                dividerWidth = 10,
+                dividerHeight = 20,
+            )
+
+        var drawBounds: Rect? = null
+
+        spl.setUserResizingDividerDrawable(
+            TestDividerDrawable(10, 20) { left, top, right, bottom ->
+                drawBounds = Rect(left, top, right, bottom)
+            }
+        )
+        val canvas = Canvas()
+        spl.draw(canvas)
+
+        val initialDrawBounds = Rect(45, 40, 55, 60)
+
+        assertWithMessage("Actual drawBounds: $drawBounds doesn't match expected drawBounds")
+            .that(drawBounds)
+            .isEqualTo(initialDrawBounds)
+
+        spl.dividerVisualOffsetHorizontal = 10
+        spl.draw(canvas)
+        assertWithMessage("Actual drawBounds: $drawBounds doesn't match expected drawBounds")
+            .that(drawBounds)
+            .isEqualTo(Rect(initialDrawBounds).apply { offset(10, 0) })
+
+        spl.dividerVisualOffsetHorizontal = -20
+        spl.draw(canvas)
+        assertWithMessage("Actual drawBounds: $drawBounds doesn't match expected drawBounds")
+            .that(drawBounds)
+            .isEqualTo(Rect(initialDrawBounds).apply { offset(-20, 0) })
+    }
+
+    @Test
+    fun dividerVisualOffsetVertical_updatesDrawBounds() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+
+        val spl =
+            createTestSpl(
+                context,
+                childPanesAcceptTouchEvents = true,
+                dividerWidth = 10,
+                dividerHeight = 20,
+            )
+
+        var drawBounds: Rect? = null
+
+        spl.setUserResizingDividerDrawable(
+            TestDividerDrawable(10, 20) { left, top, right, bottom ->
+                drawBounds = Rect(left, top, right, bottom)
+            }
+        )
+        val canvas = Canvas()
+        spl.draw(canvas)
+
+        val initialDrawBounds = Rect(45, 40, 55, 60)
+
+        assertWithMessage("Actual drawBounds: $drawBounds doesn't match expected drawBounds")
+            .that(drawBounds)
+            .isEqualTo(initialDrawBounds)
+
+        spl.dividerVisualOffsetVertical = 10
+        spl.draw(canvas)
+        assertWithMessage("Actual drawBounds: $drawBounds doesn't match expected drawBounds")
+            .that(drawBounds)
+            .isEqualTo(Rect(initialDrawBounds).apply { offset(0, 10) })
+
+        spl.dividerVisualOffsetVertical = -5
+        spl.draw(canvas)
+        assertWithMessage("Actual drawBounds: $drawBounds doesn't match expected drawBounds")
+            .that(drawBounds)
+            .isEqualTo(Rect(initialDrawBounds).apply { offset(0, -5) })
+    }
 }
 
 private fun SlidingPaneLayout.leftAndRightViews(): Pair<View, View> {
@@ -705,6 +853,8 @@ private fun createTestSpl(
     setDividerDrawable: Boolean = true,
     childPanesAcceptTouchEvents: Boolean = false,
     collapsibleContentViews: Boolean = false,
+    dividerWidth: Int = 10,
+    dividerHeight: Int = 20,
 ): SlidingPaneLayout =
     SlidingPaneLayout(context).apply {
         addView(
@@ -742,7 +892,7 @@ private fun createTestSpl(
         isUserResizingEnabled = true
         isOverlappingEnabled = false
         if (setDividerDrawable) {
-            setUserResizingDividerDrawable(TestDividerDrawable())
+            setUserResizingDividerDrawable(TestDividerDrawable(dividerWidth, dividerHeight))
         }
         measureAndLayoutForTest()
     }
@@ -758,6 +908,8 @@ private fun View.measureAndLayoutForTest(width: Int = 100, height: Int = 100) {
 private class TestDividerDrawable(
     private val intrinsicWidth: Int = 10,
     private val intrinsicHeight: Int = 20,
+    private val setBounds: (left: Int, top: Int, right: Int, bottom: Int) -> Unit = { _, _, _, _ ->
+    },
 ) : Drawable() {
 
     override fun draw(canvas: Canvas) {}
@@ -771,6 +923,11 @@ private class TestDividerDrawable(
     override fun getIntrinsicWidth(): Int = intrinsicWidth
 
     override fun getIntrinsicHeight(): Int = intrinsicHeight
+
+    override fun setBounds(left: Int, top: Int, right: Int, bottom: Int) {
+        setBounds.invoke(left, top, right, bottom)
+        super.setBounds(left, top, right, bottom)
+    }
 }
 
 private class TestPaneView(context: Context) : View(context) {
@@ -853,3 +1010,36 @@ private fun mouseEvent(action: Int, x: Int, y: Int) =
 
 private fun stylusEvent(action: Int, x: Int, y: Int) =
     motionEvent(action, x, y, InputDevice.SOURCE_STYLUS, MotionEvent.TOOL_TYPE_STYLUS)
+
+private fun SlidingPaneLayout.assertDividerTouchBounds(touchBounds: Rect) {
+    var wasClicked = false
+    setOnUserResizingDividerClickListener { wasClicked = true }
+
+    tap(touchBounds.left.toFloat(), touchBounds.top.toFloat())
+    assertWithMessage("Divider touchBounds doesn't contain the expected touchBounds $touchBounds")
+        .that(wasClicked)
+        .isTrue()
+
+    wasClicked = false
+    tap(touchBounds.left - 1f, touchBounds.top - 1f)
+    assertWithMessage("Divider touchBounds is larger than expected touchBounds $touchBounds")
+        .that(wasClicked)
+        .isFalse()
+
+    wasClicked = false
+    tap(touchBounds.right - 1f, touchBounds.bottom - 1f)
+    assertWithMessage("Divider touchBounds doesn't contain the expected touchBounds $touchBounds")
+        .that(wasClicked)
+        .isTrue()
+
+    wasClicked = false
+    tap(touchBounds.right.toFloat(), touchBounds.bottom.toFloat())
+    assertWithMessage("Divider touchBounds is larger than expected touchBounds $touchBounds")
+        .that(wasClicked)
+        .isFalse()
+}
+
+private fun SlidingPaneLayout.tap(x: Float, y: Float) {
+    onTouchEvent(downEvent(x, y))
+    onTouchEvent(upEvent(x, y))
+}

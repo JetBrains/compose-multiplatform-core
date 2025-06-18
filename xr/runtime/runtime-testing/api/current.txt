@@ -32,7 +32,7 @@ package androidx.xr.runtime.testing {
   }
 
   public static final class FakeLifecycleManager.Companion {
-    property public java.util.List<? extends java.lang.String> TestPermissions;
+    property public java.util.List<java.lang.String> TestPermissions;
   }
 
   public enum FakeLifecycleManager.State {

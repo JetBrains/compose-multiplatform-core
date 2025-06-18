@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.integration.layout.spatialcomposeapp.components.TestDialog
+import androidx.xr.compose.integration.layout.spatialcomposeapp.components.TestPopup
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.spatial.ApplicationSubspace
@@ -127,6 +128,11 @@ class StateTestAppActivity : ComponentActivity() {
                 SwitchSpaceModeButton()
                 TestDialog {
                     Counter("Dialog")
+                    CounterOrbiter()
+                    SwitchSpaceModeButton()
+                }
+                TestPopup {
+                    Counter("Popup")
                     CounterOrbiter()
                     SwitchSpaceModeButton()
                 }

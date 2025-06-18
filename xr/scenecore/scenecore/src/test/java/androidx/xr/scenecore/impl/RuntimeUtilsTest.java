@@ -19,6 +19,11 @@ package androidx.xr.scenecore.impl;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertPose;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertVector3;
 
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_END;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_ONGOING;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_START;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_UNKNOWN;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 
@@ -82,11 +87,6 @@ import java.util.regex.Pattern;
 
 @RunWith(RobolectricTestRunner.class)
 public final class RuntimeUtilsTest {
-    // TODO(b/402408284): Remove once the constants are available in the host version of ReformEvent
-    public static final int REFORM_STATE_UNKNOWN = 0;
-    public static final int REFORM_STATE_START = 1;
-    public static final int REFORM_STATE_ONGOING = 2;
-    public static final int REFORM_STATE_END = 3;
 
     @Rule
     public final ExpectedLogMessagesRule expectedLogMessagesRule = new ExpectedLogMessagesRule();

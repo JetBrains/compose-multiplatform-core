@@ -19,6 +19,13 @@ package androidx.xr.scenecore.impl;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertPose;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertVector3;
 
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_END;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_ONGOING;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_START;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_TYPE_MOVE;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_TYPE_RESIZE;
+import static com.android.extensions.xr.node.ReformOptions.ALLOW_MOVE;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
@@ -40,7 +47,6 @@ import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 
-import androidx.annotation.NonNull;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.xr.runtime.internal.AnchorEntity;
 import androidx.xr.runtime.internal.AnchorPlacement;
@@ -86,6 +92,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Expect;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -101,15 +108,6 @@ import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 public class MovableComponentImplTest {
-    // TODO(b/402408284): Remove once the constants are available in the host version of
-    // ReformOptions
-    public static final int ALLOW_MOVE = 1;
-    // TODO(b/402408284): Remove once the constants are available in the host version of ReformEvent
-    public static final int REFORM_STATE_START = 1;
-    public static final int REFORM_STATE_ONGOING = 2;
-    public static final int REFORM_STATE_END = 3;
-    public static final int REFORM_TYPE_MOVE = 1;
-    public static final int REFORM_TYPE_RESIZE = 2;
 
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);

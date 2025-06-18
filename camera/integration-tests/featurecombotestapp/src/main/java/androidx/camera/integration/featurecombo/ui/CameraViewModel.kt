@@ -30,7 +30,7 @@ import androidx.camera.core.Logger
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
-import androidx.camera.core.featurecombination.Feature
+import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.takePicture
 import androidx.camera.integration.featurecombo.AppFeatures
 import androidx.camera.integration.featurecombo.DynamicRange
@@ -111,8 +111,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         )
 
     data class FeatureCombination(
-        val requiredFeatures: Set<Feature> = emptySet(),
-        val preferredFeatures: List<Feature> = emptyList(),
+        val requiredFeatures: Set<GroupableFeature> = emptySet(),
+        val preferredFeatures: List<GroupableFeature> = emptyList(),
     )
 
     private var featureCombination: FeatureCombination? = null
@@ -175,13 +175,13 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             return
         }
 
-        val selectedFeatures = CompletableDeferred<Set<Feature>>()
+        val selectedFeatures = CompletableDeferred<Set<GroupableFeature>>()
 
         val sessionConfig =
             SessionConfig(
                     useCases = useCases,
-                    requiredFeatures = featureCombination!!.requiredFeatures,
-                    preferredFeatures = featureCombination!!.preferredFeatures,
+                    requiredFeatureGroup = featureCombination!!.requiredFeatures,
+                    preferredFeatureGroup = featureCombination!!.preferredFeatures,
                 )
                 .apply {
                     setFeatureSelectionListener { features ->
@@ -373,17 +373,21 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             featureCombination =
                 FeatureCombination(
                     preferredFeatures =
-                        listOf(Feature.HDR_HLG10, Feature.FPS_60, Feature.PREVIEW_STABILIZATION)
+                        listOf(
+                            GroupableFeature.HDR_HLG10,
+                            GroupableFeature.FPS_60,
+                            GroupableFeature.PREVIEW_STABILIZATION,
+                        )
                 )
         } else {
             featureCombination =
                 FeatureCombination(
                     preferredFeatures =
                         listOf(
-                            Feature.IMAGE_ULTRA_HDR,
-                            Feature.HDR_HLG10,
-                            Feature.PREVIEW_STABILIZATION,
-                            Feature.FPS_60,
+                            GroupableFeature.IMAGE_ULTRA_HDR,
+                            GroupableFeature.HDR_HLG10,
+                            GroupableFeature.PREVIEW_STABILIZATION,
+                            GroupableFeature.FPS_60,
                         )
                 )
         }
@@ -495,8 +499,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         val isSupported =
             cameraSelector
                 .getCameraInfo()
-                .isFeatureCombinationSupported(
-                    SessionConfig(useCases, requiredFeatures = requiredFeatures)
+                .isFeatureGroupSupported(
+                    SessionConfig(useCases, requiredFeatureGroup = requiredFeatures)
                 )
 
         Log.d(TAG, "isSupported: isSupported = $isSupported")
@@ -508,44 +512,44 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         return FeatureCombination(requiredFeatures = toCameraXFeatures())
     }
 
-    private fun AppFeatures.toCameraXFeatures(): Set<Feature> {
-        val features = mutableSetOf<Feature>()
+    private fun AppFeatures.toCameraXFeatures(): Set<GroupableFeature> {
+        val features = mutableSetOf<GroupableFeature>()
 
         if (!isVideoMode.value) {
             if (imageFormat == ImageFormat.JPEG_R) {
-                features.add(Feature.IMAGE_ULTRA_HDR)
+                features.add(GroupableFeature.IMAGE_ULTRA_HDR)
             }
         }
 
         if (dynamicRange == DynamicRange.HLG_10) {
-            features.add(Feature.HDR_HLG10)
+            features.add(GroupableFeature.HDR_HLG10)
         }
         if (fps == Fps.FPS_60) {
-            features.add(Feature.FPS_60)
+            features.add(GroupableFeature.FPS_60)
         }
         if (stabilizationMode == StabilizationMode.PREVIEW) {
-            features.add(Feature.PREVIEW_STABILIZATION)
+            features.add(GroupableFeature.PREVIEW_STABILIZATION)
         }
 
         return features
     }
 
-    private fun Set<Feature>.toAppFeatures(): AppFeatures {
+    private fun Set<GroupableFeature>.toAppFeatures(): AppFeatures {
         var newAppFeatures = AppFeatures()
 
         forEach { feature ->
             when (feature) {
-                Feature.HDR_HLG10 -> {
+                GroupableFeature.HDR_HLG10 -> {
                     newAppFeatures = newAppFeatures.copy(dynamicRange = DynamicRange.HLG_10)
                 }
-                Feature.FPS_60 -> {
+                GroupableFeature.FPS_60 -> {
                     newAppFeatures = newAppFeatures.copy(fps = Fps.FPS_60)
                 }
-                Feature.PREVIEW_STABILIZATION -> {
+                GroupableFeature.PREVIEW_STABILIZATION -> {
                     newAppFeatures =
                         newAppFeatures.copy(stabilizationMode = StabilizationMode.PREVIEW)
                 }
-                Feature.IMAGE_ULTRA_HDR -> {
+                GroupableFeature.IMAGE_ULTRA_HDR -> {
                     newAppFeatures = newAppFeatures.copy(imageFormat = ImageFormat.JPEG_R)
                 }
             }

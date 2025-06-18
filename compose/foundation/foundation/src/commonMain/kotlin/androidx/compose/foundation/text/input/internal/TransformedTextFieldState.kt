@@ -521,7 +521,9 @@ internal class TransformedTextFieldState(
                 )
 
             // This is a call to external code.
+            buffer.canCallAddStyle = true
             with(outputTransformation) { buffer.transformOutput() }
+            buffer.canCallAddStyle = false
 
             val outputAnnotations = buffer.outputTransformationAnnotations
 

@@ -135,6 +135,13 @@ public interface WatchFacePushManager {
      * Checks if a watch face with the given package name is active. **This method can only be used
      * to check the active status of watch faces installed by this application.**
      *
+     * Warning: When calling [updateWatchFace], don't call [isWatchFaceActive] immediately
+     * afterwards as this can lead to unexpected results: It can take a little time for the watch
+     * face swap to settle. Instead, first determine whether the calling app has the active watch
+     * face as shown in the previous snippet, and then call [updateWatchFace]. If [updateWatchFace]
+     * completes successfully, you can assume the app will still have control of the active watch
+     * face at that point.
+     *
      * @param watchfacePackageName The package name of the watch face to check.
      * @return `true` if the watch face is active, `false` otherwise.
      * @throws [IsWatchFaceActiveException] if there is an error while checking if the watch face is

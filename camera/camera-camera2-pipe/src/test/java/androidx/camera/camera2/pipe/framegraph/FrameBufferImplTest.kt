@@ -58,7 +58,11 @@ import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -435,6 +439,156 @@ class FrameBufferImplTest {
             advanceUntilIdle()
 
             assertThat(frameBuffer.peekAllReferences()).isEmpty()
+        }
+
+    @Test
+    fun onFrameAvailable_flowEmitted() =
+        testScope.runTest {
+            val frameRef1 = mockFrameReference(1)
+            val ready = CompletableDeferred<Unit>()
+            val resultsChannel = Channel<FrameReference>(Channel.UNLIMITED)
+
+            val job =
+                backgroundScope.launch {
+                    frameBuffer.frameFlow
+                        .onStart { ready.complete(Unit) }
+                        .collect { frame -> resultsChannel.send(frame) }
+                }
+
+            ready.await()
+            frameBuffer.onFrameStarted(frameRef1)
+
+            val receivedFrame = resultsChannel.receive()
+            assertThat(receivedFrame).isEqualTo(frameRef1)
+            job.cancel()
+        }
+
+    @Test
+    fun onFrameAvailableCalls_multipleCalls_multipleEmitted() =
+        testScope.runTest {
+            val frameRef1 = mockFrameReference(1)
+            val frameRef2 = mockFrameReference(2)
+            val ready = CompletableDeferred<Unit>()
+            val resultsChannel = Channel<FrameReference>(Channel.UNLIMITED)
+            val job =
+                backgroundScope.launch {
+                    frameBuffer.frameFlow
+                        .onStart { ready.complete(Unit) }
+                        .collect { frame -> resultsChannel.send(frame) }
+                }
+
+            ready.await()
+            frameBuffer.onFrameStarted(frameRef1)
+            frameBuffer.onFrameStarted(frameRef2)
+
+            assertThat(resultsChannel.receive()).isEqualTo(frameRef1)
+            assertThat(resultsChannel.receive()).isEqualTo(frameRef2)
+            job.cancel()
+        }
+
+    @Test
+    fun onFrameAvailable_exceedsExtraCapacity_oldestDropped() =
+        testScope.runTest {
+            val frameRef1 = mockFrameReference(1)
+            val frameRef2 = mockFrameReference(2)
+            val frameRef3 = mockFrameReference(3)
+            val frameRef4 = mockFrameReference(4)
+            val frameRef5 = mockFrameReference(5)
+            val ready = CompletableDeferred<Unit>()
+            val resultsChannel = Channel<FrameReference>(Channel.UNLIMITED)
+            val job =
+                backgroundScope.launch {
+                    frameBuffer.frameFlow
+                        .onStart { ready.complete(Unit) }
+                        .collect { frame -> resultsChannel.send(frame) }
+                }
+
+            ready.await()
+            frameBuffer.onFrameStarted(frameRef1)
+            frameBuffer.onFrameStarted(frameRef2)
+            frameBuffer.onFrameStarted(frameRef3)
+            frameBuffer.onFrameStarted(frameRef4)
+            frameBuffer.onFrameStarted(frameRef5)
+
+            // frameRef1 will drop because the extraBufferCapacity of the flow is 4
+            assertThat(resultsChannel.receive()).isEqualTo(frameRef2)
+            assertThat(resultsChannel.receive()).isEqualTo(frameRef3)
+            assertThat(resultsChannel.receive()).isEqualTo(frameRef4)
+            assertThat(resultsChannel.receive()).isEqualTo(frameRef5)
+            job.cancel()
+        }
+
+    @Test
+    fun onFrameAvailable_multipleConsumers_allReceiveFrames() =
+        testScope.runTest {
+            val frameRef1 = mockFrameReference(1)
+            val frameRef2 = mockFrameReference(2)
+            val ready1 = CompletableDeferred<Unit>()
+            val ready2 = CompletableDeferred<Unit>()
+            val resultsChannel1 = Channel<FrameReference>(Channel.UNLIMITED)
+            val resultsChannel2 = Channel<FrameReference>(Channel.UNLIMITED)
+            val job1 =
+                backgroundScope.launch {
+                    frameBuffer.frameFlow
+                        .onStart { ready1.complete(Unit) }
+                        .collect { frame -> resultsChannel1.send(frame) }
+                }
+            val job2 =
+                backgroundScope.launch {
+                    frameBuffer.frameFlow
+                        .onStart { ready2.complete(Unit) }
+                        .collect { frame -> resultsChannel2.send(frame) }
+                }
+
+            ready1.await()
+            ready2.await()
+            frameBuffer.onFrameStarted(frameRef1)
+            frameBuffer.onFrameStarted(frameRef2)
+
+            assertThat(resultsChannel1.receive()).isEqualTo(frameRef1)
+            assertThat(resultsChannel1.receive()).isEqualTo(frameRef2)
+            assertThat(resultsChannel2.receive()).isEqualTo(frameRef1)
+            assertThat(resultsChannel2.receive()).isEqualTo(frameRef2)
+            job1.cancel()
+            job2.cancel()
+        }
+
+    @Test
+    fun onFrameAvailable_slowAndFastConsumers_fastConsumerDoesNotDropFrames() =
+        testScope.runTest {
+            val frameRef1 = mockFrameReference(1)
+            val frameRef2 = mockFrameReference(2)
+            val frameRef3 = mockFrameReference(3)
+            val ready1 = CompletableDeferred<Unit>()
+            val ready2 = CompletableDeferred<Unit>()
+            val resultsChannel1 = Channel<FrameReference>(capacity = 1)
+            val resultsChannel2 = Channel<FrameReference>(Channel.UNLIMITED)
+            val job1 =
+                backgroundScope.launch {
+                    frameBuffer.frameFlow
+                        .onStart { ready1.complete(Unit) }
+                        .collect { frame -> resultsChannel1.send(frame) }
+                }
+            val job2 =
+                backgroundScope.launch {
+                    frameBuffer.frameFlow
+                        .onStart { ready2.complete(Unit) }
+                        .collect { frame -> resultsChannel2.send(frame) }
+                }
+
+            ready1.await()
+            ready2.await()
+            frameBuffer.onFrameStarted(frameRef1)
+            frameBuffer.onFrameStarted(frameRef2)
+            frameBuffer.onFrameStarted(frameRef3)
+
+            // Channel 1 is full, so the next frame will be dropped for this consumer.
+            assertThat(resultsChannel1.receive()).isEqualTo(frameRef1)
+            assertThat(resultsChannel2.receive()).isEqualTo(frameRef1)
+            assertThat(resultsChannel2.receive()).isEqualTo(frameRef2)
+            assertThat(resultsChannel2.receive()).isEqualTo(frameRef3)
+            job1.cancel()
+            job2.cancel()
         }
 
     @Test

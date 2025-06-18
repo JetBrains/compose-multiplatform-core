@@ -19,7 +19,6 @@ package androidx.xr.scenecore.impl;
 import android.app.Activity;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.runtime.internal.ActivityPose;
 import androidx.xr.runtime.internal.ActivitySpace;
@@ -41,6 +40,8 @@ import com.android.extensions.xr.space.Bounds;
 import com.android.extensions.xr.space.SpatialState;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -92,23 +93,20 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     }
 
     /** Returns the identity pose since this entity defines the origin of the activity space. */
-    @NonNull
     @Override
-    public Pose getPoseInActivitySpace() {
+    public @NonNull Pose getPoseInActivitySpace() {
         return new Pose();
     }
 
     /** Returns the identity pose since we assume the activity space is the world space root. */
-    @NonNull
     @Override
-    public Pose getActivitySpacePose() {
+    public @NonNull Pose getActivitySpacePose() {
 
         return new Pose();
     }
 
-    @NonNull
     @Override
-    public Vector3 getActivitySpaceScale() {
+    public @NonNull Vector3 getActivitySpaceScale() {
         return new Vector3(1.0f, 1.0f, 1.0f);
     }
 
@@ -202,9 +200,8 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         }
     }
 
-    @NonNull
     @Override
-    public Dimensions getBounds() {
+    public @NonNull Dimensions getBounds() {
         // The bounds are kept in sync with the Extensions in the onBoundsChangedEvent callback. We
         // only
         // invoke getSpatialState if they've never been set.

@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Applier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposeNode
@@ -34,11 +33,19 @@ import androidx.xr.compose.subspace.rememberCoreContentlessEntity
 import androidx.xr.scenecore.ContentlessEntity
 
 /**
- * [SubspaceLayout] is the main core component for layout for "leaf" nodes. It can be used to
- * measure and position zero children.
+ * [SubspaceLayout] is the main component for laying out leaf nodes with zero children.
  *
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
  * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
+ *
+ * Example:
+ * ```kotlin
+ * fun ExactSizeSpacer(size: IntVolumeSize) {
+ *   SubspaceLayout(SubspaceModifier.testTag("exactSizeSpacer")) {
+ *     _, _ -> layout(size.width, size.height, size.depth) {}
+ *   }
+ * }
+ * ```
  *
  * @param modifier SubspaceModifier to apply during layout.
  * @param measurePolicy a policy defining the measurement and positioning of the layout.
@@ -46,11 +53,15 @@ import androidx.xr.scenecore.ContentlessEntity
 @Suppress("NOTHING_TO_INLINE")
 @SubspaceComposable
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public inline fun SubspaceLayout(
     modifier: SubspaceModifier = SubspaceModifier,
     measurePolicy: SubspaceMeasurePolicy,
 ) {
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
+    }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,
@@ -69,19 +80,38 @@ public inline fun SubspaceLayout(
  * The measurement, layout and intrinsic measurement behaviours of this layout will be defined by
  * the [SubspaceMeasurePolicy] instance. See [SubspaceMeasurePolicy] for more details.
  *
+ * Example:
+ * ```kotlin
+ * fun MyLayout(
+ *     modifier: SubspaceModifier = SubspaceModifier,
+ *     content: @SubspaceComposable @Composable () -> Unit) {
+ *   SubspaceLayout(content = content, modifier = modifier) {
+ *     measurables, constraints ->
+ *     val placeables = measurables.map { it.measure(constraints) }
+ *     layout(constraints.maxWidth, constraints.maxHeight, constraints.maxDepth) {
+ *       placeables.forEach { it.place(Pose.Identity) }
+ *     }
+ *   }
+ * }
+ * ```
+ *
  * @param modifier SubspaceModifier to apply during layout
- * @param content the children composable to be laid out.
+ * @param content the child composables to be laid out.
  * @param measurePolicy a policy defining the measurement and positioning of the layout.
  */
 @Suppress("ComposableLambdaParameterPosition", "NOTHING_TO_INLINE")
 @SubspaceComposable
 @Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public inline fun SubspaceLayout(
     crossinline content: @Composable @SubspaceComposable () -> Unit,
     modifier: SubspaceModifier = SubspaceModifier,
     measurePolicy: SubspaceMeasurePolicy,
 ) {
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
+    }
     val coreEntity = rememberCoreContentlessEntity {
         ContentlessEntity.create(session = this, name = entityName("Entity"))
     }
@@ -122,6 +152,11 @@ internal inline fun SubspaceLayout(
     coreEntity: CoreEntity? = null,
     measurePolicy: SubspaceMeasurePolicy,
 ) {
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
+    }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,
@@ -162,6 +197,12 @@ internal inline fun SubspaceLayout(
     },
     measurePolicy: SubspaceMeasurePolicy,
 ) {
+    check(currentComposer.applier.current is ComposeSubspaceNode) {
+        "SubspaceComposable functions are expected to be used within the context of a " +
+            "Subspace composition. Please ensure that this component is in a Subspace or " +
+            " is a child of another SubspaceComposable."
+    }
+
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
         factory = ComposeSubspaceNode.Constructor,

@@ -26,7 +26,7 @@
             android:label="@string/title_activity_rotation"
             android:theme="@style/Theme.IntegrationTestsApp" />
         <activity
-            android:name=".mediaplayer.MediaPlayer"
+            android:name=".mediaplayer.MediaPlayerActivity"
             android:exported="true"
             android:label="@string/title_activity_media_player"
             android:theme="@style/Theme.IntegrationTestsApp" />
@@ -68,8 +68,33 @@
         <activity
             android:name=".spatialcompose.SpatialCompose"
             android:exported="true"
-            android:label="SpatialElevationTest"
+            android:label="SpatialCompose"
+            android:enableOnBackInvokedCallback="true"
             android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".spatialcompose.SpatialComposeVideoPlayer"
+            android:exported="true"
+            android:label="SpatialCompose"
+            android:enableOnBackInvokedCallback="true"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".spatialcompose.SpatialComposeWindowManager"
+            android:exported="true"
+            android:label="SpatialCompose"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".spatialcompose.SpatialComposeStateTest"
+            android:exported="true"
+            android:label="SpatialCompose"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:theme="@style/Theme.IntegrationTestsApp">
+            <intent-filter>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
        <activity
            android:name=".videoplayer.VideoPlayerActivity"
            android:exported="true"

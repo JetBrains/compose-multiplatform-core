@@ -18,6 +18,19 @@ package androidx.camera.camera2.pipe.framegraph
 
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.FrameGraph
+import androidx.camera.camera2.pipe.config.FrameGraphScope
 
-internal class FrameGraphSessionImpl(cameraGraphSession: CameraGraph.Session) :
-    FrameGraph.Session, CameraGraph.Session by cameraGraphSession
+@FrameGraphScope
+internal class FrameGraphSessionImpl(
+    private val cameraGraphSession: CameraGraph.Session,
+    private val frameGraphBuffers: FrameGraphBuffers,
+) : FrameGraph.Session, CameraGraph.Session by cameraGraphSession {
+    /**
+     * Closes and invalidates the session, reverting it to the state it was before the session was
+     * acquired.
+     */
+    override fun close() {
+        cameraGraphSession.close()
+        frameGraphBuffers.invalidate()
+    }
+}

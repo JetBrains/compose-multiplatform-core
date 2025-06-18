@@ -18,14 +18,15 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.Component;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,8 +69,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @Nullable
-    public Entity getParent() {
+    public @Nullable Entity getParent() {
         return mParent;
     }
 
@@ -89,14 +89,12 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public List<Entity> getChildren() {
+    public @NonNull List<Entity> getChildren() {
         return mChildren;
     }
 
     @Override
-    @NonNull
-    public String getContentDescription() {
+    public @NonNull String getContentDescription() {
         return "content description";
     }
 
@@ -107,8 +105,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public Pose getPose(@SpaceValue int relativeTo) {
+    public @NonNull Pose getPose(@SpaceValue int relativeTo) {
         return mPose;
     }
 
@@ -118,8 +115,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public Pose getActivitySpacePose() {
+    public @NonNull Pose getActivitySpacePose() {
         // Any parentless "space" entities (such as the root and anchor entities) are expected to
         // override this method non-recursively so that this error is never thrown.
         if (mParent == null) {
@@ -134,8 +130,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public Vector3 getScale(@SpaceValue int relativeTo) {
+    public @NonNull Vector3 getScale(@SpaceValue int relativeTo) {
         switch (relativeTo) {
             case Space.PARENT:
                 return mScale;
@@ -206,8 +201,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public Vector3 getWorldSpaceScale() {
+    public @NonNull Vector3 getWorldSpaceScale() {
         if (mParent == null) {
             throw new IllegalStateException("Cannot get scale in WorldSpace with a null parent");
         }
@@ -215,8 +209,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public Vector3 getActivitySpaceScale() {
+    public @NonNull Vector3 getActivitySpaceScale() {
         if (mParent == null) {
             throw new IllegalStateException("Cannot get scale in ActivitySpace with a null parent");
         }
@@ -257,8 +250,8 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public <T extends Component> List<T> getComponentsOfType(@NonNull Class<? extends T> type) {
+    public <T extends Component> @NonNull List<T> getComponentsOfType(
+            @NonNull Class<? extends T> type) {
         List<T> components = new ArrayList<>();
         for (Component component : mComponentList) {
             if (type.isInstance(component)) {
@@ -269,8 +262,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    @NonNull
-    public List<Component> getComponents() {
+    public @NonNull List<Component> getComponents() {
         return mComponentList;
     }
 

@@ -149,6 +149,65 @@ class DecoratedNavEntryProviderTest {
     }
 
     @Test
+    fun decoratorsOnPopImmutableBackStack() {
+        val poppedEntries = mutableListOf<Int>()
+        lateinit var backStackState: MutableState<Int>
+        lateinit var backStack: List<Int>
+
+        val decorator =
+            createTestNavEntryDecorator<Any>(onPop = { key -> poppedEntries.add(key as Int) }) {
+                entry ->
+                entry.Content()
+            }
+        composeTestRule.setContent {
+            backStackState = remember { mutableStateOf(2) }
+            backStack =
+                when (backStackState.value) {
+                    1 -> {
+                        listOf(1)
+                    }
+                    2 -> {
+                        listOf(1, 2)
+                    }
+                    else -> listOf(1, 3)
+                }
+            DecoratedNavEntryProvider(
+                backStack = backStack,
+                entryDecorators = listOf(decorator),
+                entryProvider = { key ->
+                    when (key) {
+                        1 -> NavEntry(1, 1) {}
+                        2 -> NavEntry(2, 2) {}
+                        3 -> NavEntry(3, 3) {}
+                        else -> error("Invalid Key")
+                    }
+                },
+            ) { entries ->
+                entries.lastOrNull()?.Content()
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertThat(backStack).containsExactly(1, 2).inOrder()
+
+        backStackState.value = 1 // pop 2
+
+        composeTestRule.waitForIdle()
+        assertThat(backStack).containsExactly(1).inOrder()
+        assertThat(poppedEntries).containsExactly(2)
+
+        backStackState.value = 3 // add 3
+
+        composeTestRule.waitForIdle()
+        assertThat(backStack).containsExactly(1, 3).inOrder()
+
+        backStackState.value = 1 // pop 3
+
+        composeTestRule.waitForIdle()
+        assertThat(backStack).containsExactly(1).inOrder()
+        assertThat(poppedEntries).containsExactly(2, 3).inOrder()
+    }
+
+    @Test
     fun decoratorsOnPopOrder() {
         var count = -1
         var outerPop = -1
@@ -508,8 +567,55 @@ class DecoratedNavEntryProviderTest {
         lateinit var backStackState: MutableState<Any>
 
         composeTestRule.setContent {
+            val backStack1 = mutableStateListOf(key1)
+            val backStack2 = mutableStateListOf(key2)
+            backStackState = remember { mutableStateOf(1) }
+            val backStack =
+                when (backStackState.value) {
+                    1 -> backStack1
+                    else -> backStack2
+                }
+            DecoratedNavEntryProvider(
+                backStack = backStack,
+                entryDecorators = listOf(decorator),
+                entryProvider = entryProvider { entry<DataClass>({ it.arg }) {} },
+            ) { entries ->
+                entries.lastOrNull()?.Content()
+            }
+        }
+
+        composeTestRule.runOnIdle { assertThat(stateMap).containsExactly(1 to "state") }
+
+        backStackState.value = 2
+
+        composeTestRule.waitForIdle()
+        assertThat(stateMap).containsExactly(1 to "state", 2 to "state")
+
+        backStackState.value = 1
+
+        composeTestRule.waitForIdle()
+        assertThat(stateMap).containsExactly(1 to "state", 2 to "state")
+    }
+
+    @Test
+    fun popDuplicateWithImmutableBackStackPreservesState() {
+        val key1 = DataClass(1)
+        val key2 = DataClass(2)
+
+        val stateMap = mutableMapOf<Int, String>()
+        val decorator =
+            createTestNavEntryDecorator<Any>(
+                onPop = { contentKey -> stateMap.remove(contentKey) }
+            ) { entry ->
+                stateMap.put(entry.contentKey as Int, "state")
+                entry.Content()
+            }
+        lateinit var backStackState: MutableState<Any>
+
+        composeTestRule.setContent {
             val backStack1 = mutableStateListOf(key1, key2)
-            val backStack2 = mutableStateListOf(key1)
+            val backStack2 = mutableStateListOf(key1, key2, key2)
+
             backStackState = remember { mutableStateOf(1) }
             val backStack =
                 when (backStackState.value) {
@@ -526,16 +632,63 @@ class DecoratedNavEntryProviderTest {
         }
 
         composeTestRule.runOnIdle { assertThat(stateMap).containsExactly(2 to "state") }
-
-        backStackState.value = 2
-
-        composeTestRule.waitForIdle()
-        assertThat(stateMap).containsExactly(2 to "state", 1 to "state")
-
-        backStackState.value = 1
+        backStackState.value = 2 // add 2 again
 
         composeTestRule.waitForIdle()
-        assertThat(stateMap).containsExactly(2 to "state", 1 to "state")
+        assertThat(stateMap).containsExactly(2 to "state")
+
+        backStackState.value = 1 // pop duplicate 2
+
+        composeTestRule.waitForIdle()
+        assertThat(stateMap).containsExactly(2 to "state")
+    }
+
+    @Test
+    fun popAllDuplicatesWithImmutableBackStackClearsState() {
+        val key1 = DataClass(1)
+        val key2 = DataClass(2)
+
+        val stateMap = mutableMapOf<Int, String>()
+        val decorator =
+            createTestNavEntryDecorator<Any>(
+                onPop = { contentKey -> stateMap.remove(contentKey) }
+            ) { entry ->
+                stateMap.put(entry.contentKey as Int, "state")
+                entry.Content()
+            }
+        lateinit var backStackState: MutableState<Any>
+
+        composeTestRule.setContent {
+            val backStack1 = mutableStateListOf(key1, key2)
+            val backStack2 = mutableStateListOf(key1, key2, key2)
+            val backStack3 = mutableStateListOf(key1)
+
+            backStackState = remember { mutableStateOf(1) }
+            val backStack =
+                when (backStackState.value) {
+                    1 -> backStack1
+                    2 -> backStack2
+                    else -> backStack3
+                }
+            DecoratedNavEntryProvider(
+                backStack = backStack,
+                entryDecorators = listOf(decorator),
+                entryProvider = entryProvider { entry<DataClass>({ it.arg }) {} },
+            ) { entries ->
+                entries.lastOrNull()?.Content()
+            }
+        }
+
+        composeTestRule.runOnIdle { assertThat(stateMap).containsExactly(2 to "state") }
+        backStackState.value = 2 // add 2 again
+
+        composeTestRule.waitForIdle()
+        assertThat(stateMap).containsExactly(2 to "state")
+
+        backStackState.value = 3 // pop both 2's
+
+        composeTestRule.waitForIdle()
+        assertThat(stateMap).containsExactly(1 to "state")
     }
 
     private data class DataClass(val arg: Int)

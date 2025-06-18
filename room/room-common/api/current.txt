@@ -6,7 +6,7 @@ package androidx.room {
     method public abstract Class<? extends java.lang.Object?> spec() default Any::class;
     method public abstract int to();
     property public abstract int from;
-    property public abstract Class<? extends java.lang.Object?> spec;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> spec;
     property public abstract int to;
   }
 
@@ -89,7 +89,7 @@ package androidx.room {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface ConstructedBy {
     method public abstract Class<? extends java.lang.Object?> value();
-    property public abstract Class<? extends java.lang.Object?> value;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> value;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface Dao {
@@ -102,10 +102,10 @@ package androidx.room {
     method public abstract int version();
     method public abstract Class<? extends java.lang.Object?>[] views();
     property public abstract androidx.room.AutoMigration[] autoMigrations;
-    property public abstract Class<? extends java.lang.Object?>[] entities;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?>[] entities;
     property public abstract boolean exportSchema;
     property public abstract int version;
-    property public abstract Class<? extends java.lang.Object?>[] views;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?>[] views;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface DatabaseView {
@@ -117,7 +117,7 @@ package androidx.room {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface Delete {
     method public abstract Class<? extends java.lang.Object?> entity() default Any::class;
-    property public abstract Class<? extends java.lang.Object?> entity;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> entity;
   }
 
   @java.lang.annotation.Repeatable(DeleteColumn.Entries::class) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface DeleteColumn {
@@ -171,7 +171,7 @@ package androidx.room {
     method public abstract String[] parentColumns();
     property public abstract String[] childColumns;
     property public abstract boolean deferred;
-    property public abstract Class<? extends java.lang.Object?> entity;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> entity;
     property @androidx.room.ForeignKey.Action public abstract int onDelete;
     property @androidx.room.ForeignKey.Action public abstract int onUpdate;
     property public abstract String[] parentColumns;
@@ -215,7 +215,7 @@ package androidx.room {
     method public abstract int[] prefix();
     method public abstract String tokenizer() default androidx.room.FtsOptions.TOKENIZER_SIMPLE;
     method public abstract String[] tokenizerArgs();
-    property public abstract Class<? extends java.lang.Object?> contentEntity;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> contentEntity;
     property public abstract String languageId;
     property public abstract androidx.room.FtsOptions.MatchInfo matchInfo;
     property public abstract String[] notIndexed;
@@ -269,7 +269,7 @@ package androidx.room {
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface Insert {
     method public abstract Class<? extends java.lang.Object?> entity() default Any::class;
     method @androidx.room.OnConflictStrategy public abstract int onConflict() default androidx.room.OnConflictStrategy.ABORT;
-    property public abstract Class<? extends java.lang.Object?> entity;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> entity;
     property @androidx.room.OnConflictStrategy public abstract int onConflict;
   }
 
@@ -279,7 +279,7 @@ package androidx.room {
     method public abstract Class<? extends java.lang.Object?> value();
     property public abstract String entityColumn;
     property public abstract String parentColumn;
-    property public abstract Class<? extends java.lang.Object?> value;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> value;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.TYPE) public @interface MapColumn {
@@ -345,7 +345,7 @@ package androidx.room {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface RawQuery {
     method public abstract Class<? extends java.lang.Object?>[] observedEntities();
-    property public abstract Class<? extends java.lang.Object?>[] observedEntities;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?>[] observedEntities;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface Relation {
@@ -355,7 +355,7 @@ package androidx.room {
     method public abstract String parentColumn();
     method public abstract String[] projection();
     property public abstract androidx.room.Junction associateBy;
-    property public abstract Class<? extends java.lang.Object?> entity;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> entity;
     property public abstract String entityColumn;
     property public abstract String parentColumn;
     property public abstract String[] projection;
@@ -452,19 +452,19 @@ package androidx.room {
     method public abstract androidx.room.BuiltInTypeConverters builtInTypeConverters() default androidx.room.BuiltInTypeConverters();
     method public abstract Class<? extends java.lang.Object?>[] value();
     property public abstract androidx.room.BuiltInTypeConverters builtInTypeConverters;
-    property public abstract Class<? extends java.lang.Object?>[] value;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?>[] value;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface Update {
     method public abstract Class<? extends java.lang.Object?> entity() default Any::class;
     method @androidx.room.OnConflictStrategy public abstract int onConflict() default androidx.room.OnConflictStrategy.ABORT;
-    property public abstract Class<? extends java.lang.Object?> entity;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> entity;
     property @androidx.room.OnConflictStrategy public abstract int onConflict;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface Upsert {
     method public abstract Class<? extends java.lang.Object?> entity() default Any::class;
-    property public abstract Class<? extends java.lang.Object?> entity;
+    property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> entity;
   }
 
 }

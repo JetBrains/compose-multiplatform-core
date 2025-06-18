@@ -26,7 +26,9 @@ import androidx.room.useWriterConnection
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.getOrSet
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -48,6 +50,8 @@ internal class RoomSupportSQLiteSession(val roomDatabase: RoomDatabase) {
 
     private val threadTransactionContext: ThreadLocal<CoroutineContext>
         get() = roomDatabase.suspendingTransactionContext
+
+    private val threadWaiters = AtomicInteger(0)
 
     val path: String?
         get() = roomDatabase.path
@@ -93,30 +97,93 @@ internal class RoomSupportSQLiteSession(val roomDatabase: RoomDatabase) {
 
     fun beginTransaction(type: SQLiteTransactionType, listener: SQLiteTransactionListener? = null) {
         val currentTransaction =
-            threadTransaction.get()
-                ?: ThreadTransaction.create(roomDatabase, type).also {
-                    threadTransaction.set(it)
-                    threadTransactionContext.set(it.getCoroutineContext())
+            threadTransaction.getOrSet {
+                try {
+                    threadWaiters.incrementAndGet()
+                    ThreadTransaction.acquire(roomDatabase, type).also {
+                        threadTransaction.set(it)
+                        threadTransactionContext.set(it.getCoroutineContext())
+                    }
+                } finally {
+                    threadWaiters.decrementAndGet()
                 }
+            }
         currentTransaction.begin(listener)
+        try {
+            currentTransaction.listener?.onBegin()
+        } catch (ex: Throwable) {
+            currentTransaction.mark(success = false)
+            endTransaction()
+            throw ex
+        }
     }
 
     fun endTransaction() {
-        val currentTransaction = threadTransaction.get() ?: error("Not in a transaction")
-        val transactionEnded = currentTransaction.end()
-        if (transactionEnded) {
-            threadTransactionContext.set(null)
-            threadTransaction.set(null)
+        val currentTransaction =
+            threadTransaction.get()
+                ?: error("Cannot perform this operation because there is no current transaction.")
+        try {
+            if (currentTransaction.isSuccessful()) {
+                currentTransaction.listener?.onCommit()
+            } else {
+                currentTransaction.listener?.onRollback()
+            }
+        } catch (ex: Throwable) {
+            currentTransaction.mark(success = false)
+            throw ex
+        } finally {
+            val transactionEnded = currentTransaction.end()
+            if (transactionEnded) {
+                threadTransactionContext.set(null)
+                threadTransaction.set(null)
+            }
         }
     }
 
     fun setTransactionSuccessful() {
-        val currentTransaction = threadTransaction.get() ?: error("Not in a transaction")
-        currentTransaction.markSuccessful()
+        val currentTransaction =
+            threadTransaction.get()
+                ?: error("Cannot perform this operation because there is no current transaction.")
+        check(!currentTransaction.isMarkedSuccessful) {
+            "Cannot perform this operation because the transaction has already been marked" +
+                "successful."
+        }
+        currentTransaction.mark(success = true)
     }
 
     fun inTransaction(): Boolean {
         return threadTransaction.get() != null
+    }
+
+    fun yieldIfContended(sleepAfterYieldDelayMillis: Long = 0): Boolean {
+        val currentTransaction =
+            threadTransaction.get()
+                ?: error("Cannot perform this operation because there is no current transaction.")
+        check(!currentTransaction.isNested) {
+            "Cannot perform this operation because a nested transaction is in progress."
+        }
+        check(!currentTransaction.isMarkedSuccessful) {
+            "Cannot perform this operation because the transaction has already been marked" +
+                "successful."
+        }
+
+        // TODO: Consider tracking reader vs writer waiters separately
+        if (threadWaiters.get() == 0) {
+            return false
+        }
+
+        val transactionType = currentTransaction.type
+        val transactionListener = currentTransaction.listener
+        setTransactionSuccessful()
+        endTransaction()
+        try {
+            @Suppress("BanThreadSleep") // Intended sleep to yield for other transactions
+            Thread.sleep(sleepAfterYieldDelayMillis)
+        } catch (_: InterruptedException) {
+            // got interrupted
+        }
+        beginTransaction(transactionType, transactionListener)
+        return true
     }
 
     // TODO(b/409102321): Sync the isOpen / isClosed state with RoomDatabase
@@ -145,10 +212,29 @@ internal class RoomSupportSQLiteSession(val roomDatabase: RoomDatabase) {
  */
 private class ThreadTransaction
 private constructor(
+    val type: SQLiteTransactionType,
     private val connectionContext: CoroutineContext,
     private val completable: TransactionCompletable,
 ) {
     private val stack = ArrayDeque<TransactionItem>()
+
+    val isMarkedSuccessful: Boolean
+        get() {
+            check(stack.isNotEmpty())
+            return stack[stack.lastIndex].markedSuccessful
+        }
+
+    val isNested: Boolean
+        get() {
+            check(stack.isNotEmpty())
+            return stack.size > 1
+        }
+
+    val listener: SQLiteTransactionListener?
+        get() {
+            check(stack.isNotEmpty())
+            return stack[stack.lastIndex].listener
+        }
 
     fun getCoroutineContext(): CoroutineContext {
         return connectionContext
@@ -158,9 +244,9 @@ private constructor(
         stack.addLast(TransactionItem(listener))
     }
 
-    fun markSuccessful() {
+    fun mark(success: Boolean) {
         check(stack.isNotEmpty())
-        stack[stack.lastIndex].markedSuccessful = true
+        stack[stack.lastIndex].markedSuccessful = success
     }
 
     fun end(): Boolean {
@@ -174,6 +260,12 @@ private constructor(
             stack[stack.lastIndex].childFailed = !successful
             return false
         }
+    }
+
+    fun isSuccessful(): Boolean {
+        check(stack.isNotEmpty())
+        val item = stack[stack.lastIndex]
+        return item.markedSuccessful && !item.childFailed
     }
 
     /**
@@ -206,7 +298,7 @@ private constructor(
     }
 
     companion object {
-        fun create(db: RoomDatabase, type: SQLiteTransactionType): ThreadTransaction {
+        fun acquire(db: RoomDatabase, type: SQLiteTransactionType): ThreadTransaction {
             val transactionFuture =
                 CallbackToFutureAdapter.getFuture { completer ->
                     // a latch to wait (blocking) for the coroutine to finish
@@ -218,6 +310,7 @@ private constructor(
                             // the transaction object that will be stored in a thread local
                             val threadTransaction =
                                 ThreadTransaction(
+                                    type = type,
                                     connectionContext = coroutineContext,
                                     completable =
                                         TransactionCompletable(successSignal, completionLatch),

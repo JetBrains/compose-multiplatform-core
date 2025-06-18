@@ -30,8 +30,8 @@ package androidx.room {
     property public final boolean allowDestructiveMigrationForAllTables;
     property public final boolean allowDestructiveMigrationOnDowngrade;
     property public final boolean allowMainThreadQueries;
-    property public final java.util.List<? extends androidx.room.migration.AutoMigrationSpec> autoMigrationSpecs;
-    property public final java.util.List<? extends androidx.room.RoomDatabase.Callback>? callbacks;
+    property public final java.util.List<androidx.room.migration.AutoMigrationSpec> autoMigrationSpecs;
+    property public final java.util.List<androidx.room.RoomDatabase.Callback>? callbacks;
     property public final android.content.Context context;
     property public final String? copyFromAssetPath;
     property public final java.io.File? copyFromFile;
@@ -48,7 +48,7 @@ package androidx.room {
     property public final androidx.sqlite.SQLiteDriver? sqliteDriver;
     property public final androidx.sqlite.db.SupportSQLiteOpenHelper.Factory? sqliteOpenHelperFactory;
     property public final java.util.concurrent.Executor transactionExecutor;
-    property public final java.util.List<?> typeConverters;
+    property public final java.util.List<java.lang.Object> typeConverters;
     field public final boolean allowDestructiveMigrationForAllTables;
     field public final boolean allowDestructiveMigrationOnDowngrade;
     field public final boolean allowMainThreadQueries;
@@ -242,7 +242,7 @@ package androidx.room {
     method @Deprecated public void setTransactionSuccessful();
     property public androidx.room.InvalidationTracker invalidationTracker;
     property public boolean isOpen;
-    property @Deprecated @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected final java.util.List<androidx.room.RoomDatabase.Callback>? mCallbacks;
+    property @Deprecated @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) protected final java.util.List<androidx.room.RoomDatabase.Callback>? mCallbacks;
     property @Deprecated @kotlin.jvm.Volatile protected final androidx.sqlite.db.SupportSQLiteDatabase? mDatabase;
     property public androidx.sqlite.db.SupportSQLiteOpenHelper openHelper;
     property public java.util.concurrent.Executor queryExecutor;
@@ -298,7 +298,7 @@ package androidx.room {
   }
 
   public static final class RoomDatabase.Companion {
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static int MAX_BIND_PARAMETER_CNT;
+    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public static int MAX_BIND_PARAMETER_CNT;
   }
 
   public enum RoomDatabase.JournalMode {
@@ -570,9 +570,9 @@ package androidx.room.util {
     ctor public FtsTableInfo(String name, java.util.Set<java.lang.String> columns, java.util.Set<java.lang.String> options);
     method public static androidx.room.util.FtsTableInfo read(androidx.sqlite.db.SupportSQLiteDatabase database, String tableName);
     method public static androidx.room.util.FtsTableInfo read(androidx.sqlite.SQLiteConnection connection, String tableName);
-    property public java.util.Set<? extends java.lang.String> columns;
+    property public java.util.Set<java.lang.String> columns;
     property public String name;
-    property public java.util.Set<? extends java.lang.String> options;
+    property public java.util.Set<java.lang.String> options;
     field public static final androidx.room.util.FtsTableInfo.Companion Companion;
     field public final java.util.Set<java.lang.String> columns;
     field public final String name;
@@ -621,9 +621,9 @@ package androidx.room.util {
     ctor public TableInfo(String name, java.util.Map<java.lang.String,androidx.room.util.TableInfo.Column> columns, java.util.Set<androidx.room.util.TableInfo.ForeignKey> foreignKeys, optional java.util.Set<androidx.room.util.TableInfo.Index>? indices);
     method @Deprecated public static androidx.room.util.TableInfo read(androidx.sqlite.db.SupportSQLiteDatabase database, String tableName);
     method public static androidx.room.util.TableInfo read(androidx.sqlite.SQLiteConnection connection, String tableName);
-    property public java.util.Map<java.lang.String,? extends androidx.room.util.TableInfo.Column> columns;
-    property public java.util.Set<? extends androidx.room.util.TableInfo.ForeignKey> foreignKeys;
-    property public java.util.Set<? extends androidx.room.util.TableInfo.Index>? indices;
+    property public java.util.Map<java.lang.String,androidx.room.util.TableInfo.Column> columns;
+    property public java.util.Set<androidx.room.util.TableInfo.ForeignKey> foreignKeys;
+    property public java.util.Set<androidx.room.util.TableInfo.Index>? indices;
     property public String name;
     field public static final int CREATED_FROM_DATABASE = 2; // 0x2
     field public static final int CREATED_FROM_ENTITY = 1; // 0x1
@@ -672,10 +672,10 @@ package androidx.room.util {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class TableInfo.ForeignKey {
     ctor public TableInfo.ForeignKey(String referenceTable, String onDelete, String onUpdate, java.util.List<java.lang.String> columnNames, java.util.List<java.lang.String> referenceColumnNames);
-    property public java.util.List<? extends java.lang.String> columnNames;
+    property public java.util.List<java.lang.String> columnNames;
     property public String onDelete;
     property public String onUpdate;
-    property public java.util.List<? extends java.lang.String> referenceColumnNames;
+    property public java.util.List<java.lang.String> referenceColumnNames;
     property public String referenceTable;
     field public final java.util.List<java.lang.String> columnNames;
     field public final String onDelete;
@@ -687,9 +687,9 @@ package androidx.room.util {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class TableInfo.Index {
     ctor @Deprecated public TableInfo.Index(String name, boolean unique, java.util.List<java.lang.String> columns);
     ctor public TableInfo.Index(String name, boolean unique, java.util.List<java.lang.String> columns, java.util.List<java.lang.String> orders);
-    property public java.util.List<? extends java.lang.String> columns;
+    property public java.util.List<java.lang.String> columns;
     property public String name;
-    property public java.util.List<? extends java.lang.String> orders;
+    property public java.util.List<java.lang.String> orders;
     property public boolean unique;
     field public static final androidx.room.util.TableInfo.Index.Companion Companion;
     field public static final String DEFAULT_PREFIX = "index_";

@@ -54,8 +54,6 @@ androidx {
     type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2025"
     description = "Integration tests app that exercises the ARCore APIs."
-    // TODO: b/415768376
-    optOutJSpecify = true
 }
 
 dependencies {

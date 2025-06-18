@@ -17,11 +17,13 @@
 package androidx.xr.compose.spatial
 
 import android.graphics.Rect
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -68,6 +70,7 @@ public fun SpatialPopup(
     properties: PopupProperties = PopupProperties(),
     content: @Composable () -> Unit,
 ) {
+    val movableContent = remember { movableContentOf(content) }
     if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
         LayoutSpatialPopup(
             alignment = alignment,
@@ -75,7 +78,7 @@ public fun SpatialPopup(
             onDismissRequest = onDismissRequest,
             properties = properties,
             elevation = elevation,
-            content = content,
+            content = movableContent,
         )
     } else {
         Popup(
@@ -83,7 +86,7 @@ public fun SpatialPopup(
             offset = offset,
             onDismissRequest = onDismissRequest,
             properties = properties,
-            content = content,
+            content = movableContent,
         )
     }
 }
@@ -156,6 +159,8 @@ private fun LayoutSpatialPopup(
             )
         }
     }
+
+    BackHandler(enabled = properties.dismissOnBackPress) { onDismissRequest?.invoke() }
 
     // The coordinates should be re-calculated on every layout to properly retrieve the absolute
     // bounds for popup content offset calculation.

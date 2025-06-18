@@ -24,6 +24,10 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateSet
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.savedstate.SavedState
+import androidx.savedstate.read
+import androidx.savedstate.savedState
+import androidx.savedstate.write
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
@@ -95,6 +99,27 @@ class RememberSaveableWithMutableStateTest {
     }
 
     @Test
+    fun simpleSerializable() {
+        var state: MutableState<SavedState>? = null
+        restorationTester.setContent {
+            state = rememberSerializable { mutableStateOf(savedState()) }
+        }
+
+        assertThat(state!!.value.read { contentDeepEquals(savedState()) }).isTrue()
+
+        rule.runOnUiThread {
+            state!!.value.write { putInt("key", 1) }
+            // we null it to ensure recomposition happened
+            state = null
+        }
+
+        restorationTester.emulateSavedInstanceStateRestore()
+
+        val expected = savedState { putInt("key", 1) }
+        assertThat(state!!.value.read { contentDeepEquals(expected) }).isTrue()
+    }
+
+    @Test
     fun restoreWithSaver() {
         var state: MutableState<Holder>? = null
         restorationTester.setContent {
@@ -119,7 +144,9 @@ class RememberSaveableWithMutableStateTest {
         var state: MutableState<Holder>? = null
         restorationTester.setContent {
             state =
-                rememberSaveable(stateSerializer = HolderSerializer) { mutableStateOf(Holder(0)) }
+                rememberSerializable(stateSerializer = HolderSerializer) {
+                    mutableStateOf(Holder(0))
+                }
         }
 
         rule.runOnIdle {

@@ -198,6 +198,7 @@ private fun Project.configureComponentPublishing(
             val addStubAar = isKmpAnchor && pomPlatform == PlatformIdentifier.ANDROID.id
             val buildDir = project.layout.buildDirectory
             if (addStubAar) {
+                @Suppress("DEPRECATION") // TODO(aurimas): migrate to new API
                 val minSdk =
                     project.extensions.findByType<LibraryExtension>()?.defaultConfig?.minSdk
                         ?: extensions

@@ -20,6 +20,7 @@ import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.os.Handler
+import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.CameraPipe.Config
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
@@ -31,9 +32,11 @@ import androidx.camera.camera2.pipe.config.FrameGraphConfigModule
 import androidx.camera.camera2.pipe.config.ThreadConfigModule
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.DurationNs
+import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.media.ImageSources
 import java.util.concurrent.Executor
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
@@ -212,6 +215,9 @@ public fun CameraPipe(config: Config): CameraPipe = CameraPipe.create(config)
 
 internal class CameraPipeImpl(private val component: CameraPipeComponent) : CameraPipe {
     private val debugId = cameraPipeIds.incrementAndGet()
+    private val lock = Any()
+
+    @GuardedBy("lock") private var shutdown = false
 
     @Deprecated(
         "Use createCameraGraph instead.",
@@ -220,6 +226,19 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
     override fun create(config: CameraGraph.Config): CameraGraph = createCameraGraph(config)
 
     override fun createCameraGraph(config: CameraGraph.Config): CameraGraph =
+        synchronized(lock) {
+            check(!shutdown)
+            createCameraGraphLocked(config)
+        }
+
+    override fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph> =
+        synchronized(lock) {
+            check(!shutdown)
+            config.graphConfigs.map { createCameraGraphLocked(it) }
+        }
+
+    @GuardedBy("lock")
+    private fun createCameraGraphLocked(config: CameraGraph.Config) =
         Debug.trace("CXCP#CameraGraph-${config.camera}") {
             component
                 .cameraGraphComponentBuilder()
@@ -228,11 +247,22 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
                 .cameraGraph()
         }
 
-    override fun createCameraGraphs(config: CameraGraph.ConcurrentConfig): List<CameraGraph> {
-        return config.graphConfigs.map { createCameraGraph(it) }
-    }
-
     override fun createFrameGraph(frameGraphConfig: FrameGraph.Config): FrameGraph =
+        synchronized(lock) {
+            check(!shutdown)
+            createFrameGraphLocked(frameGraphConfig)
+        }
+
+    override fun createFrameGraphs(
+        frameGraphConfigs: FrameGraph.ConcurrentConfig
+    ): List<FrameGraph> =
+        synchronized(lock) {
+            check(!shutdown)
+            frameGraphConfigs.frameGraphConfigs.map { createFrameGraphLocked(it) }
+        }
+
+    @GuardedBy("lock")
+    private fun createFrameGraphLocked(frameGraphConfig: FrameGraph.Config) =
         Debug.trace("CXCP#CreateFrameGraph-${frameGraphConfig.cameraGraphConfig.camera}") {
             val cameraGraphComponent =
                 component
@@ -250,35 +280,47 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
                 .frameGraph()
         }
 
-    override fun createFrameGraphs(
-        frameGraphConfigs: FrameGraph.ConcurrentConfig
-    ): List<FrameGraph> {
-        return frameGraphConfigs.frameGraphConfigs.map { createFrameGraph(it) }
-    }
-
     /** This provides access to information about the available cameras on the device. */
-    override fun cameras(): CameraDevices {
-        return component.cameras()
-    }
+    override fun cameras(): CameraDevices =
+        synchronized(lock) {
+            check(!shutdown)
+            component.cameras()
+        }
 
     /** This returns [CameraSurfaceManager] which tracks the lifetime of Surfaces in CameraPipe. */
-    override fun cameraSurfaceManager(): CameraSurfaceManager {
-        return component.cameraSurfaceManager()
-    }
+    override fun cameraSurfaceManager(): CameraSurfaceManager =
+        synchronized(lock) {
+            check(!shutdown)
+            component.cameraSurfaceManager()
+        }
 
     /**
      * This gets and sets the global [AudioRestrictionMode] tracked by [AudioRestrictionController].
      */
     override var globalAudioRestrictionMode: AudioRestrictionMode
         get(): AudioRestrictionMode =
-            component.cameraAudioRestrictionController().globalAudioRestrictionMode
-        set(value) {
-            component.cameraAudioRestrictionController().globalAudioRestrictionMode = value
-        }
+            synchronized(lock) {
+                if (shutdown) {
+                    Log.warn { "Trying to get audio restriction after shutdown! Returning NONE" }
+                    return AudioRestrictionMode.AUDIO_RESTRICTION_NONE
+                }
+                component.cameraAudioRestrictionController().globalAudioRestrictionMode
+            }
+        set(value) =
+            synchronized(lock) {
+                if (shutdown) {
+                    Log.warn { "Trying to set audio restriction after shutdown!" }
+                    return
+                }
+                component.cameraAudioRestrictionController().globalAudioRestrictionMode = value
+            }
 
-    override fun shutdown() {
-        component.cameraPipeLifetime().shutdown()
-    }
+    override fun shutdown() =
+        synchronized(lock) {
+            check(!shutdown)
+            component.cameraPipeLifetime().shutdown()
+            shutdown = true
+        }
 
     override fun toString(): String = "CameraPipe-$debugId"
 }

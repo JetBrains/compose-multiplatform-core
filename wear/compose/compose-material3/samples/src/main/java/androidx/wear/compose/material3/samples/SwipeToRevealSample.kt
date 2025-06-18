@@ -38,7 +38,9 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
@@ -230,6 +232,65 @@ fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
                         compositingStrategy = CompositingStrategy.ModulateAlpha
                         clip = false
                     },
+            ) {
+                TitleCard(
+                    onClick = {},
+                    title = { Text("Message #$index") },
+                    subtitle = { Text("Body of the message") },
+                    modifier =
+                        Modifier.semantics {
+                            // Use custom actions to make the primary action accessible
+                            customActions =
+                                listOf(
+                                    CustomAccessibilityAction("Delete") {
+                                        /* Add the primary action click handler here */
+                                        true
+                                    }
+                                )
+                        },
+                )
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+@Sampled
+fun SwipeToRevealWithScalingLazyColumnResetOnScrollSample() {
+    val slcState = rememberScalingLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    ScalingLazyColumn(
+        state = slcState,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+        modifier = Modifier.background(Color.Black),
+    ) {
+        items(count = 100) { index ->
+            val revealState = rememberRevealState()
+
+            // SwipeToReveal is covered on scroll.
+            LaunchedEffect(slcState.isScrollInProgress) {
+                if (
+                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
+                ) {
+                    coroutineScope.launch {
+                        revealState.animateTo(targetValue = RevealValue.Covered)
+                    }
+                }
+            }
+
+            SwipeToReveal(
+                primaryAction = {
+                    PrimaryActionButton(
+                        onClick = { /* Called when the primary action is executed. */ },
+                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
+                        text = { Text("Delete") },
+                    )
+                },
+                revealState = revealState,
+                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
+                },
+                hasPartiallyRevealedState = true,
             ) {
                 TitleCard(
                     onClick = {},

@@ -18,7 +18,6 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.ResizableComponent;
@@ -31,6 +30,8 @@ import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.ReformOptions;
 import com.android.extensions.xr.node.Vec3;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;

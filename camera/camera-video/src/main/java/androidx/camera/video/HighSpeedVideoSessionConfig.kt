@@ -28,7 +28,6 @@ import androidx.camera.core.ViewPort
 import androidx.camera.core.impl.ImageOutputConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
-import androidx.core.util.Preconditions.checkArgument
 
 /**
  * A [SessionConfig] for high-speed video recording sessions.
@@ -74,23 +73,22 @@ import androidx.core.util.Preconditions.checkArgument
  *   30 FPS, resulting in a **1/8x speed** during playback (240 / 30 = 8).
  *
  * If [isSlowMotionEnabled] is `false`, the video will be saved at the actual recording frame rate
- * specified by the [frameRate] parameter, e.g. 120 FPS, without slow-motion effect.
+ * specified by the [frameRateRange] parameter, e.g. 120 FPS, without slow-motion effect.
  *
  * See the sample code below for recording a slow-motion video:
  *
  * @sample androidx.camera.video.samples.slowMotionVideoSample
  * @property videoCapture The [VideoCapture] use case for video recording.
  * @property preview Optional [Preview] use case for displaying a preview during recording.
- * @property frameRate The desired frame rate range for high-speed video recording. The value must
- *   be one of the supported frame rates queried by [CameraInfo.getSupportedFrameRateRanges] with a
- *   specific [HighSpeedVideoSessionConfig], or an [IllegalArgumentException] will be thrown when
- *   binding to lifecycle.
+ * @property frameRateRange The desired frame rate range for high-speed video recording. The value
+ *   must be one of the supported frame rates queried by [CameraInfo.getSupportedFrameRateRanges]
+ *   with a specific [HighSpeedVideoSessionConfig], or an [IllegalArgumentException] will be thrown
+ *   when binding to lifecycle.
  * @property isSlowMotionEnabled Whether to apply slow-motion effects to the recorded video.
  * @throws IllegalArgumentException if any of the constraints are violated.
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  * @See Recorder.getHighSpeedVideoCapabilities
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 @ExperimentalHighSpeedVideo
 @OptIn(ExperimentalSessionConfig::class)
 public class HighSpeedVideoSessionConfig
@@ -98,10 +96,9 @@ public class HighSpeedVideoSessionConfig
 constructor(
     public val videoCapture: VideoCapture<*>,
     public val preview: Preview? = null,
-    // TODO: rename to frameRateRange to override parent's frameRateRange when expose the API
-    public val frameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
+    frameRateRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
     public val isSlowMotionEnabled: Boolean = false,
-) : SessionConfig(listOfNotNull(videoCapture, preview), frameRateRange = frameRate) {
+) : SessionConfig(listOfNotNull(videoCapture, preview), frameRateRange = frameRateRange) {
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
     public override val sessionType: Int = SESSION_TYPE_HIGH_SPEED
@@ -143,7 +140,7 @@ constructor(
             return HighSpeedVideoSessionConfig(
                 videoCapture = videoCapture,
                 preview = preview,
-                frameRate = frameRateRange,
+                frameRateRange = frameRateRange,
                 isSlowMotionEnabled = isSlowMotionEnabled,
             )
         }
@@ -158,29 +155,29 @@ constructor(
     }
 
     private fun validateSettingsOrThrow(videoCapture: VideoCapture<*>, preview: Preview?) {
-        checkArgument(videoCapture.mirrorMode == MIRROR_MODE_OFF) {
+        require(videoCapture.mirrorMode == MIRROR_MODE_OFF) {
             "VideoCapture.Builder.setMirrorMode() is not allowed for high-speed video."
         }
 
-        checkArgument(videoCapture.targetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED) {
+        require(videoCapture.targetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED) {
             "VideoCapture.Builder.setTargetFrameRate() is not allowed for high-speed video."
         }
 
         if (preview != null) {
-            checkArgument(preview.targetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED) {
+            require(preview.targetFrameRate == FRAME_RATE_RANGE_UNSPECIFIED) {
                 "Preview.Builder.setTargetFrameRate() is not allowed for high-speed video."
             }
 
             (preview.currentConfig as ImageOutputConfig).let { previewOutputConfig ->
-                checkArgument(previewOutputConfig.getResolutionSelector(null) == null) {
+                require(previewOutputConfig.getResolutionSelector(null) == null) {
                     "Preview.Builder.setResolutionSelector() is not allowed for high-speed video."
                 }
 
-                checkArgument(previewOutputConfig.getTargetResolution(null) == null) {
+                require(previewOutputConfig.getTargetResolution(null) == null) {
                     "Preview.Builder.setTargetResolution() is not allowed for high-speed video."
                 }
 
-                checkArgument(!previewOutputConfig.hasTargetAspectRatio()) {
+                require(!previewOutputConfig.hasTargetAspectRatio()) {
                     "Preview.Builder.setTargetAspectRatio() is not allowed for high-speed video."
                 }
             }

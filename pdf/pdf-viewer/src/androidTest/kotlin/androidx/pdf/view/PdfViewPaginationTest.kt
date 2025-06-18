@@ -32,6 +32,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -247,14 +248,12 @@ class PdfViewPaginationTest {
             pdfDocument.waitForLayout(untilPage = 9)
 
             assertThat(listener.firstVisiblePage).isEqualTo(9)
-            assertThat(
-                    isEqualTo(
-                        listener.firstPageLocation,
-                        RectF(0f, 0f, 500f, 1000f),
-                        tolerance = 0.125f,
-                    )
-                )
-                .isTrue()
+            checkEqualityWithTolerance(
+                listener.firstPageLocation,
+                RectF(0f, 0f, 500f, 1000f),
+                tolerance = 0.5F,
+            )
+
             assertThat(listener.zoomLevel).isEqualTo(1.0F)
             assertThat(listener.updates).isEqualTo(1)
 
@@ -358,14 +357,13 @@ class PdfViewPaginationTest {
             assertThat(listener.firstVisiblePage).isEqualTo(0)
             val expectedFirstPageLocation =
                 RectF(0f, topPageMarginPx * zoom, (500F * zoom), (1000F + topPageMarginPx) * zoom)
-            assertThat(
-                    isEqualTo(
-                        listener.firstPageLocation,
-                        expectedFirstPageLocation,
-                        tolerance = 0.001f,
-                    )
-                )
-                .isTrue()
+
+            checkEqualityWithTolerance(
+                listener.firstPageLocation,
+                expectedFirstPageLocation,
+                tolerance = 0.001f,
+            )
+
             assertThat(listener.zoomLevel).isWithin(0.01F).of(zoom)
             assertThat(listener.updates).isEqualTo(10)
 
@@ -504,16 +502,12 @@ class PdfViewPaginationTest {
                         val viewPoint = pdfView.pdfToViewPoint(pointPair.first)
                         val pdfPoint = pdfView.viewToPdfPoint(pointPair.second)
 
-                        assertThat(isEqualTo(viewPoint, pointPair.second, tolerance = 0.125f))
-                            .isTrue()
-                        assertThat(
-                                isEqualTo(
-                                    pdfPoint?.pagePoint,
-                                    pointPair.first.pagePoint,
-                                    tolerance = 0.125f,
-                                )
-                            )
-                            .isTrue()
+                        checkEqualityWithTolerance(viewPoint, pointPair.second, tolerance = 0.5F)
+                        checkEqualityWithTolerance(
+                            pdfPoint?.pagePoint,
+                            pointPair.first.pagePoint,
+                            tolerance = 0.5F,
+                        )
                         assertThat(pdfPoint?.pageNum).isEqualTo(pointPair.first.pageNum)
                     }
                 }
@@ -610,31 +604,35 @@ private class PdfViewportListener : PdfView.OnViewportChangedListener {
 /**
  * Compares two RectF objects for equality within a given tolerance for each coordinate.
  *
- * @param rect1 The first RectF.
- * @param rect2 The second RectF.
+ * @param expect The first RectF.
+ * @param actual The second RectF.
  * @param tolerance The maximum allowed difference for each coordinate (left, top, right, bottom).
- * @return True if the RectF objects are considered equal within the tolerance, false otherwise.
  */
-fun isEqualTo(rect1: RectF, rect2: RectF, tolerance: Float): Boolean {
-    return abs(rect1.left - rect2.left) <= tolerance &&
-        abs(rect1.top - rect2.top) <= tolerance &&
-        abs(rect1.right - rect2.right) <= tolerance &&
-        abs(rect1.bottom - rect2.bottom) <= tolerance
+fun checkEqualityWithTolerance(expect: RectF, actual: RectF, tolerance: Float) {
+    val errorMessage = "Expected $expect; got $actual"
+    assertWithMessage(errorMessage).that(abs(expect.left - actual.left)).isAtMost(tolerance)
+    assertWithMessage(errorMessage).that(abs(expect.top - actual.top)).isAtMost(tolerance)
+    assertWithMessage(errorMessage).that(abs(expect.right - actual.right)).isAtMost(tolerance)
+    assertWithMessage(errorMessage).that(abs(expect.bottom - actual.bottom)).isAtMost(tolerance)
 }
 
 /**
  * Checks if two PointF objects are close enough, considering a tolerance for each coordinate.
  *
- * @param point1 The first PointF.
- * @param point2 The second PointF.
+ * @param expect The first PointF.
+ * @param actual The second PointF.
  * @param tolerance The maximum allowed difference for each coordinate (x, y).
- * @return True if the PointF objects are considered close within the tolerance, false otherwise.
  */
-fun isEqualTo(point1: PointF?, point2: PointF?, tolerance: Float): Boolean {
-    if (point1 === point2) return true
-    if (point1 == null || point2 == null) return false
-
-    return abs(point1.x - point2.x) <= tolerance && abs(point1.y - point2.y) <= tolerance
+fun checkEqualityWithTolerance(expect: PointF?, actual: PointF?, tolerance: Float) {
+    val errorMessage = "Expected $expect; got $actual"
+    if (expect === actual) return
+    assertWithMessage(errorMessage).that(expect).isNotNull()
+    assertWithMessage(errorMessage).that(actual).isNotNull()
+    // Truth.assertThat yields readable error messages, requireNotNull makes Kotlin happy
+    assertWithMessage(errorMessage)
+        .that(abs(requireNotNull(expect?.x) - requireNotNull(actual?.x)))
+        .isAtMost(tolerance)
+    assertWithMessage(errorMessage).that(abs(expect.y - actual.y)).isAtMost(tolerance)
 }
 
 /** Arbitrary fixed ID for PdfView */

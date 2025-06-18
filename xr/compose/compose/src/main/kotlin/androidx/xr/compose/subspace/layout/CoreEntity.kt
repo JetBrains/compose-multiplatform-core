@@ -19,6 +19,7 @@ package androidx.xr.compose.subspace.layout
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Density
+import androidx.xr.compose.subspace.SceneCoreEntitySizeAdapter
 import androidx.xr.compose.subspace.SpatialPanelDefaults
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.unit.IntVolumeSize
@@ -307,6 +308,23 @@ internal class CoreSurfaceEntity(
             surfaceEntity.featherRadiusX = it.size.toHeightPercent(size.height.toFloat(), density)
         }
     }
+}
+
+/**
+ * A [CoreEntity] used in a [androidx.xr.compose.subspace.SceneCoreEntity]. The exact semantics of
+ * this entity are unknown to compose; however, the developer may supply information that we may use
+ * to set and derive the size of the entity.
+ */
+internal class AdaptableCoreEntity<T : Entity>(
+    val coreEntity: T,
+    var sceneCoreEntitySizeAdapter: SceneCoreEntitySizeAdapter<T>? = null,
+) : CoreEntity(coreEntity) {
+    override var size: IntVolumeSize
+        get() = sceneCoreEntitySizeAdapter?.intrinsicSize?.invoke(coreEntity) ?: super.size
+        set(value) {
+            sceneCoreEntitySizeAdapter?.onLayoutSizeChanged?.let { coreEntity.it(value) }
+            super.size = value
+        }
 }
 
 /**

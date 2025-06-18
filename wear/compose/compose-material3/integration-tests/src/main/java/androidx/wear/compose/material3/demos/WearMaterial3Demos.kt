@@ -40,6 +40,7 @@ import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
 import androidx.wear.compose.material3.samples.SwipeToRevealNoPartiallyRevealedStateSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
+import androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnResetOnScrollSample
 import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnResetOnScrollSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnAnimationSample
@@ -170,11 +171,11 @@ val WearMaterial3Demos =
                 Material3DemoCategory(
                     title = "Swipe to Reveal",
                     listOf(
-                        ComposableDemo("Single Action with Anchoring") {
-                            SwipeToRevealSingleButtonWithAnchoring()
+                        ComposableDemo("Single Action with partial reveal") {
+                            SwipeToRevealSingleButtonWithPartialReveal()
                         },
-                        ComposableDemo("Bi-directional / Non-anchoring") {
-                            SwipeToRevealBothDirectionsNonAnchoring()
+                        ComposableDemo("Bi-directional / No partial reveal") {
+                            SwipeToRevealBothDirectionsNoPartialReveal()
                         },
                         ComposableDemo("Bi-directional Two Actions") {
                             SwipeToRevealBothDirections()
@@ -200,6 +201,9 @@ val WearMaterial3Demos =
                         },
                         ComposableDemo("In TLC, with reset on scroll") {
                             SwipeToRevealWithTransformingLazyColumnResetOnScrollSample()
+                        },
+                        ComposableDemo("In SLC, with reset on scroll") {
+                            SwipeToRevealWithScalingLazyColumnResetOnScrollSample()
                         },
                         ComposableDemo("No Partial Reveal") {
                             ScalingLazyDemo {

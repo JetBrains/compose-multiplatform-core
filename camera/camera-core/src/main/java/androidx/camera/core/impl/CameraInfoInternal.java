@@ -39,7 +39,8 @@ import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
-import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination;
+import androidx.camera.core.featuregroup.GroupableFeature;
+import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup;
 import androidx.camera.core.internal.CalculatedUseCaseInfo;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
 
@@ -292,7 +293,7 @@ public interface CameraInfoInternal extends CameraInfo {
 
     /**
      * Checks if a use case combination is supported for some specific camera mode and the option to
-     * allow feature combination resolutions.
+     * allow feature group resolutions.
      */
     default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
             int cameraMode, boolean isFeatureComboInvocation) {
@@ -302,7 +303,7 @@ public interface CameraInfoInternal extends CameraInfo {
 
     /**
      * Checks if a use case combination is supported for some specific camera mode,
-     * {@link CameraConfig}, and the option to allow feature combination resolutions.
+     * {@link CameraConfig}, and the option to allow feature group resolutions.
      */
     default boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
             int cameraMode, boolean isFeatureComboInvocation, @NonNull CameraConfig cameraConfig) {
@@ -312,45 +313,52 @@ public interface CameraInfoInternal extends CameraInfo {
     /** {@inheritDoc} */
     @ExperimentalSessionConfig
     @Override
-    default boolean isFeatureCombinationSupported(@NonNull SessionConfig sessionConfig) {
+    default boolean isFeatureGroupSupported(@NonNull SessionConfig sessionConfig) {
         try {
             UseCaseAdditionSimulator.simulateAddUseCases(this,
                     sessionConfig, /*findMaxSupportedFrameRate=*/ false);
             return true;
         } catch (IllegalArgumentException | CameraUseCaseAdapter.CameraException e) {
             Logger.d("CameraInfoInternal",
-                    "CameraInfoInternal.isFeatureCombinationSupported failed", e);
+                    "CameraInfoInternal.isResolvedFeatureGroupSupported failed", e);
         }
 
         return false;
     }
 
     /**
-     * Checks if a combination of the provided {@link ResolvedFeatureCombination} and
+     * Checks if a combination of the provided {@link ResolvedFeatureGroup} and
      * {@link SessionConfig} is supported.
      *
      * <p> This API works by using a simulation of how {@link UseCase}s are added to the camera
      * and seeing if the proposed combination can be successfully added to the camera.
      *
-     * @param resolvedFeatureCombination The {@link ResolvedFeatureCombination} to check.
+     * @param resolvedFeatureGroup The {@link ResolvedFeatureGroup} to check.
      * @param sessionConfig The {@link SessionConfig} to check.
-     * @return {@code true} if the feature combination is supported, {@code false} otherwise.
+     * @return {@code true} if the combination is supported, {@code false} otherwise.
      * @throws IllegalStateException If
      * {@link CameraInfoInternal#setCameraUseCaseAdapterProvider(CameraUseCaseAdapterProvider)} has
      * not been called yet.
      */
     @OptIn(markerClass = ExperimentalSessionConfig.class)
-    default boolean isResolvedFeatureCombinationSupported(
-            @NonNull ResolvedFeatureCombination resolvedFeatureCombination,
+    default boolean isResolvedFeatureGroupSupported(
+            @NonNull ResolvedFeatureGroup resolvedFeatureGroup,
             @NonNull SessionConfig sessionConfig) {
+        for (GroupableFeature feature : resolvedFeatureGroup.getFeatures()) {
+            if (!feature.isSupportedIndividually(this, sessionConfig)) {
+                Logger.d("CameraInfoInternal", feature + " is not supported.");
+                return false;
+            }
+        }
+
         try {
             UseCaseAdditionSimulator.simulateAddUseCases(this,
                     sessionConfig, /*findMaxSupportedFrameRate=*/ false,
-                    resolvedFeatureCombination);
+                    resolvedFeatureGroup);
             return true;
         } catch (IllegalArgumentException | CameraUseCaseAdapter.CameraException e) {
             Logger.d("CameraInfoInternal",
-                    "CameraInfoInternal.isFeatureCombinationSupported failed", e);
+                    "CameraInfoInternal.isResolvedFeatureGroupSupported failed", e);
         }
 
         return false;

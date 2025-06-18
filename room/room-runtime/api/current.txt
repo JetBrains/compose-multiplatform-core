@@ -7,8 +7,8 @@ package androidx.room {
     property public final boolean allowDestructiveMigrationForAllTables;
     property public final boolean allowDestructiveMigrationOnDowngrade;
     property public final boolean allowMainThreadQueries;
-    property public final java.util.List<? extends androidx.room.migration.AutoMigrationSpec> autoMigrationSpecs;
-    property public final java.util.List<? extends androidx.room.RoomDatabase.Callback>? callbacks;
+    property public final java.util.List<androidx.room.migration.AutoMigrationSpec> autoMigrationSpecs;
+    property public final java.util.List<androidx.room.RoomDatabase.Callback>? callbacks;
     property public final android.content.Context context;
     property public final String? copyFromAssetPath;
     property public final java.io.File? copyFromFile;
@@ -25,7 +25,7 @@ package androidx.room {
     property public final androidx.sqlite.SQLiteDriver? sqliteDriver;
     property public final androidx.sqlite.db.SupportSQLiteOpenHelper.Factory? sqliteOpenHelperFactory;
     property public final java.util.concurrent.Executor transactionExecutor;
-    property public final java.util.List<?> typeConverters;
+    property public final java.util.List<java.lang.Object> typeConverters;
     field public final boolean allowDestructiveMigrationForAllTables;
     field public final boolean allowDestructiveMigrationOnDowngrade;
     field public final boolean allowMainThreadQueries;

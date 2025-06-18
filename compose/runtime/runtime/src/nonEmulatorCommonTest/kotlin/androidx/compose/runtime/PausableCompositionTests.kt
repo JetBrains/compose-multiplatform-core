@@ -461,6 +461,25 @@ class PausableCompositionTests {
         }
 
     @Test
+    fun pausableComposition_throwIfReusedAfterCancel() =
+        runTest(expected = IllegalStateException::class) {
+            val recomposer = Recomposer(coroutineContext)
+            val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
+
+            try {
+                val handle = pausableComposition.setPausableContent { Text("Some text") }
+                handle.cancel()
+                val handle2 = pausableComposition.setPausableContent { Text("Some other text") }
+                handle2.resume { false }
+                handle2.apply()
+            } finally {
+                pausableComposition.dispose()
+                recomposer.cancel()
+                recomposer.close()
+            }
+        }
+
+    @Test
     fun pausableComposition_isAppliedReturnsCorrectValue() = runTest {
         val recomposer = Recomposer(coroutineContext)
         val pausableComposition = PausableComposition(EmptyApplier(), recomposer)
@@ -527,6 +546,49 @@ class PausableCompositionTests {
 
         awaiter.await()
         assertEquals("ComposePausableCompositionException", applyException!!::class.simpleName)
+    }
+
+    @Test // b/424797313
+    fun rememberObserverCount() = compositionTest {
+        val awaiter = Awaiter()
+        val workFlow = workflow {
+            setContent()
+
+            resumeTillComplete { false }
+
+            cancel()
+
+            composition.dispose()
+
+            awaiter.done()
+        }
+
+        val rememberObserver =
+            object : RememberObserver {
+                var rememberCount = 0
+                var forgottenCount = 0
+                var abandonedCount = 0
+
+                override fun onRemembered() {
+                    rememberCount++
+                }
+
+                override fun onForgotten() {
+                    forgottenCount++
+                }
+
+                override fun onAbandoned() {
+                    abandonedCount++
+                }
+            }
+
+        compose { PausableContent(workFlow) { remember<RememberObserver> { rememberObserver } } }
+
+        awaiter.await()
+
+        assertEquals(0, rememberObserver.rememberCount)
+        assertEquals(0, rememberObserver.forgottenCount)
+        assertEquals(1, rememberObserver.abandonedCount)
     }
 }
 
@@ -676,6 +738,7 @@ private fun MockViewValidator.D() {
 interface PausableContentWorkflowScope {
     val iteration: Int
     val applied: Boolean
+    val composition: PausableComposition
 
     fun setContent(): PausedComposition
 
@@ -684,6 +747,8 @@ interface PausableContentWorkflowScope {
     fun resumeTillComplete(shouldPause: () -> Boolean)
 
     fun apply()
+
+    fun cancel()
 }
 
 fun PausableContentWorkflowScope.run(shouldPause: () -> Boolean = { true }) {
@@ -693,7 +758,7 @@ fun PausableContentWorkflowScope.run(shouldPause: () -> Boolean = { true }) {
 }
 
 class PausableContentWorkflowDriver(
-    private val composition: PausableComposition,
+    override val composition: PausableComposition,
     private val content: @Composable () -> Unit,
     private var host: View?,
     private var contentView: View?,
@@ -734,6 +799,12 @@ class PausableContentWorkflowDriver(
             this.host = null
             this.contentView = null
         }
+    }
+
+    override fun cancel() {
+        val pausedComposition = pausedComposition
+        checkPrecondition(pausedComposition != null)
+        pausedComposition.cancel()
     }
 }
 

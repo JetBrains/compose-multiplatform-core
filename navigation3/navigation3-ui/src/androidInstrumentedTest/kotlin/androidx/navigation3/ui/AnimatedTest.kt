@@ -29,8 +29,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,7 +62,7 @@ class AnimatedTest {
     @get:Rule val composeTestRule = createComposeRule()
 
     @Test
-    fun testNavHostAnimations() {
+    fun testNavigateAnimations() {
         lateinit var backStack: MutableList<Any>
         lateinit var firstLifecycle: Lifecycle
         lateinit var secondLifecycle: Lifecycle
@@ -116,7 +118,73 @@ class AnimatedTest {
     }
 
     @Test
-    fun testNavHostAnimationsCustom() {
+    fun testNavigateAnimationsImmutableBackStack() {
+        lateinit var backStack: List<String>
+        lateinit var backStackState: MutableState<Int>
+        lateinit var firstLifecycle: Lifecycle
+        lateinit var secondLifecycle: Lifecycle
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            backStackState = remember { mutableStateOf(1) }
+            backStack =
+                when (backStackState.value) {
+                    1 -> {
+                        listOf(first)
+                    }
+                    else -> {
+                        listOf(first, second)
+                    }
+                }
+            NavDisplay(backStack) {
+                when (it) {
+                    first ->
+                        NavEntry(first) {
+                            firstLifecycle = LocalLifecycleOwner.current.lifecycle
+                            Text(first)
+                        }
+                    second ->
+                        NavEntry(second) {
+                            secondLifecycle = LocalLifecycleOwner.current.lifecycle
+                            Text(second)
+                        }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.waitForIdle()
+        assertThat(composeTestRule.onNodeWithText(first).isDisplayed()).isTrue()
+        assertThat(firstLifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.runOnIdle { backStackState.value = 2 }
+
+        // advance half way between animations
+        composeTestRule.mainClock.advanceTimeBy(
+            DEFAULT_TRANSITION_DURATION_MILLISECOND.toLong() / 2
+        )
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(first).assertExists()
+        assertThat(firstLifecycle.currentState).isEqualTo(Lifecycle.State.STARTED)
+        composeTestRule.onNodeWithText(second).assertExists()
+        assertThat(secondLifecycle.currentState).isEqualTo(Lifecycle.State.STARTED)
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(first).assertDoesNotExist()
+        composeTestRule.onNodeWithText(second).assertExists()
+        assertThat(secondLifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+    }
+
+    @Test
+    fun testNavigateAnimationsCustom() {
         lateinit var backStack: MutableList<Any>
 
         composeTestRule.mainClock.autoAdvance = false
@@ -207,6 +275,54 @@ class AnimatedTest {
         composeTestRule.waitForIdle()
         // pop to first
         assertThat(backStack).containsExactly(first)
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        composeTestRule.onNodeWithText(second).assertDoesNotExist()
+    }
+
+    @Test
+    fun testPopAnimationsImmutableBackStack() {
+        lateinit var backStack: List<String>
+        lateinit var backStackState: MutableState<Int>
+        composeTestRule.setContent {
+            backStackState = remember { mutableStateOf(1) }
+            backStack =
+                when (backStackState.value) {
+                    1 -> {
+                        listOf(first, second)
+                    }
+                    else -> {
+                        listOf(first)
+                    }
+                }
+            NavDisplay(backStack) {
+                when (it) {
+                    first -> NavEntry(first) { Text(first) }
+                    second -> NavEntry(second) { Text(second) }
+                    else -> error("Invalid key passed")
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+        assertThat(backStack).containsExactly(first, second)
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { backStackState.value = 2 }
+
+        // advance half way between animations
+        composeTestRule.mainClock.advanceTimeBy(
+            (DEFAULT_TRANSITION_DURATION_MILLISECOND / 2).toLong()
+        )
+
+        composeTestRule.waitForIdle()
+        // pop to first
+        assertThat(backStack).containsExactly(first)
+        composeTestRule.onNodeWithText(first).assertIsDisplayed()
+        composeTestRule.onNodeWithText(second).assertIsDisplayed()
+
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText(first).assertIsDisplayed()
         composeTestRule.onNodeWithText(second).assertDoesNotExist()
     }

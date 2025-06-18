@@ -24,6 +24,7 @@ import androidx.annotation.RestrictTo
 import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.provider.CallingAppInfo
 import androidx.credentials.provider.ProviderCreateCredentialRequest
+import androidx.credentials.provider.ProviderSignalCredentialStateRequest
 import androidx.credentials.providerevents.transfer.CredentialTransferCapabilitiesRequest
 import androidx.credentials.providerevents.transfer.ExportCredentialsRequest
 import androidx.credentials.providerevents.transfer.ImportCredentialsRequest
@@ -31,6 +32,7 @@ import com.google.android.gms.identitycredentials.CreateCredentialRequest
 import com.google.android.gms.identitycredentials.ExportCredentialsToDeviceSetupRequest
 import com.google.android.gms.identitycredentials.GetCredentialTransferCapabilitiesRequest
 import com.google.android.gms.identitycredentials.ImportCredentialsForDeviceSetupRequest
+import com.google.android.gms.identitycredentials.SignalCredentialStateRequest
 
 /** TODO(b/416798373): add unit test */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -93,9 +95,35 @@ public class ConversionUtils {
         }
 
         @Suppress("RestrictedApiAndroidX")
+        public fun convertToJetpackRequest(
+            request: SignalCredentialStateRequest
+        ): ProviderSignalCredentialStateRequest? {
+            val callingAppInfo = constructCallingAppInfo(request)
+            if (callingAppInfo == null) {
+                return null
+            }
+            val signalRequest =
+                androidx.credentials.SignalCredentialStateRequest.createFrom(
+                    request.type,
+                    request.requestData,
+                    request.origin,
+                )
+            return ProviderSignalCredentialStateRequest(signalRequest, callingAppInfo)
+        }
+
+        @Suppress("RestrictedApiAndroidX")
         private fun constructCallingAppInfo(request: CreateCredentialRequest): CallingAppInfo? {
             val callingAppInfoBundle =
                 request.candidateQueryData.getBundle(EXTRA_CREDENTIAL_CALLING_APP_INFO)
+            return callingAppInfoBundle?.let { CallingAppInfo.extractCallingAppInfo(it) }
+        }
+
+        @Suppress("RestrictedApiAndroidX")
+        private fun constructCallingAppInfo(
+            request: SignalCredentialStateRequest
+        ): CallingAppInfo? {
+            val callingAppInfoBundle =
+                request.requestData.getBundle(EXTRA_CREDENTIAL_CALLING_APP_INFO)
             return callingAppInfoBundle?.let { CallingAppInfo.extractCallingAppInfo(it) }
         }
     }

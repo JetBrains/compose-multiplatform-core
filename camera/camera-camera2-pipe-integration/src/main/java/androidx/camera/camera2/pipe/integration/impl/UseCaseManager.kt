@@ -77,7 +77,7 @@ import androidx.camera.core.MirrorMode
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.concurrent.CameraCoordinator
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
@@ -365,9 +365,6 @@ constructor(
             synchronized(lock) {
                 closeCurrentUseCases()
                 meteringRepeating.onUnbind()
-                cameraDevices.disconnectAsync(cameraConfig.cameraId).also {
-                    closingCameraJobs.add(it)
-                }
                 closingCameraJobs.toList()
             }
         closingJobs.joinAll()

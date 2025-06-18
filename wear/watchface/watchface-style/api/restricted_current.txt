@@ -423,7 +423,7 @@ package androidx.wear.watchface.style {
   }
 
   @Deprecated public static final class WatchFaceLayer.Companion {
-    property @Deprecated public java.util.Set<? extends androidx.wear.watchface.style.WatchFaceLayer> ALL_WATCH_FACE_LAYERS;
+    property @Deprecated public java.util.Set<androidx.wear.watchface.style.WatchFaceLayer> ALL_WATCH_FACE_LAYERS;
   }
 
 }

@@ -34,7 +34,7 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlibJdk8)
+    api(libs.kotlinStdlib)
     api(libs.kspApi)
     api(libs.javapoet)
     api("com.squareup:kotlinpoet:2.0.0")

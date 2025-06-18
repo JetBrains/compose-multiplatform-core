@@ -88,8 +88,6 @@ import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.rotate
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.subspace.layout.width
-import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.FloatSize3d
@@ -142,7 +140,6 @@ class VideoPlayerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.setPassthroughOpacityPreference(0.0f)
         setContent { Subspace { VideoOptionsContent(session) } }
     }

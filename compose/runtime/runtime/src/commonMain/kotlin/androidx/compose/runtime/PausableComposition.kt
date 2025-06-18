@@ -301,8 +301,9 @@ internal class PausedCompositionImpl(
 
     override fun cancel() {
         state.set(PausedCompositionState.Cancelled)
+        val ignoreSet = rememberManager.extractRememberSet()
         rememberManager.dispatchAbandons()
-        composition.pausedCompositionFinished()
+        composition.pausedCompositionFinished(ignoreSet)
     }
 
     internal fun markIncomplete() {
@@ -325,7 +326,7 @@ internal class PausedCompositionImpl(
                 rememberManager.dispatchSideEffects()
             } finally {
                 rememberManager.dispatchAbandons()
-                composition.pausedCompositionFinished()
+                composition.pausedCompositionFinished(null)
             }
         }
     }
@@ -485,14 +486,14 @@ internal class RecordingApplier<N>(root: N) : Applier<N> {
 }
 
 private class ComposePausableCompositionException(
-    val instances: ObjectList<Any?>,
-    val reused: ObjectList<Any?>,
-    val operations: IntList,
-    val lastOperation: Int,
+    private val instances: ObjectList<Any?>,
+    private val reused: ObjectList<Any?>,
+    private val operations: IntList,
+    private val lastOperation: Int,
     cause: Throwable?,
 ) : Exception(cause) {
 
-    fun operations(): Sequence<String> = sequence {
+    private fun operationsSequence(): Sequence<String> = sequence {
         var currentOperation = 0
         var currentInstance = 0
         var currentReused = 0
@@ -557,7 +558,7 @@ private class ComposePausableCompositionException(
         get() =
             """
             |Exception while applying pausable composition. Last 10 operations:
-            |${operations().toList().takeLast(10).joinToString("\n")}
+            |${operationsSequence().toList().takeLast(10).joinToString("\n")}
             """
                 .trimMargin()
 }

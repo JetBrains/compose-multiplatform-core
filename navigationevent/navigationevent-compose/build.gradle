@@ -83,6 +83,18 @@ androidXMultiplatform {
                 implementation(libs.testRules)
             }
         }
+
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
+        }
     }
 }
 

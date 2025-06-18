@@ -512,6 +512,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      */
     val visualDividerPosition: Int
         get() =
+            visualDividerPositionWithoutOffset.let {
+                if (it < 0) {
+                    it
+                } else {
+                    it + dividerVisualOffsetHorizontal
+                }
+            }
+
+    /**
+     * The visual divider position without the [dividerVisualOffsetHorizontal] applied. It's used
+     * for layout and draw the child panes. And the other one with visual is used for drawing the
+     * divider drawable, touch gestures, a11y touch bounds, etc.
+     */
+    private val visualDividerPositionWithoutOffset: Int
+        get() =
             when {
                 !isUserResizable -> -1
                 isDividerDragging -> draggableDividerHandler.dragPositionX
@@ -545,7 +560,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             // paddingLeft + paddingRight >= width.
             val paneSpacing =
                 paneSpacing.coerceAtMost(width - paddingLeft - paddingRight).coerceAtLeast(0)
-            return visualDividerPosition <= paddingLeft + paneSpacing / 2
+            return visualDividerPositionWithoutOffset <= paddingLeft + paneSpacing / 2
         }
 
     private val dividerAtRightEdge: Boolean
@@ -554,7 +569,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             // paddingLeft + paddingRight >= width.
             val paneSpacing =
                 paneSpacing.coerceAtMost(width - paddingLeft - paddingRight).coerceAtLeast(0)
-            return visualDividerPosition >= width - paddingRight - (paneSpacing + 1) / 2
+            return visualDividerPositionWithoutOffset >=
+                width - paddingRight - (paneSpacing + 1) / 2
         }
 
     private fun createUserResizingDividerDrawableState(viewState: IntArray): IntArray {
@@ -641,6 +657,38 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             if (value != field) {
                 field = value
                 requestLayout()
+            }
+        }
+
+    /**
+     * The amount of pixels that the divider will be visually offset from its original horizontal
+     * position. A positive value moves divider rightwards and a negative value moves divider
+     * leftwards. Changing this value does no impact on the layout of the panes. It only affects the
+     * drawing and touch position of the divider. This offset is also reflected on the return value
+     * of [visualDividerPosition].
+     */
+    @get:Px
+    var dividerVisualOffsetHorizontal: Int = 0
+        set(value) {
+            if (value != field) {
+                field = value
+                invalidate()
+            }
+        }
+
+    /**
+     * The amount of pixels that the divider will be visually offset from its original vertical
+     * position. A positive value moves divider downwards and a negative value moves divider
+     * upwards. Changing this value does no impact on the layout of the panes. It only affects the
+     * drawing and touch position of the divider. This offset is also reflected on the value of
+     * [visualDividerPosition].
+     */
+    @get:Px
+    var dividerVisualOffsetVertical: Int = 0
+        set(value) {
+            if (value != field) {
+                field = value
+                invalidate()
             }
         }
 
@@ -732,7 +780,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         val height = max(dividerHeight, touchTargetMin)
         val left = dividerPositionX - width / 2
         val right = left + width
-        val top = (this.height - paddingTop - paddingBottom) / 2 + paddingTop - height / 2
+        val top =
+            (this.height - paddingTop - paddingBottom) / 2 + paddingTop - height / 2 +
+                dividerVisualOffsetVertical
         val bottom = top + height
         outRect.set(left, top, right, bottom)
         return outRect
@@ -860,7 +910,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             userResizingDividerDrawable?.apply {
                 val layoutCenterY = (height - paddingTop - paddingBottom) / 2 + paddingTop
                 val dividerLeft = dividerPositionX - intrinsicWidth / 2
-                val dividerTop = layoutCenterY - intrinsicHeight / 2
+                val dividerTop = layoutCenterY - intrinsicHeight / 2 + dividerVisualOffsetVertical
                 setBounds(
                     dividerLeft,
                     dividerTop,
@@ -1621,7 +1671,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             canvas.clipRect(tmpRect)
         }
         if (!isSlideable && isChildClippingToResizeDividerEnabled) {
-            val visualDividerPosition = visualDividerPosition
+            val visualDividerPosition = visualDividerPositionWithoutOffset
             val paneSpacing =
                 paneSpacing.coerceAtMost(width - paddingLeft - paddingRight).coerceAtLeast(0)
             if (visualDividerPosition >= 0) {

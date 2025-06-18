@@ -31,7 +31,7 @@ import androidx.xr.scenecore.Entity
  * propagating the annotation to the containing declaration.
  */
 @RequiresOptIn(
-    level = RequiresOptIn.Level.WARNING,
+    level = RequiresOptIn.Level.ERROR,
     message = "This is an experimental API. It may be changed or removed in the future.",
 )
 @Retention(AnnotationRetention.BINARY)

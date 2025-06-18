@@ -1795,6 +1795,26 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     }
 
     /**
+     * Returns a set of supported dynamic ranges for this VideoCapture use case
+     * for the given camera.
+     *
+     * <p>This method queries the {@link Recorder} to determine which dynamic ranges
+     * are supported for video recording, taking into account both the camera's
+     * capabilities and the available video encoders.
+     *
+     * @param cameraInfo The {@link CameraInfoInternal} instance of a camera.
+     * @return A non-null set of supported {@link DynamicRange}s.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Override
+    public @NonNull Set<@NonNull DynamicRange> getSupportedDynamicRanges(
+            @NonNull CameraInfoInternal cameraInfo) {
+        VideoCapabilities videoCapabilities = getVideoCapabilities(cameraInfo,
+                SESSION_TYPE_REGULAR);
+        return videoCapabilities.getSupportedDynamicRanges();
+    }
+
+    /**
      * Builder for a {@link VideoCapture}.
      *
      * @param <T> the type of VideoOutput

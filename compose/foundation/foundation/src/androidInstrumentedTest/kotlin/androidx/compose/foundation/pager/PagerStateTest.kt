@@ -1085,7 +1085,7 @@ class PagerStateTest : SingleParamBasePagerTest() {
             rule.mainClock.autoAdvance = false
             // Act
             // Moving forward
-            val forwardDelta = pagerSize * 0.6f * param.scrollForwardSign.toFloat()
+            val forwardDelta = pagerSize / 2f * param.scrollForwardSign.toFloat()
             onPager().performTouchInput {
                 with(param) { swipeWithVelocityAcrossMainAxis(10000f, forwardDelta) }
             }
@@ -1095,11 +1095,15 @@ class PagerStateTest : SingleParamBasePagerTest() {
             assertTrue { settledPageChanges == 0 }
             assertThat(pagerState.settledPage).isEqualTo(previousSettled)
 
-            // advanced time until is scroll in progress changes
-            rule.mainClock.advanceTimeUntil { settledPageChanges == pagerState.currentPage }
-            assertTrue { !pagerState.isScrollInProgress }
+            rule.mainClock.advanceTimeUntil { settledPageChanges != 0 }
 
+            rule.runOnIdle {
+                assertTrue { !pagerState.isScrollInProgress }
+                assertThat(pagerState.settledPage).isEqualTo(pagerState.currentPage)
+            }
             runBlocking { resetTestCase() }
+            rule.mainClock.autoAdvance = true // let time run freely
+            settledPageChanges = 0
         }
     }
 

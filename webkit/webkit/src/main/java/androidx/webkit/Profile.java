@@ -20,11 +20,14 @@ import android.os.CancellationSignal;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ServiceWorkerController;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebStorage;
+import android.webkit.WebView;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 
 import org.jspecify.annotations.NonNull;
@@ -35,6 +38,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -279,4 +283,55 @@ public interface Profile {
     @ExperimentalWarmUpRendererProcess
     void warmUpRendererProcess();
 
+    /**
+     * Set a custom header to be applied to HTTP requests to the specified origins.
+     * <p>
+     * It applies to all requests that are initiated after this method is called, including
+     * prefetch requests and requests sent from service workers.
+     * It does <em>not</em> apply the header to WebSocket requests.
+     *
+     * <p>Headers added through this API will be present in the set returned by
+     * {@link WebResourceRequest#getRequestHeaders()} provided in
+     * {@link android.webkit.WebViewClient#shouldInterceptRequest(WebView, WebResourceRequest)}
+     * and {@link android.webkit.ServiceWorkerClient#shouldInterceptRequest(WebResourceRequest)}.
+     *
+     * @param headerName  A
+     *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
+     * @param headerValue  A
+     *                          <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP value name string</a>
+     * @param originRules a set of origin rules following the same format as
+     *                    {@link WebViewCompat#addWebMessageListener}
+     * @throws IllegalStateException if the {@code headerName} has already been set. Use
+     * {@link #clearOriginMatchedHeader(String)} first in order to update the set header.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    void setOriginMatchedHeader(@NonNull String headerName,
+            @NonNull String headerValue, @NonNull Set<String> originRules);
+
+    /**
+     * Removes the specified header from the set of headers attached to requests.
+     * <p>
+     * It is safe to call this method even if {@code headerName} has not previously been set via
+     * {@link #setOriginMatchedHeader(String, String, Set)}
+     *
+     * @param headerName Header to remove.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    void clearOriginMatchedHeader(@NonNull String headerName);
+
+    /**
+     * Remove any currently set headers from being applied to network requests.
+     * @see #setOriginMatchedHeader(String, String, Set)
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    void clearAllOriginMatchedHeaders();
 }

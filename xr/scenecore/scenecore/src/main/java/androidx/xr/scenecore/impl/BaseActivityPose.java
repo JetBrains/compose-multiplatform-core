@@ -16,13 +16,14 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.ActivityPose;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base implementation of JXRCore ActivityPose.
@@ -31,35 +32,30 @@ import com.google.common.util.concurrent.ListenableFuture;
  */
 abstract class BaseActivityPose implements ActivityPose {
     @Override
-    @NonNull
-    public Pose getActivitySpacePose() {
+    public @NonNull Pose getActivitySpacePose() {
         throw new UnsupportedOperationException(
                 "getActivitySpacePose is not implemented for this ActivityPose.");
     }
 
     /** Returns the pose for this entity, relative to the activity space root. */
-    @NonNull
-    public Pose getPoseInActivitySpace() {
+    public @NonNull Pose getPoseInActivitySpace() {
         throw new UnsupportedOperationException(
                 "getPoseInActivitySpace is not implemented for this ActivityPose.");
     }
 
     @Override
-    @NonNull
-    public Vector3 getWorldSpaceScale() {
+    public @NonNull Vector3 getWorldSpaceScale() {
         return new Vector3(1f, 1f, 1f);
     }
 
     @Override
-    @NonNull
-    public Vector3 getActivitySpaceScale() {
+    public @NonNull Vector3 getActivitySpaceScale() {
         throw new UnsupportedOperationException(
                 "getActivitySpaceScale is not implemented for this ActivityPose.");
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<HitTestResult> hitTest(
+    public @NonNull ListenableFuture<HitTestResult> hitTest(
             @NonNull Vector3 origin,
             @NonNull Vector3 direction,
             @HitTestFilterValue int hitTestFilter) {
@@ -68,8 +64,7 @@ abstract class BaseActivityPose implements ActivityPose {
     }
 
     @Override
-    @NonNull
-    public Pose transformPoseTo(@NonNull Pose pose, @NonNull ActivityPose destination) {
+    public @NonNull Pose transformPoseTo(@NonNull Pose pose, @NonNull ActivityPose destination) {
 
         // This code might produce unexpected results when non-uniform scale
         // is involved in the parent-child entity hierarchy.

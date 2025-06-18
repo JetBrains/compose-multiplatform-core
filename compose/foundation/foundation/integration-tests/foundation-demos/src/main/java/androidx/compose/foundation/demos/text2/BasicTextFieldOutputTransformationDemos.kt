@@ -17,6 +17,7 @@
 package androidx.compose.foundation.demos.text2
 
 import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 @Composable
 fun BasicTextFieldOutputTransformationDemos() {
@@ -272,11 +274,20 @@ private fun ColorAnimationDemo() {
     val infiniteTransition = rememberInfiniteTransition()
     val color by
         infiniteTransition.animateColor(Color.Red, Color.Blue, infiniteRepeatable(tween(1000)))
+    val weight by infiniteTransition.animateFloat(300f, 900f, infiniteRepeatable(tween(1000)))
     BasicTextField(
         state = rememberTextFieldState(),
         modifier = demoTextFieldModifiers,
         outputTransformation =
-            OutputTransformation { addStyle(SpanStyle(color = color), 0, length) },
+            OutputTransformation {
+                for (i in asCharSequence().indices) {
+                    if (i % 2 == 0) {
+                        addStyle(SpanStyle(color = color), i, i + 1)
+                    } else {
+                        addStyle(SpanStyle(fontWeight = FontWeight(weight.roundToInt())), i, i + 1)
+                    }
+                }
+            },
         decorator = demoDecorationBox,
     )
 }

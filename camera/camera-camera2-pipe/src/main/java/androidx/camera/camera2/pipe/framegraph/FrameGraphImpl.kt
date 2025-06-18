@@ -88,18 +88,20 @@ constructor(
     }
 
     override suspend fun acquireSession(): FrameGraph.Session {
-        return FrameGraphSessionImpl(cameraGraph.acquireSession())
+        return FrameGraphSessionImpl(cameraGraph.acquireSession(), frameGraphBuffers)
     }
 
     override fun acquireSessionOrNull(): FrameGraph.Session? {
-        return cameraGraph.acquireSessionOrNull()?.let { FrameGraphSessionImpl(it) }
+        return cameraGraph.acquireSessionOrNull()?.let {
+            FrameGraphSessionImpl(it, frameGraphBuffers)
+        }
     }
 
     override suspend fun <T> useSession(
         action: suspend CoroutineScope.(FrameGraph.Session) -> T
     ): T {
         return cameraGraph.useSession { cameraGraphSession ->
-            FrameGraphSessionImpl(cameraGraphSession).use { action(it) }
+            FrameGraphSessionImpl(cameraGraphSession, frameGraphBuffers).use { action(it) }
         }
     }
 
@@ -108,7 +110,7 @@ constructor(
         action: suspend CoroutineScope.(FrameGraph.Session) -> T,
     ): Deferred<T> {
         return cameraGraph.useSessionIn(scope) { cameraGraphSession ->
-            FrameGraphSessionImpl(cameraGraphSession).use { action(it) }
+            FrameGraphSessionImpl(cameraGraphSession, frameGraphBuffers).use { action(it) }
         }
     }
 

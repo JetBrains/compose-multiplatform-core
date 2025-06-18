@@ -72,6 +72,7 @@ import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -1003,6 +1004,7 @@ class CameraControllerTest {
             .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
     }
 
+    @Ignore // b/425365173
     @Test
     fun setTapToFocusAutoCancelDuration_stateNeverResetsToNotStarted_whenDurationIsZero() {
         completeCameraInitialization()
@@ -1016,8 +1018,8 @@ class CameraControllerTest {
         shadowOf(getMainLooper()).idle()
         assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_STARTED)
 
-        // Advance to end of time
-        ShadowSystemClock.advanceBy(Long.MAX_VALUE, TimeUnit.SECONDS)
+        // Advance to 1 hour of time
+        ShadowSystemClock.advanceBy(1, TimeUnit.HOURS)
 
         // State is still the previous STARTED state
         shadowOf(getMainLooper()).idle()

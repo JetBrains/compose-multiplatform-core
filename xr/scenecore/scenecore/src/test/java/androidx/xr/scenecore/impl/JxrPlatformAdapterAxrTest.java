@@ -20,6 +20,9 @@ import static androidx.xr.runtime.testing.math.MathAssertions.assertPose;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertRotation;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertVector3;
 
+import static com.android.extensions.xr.node.ReformOptions.ALLOW_MOVE;
+import static com.android.extensions.xr.node.ReformOptions.ALLOW_RESIZE;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
@@ -145,10 +148,6 @@ import java.util.function.Consumer;
 @RunWith(RobolectricTestRunner.class)
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public final class JxrPlatformAdapterAxrTest {
-    // TODO(b/402408284): Remove once the constants are available in the host version of
-    // ReformOptions
-    public static final int ALLOW_MOVE = 1;
-    public static final int ALLOW_RESIZE = 2;
 
     private static final int OPEN_XR_REFERENCE_SPACE_TYPE = 1;
 

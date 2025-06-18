@@ -54,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.focused
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -250,7 +251,8 @@ public fun DatePicker(
                             horizontal =
                                 PaddingDefaults.horizontalContentPadding(textPaddingPercentage)
                         )
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .semantics(mergeDescendants = true) { heading() },
                 color = colors.pickerLabelColor,
                 style = labelTextStyle,
                 maxLines = maxTextLines,

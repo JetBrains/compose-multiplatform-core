@@ -18,8 +18,6 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.SystemSpaceEntity;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
@@ -27,6 +25,9 @@ import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.util.Arrays;
@@ -137,9 +138,8 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
                                         RuntimeUtils.getMatrix(transform.getTransform())));
     }
 
-    @NonNull
     @Override
-    public Vector3 getWorldSpaceScale() {
+    public @NonNull Vector3 getWorldSpaceScale() {
         return mWorldSpaceScale;
     }
 

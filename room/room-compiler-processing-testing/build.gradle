@@ -33,7 +33,6 @@ plugins {
 
 dependencies {
     api(project(":room:room-compiler-processing"))
-    implementation(libs.kotlinStdlibJdk8)
     // For Java source compilation
     implementation(libs.googleCompileTesting)
     // For KSP processing

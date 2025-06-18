@@ -27,7 +27,7 @@ import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.impl.FeatureCombinationQueryImpl;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.core.CameraUnavailableException;
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery;
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;

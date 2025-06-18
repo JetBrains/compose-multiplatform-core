@@ -165,7 +165,6 @@ package androidx.constraintlayout.compose {
     method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor getBaseline();
     method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor getBottom();
     method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor getEnd();
-    method public Object getId();
     method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor getStart();
     method public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor getTop();
     property @androidx.compose.runtime.Stable public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor absoluteLeft;
@@ -173,7 +172,6 @@ package androidx.constraintlayout.compose {
     property @androidx.compose.runtime.Stable public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.BaselineAnchor baseline;
     property @androidx.compose.runtime.Stable public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor bottom;
     property @androidx.compose.runtime.Stable public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor end;
-    property public Object id;
     property @androidx.compose.runtime.Stable public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.VerticalAnchor start;
     property @androidx.compose.runtime.Stable public androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor top;
   }

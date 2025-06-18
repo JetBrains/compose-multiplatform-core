@@ -22,7 +22,28 @@ import androidx.xr.runtime.internal.Plane as RuntimePlane
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 
-/** Test-only implementation of [RuntimePlane] */
+/**
+ * Test-only implementation of [RuntimePlane]
+ *
+ * The properties of the [FakeRuntimePlane] can be set manually in order to simulate a runtime plane
+ * in the environment.
+ *
+ * For example, for a [FakeRuntimePlane] with [Label.WALL], [Type.VERTICAL] and
+ * [TrackingState.PAUSED]:
+ * ```
+ * val plane = FakeRuntimePlane(type = RuntimePlane.Type.VERTICAL,
+ *                              label = RuntimePlane.Label.WALL,
+ *                              trackingState = TrackingState.PAUSED)
+ * ```
+ *
+ * And to modify the properties during the test:
+ * ```
+ * plane.apply {
+ *     trackingState = TrackingState.TRACKING
+ *     centerPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f))
+ * }
+ * ```
+ */
 public class FakeRuntimePlane(
     override val type: RuntimePlane.Type = RuntimePlane.Type.HORIZONTAL_UPWARD_FACING,
     override val label: RuntimePlane.Label = RuntimePlane.Label.FLOOR,
@@ -35,12 +56,14 @@ public class FakeRuntimePlane(
     public val anchors: MutableCollection<RuntimeAnchor> = mutableListOf(),
 ) : RuntimePlane, AnchorHolder {
 
+    /** Creates a new [FakeRuntimeAnchor] and adds it to the [anchors] property. */
     override fun createAnchor(pose: Pose): RuntimeAnchor {
         val anchor = FakeRuntimeAnchor(pose, this)
         anchors.add(anchor)
         return anchor
     }
 
+    /** Removes the given [anchor] from the [anchors] property. */
     override fun detachAnchor(anchor: RuntimeAnchor) {
         anchors.remove(anchor)
     }

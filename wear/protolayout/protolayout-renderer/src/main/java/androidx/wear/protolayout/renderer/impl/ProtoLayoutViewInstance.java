@@ -263,7 +263,8 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
                 @Nullable ViewGroup prevInflateParent,
                 boolean isReattaching,
                 InflaterStatsLogger inflaterStatsLogger) {
-            return immediateFuture(RenderingArtifact.create(inflaterStatsLogger));
+            return immediateFuture(
+                    RenderingArtifact.create(inflaterStatsLogger, prevInflateParent));
         }
     }
 
@@ -317,7 +318,8 @@ public class ProtoLayoutViewInstance implements AutoCloseable {
             attachParent.addView(
                     inflateResult.inflateParent, new LayoutParams(MATCH_PARENT, MATCH_PARENT));
             inflateResult.updateDynamicDataPipeline(isReattaching);
-            return immediateFuture(RenderingArtifact.create(inflaterStatsLogger));
+            return immediateFuture(
+                    RenderingArtifact.create(inflaterStatsLogger, prevInflateParent));
         }
     }
 

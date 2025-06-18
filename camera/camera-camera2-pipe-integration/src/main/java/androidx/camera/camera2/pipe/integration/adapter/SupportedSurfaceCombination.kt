@@ -47,9 +47,9 @@ import androidx.camera.camera2.pipe.integration.internal.DynamicRangeResolver
 import androidx.camera.camera2.pipe.integration.internal.HighSpeedResolver
 import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery
-import androidx.camera.core.featurecombination.impl.FeatureCombinationQuery.Companion.createSessionConfigBuilder
-import androidx.camera.core.featurecombination.impl.feature.FpsRangeFeature
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery.Companion.createSessionConfigBuilder
+import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.EncoderProfilesProvider
@@ -333,12 +333,12 @@ public class SupportedSurfaceCombination(
         size: Size,
     ): SurfaceConfig {
         return SurfaceConfig.transformSurfaceConfig(
-            cameraMode,
-            imageFormat,
-            size,
-            getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+            imageFormat = imageFormat,
+            size = size,
+            surfaceSizeDefinition = getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+            cameraMode = cameraMode,
             // FEATURE_COMBINATION_TABLE N/A for the code flows leading to this call
-            CAPTURE_SESSION_TABLES,
+            configSource = CAPTURE_SESSION_TABLES,
         )
     }
 
@@ -352,7 +352,7 @@ public class SupportedSurfaceCombination(
      * @param isPreviewStabilizationOn whether the preview stabilization is enabled.
      * @param hasVideoCapture whether the use cases has video capture.
      * @param isFeatureComboInvocation whether the code flow involves CameraX feature combo API
-     *   (e.g. [androidx.camera.core.SessionConfig.requiredFeatures]).
+     *   (e.g. [androidx.camera.core.SessionConfig.requiredFeatureGroup]).
      * @param findMaxSupportedFrameRate whether to find the max supported frame rate. If this is
      *   true, the target frame rate settings will be ignored. If false, the returned value of
      *   [SurfaceStreamSpecQueryResult.maxSupportedFrameRate] is undetermined.
@@ -507,8 +507,25 @@ public class SupportedSurfaceCombination(
                     findMaxSupportedFrameRate,
                 )
             WITH_FEATURE_COMBO -> {
+                // Use FpsRangeFeature.DEFAULT_FPS_RANGE when Camera2 FCQ checking is required
+                val targetFpsRange =
+                    if (
+                        featureSettings.isFeatureComboInvocation &&
+                            featureSettings.targetFpsRange === FRAME_RATE_RANGE_UNSPECIFIED
+                    ) {
+                        if (featureSettings.requiresFeatureComboQuery) {
+                            FpsRangeFeature.DEFAULT_FPS_RANGE
+                        } else {
+                            featureSettings.targetFpsRange
+                        }
+                    } else {
+                        featureSettings.targetFpsRange
+                    }
+
                 resolveSpecsBySettings(
-                    featureSettings.copy(requiresFeatureComboQuery = true).validateSelf(),
+                    featureSettings
+                        .copy(requiresFeatureComboQuery = true, targetFpsRange = targetFpsRange)
+                        .validateSelf(),
                     attachedSurfaces,
                     filteredNewUseCaseConfigsSupportedSizeMap,
                     newUseCaseConfigs,
@@ -580,7 +597,7 @@ public class SupportedSurfaceCombination(
             ) {
                 "No supported surface combination is found for camera device - Id : $cameraId. " +
                     "May be attempting to bind too many use cases. Existing surfaces: " +
-                    "$attachedSurfaces. New configs: $newUseCaseConfigs. Feature settings: " +
+                    "$attachedSurfaces. New configs: $newUseCaseConfigs. GroupableFeature settings: " +
                     "$featureSettings."
             }
         }
@@ -770,7 +787,7 @@ public class SupportedSurfaceCombination(
         }
 
         require(!(cameraMode != CameraMode.DEFAULT && isFeatureComboInvocation)) {
-            "Camera device Id is $cameraId. Feature combination is not " +
+            "Camera device Id is $cameraId. feature combination is not " +
                 "currently supported in ${CameraMode.toLabelString(cameraMode)} camera mode."
         }
 
@@ -829,12 +846,12 @@ public class SupportedSurfaceCombination(
             val imageFormat = useCaseConfig.inputFormat
             surfaceConfigs.add(
                 SurfaceConfig.transformSurfaceConfig(
-                    featureSettings.cameraMode,
-                    imageFormat,
-                    minSize,
-                    getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                    imageFormat = imageFormat,
+                    size = minSize,
+                    surfaceSizeDefinition = getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                    cameraMode = featureSettings.cameraMode,
                     // FEATURE_COMBINATION_TABLE not needed for the code flows leading to this call
-                    CAPTURE_SESSION_TABLES,
+                    configSource = CAPTURE_SESSION_TABLES,
                 )
             )
         }
@@ -1085,15 +1102,16 @@ public class SupportedSurfaceCombination(
     ) {
         val configSize =
             SurfaceConfig.transformSurfaceConfig(
-                    featureSettings.cameraMode,
-                    imageFormat,
-                    size,
-                    getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
-                    if (featureSettings.requiresFeatureComboQuery) {
-                        FEATURE_COMBINATION_TABLE
-                    } else {
-                        CAPTURE_SESSION_TABLES
-                    },
+                    imageFormat = imageFormat,
+                    size = size,
+                    surfaceSizeDefinition = getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                    cameraMode = featureSettings.cameraMode,
+                    configSource =
+                        if (featureSettings.requiresFeatureComboQuery) {
+                            FEATURE_COMBINATION_TABLE
+                        } else {
+                            CAPTURE_SESSION_TABLES
+                        },
                 )
                 .configSize
 
@@ -1109,7 +1127,8 @@ public class SupportedSurfaceCombination(
             }
 
         // For feature combination, target FPS range must be strictly supported, so we can filter
-        // out unsupported sizes earlier. Feature combination may also have some output sizes
+        // out unsupported sizes earlier. Feature combination may also have some output
+        // sizes
         // mapping to ConfigSize.NOT_SUPPORT, those can be filtered out earlier as well.
         if (
             featureSettings.isFeatureComboInvocation &&
@@ -1329,16 +1348,16 @@ public class SupportedSurfaceCombination(
     ): Boolean {
         var isConfigFrameRateAcceptable = true
         if (targetFpsRange != FRAME_RATE_RANGE_UNSPECIFIED) {
-            // TODO: b/402372530 - currentConfigFrameRateCeiling < targetFpsRange.getLower()
-            //  means that 'targetFpsRange.getLower() < currentConfigFrameRateCeiling  < upper'
-            //  is also acceptable i.e. partially supporting a target FPS range is acceptable.
-            //  However, for feature combo cases, we should strictly maintain the target FPS
-            //  range being fully supported. It doesn't need to be handled right now though
-            //  since feature combo API supports lower == upper case (i.e. FPS_60) only right
-            //  now.
+            // TODO: b/402372530 - currentConfigFrameRateCeiling < targetFpsRange.getUpper() to
+            //  return false means that there should still be other better choice because
+            //  currentConfigFrameRateCeiling is still smaller than both maxSupportedFps and
+            //  targetFpsRange.getUpper(). However, for feature combo cases, we should strictly
+            //  maintain the target FPS range being fully supported. It doesn't need to be handled
+            //  right now though since feature combo API supports lower == upper case (i.e. FPS_60)
+            //  only right now.
             if (
-                existingSurfaceFrameRateCeiling > currentConfigFrameRateCeiling &&
-                    currentConfigFrameRateCeiling < targetFpsRange.lower
+                currentConfigFrameRateCeiling < existingSurfaceFrameRateCeiling &&
+                    currentConfigFrameRateCeiling < targetFpsRange.upper
             ) {
                 // if the max fps before adding new use cases supports our target fps range
                 // BUT the max fps of the new configuration is below
@@ -1445,15 +1464,16 @@ public class SupportedSurfaceCombination(
             // add new use case/size config to list of surfaces
             val surfaceConfig =
                 SurfaceConfig.transformSurfaceConfig(
-                    cameraMode,
-                    imageFormat,
-                    size,
-                    getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
-                    if (checkViaFeatureComboQuery) {
-                        FEATURE_COMBINATION_TABLE
-                    } else {
-                        CAPTURE_SESSION_TABLES
-                    },
+                    imageFormat = imageFormat,
+                    size = size,
+                    surfaceSizeDefinition = getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
+                    cameraMode = cameraMode,
+                    configSource =
+                        if (checkViaFeatureComboQuery) {
+                            FEATURE_COMBINATION_TABLE
+                        } else {
+                            CAPTURE_SESSION_TABLES
+                        },
                 )
             surfaceConfigList.add(surfaceConfig)
             if (surfaceConfigIndexUseCaseConfigMap != null) {

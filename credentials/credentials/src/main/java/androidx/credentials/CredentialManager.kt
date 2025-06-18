@@ -21,9 +21,11 @@ import android.app.PendingIntent
 import android.content.Context
 import android.os.CancellationSignal
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -340,6 +342,48 @@ interface CredentialManager {
         }
 
     /**
+     * Signals a user's credential/credentials state to all credential providers.
+     *
+     * The execution does not invoke any UI but simply informs credential providers about the state
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialRequest],
+     * [SignalCurrentUserDetailsCredentialRequest], [SignalUnknownCredentialStateRequest].
+     *
+     * @param request the request for signaling the credential state
+     * @throws SignalCredentialStateException If the request parsing fails
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    suspend fun signalCredentialState(
+        request: SignalCredentialStateRequest
+    ): SignalCredentialStateResponse = suspendCancellableCoroutine { continuation ->
+        val callback =
+            object :
+                CredentialManagerCallback<
+                    SignalCredentialStateResponse,
+                    SignalCredentialStateException,
+                > {
+                override fun onResult(result: SignalCredentialStateResponse) {
+                    if (continuation.isActive) {
+                        continuation.resume(result)
+                    }
+                }
+
+                override fun onError(e: SignalCredentialStateException) {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(e)
+                    }
+                }
+            }
+
+        signalCredentialStateAsync(
+            request,
+            // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+            // handle getting to the right thread or pool via the ContinuationInterceptor.
+            Runnable::run,
+            callback,
+        )
+    }
+
+    /**
      * Requests a credential from the user.
      *
      * This API uses callbacks instead of Kotlin coroutines.
@@ -464,6 +508,27 @@ interface CredentialManager {
         cancellationSignal: CancellationSignal?,
         executor: Executor,
         callback: CredentialManagerCallback<Void?, ClearCredentialException>,
+    )
+
+    /**
+     * Signals a user's credential/credentials state to all credential providers.
+     *
+     * This API uses callbacks instead of Kotlin coroutines.
+     *
+     * The execution does not invoke any UI but simply informs credential providers about the state
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialRequest],
+     * [SignalCurrentUserDetailsCredentialRequest], [SignalUnknownCredentialStateRequest].
+     *
+     * @param request the request for signaling the credential state
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    fun signalCredentialStateAsync(
+        request: SignalCredentialStateRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
     )
 
     /**

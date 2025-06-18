@@ -73,7 +73,6 @@ import java.util.Queue
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.round
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -661,12 +660,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 pageRect.width(),
                 1f,
             )
-        val x = round((pageRect.left + pageRect.width() / 2f) * zoom - (viewportWidth / 2f))
-        val y = round((pageRect.top + pageRect.height() / 2f) * zoom - (viewportHeight / 2f))
+        val x = ((pageRect.left + pageRect.width() / 2f) * zoom - (viewportWidth / 2f)).roundToInt()
+        val y =
+            ((pageRect.top + pageRect.height() / 2f) * zoom - (viewportHeight / 2f)).roundToInt()
 
         // Set zoom to fit the width of the page, then scroll to the center of the page
         this.zoom = zoom
-        scrollTo(x.roundToInt(), y.roundToInt())
+        scrollTo(x, y)
     }
 
     /** Clears the current selection, if one exists. No-op if there is no current [Selection] */
@@ -689,10 +689,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 getVisibleAreaInContentCoords(),
             )
 
-        val x = round((pageRect.left + position.pagePoint.x) * zoom - (viewportWidth / 2f))
-        val y = round((pageRect.top + position.pagePoint.y) * zoom - (viewportHeight / 2f))
+        val x = ((pageRect.left + position.pagePoint.x) * zoom - (viewportWidth / 2f)).roundToInt()
+        val y = ((pageRect.top + position.pagePoint.y) * zoom - (viewportHeight / 2f)).roundToInt()
 
-        scrollTo(x.toInt(), y.toInt())
+        scrollTo(x, y)
     }
 
     override fun dispatchHoverEvent(event: MotionEvent): Boolean {
@@ -1115,8 +1115,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private fun scrollToRestoredPosition(position: PointF, zoom: Float) {
         this.zoom = zoom
-        val scrollX = round(position.x * zoom - viewportWidth / 2f).toInt()
-        val scrollY = round(position.y * zoom - viewportHeight / 2f).toInt()
+        val scrollX = (position.x * zoom - viewportWidth / 2f).roundToInt()
+        val scrollY = (position.y * zoom - viewportHeight / 2f).roundToInt()
         scrollTo(scrollX, scrollY)
         scrollPositionToRestore = null
         zoomToRestore = null

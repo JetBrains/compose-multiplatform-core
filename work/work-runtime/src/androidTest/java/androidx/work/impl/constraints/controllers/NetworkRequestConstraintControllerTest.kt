@@ -99,7 +99,8 @@ class NetworkRequestConstraintControllerTest {
         val currentCapabilities = connectivityManager.getNetworkCapabilities(current)
         return currentCapabilities != null &&
             currentCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) &&
-            currentCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            currentCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            currentCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
     private fun runBlockingWithWifi(
@@ -116,28 +117,28 @@ class NetworkRequestConstraintControllerTest {
     }
 
     private suspend fun toggleWifi(enable: Boolean) {
-        if (enable == isWifiConnected()) {
-            // already enabled / disabled
-            return
-        }
-
         // toggle wifi via adb shell cmd
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
             .executeShellCommand("svc wifi ${if (enable) "enable" else "disable"}")
+
         // wait for toggle
         withTimeoutOrNull(5.seconds) {
             suspendCancellableCoroutine<Unit> { cont ->
                 val callback =
                     object : ConnectivityManager.NetworkCallback() {
                         override fun onAvailable(network: Network) {
-                            if (enable) cont.resume(Unit)
+                            if (enable && cont.isActive) cont.resume(Unit)
                         }
 
                         override fun onLost(network: Network) {
-                            if (!enable) cont.resume(Unit)
+                            if (!enable && cont.isActive) cont.resume(Unit)
                         }
                     }
                 connectivityManager.registerNetworkCallback(createWifiNetworkRequest(), callback)
+                if (enable == isWifiConnected() && cont.isActive) {
+                    // already enabled / disabled
+                    cont.resume(Unit)
+                }
                 cont.invokeOnCancellation {
                     connectivityManager.unregisterNetworkCallback(callback)
                 }
@@ -162,5 +163,6 @@ class NetworkRequestConstraintControllerTest {
         NetworkRequest.Builder()
             .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
             .build()
 }

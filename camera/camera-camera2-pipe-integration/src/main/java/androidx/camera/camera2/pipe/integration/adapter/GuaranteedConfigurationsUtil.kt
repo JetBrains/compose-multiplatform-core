@@ -22,7 +22,6 @@ import android.hardware.camera2.CameraMetadata
 import android.os.Build
 import android.util.Size
 import androidx.annotation.RequiresApi
-import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
@@ -946,11 +945,9 @@ public object GuaranteedConfigurationsUtil {
         // high-speed.
         val surfaceConfig =
             SurfaceConfig.transformSurfaceConfig(
-                CameraMode.DEFAULT,
                 ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
                 maxSupportedSize,
                 surfaceSizeDefinition,
-                SurfaceConfig.ConfigSource.CAPTURE_SESSION_TABLES,
             )
 
         // Create high-speed supported combinations based on the constraints:

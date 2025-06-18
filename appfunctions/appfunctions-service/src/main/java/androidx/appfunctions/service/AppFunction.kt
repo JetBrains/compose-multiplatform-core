@@ -20,8 +20,8 @@ package androidx.appfunctions.service
  * Marks a function within a class as callable by other applications.
  *
  * The `@AppFunction` annotation signals that the annotated function can be invoked by external
- * applications with proper permission (e.g., an assistant). For instance, a note-taking app could
- * expose a function allowing an assistant to create notes based on user commands.
+ * applications with proper permission (e.g., an agent). For instance, a note-taking app could
+ * expose a function allowing an agent to create notes based on user commands.
  *
  * The enclosing class of the function would be instantiated whenever an AppFunction within the
  * class is called. If the enclosing class requires constructor parameters or custom instantiation,
@@ -60,7 +60,14 @@ package androidx.appfunctions.service
  * thread. For operations that may take a significant amount of time, it is crucial to use a
  * coroutine dispatcher that runs on a background thread.
  *
+ * In exceptional cases, implementations should throw an appropriate
+ * [androidx.appfunctions.AppFunctionException]. This allows the agent to better understand the
+ * cause of the failure. For example, if an input argument is invalid, throw an
+ * [androidx.appfunctions.AppFunctionInvalidArgumentException] with a detailed message explaining
+ * why it is invalid.
+ *
  * @see AppFunctionConfiguration.Builder.addEnclosingClassFactory
+ * @see androidx.appfunctions.AppFunctionException
  */
 // Use BINARY here so that the annotation is kept around at the aggregation stage.
 @Retention(AnnotationRetention.BINARY)

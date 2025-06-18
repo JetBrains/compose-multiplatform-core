@@ -23,7 +23,6 @@ import android.os.Build;
 import android.util.Size;
 
 import androidx.annotation.RequiresApi;
-import androidx.camera.core.impl.CameraMode;
 import androidx.camera.core.impl.ImageFormatConstants;
 import androidx.camera.core.impl.SurfaceCombination;
 import androidx.camera.core.impl.SurfaceConfig;
@@ -990,9 +989,10 @@ public final class GuaranteedConfigurationsUtil {
         // Find the closest SurfaceConfig that can contain the max supported size. Ultimately,
         // the target resolution still needs to be verified by the StreamConfigurationMap API for
         // high-speed.
-        SurfaceConfig surfaceConfig = SurfaceConfig.transformSurfaceConfig(CameraMode.DEFAULT,
-                ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE, maxSupportedSize,
-                surfaceSizeDefinition, SurfaceConfig.ConfigSource.CAPTURE_SESSION_TABLES);
+        SurfaceConfig surfaceConfig = SurfaceConfig.transformSurfaceConfig(
+                ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+                maxSupportedSize,
+                surfaceSizeDefinition);
 
         // Create high-speed supported combinations based on the constraints:
         // - Only support preview and/or video surface.

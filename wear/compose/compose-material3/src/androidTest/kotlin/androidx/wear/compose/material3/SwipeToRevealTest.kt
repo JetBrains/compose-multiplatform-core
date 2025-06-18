@@ -984,20 +984,24 @@ class SwipeToRevealTest {
         var density = 0f
         rule.setContent {
             with(LocalDensity.current) { density = this.density }
-            revealState = rememberRevealState(Covered)
-            SwipeToRevealWithDefaults(
-                modifier = Modifier.testTag(TEST_TAG),
-                onSwipePrimaryAction = { onSwipePrimaryAction = true },
-                primaryAction = {
-                    DefaultPrimaryActionButton(
-                        modifier = Modifier.testTag(PRIMARY_ACTION_TAG),
-                        onClick = { onPrimaryActionClick = true },
-                    )
-                },
-                revealState = revealState,
-            )
+            ScreenConfiguration(screenSizeDp = LARGE_SCREEN_WIDTH_DP) {
+                revealState = rememberRevealState(Covered)
+                SwipeToRevealWithDefaults(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    onSwipePrimaryAction = { onSwipePrimaryAction = true },
+                    primaryAction = {
+                        DefaultPrimaryActionButton(
+                            modifier = Modifier.testTag(PRIMARY_ACTION_TAG),
+                            onClick = { onPrimaryActionClick = true },
+                        )
+                    },
+                    revealState = revealState,
+                )
+            }
         }
+
         rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeLeftToRevealing(density) }
+        rule.waitForIdle()
         rule.onNodeWithTag(PRIMARY_ACTION_TAG).performClick()
 
         rule.runOnIdle {
@@ -1127,6 +1131,8 @@ class SwipeToRevealTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
             swipeLeftToRevealing(density, DoubleActionAnchorWidth)
         }
+
+        rule.waitForIdle()
 
         rule.runOnIdle { assertEquals(RightRevealing, revealState.currentValue) }
 
@@ -1444,16 +1450,16 @@ class SwipeToRevealTest {
         density: Float,
         anchorWidth: Dp = SingleActionAnchorWidth,
     ) {
-        val singleActionAnchorWidthPx = anchorWidth.value * density
-        swipeLeft(startX = right, endX = right - (singleActionAnchorWidthPx * 0.75f))
+        val widthPx = anchorWidth.value * density
+        swipeLeft(startX = right, endX = right - widthPx)
     }
 
     private fun TouchInjectionScope.swipeRightToRevealing(
         density: Float,
         anchorWidth: Dp = SingleActionAnchorWidth,
     ) {
-        val singleActionAnchorWidthPx = anchorWidth.value * density
-        swipeRight(startX = left, endX = left + (singleActionAnchorWidthPx * 0.75f))
+        val widthPx = anchorWidth.value * density
+        swipeRight(startX = left, endX = left + widthPx)
     }
 
     companion object {

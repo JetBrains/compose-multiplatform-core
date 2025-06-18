@@ -22,7 +22,6 @@ import android.annotation.SuppressLint;
 import android.content.res.Resources;
 import android.util.TypedValue;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.TypedValueCompat;
 import androidx.xr.runtime.internal.CameraViewActivityPose;
 import androidx.xr.runtime.internal.Dimensions;
@@ -35,6 +34,8 @@ import androidx.xr.runtime.math.Vector3;
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -90,9 +91,8 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
         return radiusPixels / getDefaultPixelDensity();
     }
 
-    @NonNull
     @Override
-    public Dimensions getSize() {
+    public @NonNull Dimensions getSize() {
         float pixelDensity = getDefaultPixelDensity();
         return new Dimensions(
                 mPixelDimensions.width / pixelDensity, mPixelDimensions.height / pixelDensity, 0);
@@ -107,9 +107,8 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
                         (int) (dimensions.height * pixelDensity)));
     }
 
-    @NonNull
     @Override
-    public PixelDimensions getSizeInPixels() {
+    public @NonNull PixelDimensions getSizeInPixels() {
         return mPixelDimensions;
     }
 
@@ -118,9 +117,8 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
         mPixelDimensions = dimensions;
     }
 
-    @NonNull
     @Override
-    public PerceivedResolutionResult getPerceivedResolution() {
+    public @NonNull PerceivedResolutionResult getPerceivedResolution() {
         // Get the Camera View with which to compute Perceived Resolution
         CameraViewActivityPose cameraView =
                 PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);

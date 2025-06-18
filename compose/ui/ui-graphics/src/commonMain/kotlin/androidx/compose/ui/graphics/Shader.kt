@@ -25,12 +25,28 @@ import androidx.compose.ui.geometry.Offset
 expect class Shader
 
 /**
- * Class that applies the transform matrix to the corresponding Shader. This is useful for
- * encapsulating platform dependencies to convert between the Compose and platform specific Matrix
+ * Class that applies the transform matrix to the corresponding [Shader]. This is useful for
+ * encapsulating platform dependencies to convert between the Compose and platform specific [Matrix]
  * classes in a manner that can be cached and reused for efficiency
  */
 internal expect class TransformShader() {
 
+    /**
+     * The [Shader] to which transformations will be applied.
+     *
+     * When set, this [Shader] becomes the base for subsequent transformations using [transform].
+     * When get, it returns the [Shader] instance that incorporates any transformations applied via
+     * the [transform] method or implicitly due to previous state.
+     *
+     * Note: The `[Shader]` instance returned by this property may differ from the instance
+     * initially assigned. This can occur immediately after setting the `shader` property (due to
+     * internal logic for previously applied transforms) or after calling `transform(matrix)`. This
+     * is because applying a transform matrix recreates the underlying native shader object.
+     * Android's implementation encapsulates this native object within a managed object, whereas
+     * non-Android implementations bind more directly (1-to-1). As a result, the reference to the
+     * `[Shader]` object can be updated, meaning this property might not return the original
+     * instance.
+     */
     var shader: Shader?
 
     /** Sets the transform to [matrix]. */

@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe
 
 import androidx.annotation.RestrictTo
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -47,6 +48,9 @@ public interface FrameBuffer : AutoCloseable {
 
     /** The current number of frame references held by the buffer. */
     public val size: StateFlow<Int>
+
+    /** The flow of [FrameReference]s added to the buffer. */
+    public val frameFlow: SharedFlow<FrameReference>
 
     /**
      * Removes the first frame reference in the buffer or null if the buffer is empty.

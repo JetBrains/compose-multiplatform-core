@@ -26,7 +26,7 @@ import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
@@ -93,9 +93,8 @@ class AlertDialogTest {
         val dialogWidthCh = Channel<Int>(Channel.CONFLATED)
         var screenWidth by mutableStateOf(0)
         rule.setContent {
-            val context = LocalContext.current
             val density = LocalDensity.current
-            val resScreenWidth = context.resources.configuration.screenWidthDp
+            val resScreenWidth = LocalConfiguration.current.screenWidthDp
             with(density) { screenWidth = resScreenWidth.dp.roundToPx() }
 
             AlertDialog(

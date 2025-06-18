@@ -199,7 +199,7 @@ internal class PaginationModel(
     fun getPageLocation(pageNum: Int, viewport: RectF): RectF {
         val page = pages[pageNum]
         var left = 0f
-        var right: Float = maxWidth.toFloat()
+        var right: Float = maxWidth
         val top = pagePositions[pageNum]
         val bottom = top + page.y
         // this page is smaller than the view's width, it may slide left or right.

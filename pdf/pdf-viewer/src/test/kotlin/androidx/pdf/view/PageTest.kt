@@ -171,7 +171,7 @@ class PageTest {
         val expectedHighlightLoc =
             RectF().apply {
                 set(highlight.area.pageRect)
-                offset(leftEdgeInView.toFloat(), topEdgeInView.toFloat())
+                offset(leftEdgeInView, topEdgeInView)
             }
         verify(canvasSpy).drawRect(eq(expectedHighlightLoc), argThat { color == highlight.color })
 

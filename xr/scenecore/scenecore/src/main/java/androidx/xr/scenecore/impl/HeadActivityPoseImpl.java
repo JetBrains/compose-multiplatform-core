@@ -16,8 +16,6 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.HeadActivityPose;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.math.Pose;
@@ -26,6 +24,9 @@ import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An ActivityPose representing the head of the user. This can be used to determine the location of
@@ -52,22 +53,19 @@ class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose 
         return mOpenXrActivityPoseHelper.getPoseInActivitySpace(getPoseInOpenXrReferenceSpace());
     }
 
-    @NonNull
     @Override
-    public Pose getActivitySpacePose() {
+    public @NonNull Pose getActivitySpacePose() {
         return mOpenXrActivityPoseHelper.getActivitySpacePose(getPoseInOpenXrReferenceSpace());
     }
 
-    @NonNull
     @Override
-    public Vector3 getActivitySpaceScale() {
+    public @NonNull Vector3 getActivitySpaceScale() {
         // This WorldPose is assumed to always have a scale of 1.0f in the OpenXR reference space.
         return mOpenXrActivityPoseHelper.getActivitySpaceScale(new Vector3(1f, 1f, 1f));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<HitTestResult> hitTest(
+    public @NonNull ListenableFuture<HitTestResult> hitTest(
             @NonNull Vector3 origin,
             @NonNull Vector3 direction,
             @HitTestFilterValue int hitTestFilter) {
@@ -75,8 +73,7 @@ class HeadActivityPoseImpl extends BaseActivityPose implements HeadActivityPose 
     }
 
     /** Gets the pose in the OpenXR reference space. Can be null if it is not yet ready. */
-    @Nullable
-    public Pose getPoseInOpenXrReferenceSpace() {
+    public @Nullable Pose getPoseInOpenXrReferenceSpace() {
         final Session session = mPerceptionLibrary.getSession();
         if (session == null) {
             return mLastOpenXrPose;

@@ -22,8 +22,6 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.CameraViewActivityPose;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.PixelDimensions;
@@ -35,6 +33,9 @@ import androidx.xr.scenecore.impl.perception.ViewProjection;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A ActivityPose representing a user's camera. This can be used to determine the location and field
@@ -65,30 +66,26 @@ final class CameraViewActivityPoseImpl extends BaseActivityPose implements Camer
         return mOpenXrActivityPoseHelper.getPoseInActivitySpace(getPoseInOpenXrReferenceSpace());
     }
 
-    @NonNull
     @Override
-    public Pose getActivitySpacePose() {
+    public @NonNull Pose getActivitySpacePose() {
         return mOpenXrActivityPoseHelper.getActivitySpacePose(getPoseInOpenXrReferenceSpace());
     }
 
-    @NonNull
     @Override
-    public Vector3 getActivitySpaceScale() {
+    public @NonNull Vector3 getActivitySpaceScale() {
         // This WorldPose is assumed to always have a scale of 1.0f in the OpenXR reference space.
         return mOpenXrActivityPoseHelper.getActivitySpaceScale(new Vector3(1f, 1f, 1f));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<HitTestResult> hitTest(
+    public @NonNull ListenableFuture<HitTestResult> hitTest(
             @NonNull Vector3 origin,
             @NonNull Vector3 direction,
             @HitTestFilterValue int hitTestFilter) {
         return mActivitySpace.hitTestRelativeToActivityPose(origin, direction, hitTestFilter, this);
     }
 
-    @Nullable
-    private ViewProjection getViewProjection() {
+    private @Nullable ViewProjection getViewProjection() {
         final Session session = mPerceptionLibrary.getSession();
         if (session == null) {
             Log.w(TAG, "Cannot retrieve the camera pose with a null perception session.");
@@ -110,8 +107,7 @@ final class CameraViewActivityPoseImpl extends BaseActivityPose implements Camer
     }
 
     /** Gets the pose in the OpenXR reference space. Can be null if it is not yet ready. */
-    @Nullable
-    public Pose getPoseInOpenXrReferenceSpace() {
+    public @Nullable Pose getPoseInOpenXrReferenceSpace() {
         ViewProjection viewProjection = getViewProjection();
         if (viewProjection != null) {
             mLastOpenXrPose = RuntimeUtils.fromPerceptionPose(viewProjection.getPose());
@@ -125,9 +121,8 @@ final class CameraViewActivityPoseImpl extends BaseActivityPose implements Camer
         return mCameraType;
     }
 
-    @NonNull
     @Override
-    public Fov getFov() {
+    public @NonNull Fov getFov() {
         ViewProjection viewProjection = getViewProjection();
         if (viewProjection == null) {
             return new Fov(0, 0, 0, 0);
@@ -135,9 +130,8 @@ final class CameraViewActivityPoseImpl extends BaseActivityPose implements Camer
         return RuntimeUtils.fovFromPerceptionFov(viewProjection.getFov());
     }
 
-    @NonNull
     @Override
-    public PixelDimensions getDisplayResolutionInPixels() {
+    public @NonNull PixelDimensions getDisplayResolutionInPixels() {
         Activity activity = mPerceptionLibrary.getActivity();
         WindowManager windowManager = activity.getSystemService(WindowManager.class);
         if (windowManager == null) {

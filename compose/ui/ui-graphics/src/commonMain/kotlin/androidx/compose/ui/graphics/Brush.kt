@@ -733,6 +733,8 @@ abstract class ShaderBrush() : Brush() {
             }
         }
         if (p.color != Color.Black) p.color = Color.Black
+        // Note that [transformShader.shader] might not be equal to returned object from
+        // [createShader] function.
         if (p.shader != transformShader?.shader) p.shader = transformShader?.shader
         if (p.alpha != alpha) p.alpha = alpha
     }

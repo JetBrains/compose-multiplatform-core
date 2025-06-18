@@ -18,10 +18,11 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.InputEventListener;
 import androidx.xr.runtime.internal.InteractableComponent;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 

@@ -16,10 +16,10 @@
 
 package androidx.camera.lifecycle;
 
-import static androidx.camera.core.featurecombination.Feature.FPS_60;
-import static androidx.camera.core.featurecombination.Feature.HDR_HLG10;
-import static androidx.camera.core.featurecombination.Feature.IMAGE_ULTRA_HDR;
-import static androidx.camera.core.featurecombination.Feature.PREVIEW_STABILIZATION;
+import static androidx.camera.core.featuregroup.GroupableFeature.FPS_60;
+import static androidx.camera.core.featuregroup.GroupableFeature.HDR_HLG10;
+import static androidx.camera.core.featuregroup.GroupableFeature.IMAGE_ULTRA_HDR;
+import static androidx.camera.core.featuregroup.GroupableFeature.PREVIEW_STABILIZATION;
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -33,13 +33,14 @@ import android.view.Surface;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.CameraUseCaseAdapterProvider;
 import androidx.camera.core.CompositionSettings;
+import androidx.camera.core.DynamicRange;
 import androidx.camera.core.LegacySessionConfig;
 import androidx.camera.core.Preview;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator;
-import androidx.camera.core.featurecombination.Feature;
+import androidx.camera.core.featuregroup.GroupableFeature;
 import androidx.camera.core.impl.AdapterCameraInfo;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.Config;
@@ -308,12 +309,14 @@ public class LifecycleCameraTest {
     public void bindSessionConfig_withFeatures_featuresSetToAttachedUseCases() {
         mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
         mLifecycleOwner.start();
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
+                Collections.singleton(DynamicRange.HLG_10_BIT));
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =
                 new SessionConfig.Builder(Collections.singletonList(preview))
-                        .addRequiredFeatures(HDR_HLG10)
-                        .setPreferredFeatures(FPS_60, PREVIEW_STABILIZATION)
+                        .setRequiredFeatureGroup(HDR_HLG10)
+                        .setPreferredFeatureGroup(FPS_60, PREVIEW_STABILIZATION)
                         .build();
         Threads.runOnMainSync(() -> {
             try {
@@ -324,7 +327,7 @@ public class LifecycleCameraTest {
         });
 
         // All features are added since the fake surface manager supports all combinations.
-        assertThat(preview.getFeatureCombination()).containsExactly(HDR_HLG10, FPS_60,
+        assertThat(preview.getFeatureGroup()).containsExactly(HDR_HLG10, FPS_60,
                 PREVIEW_STABILIZATION);
     }
 
@@ -334,12 +337,14 @@ public class LifecycleCameraTest {
         //   features while Ultra HDR is unsupported by the default behavior of fake surface manager
         mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
         mLifecycleOwner.start();
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
+                Collections.singleton(DynamicRange.HLG_10_BIT));
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =
                 new SessionConfig.Builder(Collections.singletonList(preview))
-                        .addRequiredFeatures(HDR_HLG10)
-                        .setPreferredFeatures(FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR)
+                        .setRequiredFeatureGroup(HDR_HLG10)
+                        .setPreferredFeatureGroup(FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR)
                         .build();
 
         // Act
@@ -352,7 +357,7 @@ public class LifecycleCameraTest {
         });
 
         // Assert: Ultra HDR is not added while the other features are added.
-        assertThat(preview.getFeatureCombination()).containsExactly(HDR_HLG10, FPS_60,
+        assertThat(preview.getFeatureGroup()).containsExactly(HDR_HLG10, FPS_60,
                 PREVIEW_STABILIZATION);
     }
 
@@ -363,16 +368,18 @@ public class LifecycleCameraTest {
         //   features while Ultra HDR is unsupported by the default behavior of fake surface manager
         mLifecycleCamera = new LifecycleCamera(mLifecycleOwner, mCameraUseCaseAdapter);
         mLifecycleOwner.start();
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
+                Collections.singleton(DynamicRange.HLG_10_BIT));
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =
                 new SessionConfig.Builder(Collections.singletonList(preview))
-                        .addRequiredFeatures(HDR_HLG10)
-                        .setPreferredFeatures(FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR)
+                        .setRequiredFeatureGroup(HDR_HLG10)
+                        .setPreferredFeatureGroup(FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR)
                         .build();
 
         CountDownLatch latch = new CountDownLatch(1);
-        Set<Feature> selectedFeatures = new HashSet<>();
+        Set<GroupableFeature> selectedFeatures = new HashSet<>();
 
         sessionConfig.setFeatureSelectionListener(directExecutor(),
                 features -> {
@@ -405,7 +412,7 @@ public class LifecycleCameraTest {
                 new SessionConfig.Builder(Collections.singletonList(preview)).build();
 
         CountDownLatch latch = new CountDownLatch(1);
-        Set<Feature> selectedFeatures = new HashSet<>();
+        Set<GroupableFeature> selectedFeatures = new HashSet<>();
 
         sessionConfig.setFeatureSelectionListener(directExecutor(),
                 features -> {
@@ -420,7 +427,7 @@ public class LifecycleCameraTest {
             throw new RuntimeException(e);
         }
 
-        // Assert: Feature selection listener is invoked with an empty set.
+        // Assert: GroupableFeature selection listener is invoked with an empty set.
         assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
         assertThat(selectedFeatures).isEmpty();
     }

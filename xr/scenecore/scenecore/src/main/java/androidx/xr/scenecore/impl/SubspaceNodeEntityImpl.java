@@ -16,7 +16,6 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Space;
@@ -29,7 +28,7 @@ import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -115,7 +114,7 @@ public final class SubspaceNodeEntityImpl extends AndroidXrEntity implements Sub
     }
 
     @Override
-    public @NotNull Dimensions getSize() {
+    public @NonNull Dimensions getSize() {
         return mSize;
     }
 

@@ -301,7 +301,7 @@ suspend fun AwaitPointerEventScope.awaitFirstDown(
  */
 internal expect fun firstDownRefersToPrimaryMouseButtonOnly(): Boolean
 
-private fun PointerEvent.isChangedToDown(requireUnconsumed: Boolean): Boolean {
+internal fun PointerEvent.isChangedToDown(requireUnconsumed: Boolean): Boolean {
     val onlyPrimaryButtonCausesDown =
         firstDownRefersToPrimaryMouseButtonOnly() &&
             changes.fastAll { it.type == PointerType.Mouse }

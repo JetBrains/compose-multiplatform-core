@@ -213,6 +213,17 @@ internal constructor(
     internal fun commitEdit(newValue: TextFieldBuffer) {
         val textChanged = newValue.changes.changeCount > 0
         val selectionChanged = newValue.selection != mainBuffer.selection
+
+        // TODO(135556699): Remove this when [TextFieldBuffer.addStyle] is supported by all
+        //  TextFieldBuffer instances when multi styled editing is implemented.
+        // Context; b/424167352
+        if (!textChanged && !selectionChanged) {
+            // Probably the Material layer created a TextFieldBuffer specifically to run
+            // OutputTransformation on. We should leave this TextFieldBuffer in a way that
+            // OutputTransformation can call `addStyle` on it.
+            newValue.canCallAddStyle = true
+        }
+
         if (textChanged) {
             // clear the undo history after a programmatic edit if the text content has changed
             textUndoManager.clearHistory()

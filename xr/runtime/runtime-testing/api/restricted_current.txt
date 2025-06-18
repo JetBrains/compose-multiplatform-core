@@ -11,11 +11,14 @@ package androidx.xr.runtime.testing {
     ctor public FakeActivityPose();
     method public androidx.xr.runtime.math.Pose getActivitySpacePose();
     method public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
+    method public final androidx.xr.runtime.internal.HitTestResult getHitTestResult();
     method public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.HitTestResult> hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue int hitTestFilter);
+    method public final void setHitTestResult(androidx.xr.runtime.internal.HitTestResult);
     method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.internal.ActivityPose destination);
     property public androidx.xr.runtime.math.Pose activitySpacePose;
     property public androidx.xr.runtime.math.Vector3 activitySpaceScale;
+    property public final androidx.xr.runtime.internal.HitTestResult hitTestResult;
     property public androidx.xr.runtime.math.Vector3 worldSpaceScale;
   }
 
@@ -49,8 +52,11 @@ package androidx.xr.runtime.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeComponent implements androidx.xr.runtime.internal.Component {
     ctor public FakeComponent();
+    method public final boolean getCanBeAttached();
     method public boolean onAttach(androidx.xr.runtime.internal.Entity entity);
     method public void onDetach(androidx.xr.runtime.internal.Entity entity);
+    method public final void setCanBeAttached(boolean);
+    property public final boolean canBeAttached;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeEntity extends androidx.xr.runtime.testing.FakeActivityPose implements androidx.xr.runtime.internal.Entity {
@@ -65,6 +71,7 @@ package androidx.xr.runtime.testing {
     method public java.util.List<androidx.xr.runtime.internal.Component> getComponents();
     method public <T extends androidx.xr.runtime.internal.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
     method public String getContentDescription();
+    method public final java.util.Map<androidx.xr.runtime.internal.InputEventListener,java.util.concurrent.Executor> getInputEventListenerMap();
     method public androidx.xr.runtime.internal.Entity? getParent();
     method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.runtime.internal.SpaceValue int relativeTo);
     method public androidx.xr.runtime.math.Vector3 getScale(@androidx.xr.runtime.internal.SpaceValue int relativeTo);
@@ -80,6 +87,7 @@ package androidx.xr.runtime.testing {
     method public void setScale(androidx.xr.runtime.math.Vector3 scale, @androidx.xr.runtime.internal.SpaceValue int relativeTo);
     property public java.util.List<androidx.xr.runtime.internal.Entity> children;
     property public String contentDescription;
+    property public final java.util.Map<androidx.xr.runtime.internal.InputEventListener,java.util.concurrent.Executor> inputEventListenerMap;
     property public androidx.xr.runtime.internal.Entity? parent;
   }
 
@@ -248,7 +256,7 @@ package androidx.xr.runtime.testing {
   }
 
   public static final class FakeLifecycleManager.Companion {
-    property public java.util.List<? extends java.lang.String> TestPermissions;
+    property public java.util.List<java.lang.String> TestPermissions;
   }
 
   public enum FakeLifecycleManager.State {
@@ -602,6 +610,7 @@ package androidx.xr.runtime.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeSystemSpaceEntity extends androidx.xr.runtime.testing.FakeEntity implements androidx.xr.runtime.internal.SystemSpaceEntity {
     ctor public FakeSystemSpaceEntity();
+    method public final void onSpaceUpdated();
     method public void setOnSpaceUpdatedListener(Runnable? listener, java.util.concurrent.Executor? executor);
   }
 

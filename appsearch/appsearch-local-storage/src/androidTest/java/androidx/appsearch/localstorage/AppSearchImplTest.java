@@ -890,6 +890,193 @@ public class AppSearchImplTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
+    public void testReset_withBlob() throws Exception {
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+                        new LocalStorageIcingOptionsConfig()),
+                /*initStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
+                /*icingSearchEngine=*/ null,
+                ALWAYS_OPTIMIZE);
+        File blobFilesDir = new File(mAppSearchDir, "blob_dir/blob_files");
+
+        // Insert schema
+        List<AppSearchSchema> schemas = ImmutableList.of(
+                new AppSearchSchema.Builder("Type1").build(),
+                new AppSearchSchema.Builder("Type2").build());
+        InternalSetSchemaResponse internalSetSchemaResponse = mAppSearchImpl.setSchema(
+                mContext.getPackageName(),
+                "database1",
+                schemas,
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*forceOverride=*/ false,
+                /*version=*/ 0,
+                /* setSchemaStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // Insert a valid doc
+        GenericDocument validDoc =
+                new GenericDocument.Builder<>("namespace1", "id1", "Type1").build();
+        mAppSearchImpl.putDocument(
+                mContext.getPackageName(),
+                "database1",
+                validDoc,
+                /*sendChangeNotifications=*/ false,
+                /*logger=*/null);
+        // Query it via global query. We use the same code again later so this is to make sure we
+        // have our global query configured right.
+        SearchResultPage results = mAppSearchImpl.globalQuery(
+                /*queryExpression=*/ "",
+                new SearchSpec.Builder().addFilterSchemas("Type1").build(),
+                mSelfCallerAccess,
+                /*logger=*/ null);
+        assertThat(results.getResults()).hasSize(1);
+        assertThat(results.getResults().get(0).getGenericDocument()).isEqualTo(validDoc);
+
+        // Put a blob
+        byte[] blobData = generateRandomBytes(20 * 1024); // 20 KiB
+        byte[] blobDigest = calculateDigest(blobData);
+        AppSearchBlobHandle blobHandle = AppSearchBlobHandle.createWithSha256(
+                blobDigest, mContext.getPackageName(), "database1", "namespace1");
+        try (ParcelFileDescriptor writePfd = mAppSearchImpl.openWriteBlob(
+                mContext.getPackageName(), "database1", blobHandle);
+                OutputStream outputStream = new ParcelFileDescriptor
+                        .AutoCloseOutputStream(writePfd)) {
+            outputStream.write(blobData);
+            outputStream.flush();
+        }
+        // Commit and read the blob.
+        mAppSearchImpl.commitBlob(mContext.getPackageName(), "database1", blobHandle);
+        byte[] readBytes = new byte[20 * 1024];
+        try (ParcelFileDescriptor readPfd = mAppSearchImpl.openReadBlob(
+                mContext.getPackageName(), "database1", blobHandle);
+                InputStream inputStream = new ParcelFileDescriptor.AutoCloseInputStream(readPfd)) {
+            inputStream.read(readBytes);
+        }
+        assertThat(readBytes).isEqualTo(blobData);
+        // Check that the blob file is created by AppSearch.
+        if (Flags.enableAppSearchManageBlobFiles()) {
+            assertThat(blobFilesDir.list()).asList().hasSize(1);
+        }
+
+        // Create a doc with a malformed namespace
+        DocumentProto invalidDoc = DocumentProto.newBuilder()
+                .setNamespace("invalidNamespace")
+                .setUri("id2")
+                .setSchema(mContext.getPackageName() + "$database1/Type1")
+                .build();
+        AppSearchException e = assertThrows(
+                AppSearchException.class,
+                () -> PrefixUtil.getPrefix(invalidDoc.getNamespace()));
+        assertThat(e).hasMessageThat().isEqualTo(
+                "The prefixed value \"invalidNamespace\" doesn't contain a valid database name");
+
+        // Insert the invalid doc with an invalid namespace right into icing
+        PutResultProto putResultProto = mAppSearchImpl.mIcingSearchEngineLocked.put(invalidDoc);
+        assertThat(putResultProto.getStatus().getCode()).isEqualTo(StatusProto.Code.OK);
+
+        // Initialize AppSearchImpl. This should cause a reset.
+        InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
+        mAppSearchImpl.close();
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                new AppSearchConfigImpl(new UnlimitedLimitConfig(),
+                        new LocalStorageIcingOptionsConfig()),
+                initStatsBuilder,
+                /*visibilityChecker=*/ null,
+                new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
+                /*icingSearchEngine=*/ null,
+                ALWAYS_OPTIMIZE);
+
+        // Check recovery state
+        InitializeStats initStats = initStatsBuilder.build();
+        assertThat(initStats).isNotNull();
+        assertThat(initStats.getStatusCode()).isEqualTo(AppSearchResult.RESULT_INTERNAL_ERROR);
+        assertThat(initStats.hasDeSync()).isFalse();
+        assertThat(initStats.getNativeDocumentStoreRecoveryCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeIndexRestorationCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeSchemaStoreRecoveryCause())
+                .isEqualTo(InitializeStats.RECOVERY_CAUSE_NONE);
+        assertThat(initStats.getNativeDocumentStoreDataStatus())
+                .isEqualTo(InitializeStats.DOCUMENT_STORE_DATA_STATUS_NO_DATA_LOSS);
+        assertThat(initStats.hasReset()).isTrue();
+        assertThat(initStats.getResetStatusCode()).isEqualTo(AppSearchResult.RESULT_OK);
+
+        // Make sure all our data is gone
+        assertThat(mAppSearchImpl.getSchema(
+                        /*packageName=*/mContext.getPackageName(),
+                        /*databaseName=*/"database1",
+                        /*callerAccess=*/mSelfCallerAccess)
+                .getSchemas())
+                .isEmpty();
+        results = mAppSearchImpl.globalQuery(
+                /*queryExpression=*/ "",
+                new SearchSpec.Builder().addFilterSchemas("Type1").build(),
+                mSelfCallerAccess,
+                /*logger=*/ null);
+        assertThat(results.getResults()).isEmpty();
+
+        // Make sure blob files are deleted.
+        if (Flags.enableAppSearchManageBlobFiles()) {
+            assertThat(blobFilesDir.list()).isEmpty();
+        }
+
+        // Make sure the index can now be used successfully
+        internalSetSchemaResponse = mAppSearchImpl.setSchema(
+                mContext.getPackageName(),
+                "database1",
+                Collections.singletonList(new AppSearchSchema.Builder("Type1").build()),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*forceOverride=*/ false,
+                /*version=*/ 0,
+                /* setSchemaStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // Insert a valid doc
+        mAppSearchImpl.putDocument(
+                mContext.getPackageName(),
+                "database1",
+                validDoc,
+                /*sendChangeNotifications=*/ false,
+                /*logger=*/null);
+        // Query it via global query.
+        results = mAppSearchImpl.globalQuery(
+                /*queryExpression=*/ "",
+                new SearchSpec.Builder().addFilterSchemas("Type1").build(),
+                mSelfCallerAccess,
+                /*logger=*/ null);
+        assertThat(results.getResults()).hasSize(1);
+        assertThat(results.getResults().get(0).getGenericDocument()).isEqualTo(validDoc);
+
+        // Put a blob
+        try (ParcelFileDescriptor writePfd = mAppSearchImpl.openWriteBlob(
+                mContext.getPackageName(), "database1", blobHandle);
+                OutputStream outputStream = new ParcelFileDescriptor
+                        .AutoCloseOutputStream(writePfd)) {
+            outputStream.write(blobData);
+            outputStream.flush();
+        }
+        // Commit and read the blob.
+        mAppSearchImpl.commitBlob(mContext.getPackageName(), "database1", blobHandle);
+        readBytes = new byte[20 * 1024];
+        try (ParcelFileDescriptor readPfd = mAppSearchImpl.openReadBlob(
+                mContext.getPackageName(), "database1", blobHandle);
+                InputStream inputStream = new ParcelFileDescriptor.AutoCloseInputStream(readPfd)) {
+            inputStream.read(readBytes);
+        }
+        assertThat(readBytes).isEqualTo(blobData);
+        // Check that the blob file is created by AppSearch.
+        if (Flags.enableAppSearchManageBlobFiles()) {
+            assertThat(blobFilesDir.list()).asList().hasSize(1);
+        }
+    }
+
+    @Test
     public void testResetWithSchemaDatabaseMigration() throws Exception {
         IcingSearchEngineOptions.Builder optionsBuilder =
                 IcingSearchEngineOptions.newBuilder(mUnlimitedConfig.toIcingSearchEngineOptions(
@@ -1027,6 +1214,64 @@ public class AppSearchImplTest {
         assertThat(
                 mAppSearchImpl.getSchemaProtoForPrefixLocked("package$database2/").getTypesList())
                 .containsExactlyElementsIn(expectedDb2Proto.getTypesList());
+    }
+
+    @Test
+    @RequiresFlagsEnabled({
+            Flags.FLAG_ENABLE_RESET_VISIBILITY_STORE,
+            Flags.FLAG_ENABLE_DATABASE_SCOPED_SCHEMA_OPERATIONS})
+    public void testResetBlobStore() throws Exception {
+        // Setup Icing mock to success to all calls in initialize expect the setSchema call of
+        // VisibilityStore.
+        InitializeResultProto okInit =
+                InitializeResultProto.newBuilder().setStatus(OK).build();
+        when(mMockIcingSearchEngine.initialize()).thenReturn(okInit);
+
+        GetSchemaResultProto successGetSchema =
+                GetSchemaResultProto.newBuilder().setStatus(OK).build();
+        when(mMockIcingSearchEngine.getSchema()).thenReturn(successGetSchema);
+        when(mMockIcingSearchEngine.getSchemaForDatabase(any())).thenReturn(successGetSchema);
+
+        StorageInfoResultProto successGetStorageInfo =
+                StorageInfoResultProto.newBuilder().setStatus(OK).build();
+        when(mMockIcingSearchEngine.getStorageInfo()).thenReturn(successGetStorageInfo);
+
+        // Setup Icing mock to fail the first time setSchema call for visibility type. Success to
+        // the second time setSchema call which is after the reset.
+        SetSchemaResultProto failedSetSchemaResult =
+                SetSchemaResultProto.newBuilder().setStatus(ERROR).build();
+        SetSchemaResultProto okSetSchemaResult =
+                SetSchemaResultProto.newBuilder().setStatus(OK).build();
+        when(mMockIcingSearchEngine.setSchemaWithRequestProto(any()))
+                .thenReturn(failedSetSchemaResult, okSetSchemaResult);
+
+        ResetResultProto successReset =
+                ResetResultProto.newBuilder().setStatus(OK).build();
+        when(mMockIcingSearchEngine.reset()).thenReturn(successReset);
+
+        PersistToDiskResultProto successPersist =
+                PersistToDiskResultProto.newBuilder().setStatus(OK).build();
+        when(mMockIcingSearchEngine.persistToDisk(any())).thenReturn(successPersist);
+
+        InitializeStats.Builder initStatsBuilder = new InitializeStats.Builder();
+        // Initializing with a custom icing instance will cause AppSearch to assume
+        // isVMEnabled. This will enable both database-scoped operations and init retries.
+        mAppSearchImpl =
+                AppSearchImpl.create(
+                        mAppSearchDir,
+                        new AppSearchConfigImpl(
+                                new UnlimitedLimitConfig(), new LocalStorageIcingOptionsConfig()),
+                        initStatsBuilder,
+                        /* visibilityChecker= */ null,
+                        /* revocableFileDescriptorStore= */ null,
+                        mMockIcingSearchEngine,
+                        ALWAYS_OPTIMIZE);
+
+        // Check recovery state
+        InitializeStats initStats = initStatsBuilder.build();
+        assertThat(initStats).isNotNull();
+        assertThat(initStats.getStatusCode()).isEqualTo(AppSearchResult.RESULT_INTERNAL_ERROR);
+        assertThat(initStats.hasReset()).isTrue();
     }
 
     @Test

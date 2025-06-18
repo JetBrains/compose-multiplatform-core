@@ -41,9 +41,8 @@ androidXMultiplatform {
         androidResources.enable = true
     }
     desktop()
-    mingwX64()
-    linux()
     mac()
+    linux()
     ios()
     watchos()
     tvos()
@@ -110,54 +109,26 @@ androidXMultiplatform {
             }
         }
 
+        desktopMain { dependsOn(jvmMain) }
+        desktopTest { dependsOn(jvmTest) }
 
-        desktopMain {
-            dependsOn(jvmMain)
-        }
+        nonJvmMain { dependsOn(commonMain) }
+        nonJvmTest { dependsOn(commonTest) }
 
-        desktopTest {
-            dependsOn(jvmTest)
-        }
+        nativeMain { dependsOn(nonJvmMain) }
+        nativeTest { dependsOn(nonJvmTest) }
 
-        nonJvmMain {
-            dependsOn(commonMain)
-        }
+        unixMain { dependsOn(nativeMain) }
+        unixTest { dependsOn(nativeMain) }
 
-        nonJvmTest {
-            dependsOn(commonTest)
-        }
+        darwinMain { dependsOn(unixMain) }
+        darwinTest { dependsOn(unixTest) }
 
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
+        linuxMain { dependsOn(unixMain) }
+        linuxTest { dependsOn(unixTest) }
 
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        linuxMain {
-            dependsOn(nativeMain)
-        }
-
-        linuxTest {
-            dependsOn(nativeTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-        }
+        webMain { dependsOn(nonJvmMain) }
+        webTest { dependsOn(nonJvmTest) }
 
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {

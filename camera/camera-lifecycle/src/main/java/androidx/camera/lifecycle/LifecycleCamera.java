@@ -16,7 +16,7 @@
 
 package androidx.camera.lifecycle;
 
-import static androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination.resolveFeatureCombination;
+import static androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup.resolveFeatureGroup;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
@@ -32,8 +32,8 @@ import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.LegacySessionConfig;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
-import androidx.camera.core.featurecombination.Feature;
-import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination;
+import androidx.camera.core.featuregroup.GroupableFeature;
+import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup;
 import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
@@ -281,22 +281,22 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
             mCameraUseCaseAdapter.setSessionType(sessionConfig.getSessionType());
             mCameraUseCaseAdapter.setFrameRate(sessionConfig.getFrameRateRange());
 
-            ResolvedFeatureCombination resolvedFeatureCombination = resolveFeatureCombination(
+            ResolvedFeatureGroup resolvedFeatureGroup = resolveFeatureGroup(
                     sessionConfig, (CameraInfoInternal) getCameraInfo());
 
             sessionConfig.getFeatureSelectionListenerExecutor().execute(
                     () -> {
-                        Set<Feature> features = new HashSet<>();
+                        Set<GroupableFeature> features = new HashSet<>();
 
-                        if (resolvedFeatureCombination != null) {
-                            features.addAll(resolvedFeatureCombination.getFeatures());
+                        if (resolvedFeatureGroup != null) {
+                            features.addAll(resolvedFeatureGroup.getFeatures());
                         }
 
                         sessionConfig.getFeatureSelectionListener().accept(features);
                     });
 
             mCameraUseCaseAdapter.addUseCases(sessionConfig.getUseCases(),
-                    resolvedFeatureCombination);
+                    resolvedFeatureGroup);
         }
     }
 

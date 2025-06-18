@@ -782,6 +782,15 @@ public class WebViewFeatureInternal {
             new ApiFeature.NoFramework(WebViewFeature.WARM_UP_RENDERER_PROCESS,
                     Features.WARM_UP_RENDERER_PROCESS);
 
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
+     * {@link Profile#clearOriginMatchedHeader(String)}, and {@link Profile#clearAllOriginMatchedHeaders()}.
+     */
+    public static final ApiFeature.NoFramework ORIGIN_MATCHED_HEADERS =
+            new ApiFeature.NoFramework(WebViewFeature.ORIGIN_MATCHED_HEADERS,
+                    Features.EXTRA_HEADER_FOR_ORIGINS);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {

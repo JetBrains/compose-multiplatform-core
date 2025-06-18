@@ -51,8 +51,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                // TODO: AOSP does NOT have material-icons-core in dependencies. Should we keep it?
-
                 implementation(libs.kotlinStdlib)
                 api(project(":compose:animation:animation-core"))
                 api(project(":compose:foundation:foundation"))
@@ -61,7 +59,7 @@ androidXMultiplatform {
                 api(project(":compose:ui:ui"))
                 api(project(":compose:ui:ui-text"))
 
-                implementation(project(":annotation:annotation"))
+                implementation(project(":compose:animation:animation-core"))
                 implementation(project(":compose:animation:animation"))
                 implementation(project(":compose:foundation:foundation-layout"))
                 implementation(project(":compose:ui:ui-util"))

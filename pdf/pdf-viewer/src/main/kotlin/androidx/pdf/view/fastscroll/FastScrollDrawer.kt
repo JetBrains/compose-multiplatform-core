@@ -150,7 +150,7 @@ public class FastScrollDrawer(
         val yPos =
             indicatorBounds.top + (indicatorBounds.height() / 2) -
                 ((textPaint.descent() + textPaint.ascent()) / 2)
-        canvas.drawText(currentPageIndicatorLabel, xPos.toFloat(), yPos.toFloat(), textPaint)
+        canvas.drawText(currentPageIndicatorLabel, xPos.toFloat(), yPos, textPaint)
     }
 
     internal fun calculatePageIndicatorBounds(label: String, xOffset: Int, thumbTopPx: Int): Rect {

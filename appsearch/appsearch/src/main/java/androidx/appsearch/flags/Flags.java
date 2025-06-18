@@ -283,6 +283,10 @@ public final class Flags {
     public static final String FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET =
             FLAG_PREFIX + "enable_initialization_retries_before_reset";
 
+    /** Enable reset visibility store during initialization. */
+    public static final String FLAG_ENABLE_RESET_VISIBILITY_STORE =
+            FLAG_PREFIX + "enable_reset_visibility_store";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -610,6 +614,13 @@ public final class Flags {
      * last resort.
      */
     public static boolean enableInitializationRetriesBeforeReset() {
+        return true;
+    }
+
+    /**
+     * Whether to enable reset visibility store during initialization.
+     */
+    public static boolean enableResetVisibilityStore() {
         return true;
     }
 }

@@ -66,6 +66,7 @@ import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.roundToLong
 import kotlin.math.sign
+import kotlin.ranges.IntRange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -183,16 +184,7 @@ internal constructor(
     }
 
     /** Difference between the last up and last down events of a scroll event. */
-    private var upDownDifference: Offset by mutableStateOf(Offset.Zero)
-    internal val dragGestureDelta
-        get() =
-            if (layoutInfo.orientation == Orientation.Horizontal) {
-                upDownDifference.x
-            } else {
-                upDownDifference.y
-            }
-
-    private var showWaitForFling: Boolean = false
+    internal var upDownDifference: Offset by mutableStateOf(Offset.Zero)
 
     private val scrollPosition = PagerScrollPosition(currentPage, currentPageOffsetFraction, this)
 
@@ -404,8 +396,14 @@ internal constructor(
      *
      * @sample androidx.compose.foundation.samples.ObservingStateChangesInPagerStateSample
      */
-    val settledPage: Int
-        get() = settledPageState
+    val settledPage by
+        derivedStateOf(structuralEqualityPolicy()) {
+            if (isScrollInProgress) {
+                settledPageState
+            } else {
+                this.currentPage
+            }
+        }
 
     /**
      * The page this [Pager] intends to settle to. During fling or animated scroll (from
@@ -589,9 +587,9 @@ internal constructor(
     }
 
     /**
-     * Scroll animate to a given [page]. If the [page] is too far away from [currentPage] we will
-     * not compose all pages in the way. We will pre-jump to a nearer page, compose and animate the
-     * rest of the pages until [page].
+     * Scroll animate to a given [page]'s closest snap position. If the [page] is too far away from
+     * [currentPage] we will not compose all pages in the way. We will pre-jump to a nearer page,
+     * compose and animate the rest of the pages until [page].
      *
      * Please refer to the sample to learn how to use this API.
      *
@@ -638,25 +636,12 @@ internal constructor(
         block: suspend ScrollScope.() -> Unit,
     ) {
         awaitScrollDependencies()
-        try {
-            scrollableState.scroll(scrollPriority, block)
-        } finally {
-            programmaticScrollTargetPage = -1 // reset animated scroll target page indicator
-            if (!showWaitForFling) settledPageState = currentPage
+        // will scroll and it's not scrolling already update settled page
+        if (!isScrollInProgress) {
+            settledPageState = currentPage
         }
-    }
-
-    internal fun onGestureStarted() {
-        upDownDifference = Offset.Zero
-        showWaitForFling = true
-    }
-
-    internal fun onGestureFinished(offset: Offset) {
-        upDownDifference = offset
-    }
-
-    internal fun onFlingFinished() {
-        showWaitForFling = false
+        scrollableState.scroll(scrollPriority, block)
+        programmaticScrollTargetPage = -1 // reset animated scroll target page indicator
     }
 
     override fun dispatchRawDelta(delta: Float): Float {

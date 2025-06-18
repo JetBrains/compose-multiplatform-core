@@ -18,7 +18,6 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialPointerIcon;
@@ -26,6 +25,8 @@ import androidx.xr.runtime.internal.SpatialPointerIconType;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;
+
+import org.jspecify.annotations.NonNull;
 
 class SpatialPointerComponentImpl implements SpatialPointerComponent {
 

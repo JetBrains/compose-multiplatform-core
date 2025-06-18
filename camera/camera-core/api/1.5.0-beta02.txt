@@ -59,6 +59,7 @@ package androidx.camera.core {
     method public default androidx.lifecycle.LiveData<java.lang.Integer!> getTorchStrengthLevel();
     method public androidx.lifecycle.LiveData<androidx.camera.core.ZoomState!> getZoomState();
     method public boolean hasFlashUnit();
+    method @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public default boolean isFeatureGroupSupported(androidx.camera.core.SessionConfig);
     method public default boolean isFocusMeteringSupported(androidx.camera.core.FocusMeteringAction);
     method public default boolean isLogicalMultiCameraSupported();
     method public default boolean isLowLightBoostSupported();
@@ -638,12 +639,24 @@ package androidx.camera.core {
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects);
     ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange);
+    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup);
+    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects, optional android.util.Range<java.lang.Integer> frameRateRange, optional java.util.Set<? extends androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup, optional java.util.List<? extends androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup);
     method public final java.util.List<androidx.camera.core.CameraEffect> getEffects();
+    method public final androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> getFeatureSelectionListener();
+    method public final java.util.concurrent.Executor getFeatureSelectionListenerExecutor();
     method public final android.util.Range<java.lang.Integer> getFrameRateRange();
+    method public final java.util.List<androidx.camera.core.featuregroup.GroupableFeature> getPreferredFeatureGroup();
+    method public final java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> getRequiredFeatureGroup();
     method public final java.util.List<androidx.camera.core.UseCase> getUseCases();
     method public final androidx.camera.core.ViewPort? getViewPort();
+    method public final void setFeatureSelectionListener(androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> listener);
+    method public final void setFeatureSelectionListener(optional java.util.concurrent.Executor executor, androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> listener);
     property public final java.util.List<androidx.camera.core.CameraEffect> effects;
+    property public final androidx.core.util.Consumer<java.util.Set<androidx.camera.core.featuregroup.GroupableFeature>> featureSelectionListener;
+    property public final java.util.concurrent.Executor featureSelectionListenerExecutor;
     property public final android.util.Range<java.lang.Integer> frameRateRange;
+    property public final java.util.List<androidx.camera.core.featuregroup.GroupableFeature> preferredFeatureGroup;
+    property public final java.util.Set<androidx.camera.core.featuregroup.GroupableFeature> requiredFeatureGroup;
     property public final java.util.List<androidx.camera.core.UseCase> useCases;
     property public final androidx.camera.core.ViewPort? viewPort;
   }
@@ -654,6 +667,8 @@ package androidx.camera.core {
     method public androidx.camera.core.SessionConfig.Builder addEffect(androidx.camera.core.CameraEffect effect);
     method public androidx.camera.core.SessionConfig build();
     method public androidx.camera.core.SessionConfig.Builder setFrameRateRange(android.util.Range<java.lang.Integer> frameRateRange);
+    method public androidx.camera.core.SessionConfig.Builder setPreferredFeatureGroup(androidx.camera.core.featuregroup.GroupableFeature... features);
+    method public androidx.camera.core.SessionConfig.Builder setRequiredFeatureGroup(androidx.camera.core.featuregroup.GroupableFeature... features);
     method public androidx.camera.core.SessionConfig.Builder setViewPort(androidx.camera.core.ViewPort viewPort);
   }
 
@@ -761,6 +776,34 @@ package androidx.camera.core {
     method public float getMaxZoomRatio();
     method public float getMinZoomRatio();
     method public float getZoomRatio();
+  }
+
+}
+
+package @androidx.camera.core.ExperimentalSessionConfig androidx.camera.core.featuregroup {
+
+  @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public abstract class GroupableFeature {
+    method public final int getFeatureType();
+    field public static final androidx.camera.core.featuregroup.GroupableFeature.Companion Companion;
+    field public static final int FEATURE_TYPE_DYNAMIC_RANGE = 0; // 0x0
+    field public static final int FEATURE_TYPE_FPS_RANGE = 1; // 0x1
+    field public static final int FEATURE_TYPE_IMAGE_FORMAT = 3; // 0x3
+    field public static final int FEATURE_TYPE_VIDEO_STABILIZATION = 2; // 0x2
+    field public static final androidx.camera.core.featuregroup.GroupableFeature FPS_60;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature HDR_HLG10;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature IMAGE_ULTRA_HDR;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature PREVIEW_STABILIZATION;
+  }
+
+  @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public static final class GroupableFeature.Companion {
+    property public static int FEATURE_TYPE_DYNAMIC_RANGE;
+    property public static int FEATURE_TYPE_FPS_RANGE;
+    property public static int FEATURE_TYPE_IMAGE_FORMAT;
+    property public static int FEATURE_TYPE_VIDEO_STABILIZATION;
+    property public androidx.camera.core.featuregroup.GroupableFeature FPS_60;
+    property public androidx.camera.core.featuregroup.GroupableFeature HDR_HLG10;
+    property public androidx.camera.core.featuregroup.GroupableFeature IMAGE_ULTRA_HDR;
+    property public androidx.camera.core.featuregroup.GroupableFeature PREVIEW_STABILIZATION;
   }
 
 }

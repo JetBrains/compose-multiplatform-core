@@ -124,7 +124,7 @@ internal class SelectionRenderer(
 
     private fun drawBoundsOnPage(canvas: Canvas, bounds: PdfRect, pageLocationInView: RectF) {
         val boundsRect = RectF(bounds.pageRect)
-        boundsRect.offset(pageLocationInView.left.toFloat(), pageLocationInView.top.toFloat())
+        boundsRect.offset(pageLocationInView.left, pageLocationInView.top)
         canvas.drawRect(boundsRect, BOUNDS_PAINT)
     }
 }

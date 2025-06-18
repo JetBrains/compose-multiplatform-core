@@ -16,10 +16,8 @@
 
 package androidx.camera.integration.featurecombo
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.graphics.SurfaceTexture
 import android.hardware.DataSpace
 import android.hardware.DataSpace.TRANSFER_HLG
@@ -45,11 +43,11 @@ import androidx.camera.core.Preview
 import androidx.camera.core.Preview.getPreviewCapabilities
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
-import androidx.camera.core.featurecombination.Feature
-import androidx.camera.core.featurecombination.Feature.Companion.FPS_60
-import androidx.camera.core.featurecombination.Feature.Companion.HDR_HLG10
-import androidx.camera.core.featurecombination.Feature.Companion.IMAGE_ULTRA_HDR
-import androidx.camera.core.featurecombination.Feature.Companion.PREVIEW_STABILIZATION
+import androidx.camera.core.featuregroup.GroupableFeature
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.FPS_60
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.HDR_HLG10
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.IMAGE_ULTRA_HDR
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.PREVIEW_STABILIZATION
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -57,9 +55,9 @@ import androidx.camera.testing.impl.Camera2CaptureCallbackImpl
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.GLUtil
-import androidx.camera.testing.impl.IgnoreProblematicDeviceRule.Companion.isMediumPhoneApi35Emulator
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.SurfaceTextureProvider.createSurfaceTextureProvider
+import androidx.camera.testing.impl.UltraHdrImageVerification.assertJpegUltraHdr
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.util.Camera2InteropUtil
@@ -67,7 +65,6 @@ import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.CountDownLatch
@@ -77,12 +74,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
-import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -110,14 +105,6 @@ class FeatureCombinationDeviceTest(
     @get:Rule
     val cameraPipeConfigTestRule =
         CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
-
-    @get:Rule
-    val externalStorageRule: GrantPermissionRule =
-        GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-
-    @get:Rule
-    val temporaryFolder =
-        TemporaryFolder(ApplicationProvider.getApplicationContext<Context>().cacheDir)
 
     @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
 
@@ -184,10 +171,6 @@ class FeatureCombinationDeviceTest(
 
     @Test
     fun bindToLifecycle_hlg10_bindResultMatchesQueryResult(): Unit = runBlocking {
-        assumeFalse(
-            "Medium phone API 35 doesn't support HLG10 HDR properly despite camera framework API reporting it as supported",
-            isMediumPhoneApi35Emulator,
-        )
         testIfBindAndQueryApiResultsMatch(listOf(preview, videoCapture), setOf(HDR_HLG10))
     }
 
@@ -204,7 +187,7 @@ class FeatureCombinationDeviceTest(
         )
     }
 
-    // TODO: b/420254152 - Add @Test after fixing Ultra HDR capture test issues
+    @Test
     fun bindToLifecycle_jpegUltraHdr_bindResultMatchesQueryResult(): Unit = runBlocking {
         testIfBindAndQueryApiResultsMatch(listOf(preview, imageCapture), setOf(IMAGE_ULTRA_HDR))
     }
@@ -217,12 +200,6 @@ class FeatureCombinationDeviceTest(
     @Test
     fun bindToLifecycle_bothHdrAndPrvwStabilizationRequired_bindResultMatchesQueryResult(): Unit =
         runBlocking {
-            assumeFalse(
-                "Medium phone API 35 doesn't support HLG10 HDR properly despite camera" +
-                    " framework API reporting it as supported",
-                isMediumPhoneApi35Emulator,
-            )
-
             testIfBindAndQueryApiResultsMatch(
                 listOf(preview, videoCapture),
                 setOf(HDR_HLG10, PREVIEW_STABILIZATION),
@@ -232,34 +209,29 @@ class FeatureCombinationDeviceTest(
     @Test
     fun bindToLifecycle_moreThanTwoFeaturesRequired_bindResultMatchesQueryResult(): Unit =
         runBlocking {
-            assumeFalse(
-                "Medium phone API 35 doesn't support HLG10 HDR properly despite camera" +
-                    " framework API reporting it as supported",
-                isMediumPhoneApi35Emulator,
-            )
-
             testIfBindAndQueryApiResultsMatch(
                 listOf(preview, videoCapture),
                 setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION),
             )
         }
 
-    // TODO: b/420227836 - Add @Test after fixing unsupported exception for no preferred features
-    fun bindToLifecycle_multiplePreferredFeatures_canBindSuccessfully(): Unit = runBlocking {
-        val useCases = listOf(preview, videoCapture)
-        val orderedFeatures = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION)
-        val selectedFeatures = mutableSetOf<Feature>()
+    @Test
+    fun bindToLifecycle_allPreferredFeatures_canBindSuccessfully(): Unit = runBlocking {
+        val useCases = listOf(preview, videoCapture, imageCapture)
+        val orderedFeatures = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR)
+        val selectedFeatures = mutableSetOf<GroupableFeature>()
 
         val camera =
             withContext(Dispatchers.Main) {
                 cameraProvider.bindToLifecycle(
                     fakeLifecycleOwner,
                     cameraSelector,
-                    SessionConfig(useCases = useCases, preferredFeatures = orderedFeatures).apply {
-                        setFeatureSelectionListener { features ->
-                            selectedFeatures.addAll(features)
-                        }
-                    },
+                    SessionConfig(useCases = useCases, preferredFeatureGroup = orderedFeatures)
+                        .apply {
+                            setFeatureSelectionListener { features ->
+                                selectedFeatures.addAll(features)
+                            }
+                        },
                 )
             }
 
@@ -274,14 +246,12 @@ class FeatureCombinationDeviceTest(
 
     private suspend fun testIfBindAndQueryApiResultsMatch(
         useCases: List<UseCase>,
-        features: Set<Feature>,
+        features: Set<GroupableFeature>,
     ) {
-        val sessionConfig = SessionConfig(useCases = useCases, requiredFeatures = features)
+        val sessionConfig = SessionConfig(useCases = useCases, requiredFeatureGroup = features)
 
         val isSupported =
-            cameraProvider
-                .getCameraInfo(cameraSelector)
-                .isFeatureCombinationSupported(sessionConfig)
+            cameraProvider.getCameraInfo(cameraSelector).isFeatureGroupSupported(sessionConfig)
 
         val camera = bindAndVerify(sessionConfig, isSupported)
 
@@ -316,7 +286,7 @@ class FeatureCombinationDeviceTest(
     }
 
     @SuppressLint("NewApi")
-    private suspend fun Set<Feature>.verifyFeatures(
+    private suspend fun Set<GroupableFeature>.verifyFeatures(
         useCases: List<UseCase>,
         cameraInfo: CameraInfo,
     ) {
@@ -398,15 +368,7 @@ class FeatureCombinationDeviceTest(
 
         val imageCapture = useCases.filterIsInstance<ImageCapture>().first()
 
-        val saveLocation = temporaryFolder.newFile("test.jpg")
-        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(saveLocation).build()
-
-        imageCapture.takePicture(outputFileOptions)
-
-        // Check gainmap exits.
-        val bitmap = BitmapFactory.decodeFile(saveLocation.absolutePath)
-        assertThat(bitmap).isNotNull()
-        assertThat(bitmap.hasGainmap()).isTrue()
+        imageCapture.takePicture().assertJpegUltraHdr()
     }
 
     private suspend fun <T> verifyCaptureResult(

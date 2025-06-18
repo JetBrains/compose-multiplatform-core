@@ -179,7 +179,7 @@ public class ProtoLayoutDynamicDataPipeline {
         mLayoutUpdateStatusDataProvider =
                 DynamicTypePlatformDataProvider.forDynamicLayoutUpdateStatus(
                         PlatformEventSources.Keys.LAYOUT_UPDATE_STATUS,
-                        /* initialValue= */ PlatformEventSources.LAYOUT_UPDATE_IDLE);
+                        PlatformEventSources.LAYOUT_UPDATE_IDLE);
         evaluatorConfigBuilder.addPlatformDataProvider(
                 mLayoutUpdateStatusDataProvider,
                 ImmutableSet.of(PlatformEventSources.Keys.LAYOUT_UPDATE_STATUS));

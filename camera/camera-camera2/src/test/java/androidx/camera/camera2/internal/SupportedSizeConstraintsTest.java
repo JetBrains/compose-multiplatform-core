@@ -16,7 +16,7 @@
 
 package androidx.camera.camera2.internal;
 
-import static androidx.camera.core.featurecombination.impl.FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY;
+import static androidx.camera.core.featuregroup.impl.FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY;
 
 import static com.google.common.truth.Truth.assertThat;
 

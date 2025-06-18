@@ -30,6 +30,7 @@ import androidx.pdf.models.FormEditRecord
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.util.FORM_APPLY_EDIT_REQUEST_NAME
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -89,7 +90,7 @@ internal class FormWidgetInteractionHandler(
             FormEditRecord(
                 pageNum,
                 formWidgetInfo.widgetIndex,
-                clickPoint = Point(pdfCoordinates.x.toInt(), pdfCoordinates.y.toInt()),
+                clickPoint = Point(pdfCoordinates.x.roundToInt(), pdfCoordinates.y.roundToInt()),
             )
         applyEditRecord(pageNum, formEditRecord)
     }

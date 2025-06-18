@@ -17,6 +17,7 @@
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.shadow.PlatformShadowContext
 import androidx.compose.ui.graphics.shadow.ShadowContext
 
 /**
@@ -43,5 +44,5 @@ interface GraphicsContext {
      * inner shadows
      */
     val shadowContext: ShadowContext
-        get() = object : ShadowContext {}
+        get() = object : PlatformShadowContext {}
 }

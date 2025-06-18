@@ -271,14 +271,19 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
      * can't resolve a valid camera under the requirements, an IllegalArgumentException will be
      * thrown.
      *
+     * The following code example shows various aspects of binding a session config.
+     *
+     * @sample androidx.camera.lifecycle.samples.bindSessionConfigToLifecycle
+     *
+     * The following code snippet demonstrates binding a session config with feature groups.
+     *
+     * @sample androidx.camera.lifecycle.samples.bindSessionConfigWithFeatureGroupsToLifecycle
      * @throws UnsupportedOperationException If the camera is configured in concurrent mode. For
      *   example, if a list of [SingleCameraConfig]s was bound to the lifecycle already.
      * @throws IllegalStateException if either of the following conditions is met:
      * - A [UseCase] or [SessionConfig] is already bound to the same [LifecycleOwner].
      * - A [UseCase] contained within the [SessionConfig] is already bound to a different
      *   [LifecycleOwner].
-     *
-     * @sample androidx.camera.lifecycle.samples.bindSessionConfigToLifecycle
      */
     @ExperimentalSessionConfig
     public fun bindToLifecycle(

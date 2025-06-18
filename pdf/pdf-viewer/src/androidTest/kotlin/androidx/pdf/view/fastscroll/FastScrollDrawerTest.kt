@@ -116,7 +116,7 @@ class FastScrollDrawerTest {
         val expectedTotalPages = 10
         assertEquals(expectedLowerPageRange, pageRange[0].toString().toInt())
         assertEquals(expectedUpperPageRange, pageRange[2].toString().toInt())
-        assertEquals(expectedTotalPages, totalPages.toString().toInt())
+        assertEquals(expectedTotalPages, totalPages.toInt())
     }
 
     @Test

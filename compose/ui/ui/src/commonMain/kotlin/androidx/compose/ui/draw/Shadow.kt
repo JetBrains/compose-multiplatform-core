@@ -38,6 +38,7 @@ import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.invalidateDraw
+import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.platform.InspectorInfo
@@ -442,11 +443,15 @@ internal class BlockInnerShadowNode(private var shape: Shape, block: InnerShadow
     private var densityObject: Density? = null
     private var targetShadow: Shadow? = null
     private var shadowPainter: InnerShadowPainter? = null
+    private var blockRead = false
 
     private var block: InnerShadowScope.() -> Unit = block
         set(value) {
-            field = value
-            field.invoke(this)
+            if (field !== value) {
+                field = value
+                blockRead = false
+                invalidateDraw()
+            }
         }
 
     override val density: Float
@@ -519,10 +524,6 @@ internal class BlockInnerShadowNode(private var shape: Shape, block: InnerShadow
             }
         }
 
-    init {
-        block.invoke(this)
-    }
-
     override fun onAttach() {
         super.onAttach()
         updateDensity()
@@ -552,6 +553,10 @@ internal class BlockInnerShadowNode(private var shape: Shape, block: InnerShadow
     }
 
     private fun obtainPainter(): InnerShadowPainter {
+        if (!blockRead) {
+            blockRead = true
+            observeReads { block(this) }
+        }
         var shadow = targetShadow
         var painter = shadowPainter
         val tmpBrush = brush
@@ -587,6 +592,7 @@ internal class BlockInnerShadowNode(private var shape: Shape, block: InnerShadow
 
     override fun onObservedReadsChanged() {
         invalidateShadow()
+        blockRead = false
     }
 
     private fun invalidateShadow() {
@@ -637,10 +643,14 @@ internal class BlockDropShadowNode(private var shape: Shape, block: DropShadowSc
     private var densityObject: Density? = null
     private var targetShadow: Shadow? = null
     private var shadowPainter: DropShadowPainter? = null
+    private var blockRead = false
     private var block: DropShadowScope.() -> Unit = block
         set(value) {
-            field = value
-            field.invoke(this)
+            if (field !== value) {
+                field = value
+                blockRead = false
+                invalidateDraw()
+            }
         }
 
     override val density: Float
@@ -713,10 +723,6 @@ internal class BlockDropShadowNode(private var shape: Shape, block: DropShadowSc
             }
         }
 
-    init {
-        block.invoke(this)
-    }
-
     override fun onAttach() {
         super.onAttach()
         updateDensity()
@@ -746,6 +752,10 @@ internal class BlockDropShadowNode(private var shape: Shape, block: DropShadowSc
     }
 
     private fun obtainPainter(): DropShadowPainter {
+        if (!blockRead) {
+            blockRead = true
+            observeReads { block() }
+        }
         var shadow = targetShadow
         var painter = shadowPainter
         val tmpBrush = brush
@@ -780,6 +790,7 @@ internal class BlockDropShadowNode(private var shape: Shape, block: DropShadowSc
 
     override fun onObservedReadsChanged() {
         invalidateShadow()
+        blockRead = false
     }
 
     private fun invalidateShadow() {

@@ -33,58 +33,87 @@ import javax.inject.Singleton
  */
 @Singleton
 internal class CameraPipeLifetime @Inject constructor() {
-    private val lock = Any()
+    private val cameraLock = Any()
+    @GuardedBy("cameraLock") private var isCameraShutdown = false
+    @GuardedBy("cameraLock") private val cameraShutdownActions = mutableListOf<Runnable>()
 
-    @GuardedBy("lock") private var isShutdown = false
+    private val scopeLock = Any()
+    @GuardedBy("scopeLock") private var isScopeShutdown = false
+    @GuardedBy("scopeLock") private val scopeShutdownActions = mutableListOf<Runnable>()
 
-    @GuardedBy("lock") private val shutdownTasks = mutableListOf<ShutdownTask>()
+    private val threadLock = Any()
+    @GuardedBy("threadLock") private var isThreadShutdown = false
+    @GuardedBy("threadLock") private val threadShutdownActions = mutableListOf<Runnable>()
 
     fun addShutdownAction(shutdownType: ShutdownType, shutdownAction: Runnable) {
         val success =
-            synchronized(lock) {
-                if (isShutdown) {
-                    false
-                } else {
-                    shutdownTasks.add(ShutdownTask(shutdownType, shutdownAction))
-                    true
-                }
+            when (shutdownType) {
+                ShutdownType.CAMERA -> addCameraShutdownAction(shutdownAction)
+                ShutdownType.SCOPE -> addScopeShutdownAction(shutdownAction)
+                ShutdownType.THREAD -> addThreadShutdownAction(shutdownAction)
             }
         if (!success) {
-            Log.info { "CameraPipeLifetime already shut down. Executing action immediately..." }
+            Log.error {
+                "CameraPipeLifetime already shut down. This is unexpected. " +
+                    "Executing $shutdownType shutdown action immediately..."
+            }
             shutdownAction.run()
         }
     }
 
-    fun shutdown() {
-        val tasks =
-            synchronized(lock) {
-                if (isShutdown) {
-                    return
-                }
-                isShutdown = true
-
-                val tasks = shutdownTasks.toList()
-                shutdownTasks.clear()
-                tasks
+    private fun addCameraShutdownAction(shutdownAction: Runnable) =
+        synchronized(cameraLock) {
+            if (isCameraShutdown) {
+                false
+            } else {
+                cameraShutdownActions.add(shutdownAction)
             }
-
-        shutdownTasksWithType(tasks, ShutdownType.CAMERA)
-        shutdownTasksWithType(tasks, ShutdownType.SCOPE)
-        shutdownTasksWithType(tasks, ShutdownType.THREAD)
-    }
-
-    private fun shutdownTasksWithType(
-        shutdownTasks: List<ShutdownTask>,
-        shutdownType: ShutdownType,
-    ) {
-        val tasks = shutdownTasks.filter { it.type == shutdownType }
-        Log.debug { "Shutting down $shutdownType tasks (${tasks.size} total)" }
-        for (task in tasks) {
-            task.action.run()
         }
+
+    private fun addScopeShutdownAction(shutdownAction: Runnable) =
+        synchronized(scopeLock) {
+            if (isScopeShutdown) {
+                false
+            } else {
+                scopeShutdownActions.add(shutdownAction)
+            }
+        }
+
+    private fun addThreadShutdownAction(shutdownAction: Runnable) =
+        synchronized(threadLock) {
+            if (isThreadShutdown) {
+                false
+            } else {
+                threadShutdownActions.add(shutdownAction)
+            }
+        }
+
+    fun shutdown() {
+        shutdownCamera()
+        shutdownScope()
+        shutdownThread()
     }
 
-    private data class ShutdownTask(val type: ShutdownType, val action: Runnable)
+    private fun shutdownCamera() =
+        synchronized(cameraLock) {
+            for (shutdownAction in cameraShutdownActions) {
+                shutdownAction.run()
+            }
+        }
+
+    private fun shutdownScope() =
+        synchronized(scopeLock) {
+            for (shutdownAction in scopeShutdownActions) {
+                shutdownAction.run()
+            }
+        }
+
+    private fun shutdownThread() =
+        synchronized(threadLock) {
+            for (shutdownAction in threadShutdownActions) {
+                shutdownAction.run()
+            }
+        }
 
     internal enum class ShutdownType {
         CAMERA,

@@ -67,8 +67,8 @@ import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
 import androidx.camera.core.concurrent.CameraCoordinator;
-import androidx.camera.core.featurecombination.Feature;
-import androidx.camera.core.featurecombination.impl.ResolvedFeatureCombination;
+import androidx.camera.core.featuregroup.GroupableFeature;
+import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup;
 import androidx.camera.core.impl.AdapterCameraInfo;
 import androidx.camera.core.impl.AdapterCameraInternal;
 import androidx.camera.core.impl.CameraConfig;
@@ -351,49 +351,49 @@ public final class CameraUseCaseAdapter implements Camera {
      *                         currently added UseCases exceed the capability of the camera.
      */
     public void addUseCases(@NonNull Collection<UseCase> appUseCasesToAdd) throws CameraException {
-        addUseCases(appUseCasesToAdd, /* featureCombination = */ null);
+        addUseCases(appUseCasesToAdd, /* featureGroup = */ null);
     }
 
     /**
      * Add the specified collection of {@link UseCase} to the adapter with dual camera support and
-     * a feature combination.
+     * a feature group.
      *
-     * <p> If a non-null feature combination is set, the features are set to all the use cases, not
+     * <p> If a non-null feature group is set, the features are set to all the use cases, not
      * only the new use cases. This ensures that all use case configs are updated with the correct
-     * feature combination-related values and there's no inconsistency among the use cases. On the
-     * other hand, a null feature combination represents that the Feature Combination API is not
+     * feature group-related values and there's no inconsistency among the use cases. On the
+     * other hand, a null feature group represents that the feature group API is not
      * being used and all use cases should be updated accordingly just-in-case they were not unbound
-     * or cleaned up properly before. See {@link UseCase#setFeatureCombination(Set)} for details.
+     * or cleaned up properly before. See {@link UseCase#setFeatureGroup(Set)} for details.
      * Note that the new SessionConfig design prevents mixing use cases with and without feature
-     * combination, but it's still being handled here to some extent just-in-case.
+     * group, but it's still being handled here to some extent just-in-case.
      *
      * <p> For example, if there were some use cases already added before without a non-null feature
-     * combination, they also should be using feature combination configs if the new use cases are
-     * being added with a feature combination. Conversely, if the new use cases are being added
-     * with a null feature combination, all use cases are reset to use configs without using
-     * feature combination.
+     * group, they also should be using feature group configs if the new use cases are
+     * being added with a feature group. Conversely, if the new use cases are being added
+     * with a null feature group, all use cases are reset to use configs without using
+     * feature group.
      *
      * @param appUseCasesToAdd The use cases an application wants to add.
-     * @param featureCombination A {@link ResolvedFeatureCombination} to use for all the use cases
-     *                           after adding these use cases. A null value represents that the
-     *                           feature combination API is not being used.
+     * @param featureGroup     A {@link ResolvedFeatureGroup} to use for all the use cases
+     *                         after adding these use cases. A null value represents that the
+     *                         feature combination API is not being used.
      * @throws CameraException Thrown if the combination of newly added UseCases and the
      *                         currently added UseCases exceed the capability of the camera, or
      *                         if the frame rate is not supported by the camera.
      */
     @OptIn(markerClass = ExperimentalSessionConfig.class)
     public void addUseCases(@NonNull Collection<UseCase> appUseCasesToAdd,
-            @Nullable ResolvedFeatureCombination featureCombination) throws CameraException {
+            @Nullable ResolvedFeatureGroup featureGroup) throws CameraException {
         Logger.d(TAG, "addUseCases: appUseCasesToAdd = " + appUseCasesToAdd
-                + ", featureCombination = " + featureCombination);
+                + ", featureGroup = " + featureGroup);
 
         synchronized (mLock) {
             applyCameraConfig();
             Set<UseCase> appUseCases = new LinkedHashSet<>(mAppUseCases);
             appUseCases.addAll(appUseCasesToAdd);
 
-            Map<UseCase, Set<Feature>> previousFeatureComboMap =
-                    applyFeatureCombination(appUseCases, featureCombination);
+            Map<UseCase, Set<GroupableFeature>> previousFeatureGroupMap =
+                    applyFeatureGroup(appUseCases, featureGroup);
 
             try {
                 applyCalculatedUseCaseChanges(calculateAndValidateUseCases(
@@ -402,7 +402,7 @@ public final class CameraUseCaseAdapter implements Camera {
                         false
                 ));
             } catch (IllegalArgumentException e) {
-                restoreFeatureCombination(previousFeatureComboMap);
+                restoreFeatureGroup(previousFeatureGroupMap);
                 throw new CameraException(e);
             }
         }
@@ -410,7 +410,7 @@ public final class CameraUseCaseAdapter implements Camera {
 
     /**
      * Simulates to add the specified collection of {@link UseCase} to the adapter with an
-     * optional feature combination, performing a dry-run to validate the configuration without
+     * optional feature group, performing a dry-run to validate the configuration without
      * applying any changes to the camera's active state.
      *
      * <p>This method performs all necessary calculations and validations to determine if the
@@ -418,9 +418,9 @@ public final class CameraUseCaseAdapter implements Camera {
      * camera. If the combination is not supported, a [CameraException] will be thrown.
      *
      * @param appUseCasesToAdd The use cases an application wants to add.
-     * @param featureCombination A {@link ResolvedFeatureCombination} to use for all the use cases
-     *                           after adding these use cases. A null value represents that the
-     *                           feature combination API is not being used.
+     * @param featureGroup     A {@link ResolvedFeatureGroup} to use for all the use cases
+     *                         after adding these use cases. A null value represents that the
+     *                         feature combination API is not being used.
      * @param findMaxSupportedFrameRate whether to find the maximum supported frame rates. If true,
      *                                  the {@link StreamSpecQueryResult#maxSupportedFrameRate} in
      *                                  returned {@link CalculatedUseCaseInfo} will contain the
@@ -436,19 +436,19 @@ public final class CameraUseCaseAdapter implements Camera {
     @NonNull
     public CalculatedUseCaseInfo simulateAddUseCases(
             @NonNull Collection<UseCase> appUseCasesToAdd,
-            @Nullable ResolvedFeatureCombination featureCombination,
+            @Nullable ResolvedFeatureGroup featureGroup,
             boolean findMaxSupportedFrameRate)
             throws CameraException {
         Logger.d(TAG, "simulateAddUseCases: appUseCasesToAdd = " + appUseCasesToAdd
-                + ", featureCombination = " + featureCombination);
+                + ", featureGroup = " + featureGroup);
 
         synchronized (mLock) {
             applyCameraConfig();
             Set<UseCase> appUseCases = new LinkedHashSet<>(mAppUseCases);
             appUseCases.addAll(appUseCasesToAdd);
 
-            Map<UseCase, Set<Feature>> previousFeatureComboMap =
-                    applyFeatureCombination(appUseCases, featureCombination);
+            Map<UseCase, Set<GroupableFeature>> previousFeatureGRoupMap =
+                    applyFeatureGroup(appUseCases, featureGroup);
 
             try {
                 return calculateAndValidateUseCases(
@@ -459,7 +459,7 @@ public final class CameraUseCaseAdapter implements Camera {
             } catch (IllegalArgumentException e) {
                 throw new CameraException(e);
             } finally {
-                restoreFeatureCombination(previousFeatureComboMap);
+                restoreFeatureGroup(previousFeatureGRoupMap);
             }
         }
     }
@@ -469,7 +469,7 @@ public final class CameraUseCaseAdapter implements Camera {
      */
     public void removeUseCases(@NonNull Collection<UseCase> useCasesToRemove) {
         synchronized (mLock) {
-            clearFeatureCombination(useCasesToRemove);
+            clearFeatureGroup(useCasesToRemove);
 
             Set<UseCase> appUseCases = new LinkedHashSet<>(mAppUseCases);
             appUseCases.removeAll(useCasesToRemove);
@@ -689,29 +689,29 @@ public final class CameraUseCaseAdapter implements Camera {
 
     @OptIn(markerClass = ExperimentalSessionConfig.class)
     @NonNull
-    private static Map<UseCase, Set<Feature>> applyFeatureCombination(
+    private static Map<UseCase, Set<GroupableFeature>> applyFeatureGroup(
             @NonNull Collection<UseCase> useCases,
-            @Nullable ResolvedFeatureCombination featureCombination) {
-        Map<UseCase, Set<Feature>> previousFeatureComboMap = new HashMap<>();
+            @Nullable ResolvedFeatureGroup featureGroup) {
+        Map<UseCase, Set<GroupableFeature>> previousFeatureComboMap = new HashMap<>();
         for (UseCase useCase : useCases) {
-            previousFeatureComboMap.put(useCase, useCase.getFeatureCombination());
-            useCase.setFeatureCombination(
-                    featureCombination != null ? featureCombination.getFeatures() : null);
+            previousFeatureComboMap.put(useCase, useCase.getFeatureGroup());
+            useCase.setFeatureGroup(
+                    featureGroup != null ? featureGroup.getFeatures() : null);
         }
         return previousFeatureComboMap;
     }
 
     @OptIn(markerClass = ExperimentalSessionConfig.class)
-    private static void restoreFeatureCombination(
-            Map<UseCase, @Nullable Set<@NonNull Feature>> previousFeatureComboMap) {
-        for (Map.Entry<UseCase, Set<Feature>> entry : previousFeatureComboMap.entrySet()) {
-            entry.getKey().setFeatureCombination(entry.getValue());
+    private static void restoreFeatureGroup(
+            Map<UseCase, @Nullable Set<@NonNull GroupableFeature>> previousFeatureComboMap) {
+        for (Map.Entry<UseCase, Set<GroupableFeature>> entry : previousFeatureComboMap.entrySet()) {
+            entry.getKey().setFeatureGroup(entry.getValue());
         }
     }
 
-    private static void clearFeatureCombination(@NonNull Collection<UseCase> useCases) {
+    private static void clearFeatureGroup(@NonNull Collection<UseCase> useCases) {
         for (UseCase useCase : useCases) {
-            useCase.setFeatureCombination(null);
+            useCase.setFeatureGroup(null);
         }
     }
 
@@ -722,7 +722,7 @@ public final class CameraUseCaseAdapter implements Camera {
 
         for (List<UseCase> useCases : useCaseLists) {
             for (UseCase useCase : useCases) {
-                if (useCase.getFeatureCombination() != null) {
+                if (useCase.getFeatureGroup() != null) {
                     isFeatureComboInvocation = true;
                     break;
                 }
@@ -865,7 +865,7 @@ public final class CameraUseCaseAdapter implements Camera {
             }
             if (mStreamSharing != null && mStreamSharing.getChildren().equals(newChildren)) {
                 // Returns the current instance if the new children equals the old.
-                mStreamSharing.updateFeatureCombination(newChildren);
+                mStreamSharing.updateFeatureGroup(newChildren);
                 return requireNonNull(mStreamSharing);
             }
 

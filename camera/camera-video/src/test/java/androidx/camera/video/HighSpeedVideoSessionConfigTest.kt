@@ -49,7 +49,7 @@ class HighSpeedVideoSessionConfigTest {
         val videoCapture = createVideoCapture(mirrorMode = MIRROR_MODE_ON)
 
         assertThrows(IllegalArgumentException::class.java) {
-            HighSpeedVideoSessionConfig(videoCapture, frameRate = FPS_120_120)
+            HighSpeedVideoSessionConfig(videoCapture, frameRateRange = FPS_120_120)
         }
     }
 
@@ -58,7 +58,7 @@ class HighSpeedVideoSessionConfigTest {
         val videoCapture = createVideoCapture(targetFrameRate = FPS_30_30)
 
         assertThrows(IllegalArgumentException::class.java) {
-            HighSpeedVideoSessionConfig(videoCapture, frameRate = FPS_120_120)
+            HighSpeedVideoSessionConfig(videoCapture, frameRateRange = FPS_120_120)
         }
     }
 
@@ -70,7 +70,7 @@ class HighSpeedVideoSessionConfigTest {
             HighSpeedVideoSessionConfig(
                 defaultVideoCapture,
                 preview = preview,
-                frameRate = FPS_120_120,
+                frameRateRange = FPS_120_120,
             )
         }
     }
@@ -83,7 +83,7 @@ class HighSpeedVideoSessionConfigTest {
             HighSpeedVideoSessionConfig(
                 defaultVideoCapture,
                 preview = preview,
-                frameRate = FPS_120_120,
+                frameRateRange = FPS_120_120,
             )
         }
     }
@@ -96,7 +96,7 @@ class HighSpeedVideoSessionConfigTest {
             HighSpeedVideoSessionConfig(
                 defaultVideoCapture,
                 preview = preview,
-                frameRate = FPS_120_120,
+                frameRateRange = FPS_120_120,
             )
         }
     }
@@ -109,14 +109,14 @@ class HighSpeedVideoSessionConfigTest {
             HighSpeedVideoSessionConfig(
                 defaultVideoCapture,
                 preview = preview,
-                frameRate = FPS_120_120,
+                frameRateRange = FPS_120_120,
             )
         }
     }
 
     @Test
     fun getUseCaseList_containsVideoCapture() {
-        val config = HighSpeedVideoSessionConfig(defaultVideoCapture, frameRate = FPS_120_120)
+        val config = HighSpeedVideoSessionConfig(defaultVideoCapture, frameRateRange = FPS_120_120)
 
         assertThat(config.useCases).containsExactly(defaultVideoCapture)
     }
@@ -127,7 +127,7 @@ class HighSpeedVideoSessionConfigTest {
             HighSpeedVideoSessionConfig(
                 defaultVideoCapture,
                 preview = defaultPreview,
-                frameRate = FPS_120_120,
+                frameRateRange = FPS_120_120,
             )
 
         assertThat(config.useCases).containsExactly(defaultVideoCapture, defaultPreview)
@@ -161,7 +161,7 @@ class HighSpeedVideoSessionConfigTest {
                 .setFrameRateRange(FPS_30_120)
                 .build()
 
-        assertThat(config.frameRate).isEqualTo(FPS_30_120)
+        assertThat(config.frameRateRange).isEqualTo(FPS_30_120)
         assertThat(config.videoCapture).isEqualTo(defaultVideoCapture)
         assertThat(config.useCases).containsExactly(defaultVideoCapture)
     }

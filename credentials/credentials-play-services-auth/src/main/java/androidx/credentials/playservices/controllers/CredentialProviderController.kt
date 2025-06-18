@@ -168,7 +168,7 @@ internal abstract class CredentialProviderController<
         request: T1,
         callback: CredentialManagerCallback<R1, E1>,
         executor: Executor,
-        cancellationSignal: CancellationSignal?,
+        cancellationSignal: CancellationSignal? = null,
     )
 
     /**
