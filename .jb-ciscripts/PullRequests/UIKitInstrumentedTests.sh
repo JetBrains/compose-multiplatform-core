@@ -33,6 +33,8 @@ defaults import com.apple.iphonesimulator "$PREF_PLIST"
 
 echo "BOOT:"
 xcrun simctl boot "iPhone 16"
+echo "BOOT: Run Preferences"
+xcrun simctl launch booted com.apple.Preferences
 echo "BOOT: Launch sim"
 open -a Simulator
 echo "BOOT: Launch sim via AppleScript"
