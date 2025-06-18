@@ -25,17 +25,23 @@ import androidx.compose.runtime.Composable
 internal actual fun ContextMenuArea(
     manager: TextFieldSelectionManager,
     content: @Composable () -> Unit
-) = CommonContextMenuArea(manager, content)
+) {
+    WebTextToolbarArea { CommonContextMenuArea(manager, content) }
+}
 
 @Composable
 internal actual fun ContextMenuArea(
     selectionState: TextFieldSelectionState,
     enabled: Boolean,
     content: @Composable () -> Unit
-) = CommonContextMenuArea(selectionState, enabled, content)
+) {
+    WebTextToolbarArea { CommonContextMenuArea(selectionState, enabled, content) }
+}
 
 @Composable
 internal actual fun ContextMenuArea(
     manager: SelectionManager,
     content: @Composable () -> Unit
-) = CommonContextMenuArea(manager, content)
+) {
+    WebTextToolbarArea { CommonContextMenuArea(manager, content) }
+}
