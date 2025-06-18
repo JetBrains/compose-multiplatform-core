@@ -290,7 +290,7 @@ internal class RootNodeOwner(
             IdentityPositionCalculator,
             isInBounds = isInBounds
         )
-        return PointerEventResult(result.anyMovementConsumed)
+        return PointerEventResult(value = result.value)
     }
 
     fun onKeyEvent(keyEvent: KeyEvent): Boolean {
