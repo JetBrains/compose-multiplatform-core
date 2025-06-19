@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package test.androidx.compose.foundation.text.selection
+package androidx.compose.foundation.text.selection
 
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.KeyInjectionScope

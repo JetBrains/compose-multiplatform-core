@@ -14,15 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalMultiplatform::class)
-
 package kotlinx.test
 
-@OptionalExpectation
-expect annotation class IgnoreWasmTarget()
-
-@OptionalExpectation
-expect annotation class IgnoreJsTarget()
-
-@OptionalExpectation
-expect annotation class IgnoreIosTarget()
+actual typealias IgnoreIosTarget = kotlin.test.Ignore

@@ -36,12 +36,9 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import kotlin.test.Ignore
 import kotlin.test.Test
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
-import test.androidx.compose.foundation.text.selection.DefaultKeyboardActions
-import test.androidx.compose.foundation.text.selection.MacosKeyboardActions
 
 private val ResolvedKeyboardActions
     get() = when (hostOs) {

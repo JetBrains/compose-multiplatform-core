@@ -30,20 +30,6 @@ import androidx.window.core.layout.WindowSizeClass
  * that uses the default [WindowSizeClass] constructor and the default [Posture] calculation
  * functions to retrieve [WindowSizeClass] and [Posture].
  *
- * @return [WindowAdaptiveInfo] of the provided context
- */
-@Deprecated(
-    "currentWindowAdaptiveInfo APIs now have a new parameter added.",
-    level = DeprecationLevel.HIDDEN,
-)
-@Composable
-fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo = currentWindowAdaptiveInfo(false)
-
-/**
- * Calculates and returns [WindowAdaptiveInfo] of the provided context. It's a convenient function
- * that uses the default [WindowSizeClass] constructor and the default [Posture] calculation
- * functions to retrieve [WindowSizeClass] and [Posture].
- *
  * @param supportLargeAndXLargeWidth `true` to support the large and extra-large window width size
  *   classes, which makes the returned [WindowSizeClass] be calculated based on the breakpoints that
  *   include large and extra-large widths.

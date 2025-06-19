@@ -1124,6 +1124,9 @@ public abstract class androidx/compose/runtime/snapshots/StateRecord {
 	public fun create (J)Landroidx/compose/runtime/snapshots/StateRecord;
 }
 
+public abstract interface annotation class androidx/compose/runtime/tooling/ComposeToolingApi : java/lang/annotation/Annotation {
+}
+
 public abstract interface class androidx/compose/runtime/tooling/CompositionData {
 	public fun find (Ljava/lang/Object;)Landroidx/compose/runtime/tooling/CompositionGroup;
 	public abstract fun getCompositionGroups ()Ljava/lang/Iterable;
@@ -1167,5 +1170,40 @@ public abstract interface class androidx/compose/runtime/tooling/CompositionInst
 
 public final class androidx/compose/runtime/tooling/InspectionTablesKt {
 	public static final fun getLocalInspectionTables ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
+public final class androidx/compose/runtime/tooling/LocationSourceInformation {
+	public static final field $stable I
+	public fun <init> (IIIZ)V
+	public final fun getLength ()I
+	public final fun getLineNumber ()I
+	public final fun getOffset ()I
+	public final fun isRepeatable ()Z
+}
+
+public final class androidx/compose/runtime/tooling/ParameterSourceInformation {
+	public static final field $stable I
+	public fun <init> (ILjava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (ILjava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInlineClass ()Ljava/lang/String;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSortedIndex ()I
+}
+
+public final class androidx/compose/runtime/tooling/SourceInformation {
+	public static final field $stable I
+	public fun <init> (ZZLjava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;Ljava/util/List;Ljava/lang/String;)V
+	public final fun getFunctionName ()Ljava/lang/String;
+	public final fun getLocations ()Ljava/util/List;
+	public final fun getPackageHash ()Ljava/lang/String;
+	public final fun getParameters ()Ljava/util/List;
+	public final fun getRawData ()Ljava/lang/String;
+	public final fun getSourceFile ()Ljava/lang/String;
+	public final fun isCall ()Z
+	public final fun isInline ()Z
+}
+
+public final class androidx/compose/runtime/tooling/SourceInformationKt {
+	public static final fun parseSourceInformation (Ljava/lang/String;)Landroidx/compose/runtime/tooling/SourceInformation;
 }
 

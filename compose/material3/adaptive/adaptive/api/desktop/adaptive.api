@@ -49,11 +49,12 @@ public final class androidx/compose/material3/adaptive/WindowAdaptiveInfo {
 }
 
 public final class androidx/compose/material3/adaptive/WindowAdaptiveInfoKt {
+	public static final fun currentWindowAdaptiveInfo (ZLandroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;
 	public static final fun currentWindowDpSize (Landroidx/compose/runtime/Composer;I)J
 	public static final fun currentWindowSize (Landroidx/compose/runtime/Composer;I)J
 }
 
 public final class androidx/compose/material3/adaptive/WindowAdaptiveInfo_skikoKt {
-	public static final fun currentWindowAdaptiveInfo (Landroidx/compose/runtime/Composer;I)Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;
+	public static final synthetic fun currentWindowAdaptiveInfo (Landroidx/compose/runtime/Composer;I)Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;
 }
 

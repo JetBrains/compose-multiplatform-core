@@ -84,7 +84,7 @@ public abstract class androidx/compose/ui/graphics/Brush {
 }
 
 public final class androidx/compose/ui/graphics/Brush$Companion {
-	public final fun compositeShaderBrush-7EN7VTw (Landroidx/compose/ui/graphics/Brush;Landroidx/compose/ui/graphics/Brush;I)Landroidx/compose/ui/graphics/Brush;
+	public final fun composite-7EN7VTw (Landroidx/compose/ui/graphics/Brush;Landroidx/compose/ui/graphics/Brush;I)Landroidx/compose/ui/graphics/Brush;
 	public final fun horizontalGradient-8A-3gB4 (Ljava/util/List;FFI)Landroidx/compose/ui/graphics/Brush;
 	public final fun horizontalGradient-8A-3gB4 ([Lkotlin/Pair;FFI)Landroidx/compose/ui/graphics/Brush;
 	public static synthetic fun horizontalGradient-8A-3gB4$default (Landroidx/compose/ui/graphics/Brush$Companion;Ljava/util/List;FFIILjava/lang/Object;)Landroidx/compose/ui/graphics/Brush;
@@ -915,7 +915,8 @@ public abstract class androidx/compose/ui/graphics/ShaderBrush : androidx/compos
 	public fun <init> ()V
 	public final fun applyTo-Pq9zytI (JLandroidx/compose/ui/graphics/Paint;F)V
 	public abstract fun createShader-uvyYCjk (J)Lorg/jetbrains/skia/Shader;
-	public final fun transform-Q8lPUPs ([F)V
+	public final fun getTransform-3i98HWw ()[F
+	public final fun setTransform-Q8lPUPs ([F)V
 }
 
 public final class androidx/compose/ui/graphics/ShaderKt {
@@ -1716,28 +1717,17 @@ public abstract class androidx/compose/ui/graphics/painter/Painter {
 	protected abstract fun onDraw (Landroidx/compose/ui/graphics/drawscope/DrawScope;)V
 }
 
-public final class androidx/compose/ui/graphics/shadow/DropShadow {
-	public synthetic fun <init> (FJFFIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (FJFFILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (FLandroidx/compose/ui/graphics/Brush;FFIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (FLandroidx/compose/ui/graphics/Brush;FFILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAlpha ()F
-	public final fun getBlendMode-0nO6VwU ()I
-	public final fun getBrush ()Landroidx/compose/ui/graphics/Brush;
-	public final fun getColor-0d7_KjU ()J
-	public final fun getRadius-D9Ej5fM ()F
-	public final fun getSpread-D9Ej5fM ()F
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
-}
-
 public final class androidx/compose/ui/graphics/shadow/DropShadowPainter : androidx/compose/ui/graphics/painter/Painter {
-	public fun <init> (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/DropShadow;)V
+	public fun <init> (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/Shadow;)V
 	public fun getIntrinsicSize-NH-jbRc ()J
 }
 
-public final class androidx/compose/ui/graphics/shadow/InnerShadow {
+public final class androidx/compose/ui/graphics/shadow/InnerShadowPainter : androidx/compose/ui/graphics/painter/Painter {
+	public fun <init> (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/Shadow;)V
+	public fun getIntrinsicSize-NH-jbRc ()J
+}
+
+public final class androidx/compose/ui/graphics/shadow/Shadow {
 	public synthetic fun <init> (FJFJFIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (FJFJFILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public synthetic fun <init> (FLandroidx/compose/ui/graphics/Brush;FJFIILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -1754,15 +1744,10 @@ public final class androidx/compose/ui/graphics/shadow/InnerShadow {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class androidx/compose/ui/graphics/shadow/InnerShadowPainter : androidx/compose/ui/graphics/painter/Painter {
-	public fun <init> (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/InnerShadow;)V
-	public fun getIntrinsicSize-NH-jbRc ()J
-}
-
 public abstract interface class androidx/compose/ui/graphics/shadow/ShadowContext {
 	public fun clearCache ()V
-	public fun createDropShadowPainter (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/DropShadow;)Landroidx/compose/ui/graphics/shadow/DropShadowPainter;
-	public fun createInnerShadowPainter (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/InnerShadow;)Landroidx/compose/ui/graphics/shadow/InnerShadowPainter;
+	public fun createDropShadowPainter (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/Shadow;)Landroidx/compose/ui/graphics/shadow/DropShadowPainter;
+	public fun createInnerShadowPainter (Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/Shadow;)Landroidx/compose/ui/graphics/shadow/InnerShadowPainter;
 }
 
 public final class androidx/compose/ui/graphics/vector/PathBuilder {

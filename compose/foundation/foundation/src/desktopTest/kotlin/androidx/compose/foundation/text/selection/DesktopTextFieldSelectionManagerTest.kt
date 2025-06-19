@@ -124,13 +124,14 @@ class DesktopTextFieldSelectionManagerTest {
 
     @Test
     fun TextFieldSelectionManager_mouseSelectionObserver_onStart() {
-        manager.mouseSelectionObserver.onStart(dragBeginPosition, SelectionAdjustment.None)
+        manager.mouseSelectionObserver.onStart(dragBeginPosition, SelectionAdjustment.None, 1)
 
         assertThat(value.selection).isEqualTo(TextRange(0, 0))
 
         manager.mouseSelectionObserver.onStart(
             dragBeginPosition + dragDistance,
-            SelectionAdjustment.None
+            SelectionAdjustment.None,
+            1
         )
         assertThat(value.selection).isEqualTo(TextRange(8, 8))
     }
@@ -148,7 +149,7 @@ class DesktopTextFieldSelectionManagerTest {
     @Test
     fun TextFieldSelectionManager_mouseSelectionObserver_onDrag() {
         val observer = manager.mouseSelectionObserver
-        observer.onStart(dragBeginPosition, SelectionAdjustment.None)
+        observer.onStart(dragBeginPosition, SelectionAdjustment.None, 1)
         observer.onDrag(dragDistance, SelectionAdjustment.None)
 
         assertThat(value.selection).isEqualTo(TextRange(0, 8))
@@ -157,7 +158,7 @@ class DesktopTextFieldSelectionManagerTest {
     @Test
     fun TextFieldSelectionManager_mouseSelectionObserver_copy() = runTest {
         val observer = manager.mouseSelectionObserver
-        observer.onStart(dragBeginPosition, SelectionAdjustment.None)
+        observer.onStart(dragBeginPosition, SelectionAdjustment.None, 1)
         observer.onDrag(dragDistance, SelectionAdjustment.None)
 
         manager.value = value

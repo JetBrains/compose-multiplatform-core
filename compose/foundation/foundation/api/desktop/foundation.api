@@ -1941,7 +1941,7 @@ public abstract interface class androidx/compose/foundation/text/contextmenu/dat
 }
 
 public final class androidx/compose/foundation/text/contextmenu/modifier/TextContextMenuModifierKt {
-	public static final fun addTextContextMenuComponents (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static final fun appendTextContextMenuComponents (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static final fun filterTextContextMenuComponents (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 }
 
@@ -1958,11 +1958,6 @@ public abstract interface class androidx/compose/foundation/text/contextmenu/pro
 public final class androidx/compose/foundation/text/contextmenu/provider/TextContextMenuProviderKt {
 	public static final fun getLocalTextContextMenuDropdownProvider ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 	public static final fun getLocalTextContextMenuToolbarProvider ()Landroidx/compose/runtime/ProvidableCompositionLocal;
-}
-
-public abstract interface class androidx/compose/foundation/text/input/AnnotatedOutputTransformation : androidx/compose/foundation/text/input/OutputTransformation {
-	public abstract fun annotateOutput (Landroidx/compose/foundation/text/input/OutputTransformationAnnotationScope;)V
-	public fun transformOutput (Landroidx/compose/foundation/text/input/TextFieldBuffer;)V
 }
 
 public abstract interface class androidx/compose/foundation/text/input/InputTransformation {
@@ -1991,14 +1986,10 @@ public abstract interface class androidx/compose/foundation/text/input/OutputTra
 	public abstract fun transformOutput (Landroidx/compose/foundation/text/input/TextFieldBuffer;)V
 }
 
-public abstract interface class androidx/compose/foundation/text/input/OutputTransformationAnnotationScope {
-	public abstract fun addStyle (Landroidx/compose/ui/text/ParagraphStyle;II)V
-	public abstract fun addStyle (Landroidx/compose/ui/text/SpanStyle;II)V
-	public abstract fun getText ()Ljava/lang/CharSequence;
-}
-
 public final class androidx/compose/foundation/text/input/TextFieldBuffer : java/lang/Appendable {
 	public static final field $stable I
+	public final fun addStyle (Landroidx/compose/ui/text/ParagraphStyle;II)V
+	public final fun addStyle (Landroidx/compose/ui/text/SpanStyle;II)V
 	public fun append (C)Ljava/lang/Appendable;
 	public fun append (Ljava/lang/CharSequence;)Ljava/lang/Appendable;
 	public fun append (Ljava/lang/CharSequence;II)Ljava/lang/Appendable;

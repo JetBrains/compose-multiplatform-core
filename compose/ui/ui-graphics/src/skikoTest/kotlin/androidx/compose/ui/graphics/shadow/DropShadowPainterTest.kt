@@ -35,7 +35,7 @@ class DropShadowPainterTest {
 
     @Test
     fun testDropShadowPainterWithColor() {
-        val dropShadow = DropShadowPainter(RectangleShape, DropShadow(200.dp, Color.Red))
+        val dropShadow = DropShadowPainter(RectangleShape, Shadow(200.dp, Color.Red))
         shadowTest(
             block = {
                 drawRect(Color.Blue)
@@ -73,7 +73,7 @@ class DropShadowPainterTest {
                         return Outline.Generic(path)
                     }
                 },
-                DropShadow(200.dp, Color.Red),
+                Shadow(200.dp, Color.Red),
             )
         shadowTest(
             block = {
@@ -95,7 +95,7 @@ class DropShadowPainterTest {
     @Test
     fun testDropShadowPainterWithBrush() {
         val dropShadow =
-            DropShadowPainter(RectangleShape, DropShadow(200.dp, createTestImageShaderBrush()))
+            DropShadowPainter(RectangleShape, Shadow(200.dp, createTestImageShaderBrush()))
         shadowTest(
             block = {
                 drawRect(Color.Blue)
@@ -133,7 +133,7 @@ class DropShadowPainterTest {
                         return Outline.Generic(path)
                     }
                 },
-                DropShadow(200.dp, createTestImageShaderBrush()),
+                Shadow(200.dp, createTestImageShaderBrush()),
             )
         shadowTest(
             block = {
@@ -155,7 +155,7 @@ class DropShadowPainterTest {
     @Test
     fun testDropShadowPainterWithBrushAndColorFilter() {
         val dropShadow =
-            DropShadowPainter(RectangleShape, DropShadow(200.dp, createTestImageShaderBrush()))
+            DropShadowPainter(RectangleShape, Shadow(200.dp, createTestImageShaderBrush()))
         shadowTest(
             block = {
                 drawRect(Color.Blue)
@@ -178,7 +178,7 @@ class DropShadowPainterTest {
         val dropShadow =
             DropShadowPainter(
                 RectangleShape,
-                DropShadow(
+                Shadow(
                     200.dp,
                     Brush.verticalGradient(
                         0.0f to Color.Red,

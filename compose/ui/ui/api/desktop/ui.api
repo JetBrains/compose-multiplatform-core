@@ -150,6 +150,30 @@ public final class androidx/compose/ui/ComposedModifierKt {
 	public static final fun materializeModifier (Landroidx/compose/runtime/Composer;Landroidx/compose/ui/Modifier;)Landroidx/compose/ui/Modifier;
 }
 
+public final class androidx/compose/ui/FrameRateCategory {
+	public static final field Companion Landroidx/compose/ui/FrameRateCategory$Companion;
+	public static final synthetic fun box-impl (F)Landroidx/compose/ui/FrameRateCategory;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (FLjava/lang/Object;)Z
+	public static final fun equals-impl0 (FF)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (F)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (F)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()F
+}
+
+public final class androidx/compose/ui/FrameRateCategory$Companion {
+	public final fun getDefault-NSsRyOo ()F
+	public final fun getHigh-NSsRyOo ()F
+	public final fun getNormal-NSsRyOo ()F
+}
+
+public final class androidx/compose/ui/FrameRateKt {
+	public static final fun preferredFrameRate (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
+	public static final fun preferredFrameRate-kI47g10 (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
+}
+
 public final class androidx/compose/ui/ImageComposeScene {
 	public static final field $stable I
 	public fun <init> (IILandroidx/compose/ui/unit/Density;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;)V
@@ -357,6 +381,7 @@ public final class androidx/compose/ui/autofill/ContentDataType$Companion {
 
 public abstract interface class androidx/compose/ui/autofill/ContentType {
 	public static final field Companion Landroidx/compose/ui/autofill/ContentType$Companion;
+	public abstract fun plus (Landroidx/compose/ui/autofill/ContentType;)Landroidx/compose/ui/autofill/ContentType;
 }
 
 public final class androidx/compose/ui/autofill/ContentType$Companion {
@@ -731,10 +756,9 @@ public final class androidx/compose/ui/draw/ScaleKt {
 }
 
 public final class androidx/compose/ui/draw/ShadowKt {
+	public static final fun dropShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/Shadow;)Landroidx/compose/ui/Modifier;
 	public static final fun dropShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
-	public static final fun dropShadow-hLWuAgI (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/DropShadow;J)Landroidx/compose/ui/Modifier;
-	public static synthetic fun dropShadow-hLWuAgI$default (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/DropShadow;JILjava/lang/Object;)Landroidx/compose/ui/Modifier;
-	public static final fun innerShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/InnerShadow;)Landroidx/compose/ui/Modifier;
+	public static final fun innerShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Landroidx/compose/ui/graphics/shadow/Shadow;)Landroidx/compose/ui/Modifier;
 	public static final fun innerShadow (Landroidx/compose/ui/Modifier;Landroidx/compose/ui/graphics/Shape;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static final fun shadow-s4CzXII (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;ZJJ)Landroidx/compose/ui/Modifier;
 	public static synthetic fun shadow-s4CzXII$default (Landroidx/compose/ui/Modifier;FLandroidx/compose/ui/graphics/Shape;ZJJILjava/lang/Object;)Landroidx/compose/ui/Modifier;
@@ -1469,11 +1493,40 @@ public abstract interface class androidx/compose/ui/input/InputModeManager {
 	public abstract fun requestInputMode-iuPiT84 (I)Z
 }
 
+public abstract interface class androidx/compose/ui/input/indirect/IndirectTouchEvent {
+	public abstract fun getPosition-F1C5BW0 ()J
+	public abstract fun getType-LxEHWp8 ()I
+	public abstract fun getUptimeMillis ()J
+}
+
+public final class androidx/compose/ui/input/indirect/IndirectTouchEventType {
+	public static final field Companion Landroidx/compose/ui/input/indirect/IndirectTouchEventType$Companion;
+	public static final synthetic fun box-impl (I)Landroidx/compose/ui/input/indirect/IndirectTouchEventType;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (ILjava/lang/Object;)Z
+	public static final fun equals-impl0 (II)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (I)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (I)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()I
+}
+
 public final class androidx/compose/ui/input/indirect/IndirectTouchEventType$Companion {
 	public final fun getMove-LxEHWp8 ()I
 	public final fun getPress-LxEHWp8 ()I
 	public final fun getRelease-LxEHWp8 ()I
 	public final fun getUnknown-LxEHWp8 ()I
+}
+
+public final class androidx/compose/ui/input/indirect/IndirectTouchInputModifierKt {
+	public static final fun onIndirectTouchEvent (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+	public static final fun onPreIndirectTouchEvent (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
+}
+
+public abstract interface class androidx/compose/ui/input/indirect/IndirectTouchInputModifierNode : androidx/compose/ui/node/DelegatableNode {
+	public abstract fun onIndirectTouchEvent (Landroidx/compose/ui/input/indirect/IndirectTouchEvent;)Z
+	public abstract fun onPreIndirectTouchEvent (Landroidx/compose/ui/input/indirect/IndirectTouchEvent;)Z
 }
 
 public final class androidx/compose/ui/input/key/Key {
@@ -3054,6 +3107,44 @@ public final class androidx/compose/ui/layout/VerticalRuler$Companion {
 	public final fun minOf ([Landroidx/compose/ui/layout/VerticalRuler;)Landroidx/compose/ui/layout/VerticalRuler;
 }
 
+public abstract interface class androidx/compose/ui/layout/WindowInsetsAnimation {
+	public abstract fun getAlpha ()F
+	public abstract fun getDurationMillis ()J
+	public abstract fun getFraction ()F
+	public abstract fun getSource ()Landroidx/compose/ui/layout/RectRulers;
+	public abstract fun getTarget ()Landroidx/compose/ui/layout/RectRulers;
+	public abstract fun isAnimating ()Z
+	public abstract fun isVisible ()Z
+}
+
+public abstract interface class androidx/compose/ui/layout/WindowInsetsRulers {
+	public static final field Companion Landroidx/compose/ui/layout/WindowInsetsRulers$Companion;
+	public abstract fun getAnimation (Landroidx/compose/ui/layout/Placeable$PlacementScope;)Landroidx/compose/ui/layout/WindowInsetsAnimation;
+	public abstract fun getCurrent ()Landroidx/compose/ui/layout/RectRulers;
+	public abstract fun getMaximum ()Landroidx/compose/ui/layout/RectRulers;
+}
+
+public final class androidx/compose/ui/layout/WindowInsetsRulers$Companion {
+	public final fun getCaptionBar ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getDisplayCutout ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getIme ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getMandatorySystemGestures ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getNavigationBars ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getSafeContent ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getSafeDrawing ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getSafeGestures ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getStatusBars ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getSystemBars ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getSystemGestures ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getTappableElement ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun getWaterfall ()Landroidx/compose/ui/layout/WindowInsetsRulers;
+	public final fun innermostOf ([Landroidx/compose/ui/layout/WindowInsetsRulers;)Landroidx/compose/ui/layout/WindowInsetsRulers;
+}
+
+public final class androidx/compose/ui/layout/WindowInsetsRulersKt {
+	public static final fun getDisplayCutoutBounds (Landroidx/compose/ui/layout/Placeable$PlacementScope;)Ljava/util/List;
+}
+
 public abstract class androidx/compose/ui/modifier/ModifierLocal {
 	public static final field $stable I
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -3304,6 +3395,7 @@ public abstract interface class androidx/compose/ui/node/RootForTest {
 	public abstract fun getSemanticsOwner ()Landroidx/compose/ui/semantics/SemanticsOwner;
 	public abstract fun getTextInputService ()Landroidx/compose/ui/text/input/TextInputService;
 	public fun measureAndLayoutForTest ()V
+	public fun sendIndirectTouchEvent (Landroidx/compose/ui/input/indirect/IndirectTouchEvent;)Z
 	public abstract fun sendKeyEvent-ZmokQxo (Ljava/lang/Object;)Z
 	public fun setAccessibilityEventBatchIntervalMillis (J)V
 	public fun setUncaughtExceptionHandler (Landroidx/compose/ui/node/RootForTest$UncaughtExceptionHandler;)V
@@ -4144,32 +4236,6 @@ public final class androidx/compose/ui/state/ToggleableStateKt {
 
 public final class androidx/compose/ui/text/TextMeasurerHelperKt {
 	public static final fun rememberTextMeasurer (ILandroidx/compose/runtime/Composer;II)Landroidx/compose/ui/text/TextMeasurer;
-}
-
-public final class androidx/compose/ui/ui/FrameRateCategory {
-	public static final field Companion Landroidx/compose/ui/ui/FrameRateCategory$Companion;
-	public static final synthetic fun box-impl (F)Landroidx/compose/ui/ui/FrameRateCategory;
-	public fun equals (Ljava/lang/Object;)Z
-	public static fun equals-impl (FLjava/lang/Object;)Z
-	public static final fun equals-impl0 (FF)Z
-	public final fun getValue ()F
-	public fun hashCode ()I
-	public static fun hashCode-impl (F)I
-	public fun toString ()Ljava/lang/String;
-	public static fun toString-impl (F)Ljava/lang/String;
-	public final synthetic fun unbox-impl ()F
-}
-
-public final class androidx/compose/ui/ui/FrameRateCategory$Companion {
-	public final fun getDefault-EPUNCpU ()F
-	public final fun getHigh-EPUNCpU ()F
-	public final fun getNoPreference-EPUNCpU ()F
-	public final fun getNormal-EPUNCpU ()F
-}
-
-public final class androidx/compose/ui/ui/FrameRateKt {
-	public static final fun requestedFrameRate (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
-	public static final fun requestedFrameRate-HuZ4eWk (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
 }
 
 public abstract interface class androidx/compose/ui/window/ApplicationScope {

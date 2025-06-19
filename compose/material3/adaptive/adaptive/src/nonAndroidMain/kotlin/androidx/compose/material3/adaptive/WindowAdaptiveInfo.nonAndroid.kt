@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+@file:JvmName("WindowAdaptiveInfo_skikoKt")
+
 package androidx.compose.material3.adaptive
 
 import androidx.compose.runtime.Composable
+import kotlin.jvm.JvmName
+
+@Deprecated(
+    level = DeprecationLevel.HIDDEN,
+    message = "Moved to common source set, maintained for binary compatibility.",
+)
+@Composable
+fun currentWindowAdaptiveInfo(): WindowAdaptiveInfo = currentWindowAdaptiveInfo(false)
+
+private val DefaultPosture = Posture()
 
 @Composable
 internal actual fun calculatePosture(): Posture =
-    Posture()  // Postures and hinges are relevant to android devices only
+    DefaultPosture // Postures and hinges are relevant to android devices only
