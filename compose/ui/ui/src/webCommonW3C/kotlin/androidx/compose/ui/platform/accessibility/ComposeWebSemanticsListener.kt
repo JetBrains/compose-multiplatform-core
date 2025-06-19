@@ -18,9 +18,11 @@ package androidx.compose.ui.platform.accessibility
 
 import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.Role
@@ -29,6 +31,8 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.isContainer
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.window.ComposeWindow
@@ -124,6 +128,10 @@ internal class ComposeWebSemanticsListener(
 
         val allIds = mutableSetOf<Int>()
 
+        val rootPosition = webSemanticsRoot.getBoundingClientRect().let {
+            Offset(it.left.toFloat(), it.top.toFloat())
+        }
+
         while (!dfsDeque.isEmpty()) {
             val node = dfsDeque.removeLast()
             val currentId = node.id
@@ -137,7 +145,7 @@ internal class ComposeWebSemanticsListener(
 
             if (nodes[currentId] != null) {
                 nodes[currentId] = node
-                syncNode(node, webNodes[currentId]!!)
+                syncNode(node, webNodes[currentId]!!, rootPosition)
             } else {
                 nodes[currentId] = node
                 val htmlNode = document.createElement("div") as HTMLElement
@@ -150,7 +158,7 @@ internal class ComposeWebSemanticsListener(
                 val parentId = nodeToParent[currentId]
                 val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
                 htmlParent.appendChild(htmlNode)
-                syncNode(node, htmlNode, true)
+                syncNode(node, htmlNode, rootPosition, true)
             }
         }
 
@@ -166,13 +174,24 @@ internal class ComposeWebSemanticsListener(
         removedIds.forEach { webNodes.remove(it) }
     }
 
-    private fun syncNode(sn: SemanticsNode, htmlNode: HTMLElement, justCreated: Boolean = false) {
+    private fun syncNode(
+        sn: SemanticsNode,
+        htmlNode: HTMLElement,
+        rootOffset: Offset,
+        justCreated: Boolean = false,
+    ) {
         val config = sn.config
-        println("Config = ${config}")
+
+        println("Config = $config")
 
         if (config.contains(SemanticsProperties.Text)) {
             val text = config[SemanticsProperties.Text]
             htmlNode.innerText = text.joinToString("\n") { it.text }
+        }
+
+        if (config.contains(SemanticsProperties.ContentDescription)) {
+            val contentDescription = config[SemanticsProperties.ContentDescription]
+            htmlNode.setAttribute("aria-label", contentDescription.joinToString(", "))
         }
 
         val role = config.getOrNull(SemanticsProperties.Role)
@@ -191,11 +210,7 @@ internal class ComposeWebSemanticsListener(
         }
 
         sn.layoutInfo.let {
-            val newPosition = if (sn.isRoot || true) {
-                it.coordinates.positionInWindow()
-            } else {
-                it.coordinates.positionInParent().div(it.density.density)
-            }
+            val newPosition = rootOffset + it.coordinates.positionInRoot().div(it.density.density)
             val rootCoordinates = it.coordinates.findRootCoordinates()
 
             val clippedRect = rootCoordinates

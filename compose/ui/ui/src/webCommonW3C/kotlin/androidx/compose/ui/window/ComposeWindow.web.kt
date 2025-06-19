@@ -184,6 +184,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     private val interopContainerElement: HTMLDivElement,
+    private val a11yContainerElement: HTMLDivElement,
     content: @Composable () -> Unit,
     private val state: ComposeWindowState
 ) : LifecycleOwner, ViewModelStoreOwner {
@@ -244,9 +245,11 @@ internal class ComposeWindow(
                 platformContext = this,
                 composeWindow = this@ComposeWindow,
                 coroutineScope = MainScope(),
-                webSemanticsRoot = (document.createElement("div") as HTMLElement).let {
+                webSemanticsRoot = a11yContainerElement.let {
+                    it.setAttribute("aria-label", "")
+                    it.setAttribute("role", "presentation")
+                    it.setAttribute("aria-live", "polite")
                     it.id = "a11y_root"
-                    document.body!!.appendChild(it)
                     it.style.opacity = "0"
                     it.style.setProperty("pointer-events", "none")
                     it
@@ -648,6 +651,7 @@ fun CanvasBasedWindow(
         canvas = canvas,
         // a detached container
         interopContainerElement = document.createElement("div") as HTMLDivElement,
+        a11yContainerElement = document.createElement("div") as HTMLDivElement,
         content = content,
         state = if (requestResize == null) DefaultWindowState(document.documentElement!!) else ComposeWindowState.createFromLambda(requestResize)
     )
@@ -703,9 +707,18 @@ fun ComposeViewport(
         left = "0"
     }
 
+    val a11yContainerElement = document.createElement("div") as HTMLDivElement
+    layerRoot.appendChild(a11yContainerElement)
+    a11yContainerElement.style.apply {
+        position = "absolute"
+        top = "0"
+        left = "0"
+    }
+
     ComposeWindow(
         canvas = canvas,
         interopContainerElement = interopContainerElement,
+        a11yContainerElement = a11yContainerElement,
         content = content,
         state = DefaultWindowState(viewportContainer)
     )
