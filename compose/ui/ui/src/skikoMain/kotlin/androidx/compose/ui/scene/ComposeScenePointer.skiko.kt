@@ -24,6 +24,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerInputEventData
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
@@ -152,12 +153,35 @@ internal fun PointerInputEvent(
 /**
  * The result of processing a pointer event.
  *
- * @property anyMovementConsumed Indicates whether any pointer movement was consumed during event
- * processing.
+ * @property value is a bitmask indicating the properties of the result.
+ * Use [anyMovementConsumed] and [anyChangeConsumed] to read those properties.
+ *
+ * The value is the same as in [androidx.compose.ui.input.pointer.ProcessResult],
+ * but we can't just reuse it because it's internal.
  */
 @InternalComposeUiApi
 @JvmInline
-value class PointerEventResult(val anyMovementConsumed: Boolean)
+value class PointerEventResult internal constructor(internal val value: Int) {
+
+    constructor(
+        anyMovementConsumed: Boolean = false,
+        anyChangeConsumed: Boolean = false
+    ) : this(
+        value = (anyMovementConsumed.toInt() shl 1) or
+            (anyChangeConsumed.toInt() shl 2)
+    )
+
+    /** It's true when [PointerInputChange] was consumed and Pointer's position was changed */
+    internal val anyMovementConsumed
+        inline get() = (value and 0x2) != 0
+
+    /** It's true when any [PointerInputChange] was consumed. */
+    internal val anyChangeConsumed
+        inline get() = (value and 0x4) != 0
+}
+
+@Suppress("NOTHING_TO_INLINE")
+private inline fun Boolean.toInt() = if (this) 1 else 0
 
 // TODO: Rewrite to vararg after https://youtrack.jetbrains.com/issue/KT-33565/Allow-vararg-parameter-of-inline-class-type
 internal fun PointerEventResult.merging(
@@ -165,8 +189,5 @@ internal fun PointerEventResult.merging(
     result2: PointerEventResult? = null,
     result3: PointerEventResult? = null
 ) = PointerEventResult(
-    anyMovementConsumed = anyMovementConsumed ||
-        result1.anyMovementConsumed ||
-        result2?.anyMovementConsumed ?: false ||
-        result3?.anyMovementConsumed ?: false
+    value = this.value or result1.value or (result2?.value ?: 0) or (result3?.value ?: 0)
 )
