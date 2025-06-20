@@ -182,8 +182,6 @@ internal class ComposeWebSemanticsListener(
     ) {
         val config = sn.config
 
-        println("Config = $config")
-
         if (config.contains(SemanticsProperties.Text)) {
             val text = config[SemanticsProperties.Text]
             htmlNode.innerText = text.joinToString("\n") { it.text }

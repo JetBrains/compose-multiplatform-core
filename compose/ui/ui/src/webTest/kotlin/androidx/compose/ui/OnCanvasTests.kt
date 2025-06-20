@@ -39,8 +39,12 @@ import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.MutationObserver
+import org.w3c.dom.MutationObserverInit
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
+import org.w3c.dom.get
 
 /**
  * An interface with helper functions to initialise the tests
@@ -66,13 +70,24 @@ internal interface OnCanvasTests {
     }
 
     private fun resetCanvas() {
-        (getCanvasContainer() as CanReplaceChildren).replaceChildren()
+        (getContainer() as CanReplaceChildren).replaceChildren()
     }
 
-    private fun getCanvasContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
+    private fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
+
+    private fun getAppRoot() = getContainer().children[0] as HTMLElement
+
+    fun getA11YContainer(): HTMLElement? {
+        return if (getAppRoot().children.length < 3) {
+            null
+        } else {
+            // The expected order is: canvas, interop container <div>, a11y container <div>
+            getAppRoot().children[2] as HTMLElement
+        }
+    }
 
     fun getCanvas(): HTMLCanvasElement {
-        val canvas = (getCanvasContainer().querySelector("canvas") as? HTMLCanvasElement) ?: error("failed to get canvas")
+        val canvas = (getAppRoot().querySelector("canvas") as? HTMLCanvasElement) ?: error("failed to get canvas")
         return canvas
     }
 
@@ -86,6 +101,22 @@ internal interface OnCanvasTests {
             // (it does so to let the event loop run / release the single thread)
             // I don't expect any issue from doing this, since a test will suspend and won't do anything.
             window.requestAnimationFrame { continuation.resumeWith(Result.success(it)) }
+        }
+    }
+
+    suspend fun awaitA11YChanges() {
+        val a11yContainer = getA11YContainer() ?: return
+
+        suspendCoroutine { continuation ->
+            val mutationObserver = MutationObserver { _, mutationObserver ->
+                continuation.resumeWith(Result.success(Unit))
+                mutationObserver.disconnect()
+            }
+
+            mutationObserver.observe(
+                target = a11yContainer,
+                options = MutationObserverInit(childList = true, subtree = true)
+            )
         }
     }
 

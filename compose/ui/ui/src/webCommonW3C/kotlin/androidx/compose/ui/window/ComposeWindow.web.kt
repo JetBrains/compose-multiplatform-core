@@ -685,6 +685,7 @@ fun ComposeViewport(
 ) {
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
+    canvas.setAttribute("role", "presentation")
     // canvas.setAttribute("aria-hidden", "true")
 
     // Create a common container (parent html element) for canvas and the interop container
