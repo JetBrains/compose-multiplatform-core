@@ -61,7 +61,6 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
-import androidx.compose.ui.keepscreenon.KeepScreenOnManager
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.DefaultAccessibilityManager
@@ -137,7 +136,6 @@ internal class RootNodeOwner(
     private val snapshotObserver = snapshotInvalidationTracker.snapshotObserver()
     private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
     private val coroutineScope = CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
-    private val keepScreenOnManager = KeepScreenOnManager.instance
     private val _owner = OwnerImpl(layoutDirection, coroutineContext)
     val owner: Owner get() = _owner
 
@@ -694,14 +692,16 @@ internal class RootNodeOwner(
             snapshotInvalidationTracker.requestMeasureAndLayout()
         }
 
+        private var keepScreenOnCount = 0
+
         override fun incrementKeepScreenOnCount() {
-            keepScreenOnManager.incrementKeepScreenOnCount(this@RootNodeOwner)
-            platformContext.isKeepScreenOnEnabled = keepScreenOnManager.isKeepScreenOnEnabled
+            keepScreenOnCount++
+            platformContext.isKeepScreenOnEnabled = keepScreenOnCount > 0
         }
 
         override fun decrementKeepScreenOnCount() {
-            keepScreenOnManager.decrementKeepScreenOnCount(this@RootNodeOwner)
-            platformContext.isKeepScreenOnEnabled = keepScreenOnManager.isKeepScreenOnEnabled
+            keepScreenOnCount--
+            platformContext.isKeepScreenOnEnabled = keepScreenOnCount > 0
         }
     }
 

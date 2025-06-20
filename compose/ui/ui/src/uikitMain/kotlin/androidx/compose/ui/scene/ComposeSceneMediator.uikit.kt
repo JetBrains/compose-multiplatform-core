@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.UIKitIdleTimerManager
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
@@ -102,7 +103,6 @@ import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
 import platform.QuartzCore.CATransaction
-import platform.UIKit.UIApplication
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventButtonMaskPrimary
 import platform.UIKit.UIEventButtonMaskSecondary
@@ -712,8 +712,8 @@ internal class ComposeSceneMediator(
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
 
         override var isKeepScreenOnEnabled: Boolean
-            get() = UIApplication.sharedApplication.idleTimerDisabled
-            set(value) { UIApplication.sharedApplication.idleTimerDisabled = value }
+            get() = UIKitIdleTimerManager.isIdleTimerDisabled
+            set(value) { UIKitIdleTimerManager.setIdleTimerState(this@ComposeSceneMediator, value) }
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)
