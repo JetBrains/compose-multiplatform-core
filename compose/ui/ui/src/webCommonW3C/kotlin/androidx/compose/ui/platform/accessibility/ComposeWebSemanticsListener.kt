@@ -21,9 +21,7 @@ import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.findRootCoordinates
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -31,8 +29,6 @@ import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.semantics.isContainer
-import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.window.ComposeWindow
@@ -141,25 +137,34 @@ internal class ComposeWebSemanticsListener(
             dfsDeque.addAll(children)
             children.forEach { it -> nodeToParent[it.id] = currentId }
 
-
-
-            if (nodes[currentId] != null) {
+            val htmlNode = if (nodes[currentId] != null) {
                 nodes[currentId] = node
-                syncNode(node, webNodes[currentId]!!, rootPosition)
+                val htmlNode = webNodes[currentId]!!
+
+                if (children.isNotEmpty()) {
+                    // To ensure the correct order of nested nodes, we remove all of them.
+                    // I assume it's more efficient to remove and re-add them than to insert the nodes at specific positions.
+                    // Also, the code is more simple with this approach.
+                    // They are added below.
+                    removeAllChildrenOf(htmlNode)
+                }
+
+                syncNode(node, htmlNode, rootPosition)
+                htmlNode
             } else {
                 nodes[currentId] = node
                 val htmlNode = document.createElement("div") as HTMLElement
-                htmlNode.apply {
-                    style.setProperty("position", "fixed")
-                }
+                htmlNode.style.setProperty("position", "fixed")
 
                 webNodes[currentId] = htmlNode
-
-                val parentId = nodeToParent[currentId]
-                val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
-                htmlParent.appendChild(htmlNode)
                 syncNode(node, htmlNode, rootPosition, true)
+                htmlNode
             }
+
+            // find the parent node and attach to it
+            val parentId = nodeToParent[currentId]
+            val htmlParent = parentId?.let { webNodes[it] } ?: webSemanticsRoot
+            htmlParent.appendChild(htmlNode)
         }
 
         val removedIds = mutableSetOf<Int>()
@@ -240,4 +245,9 @@ private fun setSizeAndPosition(element: HTMLElement, left: Float, top: Float, wi
        element.style.height = "" + height + "px";
     """
     )
+}
+
+private fun removeAllChildrenOf(element: HTMLElement) {
+    // language=javascript
+    js("element.replaceChildren()")
 }
