@@ -107,7 +107,6 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
@@ -136,6 +135,7 @@ internal class RootNodeOwner(
     private val snapshotObserver = snapshotInvalidationTracker.snapshotObserver()
     private val graphicsContext = SkiaGraphicsContext(platformContext.measureDrawLayerBounds)
     private val coroutineScope = CoroutineScope(coroutineContext + Job(parent = coroutineContext[Job]))
+
     private val _owner = OwnerImpl(layoutDirection, coroutineContext)
     val owner: Owner get() = _owner
 
@@ -182,7 +182,6 @@ internal class RootNodeOwner(
         platformContext.rootForTestListener?.onRootForTestDisposed(rootForTest)
         snapshotObserver.stopObserving()
         graphicsContext.dispose()
-
         // we don't need to call root.detach() because root will be garbage collected
         isDisposed = true
     }
