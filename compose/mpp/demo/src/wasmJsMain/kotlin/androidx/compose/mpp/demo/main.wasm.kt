@@ -16,17 +16,11 @@
 
 package androidx.compose.mpp.demo
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material.Button
-import androidx.compose.material.Text
 import androidx.compose.mpp.demo.bugs.BugsScreen
 import androidx.compose.mpp.demo.interops.HtmlInteropDemos
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.font.FontFamily
@@ -89,38 +83,6 @@ fun main() {
             fontsLoaded.value = true
         }
 
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-fun main1() {
-    ComposeViewport(viewportContainerId = "composeApplication") {
-
-        Row {
-            Column {
-                var text by remember { mutableStateOf("Hello") }
-
-                Text(text)
-
-                Button(onClick = {
-                    text += "1"
-                }) {
-                    Text("Click")
-                }
-            }
-
-            Column {
-                var text by remember { mutableStateOf("Hi") }
-
-                Text(text)
-
-                Button(onClick = {
-                    text += "2"
-                }) {
-                    Text("Click2")
-                }
-            }
-        }
     }
 }
 
