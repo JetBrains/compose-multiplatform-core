@@ -2,6 +2,7 @@
 .classpath
 .gradle
 .kotlin
+.kotlinBuildSrc
 **/.idea/**
 !**/.idea/codeStyleSettings.xml
 !**/.idea/copyright
