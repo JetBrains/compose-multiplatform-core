@@ -31,56 +31,56 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.window.ComposeWindow
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import org.w3c.dom.HTMLElement
 
 internal class ComposeWebSemanticsListener(
-    val platformContext: PlatformContext,
-    val composeWindow: ComposeWindow,
     val coroutineScope: CoroutineScope,
     val webSemanticsRoot: HTMLElement,
 ) : PlatformContext.SemanticsOwnerListener {
 
+    private val invalidationChannel =
+        Channel<Unit>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+    private val syncTriggerChannel = Channel<Unit>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
 
     init {
         coroutineScope.launch {
             var lastSyncTimeMs = currentTimeMillis()
 
-            var debounceJob: Job? = null
+            launch {
+                invalidationChannel.receiveAsFlow().collect {
+                    val currentTime = currentTimeMillis()
 
-            @OptIn(FlowPreview::class)
-            invalidationChannel.receiveAsFlow().collect {
-                debounceJob?.cancel()
-                val currentTime = currentTimeMillis()
-
-                if (currentTime - lastSyncTimeMs >= 1000) {
-                    // we've been debouncing for too long, but must sync periodically
-                    lastSyncTimeMs = currentTime
-                    syncSemanticsWithWebA11Y()
-                } else {
-                    // debounce until the Semantics changes settled for at least 100ms
-                    debounceJob = launch {
-                        delay(100)
-                        lastSyncTimeMs = currentTimeMillis()
+                    if (currentTime - lastSyncTimeMs >= 1000) {
+                        // we've been debouncing for too long, but must sync periodically
+                        lastSyncTimeMs = currentTime
                         syncSemanticsWithWebA11Y()
+                    } else {
+                        syncTriggerChannel.trySend(Unit)
                     }
+                }
+            }
+
+            launch {
+                @OptIn(FlowPreview::class)
+                // debounce until the Semantics changes settled for at least 100ms
+                syncTriggerChannel.receiveAsFlow().debounce(100.milliseconds).collect {
+                    lastSyncTimeMs = currentTimeMillis()
+                    syncSemanticsWithWebA11Y()
                 }
             }
         }
     }
-
-    private val invalidationChannel = Channel<Unit>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
 
     private var semanticsOwner: SemanticsOwner? = null
 
@@ -198,8 +198,8 @@ internal class ComposeWebSemanticsListener(
         }
 
         val role = config.getOrNull(SemanticsProperties.Role)
-        if (role == Role.Button) {
-            htmlNode.setAttribute("role", "button")
+        if (role != null) {
+            setA11YRole(htmlNode, roleId = role.toIntId())
         }
 
         if (config.contains(SemanticsActions.OnClick) && justCreated) {
@@ -209,7 +209,8 @@ internal class ComposeWebSemanticsListener(
                 listener.invoke()
             })
 
-            htmlNode.setAttribute("role", "button")
+            // Setting role=Button, so the A11Y tool would hint that this element can be clicked
+            setA11YRole(htmlNode, roleId = Role.Button.toIntId())
         }
 
         sn.layoutInfo.let {
@@ -220,8 +221,13 @@ internal class ComposeWebSemanticsListener(
                 .localBoundingBoxOf(it.coordinates, clipBounds = true)
                 .round(it.density)
 
-
-            setSizeAndPosition(htmlNode, newPosition.x, newPosition.y, clippedRect.width, clippedRect.height)
+            setSizeAndPosition(
+                htmlNode,
+                newPosition.x,
+                newPosition.y,
+                clippedRect.width,
+                clippedRect.height
+            )
         }
     }
 
@@ -235,7 +241,13 @@ internal class ComposeWebSemanticsListener(
     }
 }
 
-private fun setSizeAndPosition(element: HTMLElement, left: Float, top: Float, width: Int, height: Int) {
+private fun setSizeAndPosition(
+    element: HTMLElement,
+    left: Float,
+    top: Float,
+    width: Int,
+    height: Int
+) {
     // language=javascript
     js(
         """
@@ -247,7 +259,59 @@ private fun setSizeAndPosition(element: HTMLElement, left: Float, top: Float, wi
     )
 }
 
+// To avoid passing a Kotlin string to JS, we pass an int instead and map it to String on the JS side.
+// See https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
+private fun setA11YRole(element: HTMLElement, roleId: Int) {
+    // language=javascript
+    js(
+        """
+        var roleValue = "";
+        switch (roleId) {
+            case 0: // Role.Button
+                roleValue = "button";
+                break;
+            case 1: // Role.Checkbox
+                roleValue = "checkbox";
+                break;
+            case 2: // Role.Switch
+                roleValue = "switch";
+                break;
+            case 3: // Role.RadioButton
+                roleValue = "radio";
+                break;
+            case 4: // Role.Tab
+                roleValue = "tab";
+                break;
+            case 5: // Role.Image
+                roleValue = "img";
+                break;
+            case 6: // Role.DropdownList
+                roleValue = "menu";
+                break;            
+            default:
+                break;
+        }
+        element.setAttribute("role", roleValue);
+    """
+    )
+}
+
 private fun removeAllChildrenOf(element: HTMLElement) {
     // language=javascript
     js("element.replaceChildren()")
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
+// Unfortunately, Role value is private, so we map it here:
+private fun Role.toIntId(): Int = when (this) {
+    Role.Button -> 0
+    Role.Checkbox -> 1
+    Role.Switch -> 2
+    Role.RadioButton -> 3
+    Role.Tab -> 4
+    Role.Image -> 5
+    Role.DropdownList -> 6
+    Role.ValuePicker -> -1 // TODO: Any web alternative?
+    Role.Carousel -> -1 // TODO: Any web alternative?
+    else -> -1
 }

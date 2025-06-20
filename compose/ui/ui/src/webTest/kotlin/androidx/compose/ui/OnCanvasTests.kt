@@ -107,15 +107,21 @@ internal interface OnCanvasTests {
     suspend fun awaitA11YChanges() {
         val a11yContainer = getA11YContainer() ?: return
 
-        suspendCoroutine { continuation ->
-            val mutationObserver = MutationObserver { _, mutationObserver ->
-                continuation.resumeWith(Result.success(Unit))
-                mutationObserver.disconnect()
+        fun skipFramesUntil(condition: () -> Boolean, onTrue: () -> Unit) {
+            window.requestAnimationFrame {
+                if (!condition()) {
+                    skipFramesUntil(condition, onTrue)
+                } else {
+                    onTrue()
+                }
             }
+        }
 
-            mutationObserver.observe(
-                target = a11yContainer,
-                options = MutationObserverInit(childList = true, subtree = true)
+        suspendCoroutine { continuation ->
+            val initialContent = a11yContainer.innerHTML
+            skipFramesUntil(
+                condition = { a11yContainer.innerHTML != initialContent },
+                onTrue = { continuation.resumeWith(Result.success(Unit)) }
             )
         }
     }

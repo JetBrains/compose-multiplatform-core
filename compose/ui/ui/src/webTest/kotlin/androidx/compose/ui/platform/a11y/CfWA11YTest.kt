@@ -18,6 +18,7 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.compose.material.Button
 import androidx.compose.material.Text
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -26,10 +27,12 @@ import androidx.compose.ui.currentTimeMillis
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
@@ -243,5 +246,69 @@ class CfWA11YTest : OnCanvasTests {
         }
 
         assertTrue(waitedForChangesMs in 90..110, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance 10ms was exceeded")
+    }
+
+    @Test
+    fun changesMustBeAppliedDespiteConstantDebounceAfter1Second() = runApplicationTest {
+        var show1 by mutableStateOf(true)
+        var startTime = 0L
+
+        createComposeWindow {
+            if (show1) {
+                Button(onClick = {}) {
+                    Text("Text in Button")
+                }
+            }
+
+            DisposableEffect(Unit) {
+                startTime = currentTimeMillis()
+                onDispose {  }
+            }
+        }
+
+        awaitIdle()
+        assertNotEquals(0L, startTime, "The start time must be set")
+
+        val a11yContainer = getA11YContainer()!!
+
+        assertEquals("",a11yContainer.innerHTML)
+        assertEquals(0,a11yContainer.childElementCount)
+
+        suspend fun realDelay(timeMs: Long) {
+            withContext(Dispatchers.Default) {
+                delay(timeMs)
+            }
+        }
+
+        var changesAppliedTime = 0L
+
+        launch {
+            awaitA11YChanges()
+            changesAppliedTime = currentTimeMillis()
+        }
+
+        var debounceCounter = 0
+
+        repeat(20) {
+            // Change the state every 55ms. Such changes must be "debounced", (time delta is less than 100ms)
+            show1 = !show1
+            realDelay(55)
+
+            if (changesAppliedTime == 0L) {
+                // No changes expected yet due to debounce
+                assertEquals(0, a11yContainer.childElementCount)
+                debounceCounter++
+            }
+        }
+
+        // To avoid flakiness, we make just a sanity check. The expected value is ~18
+        assertTrue(debounceCounter > 1)
+
+        // the "debounce" must be ignored when the changes were waiting for 1 second
+        assertEquals(1, a11yContainer.childElementCount)
+        assertTrue(
+            changesAppliedTime - startTime in (1000..1100),
+            "Changes must be applied after 1 second, waited for ${changesAppliedTime - startTime} ms"
+        )
     }
 }

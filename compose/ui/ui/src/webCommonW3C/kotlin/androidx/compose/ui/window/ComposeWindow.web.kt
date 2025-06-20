@@ -242,8 +242,6 @@ internal class ComposeWindow(
 
         override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
             ComposeWebSemanticsListener(
-                platformContext = this,
-                composeWindow = this@ComposeWindow,
                 coroutineScope = MainScope(),
                 webSemanticsRoot = a11yContainerElement.let {
                     it.setAttribute("aria-label", "")
