@@ -68,6 +68,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinSerializationCore)
             }
         }
+
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
@@ -77,31 +78,8 @@ androidXMultiplatform {
             }
         }
 
-        nonAndroidMain {
-            dependsOn(commonMain)
-        }
-
-        nonAndroidTest {
-            dependsOn(commonTest)
-        }
-
-        jvmMain {
-            dependsOn(commonMain)
-        }
-
-        jvmTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(nonAndroidMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(nonAndroidTest)
-        }
+        jvmMain { dependsOn(commonMain) }
+        jvmTest { dependsOn(commonTest) }
 
         androidMain {
             dependsOn(jvmMain)
@@ -141,38 +119,30 @@ androidXMultiplatform {
             }
         }
 
-        nativeMain {
+        nonAndroidMain { dependsOn(commonMain) }
+        nonAndroidTest { dependsOn(commonTest) }
+
+        desktopMain {
+            dependsOn(jvmMain)
             dependsOn(nonAndroidMain)
         }
 
-        nativeTest {
+        desktopTest {
+            dependsOn(jvmTest)
             dependsOn(nonAndroidTest)
         }
 
-        linuxMain {
-            dependsOn(nativeMain)
-        }
+        nativeMain { dependsOn(nonAndroidMain) }
+        nativeTest { dependsOn(nonAndroidTest) }
 
-        linuxTest {
-            dependsOn(nativeTest)
-        }
+        linuxMain { dependsOn(nativeMain) }
+        linuxTest { dependsOn(nativeTest) }
 
-        darwinMain {
-            dependsOn(nativeMain)
-        }
+        darwinMain { dependsOn(nativeMain) }
+        darwinTest { dependsOn(nativeTest) }
 
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        nonJvmCommonTest { dependsOn(nonAndroidTest) }
-        webMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        webTest {
-            dependsOn(nonAndroidTest)
-        }
+        webMain { dependsOn(nonAndroidMain) }
+        webTest { dependsOn(nonAndroidTest) }
 
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {

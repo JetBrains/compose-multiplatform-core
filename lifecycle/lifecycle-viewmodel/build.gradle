@@ -119,7 +119,7 @@ androidXMultiplatform {
         nativeTest { dependsOn(nonJvmTest) }
 
         unixMain { dependsOn(nativeMain) }
-        unixTest { dependsOn(nativeMain) }
+        unixTest { dependsOn(nativeTest) }
 
         darwinMain { dependsOn(unixMain) }
         darwinTest { dependsOn(unixTest) }
