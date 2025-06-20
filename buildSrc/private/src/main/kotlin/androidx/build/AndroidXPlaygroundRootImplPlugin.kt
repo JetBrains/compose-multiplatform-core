@@ -148,6 +148,14 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
         }
         mavenCentral()
         gradlePluginPortal()
+        maven { repository ->
+            repository.url = URI("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+            repository.content {
+                it.includeGroupByRegex("org\\.jetbrains\\.androidx.*")
+                it.includeGroupByRegex("org\\.jetbrains\\.compose.*")
+                it.includeGroupByRegex("org\\.jetbrains\\.skiko.*")
+            }
+        }
     }
 
     private class PlaygroundRepositories(props: PlaygroundProperties) {
