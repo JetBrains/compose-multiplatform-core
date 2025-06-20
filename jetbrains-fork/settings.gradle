@@ -29,8 +29,22 @@ rootProject.name = "compose-multiplatform-core"
 playground {
     setupPlayground("..")
     selectProjectsFromAndroidX({ name ->
+        if (name.startsWith(":compose:mpp")) return true
+        if (name.startsWith(":compose:destkop")) return true
+
+        if (name.contains("benchmark")) return false
+
+        if (name.startsWith(":compose:material")) return true
+        if (name.startsWith(":compose:material3")) return true
+        if (name.startsWith(":compose:foundataion")) return true
+
+        if (name == ":compose:ui:ui-inspection") return false
+        if (name.startsWith(":compose:ui")) return true
+
         if (name == ":compose:runtime:runtime-tracing") return false
         if (name.startsWith(":compose:runtime")) return true
+
+        if (name == ":navigation:navigation-compose") return true
         return false
     })
 }
