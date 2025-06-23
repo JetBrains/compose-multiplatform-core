@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -105,6 +106,44 @@ class BaseComposeSceneTest {
 
             assertEquals(1, cancellationsCount)
         }
+    }
+
+    @Test
+    fun orphanPointerMoveEvents() {
+        val scenes: List<ComposeScene> = listOf(
+            PlatformLayersComposeScene(size = IntSize(100, 100)),
+            CanvasLayersComposeScene(size = IntSize(100, 100))
+        )
+
+        scenes.forEach { scene ->
+            var clicksCount = 0
+            scene.setContent {
+                Box(modifier = Modifier.fillMaxSize().clickable {
+                    clicksCount++
+                })
+            }
+
+            assertEquals(0, clicksCount)
+
+            // this sequence of events triggers click since homogenous "move" events does not affect release
+            scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+            scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 10f), buttons = PointerButtons(packedValue = 1))
+            scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 10f), buttons = PointerButtons(packedValue = 1))
+            scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f))
+
+            assertEquals(1, clicksCount)
+
+            // this sequence of events triggers click since heterogenous "move" events does not affect release
+            // this never suppose to happen but actually happens
+            // see https://youtrack.jetbrains.com/issue/CMP-8430/Sequence-of-Move-PointerInputEvents-cancel-out-press-PointerInputEvent-under-certain-conditions
+            scene.sendPointerEvent(PointerEventType.Press, Offset(10f, 10f))
+            scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 10f), buttons = PointerButtons(packedValue = 1))
+            scene.sendPointerEvent(PointerEventType.Move, Offset(10f, 10f), buttons = PointerButtons(packedValue = 0))
+            scene.sendPointerEvent(PointerEventType.Release, Offset(10f, 10f))
+
+            assertEquals(1, clicksCount)
+        }
+
     }
 
     @Test
