@@ -24,11 +24,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
+import androidx.compose.ui.window.A11YConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -360,5 +362,36 @@ class CfWA11YTest : OnCanvasTests {
         button.click()
         assertEquals(2, clickCounter1)
         assertEquals(2, clickCounter2)
+    }
+
+    @Test
+    fun noA11YRootAndElementsWithDisabledA11Y() = runApplicationTest {
+        createComposeWindow(
+            a11YConfiguration = A11YConfiguration(isA11YEnabled = false)
+        ) {
+            Button(onClick = {}) {
+                Text("Button1")
+            }
+        }
+
+        awaitIdle()
+        assertNull(getA11YContainer())
+
+        suspend fun realDelay(timeMs: Long) {
+            withContext(Dispatchers.Default) {
+                delay(timeMs)
+            }
+        }
+        // Wait a bit and make sure the a11y root didn't appear
+        realDelay(500)
+        assertNull(getA11YContainer())
+
+        assertTrue(getCanvas().isConnected)
+        val appContainer = getCanvas().parentElement as HTMLElement
+
+        assertTrue(appContainer.isConnected)
+        assertEquals(2, appContainer.children.length)
+        assertEquals(getCanvas(), appContainer.children[0])
+        assertEquals("DIV", appContainer.children[1]!!.tagName) // interop container
     }
 }

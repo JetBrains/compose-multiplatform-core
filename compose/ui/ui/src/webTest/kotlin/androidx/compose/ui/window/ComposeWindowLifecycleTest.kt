@@ -41,8 +41,9 @@ class ComposeWindowLifecycleTest : OnCanvasTests {
         val lifecycleOwner = ComposeWindow(
             canvas = canvas,
             interopContainerElement = document.createElement("div") as HTMLDivElement,
-            a11yContainerElement = document.createElement("div") as HTMLDivElement,
+            a11yContainerElement = null,
             content = {},
+            a11YConfiguration = A11YConfiguration(isA11YEnabled = false),
             state = DefaultWindowState(document.documentElement!!)
         )
 
