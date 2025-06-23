@@ -16,15 +16,23 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerButtons
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Enter
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Exit
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Move
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Press
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Release
+import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputEvent
+import androidx.compose.ui.input.pointer.PointerInputEventData
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.SyntheticEventSender
+import androidx.compose.ui.scene.ComposeScenePointer
 import androidx.compose.ui.scene.PointerEventResult
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -132,6 +140,21 @@ class SyntheticEventSenderTest {
             event(Release, 1 to touch(1f, 3f, pressed = false), 2 to touch(10f, 25f, pressed = true)),
             event(Move, 2 to touch(10f, 30f, pressed = true)),
             event(Release, 2 to touch(10f, 30f, pressed = false))
+        )
+    }
+
+    @Test
+    fun `sequence of homogenous move events does not trigger additional release`() {
+        eventsSentBy(
+            event(Press),
+            event(Move, buttons = PointerButtons(0)),
+            event(Move, buttons = PointerButtons(0)),
+            event(Release)
+        ) positionAndDownShouldEqual listOf(
+            event(Press),
+            event(Move, buttons = PointerButtons(1)),
+            event(Move, buttons = PointerButtons(0)),
+            event(Release)
         )
     }
 
@@ -471,3 +494,84 @@ class SyntheticEventSenderTest {
         return received
     }
 }
+
+
+private infix fun List<PointerInputEvent>.positionAndDownShouldEqual(
+    expected: List<PointerInputEvent>
+) {
+    assertContentEquals(
+        expected.map { it.formatPositionAndDown() },
+        map { it.formatPositionAndDown() }
+    )
+}
+
+private fun PointerInputEvent.formatPositionAndDown(): String {
+    val pointers = if (pointers.size == 1) {
+        pointers.first().formatPositionAndDown()
+    } else {
+        pointers.joinToString(" ") {
+            val id = it.id.value
+            val data = it.formatPositionAndDown()
+            "$id-$data"
+        }
+    }
+    return "$eventType $pointers"
+}
+
+private fun PointerInputEventData.formatPositionAndDown(): String {
+    val x = position.x.toInt()
+    val y = position.y.toInt()
+    val down = if (down) "down" else "up"
+    return "$x:$y:$down"
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun event(
+    type: PointerEventType,
+    vararg pointers: Pair<Int, ComposeScenePointer>,
+    buttons: PointerButtons = PointerButtons(packedValue = 0)
+) = PointerInputEvent(
+    type,
+    0,
+    pointers.map {
+        val id = it.first
+        val pointer = it.second
+        PointerInputEventData(
+            PointerId(id.toLong()),
+            uptime = 0,
+            pointer.position,
+            pointer.position,
+            pointer.pressed,
+            pointer.pressure,
+            pointer.type,
+            scrollDelta = Offset.Zero,
+            historical = emptyList()
+        )
+    },
+)
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun mouseEvent(
+    type: PointerEventType,
+    x: Float,
+    y: Float,
+    pressed: Boolean
+) = PointerInputEvent(
+    type,
+    0,
+    listOf(
+        PointerInputEventData(
+            id = PointerId(0),
+            uptime = 0,
+            Offset(x, y),
+            Offset(x, y),
+            down = pressed,
+            pressure = 1f,
+            type = PointerType.Mouse,
+            scrollDelta = Offset.Zero,
+            activeHover = true,
+            historical = emptyList()
+        )
+    ),
+    buttons = PointerButtons(isPrimaryPressed = pressed)
+)
