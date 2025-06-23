@@ -496,12 +496,42 @@ class SyntheticEventSenderTest {
 }
 
 
+private data class TestPointerInputEventData(
+    val id: PointerId,
+    val position: Offset,
+    val down: Boolean
+) {
+    override fun toString(): String {
+        val x = position.x.toInt()
+        val y = position.y.toInt()
+        val down = if (down) "down" else "up"
+        return "${id.value}-$x:$y:$down"
+    }
+}
+
+private data class TestPointerInputEvent(
+    val type: PointerEventType,
+    val pointers: List<TestPointerInputEventData>
+) {
+    override fun toString(): String {
+        val pointersDescription = pointers.joinToString(" ") {
+            it.toString()
+        }
+        return "$type $pointersDescription"
+    }
+}
+
+private fun PointerInputEvent.asTestRecord() = TestPointerInputEvent(
+    type = eventType,
+    pointers = pointers.map { TestPointerInputEventData(it.id, it.position, it.down) }
+)
+
 private infix fun List<PointerInputEvent>.positionAndDownShouldEqual(
     expected: List<PointerInputEvent>
 ) {
     assertContentEquals(
-        expected.map { it.formatPositionAndDown() },
-        map { it.formatPositionAndDown() }
+        expected.map { it.asTestRecord() },
+        map { it.asTestRecord() }
     )
 }
 
