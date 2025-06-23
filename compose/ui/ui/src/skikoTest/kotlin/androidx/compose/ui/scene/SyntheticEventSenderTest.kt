@@ -411,8 +411,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Enter, 1 to touch(10f, 20f, pressed = false)),
-            event(Move, 1 to touch(10f, 20f, pressed = false))
+            event(Enter, 0 to touch(10f, 20f, pressed = false)),
+            event(Move, 0 to touch(10f, 20f, pressed = false))
         )
 
         received.clear()
@@ -422,8 +422,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Move, 1 to touch(5f, 15f, pressed = false)),
-            event(Move, 1 to touch(5f, 15f, pressed = false))
+            event(Move, 0 to touch(5f, 15f, pressed = false)),
+            event(Move, 0 to touch(5f, 15f, pressed = false))
         )
     }
 
@@ -439,8 +439,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Press, 1 to touch(10f, 20f, pressed = true)),
-            event(Move, 1 to touch(10f, 20f, pressed = true))
+            event(Press, 0 to touch(10f, 20f, pressed = true)),
+            event(Move, 0 to touch(10f, 20f, pressed = true))
         )
 
         received.clear()
@@ -450,8 +450,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received positionAndDownShouldEqual listOf(
-            event(Move, 1 to touch(5f, 15f, pressed = true)),
-            event(Move, 1 to touch(5f, 15f, pressed = true))
+            event(Move, 0 to touch(5f, 15f, pressed = true)),
+            event(Move, 0 to touch(5f, 15f, pressed = true))
         )
     }
 
@@ -506,23 +506,17 @@ private infix fun List<PointerInputEvent>.positionAndDownShouldEqual(
 }
 
 private fun PointerInputEvent.formatPositionAndDown(): String {
-    val pointers = if (pointers.size == 1) {
-        pointers.first().formatPositionAndDown()
-    } else {
-        pointers.joinToString(" ") {
-            val id = it.id.value
-            val data = it.formatPositionAndDown()
-            "$id-$data"
-        }
+    val pointersSerialized = pointers.joinToString(" ") {
+        it.formatPositionAndDown()
     }
-    return "$eventType $pointers"
+    return "$eventType $pointersSerialized"
 }
 
 private fun PointerInputEventData.formatPositionAndDown(): String {
     val x = position.x.toInt()
     val y = position.y.toInt()
     val down = if (down) "down" else "up"
-    return "$x:$y:$down"
+    return "${id.value}-$x:$y:$down"
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
