@@ -49,7 +49,7 @@ class SyntheticEventSenderTest {
             mouseEvent(Press, 10f, 40f, pressed = true),
             mouseEvent(Release, 10f, 40f, pressed = false),
             mouseEvent(Exit, -1f, -1f, pressed = false),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             mouseEvent(Enter, 10f, 20f, pressed = false),
             mouseEvent(Press, 10f, 20f, pressed = true),
             mouseEvent(Move, 10f, 30f, pressed = true),
@@ -72,7 +72,7 @@ class SyntheticEventSenderTest {
             mouseEvent(Press, 10f, 45f, pressed = true),
             mouseEvent(Release, 10f, 50f, pressed = false),
             mouseEvent(Exit, -1f, -1f, pressed = false),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             mouseEvent(Enter, 10f, 20f, pressed = false),
             mouseEvent(Move, 10f, 25f, pressed = false),
             mouseEvent(Press, 10f, 25f, pressed = true),
@@ -96,7 +96,7 @@ class SyntheticEventSenderTest {
             event(Release, 1 to touch(10f, 35f, pressed = false)),
             event(Press, 2 to touch(10f, 45f, pressed = true)),
             event(Release, 2 to touch(10f, 50f, pressed = false)),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             event(Press, 1 to touch(10f, 25f, pressed = true)),
             event(Move, 1 to touch(10f, 30f, pressed = true)),
             event(Release, 1 to touch(10f, 35f, pressed = false)),
@@ -112,7 +112,7 @@ class SyntheticEventSenderTest {
             event(Press, 1 to touch(1f, 2f, pressed = true), 2 to touch(10f, 20f, pressed = true)),
             event(Release, 1 to touch(1f, 2f, pressed = false), 2 to touch(10f, 20f, pressed = true)),
             event(Release, 2 to touch(10f, 20f, pressed = false)),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             event(Press, 1 to touch(1f, 2f, pressed = true)),
             event(Press, 1 to touch(1f, 2f, pressed = true), 2 to touch(10f, 20f, pressed = true)),
             event(Release, 1 to touch(1f, 2f, pressed = false), 2 to touch(10f, 20f, pressed = true)),
@@ -131,7 +131,7 @@ class SyntheticEventSenderTest {
             event(Release, 1 to touch(1f, 3f, pressed = false), 2 to touch(10f, 25f, pressed = true)),
             event(Move, 2 to touch(10f, 30f, pressed = true)),
             event(Release, 2 to touch(10f, 30f, pressed = false)),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             event(Press, 1 to touch(1f, 2f, pressed = true)),
             event(Move, 1 to touch(1f, 2f, pressed = true)),
             event(Press, 1 to touch(1f, 2f, pressed = true), 2 to touch(10f, 20f, pressed = true)),
@@ -150,7 +150,7 @@ class SyntheticEventSenderTest {
             event(Move, buttons = PointerButtons(0)),
             event(Move, buttons = PointerButtons(0)),
             event(Release)
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             event(Press),
             event(Move, buttons = PointerButtons(1)),
             event(Move, buttons = PointerButtons(0)),
@@ -172,7 +172,7 @@ class SyntheticEventSenderTest {
                 2 to touch(10f, 20f, pressed = false),
                 3 to touch(100f, 200f, pressed = true),
             ),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             event(
                 Press,
                 1 to touch(1f, 3f, pressed = true),
@@ -218,7 +218,7 @@ class SyntheticEventSenderTest {
                 2 to touch(10f, 20f, pressed = true),
                 3 to touch(100f, 200f, pressed = true)
             ),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             event(
                 Press,
                 1 to touch(1f, 3f, pressed = true)
@@ -258,7 +258,7 @@ class SyntheticEventSenderTest {
                 2 to touch(10f, 20f, pressed = false),
                 3 to touch(100f, 200f, pressed = false),
             ),
-        ) positionAndDownShouldEqual listOf(
+        ) assertIdentical listOf(
             event(
                 Press,
                 1 to touch(1f, 3f, pressed = true),
@@ -410,7 +410,7 @@ class SyntheticEventSenderTest {
         sender.needUpdatePointerPosition = true
         sender.updatePointerPosition()
 
-        received positionAndDownShouldEqual listOf(
+        received assertIdentical listOf(
             event(Enter, 0 to touch(10f, 20f, pressed = false)),
             event(Move, 0 to touch(10f, 20f, pressed = false))
         )
@@ -421,7 +421,7 @@ class SyntheticEventSenderTest {
         sender.needUpdatePointerPosition = true
         sender.updatePointerPosition()
 
-        received positionAndDownShouldEqual listOf(
+        received assertIdentical listOf(
             event(Move, 0 to touch(5f, 15f, pressed = false)),
             event(Move, 0 to touch(5f, 15f, pressed = false))
         )
@@ -438,7 +438,7 @@ class SyntheticEventSenderTest {
         sender.needUpdatePointerPosition = true
         sender.updatePointerPosition()
 
-        received positionAndDownShouldEqual listOf(
+        received assertIdentical listOf(
             event(Press, 0 to touch(10f, 20f, pressed = true)),
             event(Move, 0 to touch(10f, 20f, pressed = true))
         )
@@ -449,7 +449,7 @@ class SyntheticEventSenderTest {
         sender.needUpdatePointerPosition = true
         sender.updatePointerPosition()
 
-        received positionAndDownShouldEqual listOf(
+        received assertIdentical listOf(
             event(Move, 0 to touch(5f, 15f, pressed = true)),
             event(Move, 0 to touch(5f, 15f, pressed = true))
         )
@@ -466,7 +466,7 @@ class SyntheticEventSenderTest {
         sender.needUpdatePointerPosition = true
         sender.updatePointerPosition()
 
-        received positionAndDownShouldEqual listOf(
+        received assertIdentical listOf(
             event(Press, 1 to touch(10f, 20f, pressed = true)),
         )
 
@@ -476,7 +476,7 @@ class SyntheticEventSenderTest {
         sender.needUpdatePointerPosition = true
         sender.updatePointerPosition()
 
-        received positionAndDownShouldEqual listOf(
+        received assertIdentical listOf(
             event(Move, 1 to touch(5f, 15f, pressed = true)),
         )
     }
@@ -496,23 +496,23 @@ class SyntheticEventSenderTest {
 }
 
 
-private infix fun List<PointerInputEvent>.positionAndDownShouldEqual(
+private infix fun List<PointerInputEvent>.assertIdentical(
     expected: List<PointerInputEvent>
 ) {
     assertContentEquals(
-        expected.map { it.formatPositionAndDown() },
-        map { it.formatPositionAndDown() }
+        expected.map { it.serialize() },
+        map { it.serialize() }
     )
 }
 
-private fun PointerInputEvent.formatPositionAndDown(): String {
+private fun PointerInputEvent.serialize(): String {
     val pointersSerialized = pointers.joinToString(" ") {
-        it.formatPositionAndDown()
+        it.serialize()
     }
     return "$eventType $pointersSerialized"
 }
 
-private fun PointerInputEventData.formatPositionAndDown(): String {
+private fun PointerInputEventData.serialize(): String {
     val x = position.x.toInt()
     val y = position.y.toInt()
     val down = if (down) "down" else "up"
