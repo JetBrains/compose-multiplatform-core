@@ -147,13 +147,13 @@ class SyntheticEventSenderTest {
     fun `sequence of homogenous move events does not trigger additional release`() {
         eventsSentBy(
             event(Press),
-            event(Move, buttons = PointerButtons(0)),
-            event(Move, buttons = PointerButtons(0)),
+            event(Move, buttons = PointerButtons(packedValue = 1)),
+            event(Move, buttons = PointerButtons(packedValue = 1)),
             event(Release)
         ) assertIdentical listOf(
             event(Press),
-            event(Move, buttons = PointerButtons(1)),
-            event(Move, buttons = PointerButtons(0)),
+            event(Move, buttons = PointerButtons(packedValue = 1)),
+            event(Move, buttons = PointerButtons(packedValue = 1)),
             event(Release)
         )
     }
@@ -439,8 +439,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received assertIdentical listOf(
-            event(Press, 0 to touch(10f, 20f, pressed = true)),
-            event(Move, 0 to touch(10f, 20f, pressed = true))
+            event(Press, 0 to touch(10f, 20f, pressed = true), buttons = PointerButtons(1)),
+            event(Move, 0 to touch(10f, 20f, pressed = true), buttons = PointerButtons(1))
         )
 
         received.clear()
@@ -450,8 +450,8 @@ class SyntheticEventSenderTest {
         sender.updatePointerPosition()
 
         received assertIdentical listOf(
-            event(Move, 0 to touch(5f, 15f, pressed = true)),
-            event(Move, 0 to touch(5f, 15f, pressed = true))
+            event(Move, 0 to touch(5f, 15f, pressed = true), buttons = PointerButtons(1)),
+            event(Move, 0 to touch(5f, 15f, pressed = true), buttons = PointerButtons(1))
         )
     }
 
@@ -509,7 +509,7 @@ private fun PointerInputEvent.serialize(): String {
     val pointersSerialized = pointers.joinToString(" ") {
         it.serialize()
     }
-    return "$eventType $pointersSerialized"
+    return "$eventType $pointersSerialized [${buttons.packedValue}]"
 }
 
 private fun PointerInputEventData.serialize(): String {
@@ -542,6 +542,7 @@ private fun event(
             historical = emptyList()
         )
     },
+    buttons = buttons
 )
 
 @OptIn(ExperimentalComposeUiApi::class)
