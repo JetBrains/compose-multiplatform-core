@@ -311,4 +311,54 @@ class CfWA11YTest : OnCanvasTests {
             "Changes must be applied after 1 second, waited for ${changesAppliedTime - startTime} ms"
         )
     }
+
+    @Test
+    fun clickListenerMustBeUpdated() = runApplicationTest {
+        var clickCounter1 = 0
+        var clickCounter2 = 0
+
+        var clickListenerSwitch by mutableStateOf(true)
+
+        createComposeWindow {
+            Button(
+                onClick = if (clickListenerSwitch) {
+                { clickCounter1++ }
+            } else {
+                { clickCounter2++ }
+            }) {
+                Text("Click me")
+            }
+        }
+
+
+        awaitIdle()
+        awaitA11YChanges()
+
+        val a11yContainer = getA11YContainer()!!
+        val button = a11yContainer.children[0]!!.children[0] as HTMLElement
+        assertEquals("button", button.getAttribute("role"))
+        assertEquals("Click me", button.innerText)
+
+        button.click()
+        assertEquals(1, clickCounter1)
+        assertEquals(0, clickCounter2)
+
+        clickListenerSwitch = false
+        awaitIdle()
+
+        button.click()
+        assertEquals(1, clickCounter1)
+        assertEquals(1, clickCounter2)
+
+        button.click()
+        assertEquals(1, clickCounter1)
+        assertEquals(2, clickCounter2)
+
+        clickListenerSwitch = true
+        awaitIdle()
+
+        button.click()
+        assertEquals(2, clickCounter1)
+        assertEquals(2, clickCounter2)
+    }
 }

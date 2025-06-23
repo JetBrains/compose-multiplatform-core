@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -99,8 +100,7 @@ internal class ComposeWebSemanticsListener(
     }
 
     override fun onLayoutChange(
-        semanticsOwner: SemanticsOwner,
-        semanticsNodeId: Int
+        semanticsOwner: SemanticsOwner, semanticsNodeId: Int
     ) {
         invalidationChannel.trySend(Unit)
     }
@@ -197,36 +197,26 @@ internal class ComposeWebSemanticsListener(
             htmlNode.setAttribute("aria-label", contentDescription.joinToString(", "))
         }
 
-        val role = config.getOrNull(SemanticsProperties.Role)
-        if (role != null) {
-            setA11YRole(htmlNode, roleId = role.toIntId())
-        }
-
         if (config.contains(SemanticsActions.OnClick) && justCreated) {
             val listener = config[SemanticsActions.OnClick].action!!
 
+            // TODO: need to remove the click listener when the new config version doesn't have OnClick action
             htmlNode.addEventListener("click", {
                 listener.invoke()
             })
-
-            // Setting role=Button, so the A11Y tool would hint that this element can be clicked
-            setA11YRole(htmlNode, roleId = Role.Button.toIntId())
         }
+
+        setA11YAriaRole(element = htmlNode, config.getRoleId())
 
         sn.layoutInfo.let {
             val newPosition = rootOffset + it.coordinates.positionInRoot().div(it.density.density)
             val rootCoordinates = it.coordinates.findRootCoordinates()
 
-            val clippedRect = rootCoordinates
-                .localBoundingBoxOf(it.coordinates, clipBounds = true)
+            val clippedRect = rootCoordinates.localBoundingBoxOf(it.coordinates, clipBounds = true)
                 .round(it.density)
 
             setSizeAndPosition(
-                htmlNode,
-                newPosition.x,
-                newPosition.y,
-                clippedRect.width,
-                clippedRect.height
+                htmlNode, newPosition.x, newPosition.y, clippedRect.width, clippedRect.height
             )
         }
     }
@@ -242,11 +232,7 @@ internal class ComposeWebSemanticsListener(
 }
 
 private fun setSizeAndPosition(
-    element: HTMLElement,
-    left: Float,
-    top: Float,
-    width: Int,
-    height: Int
+    element: HTMLElement, left: Float, top: Float, width: Int, height: Int
 ) {
     // language=javascript
     js(
@@ -259,14 +245,66 @@ private fun setSizeAndPosition(
     )
 }
 
+internal object AriaRoleId {
+    const val Unknown = -1
+
+    // Mapped from [androidx.compose.ui.semantics.Role] values:
+    const val Button = 0
+    const val Checkbox = 1
+    const val Switch = 2
+    const val RadioButton = 3
+    const val Tab = 4
+    const val Image = 5
+    const val DropdownList = 6
+    const val ValuePicker = Unknown // TODO: Any web alternative?
+    const val Carousel = Unknown // TODO: Any web alternative?
+
+    // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
+    // Other ARIA roles not specified explicitly by [androidx.compose.ui.semantics.Role]:
+    const val Heading = 7
+}
+
+internal fun SemanticsConfiguration.getRoleId(): Int {
+    // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
+    // Unfortunately, Role value is private, so we map it here:
+    fun Role.toIntId(): Int = when (this) {
+        Role.Button -> AriaRoleId.Button
+        Role.Checkbox -> AriaRoleId.Checkbox
+        Role.Switch -> AriaRoleId.Switch
+        Role.RadioButton -> AriaRoleId.RadioButton
+        Role.Tab -> AriaRoleId.Tab
+        Role.Image -> AriaRoleId.Image
+        Role.DropdownList -> AriaRoleId.DropdownList
+        Role.ValuePicker -> AriaRoleId.Unknown // TODO: Any web alternative?
+        Role.Carousel -> AriaRoleId.Unknown // TODO: Any web alternative?
+        else -> AriaRoleId.Unknown
+    }
+
+    var roleId = -1
+
+    if (this.contains(SemanticsProperties.Role)) {
+        roleId = this[SemanticsProperties.Role].toIntId()
+    }
+
+    if (this.contains(SemanticsActions.OnClick)) {
+        roleId = Role.Button.toIntId()
+    }
+
+    if (this.contains(SemanticsProperties.Heading)) {
+        roleId = AriaRoleId.Heading
+    }
+
+    return roleId
+}
+
 // To avoid passing a Kotlin string to JS, we pass an int instead and map it to String on the JS side.
 // See https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
-private fun setA11YRole(element: HTMLElement, roleId: Int) {
+internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
     // language=javascript
     js(
         """
         var roleValue = "";
-        switch (roleId) {
+        switch (ariaRoleId) {
             case 0: // Role.Button
                 roleValue = "button";
                 break;
@@ -287,11 +325,18 @@ private fun setA11YRole(element: HTMLElement, roleId: Int) {
                 break;
             case 6: // Role.DropdownList
                 roleValue = "menu";
-                break;            
+                break;
+            case 7: // heading https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/heading_role
+                roleValue = "heading";
+                break;
             default:
                 break;
         }
-        element.setAttribute("role", roleValue);
+        if (roleValue.length > 0) { 
+            element.setAttribute("role", roleValue);
+        } else {
+            element.removeAttribute("role");
+        }
     """
     )
 }
@@ -299,19 +344,4 @@ private fun setA11YRole(element: HTMLElement, roleId: Int) {
 private fun removeAllChildrenOf(element: HTMLElement) {
     // language=javascript
     js("element.replaceChildren()")
-}
-
-// https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
-// Unfortunately, Role value is private, so we map it here:
-private fun Role.toIntId(): Int = when (this) {
-    Role.Button -> 0
-    Role.Checkbox -> 1
-    Role.Switch -> 2
-    Role.RadioButton -> 3
-    Role.Tab -> 4
-    Role.Image -> 5
-    Role.DropdownList -> 6
-    Role.ValuePicker -> -1 // TODO: Any web alternative?
-    Role.Carousel -> -1 // TODO: Any web alternative?
-    else -> -1
 }
