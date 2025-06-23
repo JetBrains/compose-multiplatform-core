@@ -268,4 +268,4 @@ suspend fun NavController.bindToBrowserNavigation(
     refBrowserWindow().bindToNavigation(this, getBackStackEntryRoute)
 }
 
-private fun refBrowserWindow(): BrowserWindow = js("window")
+internal expect fun refBrowserWindow(): BrowserWindow

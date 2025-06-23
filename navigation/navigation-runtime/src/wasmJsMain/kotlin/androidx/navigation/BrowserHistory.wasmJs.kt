@@ -50,3 +50,5 @@ suspend fun Window.bindToNavigation(
 ) {
     navController.bindToBrowserNavigation(getBackStackEntryRoute)
 }
+
+internal actual fun refBrowserWindow(): BrowserWindow = js("window")
