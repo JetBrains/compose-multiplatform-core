@@ -215,7 +215,8 @@ fun ImageComposeScene.sendPointerEvent(
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun event(
     type: PointerEventType,
-    vararg pointers: Pair<Int, ComposeScenePointer>
+    vararg pointers: Pair<Int, ComposeScenePointer>,
+    buttons: PointerButtons = PointerButtons(packedValue = 0)
 ) = PointerInputEvent(
     type,
     0,
