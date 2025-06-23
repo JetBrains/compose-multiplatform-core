@@ -7,10 +7,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.ExperimentalBrowserHistoryApi
+import androidx.navigation.bindToBrowserNavigation
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.bindToNavigation
 import org.jetbrains.skiko.wasm.onWasmReady
-import kotlinx.browser.window
 
 @OptIn(ExperimentalComposeUiApi::class)
 @ExperimentalBrowserHistoryApi
@@ -33,7 +32,7 @@ fun main() {
             app.Content(navController)
 
             LaunchedEffect(Unit) {
-                window.bindToNavigation(navController)
+                navController.bindToBrowserNavigation()
             }
         }
     }
