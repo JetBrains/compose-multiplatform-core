@@ -26,22 +26,19 @@ import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class LayersInteractionTest {
+class PopupInteractionTest {
     @Test
     fun testPopupDismissOnClickOutsideEnabled() = runUIKitInstrumentedTest {
         var dismissTriggered = false
         setContent {
             Popup(
                 onDismissRequest = {
-                    println(">> On dismiss!")
                     dismissTriggered = true
                 },
                 properties = PopupProperties(dismissOnClickOutside = true)
@@ -66,46 +63,6 @@ class LayersInteractionTest {
                 properties = PopupProperties(dismissOnClickOutside = false)
             ) {
                 Text("Popup")
-            }
-        }
-
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
-        waitForIdle()
-
-        assertFalse(dismissTriggered)
-    }
-
-    @Test
-    fun testDialogDismissOnClickOutsideEnabled() = runUIKitInstrumentedTest {
-        var dismissTriggered = false
-        setContent {
-            Dialog(
-                onDismissRequest = {
-                    println(">> On dismiss!")
-                    dismissTriggered = true
-                },
-                properties = DialogProperties(dismissOnClickOutside = true)
-            ) {
-                Text("Dialog")
-            }
-        }
-
-        tap(screenSize.center)
-
-        waitForIdle()
-
-        assertTrue(dismissTriggered)
-    }
-
-    @Test
-    fun testDialogDismissOnClickOutsideDisabled() = runUIKitInstrumentedTest {
-        var dismissTriggered = false
-        setContent {
-            Dialog(
-                onDismissRequest = { dismissTriggered = true },
-                properties = DialogProperties(dismissOnClickOutside = false)
-            ) {
-                Text("Dialog")
             }
         }
 
@@ -181,6 +138,37 @@ class LayersInteractionTest {
         waitForIdle()
 
         assertTrue(dismiss1Triggered)
+        assertTrue(dismiss2Triggered)
+        assertTrue(dismiss3Triggered)
+    }
+
+    @Test
+    fun testManyPopupsBelowFocusableDismissOnClickOutside() = runUIKitInstrumentedTest {
+        var dismiss1Triggered = false
+        var dismiss2Triggered = false
+        var dismiss3Triggered = false
+        setContent {
+            Popup(
+                onDismissRequest = { dismiss1Triggered = true },
+                properties = PopupProperties(dismissOnClickOutside = true)
+            ) { Text("Popup 1") }
+            Popup(
+                onDismissRequest = { dismiss2Triggered = true },
+                properties = PopupProperties(
+                    dismissOnClickOutside = true,
+                    focusable = true
+                )
+            ) { Text("Popup 2") }
+            Popup(
+                onDismissRequest = { dismiss3Triggered = true },
+                properties = PopupProperties(dismissOnClickOutside = true)
+            ) { Text("Popup 3") }
+        }
+
+        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        waitForIdle()
+
+        assertFalse(dismiss1Triggered)
         assertTrue(dismiss2Triggered)
         assertTrue(dismiss3Triggered)
     }
