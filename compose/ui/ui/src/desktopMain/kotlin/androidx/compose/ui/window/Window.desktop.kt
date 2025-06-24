@@ -607,7 +607,7 @@ private fun SingleWindowApplicationScope(
  * @param content content of the menu bar (list of menus)
  */
 @Composable
-fun FrameWindowScope.MenuBar(content: @Composable MenuBarScope.() -> Unit) {
+fun FrameWindowScope.MenuBar(content: @Composable @MenuComposable MenuBarScope.() -> Unit) {
     val parentComposition = rememberCompositionContext()
 
     DisposableEffect(Unit) {
