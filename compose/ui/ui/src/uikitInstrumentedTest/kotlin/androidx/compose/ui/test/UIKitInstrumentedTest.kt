@@ -91,7 +91,7 @@ internal class UIKitInstrumentedTest {
     val keyboardHeight: Dp get() =
         KeyboardVisibilityListener.keyboardFrame.useContents { size.height.dp }
     val screenSize: DpSize = screen.bounds().useContents { DpSize(size.width.dp, size.height.dp) }
-    private lateinit var hostingViewController: ComposeHostingViewController
+    internal lateinit var hostingViewController: ComposeHostingViewController
 
     private val infiniteAnimationPolicy = object : InfiniteAnimationPolicy {
         override suspend fun <R> onInfiniteOperation(block: suspend () -> R): R {
