@@ -1,22 +1,20 @@
-./gradlew :compose:ui:ui:linkInstrumentedTestDebugFrameworkUikitSimArm64
 
-cd compose/ui/ui/src/uikitInstrumentedTest/launcher
+## Building framework with XCTests
+./gradlew :compose:ui:ui:linkInstrumentedTestDebugFrameworkUikitSimArm64
 
 # Force-close all simulators
 xcrun simctl shutdown all
 killall Simulator
 
-# Get list of all available devices (including unavailable)
+## Configure simulators to disconnect hardware keyboard (and show on-screen keyboard).
+# Get list of all devices
 devices=$(xcrun simctl list devices --json)
 
-# Parse only iOS simulators using `jq`
 # This assumes you have jq installed; you can also parse manually if not
 if ! command -v jq &> /dev/null; then
   echo "Error: jq is not installed"
   exit 1
 fi
-
-## Configure simulators to disconnect hardware keyboard (and show on-screen keyboard).
 
 # Export current preferences to PREF_PLIST
 PREF_PLIST=~/iphonesimulator.plist
@@ -31,12 +29,11 @@ done
 # Import back the modified plist
 defaults import com.apple.iphonesimulator "$PREF_PLIST"
 
-# Get the path of the currently selected Xcode
+## Launch Simulator app
 XCODE_PATH=$(xcode-select -p)
-# Construct the path to the Simulator app
 SIMULATOR_PATH="$XCODE_PATH/Applications/Simulator.app/Contents/MacOS/Simulator"
-
-echo "BOOT: Launch sim at $SIMULATOR_PATH"
 open -a $SIMULATOR_PATH
 
+## Launch tests
+cd compose/ui/ui/src/uikitInstrumentedTest/launcher
 xcodebuild test -scheme Launcher-CI -project Launcher.xcodeproj -destination 'platform=iOS Simulator,name=iPhone 16'
