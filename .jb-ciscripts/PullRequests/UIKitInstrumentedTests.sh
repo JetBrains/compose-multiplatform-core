@@ -31,13 +31,12 @@ done
 # Import back the modified plist
 defaults import com.apple.iphonesimulator "$PREF_PLIST"
 
-echo "BOOT:"
-xcrun simctl boot "iPhone 16"
-echo "BOOT: Run Preferences"
-xcrun simctl launch booted com.apple.Preferences
-echo "BOOT: Launch sim"
-open -a Simulator
-echo "BOOT: Launch sim via AppleScript"
-osascript -e 'tell application "Simulator" to activate'
+# Get the path of the currently selected Xcode
+XCODE_PATH=$(xcode-select -p)
+# Construct the path to the Simulator app
+SIMULATOR_PATH="$XCODE_PATH/Applications/Simulator.app/Contents/MacOS/Simulator"
+
+echo "BOOT: Launch sim at $SIMULATOR_PATH"
+open -a $SIMULATOR_PATH
 
 xcodebuild test -scheme Launcher-CI -project Launcher.xcodeproj -destination 'platform=iOS Simulator,name=iPhone 16'
