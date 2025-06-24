@@ -1296,6 +1296,42 @@ class NavHostTest {
     }
 
     @Test
+    fun navBackStackEntrySingleTopLifecycleTest() {
+        var lastEvent: Lifecycle.Event? = null
+        lateinit var navController: NavHostController
+        composeTestRule.setContent {
+            navController = rememberNavController()
+            NavHost(navController, startDestination = "First") {
+                composable("First") {
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event -> lastEvent = event }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+
+                        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                    }
+                }
+                composable("Second") {}
+            }
+        }
+
+        composeTestRule.runOnIdle { navController.navigate("Second") }
+
+        composeTestRule.runOnIdle {
+            navController.navigate("First") {
+                popUpTo("First")
+                launchSingleTop = true
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            assertWithMessage("Lifecycle should have been resumed")
+                .that(lastEvent)
+                .isEqualTo(Lifecycle.Event.ON_RESUME)
+        }
+    }
+
+    @Test
     fun testPopWithBackHandler() {
         lateinit var navController: NavHostController
         var lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
