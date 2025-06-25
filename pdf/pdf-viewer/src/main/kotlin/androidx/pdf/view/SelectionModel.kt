@@ -21,43 +21,34 @@ import android.graphics.PointF
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.annotation.VisibleForTesting
-import androidx.core.os.ParcelCompat
+import androidx.core.util.isEmpty
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfPoint
+import androidx.pdf.PdfRect
 import androidx.pdf.content.PageSelection
+import kotlin.collections.forEach
 
 /** Value class containing all data necessary to display UI related to content selection */
 @SuppressLint("BanParcelableUsage")
 internal class SelectionModel
 @VisibleForTesting
 internal constructor(
-    val selection: Selection,
+    val documentSelection: DocumentSelection,
     val startBoundary: UiSelectionBoundary,
-    val endBoundary: UiSelectionBoundary
+    val endBoundary: UiSelectionBoundary,
 ) : Parcelable {
     constructor(
         parcel: Parcel
     ) : this(
-        textSelectionFromParcel(parcel, TextSelection::class.java.classLoader),
-        requireNotNull(
-            ParcelCompat.readParcelable(
-                parcel,
-                UiSelectionBoundary::class.java.classLoader,
-                UiSelectionBoundary::class.java
-            )
-        ),
-        requireNotNull(
-            ParcelCompat.readParcelable(
-                parcel,
-                UiSelectionBoundary::class.java.classLoader,
-                UiSelectionBoundary::class.java
-            )
-        ),
+        documentSelection = DocumentSelection.selectionValueFromParcel(parcel = parcel),
+        startBoundary = UiSelectionBoundary(parcel),
+        endBoundary = UiSelectionBoundary(parcel),
     )
 
     override fun describeContents(): Int = 0
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
-        (selection as TextSelection).writeToParcel(dest, flags)
+        documentSelection.writeToParcel(dest, flags)
         startBoundary.writeToParcel(dest, flags)
         endBoundary.writeToParcel(dest, flags)
     }
@@ -66,44 +57,75 @@ internal constructor(
         if (this === other) return true
         if (other == null || other !is SelectionModel) return false
 
-        if (other.selection != selection) return false
+        if (other.documentSelection != documentSelection) return false
         if (other.startBoundary != startBoundary) return false
         if (other.endBoundary != endBoundary) return false
         return true
     }
 
     override fun hashCode(): Int {
-        var result = selection.hashCode()
+        var result = documentSelection.hashCode()
         result = 31 * result + startBoundary.hashCode()
         result = 31 * result + endBoundary.hashCode()
         return result
     }
 
     companion object {
-        /** Produces a [SelectionModel] from a single [PageSelection] on a single page */
-        // TODO(b/386398335) Add support for creating a SelectionModel from selections on 2 pages
-        fun fromSinglePageSelection(pageSelection: PageSelection): SelectionModel {
-            val startPoint =
-                requireNotNull(pageSelection.start.point) { "PageSelection is missing start point" }
-            val stopPoint =
-                requireNotNull(pageSelection.stop.point) { "PageSelection is missing end point" }
+        /**
+         * Combines multiple selections from different pages into a single [SelectionModel].
+         *
+         * @param currentSelection The current selection, can be `null` if no selection yet exists.
+         * @param newPageSelections New [PageSelection] objects on different pages.
+         * @return A [SelectionModel] that encompasses all selections, or `null` if none were found.
+         */
+        fun getCombinedSelectionModel(
+            currentSelection: DocumentSelection,
+            newPageSelections: List<PageSelection?>,
+        ): SelectionModel? {
+
+            val selection = mergeSelection(currentSelection, newPageSelections)
+            if (selection.selectedContents.isEmpty()) return null
+
+            // Finding the first selection bound of first page in the selection
+            val firstPage = selection.selectedContents.keyAt(0)
+            val firstBound: PointF =
+                selection.selectedContents[firstPage].firstOrNull()?.bounds?.firstOrNull()?.let {
+                    PointF(it.left, it.bottom)
+                } ?: PointF(0f, 0f)
+
+            // Finding the last selection bound of last page in the selection
+            val lastPage = selection.selectedContents.keyAt(selection.selectedContents.size() - 1)
+            val lastBound: PointF =
+                selection.selectedContents[lastPage].lastOrNull()?.bounds?.lastOrNull()?.let {
+                    PointF(it.right, it.bottom)
+                } ?: PointF(0f, 0f)
+
+            val isRtl = newPageSelections.firstOrNull()?.start?.isRtl ?: false
             return SelectionModel(
-                pageSelection.toViewSelection(),
-                UiSelectionBoundary(
-                    PdfPoint(
-                        pageSelection.page,
-                        PointF(startPoint.x.toFloat(), startPoint.y.toFloat())
-                    ),
-                    pageSelection.start.isRtl
-                ),
-                UiSelectionBoundary(
-                    PdfPoint(
-                        pageSelection.page,
-                        PointF(stopPoint.x.toFloat(), stopPoint.y.toFloat())
-                    ),
-                    pageSelection.stop.isRtl
-                ),
+                selection,
+                UiSelectionBoundary(PdfPoint(firstPage, firstBound), isRtl),
+                UiSelectionBoundary(PdfPoint(lastPage, lastBound), isRtl),
             )
+        }
+
+        /**
+         * Returns a merged [DocumentSelection] from [currentSelection] with a list of
+         * [newPageSelections]
+         */
+        private fun mergeSelection(
+            currentSelection: DocumentSelection,
+            newPageSelections: List<PageSelection?>,
+        ): DocumentSelection {
+
+            // Process new selection
+            newPageSelections.forEach { newPageSelection ->
+                if (newPageSelection != null) {
+                    currentSelection.selectedContents[newPageSelection.page] =
+                        listOf(newPageSelection.toViewSelection())
+                }
+            }
+
+            return DocumentSelection(currentSelection.selectedContents)
         }
 
         /**
@@ -138,17 +160,12 @@ internal constructor(
  */
 @SuppressLint("BanParcelableUsage")
 internal class UiSelectionBoundary(val location: PdfPoint, val isRtl: Boolean) : Parcelable {
-    constructor(
-        parcel: Parcel
-    ) : this(
-        pdfPointFromParcel(parcel, PdfPoint::class.java.classLoader),
-        parcel.readBoolean(),
-    )
+    constructor(parcel: Parcel) : this(pdfPointFromParcel(parcel), parcel.readBoolean())
 
     override fun describeContents(): Int = 0
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
-        location.writeToParcel(dest, flags)
+        location.writeToParcel(dest)
         dest.writeBoolean(isRtl)
     }
 

@@ -35,15 +35,15 @@ import androidx.wear.protolayout.expression.RequiresSchemaVersion
 @RequiresSchemaVersion(major = 1, minor = 400)
 fun LayoutModifier.opacity(
     @FloatRange(from = 0.0, to = 1.0) staticValue: Float,
-    dynamicValue: DynamicFloat? = null
+    dynamicValue: DynamicFloat? = null,
 ): LayoutModifier = this then BaseOpacityElement(staticValue, dynamicValue)
 
 @RequiresSchemaVersion(major = 1, minor = 400)
 internal class BaseOpacityElement(val staticValue: Float, val dynamicValue: DynamicFloat? = null) :
-    LayoutModifier.Element {
+    BaseProtoLayoutModifiersElement<FloatProp.Builder> {
     @SuppressLint("ProtoLayoutMinSchema")
-    fun mergeTo(initial: FloatProp.Builder?): FloatProp.Builder =
-        (initial ?: FloatProp.Builder(staticValue)).apply {
+    override fun mergeTo(initialBuilder: FloatProp.Builder?): FloatProp.Builder =
+        (initialBuilder ?: FloatProp.Builder(staticValue)).apply {
             dynamicValue?.let { setDynamicValue(it) }
         }
 }

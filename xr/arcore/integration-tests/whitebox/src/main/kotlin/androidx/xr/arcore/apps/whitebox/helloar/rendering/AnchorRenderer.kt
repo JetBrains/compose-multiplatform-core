@@ -18,25 +18,29 @@ package androidx.xr.arcore.apps.whitebox.helloar.rendering
 
 import android.app.Activity
 import android.util.Log
+import android.widget.Toast
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.Plane
-import androidx.xr.arcore.TrackingState
 import androidx.xr.arcore.hitTest
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
+import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
-import androidx.xr.scenecore.Session as JxrCoreSession
+import androidx.xr.scenecore.scene
+import java.nio.file.Paths
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 /** Class that keeps track of anchors rendered as GLTF models in a SceneCore session. */
@@ -44,9 +48,8 @@ internal class AnchorRenderer(
     val activity: Activity,
     val planeRenderer: PlaneRenderer,
     val session: Session,
-    val renderSession: JxrCoreSession,
     val coroutineScope: CoroutineScope,
-) {
+) : DefaultLifecycleObserver {
 
     private lateinit var gltfAnchorModel: GltfModel
 
@@ -54,18 +57,18 @@ internal class AnchorRenderer(
 
     private lateinit var updateJob: CompletableJob
 
-    internal fun startRendering() {
+    override fun onResume(owner: LifecycleOwner) {
         updateJob =
             SupervisorJob(
                 coroutineScope.launch() {
                     gltfAnchorModel =
-                        renderSession.createGltfResourceAsync("models/xyzArrows.glb").await()
+                        GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
                     planeRenderer.renderedPlanes.collect { attachInteractableComponents(it) }
                 }
             )
     }
 
-    internal fun stopRendering() {
+    override fun onPause(owner: LifecycleOwner) {
         updateJob.complete()
         clearRenderedAnchors()
     }
@@ -81,18 +84,17 @@ internal class AnchorRenderer(
         for (planeModel in planeModels) {
             if (planeModel.entity.getComponents().isEmpty()) {
                 planeModel.entity.addComponent(
-                    InteractableComponent.create(renderSession, activity.mainExecutor) { event ->
+                    InteractableComponent.create(session, activity.mainExecutor) { event ->
                         if (event.action.equals(InputEvent.ACTION_DOWN)) {
                             val up =
-                                renderSession.spatialUser.head?.getActivitySpacePose()?.up
-                                    ?: Vector3.Up
+                                session.scene.spatialUser.head?.activitySpacePose?.up ?: Vector3.Up
                             val perceptionRayPose =
-                                renderSession.activitySpace.transformPoseTo(
+                                session.scene.activitySpace.transformPoseTo(
                                     Pose(
                                         event.origin,
-                                        Quaternion.fromLookTowards(event.direction, up)
+                                        Quaternion.fromLookTowards(event.direction, up),
                                     ),
-                                    renderSession.perceptionSpace,
+                                    session.scene.perceptionSpace,
                                 )
                             val perceptionRay =
                                 Ray(perceptionRayPose.translation, perceptionRayPose.forward)
@@ -102,25 +104,40 @@ internal class AnchorRenderer(
                                     // planes once we can
                                     // support rendering them.
                                     (it.trackable as? Plane)?.state?.value?.label !=
-                                        Plane.Label.Unknown
+                                        Plane.Label.UNKNOWN
                                 }
                                 ?.let { hitResult ->
-                                    try {
-                                        when (
-                                            val anchorResult =
-                                                Anchor.create(session, hitResult.hitPose)
-                                        ) {
-                                            is AnchorCreateSuccess ->
-                                                renderedAnchors.add(
-                                                    createAnchorModel(anchorResult.anchor)
-                                                )
-                                            is AnchorCreateResourcesExhausted -> {}
+                                    val anchorResult = Anchor.create(session, hitResult.hitPose)
+                                    when (anchorResult) {
+                                        is AnchorCreateSuccess -> {
+                                            renderedAnchors.add(
+                                                createAnchorModel(anchorResult.anchor)
+                                            )
                                         }
-                                    } catch (e: IllegalStateException) {
-                                        Log.e(
-                                            activity::class.simpleName,
-                                            "Failed to create anchor: ${e.message}"
-                                        )
+                                        is AnchorCreateResourcesExhausted -> {
+                                            Log.e(
+                                                activity::class.simpleName,
+                                                "Failed to create anchor: anchor resources exhausted.",
+                                            )
+                                            Toast.makeText(
+                                                    activity,
+                                                    "Anchor limit has been reached.",
+                                                    Toast.LENGTH_LONG,
+                                                )
+                                                .show()
+                                        }
+                                        else -> {
+                                            Log.e(
+                                                activity::class.simpleName,
+                                                "Failed to create anchor: ${anchorResult::class.simpleName}",
+                                            )
+                                            Toast.makeText(
+                                                    activity,
+                                                    "Anchor failed to create.",
+                                                    Toast.LENGTH_LONG,
+                                                )
+                                                .show()
+                                        }
                                     }
                                 }
                         }
@@ -131,20 +148,24 @@ internal class AnchorRenderer(
     }
 
     private fun createAnchorModel(anchor: Anchor): AnchorModel {
-        val entity = renderSession.createGltfEntity(gltfAnchorModel, Pose())
+        val entity = GltfModelEntity.create(session, gltfAnchorModel, Pose())
         entity.setScale(.1f)
         val renderJob =
             coroutineScope.launch(updateJob) {
                 anchor.state.collect { state ->
-                    if (state.trackingState == TrackingState.Tracking) {
-                        entity.setPose(
-                            renderSession.perceptionSpace.transformPoseTo(
-                                state.pose,
-                                renderSession.activitySpace
+                    when (state.trackingState) {
+                        TrackingState.TRACKING -> {
+                            entity.setEnabled(true)
+                            entity.setAlpha(1.0f)
+                            entity.setPose(
+                                session.scene.perceptionSpace.transformPoseTo(
+                                    state.pose,
+                                    session.scene.activitySpace,
+                                )
                             )
-                        )
-                    } else if (state.trackingState == TrackingState.Stopped) {
-                        entity.setHidden(true)
+                        }
+                        TrackingState.PAUSED -> entity.setAlpha(0.5f)
+                        TrackingState.STOPPED -> entity.setEnabled(false)
                     }
                 }
             }

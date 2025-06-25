@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.gestures
 
+import androidx.compose.foundation.ComposeFoundationFlags.isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
@@ -39,9 +40,11 @@ import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.addPointerInputChange
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
@@ -74,7 +77,7 @@ interface DraggableState {
      */
     suspend fun drag(
         dragPriority: MutatePriority = MutatePriority.Default,
-        block: suspend DragScope.() -> Unit
+        block: suspend DragScope.() -> Unit,
     )
 
     /**
@@ -178,7 +181,7 @@ fun Modifier.draggable(
     startDragImmediately: Boolean = false,
     onDragStarted: suspend CoroutineScope.(startedPosition: Offset) -> Unit = NoOpOnDragStarted,
     onDragStopped: suspend CoroutineScope.(velocity: Float) -> Unit = NoOpOnDragStopped,
-    reverseDirection: Boolean = false
+    reverseDirection: Boolean = false,
 ): Modifier =
     this then
         DraggableElement(
@@ -189,7 +192,7 @@ fun Modifier.draggable(
             startDragImmediately = startDragImmediately,
             onDragStarted = onDragStarted,
             onDragStopped = onDragStopped,
-            reverseDirection = reverseDirection
+            reverseDirection = reverseDirection,
         )
 
 internal class DraggableElement(
@@ -200,7 +203,7 @@ internal class DraggableElement(
     private val startDragImmediately: Boolean,
     private val onDragStarted: suspend CoroutineScope.(startedPosition: Offset) -> Unit,
     private val onDragStopped: suspend CoroutineScope.(velocity: Float) -> Unit,
-    private val reverseDirection: Boolean
+    private val reverseDirection: Boolean,
 ) : ModifierNodeElement<DraggableNode>() {
     override fun create(): DraggableNode =
         DraggableNode(
@@ -212,7 +215,7 @@ internal class DraggableElement(
             startDragImmediately,
             onDragStarted,
             onDragStopped,
-            reverseDirection
+            reverseDirection,
         )
 
     override fun update(node: DraggableNode) {
@@ -225,7 +228,7 @@ internal class DraggableElement(
             startDragImmediately,
             onDragStarted,
             onDragStopped,
-            reverseDirection
+            reverseDirection,
         )
     }
 
@@ -286,13 +289,13 @@ internal class DraggableNode(
     private var startDragImmediately: Boolean,
     private var onDragStarted: suspend CoroutineScope.(startedPosition: Offset) -> Unit,
     private var onDragStopped: suspend CoroutineScope.(velocity: Float) -> Unit,
-    private var reverseDirection: Boolean
+    private var reverseDirection: Boolean,
 ) :
     DragGestureNode(
         canDrag = canDrag,
         enabled = enabled,
         interactionSource = interactionSource,
-        orientationLock = orientation
+        orientationLock = orientation,
     ) {
 
     override suspend fun drag(forEachDelta: suspend ((dragDelta: DragDelta) -> Unit) -> Unit) {
@@ -328,7 +331,7 @@ internal class DraggableNode(
         startDragImmediately: Boolean,
         onDragStarted: suspend CoroutineScope.(startedPosition: Offset) -> Unit,
         onDragStopped: suspend CoroutineScope.(velocity: Float) -> Unit,
-        reverseDirection: Boolean
+        reverseDirection: Boolean,
     ) {
         var resetPointerInputHandling = false
         if (this.state != state) {
@@ -361,7 +364,7 @@ internal abstract class DragGestureNode(
     canDrag: (PointerInputChange) -> Boolean,
     enabled: Boolean,
     interactionSource: MutableInteractionSource?,
-    private var orientationLock: Orientation?
+    private var orientationLock: Orientation?,
 ) : DelegatingNode(), PointerInputModifierNode {
 
     protected var canDrag = canDrag
@@ -380,6 +383,18 @@ internal abstract class DragGestureNode(
     private var channel: Channel<DragEvent>? = null
     private var dragInteraction: DragInteraction.Start? = null
     private var isListeningForEvents = false
+
+    /**
+     * Accumulated position offset of this [Modifier.Node] that happened during a drag cycle. This
+     * is used to correct the pointer input events that are added to the Velocity Tracker. If this
+     * Node is static during the drag cycle, nothing will happen. On the other hand, if the position
+     * of this node changes during the drag cycle, we need to correct the Pointer Input used for the
+     * drag events, this is because Velocity Tracker doesn't have the knowledge about changes in the
+     * position of the container that uses it, and because each Pointer Input event is related to
+     * the container's root. This new behavior relies on
+     * [androidx.compose.foundation.ComposeFoundationFlags.isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled]
+     */
+    private var nodeOffset = Offset.Zero
 
     /**
      * Responsible for the dragging behavior between the start and the end of the drag. It
@@ -445,12 +460,13 @@ internal abstract class DragGestureNode(
     override fun onDetach() {
         isListeningForEvents = false
         disposeInteractionSource()
+        nodeOffset = Offset.Zero
     }
 
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         if (enabled && pointerInputNode == null) {
             pointerInputNode = delegate(initializePointerInputNode())
@@ -464,14 +480,20 @@ internal abstract class DragGestureNode(
             // re-create tracker when pointer input block restarts. This lazily creates the tracker
             // only when it is need.
             val velocityTracker = VelocityTracker()
-
+            var previousPositionOnScreen =
+                if (isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled) {
+                    requireLayoutCoordinates().positionOnScreen()
+                } else {
+                    Offset.Zero
+                }
             val onDragStart:
                 (
                     down: PointerInputChange,
                     slopTriggerChange: PointerInputChange,
-                    postSlopOffset: Offset
+                    postSlopOffset: Offset,
                 ) -> Unit =
                 { down, slopTriggerChange, postSlopOffset ->
+                    nodeOffset = Offset.Zero // restart node offset
                     if (canDrag.invoke(down)) {
                         if (!isListeningForEvents) {
                             if (channel == null) {
@@ -503,7 +525,16 @@ internal abstract class DragGestureNode(
 
             val onDrag: (change: PointerInputChange, dragAmount: Offset) -> Unit =
                 { change, delta ->
-                    velocityTracker.addPointerInputChange(change)
+                    if (isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled) {
+                        val currentPositionOnScreen = requireLayoutCoordinates().positionOnScreen()
+                        // container changed positions
+                        if (currentPositionOnScreen != previousPositionOnScreen) {
+                            val delta = currentPositionOnScreen - previousPositionOnScreen
+                            nodeOffset += delta
+                        }
+                        previousPositionOnScreen = currentPositionOnScreen
+                    }
+                    velocityTracker.addPointerInputChange(event = change, offset = nodeOffset)
                     channel?.trySend(DragDelta(delta))
                 }
 
@@ -515,7 +546,7 @@ internal abstract class DragGestureNode(
                         onDragEnd = onDragEnd,
                         onDragCancel = onDragCancel,
                         shouldAwaitTouchSlop = shouldAwaitTouchSlop,
-                        onDrag = onDrag
+                        onDrag = onDrag,
                     )
                 } catch (cancellation: CancellationException) {
                     channel?.trySend(DragCancelled)
@@ -567,7 +598,7 @@ internal abstract class DragGestureNode(
         enabled: Boolean = this.enabled,
         interactionSource: MutableInteractionSource? = this.interactionSource,
         orientationLock: Orientation? = this.orientationLock,
-        shouldResetPointerInputHandling: Boolean = false
+        shouldResetPointerInputHandling: Boolean = false,
     ) {
         var resetPointerInputHandling = shouldResetPointerInputHandling
 
@@ -608,7 +639,7 @@ private class DefaultDraggableState(val onDelta: (Float) -> Unit) : DraggableSta
 
     override suspend fun drag(
         dragPriority: MutatePriority,
-        block: suspend DragScope.() -> Unit
+        block: suspend DragScope.() -> Unit,
     ): Unit = coroutineScope { scrollMutex.mutateWith(dragScope, dragPriority, block) }
 
     override fun dispatchRawDelta(delta: Float) {

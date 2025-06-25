@@ -28,6 +28,7 @@ import androidx.room.compiler.processing.XType
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
+import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.GuavaUtilConcurrentTypeNames
 import androidx.room.ext.KotlinTypeNames
@@ -35,7 +36,6 @@ import androidx.room.ext.LifecyclesTypeNames
 import androidx.room.ext.ReactiveStreamsTypeNames
 import androidx.room.ext.RxJava2TypeNames
 import androidx.room.ext.RxJava3TypeNames
-import androidx.room.runProcessorTestWithK1
 import androidx.room.testing.context
 import androidx.room.vo.DeleteOrUpdateShortcutFunction
 import kotlin.reflect.KClass
@@ -193,7 +193,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Integer>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Integer>",
                 RxJava3TypeNames.COMPLETABLE.canonicalName,
-                "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Integer>"
+                "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Integer>",
             )
             .forEach { type ->
                 singleShortcutMethod(
@@ -247,13 +247,21 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 @${annotation.java.canonicalName}
                 abstract public void users(User[] users);
                 """
-        ) { shortcut, _ ->
+        ) { shortcut, invocation ->
             assertThat(shortcut.element.jvmName).isEqualTo("users")
             assertThat(shortcut.parameters.size).isEqualTo(1)
             val param = shortcut.parameters.first()
             assertThat(param.type.asTypeName())
                 .isEqualTo(
-                    XTypeName.getArrayName(COMMON.USER_TYPE_NAME.copy(nullable = true))
+                    XTypeName.getArrayName(
+                            if (invocation.isKsp2) {
+                                XTypeName.getProducerExtendsName(
+                                    COMMON.USER_TYPE_NAME.copy(nullable = true)
+                                )
+                            } else {
+                                COMMON.USER_TYPE_NAME.copy(nullable = true)
+                            }
+                        )
                         .copy(nullable = true)
                 )
 
@@ -360,7 +368,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                     XClassName.get("foo.bar", "MyClass", "MyList")
                         .parametrizedBy(
                             CommonTypeNames.STRING.copy(nullable = true),
-                            COMMON.USER_TYPE_NAME.copy(nullable = true)
+                            COMMON.USER_TYPE_NAME.copy(nullable = true),
                         )
                         .copy(nullable = true)
                 )
@@ -401,7 +409,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Integer>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Integer>",
                 RxJava3TypeNames.COMPLETABLE.canonicalName,
-                "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Integer>"
+                "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Integer>",
             )
             .forEach { type ->
                 singleShortcutMethod(
@@ -458,7 +466,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "${RxJava2TypeNames.MAYBE.canonicalName}<User>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<String>",
-                "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<User>"
+                "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<User>",
             )
             .forEach { type ->
                 singleShortcutMethod(
@@ -491,7 +499,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
                 "${ReactiveStreamsTypeNames.PUBLISHER.canonicalName}<Int>",
-                "${KotlinTypeNames.FLOW.canonicalName}<Int>"
+                "${KotlinTypeNames.FLOW.canonicalName}<Int>",
             )
             .forEach { type ->
                 singleShortcutFunction(
@@ -521,14 +529,14 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 int uid;
                 String name;
             }
-            """
+            """,
             )
         singleShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public int foo(Username username);
                 """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { shortcut, _ ->
             assertThat(shortcut.element.jvmName).isEqualTo("foo")
             assertThat(shortcut.parameters.size).isEqualTo(1)
@@ -569,17 +577,17 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 String name;
                 long extraField;
             }
-            """
+            """,
             )
         singleShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public int foo(Username username);
                 """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.cannotFindAsEntityField("foo.bar.User"))
+                hasErrorContaining(ProcessorErrors.cannotFindAsEntityProperty("foo.bar.User"))
             }
         }
     }
@@ -599,14 +607,14 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 @Ignore
                 long extraField;
             }
-            """
+            """,
             )
         singleShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public int foo(Username username);
                 """,
-            additionalSources = listOf(usernameSource)
+            additionalSources = listOf(usernameSource),
         ) { _, _ ->
         }
     }
@@ -625,7 +633,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 @Embedded
                 Fullname name;
             }
-            """
+            """,
             )
         val fullnameSource =
             Source.java(
@@ -639,14 +647,14 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 String firstName;
                 String lastName;
             }
-            """
+            """,
             )
         singleShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public int foo(Username username);
                 """,
-            additionalSources = listOf(usernameSource, fullnameSource)
+            additionalSources = listOf(usernameSource, fullnameSource),
         ) { _, _ ->
         }
     }
@@ -666,7 +674,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 @Relation(parentColumn = "uid", entityColumn = "ownerId")
                 List<Pet> pets;
             }
-            """
+            """,
             )
         val petSource =
             Source.java(
@@ -681,14 +689,14 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 int petId;
                 int ownerId;
             }
-            """
+            """,
             )
         singleShortcutMethod(
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public int foo(UserPets userPets);
                 """,
-            additionalSources = listOf(userPetsSource, petSource)
+            additionalSources = listOf(userPetsSource, petSource),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.INVALID_RELATION_IN_PARTIAL_ENTITY)
@@ -702,7 +710,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             """
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public int foo(long x);
-                """,
+                """
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.shortcutFunctionArgumentMustBeAClass("long"))
@@ -719,7 +727,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             package foo.bar;
             public class EmptyClass {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         singleShortcutMethod(
@@ -727,7 +735,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 @${annotation.java.canonicalName}(entity = User.class)
                 abstract public int foo(EmptyClass x);
                 """,
-            additionalSources = listOf(emptyClass)
+            additionalSources = listOf(emptyClass),
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.noColumnsInPartialEntity("foo.bar.EmptyClass"))
@@ -752,13 +760,13 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
     abstract fun process(
         baseContext: Context,
         containing: XType,
-        executableElement: XMethodElement
+        executableElement: XMethodElement,
     ): T
 
     protected fun singleShortcutMethod(
         vararg input: String,
         additionalSources: List<Source> = emptyList(),
-        handler: (T, XTestInvocation) -> Unit
+        handler: (T, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.java("foo.bar.MyClass", DAO_PREFIX + input.joinToString("\n") + DAO_SUFFIX)
@@ -774,9 +782,9 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
                 COMMON.LISTENABLE_FUTURE,
-                COMMON.GUAVA_ROOM
+                COMMON.GUAVA_ROOM,
             )
-        runProcessorTestWithK1(
+        runProcessorTest(
             sources = commonSources + additionalSources + inputSource,
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
         ) { invocation ->
@@ -787,7 +795,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList()
+                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -795,7 +803,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 process(
                     baseContext = invocation.context,
                     containing = owner.type,
-                    executableElement = methods.first()
+                    executableElement = methods.first(),
                 )
             handler(processed, invocation)
         }
@@ -804,7 +812,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
     protected fun singleShortcutFunction(
         vararg input: String,
         additionalSources: List<Source> = emptyList(),
-        handler: (T, XTestInvocation) -> Unit
+        handler: (T, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.kotlin("MyClass.kt", DAO_PREFIX_KT + input.joinToString("\n") + DAO_SUFFIX)
@@ -829,10 +837,10 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.COMPUTABLE_LIVE_DATA,
                 COMMON.PUBLISHER,
                 COMMON.FLOW,
-                COMMON.GUAVA_ROOM
+                COMMON.GUAVA_ROOM,
             )
 
-        runProcessorTestWithK1(
+        runProcessorTest(
             sources = commonSources + additionalSources + inputSource,
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
         ) { invocation ->
@@ -843,7 +851,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList()
+                            it.getAllMethods().filter { it.hasAnnotation(annotation) }.toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -852,7 +860,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 process(
                     baseContext = invocation.context,
                     containing = owner.type,
-                    executableElement = functions.first()
+                    executableElement = functions.first(),
                 )
             handler(processed, invocation)
         }

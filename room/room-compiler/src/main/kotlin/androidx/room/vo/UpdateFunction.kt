@@ -25,5 +25,5 @@ class UpdateFunction(
     entities: Map<String, ShortcutEntity>,
     parameters: List<ShortcutQueryParameter>,
     functionBinder: DeleteOrUpdateFunctionBinder?,
-    @OnConflictStrategy val onConflictStrategy: Int
+    @param:OnConflictStrategy val onConflictStrategy: Int,
 ) : DeleteOrUpdateShortcutFunction(element, entities, parameters, functionBinder)

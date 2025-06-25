@@ -381,7 +381,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
                 assertThat(events)
                     .isExactly(
                         Event(semanticsId, prevSemantics = "text1", newSemantics = "text2"),
-                        Event(semanticsId, prevSemantics = "text2", newSemantics = "text3")
+                        Event(semanticsId, prevSemantics = "text2", newSemantics = "text3"),
                     )
             } else {
                 assertThat(events).isEmpty()
@@ -400,7 +400,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
                     Event(
                         info.semanticsId,
                         prev?.EditableText,
-                        info.semanticsConfiguration?.EditableText
+                        info.semanticsConfiguration?.EditableText,
                     )
                 )
             }
@@ -408,7 +408,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
             TextField(
                 value = text,
                 onValueChange = { text = it },
-                modifier = Modifier.testTag("item")
+                modifier = Modifier.testTag("item"),
             )
         }
 
@@ -437,7 +437,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
                     Event(
                         info.semanticsId,
                         prev?.getOrNull(SemanticsProperties.Focused),
-                        info.semanticsConfiguration?.getOrNull(SemanticsProperties.Focused)
+                        info.semanticsConfiguration?.getOrNull(SemanticsProperties.Focused),
                     )
                 )
             }
@@ -461,7 +461,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
                 assertThat(events)
                     .isExactly(
                         Event(item1, prevSemantics = true, newSemantics = false),
-                        Event(item2, prevSemantics = false, newSemantics = true)
+                        Event(item2, prevSemantics = false, newSemantics = true),
                     )
             } else {
                 assertThat(events).isEmpty()
@@ -479,7 +479,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
                     Event(
                         info.semanticsId,
                         prev?.getOrNull(SemanticsProperties.Focused),
-                        info.semanticsConfiguration?.getOrNull(SemanticsProperties.Focused)
+                        info.semanticsConfiguration?.getOrNull(SemanticsProperties.Focused),
                     )
                 )
             }
@@ -503,7 +503,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
                 assertThat(events)
                     .isExactly(
                         Event(item1, prevSemantics = true, newSemantics = false),
-                        Event(item2, prevSemantics = false, newSemantics = true)
+                        Event(item2, prevSemantics = false, newSemantics = true),
                     )
             } else {
                 assertThat(events).isEmpty()
@@ -519,13 +519,13 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
 
     private fun ComposeContentTestRule.setTestContent(
         onSemanticsChange: (SemanticsInfo, SemanticsConfiguration?) -> Unit,
-        composable: @Composable () -> Unit
+        composable: @Composable () -> Unit,
     ) {
         val semanticsListener =
             object : SemanticsListener {
                 override fun onSemanticsChanged(
                     semanticsInfo: SemanticsInfo,
-                    previousSemanticsConfiguration: SemanticsConfiguration?
+                    previousSemanticsConfiguration: SemanticsConfiguration?,
                 ) {
                     onSemanticsChange(semanticsInfo, previousSemanticsConfiguration)
                 }
@@ -545,7 +545,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
     @Composable
     private fun FocusableBox(
         modifier: Modifier = Modifier,
-        content: @Composable BoxScope.() -> Unit = {}
+        content: @Composable BoxScope.() -> Unit = {},
     ) {
         var borderColor by remember { mutableStateOf(Black) }
         Box(
@@ -555,7 +555,7 @@ class SemanticsListenerTest(private val isSemanticAutofillEnabled: Boolean) {
                     .onFocusChanged { borderColor = if (it.isFocused) Red else Black }
                     .border(2.dp, borderColor)
                     .focusable(),
-            content = content
+            content = content,
         )
     }
 }

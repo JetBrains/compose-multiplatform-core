@@ -16,8 +16,10 @@
 
 package androidx.health.connect.client.records
 
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_INT_TO_STRING_MAP
 import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_STRING_TO_INT_MAP
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.testing.EqualsTester
 import com.google.common.truth.Truth.assertThat
@@ -28,6 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalMindfulnessSessionApi::class)
 class MindfulnessSessionRecordTest {
 
     @Test
@@ -39,21 +42,23 @@ class MindfulnessSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
                 ),
                 MindfulnessSessionRecord(
                     startTime = Instant.ofEpochMilli(1234L),
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
-                )
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
+                ),
             )
             .addEqualityGroup(
                 MindfulnessSessionRecord(
@@ -61,10 +66,11 @@ class MindfulnessSessionRecordTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
+                    metadata = Metadata.manualEntry(),
                     title = "different title",
                     notes = "different note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
                 )
             )
             .testEquals()
@@ -78,10 +84,11 @@ class MindfulnessSessionRecordTest {
                 startZoneOffset = null,
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
+                metadata = Metadata.manualEntry(),
                 title = "title",
                 notes = "note",
                 mindfulnessSessionType =
-                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION
+                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION,
             )
         }
     }
@@ -94,15 +101,16 @@ class MindfulnessSessionRecordTest {
                         startZoneOffset = null,
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
+                        metadata = Metadata.unknownRecordingMethod(),
                         title = "title",
                         notes = "note",
                         mindfulnessSessionType =
-                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT,
                     )
                     .toString()
             )
             .isEqualTo(
-                "MindfulnessSessionRecord(startTime=1970-01-01T00:00:01.234Z, startZoneOffset=null, endTime=1970-01-01T00:00:01.236Z, endZoneOffset=null, mindfulnessSessionType=5, title=title, notes=note, metadata=Metadata(id='', dataOrigin=DataOrigin(packageName=''), lastModifiedTime=1970-01-01T00:00:00Z, clientRecordId=null, clientRecordVersion=0, device=null, recordingMethod=0))"
+                "MindfulnessSessionRecord(startTime=1970-01-01T00:00:01.234Z, startZoneOffset=null, endTime=1970-01-01T00:00:01.236Z, endZoneOffset=null, mindfulnessSessionType=4, title=title, notes=note, metadata=Metadata(id='', dataOrigin=DataOrigin(packageName=''), lastModifiedTime=1970-01-01T00:00:00Z, clientRecordId=null, clientRecordVersion=0, device=null, recordingMethod=0))"
             )
     }
 

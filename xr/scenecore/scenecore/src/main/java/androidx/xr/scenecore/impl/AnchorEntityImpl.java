@@ -18,28 +18,33 @@ package androidx.xr.scenecore.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import android.annotation.SuppressLint;
 import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.Nullable;
-import androidx.xr.extensions.XrExtensions;
-import androidx.xr.extensions.node.Node;
-import androidx.xr.extensions.node.NodeTransaction;
+import androidx.xr.runtime.internal.ActivitySpace;
+import androidx.xr.runtime.internal.AnchorEntity;
+import androidx.xr.runtime.internal.AnchorEntity.OnStateChangedListener;
+import androidx.xr.runtime.internal.Dimensions;
+import androidx.xr.runtime.internal.Entity;
+import androidx.xr.runtime.internal.PlaneSemantic;
+import androidx.xr.runtime.internal.PlaneType;
+import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.runtime.openxr.ExportableAnchor;
-import androidx.xr.scenecore.JxrPlatformAdapter.ActivitySpace;
-import androidx.xr.scenecore.JxrPlatformAdapter.AnchorEntity;
-import androidx.xr.scenecore.JxrPlatformAdapter.AnchorEntity.OnStateChangedListener;
-import androidx.xr.scenecore.JxrPlatformAdapter.Dimensions;
-import androidx.xr.scenecore.JxrPlatformAdapter.Entity;
-import androidx.xr.scenecore.JxrPlatformAdapter.PlaneSemantic;
-import androidx.xr.scenecore.JxrPlatformAdapter.PlaneType;
 import androidx.xr.scenecore.impl.perception.Anchor;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Plane.PlaneData;
+
+import com.android.extensions.xr.XrExtensions;
+import com.android.extensions.xr.node.Node;
+import com.android.extensions.xr.node.NodeTransaction;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -53,6 +58,7 @@ import java.util.concurrent.ScheduledFuture;
  *
  * <p>This entity creates trackable anchors in space.
  */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @SuppressWarnings("BanSynchronizedMethods")
 class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     public static final Duration ANCHOR_SEARCH_DELAY = Duration.ofMillis(500);
@@ -63,18 +69,17 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     private final AndroidXrEntity mActivitySpaceRoot;
     private final PerceptionLibrary mPerceptionLibrary;
     private OnStateChangedListener mOnStateChangedListener;
-    private State mState = State.UNANCHORED;
-    private PersistState mPersistState = PersistState.PERSIST_NOT_REQUESTED;
+    private @State int mState = State.UNANCHORED;
     private Anchor mAnchor;
     private UUID mUuid = null;
-    private PersistStateChangeListener mPersistStateChangeListener;
+    private final OpenXrActivityPoseHelper mOpenXrActivityPoseHelper;
 
     private static class AnchorCreationData {
 
         static final int ANCHOR_CREATION_SEMANTIC = 1;
         static final int ANCHOR_CREATION_PERSISTED = 2;
         static final int ANCHOR_CREATION_PLANE = 3;
-        static final int ANCHOR_CREATION_PERCEPTION_ANCHOR = 4;
+        static final int ANCHOR_CREATION_RUNTIME_ANCHOR = 4;
 
         @AnchorCreationType int mAnchorCreationType;
 
@@ -83,13 +88,13 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
             ANCHOR_CREATION_SEMANTIC,
             ANCHOR_CREATION_PERSISTED,
             ANCHOR_CREATION_PLANE,
-            ANCHOR_CREATION_PERCEPTION_ANCHOR,
+            ANCHOR_CREATION_RUNTIME_ANCHOR,
         })
         @Retention(RetentionPolicy.SOURCE)
         private @interface AnchorCreationType {}
 
-        // Anchor that is already created via Perception API.
-        androidx.xr.arcore.Anchor mPerceptionAnchor;
+        // Anchor that is already created via Runtime API.
+        androidx.xr.runtime.internal.Anchor mRuntimeAnchor;
 
         // Anchor search deadline for semantic and persisted anchors.
         Long mAnchorSearchDeadline;
@@ -189,9 +194,9 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
                 perceptionLibrary);
     }
 
-    static AnchorEntityImpl createAnchorFromPerceptionAnchor(
+    static AnchorEntityImpl createAnchorFromRuntimeAnchor(
             Node node,
-            androidx.xr.arcore.Anchor anchor,
+            androidx.xr.runtime.internal.Anchor anchor,
             ActivitySpace activitySpace,
             Entity activitySpaceRoot,
             XrExtensions extensions,
@@ -199,9 +204,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
             ScheduledExecutorService executor,
             PerceptionLibrary perceptionLibrary) {
         AnchorCreationData anchorCreationData = new AnchorCreationData();
-        anchorCreationData.mAnchorCreationType =
-                AnchorCreationData.ANCHOR_CREATION_PERCEPTION_ANCHOR;
-        anchorCreationData.mPerceptionAnchor = anchor;
+        anchorCreationData.mAnchorCreationType = AnchorCreationData.ANCHOR_CREATION_RUNTIME_ANCHOR;
+        anchorCreationData.mRuntimeAnchor = anchor;
         return new AnchorEntityImpl(
                 node,
                 anchorCreationData,
@@ -251,6 +255,14 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
             mActivitySpaceRoot = null;
         }
 
+        if (mActivitySpace != null && mActivitySpaceRoot != null) {
+            mOpenXrActivityPoseHelper =
+                    new OpenXrActivityPoseHelper(
+                            (ActivitySpaceImpl) activitySpace, (AndroidXrEntity) activitySpaceRoot);
+        } else {
+            mOpenXrActivityPoseHelper = null;
+        }
+
         // Return early if the state is already in an error state.
         if (mState == State.ERROR) {
             return;
@@ -259,8 +271,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         // If we are creating a semantic or persisted anchor then we need to search for the anchor
         // asynchronously. Otherwise we can create the anchor on the plane.
         if (anchorCreationData.mAnchorCreationType
-                == AnchorCreationData.ANCHOR_CREATION_PERCEPTION_ANCHOR) {
-            tryConvertAnchor(anchorCreationData.mPerceptionAnchor);
+                == AnchorCreationData.ANCHOR_CREATION_RUNTIME_ANCHOR) {
+            tryConvertAnchor(anchorCreationData.mRuntimeAnchor);
         } else if (anchorCreationData.mAnchorCreationType
                         == AnchorCreationData.ANCHOR_CREATION_SEMANTIC
                 || anchorCreationData.mAnchorCreationType
@@ -272,8 +284,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         }
     }
 
-    @Nullable
-    private static Long getAnchorDeadline(Duration anchorSearchTimeout) {
+    private static @Nullable Long getAnchorDeadline(Duration anchorSearchTimeout) {
         // If the timeout is zero or null then we return null here and the anchor search will
         // continue
         // indefinitely.
@@ -284,8 +295,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     // Converts a perception anchor to JXRCore runtime anchor.
-    private void tryConvertAnchor(androidx.xr.arcore.Anchor perceptionAnchor) {
-        ExportableAnchor exportableAnchor = (ExportableAnchor) perceptionAnchor.getRuntimeAnchor();
+    private void tryConvertAnchor(androidx.xr.runtime.internal.Anchor runtimeAnchor) {
+        ExportableAnchor exportableAnchor = (ExportableAnchor) runtimeAnchor;
         mAnchor =
                 new Anchor(exportableAnchor.getNativePointer(), exportableAnchor.getAnchorToken());
         if (mAnchor.getAnchorToken() == null) {
@@ -400,7 +411,6 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
             if (anchorCreationData.mAnchorCreationType
                     == AnchorCreationData.ANCHOR_CREATION_PERSISTED) {
                 mUuid = anchorCreationData.mUuid;
-                updatePersistState(PersistState.PERSISTED);
             }
         }
     }
@@ -408,8 +418,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     // Tries to find a plane that matches the semantic anchor requirements. This creates an anchor
     // on
     // the plane if found.
-    @Nullable
-    private Anchor findPlaneAnchor(AnchorCreationData anchorCreationData) {
+    private @Nullable Anchor findPlaneAnchor(AnchorCreationData anchorCreationData) {
         for (Plane plane : mPerceptionLibrary.getSession().getAllPlanes()) {
             long timeNow = SystemClock.uptimeMillis() * 1000000;
             PlaneData planeData = plane.getData(timeNow);
@@ -442,7 +451,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         return null;
     }
 
-    private synchronized void updateState(State newState) {
+    private synchronized void updateState(int newState) {
         if (mState == newState) {
             return;
         }
@@ -464,108 +473,43 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     @Override
-    public State getState() {
+    public @State int getState() {
         return mState;
     }
 
     @Override
     public void setOnStateChangedListener(OnStateChangedListener onStateChangedListener) {
         mOnStateChangedListener = onStateChangedListener;
-    }
-
-    @Override
-    @Nullable
-    public UUID persist() {
-        if (mUuid != null) {
-            return mUuid;
-        }
-        if (mState != State.ANCHORED) {
-            Log.e(TAG, "Cannot persist an anchor that is not in the ANCHORED state.");
-            return null;
-        }
-        mUuid = mAnchor.persist();
-        if (mUuid == null) {
-            Log.e(TAG, "Failed to get a UUID for the anchor.");
-            return null;
-        }
-        updatePersistState(PersistState.PERSIST_PENDING);
-        schedulePersistStateCheck();
-        return mUuid;
-    }
-
-    private void schedulePersistStateCheck() {
-        ScheduledFuture<?> unusedPersistStateFuture =
-                mExecutor.schedule(
-                        this::checkPersistState,
-                        PERSIST_STATE_CHECK_DELAY.toMillis(),
-                        MILLISECONDS);
-    }
-
-    private void checkPersistState() {
-        synchronized (this) {
-            if (mAnchor == null) {
-                Log.i(
-                        TAG,
-                        "Anchor is disposed before becoming persisted, stop checking its persist"
-                                + " state.");
-                return;
-            }
-            if (mAnchor.getPersistState() == Anchor.PersistState.PERSISTED) {
-                updatePersistState(PersistState.PERSISTED);
-                Log.i(TAG, "Anchor is persisted.");
-                return;
-            }
-        }
-        schedulePersistStateCheck();
-    }
-
-    @Override
-    public void registerPersistStateChangeListener(
-            PersistStateChangeListener persistStateChangeListener) {
-        mPersistStateChangeListener = persistStateChangeListener;
-    }
-
-    private synchronized void updatePersistState(PersistState newPersistState) {
-        if (mPersistState == newPersistState) {
-            return;
-        }
-        mPersistState = newPersistState;
-        if (mPersistStateChangeListener != null) {
-            mPersistStateChangeListener.onPersistStateChanged(newPersistState);
+        if (mOnStateChangedListener != null) {
+            mExecutor.execute(() -> mOnStateChangedListener.onStateChanged(mState));
         }
     }
 
     @Override
-    public PersistState getPersistState() {
-        return mPersistState;
-    }
-
-    @Override
-    public long nativePointer() {
+    public long getNativePointer() {
         return mAnchor.getAnchorId();
     }
 
     @Override
-    public Pose getPose() {
+    public @NonNull Pose getPose(@SpaceValue int relativeTo) {
         throw new UnsupportedOperationException("Cannot get 'pose' on an AnchorEntity.");
     }
 
     @Override
-    public void setPose(Pose pose) {
+    public void setPose(@NonNull Pose pose, @SpaceValue int relativeTo) {
         throw new UnsupportedOperationException("Cannot set 'pose' on an AnchorEntity.");
     }
 
     @Override
-    public void setScale(Vector3 scale) {
+    public void setScale(@NonNull Vector3 scale, @SpaceValue int relativeTo) {
         // TODO(b/349391097): make this behavior consistent with ActivitySpaceImpl
         throw new UnsupportedOperationException("Cannot set 'scale' on an AnchorEntity.");
     }
 
-    // TODO: b/360168321 Use the OpenXrPosableHelper when retrieving the pose in activity space.
     @Override
     public Pose getPoseInActivitySpace() {
         synchronized (this) {
-            if (mActivitySpace == null) {
+            if (mActivitySpace == null || mOpenXrActivityPoseHelper == null) {
                 throw new IllegalStateException(
                         "Cannot get pose in Activity Space with a null Activity Space.");
             }
@@ -578,45 +522,23 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
                 return new Pose();
             }
 
-            // ActivitySpace and the anchor have unit scale and the anchor has no direct parent so
-            // we can
-            // just compose the two poses without scaling.
-            final Pose openXrToAnchor = this.getPoseInOpenXrReferenceSpace();
-            final Pose openXrToActivitySpace = mActivitySpace.getPoseInOpenXrReferenceSpace();
-            if (openXrToActivitySpace == null || openXrToAnchor == null) {
-                Log.e(
-                        TAG,
-                        "Cannot retrieve pose in underlying space despite anchor being anchored."
-                                + " Returning identity pose.");
-                return new Pose();
-            }
-
-            final Pose activitySpaceToOpenXr = openXrToActivitySpace.getInverse();
-            return activitySpaceToOpenXr.compose(openXrToAnchor);
+            return mOpenXrActivityPoseHelper.getPoseInActivitySpace(
+                    getPoseInOpenXrReferenceSpace());
         }
     }
 
-    // TODO: b/360168321 Use the OpenXrPosableHelper when retrieving the pose in world space.
     @Override
-    public Pose getActivitySpacePose() {
-        if (mActivitySpaceRoot == null) {
+    public @NonNull Pose getActivitySpacePose() {
+        if (mOpenXrActivityPoseHelper == null) {
             throw new IllegalStateException(
-                    "Cannot get pose in World Space Pose with a null World Space Entity.");
+                    "Cannot get pose in Activity Space. Anchor initialized in Error state.");
         }
-
-        // ActivitySpace and the anchor have unit scale and the anchor has no direct parent so we
-        // can
-        // just
-        // compose the two poses without scaling.
-        final Pose activitySpaceToAnchor = this.getPoseInActivitySpace();
-        final Pose worldSpaceToActivitySpace =
-                mActivitySpaceRoot.getPoseInActivitySpace().getInverse();
-        return worldSpaceToActivitySpace.compose(activitySpaceToAnchor);
+        return mOpenXrActivityPoseHelper.getActivitySpacePose(getPoseInOpenXrReferenceSpace());
     }
 
     @Override
-    public Vector3 getActivitySpaceScale() {
-        return getWorldSpaceScale().div(mActivitySpace.getWorldSpaceScale());
+    public @NonNull Vector3 getActivitySpaceScale() {
+        return mOpenXrActivityPoseHelper.getActivitySpaceScale(getWorldSpaceScale());
     }
 
     @Override
@@ -631,10 +553,10 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
 
         synchronized (this) {
             // Return early if it is already in the error state.
-            if (mState == State.ERROR) {
+            if (mState == AnchorEntity.State.ERROR) {
                 return;
             }
-            updateState(State.ERROR);
+            updateState(AnchorEntity.State.ERROR);
             if (mAnchor != null && !mAnchor.detach()) {
                 Log.e(TAG, "Error when detaching anchor.");
             }
@@ -645,8 +567,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         // entity
         // was always null so does not need to be reset.
         try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
-            transaction.setAnchorId(mNode, null);
-            transaction.setParent(mNode, null).apply();
+            transaction.setAnchorId(mNode, null).setParent(mNode, null).apply();
         }
         super.dispose();
     }

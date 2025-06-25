@@ -47,7 +47,7 @@ fun Project.configureProjectForKzipTasks(config: ApiTaskConfig, extension: Andro
                 // Depends on the generated output of the proto project
                 // :wear:protolayout:protolayout-proto
                 // which we haven't captured for Java Kzip generation.
-                ":wear:tiles:tiles-proto"
+                ":wear:tiles:tiles-proto",
             )
     ) {
         return
@@ -64,7 +64,7 @@ fun Project.configureProjectForKzipTasks(config: ApiTaskConfig, extension: Andro
             compilationInputs,
             compiledSources,
             extension.kotlinTarget,
-            getDefaultTargetJavaVersion(extension.type, project.name)
+            getDefaultTargetJavaVersion(extension.type, project.name),
         )
 
         GenerateJavaKzipTask.setupProject(project, compilationInputs, compiledSources)

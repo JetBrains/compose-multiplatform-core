@@ -17,7 +17,6 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -47,6 +46,7 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.ScrollInfoProvider
 import androidx.wear.compose.foundation.curvedComposable
 import androidx.wear.compose.foundation.lazy.AutoCenteringParams
@@ -62,7 +62,7 @@ import org.junit.runner.RunWith
 class ScrollAwayTest {
     @get:Rule val rule = createComposeRule()
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun showsTimeTextWithScalingLazyColumnInitially() {
         val timeTextColor = Color.Red
@@ -83,7 +83,7 @@ class ScrollAwayTest {
             scrollState =
                 rememberScalingLazyListState(
                     initialCenterItemIndex = 1,
-                    initialCenterItemScrollOffset = 0
+                    initialCenterItemScrollOffset = 0,
                 )
             ScalingLazyColumnTest(scrollState, itemIndex = 100, timeTextColor = timeTextColor)
         }
@@ -93,7 +93,7 @@ class ScrollAwayTest {
         rule.onNodeWithTag(TIME_TEXT_TAG).assertIsDisplayed()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun showsTimeTextWithLazyColumnInitially() {
         val timeTextColor = Color.Red
@@ -106,7 +106,7 @@ class ScrollAwayTest {
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(timeTextColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun showsTimeTextWithColumnInitially() {
         val timeTextColor = Color.Red
@@ -119,7 +119,7 @@ class ScrollAwayTest {
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(timeTextColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun hidesTimeTextAfterScrollingScalingLazyColumn() {
         val timeTextColor = Color.Red
@@ -137,16 +137,13 @@ class ScrollAwayTest {
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(timeTextColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun hidesTimeTextWithLazyColumn() {
         val timeTextColor = Color.Red
         lateinit var scrollState: LazyListState
         rule.setContentWithTheme {
-            scrollState =
-                rememberLazyListState(
-                    initialFirstVisibleItemIndex = 1,
-                )
+            scrollState = rememberLazyListState(initialFirstVisibleItemIndex = 1)
 
             LazyColumnTest(scrollState, timeTextColor = timeTextColor)
         }
@@ -160,7 +157,7 @@ class ScrollAwayTest {
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(timeTextColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun hidesTimeTextWithColumn() {
         val timeTextColor = Color.Red
@@ -184,14 +181,14 @@ class ScrollAwayTest {
     private fun ScalingLazyColumnTest(
         scrollState: ScalingLazyListState,
         timeTextColor: Color,
-        itemIndex: Int = 1
+        itemIndex: Int = 1,
     ) {
         WithTouchSlop(0f) {
             Box(modifier = Modifier.fillMaxSize().testTag(TEST_TAG)) {
                 ScalingLazyColumn(
                     state = scrollState,
                     autoCentering = AutoCenteringParams(itemIndex = itemIndex),
-                    modifier = Modifier.fillMaxSize().testTag(SCROLL_TAG)
+                    modifier = Modifier.fillMaxSize().testTag(SCROLL_TAG),
                 ) {
                     item { ListHeader { Text("Buttons") } }
 
@@ -204,9 +201,9 @@ class ScrollAwayTest {
                                 screenStage = {
                                     if (scrollState.isScrollInProgress) ScreenStage.Scrolling
                                     else ScreenStage.Idle
-                                }
+                                },
                             )
-                            .testTag(TIME_TEXT_TAG),
+                            .testTag(TIME_TEXT_TAG)
                 ) {
                     curvedComposable { Box(Modifier.size(20.dp).background(timeTextColor)) }
                 }
@@ -230,7 +227,7 @@ class ScrollAwayTest {
                                 screenStage = {
                                     if (scrollState.isScrollInProgress) ScreenStage.Scrolling
                                     else ScreenStage.Idle
-                                }
+                                },
                             )
                             .testTag(TIME_TEXT_TAG)
                 ) {
@@ -260,7 +257,7 @@ class ScrollAwayTest {
                                 screenStage = {
                                     if (scrollState.isScrollInProgress) ScreenStage.Scrolling
                                     else ScreenStage.Idle
-                                }
+                                },
                             )
                             .testTag(TIME_TEXT_TAG)
                 ) {
@@ -276,10 +273,7 @@ class ScrollAwayTest {
 
     @Composable
     private fun TestButton(i: Int, modifier: Modifier = Modifier) {
-        Button(
-            modifier = modifier.fillMaxWidth().padding(horizontal = 36.dp),
-            onClick = {},
-        ) {
+        Button(modifier = modifier.fillMaxWidth().padding(horizontal = 36.dp), onClick = {}) {
             Text(text = "Button $i")
         }
     }

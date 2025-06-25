@@ -157,6 +157,47 @@ public final class CustomTabsIntent {
             "android.support.customtabs.extra.TITLE_VISIBILITY";
 
     /**
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @IntDef({OPEN_IN_BROWSER_STATE_DEFAULT, OPEN_IN_BROWSER_STATE_ON, OPEN_IN_BROWSER_STATE_OFF})
+    @Retention(RetentionPolicy.SOURCE)
+    @ExperimentalOpenInBrowser
+    public @interface OpenInBrowserState {
+    }
+
+    /**
+     * Applies the default Open in Browser button state in the toolbar depending on the browser.
+     */
+    @ExperimentalOpenInBrowser
+    public static final int OPEN_IN_BROWSER_STATE_DEFAULT = 0;
+
+    /**
+     * Shows the Open in Browser button in the toolbar.
+     */
+    @ExperimentalOpenInBrowser
+    public static final int OPEN_IN_BROWSER_STATE_ON = 1;
+
+    /**
+     * Explicitly does not show the Open in Browser button in the toolbar.
+     */
+    @ExperimentalOpenInBrowser
+    public static final int OPEN_IN_BROWSER_STATE_OFF = 2;
+
+    /**
+     * Maximum value for the OPEN_IN_BROWSER_STATE_* configuration options. For validation purposes
+     * only.
+     */
+    @ExperimentalOpenInBrowser
+    private static final int OPEN_IN_BROWSER_STATE_MAX = 2;
+
+    /**
+     * Extra to set the state for the Open in Browser button in the toolbar.
+     */
+    @ExperimentalOpenInBrowser
+    public static final String EXTRA_OPEN_IN_BROWSER_STATE =
+            "androidx.browser.customtabs.extra.OPEN_IN_BROWSER_STATE";
+
+    /**
      * Extra to disable the bookmarks button in the overflow menu.
      */
     public static final String EXTRA_DISABLE_BOOKMARKS_BUTTON =
@@ -630,6 +671,13 @@ public final class CustomTabsIntent {
             "androidx.browser.customtabs.extra.ENABLE_EPHEMERAL_BROWSING";
 
     /**
+     * Extra that enables the close button and shows it in the toolbar. The close button is enabled
+     * by default, this extra provides a way to disable the close button in the toolbar.
+     */
+    public static final String EXTRA_CLOSE_BUTTON_ENABLED =
+            "androidx.browser.customtabs.extra.CLOSE_BUTTON_ENABLED";
+
+    /**
      * Key that specifies the unique ID for an action button. To make a button to show on the
      * toolbar, use {@link #TOOLBAR_ACTION_BUTTON_ID} as its ID.
      */
@@ -735,7 +783,6 @@ public final class CustomTabsIntent {
          * Overrides the effect of {@link #setSession}.
          *
          */
-        @ExperimentalPendingSession
         public @NonNull Builder setPendingSession(
                 CustomTabsSession.@NonNull PendingSession session) {
             setSessionParameters(null, session.getId());
@@ -795,6 +842,9 @@ public final class CustomTabsIntent {
 
         /**
          * Sets the Close button icon for the custom tab.
+         *
+         * If the close button is disabled (see {@link #setCloseButtonEnabled(boolean)}), then
+         * calling this function has no effect.
          *
          * @param icon The icon {@link Bitmap}
          */
@@ -1334,6 +1384,9 @@ public final class CustomTabsIntent {
         /**
          * Sets the position of the close button.
          *
+         * If the close button is disabled (see {@link #setCloseButtonEnabled(boolean)}), then
+         * calling this function has no effect.
+         *
          * @param position The desired position.
          * @see CustomTabsIntent#CLOSE_BUTTON_POSITION_DEFAULT
          * @see CustomTabsIntent#CLOSE_BUTTON_POSITION_START
@@ -1345,6 +1398,27 @@ public final class CustomTabsIntent {
             }
 
             mIntent.putExtra(EXTRA_CLOSE_BUTTON_POSITION, position);
+            return this;
+        }
+
+        /**
+         * Sets the state for the Open in Browser button in the toolbar for this Custom Tab.
+         *
+         * @param openInBrowserState Desired Open in Browser state.
+         * @see CustomTabsIntent#EXTRA_OPEN_IN_BROWSER_STATE
+         * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_DEFAULT
+         * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_ON
+         * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_OFF
+         */
+        @ExperimentalOpenInBrowser
+        public @NonNull Builder setOpenInBrowserButtonState(
+                @OpenInBrowserState int openInBrowserState) {
+            if (openInBrowserState < 0 || openInBrowserState > OPEN_IN_BROWSER_STATE_MAX) {
+                throw new IllegalArgumentException(
+                        "Invalid value for the openInBrowserState argument.");
+            }
+
+            mIntent.putExtra(EXTRA_OPEN_IN_BROWSER_STATE, openInBrowserState);
             return this;
         }
 
@@ -1447,9 +1521,23 @@ public final class CustomTabsIntent {
          * @param enabled Whether ephemeral browsing is enabled.
          * @see CustomTabsIntent#EXTRA_ENABLE_EPHEMERAL_BROWSING
          */
-        @ExperimentalEphemeralBrowsing
         public @NonNull Builder setEphemeralBrowsingEnabled(boolean enabled) {
             mIntent.putExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, enabled);
+            return this;
+        }
+
+        /**
+         * Sets whether to enable the close button for custom tab.
+         *
+         * The close button is enabled by default. If the close button is disabled, calls
+         * to {@link #setCloseButtonIcon(Bitmap)} or {@link #setCloseButtonPosition(int)}
+         * have no effect.
+         *
+         * @param enabled Whether the close button is enabled.
+         * @see CustomTabsIntent#EXTRA_CLOSE_BUTTON_ENABLED
+         */
+        public @NonNull Builder setCloseButtonEnabled(boolean enabled) {
+            mIntent.putExtra(EXTRA_CLOSE_BUTTON_ENABLED, enabled);
             return this;
         }
 
@@ -1491,6 +1579,9 @@ public final class CustomTabsIntent {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 setShareIdentityEnabled();
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                setAllowPassThroughOnTouchOutside();
+            }
             if (mActivityOptions != null) {
                 bundle = mActivityOptions.toBundle();
             }
@@ -1526,12 +1617,20 @@ public final class CustomTabsIntent {
             }
             Api34Impl.setShareIdentityEnabled(mActivityOptions, mShareIdentity);
         }
+
+        @RequiresApi(api = Build.VERSION_CODES.BAKLAVA)
+        private void setAllowPassThroughOnTouchOutside() {
+            if (mActivityOptions == null) {
+                mActivityOptions = Api23Impl.makeBasicActivityOptions();
+            }
+            boolean enabled = isBackgroundInteractionEnabled(mIntent);
+            Api36Impl.setAllowPassThroughOnTouchOutside(mActivityOptions, enabled);
+        }
     }
 
     /**
      * Returns whether ephemeral browsing is enabled.
      */
-    @ExperimentalEphemeralBrowsing
     public boolean isEphemeralBrowsingEnabled() {
         return intent.getBooleanExtra(EXTRA_ENABLE_EPHEMERAL_BROWSING, false);
     }
@@ -1745,6 +1844,19 @@ public final class CustomTabsIntent {
     }
 
     /**
+     * @return The state for the Open in Browser button in the toolbar.
+     * @see CustomTabsIntent#EXTRA_OPEN_IN_BROWSER_STATE
+     * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_DEFAULT
+     * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_ON
+     * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_OFF
+     */
+    @ExperimentalOpenInBrowser
+    @OpenInBrowserState
+    public static int getOpenInBrowserButtonState(@NonNull Intent intent) {
+        return intent.getIntExtra(EXTRA_OPEN_IN_BROWSER_STATE, OPEN_IN_BROWSER_STATE_DEFAULT);
+    }
+
+    /**
      * @return Whether the bookmarks button is enabled.
      * @see CustomTabsIntent#EXTRA_DISABLE_BOOKMARKS_BUTTON
      */
@@ -1816,6 +1928,14 @@ public final class CustomTabsIntent {
         return intent.getParcelableExtra(EXTRA_SECONDARY_TOOLBAR_SWIPE_UP_GESTURE);
     }
 
+    /**
+     * @return Whether the close button is enabled.
+     * @see CustomTabsIntent#EXTRA_CLOSE_BUTTON_ENABLED
+     */
+    public static boolean isCloseButtonEnabled(@NonNull Intent intent) {
+        return intent.getBooleanExtra(EXTRA_CLOSE_BUTTON_ENABLED, true);
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private static class Api21Impl {
         static void setLanguageTag(Intent intent, Locale locale) {
@@ -1847,6 +1967,14 @@ public final class CustomTabsIntent {
     private static class Api34Impl {
         static void setShareIdentityEnabled(ActivityOptions activityOptions, boolean enabled) {
             activityOptions.setShareIdentityEnabled(enabled);
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.BAKLAVA)
+    private static class Api36Impl {
+        static void setAllowPassThroughOnTouchOutside(
+                ActivityOptions activityOptions, boolean enabled) {
+            activityOptions.setAllowPassThroughOnTouchOutside(enabled);
         }
     }
 }

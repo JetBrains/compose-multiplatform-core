@@ -20,7 +20,4 @@ import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XMethodType
 
 /** An executable element processed as member of a class (data class or entity) */
-class DataClassFunction(
-    val element: XMethodElement,
-    val resolvedType: XMethodType,
-)
+class DataClassFunction(val element: XMethodElement, val resolvedType: XMethodType)

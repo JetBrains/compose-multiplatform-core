@@ -438,7 +438,7 @@ public final class Camera2CameraControlImplDeviceTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public void setTorchStrengthLevel_valueUpdated()
             throws ExecutionException, InterruptedException {
-        assumeTrue(mHasFlashUnit);
+        assumeTrue(mCameraCharacteristicsCompat.isTorchStrengthLevelSupported());
 
         // Arrange
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().build();
@@ -469,7 +469,7 @@ public final class Camera2CameraControlImplDeviceTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public void setTorchStrengthLevel_throwExceptionIfLessThanOne()
             throws ExecutionException, InterruptedException {
-        assumeTrue(mHasFlashUnit);
+        assumeTrue(mCameraCharacteristicsCompat.isTorchStrengthLevelSupported());
 
         // Arrange
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().build();
@@ -496,7 +496,7 @@ public final class Camera2CameraControlImplDeviceTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public void setTorchStrengthLevel_throwExceptionIfLargerThanMax()
             throws ExecutionException, InterruptedException {
-        assumeTrue(mHasFlashUnit);
+        assumeTrue(mCameraCharacteristicsCompat.isTorchStrengthLevelSupported());
 
         // Arrange
         ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().build();
@@ -541,7 +541,7 @@ public final class Camera2CameraControlImplDeviceTest {
         HandlerUtil.waitForLooperToIdle(mHandler);
         verifyControlAeModeAndFlashMode(CONTROL_AE_MODE_ON, FLASH_MODE_TORCH);
 
-        mCamera2CameraControlImpl.enableTorch(true);
+        mCamera2CameraControlImpl.enableLowLightBoostAsync(true);
         HandlerUtil.waitForLooperToIdle(mHandler);
         verifyControlAeModeAndFlashMode(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY,
                 FLASH_MODE_OFF);
@@ -559,6 +559,7 @@ public final class Camera2CameraControlImplDeviceTest {
                 camera2Config.getCaptureRequestOption(
                         CaptureRequest.FLASH_MODE, FLASH_MODE_OFF))
                 .isEqualTo(expectedFlashMode);
+        Mockito.reset(mControlUpdateCallback);
     }
 
     @Test
@@ -609,7 +610,7 @@ public final class Camera2CameraControlImplDeviceTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public void capture_torchAsFlash_shouldUseDefaultTorchStrength()
             throws ExecutionException, InterruptedException, TimeoutException {
-        assumeTrue(mHasFlashUnit);
+        assumeTrue(mCameraCharacteristicsCompat.isTorchStrengthLevelSupported());
 
         // Arrange: explicitly set flash type to use torch as flash
         ImageCapture.Builder imageCaptureBuilder = new ImageCapture.Builder().setFlashType(

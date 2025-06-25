@@ -146,7 +146,7 @@ class PopupTest {
                     Popup(
                         alignment = Alignment.TopStart,
                         offset = offset,
-                        properties = PopupProperties(focusable = focusable)
+                        properties = PopupProperties(focusable = focusable),
                     ) {
                         // This is called after the OnChildPosition method in Popup() which
                         // updates the popup to its final position
@@ -266,7 +266,7 @@ class PopupTest {
                                 focusable = true
                             ),
                         alignment = Alignment.Center,
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -296,7 +296,7 @@ class PopupTest {
                                 focusable = true
                             ),
                         alignment = Alignment.Center,
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -322,7 +322,7 @@ class PopupTest {
                     Popup(
                         alignment = Alignment.Center,
                         properties = PopupProperties(dismissOnClickOutside = false),
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -357,10 +357,10 @@ class PopupTest {
                             PopupProperties(
                                 // Needs to be focusable to intercept back press
                                 focusable = true,
-                                dismissOnBackPress = false
+                                dismissOnBackPress = false,
                             ),
                         alignment = Alignment.Center,
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -388,10 +388,10 @@ class PopupTest {
                             PopupProperties(
                                 // Needs to be focusable to intercept key press
                                 focusable = true,
-                                dismissOnBackPress = false
+                                dismissOnBackPress = false,
                             ),
                         alignment = Alignment.Center,
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -467,13 +467,7 @@ class PopupTest {
 
         rule.setContent {
             PopupTestTag(testTag) {
-                Popup(
-                    properties =
-                        PopupProperties(
-                            flags = flags,
-                            inheritSecurePolicy = false,
-                        )
-                ) {
+                Popup(properties = PopupProperties(flags = flags, inheritSecurePolicy = false)) {
                     Box(Modifier.size(50.dp))
                 }
             }
@@ -505,7 +499,7 @@ class PopupTest {
                     val popupLayout = item.parent as ViewGroup
                     return popupLayout.measuredState != MEASURED_STATE_TOO_SMALL
                 }
-            }
+            },
         )
     }
 

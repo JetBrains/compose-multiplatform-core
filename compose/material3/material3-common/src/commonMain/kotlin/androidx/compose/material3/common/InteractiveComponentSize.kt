@@ -16,6 +16,7 @@
 
 package androidx.compose.material3.common
 
+import androidx.compose.material3.common.internal.identityHashCode
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -73,18 +74,16 @@ internal object MinimumInteractiveModifier : ModifierNodeElement<MinimumInteract
                 "interactions if the element would measure smaller"
     }
 
-    override fun hashCode(): Int = identifyHashCode(this)
+    override fun hashCode(): Int = identityHashCode(this)
 
     override fun equals(other: Any?) = (other === this)
 }
-
-internal expect inline fun identifyHashCode(value: Any): Int
 
 internal class MinimumInteractiveModifierNode :
     Modifier.Node(), CompositionLocalConsumerModifierNode, LayoutModifierNode {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val size = currentValueOf(LocalMinimumInteractiveComponentSize).coerceAtLeast(0.dp)
         val placeable = measurable.measure(constraints)

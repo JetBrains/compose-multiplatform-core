@@ -31,14 +31,14 @@ import androidx.annotation.RequiresApi
  */
 public class RequestForwardingCaptureCallback(
     private val forwardedRequest: CaptureRequest,
-    private val delegate: CameraCaptureSession.CaptureCallback
+    private val delegate: CameraCaptureSession.CaptureCallback,
 ) : CameraCaptureSession.CaptureCallback() {
 
     override fun onCaptureStarted(
         session: CameraCaptureSession,
         request: CaptureRequest,
         timestamp: Long,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         delegate.onCaptureStarted(session, forwardedRequest, timestamp, frameNumber)
     }
@@ -48,7 +48,7 @@ public class RequestForwardingCaptureCallback(
         session: CameraCaptureSession,
         request: CaptureRequest,
         timestamp: Long,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         delegate.onReadoutStarted(session, forwardedRequest, timestamp, frameNumber)
     }
@@ -56,7 +56,7 @@ public class RequestForwardingCaptureCallback(
     override fun onCaptureProgressed(
         session: CameraCaptureSession,
         request: CaptureRequest,
-        partialResult: CaptureResult
+        partialResult: CaptureResult,
     ) {
         delegate.onCaptureProgressed(session, forwardedRequest, partialResult)
     }
@@ -64,7 +64,7 @@ public class RequestForwardingCaptureCallback(
     override fun onCaptureCompleted(
         session: CameraCaptureSession,
         request: CaptureRequest,
-        result: TotalCaptureResult
+        result: TotalCaptureResult,
     ) {
         delegate.onCaptureCompleted(session, forwardedRequest, result)
     }
@@ -72,7 +72,7 @@ public class RequestForwardingCaptureCallback(
     override fun onCaptureFailed(
         session: CameraCaptureSession,
         request: CaptureRequest,
-        failure: CaptureFailure
+        failure: CaptureFailure,
     ) {
         delegate.onCaptureFailed(session, forwardedRequest, failure)
     }
@@ -80,7 +80,7 @@ public class RequestForwardingCaptureCallback(
     override fun onCaptureSequenceCompleted(
         session: CameraCaptureSession,
         sequenceId: Int,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         delegate.onCaptureSequenceCompleted(session, sequenceId, frameNumber)
     }
@@ -94,7 +94,7 @@ public class RequestForwardingCaptureCallback(
         session: CameraCaptureSession,
         request: CaptureRequest,
         target: Surface,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         delegate.onCaptureBufferLost(session, forwardedRequest, target, frameNumber)
     }

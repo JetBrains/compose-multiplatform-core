@@ -183,7 +183,7 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
                     Log.error { "Failed to acquire latest image" }
                 }
             },
-            CameraXExecutors.ioExecutor()
+            CameraXExecutors.ioExecutor(),
         )
 
         // Init the reprocessing image reader surface and add into the target surfaces of capture
@@ -191,12 +191,12 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
             ImmediateSurface(
                 checkNotNull(reprocImageReader.surface),
                 Size(reprocImageReader.width, reprocImageReader.height),
-                FORMAT
+                FORMAT,
             )
 
         reprocDeferrableSurface.terminationFuture.addListener(
             { reprocImageReader.safeClose() },
-            CameraXExecutors.mainThreadExecutor()
+            CameraXExecutors.mainThreadExecutor(),
         )
         sessionConfigBuilder.addSurface(reprocDeferrableSurface)
 
@@ -263,7 +263,7 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
             if (reprocImageReaderProxy != null) {
                 reprocImageDeferrableSurface.terminationFuture.addListener(
                     { reprocImageReaderProxy.safeClose() },
-                    CameraXExecutors.mainThreadExecutor()
+                    CameraXExecutors.mainThreadExecutor(),
                 )
                 // Clear the listener so that no more buffer is enqueued to |zslRingBuffer|.
                 reprocImageReaderProxy.clearOnImageAvailableListener()

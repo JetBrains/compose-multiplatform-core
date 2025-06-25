@@ -32,6 +32,6 @@ abstract class InsertOrUpsertFunctionBinder(val adapter: InsertOrUpsertFunctionA
         parameters: List<ShortcutQueryParameter>,
         adapters: Map<String, Pair<XPropertySpec, Any>>,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     )
 }

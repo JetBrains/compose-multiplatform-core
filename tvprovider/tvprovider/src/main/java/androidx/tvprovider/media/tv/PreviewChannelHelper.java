@@ -82,6 +82,7 @@ public class PreviewChannelHelper {
     }
 
     /**
+     * @param context                    the Context object that holds the channels
      * @param urlConnectionTimeoutMillis see {@link URLConnection#setConnectTimeout(int)}
      * @param urlReadTimeoutMillis       see {@link URLConnection#setReadTimeout(int)}
      */

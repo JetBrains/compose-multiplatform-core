@@ -63,7 +63,7 @@ object DatePickerBenchmark : MacrobenchmarkScreen {
                     },
                     minValidDate = minDate,
                     maxValidDate = maxDate,
-                    datePickerType = DatePickerType.YearMonthDay
+                    datePickerType = DatePickerType.YearMonthDay,
                 )
             } else {
                 Button(
@@ -91,7 +91,7 @@ object DatePickerBenchmark : MacrobenchmarkScreen {
                         device.displayHeight / 2,
                         device.displayWidth / 2,
                         endY,
-                        10
+                        10,
                     )
                     device.waitForIdle()
                     SystemClock.sleep(500)

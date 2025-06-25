@@ -39,7 +39,7 @@ public class CoroutinesRoom private constructor() {
         public suspend fun <R> execute(
             db: RoomDatabase,
             inTransaction: Boolean,
-            callable: Callable<R>
+            callable: Callable<R>,
         ): R {
             if (db.isOpenInternal && db.inTransaction()) {
                 return callable.call()
@@ -55,7 +55,7 @@ public class CoroutinesRoom private constructor() {
             db: RoomDatabase,
             inTransaction: Boolean,
             cancellationSignal: CancellationSignal?,
-            callable: Callable<R>
+            callable: Callable<R>,
         ): R {
             if (db.isOpenInternal && db.inTransaction()) {
                 return callable.call()
@@ -85,7 +85,7 @@ public class CoroutinesRoom private constructor() {
             db: RoomDatabase,
             inTransaction: Boolean,
             tableNames: Array<String>,
-            callable: Callable<R>
+            callable: Callable<R>,
         ): Flow<@JvmSuppressWildcards R> =
             createFlowCommon(db, inTransaction, tableNames) { callable.call() }
     }

@@ -16,12 +16,18 @@
 
 package androidx.appfunctions.compiler
 
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
+import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
 import androidx.appfunctions.compiler.core.ProcessingException
+import androidx.appfunctions.compiler.core.SymbolNotReadyException
 import androidx.appfunctions.compiler.core.logException
+import androidx.appfunctions.compiler.processors.AppFunctionAggregateProcessor
+import androidx.appfunctions.compiler.processors.AppFunctionComponentRegistryProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionIdProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor
 import androidx.appfunctions.compiler.processors.AppFunctionInvokerProcessor
-import androidx.appfunctions.compiler.processors.AppFunctionLegacyIndexXmlProcessor
+import androidx.appfunctions.compiler.processors.AppFunctionSchemaInventoryProcessor
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableProcessor
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
@@ -39,9 +45,14 @@ class AppFunctionCompiler(
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         return try {
-            buildList {
-                for (processor in processors) {
-                    addAll(processor.process(resolver))
+            val deferred = shouldDeferAllProcessing(resolver)
+            if (deferred.isNotEmpty()) {
+                deferred
+            } else {
+                buildList {
+                    for (processor in processors) {
+                        addAll(processor.process(resolver))
+                    }
                 }
             }
         } catch (e: ProcessingException) {
@@ -50,17 +61,54 @@ class AppFunctionCompiler(
         }
     }
 
+    /**
+     * Returns a non-empty list of [KSAnnotated] nodes if the processor should defer all these
+     * symbols.
+     *
+     * To ensure that all generated components are recorded in AppFunctionComponentRegistry in each
+     * compilation unit, the processor should start the processing only when all the nodes are
+     * ready.
+     */
+    private fun shouldDeferAllProcessing(resolver: Resolver): List<KSAnnotated> {
+        val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
+        val annotatedAppFunctions = appFunctionSymbolResolver.resolveAnnotatedAppFunctions()
+        for (annotatedAppFunction in annotatedAppFunctions) {
+            try {
+                annotatedAppFunction.validate()
+            } catch (e: SymbolNotReadyException) {
+                logger.logging(e.message.toString(), e.node)
+                return annotatedAppFunctions.flatMap(AnnotatedAppFunctions::getAllAnnotated)
+            }
+        }
+        return emptyList()
+    }
+
     class Provider : SymbolProcessorProvider {
 
         override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
+            val options = AppFunctionCompilerOptions.from(environment.options)
+
+            val functionRegistryProcessor =
+                AppFunctionComponentRegistryProcessor(environment.codeGenerator)
             val idProcessor = AppFunctionIdProcessor(environment.codeGenerator)
             val inventoryProcessor = AppFunctionInventoryProcessor(environment.codeGenerator)
             val invokerProcessor = AppFunctionInvokerProcessor(environment.codeGenerator)
-            // TODO: Add compiler option to disable legacy xml generator.
-            val legacyIndexXmlProcessor =
-                AppFunctionLegacyIndexXmlProcessor(environment.codeGenerator)
+            val entityProcessor =
+                AppFunctionSerializableProcessor(environment.codeGenerator, environment.logger)
+            val aggregateProcessor =
+                AppFunctionAggregateProcessor(options, environment.codeGenerator)
+            val schemaInventoryProcessor =
+                AppFunctionSchemaInventoryProcessor(environment.codeGenerator, options)
             return AppFunctionCompiler(
-                listOf(idProcessor, inventoryProcessor, invokerProcessor, legacyIndexXmlProcessor),
+                listOf(
+                    functionRegistryProcessor,
+                    idProcessor,
+                    inventoryProcessor,
+                    invokerProcessor,
+                    entityProcessor,
+                    aggregateProcessor,
+                    schemaInventoryProcessor,
+                ),
                 environment.logger,
             )
         }

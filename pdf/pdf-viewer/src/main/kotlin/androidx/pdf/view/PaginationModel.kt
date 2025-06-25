@@ -17,7 +17,7 @@
 package androidx.pdf.view
 
 import android.graphics.Point
-import android.graphics.Rect
+import android.graphics.RectF
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.Range
@@ -37,7 +37,11 @@ import kotlin.math.max
 @MainThread
 @Suppress("BanParcelableUsage")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parcelable {
+internal class PaginationModel(
+    val pageSpacingPx: Float,
+    val numPages: Int,
+    topPageMarginPx: Float = 0f,
+) : Parcelable {
 
     init {
         require(numPages >= 0) { "Empty PDF!" }
@@ -45,11 +49,11 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
     }
 
     /** The estimated total height of this PDF */
-    val totalEstimatedHeight: Int
+    val totalEstimatedHeight: Float
         get() = computeEstimatedHeight()
 
     /** The maximum width of any page known to this model */
-    var maxWidth: Int = 0
+    var maxWidth: Float = 0f
 
     private var _reach: Int = -1
 
@@ -61,7 +65,7 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
     private val pages = Array(numPages) { UNKNOWN_SIZE }
 
     /** The top position of each page known to this model */
-    private val pagePositions = IntArray(numPages) { -1 }.apply { this[0] = 0 }
+    private val pagePositions = FloatArray(numPages) { -1f }.apply { this[0] = topPageMarginPx }
 
     /**
      * The estimated height of any page not known to this model, i.e. the average height of all
@@ -76,12 +80,12 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
      * The top position of each page known to this model, as a synthetic [List] to conveniently use
      * with APIs like [Collections.binarySearch]
      */
-    private val pageTops: List<Int> =
-        object : AbstractList<Int>() {
+    private val pageTops: List<Float> =
+        object : AbstractList<Float>() {
             override val size: Int
                 get() = reach + 1
 
-            override fun get(index: Int): Int {
+            override fun get(index: Int): Float {
                 return pagePositions[index]
             }
         }
@@ -90,33 +94,33 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
      * The bottom position of each page known to this model, as a synthetic [List] to conveniently
      * use with APIs like [Collections.binarySearch]
      */
-    private val pageBottoms: List<Int> =
-        object : AbstractList<Int>() {
+    private val pageBottoms: List<Float> =
+        object : AbstractList<Float>() {
             override val size: Int
                 get() = reach + 1
 
-            override fun get(index: Int): Int {
+            override fun get(index: Int): Float {
                 return pagePositions[index] + pages[index].y
             }
         }
 
-    constructor(parcel: Parcel) : this(parcel.readInt(), parcel.readInt()) {
+    constructor(parcel: Parcel) : this(parcel.readFloat(), parcel.readInt()) {
         _reach = parcel.readInt()
         averagePageHeight = parcel.readInt()
         accumulatedPageHeight = parcel.readInt()
-        maxWidth = parcel.readInt()
-        parcel.readIntArray(pagePositions)
+        maxWidth = parcel.readFloat()
+        parcel.readFloatArray(pagePositions)
         parcel.readTypedArray(pages, Point.CREATOR)
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeInt(pageSpacingPx)
+        parcel.writeFloat(pageSpacingPx)
         parcel.writeInt(numPages)
         parcel.writeInt(_reach)
         parcel.writeInt(averagePageHeight)
         parcel.writeInt(accumulatedPageHeight)
-        parcel.writeInt(maxWidth)
-        parcel.writeIntArray(pagePositions)
+        parcel.writeFloat(maxWidth)
+        parcel.writeFloatArray(pagePositions)
         parcel.writeTypedArray(pages, flags)
     }
 
@@ -128,10 +132,16 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
         for (i in maxOf(_reach, 0) until pageNum) {
             if (pages[i] == UNKNOWN_SIZE) {
                 pages[i] = pageSize
+
+                // Use prior values as an approximation.
+                accumulatedPageHeight += pageSize.y
+                if (i > 0) {
+                    pagePositions[i] = pagePositions[i - 1] + pages[i - 1].y + pageSpacingPx
+                }
             }
         }
         if (pageSize.x > maxWidth) {
-            maxWidth = pageSize.x
+            maxWidth = pageSize.x.toFloat()
         }
         pages[pageNum] = pageSize
         // Defensive: never set _reach to a smaller value, if pages are loaded out of order
@@ -157,10 +167,17 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
      * coordinates of the viewport.
      */
     fun getPagesInViewport(
-        viewportTop: Int,
-        viewportBottom: Int,
-        includePartial: Boolean = true
-    ): Range<Int> {
+        viewportTop: Float,
+        viewportBottom: Float,
+        includePartial: Boolean = true,
+    ): PagesInViewport {
+        // If the top of the viewport exceeds the bottom of the last page whose dimensions are
+        // known, return an empty range at the bottom of this model, and indicate that layout is
+        // still in progress.
+        val index = max(0, reach)
+        if (viewportTop > pageBottoms[index]) {
+            return PagesInViewport(Range(index, index), layoutInProgress = true)
+        }
         val startList = if (includePartial) pageBottoms else pageTops
         val endList = if (includePartial) pageTops else pageBottoms
 
@@ -172,23 +189,23 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
             val midPoint = (viewportTop + viewportBottom) / 2
             val midResult = pageTops.binarySearch(midPoint)
             val page = maxOf(abs(midResult + 1) - 1, 0)
-            return Range(page, page)
+            return PagesInViewport(Range(page, page))
         }
 
-        return Range(rangeStart, rangeEnd)
+        return PagesInViewport(Range(rangeStart, rangeEnd))
     }
 
     /** Returns the location of the page in content coordinates */
-    fun getPageLocation(pageNum: Int, viewport: Rect): Rect {
+    fun getPageLocation(pageNum: Int, viewport: RectF): RectF {
         val page = pages[pageNum]
-        var left = 0
-        var right: Int = maxWidth
+        var left = 0f
+        var right: Float = maxWidth
         val top = pagePositions[pageNum]
         val bottom = top + page.y
         // this page is smaller than the view's width, it may slide left or right.
         if (page.x < viewport.width()) {
             // page is smaller than the view: center
-            left = Math.max(left, viewport.left + (viewport.width() - page.x) / 2)
+            left = Math.max(left, viewport.left + (viewport.width() - page.x) / 2f)
         } else {
             // page is larger than view: scroll proportionally
             if (viewport.right > right) {
@@ -199,13 +216,12 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
         }
         right = left + page.x
 
-        val ret = Rect(left, top, right, bottom)
-        return ret
+        return RectF(left, top, right, bottom)
     }
 
-    private fun computeEstimatedHeight(): Int {
+    private fun computeEstimatedHeight(): Float {
         return if (_reach < 0) {
-            0
+            0f
         } else if (_reach == numPages - 1) {
             val lastPageHeight = pages[_reach].y
             pagePositions[_reach] + lastPageHeight + (pageSpacingPx)
@@ -239,3 +255,21 @@ internal class PaginationModel(val pageSpacingPx: Int, val numPages: Int) : Parc
         return 0
     }
 }
+
+/**
+ * Encapsulates our understanding of the currently-visible PDF pages, including whether this is a
+ * best guess during layout or the accurate set of pages.
+ */
+internal data class PagesInViewport(
+    /** The set of pages that are currently visible */
+    val pages: Range<Int>,
+    /**
+     * True if we're actively laying out pages to reach the current scroll position, and [pages]
+     * represents a best guess at the set of pages that are currently visible (i.e. instead of
+     * precisely the pages that we know are visible).
+     *
+     * This will be false in most cases except those that involve jumping far ahead in the PDF (e.g.
+     * fast scroll or programmatic changes in position)
+     */
+    val layoutInProgress: Boolean = false,
+)

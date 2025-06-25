@@ -26,5 +26,5 @@ abstract class InsertOrUpsertShortcutFunction(
     val entities: Map<String, ShortcutEntity>,
     val returnType: XType,
     val parameters: List<ShortcutQueryParameter>,
-    val functionBinder: InsertOrUpsertFunctionBinder?
+    val functionBinder: InsertOrUpsertFunctionBinder?,
 )

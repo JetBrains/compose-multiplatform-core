@@ -16,7 +16,7 @@ package androidx.room {
   public static final class RxRoom.Companion {
     method public io.reactivex.Flowable<java.lang.Object> createFlowable(androidx.room.RoomDatabase database, java.lang.String... tableNames);
     method public io.reactivex.Observable<java.lang.Object> createObservable(androidx.room.RoomDatabase database, java.lang.String... tableNames);
-    property public final Object NOTHING;
+    property public Object NOTHING;
   }
 
 }

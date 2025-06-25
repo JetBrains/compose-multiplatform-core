@@ -30,8 +30,7 @@ public class MyDao_Impl(
       }
     }
     this.__updateAdapterOfMyEntity = object : EntityDeleteOrUpdateAdapter<MyEntity>() {
-      protected override fun createQuery(): String =
-          "UPDATE OR ABORT `MyEntity` SET `pk` = ?,`data` = ? WHERE `pk` = ?"
+      protected override fun createQuery(): String = "UPDATE OR ABORT `MyEntity` SET `pk` = ?,`data` = ? WHERE `pk` = ?"
 
       protected override fun bind(statement: SQLiteStatement, entity: MyEntity) {
         statement.bindLong(1, entity.pk)
@@ -41,25 +40,21 @@ public class MyDao_Impl(
     }
   }
 
-  public override fun deleteEntity(item: MyEntity): Unit = performBlocking(__db, false, true) {
-      _connection ->
+  public override fun deleteEntity(item: MyEntity): Unit = performBlocking(__db, false, true) { _connection ->
     __deleteAdapterOfMyEntity.handle(_connection, item)
   }
 
-  public override fun deleteEntityAndReturnCount(item: MyEntity): Int = performBlocking(__db, false,
-      true) { _connection ->
+  public override fun deleteEntityAndReturnCount(item: MyEntity): Int = performBlocking(__db, false, true) { _connection ->
     var _result: Int = 0
     _result += __deleteAdapterOfMyEntity.handle(_connection, item)
     _result
   }
 
-  public override fun updateEntity(item: MyEntity): Unit = performBlocking(__db, false, true) {
-      _connection ->
+  public override fun updateEntity(item: MyEntity): Unit = performBlocking(__db, false, true) { _connection ->
     __updateAdapterOfMyEntity.handle(_connection, item)
   }
 
-  public override fun updateEntityAndReturnCount(item: MyEntity): Int = performBlocking(__db, false,
-      true) { _connection ->
+  public override fun updateEntityAndReturnCount(item: MyEntity): Int = performBlocking(__db, false, true) { _connection ->
     var _result: Int = 0
     _result += __updateAdapterOfMyEntity.handle(_connection, item)
     _result

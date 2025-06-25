@@ -23,6 +23,8 @@ import static androidx.recyclerview.selection.testing.TestEvents.Touch.UP;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import android.view.MotionEvent;
+
 import androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails;
 import androidx.recyclerview.selection.testing.SelectionProbe;
 import androidx.recyclerview.selection.testing.SelectionTrackers;
@@ -84,6 +86,86 @@ public final class TouchInputHandlerTest {
                 mLongPressCallback::run);
     }
 
+    private boolean singleTap(MotionEvent e) {
+        MotionEvent downEvent = e;
+        // Strictly speaking, it would be more realistic if the upEvent's getAction() was
+        // MotionEvent.ACTION_UP, in contrast to e.getAction(), which is MotionEvent.ACTION_DOWN.
+        // But the code under test doesn't care about the action. It's simpler to just re-use e.
+        MotionEvent upEvent = e;
+
+        return mInputDelegate.onDown(downEvent)
+                || mInputDelegate.onSingleTapUp(upEvent)
+                || mInputDelegate.onSingleTapConfirmed(downEvent);
+    }
+
+    @Test
+    public void testTapOnSelectionHotspot_False() {
+        // When nothing is selected, tapping outside the hotspot does nothing.
+
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(false);
+        assertTrue(singleTap(UP));
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(false);
+        assertTrue(singleTap(UP));
+        mSelection.assertNoSelection();
+
+        // When something is selected, tapping outside the hotspot toggles selection.
+
+        mSelectionMgr.select("8");
+        mSelectionMgr.select("9");
+        mSelectionMgr.select("10");
+        mSelectionMgr.select("11");
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(false);
+        assertTrue(singleTap(UP));
+        mSelection.assertSelection(8, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(false);
+        assertTrue(singleTap(UP));
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(20).setInItemSelectRegion(false);
+        assertTrue(singleTap(UP));
+        mSelection.assertSelection(8, 9, 10, 11, 20);
+    }
+
+    @Test
+    public void testTapOnSelectionHotspot_True() {
+        // Tapping inside the hotspot toggles selection.
+
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(true);
+        assertTrue(singleTap(UP));
+        mSelection.assertSelection(5);
+
+        mDetailsLookup.initAt(5).setInItemSelectRegion(true);
+        assertTrue(singleTap(UP));
+        mSelection.assertNoSelection();
+
+        mSelectionMgr.select("8");
+        mSelectionMgr.select("9");
+        mSelectionMgr.select("10");
+        mSelectionMgr.select("11");
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(true);
+        assertTrue(singleTap(UP));
+        mSelection.assertSelection(8, 10, 11);
+
+        mDetailsLookup.initAt(9).setInItemSelectRegion(true);
+        assertTrue(singleTap(UP));
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(20).setInItemSelectRegion(true);
+        assertTrue(singleTap(UP));
+        mSelection.assertSelection(8, 9, 10, 11, 20);
+    }
+
     @Test
     public void testTap_ActivatesWhenNoExistingSelection() {
         ItemDetails<String> doc = mDetailsLookup.initAt(11);
@@ -109,7 +191,6 @@ public final class TouchInputHandlerTest {
 
         mSelection.assertSelection(7);
     }
-
 
     @Test
     public void testLongPress_NotifiesLongPressCallback() {

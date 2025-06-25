@@ -109,7 +109,7 @@ class FromGenericDocumentCodeGenerator {
         // Create an instance of the document class/builder via the chosen create method.
         DocumentClassCreationInfo documentClassCreationInfo = mModel.getDocumentClassCreationInfo();
         CreationMethod creationMethod = documentClassCreationInfo.getCreationMethod();
-        String variableName = creationMethod.returnsBuilder() ? "builder" : "document";
+        String variableName = creationMethod.getReturnsBuilder() ? "builder" : "document";
         List<CodeBlock> params = creationMethod.getParamAssociations().stream()
                 .map(annotatedGetterOrField ->
                         CodeBlock.of("$NConv", annotatedGetterOrField.getJvmName()))
@@ -145,7 +145,7 @@ class FromGenericDocumentCodeGenerator {
             }
         }
 
-        if (creationMethod.returnsBuilder()) {
+        if (creationMethod.getReturnsBuilder()) {
             methodBuilder.addStatement("return $N.build()", variableName);
         } else {
             methodBuilder.addStatement("return $N", variableName);

@@ -20,9 +20,9 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import androidx.annotation.RequiresApi
 import androidx.security.state.SecurityPatchState.Companion.getComponentSecurityPatchLevel
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -123,7 +123,7 @@ class SecurityPatchStateTest {
         val cves =
             securityState.getPatchedCves(
                 SecurityPatchState.COMPONENT_SYSTEM,
-                SecurityPatchState.DateBasedSecurityPatchLevel(2022, 1, 1)
+                SecurityPatchState.DateBasedSecurityPatchLevel(2022, 1, 1),
             )
 
         assertEquals(1, cves[SecurityPatchState.Severity.HIGH]?.size)
@@ -160,7 +160,7 @@ class SecurityPatchStateTest {
         securityState.loadVulnerabilityReport(invalidJson)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
     @Test
     fun testGetVulnerabilityReportUrl_validSdkVersion_returnsCorrectUrl() {
@@ -211,7 +211,7 @@ class SecurityPatchStateTest {
                 mockContext,
                 listOf(),
                 mockSecurityStateManagerCompat,
-                vulnerabilityReportJsonString = generateMockReport("system", "2023-01-01")
+                vulnerabilityReportJsonString = generateMockReport("system", "2023-01-01"),
             )
         securityState.getPublishedSecurityPatchLevel(SecurityPatchState.COMPONENT_SYSTEM)
     }
@@ -559,10 +559,44 @@ class SecurityPatchStateTest {
         assertEquals(2, cves[SecurityPatchState.Severity.HIGH]?.size)
         assertEquals(
             setOf("CVE-2023-0001", "CVE-2023-0002"),
-            cves[SecurityPatchState.Severity.HIGH]
+            cves[SecurityPatchState.Severity.HIGH],
         )
 
         assertEquals(null, cves[SecurityPatchState.Severity.MODERATE])
+    }
+
+    @Test
+    fun testGetPatchedCves_withSystemModulesComponent_returnsCorrectCvesCategorizedBySeverity() {
+        val spl = SecurityPatchState.DateBasedSecurityPatchLevel.fromString("2023-01-15")
+        val jsonInput =
+            """
+            {
+                "vulnerabilities": {
+                    "2023-01-01": [{
+                        "cve_identifiers": ["CVE-2023-0001", "CVE-2023-0002"],
+                        "asb_identifiers": ["ASB-A-2023011"],
+                        "severity": "high",
+                        "components": ["system"]
+                    }],
+                    "2023-01-15": [{
+                        "cve_identifiers": ["CVE-2023-0010"],
+                        "asb_identifiers": ["ASB-A-2023022"],
+                        "severity": "moderate",
+                        "components": ["com.google.android.modulemetadata"]
+                    }]
+                },
+                "kernel_lts_versions": {}
+            }
+        """
+                .trimIndent()
+        securityState.loadVulnerabilityReport(jsonInput)
+
+        val cves = securityState.getPatchedCves(SecurityPatchState.COMPONENT_SYSTEM_MODULES, spl)
+
+        assertEquals(1, cves[SecurityPatchState.Severity.MODERATE]?.size)
+        assertEquals(setOf("CVE-2023-0010"), cves[SecurityPatchState.Severity.MODERATE])
+
+        assertEquals(null, cves[SecurityPatchState.Severity.HIGH])
     }
 
     @Test

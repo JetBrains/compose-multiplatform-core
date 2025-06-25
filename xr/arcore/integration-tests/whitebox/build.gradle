@@ -22,9 +22,9 @@
  * modifying its settings.
  */
 
+import androidx.build.AndroidXConfig
 import androidx.build.ApkCopyHelperKt
-import androidx.build.KotlinTarget
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -37,20 +37,25 @@ android {
     defaultConfig {
         // TODO: This should be lower, possibly 21.
         //       Address API calls that require higher versions.
-        minSdkVersion 30
+        minSdkVersion 34
     }
     buildFeatures { viewBinding = true }
     namespace = "androidx.xr.arcore.apps.whitebox"
+
+    buildTypes {
+        release {
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+        }
+    }
 }
 
 androidx {
     name = "ARCore Whitebox"
-    type = LibraryType.TEST_APPLICATION
+    type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2024"
     description = "Test app that exercises the ARCore APIs."
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
-    // TODO: b/326456246
-    optOutJSpecify = true
 }
 
 dependencies {
@@ -68,6 +73,8 @@ dependencies {
     implementation("androidx.compose.runtime:runtime:1.7.5")
     implementation("androidx.compose.ui:ui:1.7.5")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
+
+    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
 }
 
 // Making this APK available via Android Build so the QA team can

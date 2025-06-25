@@ -37,17 +37,17 @@ import androidx.wear.protolayout.expression.RequiresSchemaVersion
 @ProtoLayoutExperimental
 fun LayoutModifier.visibility(
     staticVisibility: Boolean,
-    dynamicVisibility: DynamicBool? = null
+    dynamicVisibility: DynamicBool? = null,
 ): LayoutModifier = this then BaseVisibilityElement(staticVisibility, dynamicVisibility)
 
 @RequiresSchemaVersion(major = 1, minor = 300)
 internal class BaseVisibilityElement(
     val visibility: Boolean,
-    val dynamicVisibility: DynamicBool? = null
-) : LayoutModifier.Element {
+    val dynamicVisibility: DynamicBool? = null,
+) : BaseProtoLayoutModifiersElement<BoolProp.Builder> {
     @SuppressLint("ProtoLayoutMinSchema")
-    fun mergeTo(initial: BoolProp.Builder?): BoolProp.Builder =
-        (initial ?: BoolProp.Builder(visibility)).apply {
+    override fun mergeTo(initialBuilder: BoolProp.Builder?): BoolProp.Builder =
+        (initialBuilder ?: BoolProp.Builder(visibility)).apply {
             dynamicVisibility?.let { setDynamicValue(it) }
         }
 }

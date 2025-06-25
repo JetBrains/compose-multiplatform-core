@@ -56,7 +56,7 @@ class DateRangeInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(wrap.testTag(wrapperTestTag)) {
                 DateRangePicker(
                     state = rememberDateRangePickerState(initialDisplayMode = DisplayMode.Input),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }
@@ -86,9 +86,9 @@ class DateRangeInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         rememberDateRangePickerState(
                             initialSelectedStartDateMillis = startDayMillis,
                             initialSelectedEndDateMillis = endDayMillis,
-                            initialDisplayMode = DisplayMode.Input
+                            initialDisplayMode = DisplayMode.Input,
                         ),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }

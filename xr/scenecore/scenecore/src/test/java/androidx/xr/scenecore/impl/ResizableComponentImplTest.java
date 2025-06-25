@@ -16,6 +16,13 @@
 
 package androidx.xr.scenecore.impl;
 
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_END;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_START;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_TYPE_MOVE;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_TYPE_RESIZE;
+import static com.android.extensions.xr.node.ReformOptions.ALLOW_MOVE;
+import static com.android.extensions.xr.node.ReformOptions.ALLOW_RESIZE;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
@@ -31,29 +38,33 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 
-import androidx.xr.extensions.node.Node;
-import androidx.xr.extensions.node.ReformEvent;
-import androidx.xr.extensions.node.ReformOptions;
-import androidx.xr.extensions.node.Vec3;
+import androidx.xr.runtime.internal.Dimensions;
+import androidx.xr.runtime.internal.Entity;
+import androidx.xr.runtime.internal.JxrPlatformAdapter;
+import androidx.xr.runtime.internal.MoveEventListener;
+import androidx.xr.runtime.internal.ResizeEvent;
+import androidx.xr.runtime.internal.ResizeEventListener;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.scenecore.JxrPlatformAdapter;
-import androidx.xr.scenecore.JxrPlatformAdapter.Dimensions;
-import androidx.xr.scenecore.JxrPlatformAdapter.Entity;
-import androidx.xr.scenecore.JxrPlatformAdapter.MoveEventListener;
-import androidx.xr.scenecore.JxrPlatformAdapter.ResizeEvent;
-import androidx.xr.scenecore.JxrPlatformAdapter.ResizeEventListener;
+import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
-import androidx.xr.scenecore.testing.FakeXrExtensions;
-import androidx.xr.scenecore.testing.FakeXrExtensions.FakeNode;
-import androidx.xr.scenecore.testing.FakeXrExtensions.FakeReformEvent;
+
+import com.android.extensions.xr.XrExtensions;
+import com.android.extensions.xr.node.Node;
+import com.android.extensions.xr.node.NodeRepository;
+import com.android.extensions.xr.node.ReformEvent;
+import com.android.extensions.xr.node.ReformOptions;
+import com.android.extensions.xr.node.ShadowReformEvent;
+import com.android.extensions.xr.node.Vec3;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.collect.ImmutableSet;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -64,6 +75,7 @@ import org.robolectric.android.controller.ActivityController;
 
 @RunWith(RobolectricTestRunner.class)
 public class ResizableComponentImplTest {
+
     private static final Dimensions kMinDimensions = new Dimensions(0f, 0f, 0f);
     private static final Dimensions kMaxDimensions = new Dimensions(10f, 10f, 10f);
     private final ActivityController<Activity> mActivityController =
@@ -71,16 +83,18 @@ public class ResizableComponentImplTest {
     private final Activity mActivity = mActivityController.create().start().get();
     private final FakeScheduledExecutorService mFakeExecutor = new FakeScheduledExecutorService();
     private final PerceptionLibrary mPerceptionLibrary = mock(PerceptionLibrary.class);
-    private final FakeXrExtensions mFakeExtensions = new FakeXrExtensions();
-    private final FakeImpressApi mFakeImpressApiImpl = new FakeImpressApi();
+    private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
+    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
     private final EntityManager mEntityManager = new EntityManager();
-    private final Node mActivitySpaceNode = mFakeExtensions.createNode();
+    private final Node mActivitySpaceNode = mXrExtensions.createNode();
     private final ActivitySpaceImpl mActivitySpaceImpl =
             new ActivitySpaceImpl(
                     mActivitySpaceNode,
-                    mFakeExtensions,
+                    mActivity,
+                    mXrExtensions,
                     mEntityManager,
-                    () -> mFakeExtensions.fakeSpatialState,
+                    () -> mXrExtensions.getSpatialState(mActivity),
+                    /* unscaledGravityAlignedActivitySpace= */ false,
                     mFakeExecutor);
     private final AndroidXrEntity mActivitySpaceRoot = Mockito.mock(AndroidXrEntity.class);
     private final PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose =
@@ -92,22 +106,35 @@ public class ResizableComponentImplTest {
             Mockito.mock(SplitEngineSubspaceManager.class);
     private final ImpSplitEngineRenderer mSplitEngineRenderer =
             Mockito.mock(ImpSplitEngineRenderer.class);
+    private JxrPlatformAdapter mFakeRuntime;
+    private final NodeRepository mNodeRepository = NodeRepository.getInstance();
 
-    private Entity createTestEntity() {
+    @Before
+    public void setUp() {
         when(mPerceptionLibrary.initSession(eq(mActivity), anyInt(), eq(mFakeExecutor)))
                 .thenReturn(immediateFuture(mock(Session.class)));
-        JxrPlatformAdapter fakeRuntime =
+        mFakeRuntime =
                 JxrPlatformAdapterAxr.create(
                         mActivity,
                         mFakeExecutor,
-                        mFakeExtensions,
-                        mFakeImpressApiImpl,
+                        mXrExtensions,
+                        mFakeImpressApi,
                         mEntityManager,
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ false);
-        return fakeRuntime.createEntity(new Pose(), "test", fakeRuntime.getActivitySpace());
+                        /* useSplitEngine= */ false,
+                        /* unscaledGravityAlignedActivitySpace= */ false);
+    }
+
+    @After
+    public void tearDown() {
+        // Dispose the runtime between test cases to clean up lingering references.
+        mFakeRuntime.dispose();
+    }
+
+    private Entity createTestEntity() {
+        return mFakeRuntime.createGroupEntity(new Pose(), "test", mFakeRuntime.getActivitySpace());
     }
 
     @Test
@@ -116,7 +143,7 @@ public class ResizableComponentImplTest {
         Entity entity2 = createTestEntity();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity1.addComponent(resizableComponent)).isTrue();
         assertThat(entity2.addComponent(resizableComponent)).isFalse();
@@ -128,20 +155,19 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
 
-        FakeNode node = (FakeNode) entity.getNode();
-        assertThat(node.getReformOptions().getEnabledReform())
-                .isEqualTo(ReformOptions.ALLOW_RESIZE);
-        assertThat(node.getReformOptions().getMinimumSize().x).isEqualTo(kMinDimensions.width);
-        assertThat(node.getReformOptions().getMinimumSize().y).isEqualTo(kMinDimensions.height);
-        assertThat(node.getReformOptions().getMinimumSize().z).isEqualTo(kMinDimensions.depth);
-        assertThat(node.getReformOptions().getMaximumSize().x).isEqualTo(kMaxDimensions.width);
-        assertThat(node.getReformOptions().getMaximumSize().y).isEqualTo(kMaxDimensions.height);
-        assertThat(node.getReformOptions().getMaximumSize().z).isEqualTo(kMaxDimensions.depth);
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_RESIZE);
+        assertThat(options.getMinimumSize().x).isEqualTo(kMinDimensions.width);
+        assertThat(options.getMinimumSize().y).isEqualTo(kMinDimensions.height);
+        assertThat(options.getMinimumSize().z).isEqualTo(kMinDimensions.depth);
+        assertThat(options.getMaximumSize().x).isEqualTo(kMaxDimensions.width);
+        assertThat(options.getMaximumSize().y).isEqualTo(kMaxDimensions.height);
+        assertThat(options.getMaximumSize().z).isEqualTo(kMaxDimensions.depth);
     }
 
     @Test
@@ -150,16 +176,16 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
         resizableComponent.setSize(kMaxDimensions);
-        assertThat(node.getReformOptions().getCurrentSize().x).isEqualTo(kMaxDimensions.width);
-        assertThat(node.getReformOptions().getCurrentSize().y).isEqualTo(kMaxDimensions.height);
-        assertThat(node.getReformOptions().getCurrentSize().z).isEqualTo(kMaxDimensions.depth);
+        assertThat(options.getCurrentSize().x).isEqualTo(kMaxDimensions.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(kMaxDimensions.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(kMaxDimensions.depth);
     }
 
     @Test
@@ -168,16 +194,16 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
         resizableComponent.setMinimumSize(kMaxDimensions);
-        assertThat(node.getReformOptions().getMinimumSize().x).isEqualTo(kMaxDimensions.width);
-        assertThat(node.getReformOptions().getMinimumSize().y).isEqualTo(kMaxDimensions.height);
-        assertThat(node.getReformOptions().getMinimumSize().z).isEqualTo(kMaxDimensions.depth);
+        assertThat(options.getMinimumSize().x).isEqualTo(kMaxDimensions.width);
+        assertThat(options.getMinimumSize().y).isEqualTo(kMaxDimensions.height);
+        assertThat(options.getMinimumSize().z).isEqualTo(kMaxDimensions.depth);
     }
 
     @Test
@@ -186,16 +212,16 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
         resizableComponent.setMaximumSize(kMinDimensions);
-        assertThat(node.getReformOptions().getMaximumSize().x).isEqualTo(kMinDimensions.width);
-        assertThat(node.getReformOptions().getMaximumSize().y).isEqualTo(kMinDimensions.height);
-        assertThat(node.getReformOptions().getMaximumSize().z).isEqualTo(kMinDimensions.depth);
+        assertThat(options.getMaximumSize().x).isEqualTo(kMinDimensions.width);
+        assertThat(options.getMaximumSize().y).isEqualTo(kMinDimensions.height);
+        assertThat(options.getMaximumSize().z).isEqualTo(kMinDimensions.depth);
     }
 
     @Test
@@ -204,18 +230,18 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
         resizableComponent.setFixedAspectRatio(2.0f);
-        assertThat(node.getReformOptions().getFixedAspectRatio()).isEqualTo(2.0f);
+        assertThat(options.getFixedAspectRatio()).isEqualTo(2.0f);
         resizableComponent.setFixedAspectRatio(0.0f);
-        assertThat(node.getReformOptions().getFixedAspectRatio()).isEqualTo(0.0f);
+        assertThat(options.getFixedAspectRatio()).isEqualTo(0.0f);
         resizableComponent.setFixedAspectRatio(-1.0f);
-        assertThat(node.getReformOptions().getFixedAspectRatio()).isEqualTo(-1.0f);
+        assertThat(options.getFixedAspectRatio()).isEqualTo(-1.0f);
     }
 
     @Test
@@ -225,14 +251,14 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
 
         resizableComponent.setForceShowResizeOverlay(true);
-        assertThat(node.getReformOptions().getForceShowResizeOverlay()).isTrue();
+        assertThat(mNodeRepository.getReformOptions(entity.getNode()).getForceShowResizeOverlay())
+                .isTrue();
     }
 
     @Test
@@ -241,7 +267,7 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         Dimensions testSize = new Dimensions(1f, 1f, 1f);
         Dimensions testMinSize = new Dimensions(0.25f, 0.25f, 0.25f);
@@ -252,18 +278,17 @@ public class ResizableComponentImplTest {
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
 
-        FakeNode node = (FakeNode) entity.getNode();
-        assertThat(node.getReformOptions().getEnabledReform())
-                .isEqualTo(ReformOptions.ALLOW_RESIZE);
-        assertThat(node.getReformOptions().getCurrentSize().x).isEqualTo(testSize.width);
-        assertThat(node.getReformOptions().getCurrentSize().y).isEqualTo(testSize.height);
-        assertThat(node.getReformOptions().getCurrentSize().z).isEqualTo(testSize.depth);
-        assertThat(node.getReformOptions().getMinimumSize().x).isEqualTo(testMinSize.width);
-        assertThat(node.getReformOptions().getMinimumSize().y).isEqualTo(testMinSize.height);
-        assertThat(node.getReformOptions().getMinimumSize().z).isEqualTo(testMinSize.depth);
-        assertThat(node.getReformOptions().getMaximumSize().x).isEqualTo(testMaxSize.width);
-        assertThat(node.getReformOptions().getMaximumSize().y).isEqualTo(testMaxSize.height);
-        assertThat(node.getReformOptions().getMaximumSize().z).isEqualTo(testMaxSize.depth);
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_RESIZE);
+        assertThat(options.getCurrentSize().x).isEqualTo(testSize.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(testSize.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(testSize.depth);
+        assertThat(options.getMinimumSize().x).isEqualTo(testMinSize.width);
+        assertThat(options.getMinimumSize().y).isEqualTo(testMinSize.height);
+        assertThat(options.getMinimumSize().z).isEqualTo(testMinSize.depth);
+        assertThat(options.getMaximumSize().x).isEqualTo(testMaxSize.width);
+        assertThat(options.getMaximumSize().y).isEqualTo(testMaxSize.height);
+        assertThat(options.getMaximumSize().z).isEqualTo(testMaxSize.depth);
     }
 
     @Test
@@ -272,33 +297,37 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
 
         resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
         assertThat(entity.mReformEventConsumerMap).isNotEmpty();
 
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_MOVE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent moveReformEvent =
+                ShadowReformEvent.create(/* type= */ REFORM_TYPE_MOVE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), moveReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(mockResizeEventListener, never()).onResizeEvent(any());
 
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent resizeReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ 0, /* id= */ 0);
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(mockResizeEventListener).onResizeEvent(any());
+    }
+
+    private void sendResizeEvent(Node node, ReformEvent reformEvent) {
+        ReformOptions options = mNodeRepository.getReformOptions(node);
+        options.getEventExecutor().execute(() -> options.getEventCallback().accept(reformEvent));
     }
 
     @Test
@@ -307,22 +336,22 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
         FakeScheduledExecutorService executorService = new FakeScheduledExecutorService();
 
         resizableComponent.addResizeEventListener(executorService, mockResizeEventListener);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
 
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent resizeReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         assertThat(executorService.hasNext()).isTrue();
@@ -336,24 +365,24 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         ResizeEventListener mockResizeEventListener1 = mock(ResizeEventListener.class);
         ResizeEventListener mockResizeEventListener2 = mock(ResizeEventListener.class);
         FakeScheduledExecutorService executorService = new FakeScheduledExecutorService();
 
         resizableComponent.addResizeEventListener(executorService, mockResizeEventListener1);
         resizableComponent.addResizeEventListener(executorService, mockResizeEventListener2);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
 
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent resizeReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         assertThat(executorService.hasNext()).isTrue();
@@ -368,33 +397,31 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         ResizeEventListener mockResizeEventListener1 = mock(ResizeEventListener.class);
         ResizeEventListener mockResizeEventListener2 = mock(ResizeEventListener.class);
         FakeScheduledExecutorService executorService = new FakeScheduledExecutorService();
 
         resizableComponent.addResizeEventListener(executorService, mockResizeEventListener1);
         resizableComponent.addResizeEventListener(executorService, mockResizeEventListener2);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
 
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent resizeReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         assertThat(executorService.hasNext()).isTrue();
         executorService.runAll();
 
         resizableComponent.removeResizeEventListener(mockResizeEventListener1);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         assertThat(executorService.hasNext()).isTrue();
@@ -409,24 +436,24 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         ResizeEventListener mockResizeEventListener1 = mock(ResizeEventListener.class);
         ResizeEventListener mockResizeEventListener2 = mock(ResizeEventListener.class);
         FakeScheduledExecutorService executorService = new FakeScheduledExecutorService();
 
         resizableComponent.addResizeEventListener(executorService, mockResizeEventListener1);
         resizableComponent.addResizeEventListener(executorService, mockResizeEventListener2);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
 
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent resizeReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         assertThat(executorService.hasNext()).isTrue();
@@ -446,18 +473,16 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
 
         resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
         assertThat(resizableComponent.mReformEventConsumer).isNotNull();
 
         entity.removeComponent(resizableComponent);
-        assertThat(node.getReformOptions().getEnabledReform() & ReformOptions.ALLOW_RESIZE)
-                .isEqualTo(0);
+        assertThat(mNodeRepository.getReformOptions(entity.getNode())).isNull();
         assertThat(entity.mReformEventConsumerMap).isEmpty();
     }
 
@@ -472,7 +497,7 @@ public class ResizableComponentImplTest {
                         ImmutableSet.of(),
                         /* shouldDisposeParentAnchor= */ true,
                         mPerceptionLibrary,
-                        mFakeExtensions,
+                        mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
                         mPerceptionSpaceActivityPose,
@@ -482,14 +507,13 @@ public class ResizableComponentImplTest {
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor,
-                        mFakeExtensions,
+                        mXrExtensions,
                         new Dimensions(0f, 0f, 0f),
                         new Dimensions(5f, 5f, 5f));
         assertThat(entity.addComponent(movableComponent)).isTrue();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
-        assertThat(node.getReformOptions().getEnabledReform())
-                .isEqualTo(ReformOptions.ALLOW_MOVE | ReformOptions.ALLOW_RESIZE);
+        assertThat(mNodeRepository.getReformOptions(entity.getNode()).getEnabledReform())
+                .isEqualTo(ALLOW_MOVE | ALLOW_RESIZE);
     }
 
     @Test
@@ -503,7 +527,7 @@ public class ResizableComponentImplTest {
                         ImmutableSet.of(),
                         /* shouldDisposeParentAnchor= */ true,
                         mPerceptionLibrary,
-                        mFakeExtensions,
+                        mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
                         mPerceptionSpaceActivityPose,
@@ -513,7 +537,7 @@ public class ResizableComponentImplTest {
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor,
-                        mFakeExtensions,
+                        mXrExtensions,
                         new Dimensions(0f, 0f, 0f),
                         new Dimensions(5f, 5f, 5f));
         assertThat(entity.addComponent(movableComponent)).isTrue();
@@ -522,27 +546,25 @@ public class ResizableComponentImplTest {
         movableComponent.addMoveEventListener(directExecutor(), moveEventListener);
         ResizeEventListener resizeEventListener = mock(ResizeEventListener.class);
         resizableComponent.addResizeEventListener(directExecutor(), resizeEventListener);
-        FakeNode node = (FakeNode) entity.getNode();
-        assertThat(node.getReformOptions().getEnabledReform())
-                .isEqualTo(ReformOptions.ALLOW_MOVE | ReformOptions.ALLOW_RESIZE);
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_MOVE | ALLOW_RESIZE);
 
         entity.removeComponent(movableComponent);
-        assertThat(node.getReformOptions().getEnabledReform())
-                .isEqualTo(ReformOptions.ALLOW_RESIZE);
+        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_RESIZE);
 
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent resizeReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(resizeEventListener).onResizeEvent(any());
 
-        reformEvent.setType(ReformEvent.REFORM_TYPE_MOVE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent moveReformEvent =
+                ShadowReformEvent.create(/* type= */ REFORM_TYPE_MOVE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), moveReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(moveEventListener, never()).onMoveEvent(any());
@@ -559,7 +581,7 @@ public class ResizableComponentImplTest {
                         ImmutableSet.of(),
                         /* shouldDisposeParentAnchor= */ true,
                         mPerceptionLibrary,
-                        mFakeExtensions,
+                        mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
                         mPerceptionSpaceActivityPose,
@@ -569,7 +591,7 @@ public class ResizableComponentImplTest {
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor,
-                        mFakeExtensions,
+                        mXrExtensions,
                         new Dimensions(0f, 0f, 0f),
                         new Dimensions(5f, 5f, 5f));
         assertThat(entity.addComponent(movableComponent)).isTrue();
@@ -578,26 +600,32 @@ public class ResizableComponentImplTest {
         movableComponent.addMoveEventListener(directExecutor(), moveEventListener);
         ResizeEventListener resizeEventListener = mock(ResizeEventListener.class);
         resizableComponent.addResizeEventListener(directExecutor(), resizeEventListener);
-        FakeNode node = (FakeNode) entity.getNode();
-        assertThat(node.getReformOptions().getEnabledReform())
-                .isEqualTo(ReformOptions.ALLOW_MOVE | ReformOptions.ALLOW_RESIZE);
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_MOVE | ALLOW_RESIZE);
 
         entity.removeComponent(resizableComponent);
-        assertThat(node.getReformOptions().getEnabledReform()).isEqualTo(ReformOptions.ALLOW_MOVE);
+        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_MOVE);
 
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_MOVE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        // Start the resize.
+        ReformEvent startReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_MOVE, /* state= */ REFORM_STATE_START, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), startReformEvent);
+
+        ReformEvent moveReformEvent =
+                ShadowReformEvent.create(/* type= */ REFORM_TYPE_MOVE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), moveReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
-        verify(moveEventListener).onMoveEvent(any());
+        verify(moveEventListener, times(2)).onMoveEvent(any());
 
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent resizeReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ 0, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), resizeReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(resizeEventListener, never()).onResizeEvent(any());
@@ -609,7 +637,7 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
         entity.removeComponent(resizableComponent);
@@ -622,45 +650,50 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
         entity.setAlpha(0.9f);
         assertThat(entity.getAlpha()).isEqualTo(0.9f);
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
 
         resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
         assertThat(entity.mReformEventConsumerMap).isNotEmpty();
 
         // Start the resize.
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        reformEvent.setState(ReformEvent.REFORM_STATE_START);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent startReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE,
+                        /* state= */ REFORM_STATE_START,
+                        /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), startReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         ArgumentCaptor<ResizeEvent> resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
         verify(mockResizeEventListener).onResizeEvent(resizeEventCaptor.capture());
         ResizeEvent resizeEvent = resizeEventCaptor.getValue();
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_START);
-        assertThat(node.getAlpha()).isEqualTo(0.0f);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_START);
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f);
 
         // End the resize.
-        reformEvent.setState(ReformEvent.REFORM_STATE_END);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent endReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ REFORM_STATE_END, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), endReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
+        // Verify that alpha is not restored until the resize event is processed.
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f);
         mFakeExecutor.runAll();
         verify(mockResizeEventListener, times(2)).onResizeEvent(resizeEventCaptor.capture());
         resizeEvent = resizeEventCaptor.getAllValues().get(2);
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        assertThat(node.getAlpha()).isEqualTo(0.9f);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
+        // Verify that alpha is restored after the resize event is processed.
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f);
     }
 
     @Test
@@ -669,46 +702,48 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
         entity.setAlpha(0.9f);
         assertThat(entity.getAlpha()).isEqualTo(0.9f);
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
 
         resizableComponent.setAutoHideContent(false);
         resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
         assertThat(entity.mReformEventConsumerMap).isNotEmpty();
 
         // Start the resize.
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        reformEvent.setState(ReformEvent.REFORM_STATE_START);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent startReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE,
+                        /* state= */ REFORM_STATE_START,
+                        /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), startReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         ArgumentCaptor<ResizeEvent> resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
         verify(mockResizeEventListener).onResizeEvent(resizeEventCaptor.capture());
         ResizeEvent resizeEvent = resizeEventCaptor.getValue();
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_START);
-        assertThat(node.getAlpha()).isEqualTo(0.9f);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_START);
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f);
 
         // End the resize.
-        reformEvent.setState(ReformEvent.REFORM_STATE_END);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent endReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ REFORM_STATE_END, /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), endReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(mockResizeEventListener, times(2)).onResizeEvent(resizeEventCaptor.capture());
         resizeEvent = resizeEventCaptor.getAllValues().get(2);
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        assertThat(node.getAlpha()).isEqualTo(0.9f);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f);
     }
 
     @Test
@@ -717,49 +752,51 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         resizableComponent.setSize(new Dimensions(1.0f, 2.0f, 3.0f));
-        assertThat(node.getReformOptions().getCurrentSize().x).isEqualTo(1.0f);
-        assertThat(node.getReformOptions().getCurrentSize().y).isEqualTo(2.0f);
-        assertThat(node.getReformOptions().getCurrentSize().z).isEqualTo(3.0f);
+        assertThat(options.getCurrentSize().x).isEqualTo(1.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(2.0f);
+        assertThat(options.getCurrentSize().z).isEqualTo(3.0f);
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
 
         resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
         assertThat(entity.mReformEventConsumerMap).isNotEmpty();
 
         // Start the resize.
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        reformEvent.setState(ReformEvent.REFORM_STATE_START);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent startReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE,
+                        /* state= */ REFORM_STATE_START,
+                        /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), startReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         ArgumentCaptor<ResizeEvent> resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
         verify(mockResizeEventListener).onResizeEvent(resizeEventCaptor.capture());
         ResizeEvent resizeEvent = resizeEventCaptor.getValue();
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_START);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_START);
 
         // End the resize.
-        reformEvent.setState(ReformEvent.REFORM_STATE_END);
-        reformEvent.setProposedSize(new Vec3(4.0f, 5.0f, 6.0f));
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent endReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ REFORM_STATE_END, /* id= */ 0);
+        ShadowReformEvent.extract(endReformEvent).setProposedSize(new Vec3(4.0f, 5.0f, 6.0f));
+
+        sendResizeEvent(entity.getNode(), endReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(mockResizeEventListener, times(2)).onResizeEvent(resizeEventCaptor.capture());
         resizeEvent = resizeEventCaptor.getAllValues().get(2);
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        assertThat(node.getReformOptions().getCurrentSize().x).isEqualTo(4.0f);
-        assertThat(node.getReformOptions().getCurrentSize().y).isEqualTo(5.0f);
-        assertThat(node.getReformOptions().getCurrentSize().z).isEqualTo(6.0f);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
+        assertThat(options.getCurrentSize().x).isEqualTo(4.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(5.0f);
+        assertThat(options.getCurrentSize().z).isEqualTo(6.0f);
     }
 
     @Test
@@ -769,50 +806,52 @@ public class ResizableComponentImplTest {
         assertThat(entity).isNotNull();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mFakeExtensions, kMinDimensions, kMaxDimensions);
+                        mFakeExecutor, mXrExtensions, kMinDimensions, kMaxDimensions);
         assertThat(resizableComponent).isNotNull();
         assertThat(entity.addComponent(resizableComponent)).isTrue();
-        FakeNode node = (FakeNode) entity.getNode();
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         resizableComponent.setAutoUpdateSize(false);
         resizableComponent.setSize(new Dimensions(1.0f, 2.0f, 3.0f));
-        assertThat(node.getReformOptions().getCurrentSize().x).isEqualTo(1.0f);
-        assertThat(node.getReformOptions().getCurrentSize().y).isEqualTo(2.0f);
-        assertThat(node.getReformOptions().getCurrentSize().z).isEqualTo(3.0f);
+        assertThat(options.getCurrentSize().x).isEqualTo(1.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(2.0f);
+        assertThat(options.getCurrentSize().z).isEqualTo(3.0f);
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
 
         resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
-        assertThat(node.getReformOptions().getEventCallback()).isNotNull();
-        assertThat(node.getReformOptions().getEventExecutor()).isNotNull();
+        assertThat(options.getEventCallback()).isNotNull();
+        assertThat(options.getEventExecutor()).isNotNull();
         assertThat(entity.mReformEventConsumerMap).isNotEmpty();
 
         // Start the resize.
-        FakeReformEvent reformEvent = new FakeReformEvent();
-        reformEvent.setType(ReformEvent.REFORM_TYPE_RESIZE);
-        reformEvent.setState(ReformEvent.REFORM_STATE_START);
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent startReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE,
+                        /* state= */ REFORM_STATE_START,
+                        /* id= */ 0);
+
+        sendResizeEvent(entity.getNode(), startReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         ArgumentCaptor<ResizeEvent> resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
         verify(mockResizeEventListener).onResizeEvent(resizeEventCaptor.capture());
         ResizeEvent resizeEvent = resizeEventCaptor.getValue();
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_START);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_START);
 
         // End the resize.
-        reformEvent.setState(ReformEvent.REFORM_STATE_END);
-        reformEvent.setProposedSize(new Vec3(4.0f, 5.0f, 6.0f));
-        node.getReformOptions()
-                .getEventExecutor()
-                .execute(() -> node.getReformOptions().getEventCallback().accept(reformEvent));
+        ReformEvent endReformEvent =
+                ShadowReformEvent.create(
+                        /* type= */ REFORM_TYPE_RESIZE, /* state= */ REFORM_STATE_END, /* id= */ 0);
+        ShadowReformEvent.extract(endReformEvent).setProposedSize(new Vec3(4.0f, 5.0f, 6.0f));
+
+        sendResizeEvent(entity.getNode(), endReformEvent);
         assertThat(mFakeExecutor.hasNext()).isTrue();
         mFakeExecutor.runAll();
         verify(mockResizeEventListener, times(2)).onResizeEvent(resizeEventCaptor.capture());
         resizeEvent = resizeEventCaptor.getAllValues().get(2);
-        assertThat(resizeEvent.resizeState).isEqualTo(ResizeEvent.RESIZE_STATE_END);
+        assertThat(resizeEvent.getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
         // Reform size should be unchanged.
-        assertThat(node.getReformOptions().getCurrentSize().x).isEqualTo(1.0f);
-        assertThat(node.getReformOptions().getCurrentSize().y).isEqualTo(2.0f);
-        assertThat(node.getReformOptions().getCurrentSize().z).isEqualTo(3.0f);
+        assertThat(options.getCurrentSize().x).isEqualTo(1.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(2.0f);
+        assertThat(options.getCurrentSize().z).isEqualTo(3.0f);
     }
 }

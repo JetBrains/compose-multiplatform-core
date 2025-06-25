@@ -89,4 +89,73 @@ class LookaheadDelegatesTest {
         placeChild = true
         rule.waitForIdle()
     }
+
+    @Test
+    fun testResetLookaheadPassInvalidations() {
+        var invalidateParent by mutableStateOf(false)
+        var placeChild by mutableStateOf(true)
+        var useLookaheadScope by mutableStateOf(true)
+        var largeSize by mutableStateOf(true)
+        rule.setContent {
+            val movableContent = remember {
+                movableContentOf {
+                    Row(
+                        Modifier.layout { m, c ->
+                            if (isLookingAhead) {
+                                @Suppress("UNUSED_EXPRESSION")
+                                // Trigger a lookahead re-measurement via a state read
+                                invalidateParent
+                            }
+                            m.measure(c).run { layout(width, height) { place(0, 0) } }
+                        }
+                    ) {
+                        Box(
+                            Modifier.layout { m, c ->
+                                if (isLookingAhead) {
+                                    val size = if (largeSize) 100 else 50
+                                    val p = m.measure(c)
+                                    layout(size, size) { p.place(0, 0) }
+                                } else {
+                                    m.measure(c).run { layout(width, height) { place(0, 0) } }
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+            Box(
+                Modifier.layout { m, c ->
+                    m.measure(c).run {
+                        layout(width, height) {
+                            if (placeChild) {
+                                place(0, 0)
+                            }
+                        }
+                    }
+                }
+            ) {
+                // Move moveableContent from a parent in LookaheadScope to a parent that is not
+                // in a LookaheadScope.
+                if (useLookaheadScope) {
+                    LookaheadScope { movableContent() }
+                } else {
+                    movableContent()
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        // Invalidate parent's measurement so that the child is only marked as dirty, instead of
+        // being independently invalidated
+        invalidateParent = true
+        // Invalidate lookahead measurement via this size change
+        largeSize = !largeSize
+        placeChild = false
+        useLookaheadScope = !useLookaheadScope
+
+        rule.waitForIdle()
+
+        placeChild = true
+        rule.waitForIdle()
+    }
 }

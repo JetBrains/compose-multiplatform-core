@@ -53,14 +53,14 @@ public class CameraSelectorTest {
         mRearCamera =
             FakeCamera(
                 Mockito.mock(CameraControlInternal::class.java),
-                FakeCameraInfoInternal(mRearRotation, CameraSelector.LENS_FACING_BACK)
+                FakeCameraInfoInternal(mRearRotation, CameraSelector.LENS_FACING_BACK),
             )
         cameraFactory.insertCamera(CameraSelector.LENS_FACING_BACK, mRearId) { mRearCamera }
         mCameras.add(mRearCamera)
         mFrontCamera =
             FakeCamera(
                 Mockito.mock(CameraControlInternal::class.java),
-                FakeCameraInfoInternal(mFrontRotation, CameraSelector.LENS_FACING_FRONT)
+                FakeCameraInfoInternal(mFrontRotation, CameraSelector.LENS_FACING_FRONT),
             )
         cameraFactory.insertCamera(CameraSelector.LENS_FACING_FRONT, mFrontId) { mFrontCamera }
         mCameras.add(mFrontCamera)

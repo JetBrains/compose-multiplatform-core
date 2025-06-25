@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -34,6 +33,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,12 +44,18 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.Ref
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -62,7 +68,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
@@ -71,10 +79,10 @@ import androidx.compose.ui.unit.dp
 import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -160,7 +168,7 @@ class SearchBarTest {
                 TextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester)
+                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester),
                 )
             }
         }
@@ -312,11 +320,11 @@ class SearchBarTest {
                             trailingIcon = {
                                 IconButton(
                                     onClick = { iconClicked = true },
-                                    modifier = Modifier.testTag(IconTestTag)
+                                    modifier = Modifier.testTag(IconTestTag),
                                 ) {
                                     Icon(Icons.Default.MoreVert, null)
                                 }
-                            }
+                            },
                         )
                     },
                     expanded = expanded,
@@ -406,7 +414,7 @@ class SearchBarTest {
                 TextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester)
+                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester),
                 )
             }
         }
@@ -514,11 +522,11 @@ class SearchBarTest {
                             trailingIcon = {
                                 IconButton(
                                     onClick = { iconClicked = true },
-                                    modifier = Modifier.testTag(IconTestTag)
+                                    modifier = Modifier.testTag(IconTestTag),
                                 ) {
                                     Icon(Icons.Default.MoreVert, null)
                                 }
-                            }
+                            },
                         )
                     },
                     expanded = expanded,
@@ -556,10 +564,15 @@ class SearchBarTest {
 
     // Tests for new search bar APIs below this section
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun newSearchBar_becomesExpandedAndFocusedOnClick_andCollapsedAndUnfocusedOnBack() {
+        var softwareKeyboardController: SoftwareKeyboardController? = null
+        var isInTouchMode = false
         rule.setMaterialContent(lightColorScheme()) {
+            val inputModeManager = LocalInputModeManager.current
+
+            SideEffect { isInTouchMode = inputModeManager.requestInputMode(InputMode.Touch) }
+
             Box(Modifier.fillMaxSize()) {
                 val searchBarState = rememberSearchBarState()
                 val textFieldState = rememberTextFieldState("Query")
@@ -581,6 +594,7 @@ class SearchBarTest {
                 ExpandedFullScreenSearchBar(
                     state = searchBarState,
                     inputField = {
+                        softwareKeyboardController = LocalSoftwareKeyboardController.current
                         InputField(
                             searchBarState = searchBarState,
                             textFieldState = textFieldState,
@@ -592,6 +606,7 @@ class SearchBarTest {
                 }
             }
         }
+        assumeTrue(isInTouchMode)
 
         rule.onNodeWithTag(ContentTestTag).assertDoesNotExist()
 
@@ -601,15 +616,99 @@ class SearchBarTest {
         rule.onNodeWithTag(ContentTestTag).assertIsDisplayed()
         rule.onNodeWithTag(ExpandedInputFieldTestTag).assertIsFocused()
 
-        // first dismiss keyboard, then dismiss search bar
-        repeat(2) {
-            Espresso.pressBack()
-            rule.waitForIdle()
-        }
+        softwareKeyboardController?.hide()
+        rule.waitForIdle()
+
+        // Dismiss search bar
+        Espresso.pressBack()
+        rule.waitForIdle()
 
         rule.onNodeWithTag(ContentTestTag).assertDoesNotExist()
         rule.onNodeWithTag(ExpandedInputFieldTestTag).assertDoesNotExist()
         rule.onNodeWithTag(CollapsedInputFieldTestTag).assertIsNotFocused()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun newSearchBar_expansionBehavior_inNonTouchMode() {
+        val focusRequester = FocusRequester()
+        var softwareKeyboardController: SoftwareKeyboardController? = null
+        lateinit var searchBarState: SearchBarState
+        var isInKeyboardMode = false
+        rule.setMaterialContent(lightColorScheme()) {
+            val textFieldState = rememberTextFieldState()
+            searchBarState = rememberSearchBarState()
+            val inputModeManager = LocalInputModeManager.current
+
+            SideEffect { isInKeyboardMode = inputModeManager.requestInputMode(InputMode.Keyboard) }
+
+            Box(Modifier.fillMaxSize()) {
+                // Extra item for initial focus.
+                Box(Modifier.size(10.dp).focusable())
+
+                SearchBar(
+                    modifier = Modifier.testTag(SearchBarTestTag),
+                    state = searchBarState,
+                    inputField = {
+                        InputField(
+                            searchBarState = searchBarState,
+                            textFieldState = textFieldState,
+                            modifier =
+                                Modifier.testTag(CollapsedInputFieldTestTag)
+                                    .focusRequester(focusRequester),
+                        )
+                    },
+                )
+                ExpandedFullScreenSearchBar(
+                    state = searchBarState,
+                    inputField = {
+                        softwareKeyboardController = LocalSoftwareKeyboardController.current
+                        InputField(
+                            searchBarState = searchBarState,
+                            textFieldState = textFieldState,
+                            modifier = Modifier.testTag(ExpandedInputFieldTestTag),
+                        )
+                    },
+                ) {
+                    Text("Content", modifier = Modifier.testTag(ContentTestTag))
+                }
+            }
+        }
+        assumeTrue(isInKeyboardMode)
+        rule.runOnIdle { focusRequester.requestFocus() }
+
+        // Focused and collapsed
+        rule.onNodeWithTag(CollapsedInputFieldTestTag).assertIsFocused()
+        rule.onNodeWithTag(ContentTestTag).assertDoesNotExist()
+
+        // start typing
+        rule.onNodeWithTag(CollapsedInputFieldTestTag).performKeyInput { pressKey(Key.A) }
+        rule.waitForIdle()
+
+        // Focused and expanded
+        rule.onNodeWithTag(ContentTestTag).assertIsDisplayed()
+        rule.onNodeWithTag(ExpandedInputFieldTestTag).assertIsFocused()
+
+        softwareKeyboardController?.hide()
+        rule.waitForIdle()
+
+        // Dismiss search bar
+        Espresso.pressBack()
+        rule.waitUntil { searchBarState.currentValue == SearchBarValue.Collapsed }
+
+        // Focused and collapsed
+        rule.onNodeWithTag(CollapsedInputFieldTestTag).assertIsFocused()
+        rule.onNodeWithTag(ContentTestTag).assertDoesNotExist()
+
+        // press down
+        rule.onNodeWithTag(CollapsedInputFieldTestTag).performKeyInput {
+            pressKey(Key.DirectionDown)
+        }
+        rule.waitForIdle()
+
+        // Focused and expanded
+        rule.onNodeWithTag(ContentTestTag).assertIsDisplayed()
+        rule.onNodeWithTag(ExpandedInputFieldTestTag).assertIsFocused()
     }
 
     @Test
@@ -639,13 +738,13 @@ class SearchBarTest {
                             modifier = Modifier.testTag(ExpandedInputFieldTestTag),
                         )
                     },
-                    content = {}
+                    content = {},
                 )
 
                 TextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester)
+                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester),
                 )
             }
         }
@@ -688,7 +787,7 @@ class SearchBarTest {
                             modifier = Modifier.testTag(ExpandedInputFieldTestTag),
                         )
                     },
-                    content = { Text("Content") }
+                    content = { Text("Content") },
                 )
             }
         }
@@ -743,7 +842,7 @@ class SearchBarTest {
                             trailingIcon = {
                                 IconButton(
                                     onClick = { iconClicked = true },
-                                    modifier = Modifier.testTag(IconTestTag)
+                                    modifier = Modifier.testTag(IconTestTag),
                                 ) {
                                     Icon(Icons.Default.MoreVert, null)
                                 }
@@ -761,7 +860,7 @@ class SearchBarTest {
                             // don't need a trailing icon since the search bar should never expand
                         )
                     },
-                    content = { Text("Content", modifier = Modifier.testTag(ContentTestTag)) }
+                    content = { Text("Content", modifier = Modifier.testTag(ContentTestTag)) },
                 )
             }
         }
@@ -869,12 +968,8 @@ class SearchBarTest {
         var canScroll by mutableStateOf(true)
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior =
-                SearchBarDefaults.enterAlwaysSearchBarScrollBehavior(
-                    canScroll = { canScroll },
-                )
-            SearchBarWithScrollableContent(
-                searchBarScrollBehavior = scrollBehavior,
-            )
+                SearchBarDefaults.enterAlwaysSearchBarScrollBehavior(canScroll = { canScroll })
+            SearchBarWithScrollableContent(searchBarScrollBehavior = scrollBehavior)
         }
 
         // search bar is initially displayed
@@ -974,7 +1069,7 @@ class SearchBarTest {
                         )
                     },
                 )
-            }
+            },
         ) { innerPadding ->
             LazyColumn(
                 modifier = Modifier.testTag(ScrollableContentTestTag),

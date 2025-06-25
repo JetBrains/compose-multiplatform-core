@@ -53,5 +53,5 @@ internal expect fun defaultLocale(): CalendarLocale
 internal expect fun Int.toLocalString(
     minDigits: Int = 1,
     maxDigits: Int = 40,
-    isGroupingUsed: Boolean = false
+    isGroupingUsed: Boolean = false,
 ): String

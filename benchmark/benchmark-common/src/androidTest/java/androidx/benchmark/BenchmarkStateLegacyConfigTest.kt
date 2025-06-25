@@ -34,7 +34,7 @@ class BenchmarkStateLegacyConfigTest {
         expectedMeasurements: Int,
         expectedIterations: Int?,
         expectedUsesProfiler: Boolean = false,
-        expectedProfilerIterations: Int = 0
+        expectedProfilerIterations: Int = 0,
     ) {
         val state = BenchmarkStateLegacy(config)
         var count = 0

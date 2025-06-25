@@ -30,13 +30,13 @@ import androidx.room.vo.TransactionFunction
 class TransactionFunctionAdapter(
     private val functionName: String,
     private val jvmMethodName: String,
-    private val callType: TransactionFunction.CallType
+    private val callType: TransactionFunction.CallType,
 ) {
     fun createDelegateToSuperCode(
         parameterNames: List<String>,
         daoName: XClassName,
         daoImplName: XClassName,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             val delegateInvokeArgs = mutableListOf<Any>()
@@ -88,12 +88,11 @@ class TransactionFunctionAdapter(
                     daoName,
                     DEFAULT_IMPLS_CLASS_NAME,
                     jvmMethodName,
-                    daoImplName
+                    daoImplName,
                 )
             }
         }
 
-    private fun CodeGenScope.getKotlinInvokeExpr(
-        daoImplName: XClassName,
-    ): XCodeBlock = XCodeBlock.of("super@%T.%N(", daoImplName, functionName)
+    private fun CodeGenScope.getKotlinInvokeExpr(daoImplName: XClassName): XCodeBlock =
+        XCodeBlock.of("super@%T.%N(", daoImplName, functionName)
 }

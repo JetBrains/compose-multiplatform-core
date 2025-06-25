@@ -51,7 +51,7 @@ internal actual fun windowContainerWidthInPx(): Int {
  */
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter."
+    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter.",
 )
 @Composable
 @ExperimentalMaterial3Api
@@ -64,7 +64,7 @@ fun TooltipScope.PlainTooltipAndroid(
     containerColor: Color = TooltipDefaults.plainTooltipContainerColor,
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) =
     PlainTooltip(
         modifier = modifier,
@@ -75,7 +75,7 @@ fun TooltipScope.PlainTooltipAndroid(
         containerColor = containerColor,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        content = content
+        content = content,
     )
 
 /**
@@ -108,7 +108,7 @@ fun TooltipScope.PlainTooltipAndroid(
     containerColor: Color = TooltipDefaults.plainTooltipContainerColor,
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     PlainTooltip(
         modifier = modifier,
@@ -143,7 +143,7 @@ fun TooltipScope.PlainTooltipAndroid(
  */
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter."
+    message = "Maintained for binary compatibility. " + "Use overload with maxWidth parameter.",
 )
 @Composable
 @ExperimentalMaterial3Api
@@ -157,7 +157,7 @@ fun TooltipScope.RichTooltipAndroid(
     colors: RichTooltipColors = TooltipDefaults.richTooltipColors(),
     tonalElevation: Dp = ElevationTokens.Level0,
     shadowElevation: Dp = RichTooltipTokens.ContainerElevation,
-    text: @Composable () -> Unit
+    text: @Composable () -> Unit,
 ) =
     RichTooltip(
         modifier = modifier,
@@ -169,7 +169,7 @@ fun TooltipScope.RichTooltipAndroid(
         colors = colors,
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
-        text = text
+        text = text,
     )
 
 /**
@@ -205,7 +205,7 @@ fun TooltipScope.RichTooltipAndroid(
     colors: RichTooltipColors = TooltipDefaults.richTooltipColors(),
     tonalElevation: Dp = ElevationTokens.Level0,
     shadowElevation: Dp = RichTooltipTokens.ContainerElevation,
-    text: @Composable () -> Unit
+    text: @Composable () -> Unit,
 ) {
     RichTooltip(
         modifier = modifier,

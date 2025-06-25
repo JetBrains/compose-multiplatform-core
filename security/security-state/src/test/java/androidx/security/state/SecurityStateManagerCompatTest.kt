@@ -59,7 +59,7 @@ class SecurityStateManagerCompatTest {
             securityStateManagerCompat.getGlobalSecurityState("com.google.android.modulemetadata")
         assertEquals(
             expectedBundle.getString("com.google.android.modulemetadata"),
-            result.getString("com.google.android.modulemetadata")
+            result.getString("com.google.android.modulemetadata"),
         )
     }
 

@@ -62,19 +62,19 @@ package androidx.room {
   }
 
   public static final class ColumnInfo.Companion {
-    property public static final int BINARY;
-    property public static final int BLOB;
-    property public static final String INHERIT_FIELD_NAME;
-    property public static final int INTEGER;
-    property @RequiresApi(21) public static final int LOCALIZED;
-    property public static final int NOCASE;
-    property public static final int REAL;
-    property public static final int RTRIM;
-    property public static final int TEXT;
-    property public static final int UNDEFINED;
-    property @RequiresApi(21) public static final int UNICODE;
-    property public static final int UNSPECIFIED;
-    property public static final String VALUE_UNSPECIFIED;
+    property public static int BINARY;
+    property public static int BLOB;
+    property public static String INHERIT_FIELD_NAME;
+    property public static int INTEGER;
+    property @RequiresApi(21) public static int LOCALIZED;
+    property public static int NOCASE;
+    property public static int REAL;
+    property public static int RTRIM;
+    property public static int TEXT;
+    property public static int UNDEFINED;
+    property @RequiresApi(21) public static int UNICODE;
+    property public static int UNSPECIFIED;
+    property public static String VALUE_UNSPECIFIED;
     field public static final int BINARY = 2; // 0x2
     field public static final int BLOB = 5; // 0x5
     field public static final String INHERIT_FIELD_NAME = "[field-name]";
@@ -193,11 +193,11 @@ package androidx.room {
   }
 
   public static final class ForeignKey.Companion {
-    property public static final int CASCADE;
-    property public static final int NO_ACTION;
-    property public static final int RESTRICT;
-    property public static final int SET_DEFAULT;
-    property public static final int SET_NULL;
+    property public static int CASCADE;
+    property public static int NO_ACTION;
+    property public static int RESTRICT;
+    property public static int SET_DEFAULT;
+    property public static int SET_NULL;
     field public static final int CASCADE = 5; // 0x5
     field public static final int NO_ACTION = 1; // 0x1
     field public static final int RESTRICT = 2; // 0x2
@@ -232,10 +232,10 @@ package androidx.room {
   }
 
   public final class FtsOptions {
-    property public static final String TOKENIZER_ICU;
-    property public static final String TOKENIZER_PORTER;
-    property public static final String TOKENIZER_SIMPLE;
-    property @RequiresApi(21) public static final String TOKENIZER_UNICODE61;
+    property public static String TOKENIZER_ICU;
+    property public static String TOKENIZER_PORTER;
+    property public static String TOKENIZER_SIMPLE;
+    property @RequiresApi(21) public static String TOKENIZER_UNICODE61;
     field public static final androidx.room.FtsOptions INSTANCE;
     field public static final String TOKENIZER_ICU = "icu";
     field public static final String TOKENIZER_PORTER = "porter";
@@ -319,12 +319,12 @@ package androidx.room {
   public static final class OnConflictStrategy.Companion {
     method @Deprecated public int getFAIL();
     method @Deprecated public int getROLLBACK();
-    property public static final int ABORT;
-    property @Deprecated public int FAIL;
-    property public static final int IGNORE;
-    property public static final int NONE;
-    property public static final int REPLACE;
-    property @Deprecated public int ROLLBACK;
+    property public static int ABORT;
+    property @Deprecated public static int FAIL;
+    property public static int IGNORE;
+    property public static int NONE;
+    property public static int REPLACE;
+    property @Deprecated public static int ROLLBACK;
     field public static final int ABORT = 3; // 0x3
     field @Deprecated public static final int FAIL = 4; // 0x4
     field public static final int IGNORE = 5; // 0x5
@@ -398,11 +398,11 @@ package androidx.room {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class RoomMasterTable {
     method public static String createInsertQuery(String hash);
-    property public static final String CREATE_QUERY;
-    property public static final String DEFAULT_ID;
-    property public static final String NAME;
-    property public static final String READ_QUERY;
-    property public static final String TABLE_NAME;
+    property public static String CREATE_QUERY;
+    property public static String DEFAULT_ID;
+    property public static String NAME;
+    property public static String READ_QUERY;
+    property public static String TABLE_NAME;
     field public static final String CREATE_QUERY = "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)";
     field public static final String DEFAULT_ID = "42";
     field public static final androidx.room.RoomMasterTable INSTANCE;
@@ -438,26 +438,26 @@ package androidx.room {
 
   public static final class RoomWarnings.Companion {
     method @Deprecated public String getCURSOR_MISMATCH();
-    property public static final String AMBIGUOUS_COLUMN_IN_RESULT;
-    property public static final String CANNOT_CREATE_VERIFICATION_DATABASE;
-    property @Deprecated public String CURSOR_MISMATCH;
-    property public static final String DEFAULT_CONSTRUCTOR;
-    property public static final String DOES_NOT_IMPLEMENT_EQUALS_HASHCODE;
-    property public static final String INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED;
-    property public static final String INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED;
-    property public static final String INDEX_FROM_PARENT_FIELD_IS_DROPPED;
-    property public static final String INDEX_FROM_PARENT_IS_DROPPED;
-    property public static final String MISMATCHED_GETTER;
-    property public static final String MISMATCHED_SETTER;
-    property public static final String MISSING_INDEX_ON_FOREIGN_KEY_CHILD;
-    property public static final String MISSING_INDEX_ON_JUNCTION;
-    property public static final String MISSING_JAVA_TMP_DIR;
-    property public static final String MISSING_SCHEMA_LOCATION;
-    property public static final String PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED;
-    property public static final String QUERY_MISMATCH;
-    property public static final String RELATION_QUERY_WITHOUT_TRANSACTION;
-    property public static final String RELATION_TYPE_MISMATCH;
-    property public static final String UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE;
+    property public static String AMBIGUOUS_COLUMN_IN_RESULT;
+    property public static String CANNOT_CREATE_VERIFICATION_DATABASE;
+    property @Deprecated public static String CURSOR_MISMATCH;
+    property public static String DEFAULT_CONSTRUCTOR;
+    property public static String DOES_NOT_IMPLEMENT_EQUALS_HASHCODE;
+    property public static String INDEX_FROM_EMBEDDED_ENTITY_IS_DROPPED;
+    property public static String INDEX_FROM_EMBEDDED_FIELD_IS_DROPPED;
+    property public static String INDEX_FROM_PARENT_FIELD_IS_DROPPED;
+    property public static String INDEX_FROM_PARENT_IS_DROPPED;
+    property public static String MISMATCHED_GETTER;
+    property public static String MISMATCHED_SETTER;
+    property public static String MISSING_INDEX_ON_FOREIGN_KEY_CHILD;
+    property public static String MISSING_INDEX_ON_JUNCTION;
+    property public static String MISSING_JAVA_TMP_DIR;
+    property public static String MISSING_SCHEMA_LOCATION;
+    property public static String PRIMARY_KEY_FROM_EMBEDDED_IS_DROPPED;
+    property public static String QUERY_MISMATCH;
+    property public static String RELATION_QUERY_WITHOUT_TRANSACTION;
+    property public static String RELATION_TYPE_MISMATCH;
+    property public static String UNNECESSARY_NULLABILITY_IN_DAO_RETURN_TYPE;
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.CLASS}) public @interface SkipQueryVerification {

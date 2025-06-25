@@ -262,7 +262,7 @@ class SchemaCodeGenerator {
         Set<String> indexableNestedProperties = new HashSet<>(
                 documentPropertyAnnotation.getIndexableNestedPropertiesList());
 
-        if (documentPropertyAnnotation.shouldInheritIndexableNestedPropertiesFromSuperClass()) {
+        if (documentPropertyAnnotation.getShouldInheritIndexableNestedPropertiesFromSuperClass()) {
             // List of classes to expand into parent classes to search for the property annotation
             Queue<TypeElement> classesToExpand = new ArrayDeque<>();
             Set<TypeElement> visited = new HashSet<>();
@@ -292,7 +292,7 @@ class SchemaCodeGenerator {
                     } else {
                         indexableNestedProperties.addAll(
                                 annotation.getIndexableNestedPropertiesList());
-                        if (annotation.shouldInheritIndexableNestedPropertiesFromSuperClass()) {
+                        if (annotation.getShouldInheritIndexableNestedPropertiesFromSuperClass()) {
                             // Continue searching in the parent class's parents
                             classesToExpand.add(parentElement);
                         }
@@ -394,7 +394,7 @@ class SchemaCodeGenerator {
     private static @NonNull CodeBlock createSetShouldIndexNestedPropertiesExpr(
             @NonNull DocumentPropertyAnnotation annotation) {
         return CodeBlock.of("\n.setShouldIndexNestedProperties($L)",
-                annotation.shouldIndexNestedProperties());
+                annotation.getShouldIndexNestedProperties());
     }
 
     /**

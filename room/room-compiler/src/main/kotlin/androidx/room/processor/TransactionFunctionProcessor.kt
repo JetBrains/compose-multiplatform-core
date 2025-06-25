@@ -27,7 +27,7 @@ class TransactionFunctionProcessor(
     baseContext: Context,
     val containingElement: XTypeElement,
     val containingType: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
 
     val context = baseContext.fork(executableElement)
@@ -40,7 +40,7 @@ class TransactionFunctionProcessor(
             executableElement.isOverrideableIgnoringContainer() &&
                 (!executableElement.isAbstract() || hasKotlinDefaultImpl),
             executableElement,
-            ProcessorErrors.TRANSACTION_FUNCTION_MODIFIERS
+            ProcessorErrors.TRANSACTION_FUNCTION_MODIFIERS,
         )
 
         val returnType = delegate.extractReturnType()
@@ -58,7 +58,7 @@ class TransactionFunctionProcessor(
                 ProcessorErrors.transactionFunctionAsync(
                     deferredReturnTypeName.toString(context.codeLanguage)
                 ),
-                executableElement
+                executableElement,
             )
         }
 
@@ -70,7 +70,7 @@ class TransactionFunctionProcessor(
             // include non-Android targets.
             context.logger.e(
                 executableElement,
-                ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID
+                ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID,
             )
         }
 
@@ -99,7 +99,7 @@ class TransactionFunctionProcessor(
             returnType = returnType,
             parameterNames = processedParamNames,
             callType = callType,
-            functionBinder = delegate.findTransactionFunctionBinder(callType)
+            functionBinder = delegate.findTransactionFunctionBinder(callType),
         )
     }
 }

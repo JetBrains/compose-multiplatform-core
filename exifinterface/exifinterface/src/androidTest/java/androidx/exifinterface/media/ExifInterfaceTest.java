@@ -2239,6 +2239,21 @@ public class ExifInterfaceTest {
                     expectedAttributes, exifInterface);
             expectThumbnailMatchesFileBytes(imageFile, exifInterface, expectedAttributes);
         }
+
+        // Clear the properties we overwrote to check passing null results in clearing.
+        exifInterface.setAttribute(ExifInterface.TAG_MAKE, null);
+        exifInterface.setAttribute(ExifInterface.TAG_XMP, null);
+
+        expectedAttributes = expectedAttributesBuilder.setMake(null).clearXmp().build();
+        // Check expected modifications are visible without saving to disk.
+        compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
+
+        // Check expected modifications are visible without re-parsing the file.
+        exifInterface.saveAttributes();
+        compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
+        // Re-parse the file to confirm the changes are persisted to disk
+        exifInterface = new ExifInterface(imageFile.getAbsolutePath());
+        compareWithExpectedAttributes(exifInterface, expectedAttributes, verboseTag);
     }
 
     private void readFromFilesWithExif(File imageFile, ExpectedAttributes expectedAttributes)

@@ -32,7 +32,7 @@ fun LayoutModifier.border(@Dimension(DP) width: Float, color: LayoutColor): Layo
     this then BaseBorderElement(width, color)
 
 internal class BaseBorderElement(@Dimension(DP) val width: Float, val color: LayoutColor) :
-    LayoutModifier.Element {
-    fun mergeTo(initial: Border.Builder?): Border.Builder =
-        (initial ?: Border.Builder()).setWidth(width.dp).setColor(color.prop)
+    BaseProtoLayoutModifiersElement<Border.Builder> {
+    override fun mergeTo(initialBuilder: Border.Builder?): Border.Builder =
+        (initialBuilder ?: Border.Builder()).setWidth(width.dp).setColor(color.prop)
 }

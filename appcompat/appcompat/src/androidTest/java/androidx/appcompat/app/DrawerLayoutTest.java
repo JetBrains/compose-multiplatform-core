@@ -512,7 +512,8 @@ public class DrawerLayoutTest {
         // Start X coordinate of the swipe - 75% across the drawer
         final int swipeStartX = drawerLocation[0] + mDrawerLayout.getWidth() * 3 / 4;
         // End X coordinate of the swipe - 25% across the drawer
-        final int swipeEndX = swipeY - mDrawerLayout.getWidth() / 2;
+        final int swipeEndX = swipeStartX - mDrawerLayout.getWidth() / 2;
+
         onView(withId(R.id.drawer_layout)).perform(
                 wrap(new GeneralSwipeAction(Swipe.FAST,
                         new CoordinatesProvider() {

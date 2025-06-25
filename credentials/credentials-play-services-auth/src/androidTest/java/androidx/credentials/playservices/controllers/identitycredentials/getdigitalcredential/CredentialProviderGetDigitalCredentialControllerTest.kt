@@ -59,7 +59,7 @@ class CredentialProviderGetDigitalCredentialControllerTest {
             assertThat(convertedRequest.origin).isEqualTo(request.origin)
             TestUtils.equals(
                 convertedRequest.data,
-                GetCredentialRequest.getRequestMetadataBundle(request)
+                GetCredentialRequest.getRequestMetadataBundle(request),
             )
             request.credentialOptions.forEachIndexed { idx, expectedOption ->
                 val actualOption = convertedRequest.credentialOptions[idx]

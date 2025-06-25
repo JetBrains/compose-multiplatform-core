@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
 
 package androidx.compose.foundation.lazy.list
 
@@ -74,6 +74,7 @@ import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.collections.removeLast as removeLastKt
+import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -271,7 +272,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
         rule.setContentWithTestViewConfiguration {
             LazyColumn(
                 Modifier.testTag(LazyListTag).requiredWidth(100.dp),
-                horizontalAlignment = horizontalGravity
+                horizontalAlignment = horizontalGravity,
             ) {
                 items(listOf(1, 2)) {
                     if (it == 1) {
@@ -409,7 +410,7 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
                     .testTag(LazyListTag)
                     .graphicsLayer()
                     .background(Color.Blue),
-                state = state
+                state = state,
             ) {
                 items(2) {
                     val size = if (it == 0) 5.dp else 100.dp
@@ -577,6 +578,50 @@ class LazyColumnTest(val useLookaheadScope: Boolean) {
         rule.waitUntil { job.isCompleted }
     }
 
+    @Test
+    fun awaitFirstLayoutIsCancellableMultipleInvocations() {
+        val itemSize = 10f
+        val itemSizeDp = with(rule.density) { itemSize.toDp() }
+        val state = LazyListState()
+        var shouldPlace by mutableStateOf(false)
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            LazyColumn(
+                Modifier.size(itemSizeDp).layout { m, c ->
+                    val p = m.measure(c)
+                    layout(p.width, p.height) {
+                        if (shouldPlace) {
+                            p.place(0, 0)
+                        }
+                    }
+                },
+                state,
+            ) {
+                items(100) { Box(Modifier.size(itemSizeDp)) }
+            }
+            scope = rememberCoroutineScope()
+        }
+
+        // emulate different launched effects
+        val job1 = scope.launch(Dispatchers.Main + AutoTestFrameClock()) { state.scrollToItem(2) }
+        val job2 = scope.launch(Dispatchers.Main + AutoTestFrameClock()) { state.scrollToItem(99) }
+        val job3 = scope.launch(Dispatchers.Main + AutoTestFrameClock()) { state.scrollToItem(3) }
+        rule.waitForIdle()
+
+        job2.cancel()
+        rule.waitUntil { job2.isCompleted }
+        assertEquals(false, job1.isCancelled)
+        assertEquals(false, job3.isCancelled)
+
+        shouldPlace = true
+        rule.runOnIdle {
+            assertEquals(3, state.firstVisibleItemIndex)
+            assertEquals(true, job1.isCompleted)
+            assertEquals(true, job3.isCompleted)
+        }
+    }
+
     @Composable
     private fun LazyRowWrapped(content: @Composable () -> Unit) {
         LazyRow { items(count = 1) { content() } }
@@ -600,6 +645,6 @@ internal fun Modifier.drawOutsideOfBounds() = drawBehind {
     drawRect(
         Color.Red,
         Offset(-inflate, -inflate),
-        Size(size.width + inflate * 2, size.height + inflate * 2)
+        Size(size.width + inflate * 2, size.height + inflate * 2),
     )
 }

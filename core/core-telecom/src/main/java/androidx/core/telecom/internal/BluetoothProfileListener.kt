@@ -43,7 +43,7 @@ internal class BluetoothProfileListener(
             listOf(
                 BluetoothProfile.HEADSET,
                 BluetoothProfile.LE_AUDIO,
-                BluetoothProfile.HEARING_AID
+                BluetoothProfile.HEARING_AID,
             )
     }
 
@@ -59,7 +59,7 @@ internal class BluetoothProfileListener(
      */
     private data class ProfileData(
         val endpoints: MutableList<CallEndpointCompat>?,
-        val proxy: BluetoothProfile?
+        val proxy: BluetoothProfile?,
     )
 
     private val mProfileToData: HashMap<Int, ProfileData> = HashMap()
@@ -96,7 +96,7 @@ internal class BluetoothProfileListener(
                         Log.e(
                             TAG,
                             "cBPP: hit exception when closing proxy for profile=[$profile]",
-                            e
+                            e,
                         )
                     }
             }
@@ -156,13 +156,13 @@ internal class BluetoothProfileListener(
             CallEndpointUuidTracker.getUuid(
                 mUuidSessionId,
                 CallEndpointCompat.TYPE_BLUETOOTH,
-                bluetoothDeviceName
+                bluetoothDeviceName,
             )
         val callEndpoint =
             CallEndpointCompat(
                 bluetoothDeviceName,
                 CallEndpointCompat.TYPE_BLUETOOTH,
-                uuidForBluetoothDevice
+                uuidForBluetoothDevice,
             )
         callEndpoint.mMackAddress = getBluetoothDeviceAddress(device)
         return callEndpoint
