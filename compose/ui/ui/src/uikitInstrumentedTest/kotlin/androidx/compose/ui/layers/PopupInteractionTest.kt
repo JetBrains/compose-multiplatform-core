@@ -19,6 +19,7 @@ package androidx.compose.ui.layers
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
@@ -38,6 +39,7 @@ class PopupInteractionTest {
         var dismissTriggered = false
         setContent {
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = {
                     dismissTriggered = true
                 },
@@ -59,6 +61,7 @@ class PopupInteractionTest {
         var dismissTriggered = false
         setContent {
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismissTriggered = true },
                 properties = PopupProperties(dismissOnClickOutside = false)
             ) {
@@ -77,6 +80,7 @@ class PopupInteractionTest {
         var dismissTriggered = false
         setContent {
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismissTriggered = true },
                 properties = PopupProperties(
                     dismissOnClickOutside = true,
@@ -98,6 +102,7 @@ class PopupInteractionTest {
         var dismissTriggered = false
         setContent {
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismissTriggered = true },
                 properties = PopupProperties(
                     dismissOnClickOutside = false,
@@ -121,14 +126,17 @@ class PopupInteractionTest {
         var dismiss3Triggered = false
         setContent {
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismiss1Triggered = true },
                 properties = PopupProperties(dismissOnClickOutside = true)
             ) { Text("Popup 1") }
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismiss2Triggered = true },
                 properties = PopupProperties(dismissOnClickOutside = true)
             ) { Text("Popup 2") }
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismiss3Triggered = true },
                 properties = PopupProperties(dismissOnClickOutside = true)
             ) { Text("Popup 3") }
@@ -149,10 +157,12 @@ class PopupInteractionTest {
         var dismiss3Triggered = false
         setContent {
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismiss1Triggered = true },
                 properties = PopupProperties(dismissOnClickOutside = true)
             ) { Text("Popup 1") }
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismiss2Triggered = true },
                 properties = PopupProperties(
                     dismissOnClickOutside = true,
@@ -160,6 +170,7 @@ class PopupInteractionTest {
                 )
             ) { Text("Popup 2") }
             Popup(
+                alignment = Alignment.TopStart,
                 onDismissRequest = { dismiss3Triggered = true },
                 properties = PopupProperties(dismissOnClickOutside = true)
             ) { Text("Popup 3") }

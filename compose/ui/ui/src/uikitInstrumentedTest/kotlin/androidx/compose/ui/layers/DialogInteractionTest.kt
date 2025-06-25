@@ -16,11 +16,11 @@
 
 package androidx.compose.ui.layers
 
+import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -39,15 +39,18 @@ class DialogInteractionTest {
                 },
                 properties = DialogProperties(dismissOnClickOutside = true)
             ) {
-                Text("Dialog")
+                Button(onClick = {}) {
+                    Text("Dialog")
+                }
             }
         }
 
-        tap(screenSize.center)
+        tap(DpOffset(x = screenSize.width / 2, 100.dp))
 
         waitForIdle()
 
         assertTrue(dismissTriggered)
+        delay(1000)
     }
 
     @Test
@@ -58,14 +61,17 @@ class DialogInteractionTest {
                 onDismissRequest = { dismissTriggered = true },
                 properties = DialogProperties(dismissOnClickOutside = false)
             ) {
-                Text("Dialog")
+                Button(onClick = {}) {
+                    Text("Dialog")
+                }
             }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(DpOffset(x = screenSize.width / 2, 100.dp))
         waitForIdle()
 
         assertFalse(dismissTriggered)
+        delay(1000)
     }
 
     @Test
@@ -77,13 +83,21 @@ class DialogInteractionTest {
                 Dialog(
                     onDismissRequest = { showDialog1.value = false },
                     properties = DialogProperties(dismissOnClickOutside = true)
-                ) { Text("Dialog 1") }
+                ) {
+                    Button(onClick = {}) {
+                        Text("Dialog")
+                    }
+                }
             }
             if (showDialog2.value) {
                 Dialog(
                     onDismissRequest = { showDialog2.value = false },
                     properties = DialogProperties(dismissOnClickOutside = true)
-                ) { Text("Dialog 2") }
+                ) {
+                    Button(onClick = {}) {
+                        Text("Dialog")
+                    }
+                }
             }
         }
 
@@ -98,5 +112,6 @@ class DialogInteractionTest {
 
         assertFalse(showDialog1.value)
         assertFalse(showDialog2.value)
+        delay(1000)
     }
 }
