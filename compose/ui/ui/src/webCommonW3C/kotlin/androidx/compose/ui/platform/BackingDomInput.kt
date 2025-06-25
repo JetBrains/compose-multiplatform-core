@@ -80,7 +80,12 @@ internal class BackingDomInput(
     }
 
     fun updateHtmlInputBox(left: Float, top: Float, width: Float, height: Float) {
-        setBackingInputBox(left, top, width, height)
+        // we coerce the width to at least 1px, to mitigate the typing lags in mobile Safari:
+        // https://youtrack.jetbrains.com/issue/CMP-8373/Web-Mobile.-TextField.-Typing-input-delay
+        // Apparently when the width is 0px and the selection index is large enough (big text length),
+        // the lags become more noticeable.
+        // I assume it has something to do with text layout. Read more in the comments of the linked issue.
+        setBackingInputBox(left, top, width.coerceAtLeast(1f), height)
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
