@@ -57,8 +57,7 @@ import kotlin.math.floor
 import kotlin.math.max
 
 /**
- * <a href="https://m3.material.io/components/checkbox/overview" class="external"
- * target="_blank">Material Design checkbox</a>.
+ * [Material Design checkbox](https://m3.material.io/components/checkbox/overview)
  *
  * Checkboxes allow users to select one or more items from a set. Checkboxes can turn an option on
  * or off.
@@ -95,7 +94,7 @@ fun Checkbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: CheckboxColors = CheckboxDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val strokeWidthPx = with(LocalDensity.current) { floor(CheckboxDefaults.StrokeWidth.toPx()) }
     TriStateCheckbox(
@@ -111,13 +110,12 @@ fun Checkbox(
         modifier = modifier,
         enabled = enabled,
         colors = colors,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     )
 }
 
 /**
- * <a href="https://m3.material.io/components/checkbox/overview" class="external"
- * target="_blank">Material Design checkbox</a>.
+ * [Material Design checkbox](https://m3.material.io/components/checkbox/overview)
  *
  * Checkboxes allow users to select one or more items from a set. Checkboxes can turn an option on
  * or off.
@@ -160,7 +158,7 @@ fun Checkbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: CheckboxColors = CheckboxDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     TriStateCheckbox(
         state = ToggleableState(checked),
@@ -175,13 +173,12 @@ fun Checkbox(
         modifier = modifier,
         enabled = enabled,
         colors = colors,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     )
 }
 
 /**
- * <a href="https://m3.material.io/components/checkbox/guidelines" class="external"
- * target="_blank">Material Design checkbox</a> parent.
+ * [Material Design checkbox](https://m3.material.io/components/checkbox/guidelines)
  *
  * Checkboxes can have a parent-child relationship with other checkboxes. When the parent checkbox
  * is checked, all child checkboxes are checked. If a parent checkbox is unchecked, all child
@@ -214,7 +211,7 @@ fun TriStateCheckbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: CheckboxColors = CheckboxDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val strokeWidthPx = with(LocalDensity.current) { floor(CheckboxDefaults.StrokeWidth.toPx()) }
     TriStateCheckbox(
@@ -225,13 +222,12 @@ fun TriStateCheckbox(
         modifier = modifier,
         enabled = enabled,
         colors = colors,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     )
 }
 
 /**
- * <a href="https://m3.material.io/components/checkbox/guidelines" class="external"
- * target="_blank">Material Design checkbox</a> parent.
+ * [Material Design checkbox](https://m3.material.io/components/checkbox/guidelines)
  *
  * Checkboxes can have a parent-child relationship with other checkboxes. When the parent checkbox
  * is checked, all child checkboxes are checked. If a parent checkbox is unchecked, all child
@@ -276,7 +272,7 @@ fun TriStateCheckbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: CheckboxColors = CheckboxDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val toggleableModifier =
         if (onClick != null) {
@@ -286,7 +282,7 @@ fun TriStateCheckbox(
                 enabled = enabled,
                 role = Role.Checkbox,
                 interactionSource = interactionSource,
-                indication = ripple(bounded = false, radius = CheckboxTokens.StateLayerSize / 2)
+                indication = ripple(bounded = false, radius = CheckboxTokens.StateLayerSize / 2),
             )
         } else {
             Modifier
@@ -307,7 +303,7 @@ fun TriStateCheckbox(
                 .padding(CheckboxDefaultPadding),
         colors = colors,
         checkmarkStroke = checkmarkStroke,
-        outlineStroke = outlineStroke
+        outlineStroke = outlineStroke,
     )
 }
 
@@ -341,7 +337,7 @@ object CheckboxDefaults {
         checkmarkColor: Color = Color.Unspecified,
         disabledCheckedColor: Color = Color.Unspecified,
         disabledUncheckedColor: Color = Color.Unspecified,
-        disabledIndeterminateColor: Color = Color.Unspecified
+        disabledIndeterminateColor: Color = Color.Unspecified,
     ): CheckboxColors =
         MaterialTheme.colorScheme.defaultCheckboxColors.copy(
             checkedCheckmarkColor = checkmarkColor,
@@ -355,7 +351,7 @@ object CheckboxDefaults {
             uncheckedBorderColor = uncheckedColor,
             disabledBorderColor = disabledCheckedColor,
             disabledUncheckedBorderColor = disabledUncheckedColor,
-            disabledIndeterminateBorderColor = disabledIndeterminateColor
+            disabledIndeterminateBorderColor = disabledIndeterminateColor,
         )
 
     internal val ColorScheme.defaultCheckboxColors: CheckboxColors
@@ -383,7 +379,7 @@ object CheckboxDefaults {
                                 .copy(alpha = CheckboxTokens.UnselectedDisabledContainerOpacity),
                         disabledIndeterminateBorderColor =
                             fromToken(CheckboxTokens.SelectedDisabledContainerColor)
-                                .copy(alpha = CheckboxTokens.SelectedDisabledContainerOpacity)
+                                .copy(alpha = CheckboxTokens.SelectedDisabledContainerOpacity),
                     )
                     .also { defaultCheckboxColorsCached = it }
         }
@@ -450,14 +446,14 @@ private fun CheckboxImpl(
             boxColor = boxColor.value,
             borderColor = borderColor.value,
             radius = RadiusSize.toPx(),
-            stroke = outlineStroke
+            stroke = outlineStroke,
         )
         drawCheck(
             checkColor = checkColor.value,
             checkFraction = checkDrawFraction.value,
             crossCenterGravitation = checkCenterGravitationShiftFraction.value,
             stroke = checkmarkStroke,
-            drawingCache = checkCache
+            drawingCache = checkCache,
         )
     }
 }
@@ -470,7 +466,7 @@ private fun DrawScope.drawBox(boxColor: Color, borderColor: Color, radius: Float
             boxColor,
             size = Size(checkboxSize, checkboxSize),
             cornerRadius = CornerRadius(radius),
-            style = Fill
+            style = Fill,
         )
     } else {
         drawRoundRect(
@@ -478,14 +474,14 @@ private fun DrawScope.drawBox(boxColor: Color, borderColor: Color, radius: Float
             topLeft = Offset(stroke.width, stroke.width),
             size = Size(checkboxSize - stroke.width * 2, checkboxSize - stroke.width * 2),
             cornerRadius = CornerRadius(max(0f, radius - stroke.width)),
-            style = Fill
+            style = Fill,
         )
         drawRoundRect(
             borderColor,
             topLeft = Offset(halfStrokeWidth, halfStrokeWidth),
             size = Size(checkboxSize - stroke.width, checkboxSize - stroke.width),
             cornerRadius = CornerRadius(radius - halfStrokeWidth),
-            style = stroke
+            style = stroke,
         )
     }
 }
@@ -495,7 +491,7 @@ private fun DrawScope.drawCheck(
     checkFraction: Float,
     crossCenterGravitation: Float,
     stroke: Stroke,
-    drawingCache: CheckDrawingCache
+    drawingCache: CheckDrawingCache,
 ) {
     val width = size.width
     val checkCrossX = 0.4f
@@ -528,7 +524,7 @@ private fun DrawScope.drawCheck(
 private class CheckDrawingCache(
     val checkPath: Path = Path(),
     val pathMeasure: PathMeasure = PathMeasure(),
-    val pathToDraw: Path = Path()
+    val pathToDraw: Path = Path(),
 )
 
 /**
@@ -567,7 +563,7 @@ constructor(
     val uncheckedBorderColor: Color,
     val disabledBorderColor: Color,
     val disabledUncheckedBorderColor: Color,
-    val disabledIndeterminateBorderColor: Color
+    val disabledIndeterminateBorderColor: Color,
 ) {
     /**
      * Returns a copy of this CheckboxColors, optionally overriding some of the values. This uses
@@ -585,7 +581,7 @@ constructor(
         uncheckedBorderColor: Color = this.uncheckedBorderColor,
         disabledBorderColor: Color = this.disabledBorderColor,
         disabledUncheckedBorderColor: Color = this.disabledUncheckedBorderColor,
-        disabledIndeterminateBorderColor: Color = this.disabledIndeterminateBorderColor
+        disabledIndeterminateBorderColor: Color = this.disabledIndeterminateBorderColor,
     ) =
         CheckboxColors(
             checkedCheckmarkColor.takeOrElse { this.checkedCheckmarkColor },

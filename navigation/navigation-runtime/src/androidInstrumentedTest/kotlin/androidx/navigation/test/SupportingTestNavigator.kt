@@ -36,7 +36,7 @@ class SupportingTestNavigator : TestNavigator() {
 /** Construct a new [TestNavigator.Destination] from a [SupportingTestNavigator]. */
 inline fun NavGraphBuilder.supportingPane(
     route: String,
-    builder: SupportingTestNavigatorDestinationBuilder.() -> Unit = {}
+    builder: SupportingTestNavigatorDestinationBuilder.() -> Unit = {},
 ) =
     destination(
         SupportingTestNavigatorDestinationBuilder(provider[SupportingTestNavigator::class], route)

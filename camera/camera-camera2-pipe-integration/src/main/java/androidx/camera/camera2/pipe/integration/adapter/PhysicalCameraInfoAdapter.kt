@@ -67,7 +67,7 @@ public class PhysicalCameraInfoAdapter(private val cameraProperties: CameraPrope
         return CameraOrientationUtil.getRelativeImageRotation(
             relativeRotationDegrees,
             sensorOrientation,
-            isOppositeFacingScreen
+            isOppositeFacingScreen,
         )
     }
 

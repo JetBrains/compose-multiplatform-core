@@ -20,20 +20,20 @@ package androidx.room.concurrent
 
 import androidx.annotation.RestrictTo
 
-expect class AtomicInt {
-    constructor(initialValue: Int)
+public expect class AtomicInt {
+    public constructor(initialValue: Int)
 
-    fun get(): Int
+    public fun get(): Int
 
-    fun set(value: Int)
+    public fun set(value: Int)
 
-    fun compareAndSet(expect: Int, update: Int): Boolean
+    public fun compareAndSet(expect: Int, update: Int): Boolean
 
-    fun incrementAndGet(): Int
+    public fun incrementAndGet(): Int
 
-    fun getAndIncrement(): Int
+    public fun getAndIncrement(): Int
 
-    fun decrementAndGet(): Int
+    public fun decrementAndGet(): Int
 }
 
 internal inline fun AtomicInt.loop(action: (Int) -> Unit): Nothing {
@@ -42,10 +42,10 @@ internal inline fun AtomicInt.loop(action: (Int) -> Unit): Nothing {
     }
 }
 
-expect class AtomicBoolean {
-    constructor(initialValue: Boolean)
+public expect class AtomicBoolean {
+    public constructor(initialValue: Boolean)
 
-    fun get(): Boolean
+    public fun get(): Boolean
 
-    fun compareAndSet(expect: Boolean, update: Boolean): Boolean
+    public fun compareAndSet(expect: Boolean, update: Boolean): Boolean
 }

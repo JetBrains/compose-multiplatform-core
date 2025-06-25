@@ -61,7 +61,7 @@ class RippleHostViewTest {
                 radius = 10,
                 color = Color.Red,
                 alpha = 0.4f,
-                onInvalidateRipple = {}
+                onInvalidateRipple = {},
             )
 
             // Create a hardware backed canvas

@@ -231,6 +231,11 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"Démo du modèle de message"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Emplacement du message.\nPlus de texte sur la 2e ligne."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Démo du modèle de message court"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Démo du modèle d\'éléments à sections"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Section \"Case d\'option\""</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Changer de section"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"Section \"Nombreuses lignes\""</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"Section d\'élément de grille"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Démo du modèle de volet"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Démo du modèle de la liste des lieux"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Parcourir les lieux"</string>

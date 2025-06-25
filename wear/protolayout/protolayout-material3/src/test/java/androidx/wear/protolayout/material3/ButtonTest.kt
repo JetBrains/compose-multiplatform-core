@@ -25,8 +25,7 @@ import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.material3.CompactButtonStyle.COMPACT_BUTTON_HEIGHT_DP
 import androidx.wear.protolayout.modifiers.LayoutModifier
-import androidx.wear.protolayout.modifiers.backgroundColor
-import androidx.wear.protolayout.modifiers.clickable
+import androidx.wear.protolayout.modifiers.background
 import androidx.wear.protolayout.modifiers.contentDescription
 import androidx.wear.protolayout.testing.LayoutElementAssertionsProvider
 import androidx.wear.protolayout.testing.hasClickable
@@ -39,6 +38,7 @@ import androidx.wear.protolayout.testing.hasText
 import androidx.wear.protolayout.testing.hasWidth
 import androidx.wear.protolayout.types.argb
 import androidx.wear.protolayout.types.layoutString
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.internal.DoNotInstrument
@@ -71,6 +71,17 @@ class ButtonTest {
             .assert(hasWidth(wrapWithMinTapTargetDimension()))
             .assert(hasHeight(wrapWithMinTapTargetDimension()))
             .assert(hasTag(ButtonDefaults.METADATA_TAG_BUTTON))
+    }
+
+    @Test
+    fun textButton_contentDescription_default() {
+        LayoutElementAssertionsProvider(
+                materialScope(CONTEXT, DEVICE_CONFIGURATION) {
+                    textButton(onClick = CLICKABLE, labelContent = { text(TEXT.layoutString) })
+                }
+            )
+            .onRoot()
+            .assert(hasContentDescription(TEXT))
     }
 
     @Test
@@ -113,7 +124,7 @@ class ButtonTest {
                     imageButton(
                         onClick = CLICKABLE,
                         modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                        backgroundContent = { backgroundImage(IMAGE_ID) }
+                        backgroundContent = { backgroundImage(IMAGE_ID) },
                     )
                 }
             )
@@ -214,11 +225,37 @@ class ButtonTest {
                 imageButton(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    backgroundContent = { backgroundImage(IMAGE_ID) }
+                    backgroundContent = { backgroundImage(IMAGE_ID) },
                 )
             }
 
         LayoutElementAssertionsProvider(button).onElement(hasImage(IMAGE_ID)).assertExists()
+        // Doesn't have the overlay
+        LayoutElementAssertionsProvider(button)
+            .onElement(hasColor(Color.BLACK.argb.withOpacity(ratio = 0.6f).staticArgb))
+            .assertDoesNotExist()
+        LayoutElementAssertionsProvider(button)
+            .onRoot()
+            .assert(hasTag(ButtonDefaults.METADATA_TAG_BUTTON))
+    }
+
+    @Test
+    fun imageButton_hasBackgroundImage_andCustomOverlay() {
+        val color = Color.YELLOW
+        val button =
+            materialScope(CONTEXT, DEVICE_CONFIGURATION) {
+                imageButton(
+                    onClick = CLICKABLE,
+                    modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
+                    backgroundContent = {
+                        backgroundImage(protoLayoutResourceId = IMAGE_ID, overlayColor = color.argb)
+                    },
+                )
+            }
+
+        LayoutElementAssertionsProvider(button).onElement(hasImage(IMAGE_ID)).assertExists()
+        // Has the overlay
+        LayoutElementAssertionsProvider(button).onElement(hasColor(color)).assertExists()
         LayoutElementAssertionsProvider(button)
             .onRoot()
             .assert(hasTag(ButtonDefaults.METADATA_TAG_BUTTON))
@@ -233,8 +270,8 @@ class ButtonTest {
                     onClick = CLICKABLE,
                     modifier =
                         LayoutModifier.contentDescription(CONTENT_DESCRIPTION)
-                            .backgroundColor(color.argb),
-                    content = { text(TEXT.layoutString) }
+                            .background(color.argb),
+                    content = { text(TEXT.layoutString) },
                 )
             }
 
@@ -242,6 +279,22 @@ class ButtonTest {
         LayoutElementAssertionsProvider(button)
             .onRoot()
             .assert(hasTag(ButtonDefaults.METADATA_TAG_BUTTON))
+    }
+
+    @Test
+    fun buttonColors_copy() {
+        val color = Color.YELLOW
+        val originButtonColors = ButtonColors()
+
+        val buttonColors = originButtonColors.copy(secondaryLabelColor = color.argb)
+
+        assertThat(buttonColors.containerColor.staticArgb)
+            .isEqualTo(originButtonColors.containerColor.staticArgb)
+        assertThat(buttonColors.labelColor.staticArgb)
+            .isEqualTo(originButtonColors.labelColor.staticArgb)
+        assertThat(buttonColors.secondaryLabelColor.staticArgb).isEqualTo(color)
+        assertThat(buttonColors.iconColor.staticArgb)
+            .isEqualTo(originButtonColors.iconColor.staticArgb)
     }
 
     // TODO: b/381518061 - Add test for corner shape.
@@ -256,7 +309,7 @@ class ButtonTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     width = expand(),
                     height = height.toDp(),
-                    content = { text(TEXT.layoutString) }
+                    content = { text(TEXT.layoutString) },
                 )
             }
 
@@ -276,8 +329,6 @@ class ButtonTest {
                 .setScreenHeightDp(192)
                 .build()
 
-        private val CLICKABLE = clickable(id = "id")
-
         private const val CONTENT_DESCRIPTION = "This is a button"
 
         private const val IMAGE_ID = "image"
@@ -292,7 +343,7 @@ class ButtonTest {
                 buttonContainer(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    content = { text(TEXT.layoutString) }
+                    content = { text(TEXT.layoutString) },
                 )
             }
 
@@ -301,7 +352,7 @@ class ButtonTest {
                 iconButton(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    iconContent = { icon(ICON_ID) }
+                    iconContent = { icon(ICON_ID) },
                 )
             }
 
@@ -310,7 +361,7 @@ class ButtonTest {
                 textButton(
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
-                    labelContent = { text(TEXT.layoutString) }
+                    labelContent = { text(TEXT.layoutString) },
                 )
             }
 
@@ -321,7 +372,7 @@ class ButtonTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     labelContent = { text(TEXT.layoutString) },
                     secondaryLabelContent = { text(TEXT2.layoutString) },
-                    iconContent = { icon(ICON_ID) }
+                    iconContent = { icon(ICON_ID) },
                 )
             }
 
@@ -332,7 +383,7 @@ class ButtonTest {
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     labelContent = { text(TEXT.layoutString) },
                     secondaryLabelContent = { text(TEXT2.layoutString) },
-                    avatarContent = { icon(IMAGE_ID) }
+                    avatarContent = { icon(IMAGE_ID) },
                 )
             }
 
@@ -342,7 +393,7 @@ class ButtonTest {
                     onClick = CLICKABLE,
                     modifier = LayoutModifier.contentDescription(CONTENT_DESCRIPTION),
                     labelContent = { text(TEXT.layoutString) },
-                    iconContent = { icon(ICON_ID) }
+                    iconContent = { icon(ICON_ID) },
                 )
             }
     }

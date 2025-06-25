@@ -20,7 +20,7 @@ import kotlin.jvm.JvmField
 
 /** A [ByteArray] wrapper that implements equals and hashCode to be used as a Map key.typ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-class ByteArrayWrapper(@JvmField val array: ByteArray) {
+public class ByteArrayWrapper(@JvmField public val array: ByteArray) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ByteArrayWrapper) return false

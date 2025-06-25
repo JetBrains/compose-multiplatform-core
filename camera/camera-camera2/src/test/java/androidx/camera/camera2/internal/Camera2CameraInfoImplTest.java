@@ -74,6 +74,7 @@ import androidx.camera.core.internal.ImmutableZoomState;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.filters.SdkSuppress;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -558,7 +559,7 @@ public class Camera2CameraInfoImplTest {
     }
 
     @Config(minSdk = 28)
-    @RequiresApi(28)
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     public void canReturnCameraCharacteristicsMapWithPhysicalCameras()
             throws CameraAccessExceptionCompat {
@@ -584,7 +585,7 @@ public class Camera2CameraInfoImplTest {
     }
 
     @Config(minSdk = 28)
-    @RequiresApi(28)
+    @SdkSuppress(minSdkVersion = 28)
     @Test
     public void canReturnPhysicalCameraInfos()
             throws CameraAccessExceptionCompat {
@@ -926,6 +927,19 @@ public class Camera2CameraInfoImplTest {
 
         assertThat(cameraInfo.getMaxTorchStrengthLevel()).isEqualTo(
                 CameraInfo.TORCH_STRENGTH_LEVEL_UNSUPPORTED);
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @Test
+    public void apiVersionMet_canReturnIsTorchStrengthSupported()
+            throws CameraAccessExceptionCompat {
+        init(/* hasAvailableCapabilities = */ true);
+
+        final CameraInfo cameraInfo0 = new Camera2CameraInfoImpl(CAMERA0_ID, mCameraManagerCompat);
+        final CameraInfo cameraInfo1 = new Camera2CameraInfoImpl(CAMERA1_ID, mCameraManagerCompat);
+
+        assertThat(cameraInfo0.isTorchStrengthSupported()).isTrue();
+        assertThat(cameraInfo1.isTorchStrengthSupported()).isFalse();
     }
 
     @Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)

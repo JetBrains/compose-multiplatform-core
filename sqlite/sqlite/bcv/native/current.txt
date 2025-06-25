@@ -13,9 +13,13 @@ open annotation class androidx.sqlite/DataType : kotlin/Annotation { // androidx
 abstract interface androidx.sqlite/SQLiteConnection : kotlin/AutoCloseable { // androidx.sqlite/SQLiteConnection|null[0]
     abstract fun close() // androidx.sqlite/SQLiteConnection.close|close(){}[0]
     abstract fun prepare(kotlin/String): androidx.sqlite/SQLiteStatement // androidx.sqlite/SQLiteConnection.prepare|prepare(kotlin.String){}[0]
+    open fun inTransaction(): kotlin/Boolean // androidx.sqlite/SQLiteConnection.inTransaction|inTransaction(){}[0]
 }
 
 abstract interface androidx.sqlite/SQLiteDriver { // androidx.sqlite/SQLiteDriver|null[0]
+    open val hasConnectionPool // androidx.sqlite/SQLiteDriver.hasConnectionPool|{}hasConnectionPool[0]
+        open fun <get-hasConnectionPool>(): kotlin/Boolean // androidx.sqlite/SQLiteDriver.hasConnectionPool.<get-hasConnectionPool>|<get-hasConnectionPool>(){}[0]
+
     abstract fun open(kotlin/String): androidx.sqlite/SQLiteConnection // androidx.sqlite/SQLiteDriver.open|open(kotlin.String){}[0]
 }
 

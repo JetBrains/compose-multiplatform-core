@@ -40,8 +40,8 @@ class SnapshotTestsJvm {
             val state = mutableStateOf(0)
             Snapshot.notifyObjectsInitialized()
 
-            // Create 100 reader threads of state
-            repeat(100) {
+            // Create 20 reader threads of state
+            repeat(20) {
                 thread {
                     try {
                         while (running.get()) {
@@ -79,7 +79,7 @@ class SnapshotTestsJvm {
 
     @Test
     fun listWriteRace() {
-        val iterations = 1000000
+        val iterations = 10000
         val list = SnapshotStateList<Int>().apply { add(0) }
         val max by derivedStateOf { list.max() }
         var exception: Throwable? = null

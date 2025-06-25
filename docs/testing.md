@@ -373,6 +373,16 @@ NOTE The `Project Structure` dialog reachable via `File > Project Structure` is
 specify the SDK source path. You must use the "Module Settings" action as
 directed above.
 
+### Flaky Tests
+
+If you are seeing flakiness on emulator runners (not Cuttlefish) then it is
+possible that tests are not cleaning up after themselves, causing
+misconfiguration between tests in the same module.
+
+Cuttlefish does not run tests with module isolation; it runs multiple test
+modules on the same instance, so pollution between modules is possible, making
+it harder to find the cause of the flakiness
+
 ### Accessing FTL outputs
 
 When we run tests on Firebase Test Lab devices, we transfer the results and
@@ -431,11 +441,13 @@ from `framework/support`:
 
 # Run instrumentation tests in Firebase Test Lab (remote)
 ./gradlew <project-name>:ftlnexus4api21
-./gradlew <project-name>:ftlpixel2api26
-./gradlew <project-name>:ftlpixel2api30
-./gradlew <project-name>:ftlpixel2api33
+./gradlew <project-name>:ftlmediumphoneapi26
+./gradlew <project-name>:ftlmediumphoneapi30
+./gradlew <project-name>:ftlmediumphoneapi33
 ./gradlew <project-name>:ftlmediumphoneapi34
 ./gradlew <project-name>:ftlmediumphoneapi35
+
+./gradlew <project-name>:ftlmediumphoneapi28 (For compose tests only)
 
 # Run local unit tests
 ./gradlew <project-name>:test
@@ -451,7 +463,7 @@ To run a specific instrumentation test in a given project, run
     -Pandroid.testInstrumentationRunnerArguments.class=<fully-qualified-class>[\#testName]
 
 # Run instrumentation tests on in Firebase Test Lab (remote)
-./gradlew <project-name>:ftlpixel2api30 --className=<fully-qualified-class>
+./gradlew <project-name>:ftlmediumphoneapi30 --className=<fully-qualified-class>
 ```
 
 substituting the Gradle project name (ex. `viewpager`) and fully-qualified class

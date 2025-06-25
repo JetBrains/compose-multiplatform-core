@@ -23,12 +23,12 @@ import androidx.room.OnConflictStrategy
 import androidx.room.compiler.processing.XMethodElement
 import androidx.room.compiler.processing.XType
 import androidx.room.vo.InsertFunction
-import androidx.room.vo.findFieldByColumnName
+import androidx.room.vo.findPropertyByColumnName
 
 class InsertFunctionProcessor(
     baseContext: Context,
     val containing: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
     val context = baseContext.fork(executableElement)
 
@@ -37,55 +37,55 @@ class InsertFunctionProcessor(
         val annotation =
             delegate.extractAnnotation(Insert::class, ProcessorErrors.MISSING_INSERT_ANNOTATION)
 
-        val onConflict = annotation?.value?.onConflict ?: OnConflictProcessor.INVALID_ON_CONFLICT
+        val onConflict = annotation?.get("onConflict")?.asInt() ?: OnConflictStrategy.ABORT
         context.checker.check(
             onConflict in OnConflictStrategy.NONE..OnConflictStrategy.IGNORE,
             executableElement,
-            ProcessorErrors.INVALID_ON_CONFLICT_VALUE
+            ProcessorErrors.INVALID_ON_CONFLICT_VALUE,
         )
 
         val returnType = delegate.extractReturnType()
         context.checker.notUnbound(
             returnType,
             executableElement,
-            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_INSERT_FUNCTIONS
+            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_INSERT_FUNCTIONS,
         )
 
         val (entities, params) =
             delegate.extractParams(
-                targetEntityType = annotation?.getAsType("entity"),
+                targetEntityType = annotation?.get("entity")?.asType(),
                 missingParamError = ProcessorErrors.INSERT_DOES_NOT_HAVE_ANY_PARAMETERS_TO_INSERT,
                 onValidatePartialEntity = { entity, pojo ->
                     val missingPrimaryKeys =
-                        entity.primaryKey.fields.any {
-                            pojo.findFieldByColumnName(it.columnName) == null
+                        entity.primaryKey.properties.any {
+                            pojo.findPropertyByColumnName(it.columnName) == null
                         }
                     context.checker.check(
                         entity.primaryKey.autoGenerateId || !missingPrimaryKeys,
                         executableElement,
                         ProcessorErrors.missingPrimaryKeysInPartialEntityForInsert(
                             partialEntityName = pojo.typeName.toString(context.codeLanguage),
-                            primaryKeyNames = entity.primaryKey.fields.columnNames
-                        )
+                            primaryKeyNames = entity.primaryKey.properties.columnNames,
+                        ),
                     )
 
                     // Verify all non null columns without a default value are in the POJO otherwise
                     // the INSERT will fail with a NOT NULL constraint.
                     val missingRequiredFields =
-                        (entity.fields - entity.primaryKey.fields).filter {
+                        (entity.properties - entity.primaryKey.properties).filter {
                             it.nonNull &&
                                 it.defaultValue == null &&
-                                pojo.findFieldByColumnName(it.columnName) == null
+                                pojo.findPropertyByColumnName(it.columnName) == null
                         }
                     context.checker.check(
                         missingRequiredFields.isEmpty(),
                         executableElement,
                         ProcessorErrors.missingRequiredColumnsInPartialEntity(
                             partialEntityName = pojo.typeName.toString(context.codeLanguage),
-                            missingColumnNames = missingRequiredFields.map { it.columnName }
-                        )
+                            missingColumnNames = missingRequiredFields.map { it.columnName },
+                        ),
                     )
-                }
+                },
             )
 
         val functionBinder = delegate.findInsertFunctionBinder(returnType, params)
@@ -93,7 +93,7 @@ class InsertFunctionProcessor(
         context.checker.check(
             functionBinder.adapter != null,
             executableElement,
-            ProcessorErrors.CANNOT_FIND_INSERT_RESULT_ADAPTER
+            ProcessorErrors.CANNOT_FIND_INSERT_RESULT_ADAPTER,
         )
 
         return InsertFunction(
@@ -102,7 +102,7 @@ class InsertFunctionProcessor(
             entities = entities,
             parameters = params,
             onConflict = onConflict,
-            functionBinder = functionBinder
+            functionBinder = functionBinder,
         )
     }
 }

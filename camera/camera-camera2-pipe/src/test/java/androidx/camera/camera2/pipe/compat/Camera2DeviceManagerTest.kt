@@ -78,7 +78,7 @@ internal class PruningCamera2DeviceManagerImplTest {
             override suspend fun openCameraWithRetry(
                 cameraId: CameraId,
                 camera2DeviceCloser: Camera2DeviceCloser,
-                isForegroundObserver: (Unit) -> Boolean
+                isForegroundObserver: (Unit) -> Boolean,
             ): OpenCameraResult {
                 val fakeCameraMetadata = FakeCameraMetadata(cameraId = cameraId)
                 val fakeCamera2MetadataProvider =
@@ -103,7 +103,7 @@ internal class PruningCamera2DeviceManagerImplTest {
 
             override fun openAndAwaitCameraWithRetry(
                 cameraId: CameraId,
-                camera2DeviceCloser: Camera2DeviceCloser
+                camera2DeviceCloser: Camera2DeviceCloser,
             ): AwaitOpenCameraResult {
                 TODO("Not yet implemented")
             }
@@ -254,7 +254,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                     eq(androidCameraState),
                     any(),
                     any(),
-                    any()
+                    any(),
                 )
         }
 
@@ -307,6 +307,232 @@ internal class PruningCamera2DeviceManagerImplTest {
 
             // The previous camera should be closed.
             assertIs<CameraStateClosed>(androidCameraState1.state.value)
+        }
+
+    @Test
+    fun canPrewarmCamera() =
+        testScope.runTest {
+            // Test to make sure the camera prewarmed is reused in a later regular open request.
+            deviceManager.prewarm(cameraId0)
+
+            // Advance time by a little bit to complete the prewarm processing request.
+            advanceTimeBy(100)
+
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+            val androidCameraState = fakeRetryingCameraStateOpener.androidCameraStates.first()
+            androidCameraState.onOpened(fakeCameraDevice0)
+
+            // Advance time by a little bit to allow camera open processing to finish.
+            advanceTimeBy(100)
+
+            val virtualCamera =
+                deviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) { true }
+            assertNotNull(virtualCamera)
+            advanceUntilIdle()
+
+            // Verify we get an opened camera and we didn't open the camera twice.
+            assertIs<CameraStateOpen>(virtualCamera.value)
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+        }
+
+    @Test
+    fun prewarmDoesNotDisconnectPriorRequestOpen() =
+        testScope.runTest {
+            // Test to make sure that cameras are not disconnected by a later prewarm request.
+            val virtualCamera =
+                deviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) { true }
+            assertNotNull(virtualCamera)
+            deviceManager.prewarm(cameraId0)
+            advanceTimeBy(100)
+
+            // The prewarm request should not disconnect the virtual camera.
+            assertIsNot<CameraStateClosed>(virtualCamera.value)
+
+            // Now provide an opened camera.
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+            val androidCameraState = fakeRetryingCameraStateOpener.androidCameraStates.first()
+            androidCameraState.onOpened(fakeCameraDevice0)
+            advanceUntilIdle()
+
+            // Verify the camera is opened successfully.
+            assertIs<CameraStateOpen>(virtualCamera.value)
+
+            // Now disconnect the virtual camera. The camera should still close eventually.
+            virtualCamera.disconnect()
+            advanceUntilIdle()
+            assertIs<CameraStateClosed>(androidCameraState.state.value)
+            assertIs<CameraStateClosed>(virtualCamera.value)
+        }
+
+    @Test
+    fun prewarmedCameraShouldBeClosedEventually() =
+        testScope.runTest {
+            // Test to make sure we do close the camera eventually if a prewarmed camera went
+            // unused after a period of time.
+            deviceManager.prewarm(cameraId0)
+            advanceTimeBy(100)
+
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+            val androidCameraState = fakeRetryingCameraStateOpener.androidCameraStates.first()
+            androidCameraState.onOpened(fakeCameraDevice0)
+
+            advanceTimeBy(100)
+            // Verify the camera is still open due to prewarm.
+            assertIs<CameraStateOpen>(androidCameraState.state.value)
+
+            advanceUntilIdle()
+            // Make sure the camera is closed eventually.
+            assertIs<CameraStateClosed>(androidCameraState.state.value)
+        }
+
+    @Test
+    fun shouldReopenCameraWhenOpenComesTooLateAfterPrewarm() =
+        testScope.runTest {
+            // Test to verify when we open a camera later than expected after
+            deviceManager.prewarm(cameraId0)
+            advanceTimeBy(100)
+
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+            val androidCameraState = fakeRetryingCameraStateOpener.androidCameraStates.first()
+            androidCameraState.onOpened(fakeCameraDevice0)
+
+            advanceTimeBy(100)
+            // Verify the camera is still open due to prewarm.
+            assertIs<CameraStateOpen>(androidCameraState.state.value)
+
+            advanceTimeBy(5000)
+            // Make sure the camera is closed.
+            assertIs<CameraStateClosed>(androidCameraState.state.value)
+
+            // Now open the same camera.
+            val virtualCamera =
+                deviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) { true }
+            assertNotNull(virtualCamera)
+            advanceTimeBy(100)
+
+            // Verify we do open the camera again.
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 2)
+            val androidCameraState2 = fakeRetryingCameraStateOpener.androidCameraStates.last()
+            androidCameraState2.onOpened(fakeCameraDevice0)
+
+            advanceTimeBy(100)
+            // Verify that we opened the camera successfully.
+            assertIs<CameraStateOpen>(androidCameraState2.state.value)
+            assertIs<CameraStateOpen>(virtualCamera.value)
+
+            // Now disconnect the virtual camera. The camera should be closed eventually.
+            virtualCamera.disconnect()
+            advanceUntilIdle()
+            assertIs<CameraStateClosed>(androidCameraState.state.value)
+            assertIs<CameraStateClosed>(virtualCamera.value)
+        }
+
+    @Test
+    fun prewarmedAndOpenedCameraShouldBeClosedWhenDisconnect() =
+        testScope.runTest {
+            // Test to make sure a prewarmed and later opened camera should be closed when the
+            // virtual camera disconnects.
+            deviceManager.prewarm(cameraId0)
+
+            // Advance time by a little bit to complete the prewarm processing request.
+            advanceTimeBy(100)
+
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+            val androidCameraState = fakeRetryingCameraStateOpener.androidCameraStates.first()
+            androidCameraState.onOpened(fakeCameraDevice0)
+
+            // Advance time by a little bit to allow camera open processing to finish.
+            advanceTimeBy(100)
+            assertIs<CameraStateOpen>(androidCameraState.state.value)
+
+            val virtualCamera =
+                deviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) { true }
+            assertNotNull(virtualCamera)
+            advanceUntilIdle()
+
+            // Verify we get an opened camera.
+            assertIs<CameraStateOpen>(virtualCamera.value)
+
+            // Now disconnect the virtual camera, which should release the token and close the
+            // camera after a while.
+            virtualCamera.disconnect()
+            advanceUntilIdle()
+
+            assertIs<CameraStateClosed>(androidCameraState.state.value)
+            assertIs<CameraStateClosed>(virtualCamera.value)
+        }
+
+    @Test
+    fun canPrewarmCameraMultipleTimes() =
+        testScope.runTest {
+            // Test to make sure the camera can be prewarmed multiple times before the camera is
+            // actually opened.
+            deviceManager.prewarm(cameraId0)
+            advanceTimeBy(100)
+            deviceManager.prewarm(cameraId0)
+            advanceTimeBy(100)
+
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+            val androidCameraState = fakeRetryingCameraStateOpener.androidCameraStates.first()
+            androidCameraState.onOpened(fakeCameraDevice0)
+
+            // Advance time by a little bit to allow camera open processing to finish.
+            advanceTimeBy(100)
+            // The prewarm requests should result in an opened camera.
+            assertIs<CameraStateOpen>(androidCameraState.state.value)
+
+            val virtualCamera =
+                deviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) { true }
+            assertNotNull(virtualCamera)
+            advanceUntilIdle()
+
+            // Verify we get an opened camera and we didn't open the camera twice.
+            assertIs<CameraStateOpen>(virtualCamera.value)
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+
+            // Now disconnect the virtual camera.
+            virtualCamera.disconnect()
+            advanceUntilIdle()
+            // Verify the camera is closed.
+            assertIs<CameraStateClosed>(androidCameraState.state.value)
+            assertIs<CameraStateClosed>(virtualCamera.value)
+        }
+
+    @Test
+    fun prewarmDoesNotDisconnectCameraAfterPrewarmAndOpen() =
+        testScope.runTest {
+            // Test to make sure the camera can be prewarmed multiple times before the camera is
+            // actually opened.
+            deviceManager.prewarm(cameraId0)
+            advanceTimeBy(100)
+
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+            val androidCameraState = fakeRetryingCameraStateOpener.androidCameraStates.first()
+            androidCameraState.onOpened(fakeCameraDevice0)
+
+            // Advance time by a little bit to allow camera open processing to finish.
+            advanceTimeBy(100)
+            assertIs<CameraStateOpen>(androidCameraState.state.value)
+
+            // Open the camera.
+            val virtualCamera =
+                deviceManager.open(cameraId0, emptyList(), fakeGraphListener1, false) { true }
+            assertNotNull(virtualCamera)
+
+            // Simulate a prewarm that is sent immediately after.
+            deviceManager.prewarm(cameraId0)
+            advanceUntilIdle()
+
+            // Verify we get an opened camera and we didn't open the camera twice.
+            assertIs<CameraStateOpen>(virtualCamera.value)
+            assertEquals(fakeRetryingCameraStateOpener.androidCameraStates.size, 1)
+
+            // Now disconnect the virtual camera.
+            virtualCamera.disconnect()
+            advanceUntilIdle()
+            // Verify the camera is closed.
+            assertIs<CameraStateClosed>(androidCameraState.state.value)
+            assertIs<CameraStateClosed>(virtualCamera.value)
         }
 
     @Test
@@ -470,10 +696,7 @@ internal class PruningCamera2DeviceManagerImplTest {
             val requestOpen1 = createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener1)
             val requestClose1 = createFakeRequestClose(cameraId0)
             var requestList =
-                mutableListOf<CameraRequest>(
-                    RequestCloseById(cameraId0),
-                    requestClose1,
-                )
+                mutableListOf<CameraRequest>(RequestCloseById(cameraId0), requestClose1)
             deviceManager.prune(requestList)
             assertEquals(requestList.first(), requestClose1)
 
@@ -586,6 +809,44 @@ internal class PruningCamera2DeviceManagerImplTest {
         }
 
     @Test
+    fun PrewarmShouldNotPruneRegularRequestOpens() =
+        testScope.runTest {
+            val fakeRequestOpen1 = createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener1)
+            val fakeRequestOpen2 =
+                createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener2, isPrewarm = true)
+
+            val requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen2)
+            deviceManager.prune(requestList)
+            // The latter RequestOpen is a prewarm, and should thus not prune the former RequestOpen
+            assertEquals(requestList.size, 2)
+            assertEquals(requestList[0], fakeRequestOpen1)
+            assertEquals(requestList[1], fakeRequestOpen2)
+        }
+
+    @Test
+    fun PrewarmShouldBePrunedByAnyRequestOpen() =
+        testScope.runTest {
+            val fakeRequestOpen1 =
+                createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener1, isPrewarm = true)
+            val fakeRequestOpen2 = createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener2)
+            val fakeRequestOpen3 =
+                createFakeRequestOpen(cameraId0, emptyList(), fakeGraphListener3, isPrewarm = true)
+
+            var requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen2)
+            deviceManager.prune(requestList)
+            // If we have a prewarm request with the same camera that hasn't be processed, it should
+            // be pruned.
+            assertEquals(requestList.size, 1)
+            assertEquals(requestList.first(), fakeRequestOpen2)
+
+            requestList = mutableListOf<CameraRequest>(fakeRequestOpen1, fakeRequestOpen3)
+            deviceManager.prune(requestList)
+            // If we have consecutive prewarm requests for the same camera, the former can be pruned
+            assertEquals(requestList.size, 1)
+            assertEquals(requestList.first(), fakeRequestOpen3)
+        }
+
+    @Test
     fun deferredStillCompletesForPrunedRequests() =
         testScope.runTest {
             val requestCloseById1 = RequestCloseById(cameraId0)
@@ -639,9 +900,10 @@ internal class PruningCamera2DeviceManagerImplTest {
         cameraId: CameraId,
         sharedCameraIds: List<CameraId>,
         graphListener: GraphListener,
+        isPrewarm: Boolean = false,
     ): RequestOpen {
-        val virtualCamera = VirtualCameraState(cameraId, graphListener, fakeThreads.globalScope)
-        return RequestOpen(virtualCamera, sharedCameraIds, graphListener, false, { true })
+        val virtualCamera = VirtualCameraState(cameraId, graphListener, fakeThreads.cameraPipeScope)
+        return RequestOpen(virtualCamera, sharedCameraIds, graphListener, isPrewarm, { true })
     }
 
     private fun createFakeRequestClose(
@@ -666,7 +928,7 @@ internal class PruningCamera2DeviceManagerImplTest {
                 fakeAudioRestrictionController,
             )
         val fakeActiveCamera =
-            ActiveCamera(fakeAndroidCameraState, allCameraIds, fakeThreads.globalScope) {}
+            ActiveCamera(fakeAndroidCameraState, allCameraIds, fakeThreads.cameraPipeScope) {}
         return RequestClose(fakeActiveCamera)
     }
 }

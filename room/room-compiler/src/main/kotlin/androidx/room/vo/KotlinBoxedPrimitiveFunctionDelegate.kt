@@ -25,5 +25,5 @@ import androidx.room.compiler.processing.XMethodElement
  */
 data class KotlinBoxedPrimitiveFunctionDelegate(
     val element: XMethodElement,
-    val concreteFunction: XMethodElement
+    val concreteFunction: XMethodElement,
 )

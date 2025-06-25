@@ -24,5 +24,5 @@ abstract class DeleteOrUpdateShortcutFunction(
     val element: XMethodElement,
     val entities: Map<String, ShortcutEntity>,
     val parameters: List<ShortcutQueryParameter>,
-    val functionBinder: DeleteOrUpdateFunctionBinder?
+    val functionBinder: DeleteOrUpdateFunctionBinder?,
 )

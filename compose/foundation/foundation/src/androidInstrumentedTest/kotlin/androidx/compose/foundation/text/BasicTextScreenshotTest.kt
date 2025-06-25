@@ -69,7 +69,7 @@ class BasicTextScreenshotTest {
             Box(
                 modifier =
                     Modifier.padding(top = padding.value).fillMaxSize().border(1.dp, Color.Blue),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     BasicText(
@@ -84,12 +84,12 @@ class BasicTextScreenshotTest {
                                     LineHeightStyle(
                                         alignment = LineHeightStyle.Alignment.Center,
                                         trim = LineHeightStyle.Trim.None,
-                                        mode = LineHeightStyle.Mode.Fixed
+                                        mode = LineHeightStyle.Mode.Fixed,
                                     ),
                             ),
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 1,
-                        color = { Color.Black }
+                        color = { Color.Black },
                     )
                 }
             }
@@ -122,8 +122,8 @@ class BasicTextScreenshotTest {
                     TextStyle(
                         fontSize = 24.sp,
                         fontStyle = FontStyle.Italic,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        fontFamily = FontFamily.Monospace,
+                    ),
             )
         }
         rule
@@ -149,8 +149,8 @@ class BasicTextScreenshotTest {
                         fontSize = 24.sp,
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        fontFamily = FontFamily.Monospace,
+                    ),
             )
         }
         rule
@@ -175,8 +175,8 @@ class BasicTextScreenshotTest {
                     TextStyle(
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        fontFamily = FontFamily.Monospace,
+                    ),
             )
         }
         rule

@@ -17,14 +17,17 @@
 package androidx.appfunctions.compiler.processors
 
 import androidx.appfunctions.compiler.AppFunctionCompiler
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
+import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator
+import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator.AppFunctionComponent
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
-import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionComponentRegistryAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
-import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionFactoryClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInvokerClass
-import androidx.appfunctions.compiler.core.IntrospectionHelper.CONFIGURABLE_APP_FUNCTION_FACTORY_CLASS
+import androidx.appfunctions.compiler.core.IntrospectionHelper.ConfigurableAppFunctionFactoryClass
 import androidx.appfunctions.compiler.core.toTypeName
+import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -85,18 +88,49 @@ import com.squareup.kotlinpoet.buildCodeBlock
  *   }
  * }
  * ```
+ * * **Important:** [androidx.appfunctions.compiler.processors.AppFunctionInvokerProcessor] will
+ * * process exactly once for each compilation unit to generate a single registry for looking up
+ * * all generated invokers within the compilation unit.
  */
 class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
+
+    private var hasProcessed = false
+
+    @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
+        if (hasProcessed) return emptyList()
+        hasProcessed = true
+
         val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
         val appFunctionClasses = appFunctionSymbolResolver.resolveAnnotatedAppFunctions()
-        for (appFunctionClass in appFunctionClasses) {
-            generateAppFunctionInvokerClass(appFunctionClass)
-        }
+        val generatedInvokerComponents =
+            buildList<AppFunctionComponent> {
+                for (appFunctionClass in appFunctionClasses) {
+                    val invokerQualifiedName = generateAppFunctionInvokerClass(appFunctionClass)
+                    add(
+                        AppFunctionComponent(
+                            qualifiedName = invokerQualifiedName,
+                            sourceFiles = appFunctionClass.getSourceFiles(),
+                        )
+                    )
+                }
+            }
+
+        AppFunctionComponentRegistryGenerator(codeGenerator)
+            .generateRegistry(
+                resolver.getModuleName().asString(),
+                AppFunctionComponentRegistryAnnotation.Category.INVOKER,
+                generatedInvokerComponents,
+            )
         return emptyList()
     }
 
-    private fun generateAppFunctionInvokerClass(appFunctionClass: AnnotatedAppFunctions) {
+    /**
+     * Generates an implementation of AppFunctionInvoker for [appFunctionClass].
+     *
+     * @return fully qualified name of the generated invoker implementation class.
+     */
+    private fun generateAppFunctionInvokerClass(appFunctionClass: AnnotatedAppFunctions): String {
         val originalPackageName = appFunctionClass.classDeclaration.packageName.asString()
         val originalClassName = appFunctionClass.classDeclaration.simpleName.asString()
 
@@ -114,14 +148,16 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         codeGenerator
             .createNewFile(
                 Dependencies(
-                    aggregating = false,
-                    checkNotNull(appFunctionClass.classDeclaration.containingFile)
+                    aggregating = true,
+                    sources = appFunctionClass.getSourceFiles().toTypedArray(),
                 ),
                 originalPackageName,
-                invokerClassName
+                invokerClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }
+
+        return "${originalPackageName}.$invokerClassName"
     }
 
     private fun buildSupportedFunctionIdsProperty(
@@ -154,13 +190,13 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         val contextSpec =
             ParameterSpec.builder(
                     AppFunctionInvokerClass.UnsafeInvokeMethod.APPLICATION_CONTEXT_PARAM_NAME,
-                    AppFunctionContextClass.CLASS_NAME
+                    AppFunctionContextClass.CLASS_NAME,
                 )
                 .build()
         val functionIdentifierSpec =
             ParameterSpec.builder(
                     AppFunctionInvokerClass.UnsafeInvokeMethod.FUNCTION_ID_PARAM_NAME,
-                    String::class
+                    String::class,
                 )
                 .build()
         val functionParametersSpec =
@@ -182,7 +218,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
             .returns(Any::class.asTypeName().copy(nullable = true))
             .addCode(
                 buildCodeBlock {
-                    addStatement("val result = when (${functionIdentifierSpec.name}) {")
+                    addStatement("val result: Any? = when (${functionIdentifierSpec.name}) {")
                     indent()
                     for (appFunction in annotatedAppFunctions.appFunctionDeclarations) {
                         appendInvocationBranchStatement(
@@ -233,13 +269,14 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         val formatStringMap =
             mapOf<String, Any>(
                 "function_id" to annotatedAppFunctions.getAppFunctionIdentifier(appFunction),
-                "factory_class" to CONFIGURABLE_APP_FUNCTION_FACTORY_CLASS,
+                "factory_class" to ConfigurableAppFunctionFactoryClass.CLASS_NAME,
                 "enclosing_class" to annotatedAppFunctions.getEnclosingClassName(),
                 "context_param" to contextSpec.name,
                 "context_property" to AppFunctionContextClass.CONTEXT_PROPERTY_NAME,
-                "create_method" to AppFunctionFactoryClass.CreateEnclosingClassMethod.METHOD_NAME,
+                "create_method" to
+                    ConfigurableAppFunctionFactoryClass.CreateEnclosingClassMethod.METHOD_NAME,
                 "function_name" to appFunction.simpleName.asString(),
-                "parameters" to functionParameterStatement
+                "parameters" to functionParameterStatement,
             )
         addNamed("\"%function_id:L\" -> {\n", formatStringMap)
         indent()

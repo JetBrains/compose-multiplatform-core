@@ -37,13 +37,11 @@ public class MyDao_Impl(
     super@MyDao_Impl.concreteWithReturn()
   }
 
-  public override fun concreteWithParamsAndReturn(text: String, num: Long): String =
-      performBlocking(__db, false, true) { _ ->
+  public override fun concreteWithParamsAndReturn(text: String, num: Long): String = performBlocking(__db, false, true) { _ ->
     super@MyDao_Impl.concreteWithParamsAndReturn(text, num)
   }
 
-  public override fun concreteWithFunctionalParam(block: Function0<Unit>): Unit =
-      performBlocking(__db, false, true) { _ ->
+  public override fun concreteWithFunctionalParam(block: Function0<Unit>): Unit = performBlocking(__db, false, true) { _ ->
     super@MyDao_Impl.concreteWithFunctionalParam(block)
   }
 
@@ -51,14 +49,11 @@ public class MyDao_Impl(
     super@MyDao_Impl.suspendConcrete()
   }
 
-  public override suspend fun suspendConcreteWithReturn(): String =
-      performInTransactionSuspending(__db) {
+  public override suspend fun suspendConcreteWithReturn(): String = performInTransactionSuspending(__db) {
     super@MyDao_Impl.suspendConcreteWithReturn()
   }
 
-  public override suspend
-      fun suspendConcreteWithSuspendFunctionalParam(block: SuspendFunction0<Unit>): Unit =
-      performInTransactionSuspending(__db) {
+  public override suspend fun suspendConcreteWithSuspendFunctionalParam(block: SuspendFunction0<Unit>): Unit = performInTransactionSuspending(__db) {
     super@MyDao_Impl.suspendConcreteWithSuspendFunctionalParam(block)
   }
 

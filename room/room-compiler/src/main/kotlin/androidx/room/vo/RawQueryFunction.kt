@@ -36,7 +36,7 @@ data class RawQueryFunction(
     val inTransaction: Boolean,
     val observedTableNames: Set<String>,
     val runtimeQueryParam: RuntimeQueryParameter?,
-    val queryResultBinder: QueryResultBinder
+    val queryResultBinder: QueryResultBinder,
 ) {
     val returnsValue by lazy { returnType.isNotVoid() && !returnType.isKotlinUnit() }
 

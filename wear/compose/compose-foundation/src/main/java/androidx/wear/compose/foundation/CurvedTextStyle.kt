@@ -40,6 +40,7 @@ internal val DefaultCurvedTextStyles =
         fontSynthesis = FontSynthesis.All,
         letterSpacing = 0f.em,
         letterSpacingCounterClockwise = 0f.em,
+        lineHeight = TextUnit.Unspecified,
     )
 
 /**
@@ -66,6 +67,9 @@ internal val DefaultCurvedTextStyles =
  *   [letterSpacing] to account for the fact that going clockwise, text fans out from the baseline
  *   while going counter clockwise text fans in. If not specified, the value for [letterSpacing]
  *   will be used.
+ * @param lineHeight Line height for the text in [TextUnit] unit, e.g. SP or EM. Note that since
+ *   curved text only has one line, this used the equivalent of a lineHeightStyle: alignment =
+ *   Center, trim = None, mode = Fixed
  */
 public class CurvedTextStyle(
     public val background: Color = Color.Unspecified,
@@ -77,6 +81,7 @@ public class CurvedTextStyle(
     public val fontSynthesis: FontSynthesis? = null,
     public val letterSpacing: TextUnit = TextUnit.Unspecified,
     public val letterSpacingCounterClockwise: TextUnit = TextUnit.Unspecified,
+    public val lineHeight: TextUnit = TextUnit.Unspecified,
 ) {
     /**
      * Styling configuration for a curved text.
@@ -90,12 +95,12 @@ public class CurvedTextStyle(
     @Deprecated(
         "This overload is provided for backwards compatibility with Compose for " +
             "Wear OS 1.0. A newer overload is available with additional font parameters.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     public constructor(
         background: Color = Color.Unspecified,
         color: Color = Color.Unspecified,
-        fontSize: TextUnit = TextUnit.Unspecified
+        fontSize: TextUnit = TextUnit.Unspecified,
     ) : this(background, color, fontSize, null)
 
     /**
@@ -111,9 +116,9 @@ public class CurvedTextStyle(
      */
     @Deprecated(
         "This overload is provided for backwards compatibility with Compose for " +
-            "Wear OS 1.4. A newer overload is available with an additional letter spacing " +
-            "parameter.",
-        level = DeprecationLevel.HIDDEN
+            "Wear OS 1.4. A newer overload is available with additional letter spacing " +
+            "and lineHeight parameters.",
+        level = DeprecationLevel.HIDDEN,
     )
     public constructor(
         background: Color = Color.Unspecified,
@@ -122,7 +127,7 @@ public class CurvedTextStyle(
         fontFamily: FontFamily? = null,
         fontWeight: FontWeight? = null,
         fontStyle: FontStyle? = null,
-        fontSynthesis: FontSynthesis? = null
+        fontSynthesis: FontSynthesis? = null,
     ) : this(background, color, fontSize, fontFamily, fontWeight, fontStyle, fontSynthesis)
 
     /**
@@ -139,9 +144,9 @@ public class CurvedTextStyle(
      */
     @Deprecated(
         "This overload is provided for backwards compatibility with Compose for " +
-            "Wear OS 1.4. A newer overload is available with two additional letter spacing " +
-            "parameters.",
-        level = DeprecationLevel.HIDDEN
+            "Wear OS 1.4. A newer overload is available with additional letter spacing " +
+            "and lineHeight parameters.",
+        level = DeprecationLevel.HIDDEN,
     )
     public constructor(
         background: Color = Color.Unspecified,
@@ -161,7 +166,7 @@ public class CurvedTextStyle(
         fontStyle,
         fontSynthesis,
         letterSpacing,
-        letterSpacing
+        letterSpacing,
     )
 
     /**
@@ -169,7 +174,8 @@ public class CurvedTextStyle(
      *
      * Note that not all parameters in the text style will be used, only [TextStyle.color],
      * [TextStyle.fontSize], [TextStyle.background], [TextStyle.fontFamily], [TextStyle.fontWeight],
-     * [TextStyle.fontStyle], [TextStyle.fontSynthesis] and [TextStyle.letterSpacing].
+     * [TextStyle.fontStyle], [TextStyle.fontSynthesis], [TextStyle.letterSpacing],
+     * [TextStyle.lineHeight].
      */
     public constructor(
         style: TextStyle
@@ -182,7 +188,8 @@ public class CurvedTextStyle(
         style.fontStyle,
         style.fontSynthesis,
         style.letterSpacing,
-        style.letterSpacing
+        style.letterSpacing,
+        style.lineHeight,
     )
 
     /**
@@ -212,6 +219,7 @@ public class CurvedTextStyle(
                 if (other.letterSpacingCounterClockwise.isSpecified)
                     other.letterSpacingCounterClockwise
                 else this.letterSpacingCounterClockwise,
+            lineHeight = other.lineHeight.takeOrElse { this.lineHeight },
         )
     }
 
@@ -221,7 +229,7 @@ public class CurvedTextStyle(
     @Deprecated(
         "This overload is provided for backwards compatibility with Compose for " +
             "Wear OS 1.0. A newer overload is available with additional font parameters.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     public fun copy(
         background: Color = this.background,
@@ -238,13 +246,14 @@ public class CurvedTextStyle(
             fontSynthesis = this.fontSynthesis,
             letterSpacing = this.letterSpacing,
             letterSpacingCounterClockwise = this.letterSpacingCounterClockwise,
+            lineHeight = this.lineHeight,
         )
     }
 
     @Deprecated(
         "This overload is provided for backwards compatibility with Compose for " +
             "Wear OS 1.4. A newer overload is available with additional letter spacing parameters.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     public fun copy(
         background: Color = this.background,
@@ -253,7 +262,7 @@ public class CurvedTextStyle(
         fontFamily: FontFamily? = this.fontFamily,
         fontWeight: FontWeight? = this.fontWeight,
         fontStyle: FontStyle? = this.fontStyle,
-        fontSynthesis: FontSynthesis? = this.fontSynthesis
+        fontSynthesis: FontSynthesis? = this.fontSynthesis,
     ): CurvedTextStyle {
         return CurvedTextStyle(
             background = background,
@@ -265,13 +274,14 @@ public class CurvedTextStyle(
             fontSynthesis = fontSynthesis,
             letterSpacing = this.letterSpacing,
             letterSpacingCounterClockwise = this.letterSpacingCounterClockwise,
+            lineHeight = this.lineHeight,
         )
     }
 
     @Deprecated(
         "This overload is provided for backwards compatibility with Compose for " +
             "Wear OS 1.4. A newer overload is available with additional letter spacing parameters.",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     public fun copy(
         background: Color = this.background,
@@ -295,7 +305,8 @@ public class CurvedTextStyle(
             fontSynthesis = fontSynthesis,
             letterSpacing = letterSpacing.takeOrElse { this@CurvedTextStyle.letterSpacing },
             letterSpacingCounterClockwise =
-                letterSpacing.takeOrElse { letterSpacingCounterClockwise }
+                letterSpacing.takeOrElse { letterSpacingCounterClockwise },
+            lineHeight = this.lineHeight,
         )
     }
 
@@ -309,6 +320,7 @@ public class CurvedTextStyle(
         fontSynthesis: FontSynthesis? = this.fontSynthesis,
         letterSpacing: TextUnit = this.letterSpacing,
         letterSpacingCounterClockwise: TextUnit = this.letterSpacingCounterClockwise,
+        lineHeight: TextUnit = this.lineHeight,
     ): CurvedTextStyle {
         return CurvedTextStyle(
             background = background,
@@ -319,7 +331,8 @@ public class CurvedTextStyle(
             fontStyle = fontStyle,
             fontSynthesis = fontSynthesis,
             letterSpacing = letterSpacing,
-            letterSpacingCounterClockwise = letterSpacingCounterClockwise
+            letterSpacingCounterClockwise = letterSpacingCounterClockwise,
+            lineHeight = lineHeight,
         )
     }
 
@@ -335,7 +348,8 @@ public class CurvedTextStyle(
             fontStyle == other.fontStyle &&
             fontSynthesis == other.fontSynthesis &&
             letterSpacing == other.letterSpacing &&
-            letterSpacingCounterClockwise == other.letterSpacingCounterClockwise
+            letterSpacingCounterClockwise == other.letterSpacingCounterClockwise &&
+            lineHeight == other.lineHeight
     }
 
     override fun hashCode(): Int {
@@ -348,6 +362,7 @@ public class CurvedTextStyle(
         result = 31 * result + fontSynthesis.hashCode()
         result = 31 * result + letterSpacing.hashCode()
         result = 31 * result + letterSpacingCounterClockwise.hashCode()
+        result = 31 * result + lineHeight.hashCode()
         return result
     }
 
@@ -362,6 +377,7 @@ public class CurvedTextStyle(
             "fontSynthesis=$fontSynthesis, " +
             "letterSpacing=$letterSpacing, " +
             "letterSpacingCounterClockwise=$letterSpacingCounterClockwise, " +
+            "lineHeight=$lineHeight, " +
             ")"
     }
 }

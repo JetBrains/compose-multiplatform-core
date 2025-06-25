@@ -71,7 +71,7 @@ internal fun KSTypeReference?.asJTypeName(resolver: Resolver): JTypeName =
 
 private fun KSTypeReference?.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     return if (this == null) {
         ERROR_JTYPE_NAME
@@ -87,7 +87,7 @@ internal fun KSDeclaration.asJTypeName(resolver: Resolver): JTypeName =
 @OptIn(KspExperimental::class)
 private fun KSDeclaration.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     if (this is KSTypeAlias) {
         return this.type.asJTypeName(resolver, typeResolutionContext)
@@ -144,7 +144,7 @@ internal fun KSTypeArgument.asJTypeName(resolver: Resolver): JTypeName =
 
 private fun KSTypeParameter.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     // see https://github.com/square/javapoet/issues/842
     typeResolutionContext.typeArgumentTypeLookup[name]?.let {
@@ -165,7 +165,7 @@ private fun KSTypeParameter.asJTypeName(
 
 private fun KSTypeArgument.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     fun resolveTypeName() = type.asJTypeName(resolver, typeResolutionContext).tryBox()
     return when (variance) {
@@ -264,7 +264,7 @@ private val typeVarNameConstructor by lazy {
             Please file a bug at $ISSUE_TRACKER_LINK.
             """
                 .trimIndent(),
-            ex
+            ex,
         )
     }
 }
@@ -275,7 +275,7 @@ private val typeVarNameConstructor by lazy {
  */
 private fun createModifiableTypeVariableName(
     name: String,
-    bounds: List<JTypeName>
+    bounds: List<JTypeName>,
 ): JTypeVariableName = typeVarNameConstructor.newInstance(name, bounds) as JTypeVariableName
 
 private fun KSDeclaration.isUsedDirectly(typeResolutionContext: TypeResolutionContext): Boolean {

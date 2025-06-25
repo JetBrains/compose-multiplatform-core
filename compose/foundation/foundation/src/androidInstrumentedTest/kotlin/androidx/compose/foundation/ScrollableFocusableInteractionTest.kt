@@ -74,9 +74,10 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class ScrollableFocusableInteractionTest(
     private val orientation: Orientation,
-    private val reverseScrolling: Boolean
+    private val reverseScrolling: Boolean,
 ) {
     companion object {
+        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @Parameterized.Parameters(name = "{0} reverseScrolling={1}")
         fun initParameters() =
@@ -577,7 +578,7 @@ class ScrollableFocusableInteractionTest(
                     // Uses scrollable under the hood.
                     modifier.verticalScroll(
                         state = scrollState,
-                        reverseScrolling = reverseScrolling
+                        reverseScrolling = reverseScrolling,
                     )
                 ) {
                     content()
@@ -588,7 +589,7 @@ class ScrollableFocusableInteractionTest(
                     // Uses scrollable under the hood.
                     modifier.horizontalScroll(
                         state = scrollState,
-                        reverseScrolling = reverseScrolling
+                        reverseScrolling = reverseScrolling,
                     )
                 ) {
                     content()

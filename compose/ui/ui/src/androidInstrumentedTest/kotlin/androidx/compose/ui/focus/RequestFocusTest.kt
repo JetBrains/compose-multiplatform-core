@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusStateImpl.Active
 import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
@@ -796,6 +798,7 @@ class RequestFocusTest {
 
     @Test
     fun requestFocus_wrongDirection() {
+        val tag1 = "tag 1"
         val tag2 = "tag 2"
         val tag3 = "tag 3"
         lateinit var button2: View
@@ -811,7 +814,11 @@ class RequestFocusTest {
                         orientation = LinearLayout.VERTICAL
                         addView(
                             ComposeView(it).apply {
-                                setContent { Button(onClick = {}) { Text("Button 1") } }
+                                setContent {
+                                    Button(onClick = {}, Modifier.testTag(tag1)) {
+                                        Text("Button 1")
+                                    }
+                                }
                             }
                         )
                         addView(
@@ -835,13 +842,23 @@ class RequestFocusTest {
                             }
                         )
                     }
-                }
+                },
             )
         }
         rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
         rule.runOnIdle { button3.requestFocus() }
         rule.onNodeWithTag(tag3).assertIsFocused()
-        rule.runOnIdle { button2.requestFocus(View.FOCUS_UP, android.graphics.Rect()) }
-        rule.onNodeWithTag(tag2).assertIsFocused()
+
+        val success =
+            rule.runOnIdle { button2.requestFocus(View.FOCUS_UP, android.graphics.Rect()) }
+
+        // TODO(b/406327273): Support this use case without isViewFocusFixEnabled. This was
+        //  added in aosp/3447394 but depends on aosp/3417182 which is behind a flag.
+        if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isViewFocusFixEnabled) {
+            assertThat(success).isTrue()
+            rule.onNodeWithTag(tag1).assertIsFocused()
+        } else {
+            assertThat(success).isFalse()
+        }
     }
 }

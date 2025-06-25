@@ -35,7 +35,7 @@ class MicrobenchmarkPhaseConfigTest {
         expectedMeasurements: Int,
         expectedIterations: Int?,
         expectedUsesProfiler: Boolean = false,
-        expectedProfilerIterations: Int = 0
+        expectedProfilerIterations: Int = 0,
     ) {
         var count = 0
         val output = runBlocking {
@@ -44,7 +44,7 @@ class MicrobenchmarkPhaseConfigTest {
                     TestDefinition(
                         "MicrobenchmarkPhaseConfigTest",
                         "MicrobenchmarkPhaseConfigTest",
-                        "methodName"
+                        "methodName",
                     ),
                     phaseConfig = config,
                     yieldThreadPeriodically = false,
@@ -62,7 +62,7 @@ class MicrobenchmarkPhaseConfigTest {
                             while (System.nanoTime() == start) {}
                             count++
                         }
-                    }
+                    },
                 )
             microbenchmark.executePhases()
             microbenchmark.output(null)

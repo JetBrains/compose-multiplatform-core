@@ -26,7 +26,7 @@ import kotlinx.coroutines.channels.SendChannel
 @RequiresApi(Build.VERSION_CODES.O)
 internal class PreCallEndpointsUpdater(
     var mCurrentDevices: MutableList<CallEndpointCompat> = mutableListOf(),
-    var mSendChannel: SendChannel<List<CallEndpointCompat>>
+    var mSendChannel: SendChannel<List<CallEndpointCompat>>,
 ) {
     // earpiece, speaker, unknown, wired_headset
     val mNonBluetoothEndpoints: HashMap<Int, CallEndpointCompat> = HashMap()

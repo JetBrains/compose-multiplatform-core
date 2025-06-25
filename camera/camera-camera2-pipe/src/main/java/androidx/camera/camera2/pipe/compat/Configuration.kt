@@ -69,7 +69,7 @@ internal data class ExtensionSessionConfigData(
     val sessionParameters: Map<*, Any?>,
     val extensionMode: Int? = null,
     val extensionStateCallback: CameraExtensionSessionWrapper.StateCallback? = null,
-    val postviewOutputConfiguration: OutputConfigurationWrapper? = null
+    val postviewOutputConfiguration: OutputConfigurationWrapper? = null,
 )
 
 internal object Camera2SessionTypes {
@@ -140,7 +140,7 @@ internal class AndroidOutputConfiguration(
     private val output: OutputConfiguration,
     override val surfaceSharing: Boolean,
     override val maxSharedSurfaceCount: Int,
-    override val physicalCameraId: CameraId?
+    override val physicalCameraId: CameraId?,
 ) : OutputConfigurationWrapper {
 
     @RequiresApi(24)
@@ -287,7 +287,7 @@ internal class AndroidOutputConfiguration(
                 } else {
                     1
                 },
-                physicalCameraId
+                physicalCameraId,
             )
         }
 

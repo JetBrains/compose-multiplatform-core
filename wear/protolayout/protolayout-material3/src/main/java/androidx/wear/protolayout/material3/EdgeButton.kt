@@ -22,12 +22,12 @@ import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.VerticalAlignment
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.ModifiersBuilders.Padding
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_BUTTON
-import androidx.wear.protolayout.expression.VersionBuilders.VersionInfo
 import androidx.wear.protolayout.material3.ButtonDefaults.filledButtonColors
 import androidx.wear.protolayout.material3.EdgeButtonDefaults.BOTTOM_MARGIN_DP
 import androidx.wear.protolayout.material3.EdgeButtonDefaults.CONTAINER_HEIGHT_DP
@@ -49,6 +49,7 @@ import androidx.wear.protolayout.material3.EdgeButtonStyle.Companion.ICON
 import androidx.wear.protolayout.material3.EdgeButtonStyle.Companion.ICON_FALLBACK
 import androidx.wear.protolayout.material3.EdgeButtonStyle.Companion.TEXT
 import androidx.wear.protolayout.material3.EdgeButtonStyle.Companion.TEXT_FALLBACK
+import androidx.wear.protolayout.material3.Versions.hasAsymmetricalCornersSupport
 import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.background
 import androidx.wear.protolayout.modifiers.clickable
@@ -68,11 +69,15 @@ import androidx.wear.protolayout.types.dp
  *
  * The edge button is intended to be used at the bottom of a round screen. It has a special shape
  * with its bottom almost follows the screen's curvature. It has fixed height, and takes 1 line of
- * text or a single icon. This button represents the most important action on the screen, and it
- * must occupy the whole horizontal space in its position as well as being anchored to the screen
- * bottom.
+ * icon. This button represents the most important action on the screen, and it must occupy the
+ * whole horizontal space in its position as well as being anchored to the screen bottom.
  *
  * This component is not intended to be used with an image background.
+ *
+ * The button's [colors] default to using [ColorScheme] from the [MaterialScope] it's defined in,
+ * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
+ * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
+ * [MaterialScope].
  *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
@@ -92,7 +97,7 @@ public fun MaterialScope.iconEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    iconContent: (MaterialScope.() -> LayoutElement)
+    iconContent: (MaterialScope.() -> LayoutElement),
 ): LayoutElement {
     val style =
         if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
@@ -103,10 +108,15 @@ public fun MaterialScope.iconEdgeButton(
 
     return edgeButton(onClick = onClick, modifier = modifier, colors = colors, style = style) {
         withStyle(
-                defaultIconStyle =
-                    IconStyle(size = style.iconSizeDp.dp, tintColor = colors.iconColor)
-            )
-            .iconContent()
+            defaultIconStyle =
+                IconStyle(
+                    width = style.iconSizeDp.dp,
+                    height = style.iconSizeDp.dp,
+                    tintColor = colors.iconColor,
+                )
+        ) {
+            iconContent()
+        }
     }
 }
 
@@ -116,11 +126,15 @@ public fun MaterialScope.iconEdgeButton(
  *
  * The edge button is intended to be used at the bottom of a round screen. It has a special shape
  * with its bottom almost follows the screen's curvature. It has fixed height, and takes 1 line of
- * text or a single icon. This button represents the most important action on the screen, and it
- * must occupy the whole horizontal space in its position as well as being anchored to the screen
- * bottom.
+ * text. This button represents the most important action on the screen, and it must occupy the
+ * whole horizontal space in its position as well as being anchored to the screen bottom.
  *
  * This component is not intended to be used with an image background.
+ *
+ * The button's [colors] default to using [ColorScheme] from the [MaterialScope] it's defined in,
+ * which defaults to [dynamicColorScheme], meaning that the colors follow system theme if available
+ * on device. If not, or switched off by user, uses fallback [ColorScheme] defined in its
+ * [MaterialScope].
  *
  * @param onClick Associated [Clickable] for click events. When the button is clicked it will fire
  *   the associated action.
@@ -140,29 +154,42 @@ public fun MaterialScope.textEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    labelContent: (MaterialScope.() -> LayoutElement)
-): LayoutElement =
-    edgeButton(
+    labelContent: (MaterialScope.() -> LayoutElement),
+): LayoutElement {
+    val content =
+        withStyle(
+            defaultTextElementStyle =
+                TextElementStyle(
+                    typography = Typography.LABEL_MEDIUM,
+                    color = colors.labelColor,
+                    scalable = false,
+                )
+        ) {
+            labelContent()
+        }
+
+    val modifierWithContentDescription =
+        (content as? Text)?.text?.let {
+            LayoutModifier.contentDescription(
+                staticValue = it.value,
+                dynamicValue = it.dynamicValue,
+            ) then modifier
+        } ?: modifier
+
+    return edgeButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifierWithContentDescription,
         colors = colors,
         style =
             if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
                 TEXT
             } else {
                 TEXT_FALLBACK
-            }
+            },
     ) {
-        withStyle(
-                defaultTextElementStyle =
-                    TextElementStyle(
-                        typography = Typography.LABEL_MEDIUM,
-                        color = colors.iconColor,
-                        scalable = false
-                    )
-            )
-            .labelContent()
+        content
     }
+}
 
 /**
  * ProtoLayout Material3 component edge button that offers a single slot to take any content.
@@ -196,12 +223,15 @@ private fun MaterialScope.edgeButton(
     colors: ButtonColors,
     modifier: LayoutModifier = LayoutModifier,
     style: EdgeButtonStyle = ICON,
-    content: MaterialScope.() -> LayoutElement
+    content: MaterialScope.() -> LayoutElement,
 ): LayoutElement {
     val containerWidth = deviceConfiguration.screenWidthDp.toDp()
     val horizontalMarginPercent: Float =
-        if (deviceConfiguration.screenWidthDp.isBreakpoint()) HORIZONTAL_MARGIN_PERCENT_LARGE
-        else HORIZONTAL_MARGIN_PERCENT_SMALL
+        if (deviceConfiguration.screenWidthDp.isBreakpoint()) {
+            HORIZONTAL_MARGIN_PERCENT_LARGE
+        } else {
+            HORIZONTAL_MARGIN_PERCENT_SMALL
+        }
     val edgeButtonWidth: Float =
         (100f - 2f * horizontalMarginPercent) * deviceConfiguration.screenWidthDp / 100f
 
@@ -239,7 +269,7 @@ private fun MaterialScope.edgeButton(
         .addContent(button)
         .setModifiers(
             LayoutModifier.tag(METADATA_TAG)
-                .padding(padding(bottom = style.bottomMarginDp.toFloat()))
+                .padding(padding(bottom = style.bottomMarginDp))
                 .toProtoLayoutModifiers()
         )
         .build()
@@ -271,7 +301,7 @@ internal constructor(
     @Dimension(DP) internal val buttonHeightDp: Float = EDGE_BUTTON_HEIGHT_DP,
     @Dimension(DP) internal val bottomMarginDp: Float = BOTTOM_MARGIN_DP,
     @Dimension(DP) internal val iconSizeDp: Float = ICON_SIZE_DP,
-    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS
+    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS,
 ) {
     internal companion object {
         /**
@@ -287,8 +317,8 @@ internal constructor(
                     padding(
                         start = TEXT_SIDE_PADDING_DP,
                         top = TEXT_TOP_PADDING_DP,
-                        end = TEXT_SIDE_PADDING_DP
-                    )
+                        end = TEXT_SIDE_PADDING_DP,
+                    ),
             )
 
         /**
@@ -320,7 +350,7 @@ internal constructor(
                     ),
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
-                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP
+                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
             )
 
         /**
@@ -347,7 +377,7 @@ internal constructor(
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
                 bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
-                iconSizeDp = ICON_SIZE_FALLBACK_DP
+                iconSizeDp = ICON_SIZE_FALLBACK_DP,
             )
     }
 }
@@ -384,9 +414,3 @@ internal object EdgeButtonFallbackDefaults {
 
 internal fun LayoutElement.isSlotEdgeButton(): Boolean =
     this is Box && METADATA_TAG == this.modifiers?.metadata?.toTagName()
-
-/**
- * Checks whether the renderer has support for asymmetrical corners, which is added in version
- * 1.303.
- */
-private fun VersionInfo.hasAsymmetricalCornersSupport() = major > 1 || (major == 1 && minor >= 303)

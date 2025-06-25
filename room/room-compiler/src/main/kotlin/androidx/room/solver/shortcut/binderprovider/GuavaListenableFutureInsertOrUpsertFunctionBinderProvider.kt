@@ -43,7 +43,7 @@ class GuavaListenableFutureInsertOrUpsertFunctionBinderProvider(private val cont
     override fun provide(
         declared: XType,
         params: List<ShortcutQueryParameter>,
-        forUpsert: Boolean
+        forUpsert: Boolean,
     ): InsertOrUpsertFunctionBinder {
         if (!hasGuavaRoom) {
             context.logger.e(ProcessorErrors.MISSING_ROOM_GUAVA_ARTIFACT)
@@ -62,7 +62,7 @@ class GuavaListenableFutureInsertOrUpsertFunctionBinderProvider(private val cont
                     context.typeAdapterStore.findUpsertAdapter(typeArg, params)
                 } else {
                     context.typeAdapterStore.findInsertAdapter(typeArg, params)
-                }
+                },
         )
     }
 }

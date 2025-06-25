@@ -35,10 +35,8 @@ import androidx.room.ext.RxJava2TypeNames
 import androidx.room.ext.RxJava3TypeNames
 import androidx.room.ext.SupportDbTypeNames
 import androidx.room.processor.ProcessorErrors.RAW_QUERY_STRING_PARAMETER_REMOVED
-import androidx.room.runProcessorTestWithK1
 import androidx.room.testing.context
 import androidx.room.vo.RawQueryFunction
-import androidx.sqlite.db.SupportSQLiteQuery
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -58,13 +56,13 @@ class RawQueryFunctionProcessorTest {
                 `is`(
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
-                        typeName = SupportDbTypeNames.QUERY
+                        typeName = SupportDbTypeNames.QUERY,
                     )
-                )
+                ),
             )
             assertThat(
                 query.returnType.asTypeName(),
-                `is`(XTypeName.getArrayName(XTypeName.PRIMITIVE_INT).copy(nullable = true))
+                `is`(XTypeName.getArrayName(XTypeName.PRIMITIVE_INT).copy(nullable = true)),
             )
         }
     }
@@ -97,9 +95,9 @@ class RawQueryFunctionProcessorTest {
                 `is`(
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
-                        typeName = SupportDbTypeNames.QUERY
+                        typeName = SupportDbTypeNames.QUERY,
                     )
-                )
+                ),
             )
             assertThat(query.observedTableNames.size, `is`(1))
             assertThat(query.observedTableNames, `is`(setOf("User")))
@@ -120,9 +118,9 @@ class RawQueryFunctionProcessorTest {
                 `is`(
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
-                        typeName = SupportDbTypeNames.QUERY
+                        typeName = SupportDbTypeNames.QUERY,
                     )
-                )
+                ),
             )
             assertThat(query.observedTableNames, `is`(emptySet()))
             invocation.assertCompilationResult {
@@ -192,9 +190,9 @@ class RawQueryFunctionProcessorTest {
                 `is`(
                     RawQueryFunction.RuntimeQueryParameter(
                         paramName = "query",
-                        typeName = SupportDbTypeNames.QUERY
+                        typeName = SupportDbTypeNames.QUERY,
                     )
-                )
+                ),
             )
             assertThat(query.returnType.asTypeName(), `is`(dataClass.copy(nullable = true)))
             assertThat(query.observedTableNames, `is`(emptySet()))
@@ -215,20 +213,30 @@ class RawQueryFunctionProcessorTest {
         }
     }
 
-    interface RawQuerySuspendUnitDao {
-        @RawQuery suspend fun foo(query: SupportSQLiteQuery)
-    }
-
     @Test
     fun suspendUnit() {
-        runProcessorTest { invocation ->
-            val daoElement =
-                invocation.processingEnv.requireTypeElement(RawQuerySuspendUnitDao::class)
+        runProcessorTest(
+            sources =
+                listOf(
+                    Source.kotlin(
+                        "RawQuerySuspendUnitDao.kt",
+                        """
+                    import androidx.room.RawQuery
+                    import androidx.sqlite.db.SupportSQLiteQuery
+                    interface RawQuerySuspendUnitDao {
+                        @RawQuery suspend fun foo(query: SupportSQLiteQuery)
+                    }
+                    """
+                            .trimIndent(),
+                    )
+                )
+        ) { invocation ->
+            val daoElement = invocation.processingEnv.requireTypeElement("RawQuerySuspendUnitDao")
             val daoFunctionElement = daoElement.getDeclaredMethods().first()
             RawQueryFunctionProcessor(
                     baseContext = invocation.context,
                     containing = daoElement.type,
-                    executableElement = daoFunctionElement
+                    executableElement = daoFunctionElement,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -595,7 +603,7 @@ class RawQueryFunctionProcessorTest {
                 "${LifecyclesTypeNames.COMPUTABLE_LIVE_DATA.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
                 "${ReactiveStreamsTypeNames.PUBLISHER.canonicalName}<Int>",
-                "${KotlinTypeNames.FLOW.canonicalName}<Int>"
+                "${KotlinTypeNames.FLOW.canonicalName}<Int>",
             )
             .forEach { type ->
                 singleQueryFunction(
@@ -626,7 +634,7 @@ class RawQueryFunctionProcessorTest {
 
     private fun singleQueryMethod(
         vararg input: String,
-        handler: (RawQueryFunction, XTestInvocation) -> Unit
+        handler: (RawQueryFunction, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.java("foo.bar.MyClass", DAO_PREFIX + input.joinToString("\n") + DAO_SUFFIX)
@@ -643,9 +651,9 @@ class RawQueryFunctionProcessorTest {
                 COMMON.SONG,
                 COMMON.IMAGE,
                 COMMON.IMAGE_FORMAT,
-                COMMON.CONVERTER
+                COMMON.CONVERTER,
             )
-        runProcessorTestWithK1(
+        runProcessorTest(
             sources = commonSources + inputSource,
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
         ) { invocation ->
@@ -656,7 +664,7 @@ class RawQueryFunctionProcessorTest {
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(RawQuery::class) }.toList()
+                            it.getAllMethods().filter { it.hasAnnotation(RawQuery::class) }.toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -664,7 +672,7 @@ class RawQueryFunctionProcessorTest {
                 RawQueryFunctionProcessor(
                     baseContext = invocation.context,
                     containing = owner.type,
-                    executableElement = functions.first()
+                    executableElement = functions.first(),
                 )
             val parsedQuery = parser.process()
             handler(parsedQuery, invocation)
@@ -673,7 +681,7 @@ class RawQueryFunctionProcessorTest {
 
     private fun singleQueryFunction(
         vararg input: String,
-        handler: (RawQueryFunction, XTestInvocation) -> Unit
+        handler: (RawQueryFunction, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             Source.kotlin("MyClass.kt", DAO_PREFIX_KT + input.joinToString("\n") + DAO_SUFFIX)
@@ -697,9 +705,9 @@ class RawQueryFunctionProcessorTest {
                 COMMON.COMPUTABLE_LIVE_DATA,
                 COMMON.PUBLISHER,
                 COMMON.FLOW,
-                COMMON.GUAVA_ROOM
+                COMMON.GUAVA_ROOM,
             )
-        runProcessorTestWithK1(sources = commonSources + inputSource) { invocation ->
+        runProcessorTest(sources = commonSources + inputSource) { invocation ->
             val (owner, functions) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)
@@ -707,7 +715,7 @@ class RawQueryFunctionProcessorTest {
                     .map {
                         Pair(
                             it,
-                            it.getAllMethods().filter { it.hasAnnotation(RawQuery::class) }.toList()
+                            it.getAllMethods().filter { it.hasAnnotation(RawQuery::class) }.toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -715,7 +723,7 @@ class RawQueryFunctionProcessorTest {
                 RawQueryFunctionProcessor(
                     baseContext = invocation.context,
                     containing = owner.type,
-                    executableElement = functions.first()
+                    executableElement = functions.first(),
                 )
             val parsedQuery = parser.process()
             handler(parsedQuery, invocation)

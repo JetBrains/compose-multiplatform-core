@@ -28,7 +28,7 @@ import kotlin.math.min
  * objects contained in it, but it does so just by storing all of the information packed into a
  * single LongArray. Because of the simplicity and tight loops / locality of information, this ends
  * up being faster than most other data structures in most things for the size data sets that we
- * will be using this for. For O(10**2) items, this outperformas other data structures. Each
+ * will be using this for. For O(10**2) items, this outperforms other data structures. Each
  * meta/rect pair is stored contiguously as 3 Longs in an LongArray. This makes insert and update
  * extremely cheap. Query operations require scanning the entire array, but due to cache locality
  * and fairly efficient math, it is competitive with data structures which use mechanisms to prune
@@ -164,7 +164,7 @@ internal class RectList {
                 //  a problem
                 updated = true,
                 focusable,
-                gesturable
+                gesturable,
             )
 
         if (parentId < 0) return
@@ -243,6 +243,30 @@ internal class RectList {
     }
 
     /**
+     * Updates the focusable and/or gesturable flags associated with this value (item id).
+     *
+     * @return true if the value was found and updated, false if this value is not currently in the
+     *   collection
+     */
+    fun updateFlagsFor(value: Int, focusable: Boolean, gesturable: Boolean): Boolean {
+        val value = value and Lower26Bits
+        val items = items
+        val size = itemsSize
+        var i = 0
+        while (i < items.size - 2) {
+            if (i >= size) break
+            val meta = items[i + 2]
+            // NOTE: We are assuming that the value can only be here once.
+            if (unpackMetaValue(meta) == value) {
+                items[i + 2] = metaMarkFlags(meta, focusable, gesturable)
+                return true
+            }
+            i += LongsPerItem
+        }
+        return false
+    }
+
+    /**
      * Moves the rectangle associated with this value to the specified rectangle, and updates every
      * item that is "below" the specified rectangle by the associated offset. move() is generally
      * more efficient than calling update() for all of the rectangles included in the subhierarchy
@@ -287,7 +311,7 @@ internal class RectList {
                     gesturable = false,
                 ),
             deltaX = deltaX,
-            deltaY = deltaY
+            deltaY = deltaY,
         )
     }
 
@@ -444,13 +468,7 @@ internal class RectList {
      * For a provided rectangle, executes [block] for each value in the collection whose associated
      * rectangle intersects the provided one. The argument passed into [block] will be the value.
      */
-    inline fun forEachIntersection(
-        l: Int,
-        t: Int,
-        r: Int,
-        b: Int,
-        block: (Int) -> Unit,
-    ) {
+    inline fun forEachIntersection(l: Int, t: Int, r: Int, b: Int, block: (Int) -> Unit) {
         val destTopLeft = packXY(l, t)
         val destTopRight = packXY(r, b)
         val items = items
@@ -470,9 +488,36 @@ internal class RectList {
         }
     }
 
-    inline fun forEachRect(
-        block: (Int, Int, Int, Int, Int) -> Unit,
-    ) {
+    /**
+     * For each value in the collection, checks first if it is gesturable. If it is and it
+     * intersects with the provided rectangle, the function executes [block]. The argument passed
+     * into [block] will be the value (item id).
+     */
+    inline fun forEachGesturableIntersection(l: Int, t: Int, r: Int, b: Int, block: (Int) -> Unit) {
+        val destTopLeft = packXY(l, t)
+        val destTopRight = packXY(r, b)
+        val items = items
+        val size = itemsSize
+
+        var i = 0
+        while (i < items.size - 2) {
+            if (i >= size) break
+            if (unpackMetaGesturable(items[i + 2]) != 0) { // Checks gesturable is true
+                val topLeft = items[i + 0]
+                val bottomRight = items[i + 1]
+
+                if (rectIntersectsRect(topLeft, bottomRight, destTopLeft, destTopRight)) {
+                    // TODO: it might make sense to include the rectangle in the block since calling
+                    //  code may want to filter this list using that geometry, and it would be
+                    //  beneficial to not have to look up the layout node in order to do so.
+                    block(unpackMetaValue(items[i + 2]))
+                }
+            }
+            i += LongsPerItem
+        }
+    }
+
+    inline fun forEachRect(block: (Int, Int, Int, Int, Int) -> Unit) {
         val items = items
         val size = itemsSize
         var i = 0
@@ -497,11 +542,7 @@ internal class RectList {
      * For a provided point, executes [block] for each value in the collection whose associated
      * rectangle contains the provided point. The argument passed into [block] will be the value.
      */
-    inline fun forEachIntersection(
-        x: Int,
-        y: Int,
-        block: (Int) -> Unit,
-    ) {
+    inline fun forEachIntersection(x: Int, y: Int, block: (Int) -> Unit) {
         val destXY = packXY(x, y)
         val items = items
         val size = itemsSize
@@ -524,7 +565,7 @@ internal class RectList {
      */
     inline fun forEachIntersectingRectWithValueAt(
         index: Int,
-        block: (Int, Int, Int, Int, Int) -> Unit
+        block: (Int, Int, Int, Int, Int) -> Unit,
     ) {
         val items = items
         val size = itemsSize
@@ -547,7 +588,7 @@ internal class RectList {
                     unpackY(topLeft),
                     unpackX(bottomRight),
                     unpackY(bottomRight),
-                    unpackMetaValue(items[i + 2])
+                    unpackMetaValue(items[i + 2]),
                 )
             }
             i += LongsPerItem
@@ -602,14 +643,7 @@ internal class RectList {
         block: (score: Int, id: Int, l: Int, t: Int, r: Int, b: Int) -> Unit,
     ) {
         // this list is 1:1 with items and holds the score for each item
-        val list =
-            neighborsScoredByDistance(
-                searchAxis,
-                l,
-                t,
-                r,
-                b,
-            )
+        val list = neighborsScoredByDistance(searchAxis, l, t, r, b)
         val items = items
 
         var sent = 0
@@ -731,11 +765,7 @@ internal class RectList {
             if (unpackMetaUpdated(meta) != 0) {
                 val topLeft = items[i + 0]
                 val bottomRight = items[i + 1]
-                block(
-                    unpackMetaValue(meta),
-                    topLeft,
-                    bottomRight,
-                )
+                block(unpackMetaValue(meta), topLeft, bottomRight)
             }
             i += LongsPerItem
         }
@@ -797,7 +827,7 @@ internal inline fun packMeta(
     //     26 bits: item id
     //     26 bits: parent id
     //     9 bits: last child offset
-    //      1 bits: updated
+    //      1 bits: updated - means the bounds have been updated
     //      1 bits: focusable
     //      1 bits: gesturable
     (gesturable.toLong() shl 63) or
@@ -824,6 +854,12 @@ internal inline fun metaMarkUpdated(meta: Long): Long = meta or (1L shl 61)
 
 internal inline fun metaUnMarkUpdated(meta: Long): Long = meta and (1L shl 61).inv()
 
+internal inline fun metaMarkFlags(meta: Long, focusable: Boolean, gesturable: Boolean): Long {
+    return (meta and (1L shl 62).inv() and (1L shl 63).inv()) or
+        ((1L shl 62) * focusable.toInt()) or
+        ((1L shl 63) * gesturable.toInt())
+}
+
 internal inline fun metaWithLastChildOffset(meta: Long, lastChildOffset: Int): Long =
     (meta and EverythingButLastChildOffset.toLong()) or
         ((lastChildOffset and Lower9Bits).toLong() shl 52)
@@ -843,7 +879,7 @@ internal inline fun rectIntersectsRect(
     srcLT: Long,
     srcRB: Long,
     destLT: Long,
-    destRB: Long
+    destRB: Long,
 ): Boolean {
     // destRB - srcLT = [r2 - l1, b2 - t1]
     // srcRB - destLT = [r1 - l2, b1 - t2]

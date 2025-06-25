@@ -87,7 +87,7 @@ abstract class WindowAreaController @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) 
         activity: Activity,
         executor: Executor,
         // TODO(272064992) investigate how to make this safer from leaks
-        windowAreaSessionCallback: WindowAreaSessionCallback
+        windowAreaSessionCallback: WindowAreaSessionCallback,
     )
 
     /**
@@ -122,7 +122,7 @@ abstract class WindowAreaController @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) 
         token: Binder,
         activity: Activity,
         executor: Executor,
-        windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback
+        windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback,
     )
 
     companion object {
@@ -130,44 +130,36 @@ abstract class WindowAreaController @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) 
         private val TAG = WindowAreaController::class.simpleName
 
         private var decorator: WindowAreaControllerDecorator = EmptyDecorator
-        private var windowAreaController: WindowAreaController? = null
+        private val windowAreaController: WindowAreaController by lazy {
+            val windowAreaComponentExtensions =
+                try {
+                    this::class.java.classLoader?.let {
+                        SafeWindowAreaComponentProvider(it).windowAreaComponent
+                    }
+                } catch (t: Throwable) {
+                    if (BuildConfig.verificationMode == VerificationMode.LOG) {
+                        Log.d(TAG, "Failed to load WindowExtensions")
+                    }
+                    null
+                }
+
+            val deviceSupported =
+                Build.VERSION.SDK_INT > Build.VERSION_CODES.Q &&
+                    windowAreaComponentExtensions != null &&
+                    ExtensionsUtil.safeVendorApiLevel >= 3
+
+            if (deviceSupported) {
+                WindowAreaControllerImpl(windowAreaComponent = windowAreaComponentExtensions!!)
+            } else {
+                EmptyWindowAreaControllerImpl()
+            }
+        }
 
         /** Provides an instance of [WindowAreaController]. */
         @JvmName("getOrCreate")
         @JvmStatic
         fun getOrCreate(): WindowAreaController {
-            return if (windowAreaController != null) windowAreaController!!
-            else {
-
-                val windowAreaComponentExtensions =
-                    try {
-                        this::class.java.classLoader?.let {
-                            SafeWindowAreaComponentProvider(it).windowAreaComponent
-                        }
-                    } catch (t: Throwable) {
-                        if (BuildConfig.verificationMode == VerificationMode.LOG) {
-                            Log.d(TAG, "Failed to load WindowExtensions")
-                        }
-                        null
-                    }
-
-                val deviceSupported =
-                    Build.VERSION.SDK_INT > Build.VERSION_CODES.Q &&
-                        windowAreaComponentExtensions != null &&
-                        ExtensionsUtil.safeVendorApiLevel >= 3
-
-                val controller =
-                    if (deviceSupported) {
-                        WindowAreaControllerImpl(
-                            windowAreaComponent = windowAreaComponentExtensions!!,
-                        )
-                    } else {
-                        EmptyWindowAreaControllerImpl()
-                    }
-                val decoratedController = decorator.decorate(controller)
-                windowAreaController = decoratedController
-                decoratedController
-            }
+            return decorator.decorate(windowAreaController)
         }
 
         @JvmStatic

@@ -71,8 +71,8 @@ package androidx.collection {
     method public void removeFromEnd(int count);
     method public void removeFromStart(int count);
     method public int size();
-    property public final E first;
-    property public final E last;
+    property public E first;
+    property public E last;
   }
 
   public final class CircularIntArray {
@@ -90,8 +90,8 @@ package androidx.collection {
     method public void removeFromEnd(int count);
     method public void removeFromStart(int count);
     method public int size();
-    property public final int first;
-    property public final int last;
+    property public int first;
+    property public int last;
   }
 
   public abstract sealed class DoubleList {
@@ -233,9 +233,9 @@ package androidx.collection {
     ctor public FloatFloatPair(float first, float second);
     method public inline operator float component1();
     method public inline operator float component2();
-    property public final inline float first;
-    property public final long packedValue;
-    property public final inline float second;
+    property public inline float first;
+    property public long packedValue;
+    property public inline float second;
     field public final long packedValue;
   }
 
@@ -677,9 +677,9 @@ package androidx.collection {
     ctor public IntIntPair(int first, int second);
     method public inline operator int component1();
     method public inline operator int component2();
-    property public final int first;
-    property public final long packedValue;
-    property public final int second;
+    property public int first;
+    property public long packedValue;
+    property public int second;
     field public final long packedValue;
   }
 
@@ -1196,8 +1196,8 @@ package androidx.collection {
     method public inline operator long component2();
     method public long getFirst();
     method public long getSecond();
-    property public final long first;
-    property public final long second;
+    property public long first;
+    property public long second;
   }
 
   public abstract sealed class LongObjectMap<V> {
@@ -1353,6 +1353,7 @@ package androidx.collection {
     method @Deprecated public static <T> boolean remove(androidx.collection.LongSparseArray<T>, long key, T value);
     method public static inline operator <T> void set(androidx.collection.LongSparseArray<T>, long key, T value);
     method public static <T> java.util.Iterator<T> valueIterator(androidx.collection.LongSparseArray<T>);
+    property public static inline <T> int androidx.collection.LongSparseArray<T>.size;
   }
 
   public class LruCache<K, V> {
@@ -1409,7 +1410,7 @@ package androidx.collection {
     method public void sort();
     method public void sortDescending();
     method public void trim(optional int minCapacity);
-    property public final inline int capacity;
+    property public inline int capacity;
   }
 
   public final class MutableFloatFloatMap extends androidx.collection.FloatFloatMap {
@@ -1483,7 +1484,7 @@ package androidx.collection {
     method public void sort();
     method public void sortDescending();
     method public void trim(optional int minCapacity);
-    property public final inline int capacity;
+    property public inline int capacity;
   }
 
   public final class MutableFloatLongMap extends androidx.collection.FloatLongMap {
@@ -1617,7 +1618,7 @@ package androidx.collection {
     method public void sort();
     method public void sortDescending();
     method public void trim(optional int minCapacity);
-    property public final inline int capacity;
+    property public inline int capacity;
   }
 
   public final class MutableIntLongMap extends androidx.collection.IntLongMap {
@@ -1751,7 +1752,7 @@ package androidx.collection {
     method public void sort();
     method public void sortDescending();
     method public void trim(optional int minCapacity);
-    property public final inline int capacity;
+    property public inline int capacity;
   }
 
   public final class MutableLongLongMap extends androidx.collection.LongLongMap {
@@ -1909,7 +1910,7 @@ package androidx.collection {
     method public boolean retainAll(kotlin.sequences.Sequence<? extends E> elements);
     method public operator E set(@IntRange(from=0L) int index, E element);
     method public void trim(optional int minCapacity);
-    property public final inline int capacity;
+    property public inline int capacity;
   }
 
   public final class MutableObjectLongMap<K> extends androidx.collection.ObjectLongMap<K> {
@@ -2417,9 +2418,9 @@ package androidx.collection {
     method public static <K, V> androidx.collection.MutableScatterMap<K,V> mutableScatterMapOf();
     method public static <K, V> androidx.collection.MutableScatterMap<K,V> mutableScatterMapOf(kotlin.Pair<? extends K,? extends V>... pairs);
     method @kotlin.PublishedApi internal static inline long readRawMetadata(long[] data, int offset);
-    property @kotlin.PublishedApi internal static final long BitmaskLsb;
-    property @kotlin.PublishedApi internal static final long BitmaskMsb;
-    property @kotlin.PublishedApi internal static final long Sentinel;
+    property @kotlin.PublishedApi internal static long BitmaskLsb;
+    property @kotlin.PublishedApi internal static long BitmaskMsb;
+    property @kotlin.PublishedApi internal static long Sentinel;
     field @kotlin.PublishedApi internal static final long BitmaskLsb = 72340172838076673L; // 0x101010101010101L
     field @kotlin.PublishedApi internal static final long BitmaskMsb = -9187201950435737472L; // 0x8080808080808080L
     field @kotlin.PublishedApi internal static final long Sentinel = 255L; // 0xffL
@@ -2521,21 +2522,23 @@ package androidx.collection {
     method public void resize(@IntRange(from=1L, to=androidx.collection.SieveCacheKt.MaxSize) int maxSize);
     method public inline operator void set(K key, V value);
     method public void trimToSize(int maxSize);
-    property public final int capacity;
-    property public final int count;
-    property @kotlin.PublishedApi internal final Object?[] keys;
-    property public final int maxSize;
-    property @kotlin.PublishedApi internal final long[] metadata;
-    property public final int size;
-    property @kotlin.PublishedApi internal final Object?[] values;
+    property public int capacity;
+    property public int count;
+    property @kotlin.PublishedApi internal Object?[] keys;
+    property public int maxSize;
+    property @kotlin.PublishedApi internal long[] metadata;
+    property public int size;
+    property @kotlin.PublishedApi internal Object?[] values;
     field @kotlin.PublishedApi internal Object?[] keys;
     field @kotlin.PublishedApi internal long[] metadata;
     field @kotlin.PublishedApi internal Object?[] values;
   }
 
   public final class SieveCacheKt {
-    property @kotlin.PublishedApi internal static final int NodeInvalidLink;
-    property @kotlin.PublishedApi internal static final long NodeLinkMask;
+    property @kotlin.PublishedApi internal static int NodeInvalidLink;
+    property @kotlin.PublishedApi internal static long NodeLinkMask;
+    property @kotlin.PublishedApi internal static inline int long.nextNode;
+    property @kotlin.PublishedApi internal static inline int long.previousNode;
     field @kotlin.PublishedApi internal static final int NodeInvalidLink = 2147483647; // 0x7fffffff
     field @kotlin.PublishedApi internal static final long NodeLinkMask = 2147483647L; // 0x7fffffffL
   }
@@ -2609,6 +2612,7 @@ package androidx.collection {
     method @Deprecated public static <T> boolean remove(androidx.collection.SparseArrayCompat<T>, int key, T value);
     method public static inline operator <T> void set(androidx.collection.SparseArrayCompat<T>, int key, T value);
     method public static <T> java.util.Iterator<T> valueIterator(androidx.collection.SparseArrayCompat<T>);
+    property public static inline <T> int androidx.collection.SparseArrayCompat<T>.size;
   }
 
 }

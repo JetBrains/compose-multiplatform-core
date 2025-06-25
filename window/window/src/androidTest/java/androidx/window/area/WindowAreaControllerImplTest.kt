@@ -27,6 +27,7 @@ import android.view.Window
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.test.ext.junit.rules.ActivityScenarioRule
+import androidx.test.filters.SdkSuppress
 import androidx.window.TestActivity
 import androidx.window.WindowTestUtils.Companion.assumeAtLeastWindowExtensionVersion
 import androidx.window.area.WindowAreaCapability.Operation.Companion.OPERATION_PRESENT_ON_AREA
@@ -77,7 +78,7 @@ class WindowAreaControllerImplTest {
      * [WindowAreaInfo.Type.TYPE_REAR_FACING]. Verifies that updating the status of features on
      * device returns an updated [WindowAreaInfo] list.
      */
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testRearFacingWindowAreaInfoList(): Unit =
         testScope.runTest {
@@ -99,12 +100,12 @@ class WindowAreaControllerImplTest {
                             ),
                         type = WindowAreaInfo.Type.TYPE_REAR_FACING,
                         token = Binder(REAR_FACING_BINDER_DESCRIPTION),
-                        windowAreaComponent = extensionComponent
+                        windowAreaComponent = extensionComponent,
                     )
                 val rearDisplayCapability =
                     WindowAreaCapability(
                         OPERATION_TRANSFER_ACTIVITY_TO_AREA,
-                        WINDOW_AREA_STATUS_UNAVAILABLE
+                        WINDOW_AREA_STATUS_UNAVAILABLE,
                     )
                 val rearDisplayPresentationCapability =
                     WindowAreaCapability(OPERATION_PRESENT_ON_AREA, WINDOW_AREA_STATUS_UNAVAILABLE)
@@ -120,7 +121,7 @@ class WindowAreaControllerImplTest {
                 val updatedRearDisplayCapability =
                     WindowAreaCapability(
                         OPERATION_TRANSFER_ACTIVITY_TO_AREA,
-                        WINDOW_AREA_STATUS_AVAILABLE
+                        WINDOW_AREA_STATUS_AVAILABLE,
                     )
                 expectedAreaInfo.capabilityMap[OPERATION_TRANSFER_ACTIVITY_TO_AREA] =
                     updatedRearDisplayCapability
@@ -159,7 +160,7 @@ class WindowAreaControllerImplTest {
      * transferring to the rear facing window area and then returns it back to portrait when it's
      * disabled.
      */
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testTransferToRearFacingWindowArea(): Unit =
         testScope.runTest {
@@ -179,7 +180,7 @@ class WindowAreaControllerImplTest {
             assertNotNull(windowAreaInfo)
             assertEquals(
                 windowAreaInfo.getCapability(OPERATION_TRANSFER_ACTIVITY_TO_AREA).status,
-                WINDOW_AREA_STATUS_AVAILABLE
+                WINDOW_AREA_STATUS_AVAILABLE,
             )
 
             activityScenario.scenario.onActivity { testActivity ->
@@ -197,7 +198,7 @@ class WindowAreaControllerImplTest {
                     windowAreaInfo.token,
                     testActivity,
                     Runnable::run,
-                    callback
+                    callback,
                 )
             }
 
@@ -217,13 +218,13 @@ class WindowAreaControllerImplTest {
             }
         }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testTransferRearDisplayReturnsError_statusUnavailable() {
         testTransferRearDisplayReturnsError(STATUS_UNAVAILABLE)
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testTransferRearDisplayReturnsError_statusActive() {
         testTransferRearDisplayReturnsError(STATUS_ACTIVE)
@@ -250,7 +251,7 @@ class WindowAreaControllerImplTest {
             assertNotNull(windowAreaInfo)
             assertEquals(
                 windowAreaInfo.getCapability(OPERATION_TRANSFER_ACTIVITY_TO_AREA).status,
-                WindowAreaAdapter.translate(initialState)
+                WindowAreaAdapter.translate(initialState),
             )
 
             activityScenario.scenario.onActivity { testActivity ->
@@ -258,7 +259,7 @@ class WindowAreaControllerImplTest {
                     windowAreaInfo.token,
                     testActivity,
                     Runnable::run,
-                    callback
+                    callback,
                 )
                 assertNotNull(callback.error)
                 assertNull(callback.currentSession)
@@ -274,7 +275,7 @@ class WindowAreaControllerImplTest {
      *
      * Tests the flow through WindowAreaControllerImpl with a fake extension component.
      */
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testPresentRearDisplayArea(): Unit =
         testScope.runTest {
@@ -304,7 +305,7 @@ class WindowAreaControllerImplTest {
                     windowAreaInfo.token,
                     testActivity,
                     Runnable::run,
-                    callback
+                    callback,
                 )
                 assert(callback.sessionActive)
                 assert(!callback.contentVisible)
@@ -319,7 +320,7 @@ class WindowAreaControllerImplTest {
             }
         }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testRearDisplayPresentationModeSessionEndedError(): Unit =
         testScope.runTest {
@@ -349,7 +350,7 @@ class WindowAreaControllerImplTest {
                     windowAreaInfo.token,
                     testActivity,
                     Runnable::run,
-                    callback
+                    callback,
                 )
                 assert(!callback.sessionActive)
                 assert(callback.sessionError != null)
@@ -357,7 +358,7 @@ class WindowAreaControllerImplTest {
             }
         }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
     @Test
     fun testPresentContentWithNewControllerThrowsException(): Unit =
         testScope.runTest {
@@ -391,7 +392,7 @@ class WindowAreaControllerImplTest {
                     windowAreaInfo.token,
                     testActivity,
                     Runnable::run,
-                    callback
+                    callback,
                 )
 
                 assert(!callback.sessionActive)
@@ -446,7 +447,7 @@ class WindowAreaControllerImplTest {
         // entering rear display mode, as well as ending the session
         override fun startRearDisplaySession(
             activity: Activity,
-            rearDisplaySessionConsumer: Consumer<Int>
+            rearDisplaySessionConsumer: Consumer<Int>,
         ) {
             if (currentRearDisplayStatus != STATUS_AVAILABLE) {
                 rearDisplaySessionConsumer.accept(SESSION_STATE_INACTIVE)
@@ -464,7 +465,7 @@ class WindowAreaControllerImplTest {
 
         override fun startRearDisplayPresentationSession(
             activity: Activity,
-            consumer: Consumer<Int>
+            consumer: Consumer<Int>,
         ) {
             if (currentRearDisplayPresentationStatus != STATUS_AVAILABLE) {
                 consumer.accept(SESSION_STATE_INACTIVE)
@@ -483,7 +484,7 @@ class WindowAreaControllerImplTest {
         override fun getRearDisplayPresentation(): ExtensionWindowAreaPresentation {
             return TestExtensionWindowAreaPresentation(
                 testActivity!!,
-                rearDisplayPresentationSessionConsumer!!
+                rearDisplayPresentationSessionConsumer!!,
             )
         }
 
@@ -566,7 +567,7 @@ class WindowAreaControllerImplTest {
 
     private class TestExtensionWindowAreaPresentation(
         private val activity: Activity,
-        private val sessionConsumer: Consumer<Int>
+        private val sessionConsumer: Consumer<Int>,
     ) : ExtensionWindowAreaPresentation {
         override fun getPresentationContext(): Context {
             return activity

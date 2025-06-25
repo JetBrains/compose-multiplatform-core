@@ -59,7 +59,7 @@ internal fun ContextMenuArea(
         ContextMenu(
             state = state,
             onDismiss = onDismiss,
-            contextMenuBuilderBlock = contextMenuBuilderBlock
+            contextMenuBuilderBlock = contextMenuBuilderBlock,
         )
     }
 }

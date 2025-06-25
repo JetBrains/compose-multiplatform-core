@@ -95,7 +95,7 @@ class VirtualCameraAdapterTest {
     private val childrenEdges =
         mapOf(
             Pair(child1 as UseCase, createSurfaceEdge()),
-            Pair(child2 as UseCase, createSurfaceEdge())
+            Pair(child2 as UseCase, createSurfaceEdge()),
         )
     private val selectedChildSizes =
         mapOf<UseCase, Size>(child1 to INPUT_SIZE, child2 to INPUT_SIZE)
@@ -140,7 +140,7 @@ class VirtualCameraAdapterTest {
         cameraControl.submitStillCaptureRequests(
             listOf(CaptureConfig.Builder().build()),
             CAPTURE_MODE_MINIMIZE_LATENCY,
-            FLASH_MODE_AUTO
+            FLASH_MODE_AUTO,
         )
         shadowOf(getMainLooper()).idle()
 
@@ -176,7 +176,7 @@ class VirtualCameraAdapterTest {
         cameraControl.submitStillCaptureRequests(
             listOf(CaptureConfig.Builder().build()),
             CAPTURE_MODE_MINIMIZE_LATENCY,
-            FLASH_MODE_AUTO
+            FLASH_MODE_AUTO,
         )
         shadowOf(getMainLooper()).idle()
 
@@ -215,7 +215,7 @@ class VirtualCameraAdapterTest {
             parentCamera,
             null,
             null,
-            useCase.getDefaultConfig(true, useCaseConfigFactory)
+            useCase.getDefaultConfig(true, useCaseConfigFactory),
         )
         useCase.updateSuggestedStreamSpec(StreamSpec.builder(INPUT_SIZE).build(), null)
         return VirtualCameraAdapter.getChildSurface(useCase)
@@ -234,7 +234,7 @@ class VirtualCameraAdapterTest {
         verifyEdge(child1, OPEN, HAS_PROVIDER)
         // Set UseCase to inactive, verify it's closed.
         child1.notifyInactiveForTesting()
-        verifyEdge(child1, CLOSED, HAS_PROVIDER)
+        verifyEdge(child1, CLOSED, NO_PROVIDER)
         // Set UseCase to active, verify it becomes open again.
         child1.notifyActiveForTesting()
         verifyEdge(child1, OPEN, HAS_PROVIDER)
@@ -292,7 +292,7 @@ class VirtualCameraAdapterTest {
         child1.updateSessionConfigForTesting(defaultEmptySessionConfig())
         child1.notifyUpdatedForTesting()
         // Assert: edge is disconnected.
-        verifyEdge(child1, CLOSED, HAS_PROVIDER)
+        verifyEdge(child1, CLOSED, NO_PROVIDER)
         // Act: set Surface and update.
         child1.updateSessionConfigForTesting(SESSION_CONFIG_WITH_SURFACE)
         child1.notifyUpdatedForTesting()
@@ -325,7 +325,7 @@ class VirtualCameraAdapterTest {
                 parentCamera,
                 null,
                 setOf(preview, child2, imageCapture),
-                useCaseConfigFactory
+                useCaseConfigFactory,
             ) { _, _ ->
                 Futures.immediateFuture(null)
             }
@@ -335,7 +335,7 @@ class VirtualCameraAdapterTest {
             adapter.getChildrenOutConfigs(
                 createSurfaceEdge(cropRect = cropRect, rotationDegrees = 90),
                 Surface.ROTATION_90,
-                true
+                true,
             )
 
         // Assert: preview config
@@ -391,7 +391,7 @@ class VirtualCameraAdapterTest {
         hasCameraTransform: Boolean = true,
         cropRect: Rect = CROP_RECT,
         rotationDegrees: Int = 0,
-        mirroring: Boolean = false
+        mirroring: Boolean = false,
     ): SurfaceEdge {
         return SurfaceEdge(
                 target,
@@ -402,7 +402,7 @@ class VirtualCameraAdapterTest {
                 cropRect,
                 rotationDegrees,
                 ROTATION_NOT_SPECIFIED,
-                mirroring
+                mirroring,
             )
             .also { surfaceEdgesToClose.add(it) }
     }

@@ -1,5 +1,15 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetMillis():
-    Removed method androidx.compose.animation.core.StartOffset.getOffsetMillis()
-RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetType():
-    Removed method androidx.compose.animation.core.StartOffset.getOffsetType()
+RemovedFromJava: androidx.compose.animation.core.VectorizedSpringSpec#getDurationNanos(V, V, V):
+    Source breaking change: method androidx.compose.animation.core.VectorizedSpringSpec.getDurationNanos(V,V,V) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.animation.core.VectorizedSpringSpec#getValueFromNanos(long, V, V, V):
+    Source breaking change: method androidx.compose.animation.core.VectorizedSpringSpec.getValueFromNanos(long,V,V,V) can no longer be resolved from Java source
+RemovedFromJava: androidx.compose.animation.core.VectorizedSpringSpec#getVelocityFromNanos(long, V, V, V):
+    Source breaking change: method androidx.compose.animation.core.VectorizedSpringSpec.getVelocityFromNanos(long,V,V,V) can no longer be resolved from Java source
+
+
+RemovedFromKotlin: androidx.compose.animation.core.VectorizedSpringSpec#getDurationNanos(V, V, V):
+    Source breaking change: method androidx.compose.animation.core.VectorizedSpringSpec.getDurationNanos(V,V,V) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.animation.core.VectorizedSpringSpec#getValueFromNanos(long, V, V, V):
+    Source breaking change: method androidx.compose.animation.core.VectorizedSpringSpec.getValueFromNanos(long,V,V,V) can no longer be resolved from Kotlin source
+RemovedFromKotlin: androidx.compose.animation.core.VectorizedSpringSpec#getVelocityFromNanos(long, V, V, V):
+    Source breaking change: method androidx.compose.animation.core.VectorizedSpringSpec.getVelocityFromNanos(long,V,V,V) can no longer be resolved from Kotlin source

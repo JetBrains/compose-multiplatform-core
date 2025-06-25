@@ -74,7 +74,7 @@ import kotlin.reflect.safeCast
  * The helper is then instantiated to use the same schema location where they are exported to. See
  * platform-specific documentation for further configuration.
  */
-expect class MigrationTestHelper {
+public expect class MigrationTestHelper {
     /**
      * Creates the database at the given version.
      *
@@ -84,7 +84,7 @@ expect class MigrationTestHelper {
      * @return A database connection of the newly created database.
      * @throws IllegalStateException If a new database was not created.
      */
-    fun createDatabase(version: Int): SQLiteConnection
+    public fun createDatabase(version: Int): SQLiteConnection
 
     /**
      * Runs the given set of migrations on the existing database once created via [createDatabase].
@@ -103,9 +103,9 @@ expect class MigrationTestHelper {
      * @return A database connection of the migrated database.
      * @throws IllegalStateException If the schema validation fails.
      */
-    fun runMigrationsAndValidate(
+    public fun runMigrationsAndValidate(
         version: Int,
-        migrations: List<Migration> = emptyList()
+        migrations: List<Migration> = emptyList(),
     ): SQLiteConnection
 }
 
@@ -120,7 +120,7 @@ internal fun createDatabaseCommon(
     configurationFactory: ConfigurationFactory,
     connectionManagerFactory: ConnectionManagerFactory = { config, openDelegate ->
         DefaultTestConnectionManager(config, openDelegate)
-    }
+    },
 ): SQLiteConnection {
     val emptyContainer = RoomDatabase.MigrationContainer()
     val configuration = configurationFactory.invoke(emptyContainer)
@@ -139,7 +139,7 @@ internal fun runMigrationsAndValidateCommon(
     configurationFactory: ConfigurationFactory,
     connectionManagerFactory: ConnectionManagerFactory = { config, openDelegate ->
         DefaultTestConnectionManager(config, openDelegate)
-    }
+    },
 ): SQLiteConnection {
     val container = RoomDatabase.MigrationContainer()
     container.addMigrations(migrations)
@@ -155,26 +155,26 @@ internal fun runMigrationsAndValidateCommon(
     val testConnectionManager =
         connectionManagerFactory.invoke(
             configuration,
-            MigrateOpenDelegate(schema, validateUnknownTables)
+            MigrateOpenDelegate(schema, validateUnknownTables),
         )
     return testConnectionManager.openConnection()
 }
 
 private fun getAutoMigrations(
     databaseInstance: RoomDatabase,
-    providedSpecs: List<AutoMigrationSpec>
+    providedSpecs: List<AutoMigrationSpec>,
 ): List<Migration> {
     val autoMigrationSpecMap =
         createAutoMigrationSpecMap(
             databaseInstance.getRequiredAutoMigrationSpecClasses(),
-            providedSpecs
+            providedSpecs,
         )
     return databaseInstance.createAutoMigrations(autoMigrationSpecMap)
 }
 
 private fun createAutoMigrationSpecMap(
     requiredAutoMigrationSpecs: Set<KClass<out AutoMigrationSpec>>,
-    providedSpecs: List<AutoMigrationSpec>
+    providedSpecs: List<AutoMigrationSpec>,
 ): Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec> {
     if (requiredAutoMigrationSpecs.isEmpty()) {
         return emptyMap()
@@ -195,7 +195,7 @@ internal abstract class TestConnectionManager : BaseRoomConnectionManager() {
 
     override suspend fun <R> useConnection(
         isReadOnly: Boolean,
-        block: suspend (Transactor) -> R
+        block: suspend (Transactor) -> R,
     ): R {
         error("Function should never be invoked during tests.")
     }
@@ -205,7 +205,7 @@ internal abstract class TestConnectionManager : BaseRoomConnectionManager() {
 
 private class DefaultTestConnectionManager(
     override val configuration: DatabaseConfiguration,
-    override val openDelegate: RoomOpenDelegate
+    override val openDelegate: RoomOpenDelegate,
 ) : TestConnectionManager() {
 
     private val driverWrapper = DriverWrapper(requireNotNull(configuration.sqliteDriver))
@@ -217,7 +217,7 @@ private sealed class TestOpenDelegate(databaseBundle: DatabaseBundle) :
     RoomOpenDelegate(
         version = databaseBundle.version,
         identityHash = databaseBundle.identityHash,
-        legacyIdentityHash = databaseBundle.identityHash
+        legacyIdentityHash = databaseBundle.identityHash,
     ) {
     override fun onCreate(connection: SQLiteConnection) {}
 
@@ -255,7 +255,7 @@ private class CreateOpenDelegate(val databaseBundle: DatabaseBundle) :
 
 private class MigrateOpenDelegate(
     val databaseBundle: DatabaseBundle,
-    val validateUnknownTables: Boolean
+    val validateUnknownTables: Boolean,
 ) : TestOpenDelegate(databaseBundle) {
     override fun onValidateSchema(connection: SQLiteConnection): ValidationResult {
         val tables = databaseBundle.entitiesByTableName
@@ -278,7 +278,7 @@ private class MigrateOpenDelegate(
                                 |
                                 |$found
                                 """
-                                    .trimMargin()
+                                    .trimMargin(),
                         )
                     }
                 }
@@ -299,7 +299,7 @@ private class MigrateOpenDelegate(
                                 |
                                 |$found
                                 """
-                                    .trimMargin()
+                                    .trimMargin(),
                         )
                     }
                 }
@@ -318,7 +318,7 @@ private class MigrateOpenDelegate(
                         |
                         |Found: $found
                         """
-                            .trimMargin()
+                            .trimMargin(),
                 )
             }
         }
@@ -348,7 +348,7 @@ private class MigrateOpenDelegate(
                         if (!expectedTables.contains(tableName)) {
                             return ValidationResult(
                                 isValid = false,
-                                expectedFoundMsg = "Unexpected table $tableName"
+                                expectedFoundMsg = "Unexpected table $tableName",
                             )
                         }
                     }

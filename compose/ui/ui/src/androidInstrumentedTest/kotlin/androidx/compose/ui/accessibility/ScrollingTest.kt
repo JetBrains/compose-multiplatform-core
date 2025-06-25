@@ -123,7 +123,7 @@ class ScrollingTest {
                 androidComposeView.accessibilityNodeProvider.performAction(
                     virtualViewId,
                     ACTION_ACCESSIBILITY_FOCUS,
-                    null
+                    null,
                 )
                 Snapshot.notifyObjectsInitialized()
                 scrollValue = 2f
@@ -242,7 +242,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = false
+                            reverseScrolling = false,
                         )
                 }
             )
@@ -271,7 +271,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = false
+                            reverseScrolling = false,
                         )
                 }
             )
@@ -420,7 +420,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
                 }
             )
@@ -450,7 +450,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
 
                     scrollBy { x, _ ->
@@ -466,7 +466,7 @@ class ScrollingTest {
             androidComposeView.accessibilityNodeProvider.performAction(
                 virtualViewId,
                 ACTION_SCROLL_BACKWARD,
-                null
+                null,
             )
         }
         assertThat(actualScrolledAmount).isEqualTo(viewPortSize)
@@ -486,7 +486,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
 
                     scrollBy { x, _ ->
@@ -504,7 +504,7 @@ class ScrollingTest {
             androidComposeView.accessibilityNodeProvider.performAction(
                 virtualViewId,
                 ACTION_SCROLL_BACKWARD,
-                null
+                null,
             )
         }
         assertThat(actualScrolledAmount).isEqualTo(viewPortSize - contentPadding)
@@ -521,7 +521,7 @@ class ScrollingTest {
                         ScrollAxisRange(
                             value = { 0.5f },
                             maxValue = { 1f },
-                            reverseScrolling = true
+                            reverseScrolling = true,
                         )
                 }
             )
@@ -599,7 +599,7 @@ class ScrollingTest {
                         actual.parcelableData == expected.parcelableData &&
                         actual.recordCount == expected.recordCount
                 },
-                "has same properties as"
+                "has same properties as",
             )
     }
 

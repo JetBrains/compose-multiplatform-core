@@ -16,7 +16,7 @@ package androidx.room.rxjava3 {
     method public static io.reactivex.rxjava3.core.Observable<java.lang.Object> createObservable(androidx.room.RoomDatabase database, java.lang.String... tableNames);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static <T> io.reactivex.rxjava3.core.Single<T> createSingle(androidx.room.RoomDatabase db, boolean isReadOnly, boolean inTransaction, kotlin.jvm.functions.Function1<? super androidx.sqlite.SQLiteConnection,? extends T?> block);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static <T> io.reactivex.rxjava3.core.Single<T> createSingle(java.util.concurrent.Callable<? extends T> callable);
-    property public final Object NOTHING;
+    property public static Object NOTHING;
     field public static final Object NOTHING;
   }
 

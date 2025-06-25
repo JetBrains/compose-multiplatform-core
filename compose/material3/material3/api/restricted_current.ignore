@@ -1,7 +1,17 @@
 // Baseline format: 1.0
+AddedAbstractMethod: androidx.compose.material3.NavigationDrawerItemColors#badgeColor(boolean, androidx.compose.runtime.Composer, int):
+    Binary breaking change: Added method androidx.compose.material3.NavigationDrawerItemColors.badgeColor(boolean,androidx.compose.runtime.Composer,int)
+AddedAbstractMethod: androidx.compose.material3.NavigationDrawerItemColors#containerColor(boolean, androidx.compose.runtime.Composer, int):
+    Binary breaking change: Added method androidx.compose.material3.NavigationDrawerItemColors.containerColor(boolean,androidx.compose.runtime.Composer,int)
+AddedAbstractMethod: androidx.compose.material3.NavigationDrawerItemColors#iconColor(boolean, androidx.compose.runtime.Composer, int):
+    Binary breaking change: Added method androidx.compose.material3.NavigationDrawerItemColors.iconColor(boolean,androidx.compose.runtime.Composer,int)
+AddedAbstractMethod: androidx.compose.material3.NavigationDrawerItemColors#textColor(boolean, androidx.compose.runtime.Composer, int):
+    Binary breaking change: Added method androidx.compose.material3.NavigationDrawerItemColors.textColor(boolean,androidx.compose.runtime.Composer,int)
+
+
 RemovedClass: androidx.compose.material3.ExposedDropdownMenu_androidKt:
-    Removed class androidx.compose.material3.ExposedDropdownMenu_androidKt
+    Binary breaking change: Removed class androidx.compose.material3.ExposedDropdownMenu_androidKt
 RemovedClass: androidx.compose.material3.MenuAnchorType:
-    Removed class androidx.compose.material3.MenuAnchorType
+    Binary breaking change: Removed class androidx.compose.material3.MenuAnchorType
 RemovedClass: androidx.compose.material3.SearchBar_androidKt:
-    Removed class androidx.compose.material3.SearchBar_androidKt
+    Binary breaking change: Removed class androidx.compose.material3.SearchBar_androidKt

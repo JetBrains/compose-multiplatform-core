@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *   use, it automatically creates a new one.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-abstract class SharedSQLiteStatement(private val database: RoomDatabase) {
+public abstract class SharedSQLiteStatement(private val database: RoomDatabase) {
     private val lock = AtomicBoolean(false)
 
     private val stmt: SupportSQLiteStatement by lazy { createNewStatement() }
@@ -65,7 +65,7 @@ abstract class SharedSQLiteStatement(private val database: RoomDatabase) {
     }
 
     /** Call this to get the statement. Must call [.release] once done. */
-    open fun acquire(): SupportSQLiteStatement {
+    public open fun acquire(): SupportSQLiteStatement {
         assertNotMainThread()
         return getStmt(lock.compareAndSet(false, true))
     }
@@ -75,7 +75,7 @@ abstract class SharedSQLiteStatement(private val database: RoomDatabase) {
      *
      * @param statement The statement that was returned from acquire.
      */
-    open fun release(statement: SupportSQLiteStatement) {
+    public open fun release(statement: SupportSQLiteStatement) {
         if (statement === stmt) {
             lock.set(false)
         }

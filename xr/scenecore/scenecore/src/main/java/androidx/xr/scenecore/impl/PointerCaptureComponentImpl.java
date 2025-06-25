@@ -16,11 +16,12 @@
 
 package androidx.xr.scenecore.impl;
 
-import androidx.annotation.NonNull;
-import androidx.xr.scenecore.JxrPlatformAdapter.Entity;
-import androidx.xr.scenecore.JxrPlatformAdapter.InputEventListener;
-import androidx.xr.scenecore.JxrPlatformAdapter.PointerCaptureComponent;
-import androidx.xr.scenecore.JxrPlatformAdapter.PointerCaptureComponent.StateListener;
+import androidx.xr.runtime.internal.Entity;
+import androidx.xr.runtime.internal.InputEventListener;
+import androidx.xr.runtime.internal.PointerCaptureComponent;
+import androidx.xr.runtime.internal.PointerCaptureComponent.StateListener;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -43,7 +44,7 @@ final class PointerCaptureComponentImpl implements PointerCaptureComponent {
     }
 
     @Override
-    public boolean onAttach(Entity entity) {
+    public boolean onAttach(@NonNull Entity entity) {
         if (!(entity instanceof AndroidXrEntity) || mAttachedEntity != null) {
             return false;
         }
@@ -53,7 +54,7 @@ final class PointerCaptureComponentImpl implements PointerCaptureComponent {
     }
 
     @Override
-    public void onDetach(Entity entity) {
+    public void onDetach(@NonNull Entity entity) {
         mAttachedEntity.stopPointerCapture();
         mAttachedEntity = null;
     }

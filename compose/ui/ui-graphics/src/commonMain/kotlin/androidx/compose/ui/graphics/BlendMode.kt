@@ -305,7 +305,7 @@ value class BlendMode internal constructor(@Suppress("unused") private val value
          * **NOTE** This [BlendMode] can only be used on Android API level 29 and above
          *
          * See also:
-         * * [Color], which is a more subtle tinting effect.
+         * * [BlendMode.Color], which is a more subtle tinting effect.
          */
         val Softlight = BlendMode(21)
 
@@ -377,7 +377,7 @@ value class BlendMode internal constructor(@Suppress("unused") private val value
          * **NOTE** This [BlendMode] can only be used on Android API level 29 and above
          *
          * See also:
-         * * [Color], which also applies the hue of the source image.
+         * * [BlendMode.Color], which also applies the hue of the source image.
          * * [Luminosity], which applies the luminosity of the source image to the destination.
          */
         val Saturation = BlendMode(26)

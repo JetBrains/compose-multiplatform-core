@@ -28,6 +28,7 @@ import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
+import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GlobalSearchSession;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.flags.Flags;
@@ -324,6 +325,15 @@ public class LocalStorage {
     }
 
     /**
+     * Returns the {@link Features} to check for the availability of certain features for this
+     * AppSearch storage.
+     */
+    @ExperimentalAppSearchApi
+    public static @NonNull Features getFeatures() {
+        return new FeaturesImpl();
+    }
+
+    /**
      * Returns the singleton instance of {@link LocalStorage}.
      *
      * <p>If the system is not initialized, it will be initialized using the provided
@@ -398,6 +408,7 @@ public class LocalStorage {
                 initStatsBuilder,
                 /*visibilityChecker=*/ null,
                 revocableFileDescriptorStore,
+                /*icingSearchEngine=*/ null,
                 new JetpackOptimizeStrategy());
 
         if (logger != null) {

@@ -23,10 +23,10 @@ import static androidx.recyclerview.selection.Shared.VERBOSE;
 import android.util.Log;
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A MotionInputHandler that provides the high-level glue for mouse driven selection. This
@@ -69,6 +69,8 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     @Override
     public boolean onDown(@NonNull MotionEvent e) {
+        mHandledTapUp = false;
+        mHandledOnDown = false;
         if (VERBOSE) Log.v(TAG, "Delegated onDown event.");
         if ((MotionEvents.isAltKeyPressed(e) && MotionEvents.isPrimaryMouseButtonPressed(e))
                 || MotionEvents.isSecondaryMouseButtonPressed(e)) {
@@ -94,7 +96,6 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
         // DOWN events or not.
         if (mHandledOnDown) {
             if (VERBOSE) Log.v(TAG, "Ignoring onSingleTapUp, previously handled in onDown.");
-            mHandledOnDown = false;
             return false;
         }
 
@@ -152,7 +153,6 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
                 Log.v(TAG,
                         "Ignoring onSingleTapConfirmed, previously handled in onSingleTapUp.");
             }
-            mHandledTapUp = false;
             return false;
         }
 
@@ -170,7 +170,7 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
             return false;
         }
 
-        @Nullable ItemDetails<K> item = mDetailsLookup.getItemDetails(e);
+        ItemDetails<K> item = mDetailsLookup.getItemDetails(e);
         if (item == null || !item.hasSelectionKey()) {
             return false;
         }
@@ -186,8 +186,6 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     @Override
     public boolean onDoubleTap(@NonNull MotionEvent e) {
-        mHandledTapUp = false;
-
         if (!mDetailsLookup.overItemWithSelectionKey(e)) {
             if (DEBUG) Log.d(TAG, "Ignoring DoubleTap on non-model-backed item.");
             return false;
@@ -204,7 +202,7 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
     private boolean onRightClick(@NonNull MotionEvent e) {
         if (mDetailsLookup.overItemWithSelectionKey(e)) {
-            @Nullable ItemDetails<K> item = mDetailsLookup.getItemDetails(e);
+            ItemDetails<K> item = mDetailsLookup.getItemDetails(e);
             if (item != null && !mSelectionTracker.isSelected(item.getSelectionKey())) {
                 mSelectionTracker.clearSelection();
                 selectItem(item);

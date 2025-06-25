@@ -16,19 +16,11 @@
 
 package androidx.compose.foundation.contextmenu
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.contextmenu.ContextMenuState.Status
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.text.contextmenu.gestures.onRightClickDown
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.AwaitPointerEventScope
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.util.fastAll
 
 /** Unique key to avoid [Unit] clashes in [pointerInput]. */
 private object ContextMenuKey
@@ -50,27 +42,3 @@ internal fun Modifier.contextMenuGestures(state: ContextMenuState): Modifier = c
  */
 internal fun Modifier.contextMenuGestures(onOpenGesture: (Offset) -> Unit): Modifier =
     pointerInput(ContextMenuKey) { onRightClickDown(onOpenGesture) }
-
-/** Similar to PointerInputScope.detectTapAndPress, but for right clicks. */
-@VisibleForTesting
-internal suspend fun PointerInputScope.onRightClickDown(onDown: (Offset) -> Unit) {
-    awaitEachGesture {
-        val down = awaitFirstRightClickDown()
-        down.consume()
-        onDown(down.position)
-        waitForUpOrCancellation()?.consume()
-    }
-}
-
-/**
- * Similar to AwaitPointerEventScope.awaitFirstDown, but with an additional check to ensure it is a
- * right click.
- */
-private suspend fun AwaitPointerEventScope.awaitFirstRightClickDown(): PointerInputChange {
-    while (true) {
-        val event = awaitPointerEvent()
-        if (event.buttons.isSecondaryPressed && event.changes.fastAll { it.changedToDown() }) {
-            return event.changes[0]
-        }
-    }
-}

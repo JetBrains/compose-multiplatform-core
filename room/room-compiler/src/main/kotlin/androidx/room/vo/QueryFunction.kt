@@ -30,7 +30,7 @@ sealed class QueryFunction(
     val element: XMethodElement,
     val query: ParsedQuery,
     val returnType: XType,
-    val parameters: List<QueryParameter>
+    val parameters: List<QueryParameter>,
 ) {
     val sectionToParamMapping by lazy {
         query.bindSections.map {
@@ -53,7 +53,7 @@ class ReadQueryFunction(
     returnType: XType,
     parameters: List<QueryParameter>,
     val inTransaction: Boolean,
-    val queryResultBinder: QueryResultBinder
+    val queryResultBinder: QueryResultBinder,
 ) : QueryFunction(element, query, returnType, parameters) {
     val isProperty = element.isKotlinPropertyMethod()
 }
@@ -64,5 +64,5 @@ class WriteQueryFunction(
     query: ParsedQuery,
     returnType: XType,
     parameters: List<QueryParameter>,
-    val preparedQueryResultBinder: PreparedQueryResultBinder
+    val preparedQueryResultBinder: PreparedQueryResultBinder,
 ) : QueryFunction(element, query, returnType, parameters)

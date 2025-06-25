@@ -32,10 +32,10 @@ import androidx.room.RoomDatabase
  * @param fetchBlock - A lambda for calling the generated _fetchRelationship function.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun <K : Any, V> recursiveFetchHashMap(
+public fun <K : Any, V> recursiveFetchHashMap(
     map: HashMap<K, V>,
     isRelationCollection: Boolean,
-    fetchBlock: (HashMap<K, V>) -> Unit
+    fetchBlock: (HashMap<K, V>) -> Unit,
 ) {
     val tmpMap = HashMap<K, V>(RoomDatabase.MAX_BIND_PARAMETER_CNT)
     var count = 0
@@ -72,10 +72,10 @@ fun <K : Any, V> recursiveFetchHashMap(
 
 /** Same as [recursiveFetchHashMap] but for [ArrayMap]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun <K : Any, V> recursiveFetchArrayMap(
+public fun <K : Any, V> recursiveFetchArrayMap(
     map: ArrayMap<K, V>,
     isRelationCollection: Boolean,
-    fetchBlock: (ArrayMap<K, V>) -> Unit
+    fetchBlock: (ArrayMap<K, V>) -> Unit,
 ) {
     val tmpMap = ArrayMap<K, V>(RoomDatabase.MAX_BIND_PARAMETER_CNT)
     var count = 0

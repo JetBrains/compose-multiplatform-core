@@ -45,7 +45,7 @@ class DatabaseProcessingStep : XProcessingStep {
     override fun process(
         env: XProcessingEnv,
         elementsByAnnotation: Map<String, Set<XElement>>,
-        isLastRound: Boolean
+        isLastRound: Boolean,
     ): Set<XTypeElement> {
         check(env.config == getEnvConfig(env.options)) {
             "Room Processor expected ${getEnvConfig(env.options)} " +
@@ -98,7 +98,7 @@ class DatabaseProcessingStep : XProcessingStep {
                 DaoWriter(
                         dao = daoFunction.dao,
                         dbElement = db.element,
-                        writerContext = TypeWriter.WriterContext.fromProcessingContext(context)
+                        writerContext = TypeWriter.WriterContext.fromProcessingContext(context),
                     )
                     .write(context.processingEnv)
             }
@@ -107,7 +107,7 @@ class DatabaseProcessingStep : XProcessingStep {
         databases?.forEach { db ->
             DatabaseWriter(
                     database = db,
-                    writerContext = TypeWriter.WriterContext.fromProcessingContext(context)
+                    writerContext = TypeWriter.WriterContext.fromProcessingContext(context),
                 )
                 .write(context.processingEnv)
             if (db.exportSchema) {
@@ -122,19 +122,19 @@ class DatabaseProcessingStep : XProcessingStep {
                     val schemaFileOutputStream =
                         env.filer.writeResource(
                             filePath = Path.of("schemas", qName, filename),
-                            originatingElements = listOf(db.element)
+                            originatingElements = listOf(db.element),
                         )
                     db.exportSchemaOnly(schemaFileOutputStream)
                 } else if (schemaInFolderPath != null && schemaOutFolderPath != null) {
                     db.exportSchema(
                         inputPath = Path.of(schemaInFolderPath, qName, filename),
-                        outputPath = Path.of(schemaOutFolderPath, qName, filename)
+                        outputPath = Path.of(schemaOutFolderPath, qName, filename),
                     )
                 } else {
                     context.logger.w(
                         warning = Warning.MISSING_SCHEMA_LOCATION,
                         element = db.element,
-                        msg = ProcessorErrors.MISSING_SCHEMA_EXPORT_DIRECTORY
+                        msg = ProcessorErrors.MISSING_SCHEMA_EXPORT_DIRECTORY,
                     )
                 }
             }
@@ -142,14 +142,14 @@ class DatabaseProcessingStep : XProcessingStep {
                 AutoMigrationWriter(
                         autoMigration = autoMigration,
                         dbElement = db.element,
-                        writerContext = TypeWriter.WriterContext.fromProcessingContext(context)
+                        writerContext = TypeWriter.WriterContext.fromProcessingContext(context),
                     )
                     .write(context.processingEnv)
             }
             if (db.constructorObject != null) {
                 DatabaseObjectConstructorWriter(
                         database = db,
-                        constructorObject = db.constructorObject
+                        constructorObject = db.constructorObject,
                     )
                     .write(context.processingEnv)
             }
@@ -171,7 +171,7 @@ class DatabaseProcessingStep : XProcessingStep {
      */
     private fun prepareDaosForWriting(
         databases: List<androidx.room.vo.Database>,
-        daoFunctions: List<DaoFunction>
+        daoFunctions: List<DaoFunction>,
     ) {
         daoFunctions
             .groupBy { it.dao.typeName }

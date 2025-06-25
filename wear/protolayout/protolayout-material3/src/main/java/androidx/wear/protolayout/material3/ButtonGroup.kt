@@ -29,7 +29,6 @@ import androidx.wear.protolayout.ModifiersBuilders.Modifiers
 import androidx.wear.protolayout.material3.ButtonGroupDefaults.DEFAULT_SPACER_SIZE_DP
 import androidx.wear.protolayout.material3.ButtonGroupDefaults.METADATA_TAG
 
-// TODO: b/356568440 - Put the above sample in proper samples file and link with @sample
 /**
  * ProtoLayout Material3 component-layout that places its children in a horizontal sequence.
  *
@@ -72,27 +71,27 @@ public fun MaterialScope.buttonGroup(
     width: ContainerDimension = expand(),
     height: ContainerDimension = expand(),
     @Dimension(unit = DP) spacing: Float = DEFAULT_SPACER_SIZE_DP,
-    content: ButtonGroupScope.() -> Unit
-): LayoutElement =
-    Row.Builder()
-        .setWidth(width)
-        .setHeight(height)
-        .setModifiers(
-            Modifiers.Builder()
-                .setMetadata(
-                    ElementMetadata.Builder().setTagData(METADATA_TAG.toTagBytes()).build()
-                )
-                .build()
-        )
-        .also { row ->
-            // List of children
-            ButtonGroupScope(this)
-                .apply { content() }
-                .items
-                .addBetween(Spacer.Builder().setWidth(dp(spacing)).setHeight(expand()).build())
-                .forEach(row::addContent)
-        }
-        .build()
+    content: ButtonGroupScope.() -> Unit,
+): LayoutElement {
+    val row =
+        Row.Builder()
+            .setWidth(width)
+            .setHeight(height)
+            .setModifiers(
+                Modifiers.Builder()
+                    .setMetadata(
+                        ElementMetadata.Builder().setTagData(METADATA_TAG.toTagBytes()).build()
+                    )
+                    .build()
+            )
+    // List of children
+    ButtonGroupScope(this)
+        .apply { content() }
+        .items
+        .addBetween(Spacer.Builder().setWidth(dp(spacing)).setHeight(expand()).build())
+        .forEach(row::addContent)
+    return row.build()
+}
 
 /** Scope for the children of a [buttonGroup] */
 @MaterialScopeMarker
@@ -103,9 +102,9 @@ public class ButtonGroupScope internal constructor(private val scope: MaterialSc
      * Adds an item to a [buttonGroup]
      *
      * @param content the content to use for this item. Usually, this will be one of the Material 3
-     *   button or card variants.
+     *   button or card variants (for example [iconButton], [textButton], [iconDataCard] or
+     *   [textDataCard]).
      */
-    // TODO: b/360110062: Add link to Button and Card.
     public fun buttonGroupItem(content: MaterialScope.() -> LayoutElement) {
         items += scope.content()
     }

@@ -23,6 +23,7 @@ import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
+import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.ext.GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE
 import androidx.room.ext.KotlinTypeNames.FLOW
 import androidx.room.ext.LifecyclesTypeNames.COMPUTABLE_LIVE_DATA
@@ -30,7 +31,6 @@ import androidx.room.ext.LifecyclesTypeNames.LIVE_DATA
 import androidx.room.ext.ReactiveStreamsTypeNames.PUBLISHER
 import androidx.room.ext.RxJava2TypeNames
 import androidx.room.ext.RxJava3TypeNames
-import androidx.room.runProcessorTestWithK1
 import androidx.room.testing.context
 import androidx.room.vo.TransactionFunction
 import org.hamcrest.CoreMatchers.`is`
@@ -322,7 +322,7 @@ class TransactionFunctionProcessorTest {
 
     private fun singleTransactionMethod(
         vararg input: String,
-        handler: (TransactionFunction, XTestInvocation) -> Unit
+        handler: (TransactionFunction, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             listOf(
@@ -340,11 +340,11 @@ class TransactionFunctionProcessorTest {
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_SINGLE,
                 COMMON.LISTENABLE_FUTURE,
-                COMMON.FLOW
+                COMMON.FLOW,
             )
-        runProcessorTestWithK1(
+        runProcessorTest(
             sources = inputSource + otherSources,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false")
+            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
         ) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
@@ -355,7 +355,7 @@ class TransactionFunctionProcessorTest {
                             it,
                             it.getAllMethods()
                                 .filter { it.hasAnnotation(Transaction::class) }
-                                .toList()
+                                .toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -364,7 +364,7 @@ class TransactionFunctionProcessorTest {
                     baseContext = invocation.context,
                     containingElement = owner,
                     containingType = owner.type,
-                    executableElement = methods.first()
+                    executableElement = methods.first(),
                 )
             val processed = processor.process()
             handler(processed, invocation)
