@@ -16,19 +16,27 @@
 
 package androidx.compose.foundation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.JPopupTextMenu
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuComponent
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItem
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSeparator
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +63,7 @@ import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.rememberPopupPositionProviderAtPosition
 import java.awt.Component
@@ -104,61 +113,122 @@ class DefaultContextMenuRepresentation(
     override fun Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
         val status = state.status
         if (status is ContextMenuState.Status.Open) {
-            var focusManager: FocusManager? by mutableStateOf(null)
-            var inputModeManager: InputModeManager? by mutableStateOf(null)
-
-            Popup(
-                properties = PopupProperties(focusable = true),
-                onDismissRequest = { state.status = ContextMenuState.Status.Closed },
-                popupPositionProvider = rememberPopupPositionProviderAtPosition(
-                    positionPx = status.rect.center
-                ),
-                onKeyEvent = {
-                    if (it.type == KeyEventType.KeyDown) {
-                        when (it.key.nativeKeyCode) {
-                            java.awt.event.KeyEvent.VK_DOWN  -> {
-                                inputModeManager!!.requestInputMode(InputMode.Keyboard)
-                                focusManager!!.moveFocus(FocusDirection.Next)
-                                true
-                            }
-                            java.awt.event.KeyEvent.VK_UP -> {
-                                inputModeManager!!.requestInputMode(InputMode.Keyboard)
-                                focusManager!!.moveFocus(FocusDirection.Previous)
-                                true
-                            }
-                            else -> false
-                        }
-                    } else {
-                        false
+            val session = remember(state) {
+                object : TextContextMenuSession {
+                    override fun close() {
+                        state.status = ContextMenuState.Status.Closed
                     }
-                },
-            ) {
-                focusManager = LocalFocusManager.current
-                inputModeManager = LocalInputModeManager.current
-                Column(
-                    modifier = Modifier
-                        .shadow(8.dp)
-                        .background(backgroundColor)
-                        .padding(vertical = 4.dp)
-                        .width(IntrinsicSize.Max)
-                        .verticalScroll(rememberScrollState())
+                }
+            }
+            val components by remember {
+                derivedStateOf {
+                    items().map {
+                        TextContextMenuItem(
+                            key = it,
+                            label = it.label,
+                            enabled = true,
+                            onClick = { it.onClick() }
+                        )
+                    }
+                }
+            }
+            val colors = remember(backgroundColor, textColor, itemHoverColor) {
+                ContextMenuColors(
+                    backgroundColor = backgroundColor,
+                    textColor = textColor,
+                    iconColor = Color.Unspecified,
+                    disabledTextColor = Color.Unspecified,
+                    disabledIconColor = Color.Unspecified,
+                    hoverColor = itemHoverColor,
+                )
+            }
+            DefaultOpenContextMenu(
+                session = session,
+                components = components,
+                popupPositionProvider = rememberPopupPositionProviderAtPosition(status.rect.center),
+                colors = colors,
+            )
+        }
+    }
+}
 
-                ) {
-                    items().forEach { item ->
+@Composable
+internal fun DefaultOpenContextMenu(
+    session: TextContextMenuSession,
+    components: List<TextContextMenuComponent>,
+    popupPositionProvider: PopupPositionProvider,
+    colors: ContextMenuColors = DefaultContextMenuColors,
+) {
+    var focusManager: FocusManager? by mutableStateOf(null)
+    var inputModeManager: InputModeManager? by mutableStateOf(null)
+
+    Popup(
+        properties = PopupProperties(focusable = true),
+        onDismissRequest = { session.close() },
+        popupPositionProvider = popupPositionProvider,
+        onKeyEvent = {
+            if (it.type == KeyEventType.KeyDown) {
+                when (it.key.nativeKeyCode) {
+                    java.awt.event.KeyEvent.VK_DOWN  -> {
+                        inputModeManager!!.requestInputMode(InputMode.Keyboard)
+                        focusManager!!.moveFocus(FocusDirection.Next)
+                        true
+                    }
+                    java.awt.event.KeyEvent.VK_UP -> {
+                        inputModeManager!!.requestInputMode(InputMode.Keyboard)
+                        focusManager!!.moveFocus(FocusDirection.Previous)
+                        true
+                    }
+                    else -> false
+                }
+            } else {
+                false
+            }
+        },
+    ) {
+        focusManager = LocalFocusManager.current
+        inputModeManager = LocalInputModeManager.current
+        Column(
+            modifier = Modifier
+                .shadow(8.dp)
+                .background(colors.backgroundColor)
+                .padding(vertical = 4.dp)
+                .width(IntrinsicSize.Max)
+                .verticalScroll(rememberScrollState())
+
+        ) {
+            components.forEach { component ->
+                when (component) {
+                    is TextContextMenuSeparator -> MenuSeparator(colors.textColor)
+                    is TextContextMenuItem -> {
                         MenuItemContent(
-                            itemHoverColor = itemHoverColor,
-                            onClick = {
-                                state.status = ContextMenuState.Status.Closed
-                                item.onClick()
-                            }
+                            itemHoverColor = colors.hoverColor,
+                            onClick = { component.onClick(session) },
                         ) {
-                            BasicText(text = item.label, style = TextStyle(color = textColor))
+                            component.leadingIcon?.let { icon ->
+                                icon(colors.resolveIconColor(component.enabled))
+                            }
+                            BasicText(
+                                text = component.label,
+                                style = TextStyle(colors.resolveTextColor(component.enabled))
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun MenuSeparator(color: Color) {
+    Box(
+        modifier =
+            Modifier.padding(vertical = 8.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(color)
+    )
 }
 
 @Composable
@@ -259,4 +329,83 @@ private fun Modifier.onHover(onHover: (Boolean) -> Unit) = pointerInput(Unit) {
             }
         }
     }
+}
+
+private const val DisabledAlpha = 0.38f
+
+internal val DefaultContextMenuColors =
+    ContextMenuColors(
+        backgroundColor = Color.White,
+        textColor = Color.Black,
+        iconColor = Color.Black,
+        disabledTextColor = Color.Black.copy(alpha = DisabledAlpha),
+        disabledIconColor = Color.Black.copy(alpha = DisabledAlpha),
+        hoverColor = Color.Black.copy(alpha = 0.04f),
+    )
+
+
+/**
+ * Colors to apply to the context menu.
+ *
+ * @param backgroundColor Color of the background in the context menu
+ * @param textColor Color of the text in context menu items
+ * @param iconColor Color of the icon in context menu items
+ * @param disabledTextColor Color of disabled text in context menu items
+ * @param disabledIconColor Color of disabled icon in context menu items
+ */
+@Stable
+internal class ContextMenuColors(
+    val backgroundColor: Color,
+    val textColor: Color,
+    val iconColor: Color,
+    val disabledTextColor: Color,
+    val disabledIconColor: Color,
+    val hoverColor: Color,
+) {
+
+    /**
+     * Returns the text color to use in the given enabled state.
+     */
+    fun resolveTextColor(enabled: Boolean): Color =
+        if (enabled) textColor else disabledTextColor
+
+    /**
+     * Returns the icon color to use in the given enabled state.
+     */
+    fun resolveIconColor(enabled: Boolean): Color =
+        if (enabled) iconColor else disabledIconColor
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || other !is ContextMenuColors) return false
+
+        if (this.backgroundColor != other.backgroundColor) return false
+        if (this.textColor != other.textColor) return false
+        if (this.iconColor != other.iconColor) return false
+        if (this.disabledTextColor != other.disabledTextColor) return false
+        if (this.disabledIconColor != other.disabledIconColor) return false
+        if (this.hoverColor != other.hoverColor) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = backgroundColor.hashCode()
+        result = 31 * result + textColor.hashCode()
+        result = 31 * result + iconColor.hashCode()
+        result = 31 * result + disabledTextColor.hashCode()
+        result = 31 * result + disabledIconColor.hashCode()
+        result = 31 * result + hoverColor.hashCode()
+        return result
+    }
+
+    override fun toString(): String =
+        "ContextMenuColors(" +
+            "backgroundColor=$backgroundColor, " +
+            "textColor=$textColor, " +
+            "iconColor=$iconColor, " +
+            "disabledTextColor=$disabledTextColor, " +
+            "disabledIconColor=$disabledIconColor, " +
+            "hoverColor=$hoverColor" +
+            ")"
 }

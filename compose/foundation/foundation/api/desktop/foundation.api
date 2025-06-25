@@ -1907,6 +1907,11 @@ public final class androidx/compose/foundation/text/contextmenu/builder/TextCont
 	public final fun separator ()V
 }
 
+public final class androidx/compose/foundation/text/contextmenu/builder/TextContextMenuBuilderScope_desktopKt {
+	public static final fun item (Landroidx/compose/foundation/text/contextmenu/builder/TextContextMenuBuilderScope;Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun item$default (Landroidx/compose/foundation/text/contextmenu/builder/TextContextMenuBuilderScope;Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+}
+
 public abstract class androidx/compose/foundation/text/contextmenu/data/TextContextMenuComponent {
 	public static final field $stable I
 	public final fun getKey ()Ljava/lang/Object;
@@ -1941,6 +1946,17 @@ public final class androidx/compose/foundation/text/contextmenu/data/TextContext
 
 public abstract interface class androidx/compose/foundation/text/contextmenu/data/TextContextMenuSession {
 	public abstract fun close ()V
+}
+
+public final class androidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_desktopKt {
+	public static final field INSTANCE Landroidx/compose/foundation/text/contextmenu/internal/ComposableSingletons$DefaultTextContextMenuDropdownProvider_desktopKt;
+	public fun <init> ()V
+	public final fun getLambda$1526480516$foundation ()Lkotlin/jvm/functions/Function5;
+	public final fun getLambda$2032773318$foundation ()Lkotlin/jvm/functions/Function5;
+}
+
+public final class androidx/compose/foundation/text/contextmenu/internal/DefaultTextContextMenuDropdownProvider_desktopKt {
+	public static final fun ProvideDefaultTextContextMenuDropdown (Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
 }
 
 public final class androidx/compose/foundation/text/contextmenu/modifier/TextContextMenuModifierKt {
