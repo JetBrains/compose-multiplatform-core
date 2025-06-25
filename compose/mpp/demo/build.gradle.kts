@@ -173,7 +173,7 @@ kotlin {
                 implementation(libs.kotlinCoroutinesCore)
                 api(libs.kotlinSerializationCore)
 
-                implementation("org.jetbrains.compose.material:material-icons-core:1.6.11") {
+                implementation("org.jetbrains.compose.material:material-icons-core:1.7.3") {
                     // exclude dependencies, because they override local projects when we build 0.0.0-* version
                     // (see https://repo1.maven.org/maven2/org/jetbrains/compose/material/material-icons-core-desktop/1.6.11/material-icons-core-desktop-1.6.11.module)
                     exclude("org.jetbrains.compose.runtime")
