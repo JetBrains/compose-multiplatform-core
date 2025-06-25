@@ -21,11 +21,11 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -49,7 +49,7 @@ class PopupInteractionTest {
             }
         }
 
-        tap(screenSize.center)
+        tap(outOfPopupBoundsPoint)
 
         waitForIdle()
 
@@ -69,7 +69,7 @@ class PopupInteractionTest {
             }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(outOfPopupBoundsPoint)
         waitForIdle()
 
         assertFalse(dismissTriggered)
@@ -91,7 +91,7 @@ class PopupInteractionTest {
             }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(outOfPopupBoundsPoint)
         waitForIdle()
 
         assertTrue(dismissTriggered)
@@ -113,7 +113,7 @@ class PopupInteractionTest {
             }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(outOfPopupBoundsPoint)
         waitForIdle()
 
         assertFalse(dismissTriggered)
@@ -142,7 +142,7 @@ class PopupInteractionTest {
             ) { Text("Popup 3") }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(outOfPopupBoundsPoint)
         waitForIdle()
 
         assertTrue(dismiss1Triggered)
@@ -176,7 +176,7 @@ class PopupInteractionTest {
             ) { Text("Popup 3") }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(outOfPopupBoundsPoint)
         waitForIdle()
 
         assertFalse(dismiss1Triggered)
@@ -211,7 +211,7 @@ class PopupInteractionTest {
         val contentButtonAccessible = findNodeWithLabelOrNull("Content Button") != null
         assertFalse(contentButtonAccessible)
 
-        tap(screenSize.center)
+        tap(outOfPopupBoundsPoint)
         waitForIdle()
         assertFalse(contentButtonClicked)
     }
@@ -244,4 +244,7 @@ class PopupInteractionTest {
         waitForIdle()
         assertTrue(contentButtonClicked)
     }
+
+    private val UIKitInstrumentedTest.outOfPopupBoundsPoint: DpOffset
+        get() = DpOffset(x = screenSize.width / 2, y = 100.dp)
 }

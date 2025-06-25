@@ -19,6 +19,7 @@ package androidx.compose.ui.layers
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -45,12 +46,11 @@ class DialogInteractionTest {
             }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, 100.dp))
+        tap(outOfDialogBoundsPoint)
 
         waitForIdle()
 
         assertTrue(dismissTriggered)
-        delay(1000)
     }
 
     @Test
@@ -67,11 +67,10 @@ class DialogInteractionTest {
             }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, 100.dp))
+        tap(outOfDialogBoundsPoint)
         waitForIdle()
 
         assertFalse(dismissTriggered)
-        delay(1000)
     }
 
     @Test
@@ -101,17 +100,19 @@ class DialogInteractionTest {
             }
         }
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(outOfDialogBoundsPoint)
         waitForIdle()
 
         assertTrue(showDialog1.value)
         assertFalse(showDialog2.value)
 
-        tap(DpOffset(x = screenSize.width / 2, y = 100.dp))
+        tap(outOfDialogBoundsPoint)
         waitForIdle()
 
         assertFalse(showDialog1.value)
         assertFalse(showDialog2.value)
-        delay(1000)
     }
+
+    private val UIKitInstrumentedTest.outOfDialogBoundsPoint: DpOffset
+        get() = DpOffset(x = screenSize.width / 2, y = 100.dp)
 }
