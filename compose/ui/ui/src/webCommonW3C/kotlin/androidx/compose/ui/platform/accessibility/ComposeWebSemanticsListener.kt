@@ -19,9 +19,6 @@ package androidx.compose.ui.platform.accessibility
 import androidx.collection.MutableScatterMap
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.layout.findRootCoordinates
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -29,11 +26,6 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntRect
-import kotlin.math.ceil
-import kotlin.math.floor
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
@@ -208,6 +200,13 @@ internal class ComposeWebSemanticsListener(
         if (config.contains(SemanticsProperties.EditableText)) {
             val text = config[SemanticsProperties.EditableText].text
             htmlNode.innerText = text
+
+            if (justCreated) {
+                htmlNode.setAttribute("contenteditable", "true")
+                htmlNode.addEventListener("focus", {
+                    htmlNode.click()
+                })
+            }
         }
 
         setA11YAriaRole(element = htmlNode, config.getRoleId())
