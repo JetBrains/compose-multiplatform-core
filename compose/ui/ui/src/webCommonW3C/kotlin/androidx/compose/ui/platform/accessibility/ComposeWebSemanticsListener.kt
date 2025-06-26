@@ -145,7 +145,10 @@ internal class ComposeWebSemanticsListener(
             } else {
                 nodes[currentId] = node
                 val htmlNode = document.createElement("div") as HTMLElement
-                htmlNode.style.setProperty("position", "fixed")
+                htmlNode.style.apply {
+                    position = "fixed"
+                    whiteSpace = "pre"
+                }
 
                 webNodes[currentId] = htmlNode
                 syncNode(node, htmlNode, rootPosition, true)
@@ -199,31 +202,19 @@ internal class ComposeWebSemanticsListener(
 
         setA11YAriaRole(element = htmlNode, config.getRoleId())
 
-        sn.layoutInfo.let {
-            val newPosition = rootOffset + it.coordinates.positionInRoot().div(it.density.density)
-            val rootCoordinates = it.coordinates.findRootCoordinates()
+        val density = sn.layoutNode.density
+        sn.boundsInRoot.let { rect ->
+            val newPosition = rootOffset + rect.topLeft.div(density.density)
+            val width = rect.width.div(density.density)
+            val height = rect.height.div(density.density)
 
-            val clippedRect = rootCoordinates.localBoundingBoxOf(it.coordinates, clipBounds = true)
-                .round(it.density)
-
-            setSizeAndPosition(
-                htmlNode, newPosition.x, newPosition.y, clippedRect.width, clippedRect.height
-            )
+            setSizeAndPosition(htmlNode, newPosition.x, newPosition.y, width , height)
         }
-    }
-
-    private fun Rect.round(density: Density): IntRect {
-        val left = floor(left / density.density).toInt()
-        val top = floor(top / density.density).toInt()
-        val right = ceil(right / density.density).toInt()
-        val bottom = ceil(bottom / density.density).toInt()
-
-        return IntRect(left, top, right, bottom)
     }
 }
 
 private fun setSizeAndPosition(
-    element: HTMLElement, left: Float, top: Float, width: Int, height: Int
+    element: HTMLElement, left: Float, top: Float, width: Float, height: Float
 ) {
     // language=javascript
     js(
