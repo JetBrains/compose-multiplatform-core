@@ -200,6 +200,11 @@ internal class ComposeWebSemanticsListener(
             })
         }
 
+        if (config.contains(SemanticsProperties.TestTag)) {
+            val testTag = config[SemanticsProperties.TestTag]
+            htmlNode.id = testTag
+        }
+
         setA11YAriaRole(element = htmlNode, config.getRoleId())
 
         val density = sn.layoutNode.density

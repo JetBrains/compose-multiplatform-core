@@ -22,8 +22,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.window.A11YConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,6 +34,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.browser.document
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -393,5 +396,38 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals(2, appContainer.children.length)
         assertEquals(getCanvas(), appContainer.children[0])
         assertEquals("DIV", appContainer.children[1]!!.tagName) // interop container
+    }
+
+    @Test
+    fun modifierTestTagIsSetToId() = runApplicationTest {
+        var showButton by mutableStateOf(true)
+        var clickCounter = 0
+
+        createComposeWindow {
+            if (showButton) {
+                Button(
+                    onClick = {
+                        clickCounter++
+                    },
+                    modifier = Modifier.testTag("buttonTag")
+                ) {
+                    Text("Button with a test tag")
+                }
+            }
+        }
+
+        awaitIdle()
+        awaitA11YChanges()
+
+        val button = document.getElementById("buttonTag") as? HTMLElement
+        assertNotNull(button)
+        button.click()
+        assertEquals(1, clickCounter)
+
+        showButton = false
+        awaitIdle()
+        awaitA11YChanges()
+
+        assertNull(document.getElementById("buttonTag"))
     }
 }
