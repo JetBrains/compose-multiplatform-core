@@ -67,10 +67,6 @@ import kotlinx.atomicfu.atomic
 import org.jetbrains.skia.BreakIterator
 import org.jetbrains.skiko.nativeInitializeAccessible
 
-private fun <T> SemanticsConfiguration.getFirstOrNull(key: SemanticsPropertyKey<List<T>>): T? {
-    return getOrNull(key)?.firstOrNull()
-}
-
 private typealias ActionKey = SemanticsPropertyKey<AccessibilityAction<() -> Boolean>>
 
 /**
@@ -139,11 +135,8 @@ internal class ComposeAccessible(
         val setSelection
             get() = semanticsConfig.getOrNull(SemanticsActions.SetSelection)
         val text
-            // TODO should we concatenate the texts instead of getting only the first one
-            // Concatenation seems to be reasonable eg, for button with two text nodes inside
-            // but conflicts with setText action
             get() = semanticsConfig.getOrNull(SemanticsProperties.EditableText)
-                ?: semanticsConfig.getFirstOrNull(SemanticsProperties.Text)
+                ?: semanticsConfig.getOrNull(SemanticsProperties.Text)?.mergeText()
 
         val textLayoutResult: TextLayoutResult?
             get() {
@@ -255,9 +248,9 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleDescription(): String? {
-            // TODO concatenate values?
             return semanticsConfig
-                .getFirstOrNull(SemanticsProperties.ContentDescription)
+                .getOrNull(SemanticsProperties.ContentDescription)
+                ?.mergeText()
         }
 
         override fun getAccessibleParent(): Accessible? {
@@ -870,6 +863,8 @@ internal class ComposeAccessible(
         override fun doAccessibleAction(i: Int): Boolean {
             return accessibleAction?.doAccessibleAction(i) ?: false
         }
+
+        private fun List<CharSequence>.mergeText() = joinToString(", ")
     }
 }
 
