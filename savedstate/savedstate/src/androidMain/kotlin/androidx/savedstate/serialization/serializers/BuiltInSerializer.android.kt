@@ -18,7 +18,6 @@
 
 package androidx.savedstate.serialization.serializers
 
-import android.annotation.SuppressLint
 import android.os.IBinder
 import android.os.Parcelable
 import android.util.Size
@@ -414,7 +413,5 @@ public class SparseArraySerializer<T>(elementSerializer: KSerializer<T>) :
         }
     }
 
-    @SuppressLint("UnsafeOptInUsageError") // The class is private.
-    @Serializable
-    private class SparseArraySurrogate<T>(val keys: List<Int>, val values: List<T>)
+    @Serializable private class SparseArraySurrogate<T>(val keys: List<Int>, val values: List<T>)
 }
