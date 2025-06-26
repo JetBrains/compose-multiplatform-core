@@ -205,6 +205,11 @@ internal class ComposeWebSemanticsListener(
             htmlNode.id = testTag
         }
 
+        if (config.contains(SemanticsProperties.EditableText)) {
+            val text = config[SemanticsProperties.EditableText].text
+            htmlNode.innerText = text
+        }
+
         setA11YAriaRole(element = htmlNode, config.getRoleId())
 
         val density = sn.layoutNode.density
@@ -249,6 +254,7 @@ internal object AriaRoleId {
     // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles
     // Other ARIA roles not specified explicitly by [androidx.compose.ui.semantics.Role]:
     const val Heading = 7
+    const val TextBox = 8
 }
 
 internal fun SemanticsConfiguration.getRoleId(): Int {
@@ -280,6 +286,10 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
 
     if (this.contains(SemanticsProperties.Heading)) {
         roleId = AriaRoleId.Heading
+    }
+
+    if (this.contains(SemanticsProperties.EditableText)) {
+        roleId = AriaRoleId.TextBox
     }
 
     return roleId
@@ -316,6 +326,9 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
                 break;
             case 7: // heading https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/heading_role
                 roleValue = "heading";
+                break;
+            case 8: // Role.TextBox
+                roleValue = "textbox";
                 break;
             default:
                 break;

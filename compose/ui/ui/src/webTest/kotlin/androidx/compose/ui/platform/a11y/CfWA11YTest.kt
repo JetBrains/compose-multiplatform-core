@@ -18,6 +18,7 @@ package androidx.compose.ui.platform.a11y
 
 import androidx.compose.material.Button
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -429,5 +430,27 @@ class CfWA11YTest : OnCanvasTests {
         awaitA11YChanges()
 
         assertNull(document.getElementById("buttonTag"))
+    }
+
+    @Test
+    fun textFieldHasTextBoxRole() = runApplicationTest {
+        var text by mutableStateOf("Hello, World!")
+
+        createComposeWindow {
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.testTag("textFieldTag")
+            )
+        }
+
+        awaitIdle()
+        awaitA11YChanges()
+
+        val textField = document.getElementById("textFieldTag") as? HTMLElement
+        assertNotNull(textField)
+
+        assertEquals("textbox", textField.getAttribute("role"))
+        assertEquals("Hello, World!", textField.innerText)
     }
 }
