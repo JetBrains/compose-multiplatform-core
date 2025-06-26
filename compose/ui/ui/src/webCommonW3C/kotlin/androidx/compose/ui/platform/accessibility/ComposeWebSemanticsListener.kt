@@ -29,7 +29,6 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
 import kotlin.math.ceil
@@ -41,7 +40,9 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.w3c.dom.HTMLElement
 
@@ -57,26 +58,16 @@ internal class ComposeWebSemanticsListener(
     init {
         coroutineScope.launch {
             var lastSyncTimeMs = currentTimeMillis()
+            val invalidationFlow = invalidationChannel.receiveAsFlow()
 
-            launch {
-                invalidationChannel.receiveAsFlow().collect {
-                    val currentTime = currentTimeMillis()
-
-                    if (currentTime - lastSyncTimeMs >= 1000) {
-                        // we've been debouncing for too long, but must sync periodically
-                        lastSyncTimeMs = currentTime
-                        syncSemanticsWithWebA11Y()
-                    } else {
-                        syncTriggerChannel.trySend(Unit)
-                    }
-                }
-            }
-
-            launch {
-                @OptIn(FlowPreview::class)
-                // debounce until the Semantics changes settled for at least 100ms
-                syncTriggerChannel.receiveAsFlow().debounce(100.milliseconds).collect {
-                    lastSyncTimeMs = currentTimeMillis()
+            @OptIn(FlowPreview::class)
+            merge(
+                invalidationFlow.sample(1000),
+                invalidationFlow.debounce(100)
+            ).collect {
+                val currentTime = currentTimeMillis()
+                if (currentTime - lastSyncTimeMs >= 100) {
+                    lastSyncTimeMs = currentTime
                     syncSemanticsWithWebA11Y()
                 }
             }
@@ -287,6 +278,7 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
     }
 
     if (this.contains(SemanticsActions.OnClick)) {
+        // TODO: Not everything with OnClick is a button!!!
         roleId = Role.Button.toIntId()
     }
 
