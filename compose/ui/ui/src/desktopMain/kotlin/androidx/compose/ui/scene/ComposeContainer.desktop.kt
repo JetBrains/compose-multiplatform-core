@@ -30,10 +30,8 @@ import androidx.compose.ui.backhandler.DesktopBackGestureDispatcher
 import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
-import androidx.compose.ui.platform.LocalLocalization
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.platform.defaultPlatformLocalization
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Density
@@ -536,7 +534,6 @@ private fun ProvideContainerCompositionLocals(
     backGestureDispatcher: DesktopBackGestureDispatcher,
     content: @Composable () -> Unit,
 ) = CompositionLocalProvider(
-    LocalLocalization providesDefault defaultPlatformLocalization(),
     LocalLifecycleOwner provides composeContainer,
     LocalInternalViewModelStoreOwner provides composeContainer,
     LocalBackGestureDispatcher provides backGestureDispatcher,
