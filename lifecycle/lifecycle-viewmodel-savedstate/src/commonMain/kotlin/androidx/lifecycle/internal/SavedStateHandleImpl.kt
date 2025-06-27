@@ -17,9 +17,9 @@
 package androidx.lifecycle.internal
 
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
 import androidx.savedstate.SavedStateRegistry.SavedStateProvider
 import androidx.savedstate.savedState
+import kotlin.js.JsName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -47,7 +47,7 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
         savedState(initialState = regular)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @JsName("fun_savedStateProvider")
     fun savedStateProvider(): SavedStateProvider = savedStateProvider
 
     @MainThread operator fun contains(key: String): Boolean = key in regular
