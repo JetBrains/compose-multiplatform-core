@@ -17,9 +17,6 @@ package androidx.privacysandbox.ui.core {
   public sealed interface ExperimentalFeatures {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental. It may be changed in the future without notice.", level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public static @interface ExperimentalFeatures.ChangingContentUiZOrderApi {
-  }
-
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental. It may be changed in the future without notice.", level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public static @interface ExperimentalFeatures.DelegatingAdapterApi {
   }
 
@@ -81,6 +78,14 @@ package androidx.privacysandbox.ui.core {
   public static final class SandboxedUiAdapterSignalOptions.Companion {
     property public static String GEOMETRY;
     property public static String OBSTRUCTIONS;
+  }
+
+  public final class SdkRuntimeUiLibVersions {
+    method public int getClientVersion();
+    property public static int apiVersion;
+    property public int clientVersion;
+    field public static final androidx.privacysandbox.ui.core.SdkRuntimeUiLibVersions INSTANCE;
+    field public static final int apiVersion = 1; // 0x1
   }
 
   public final class SessionData {

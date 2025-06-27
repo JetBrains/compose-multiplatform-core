@@ -27,10 +27,8 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
 import androidx.annotation.RestrictTo
-import androidx.camera.camera2.pipe.compat.Api33Compat
 import androidx.camera.camera2.pipe.compat.Api34Compat
 import androidx.camera.camera2.pipe.compat.Api35Compat
-import androidx.camera.camera2.pipe.compat.Camera2ColorSpaceProfiles
 
 /**
  * [CameraMetadata] is a compatibility wrapper around [CameraCharacteristics].
@@ -89,21 +87,10 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         public const val CAPABILITIES_SECURE_IMAGE_DATA: Int = 13
         public const val CAPABILITIES_SYSTEM_CAMERA: Int = 14
         public const val CAPABILITIES_OFFLINE_REPROCESSING: Int = 15
-        public const val CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR: Int = 16
-        public const val CAPABILITIES_REMOSAIC_REPROCESSING: Int = 17
-        public const val CAPABILITIES_DYNAMIC_RANGE_TEN_BIT: Int = 18
-        public const val CAPABILITIES_STREAM_USE_CASE: Int = 19
-        public const val CAPABILITIES_COLOR_SPACE_PROFILES: Int = 20
 
         public val CameraMetadata.availableCapabilities: IntArray
             @JvmStatic
             get() = this[CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES] ?: EMPTY_INT_ARRAY
-
-        public val CameraMetadata.availableVideoStabilizationModes: IntArray
-            @JvmStatic
-            get() =
-                this[CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES]
-                    ?: EMPTY_INT_ARRAY
 
         public val CameraMetadata.isHardwareLevelExternal: Boolean
             @JvmStatic
@@ -176,36 +163,6 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
             @JvmStatic
             get() = this.availableCapabilities.contains(CAPABILITIES_OFFLINE_REPROCESSING)
 
-        public val CameraMetadata.supportsUltraHighResolutionSensor: Boolean
-            @JvmStatic
-            get() = this.availableCapabilities.contains(CAPABILITIES_ULTRA_HIGH_RESOLUTION_SENSOR)
-
-        public val CameraMetadata.supportsRemosaicProcessing: Boolean
-            @JvmStatic
-            get() = this.availableCapabilities.contains(CAPABILITIES_REMOSAIC_REPROCESSING)
-
-        public val CameraMetadata.supportsDynamicRangeTenBit: Boolean
-            @JvmStatic
-            get() = this.availableCapabilities.contains(CAPABILITIES_DYNAMIC_RANGE_TEN_BIT)
-
-        public val CameraMetadata.supportsStreamUseCase: Boolean
-            @JvmStatic get() = this.availableCapabilities.contains(CAPABILITIES_STREAM_USE_CASE)
-
-        public val CameraMetadata.supportsColorSpaceProfiles: Boolean
-            @JvmStatic
-            get() = this.availableCapabilities.contains(CAPABILITIES_COLOR_SPACE_PROFILES)
-
-        public val CameraMetadata.availableColorSpaceProfiles: CameraColorSpaceProfiles?
-            @JvmStatic
-            get() =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    this[CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES]?.let {
-                        Camera2ColorSpaceProfiles(it)
-                    }
-                } else {
-                    null
-                }
-
         public val CameraMetadata.supportsAutoFocusTrigger: Boolean
             @JvmStatic
             get() {
@@ -275,23 +232,12 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
                 else 1
 
         public val CameraMetadata.supportsLowLightBoost: Boolean
-            @JvmStatic
             get() {
                 val availableAeModes =
                     this[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES] ?: return false
                 return availableAeModes.contains(
                     AeMode.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
                 )
-            }
-
-        public val CameraMetadata.supportsPreviewStabilization: Boolean
-            @JvmStatic
-            get() {
-                return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    Api33Compat.supportsPreviewStabilization(this)
-                } else {
-                    false
-                }
             }
     }
 }

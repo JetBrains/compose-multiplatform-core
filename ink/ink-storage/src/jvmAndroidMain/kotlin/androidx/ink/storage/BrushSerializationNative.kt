@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,16 +34,17 @@ internal object BrushSerializationNative {
      * @param pngBytes The PNG bytes of the texture bitmap, or null if none was encoded.
      * @return The texture ID to use in the decoded BrushFamily.
      */
-    fun interface TextureDecodeCallback {
-        @UsedByNative fun onDecodeTexture(clientTextureId: String, pngBytes: ByteArray?): String
+    internal fun interface TextureDecodeCallback {
+        public fun onDecodeTexture(clientTextureId: String, pngBytes: ByteArray?): String
     }
 
-    fun newBrushFamilyFromProto(
+    internal fun newBrushFamilyFromProto(
         brushFamilyDirectByteBuffer: ByteBuffer?,
         brushFamilyByteArray: ByteArray?,
         offset: Int,
         length: Int,
         callback: TextureDecodeCallback = TextureDecodeCallback { id, _ -> id },
+        throwOnParseError: Boolean,
     ): Long =
         newBrushFamilyFromProtoInternal(
             brushFamilyDirectByteBuffer,
@@ -51,13 +52,14 @@ internal object BrushSerializationNative {
             offset,
             length,
             callback,
+            throwOnParseError,
         )
 
     /**
      * Serializes a [BrushFamily] to a [ByteArray] using the provided texture map of keys (client
      * texture IDs) to values (PNG bytes).
      */
-    fun serializeBrushFamily(
+    internal fun serializeBrushFamily(
         nativeBrushFamilyPointer: Long,
         map: Map<String, ByteArray>,
     ): ByteArray =
@@ -96,6 +98,7 @@ internal object BrushSerializationNative {
         brushByteArray: ByteArray?,
         offset: Int,
         length: Int,
+        throwOnParseError: Boolean,
     ): Long
 
     /**
@@ -110,6 +113,7 @@ internal object BrushSerializationNative {
         offset: Int,
         length: Int,
         callback: TextureDecodeCallback,
+        throwOnParseError: Boolean,
     ): Long
 
     /**
@@ -122,6 +126,7 @@ internal object BrushSerializationNative {
         brushCoatByteArray: ByteArray?,
         offset: Int,
         length: Int,
+        throwOnParseError: Boolean,
     ): Long
 
     /**
@@ -134,6 +139,7 @@ internal object BrushSerializationNative {
         brushTipByteArray: ByteArray?,
         offset: Int,
         length: Int,
+        throwOnParseError: Boolean,
     ): Long
 
     /**
@@ -146,5 +152,6 @@ internal object BrushSerializationNative {
         brushPaintByteArray: ByteArray?,
         offset: Int,
         length: Int,
+        throwOnParseError: Boolean,
     ): Long
 }

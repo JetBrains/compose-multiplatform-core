@@ -23,7 +23,7 @@ import androidx.test.uiautomator.boundsInScreen
 import androidx.test.uiautomator.children
 
 /** A snapshot of an accessibility node info at a certain moment in time. */
-internal data class ElementNode(
+internal data class ViewNode(
     val depth: Int,
     val text: String,
     val viewIdResourceName: String,
@@ -42,7 +42,7 @@ internal data class ElementNode(
     val isSelected: Boolean,
     val bounds: Rect,
     val childCount: Int,
-    val children: Set<ElementNode>,
+    val children: Set<ViewNode>,
     val hintText: String,
     val isLeaf: Boolean,
     val drawingOrderInParent: Int,
@@ -54,18 +54,18 @@ internal data class ElementNode(
             depth: Int,
             node: AccessibilityNodeInfo,
             displayRect: Rect,
-        ): ElementNode {
+        ): ViewNode {
 
             val children = node.children()
 
-            val childrenNodes =
+            val childrenViewNodes =
                 children
                     .map { child ->
                         val childNode =
                             fromAccessibilityNodeInfo(
                                 node = child,
                                 displayRect = displayRect,
-                                depth = depth + 1,
+                                depth = depth + 1
                             )
                         @Suppress("DEPRECATION") child.recycle()
                         childNode
@@ -82,7 +82,7 @@ internal data class ElementNode(
                 } else 0
 
             fun CharSequence?.orBlank() = this.toString()
-            return ElementNode(
+            return ViewNode(
                 depth = depth,
                 text = node.text.orBlank(),
                 viewIdResourceName = node.viewIdResourceName.orBlank(),
@@ -102,7 +102,7 @@ internal data class ElementNode(
                 isSelected = node.isSelected,
                 childCount = node.childCount,
                 bounds = node.boundsInScreen(),
-                children = childrenNodes.toSet(),
+                children = childrenViewNodes.toSet(),
                 isLeaf = children.isEmpty(),
                 drawingOrderInParent = drawingOrderInParent,
                 accessibilityNodeInfo = node,
@@ -114,7 +114,7 @@ internal data class ElementNode(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ElementNode
+        other as ViewNode
 
         if (depth != other.depth) return false
         if (text != other.text) return false

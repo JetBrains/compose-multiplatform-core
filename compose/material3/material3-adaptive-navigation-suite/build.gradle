@@ -34,7 +34,17 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.material3.adaptive.navigationsuite"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+
         compileSdk = 35
+        aarMetadata.minCompileSdk = 35
     }
     jvmStubs()
 
@@ -44,7 +54,7 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                api("androidx.compose.material3:material3:1.4.0-alpha15")
+                api(project(":compose:material3:material3"))
                 api(project(":compose:material3:adaptive:adaptive"))
                 implementation("androidx.window:window-core:1.4.0-rc01")
             }
@@ -79,7 +89,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
-                implementation(project(":window:window-testing"))
+                implementation("androidx.window:window-testing:1.3.0")
                 implementation(libs.junit)
                 implementation(libs.testRunner)
                 implementation(libs.truth)
@@ -91,9 +101,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.testRunner)
-                implementation(libs.espressoCore)
                 implementation(libs.truth)
-                implementation(project(":compose:ui:ui"))
                 implementation(project(":window:window-core"))
             }
         }

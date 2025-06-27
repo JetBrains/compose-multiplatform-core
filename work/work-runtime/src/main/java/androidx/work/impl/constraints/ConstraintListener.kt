@@ -22,11 +22,11 @@ import androidx.annotation.MainThread
  *
  * @param T the constraint data type for this listener
  */
-public interface ConstraintListener<T> {
+interface ConstraintListener<T> {
     /**
      * Called when the value of a constraint has changed.
      *
      * @param newValue the new value of the constraint
      */
-    @MainThread public fun onConstraintChanged(newValue: T)
+    @MainThread fun onConstraintChanged(newValue: T)
 }

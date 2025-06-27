@@ -62,15 +62,18 @@ fun TextScrollableColumnSelectionDemo() {
                         Modifier.fillMaxWidth()
                             .selectable(
                                 selected = option == selectedOption,
-                                onClick = { onOptionSelected(option) },
+                                onClick = { onOptionSelected(option) }
                             ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(
                         selected = option == selectedOption,
-                        onClick = { onOptionSelected(option) },
+                        onClick = { onOptionSelected(option) }
                     )
-                    Text(text = option.displayText, style = MaterialTheme.typography.body1.merge())
+                    Text(
+                        text = option.displayText,
+                        style = MaterialTheme.typography.body1.merge(),
+                    )
                 }
             }
         }
@@ -87,7 +90,7 @@ private enum class Options(val displayText: String, val content: @Composable () 
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 text = (0..100).joinToString(separator = "\n") { it.toString() },
             )
-        },
+        }
     ),
     LongTextScrollableColumn(
         "Long Single Text in Scrollable Column",
@@ -95,7 +98,7 @@ private enum class Options(val displayText: String, val content: @Composable () 
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 MyText((0..100).joinToString(separator = "\n") { it.toString() })
             }
-        },
+        }
     ),
     MultiTextScrollableColumn(
         "Multiple Texts in Scrollable Column",
@@ -103,11 +106,11 @@ private enum class Options(val displayText: String, val content: @Composable () 
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 repeat(100) { MyText(it.toString()) }
             }
-        },
+        }
     ),
     MultiTextLazyColumn(
         "Multiple Texts in LazyColumn",
-        { LazyColumn { items(100) { MyText(it.toString()) } } },
+        { LazyColumn { items(100) { MyText(it.toString()) } } }
     );
 
     @Composable
@@ -121,6 +124,6 @@ private fun MyText(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = TextStyle(fontSize = fontSize8, textAlign = TextAlign.Center),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth()
     )
 }

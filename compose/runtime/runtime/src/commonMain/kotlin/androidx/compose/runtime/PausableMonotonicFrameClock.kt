@@ -28,7 +28,7 @@ package androidx.compose.runtime
  * not altered from the source [frameClock], animations in progress may be fully complete by the
  * time the clock is resumed and a new frame is produced.
  */
-public class PausableMonotonicFrameClock(private val frameClock: MonotonicFrameClock) :
+class PausableMonotonicFrameClock(private val frameClock: MonotonicFrameClock) :
     MonotonicFrameClock {
     private val latch = Latch()
 
@@ -36,7 +36,7 @@ public class PausableMonotonicFrameClock(private val frameClock: MonotonicFrameC
      * `true` if this clock is currently [paused][pause] or `false` if this clock is currently
      * [resumed][resume]. A PausableMonotonicFrameClock is not paused at construction time.
      */
-    public val isPaused: Boolean
+    val isPaused: Boolean
         get() = !latch.isOpen
 
     /**
@@ -45,7 +45,7 @@ public class PausableMonotonicFrameClock(private val frameClock: MonotonicFrameC
      * before delegating to the wrapped [frameClock]'s [withFrameNanos] method. Call [resume] to
      * resume generating frames.
      */
-    public fun pause() {
+    fun pause() {
         latch.closeLatch()
     }
 
@@ -53,7 +53,7 @@ public class PausableMonotonicFrameClock(private val frameClock: MonotonicFrameC
      * Resume the generation of frames. Any queued calls to [withFrameNanos] will resume and
      * delegate to the wrapped [frameClock]'s [withFrameNanos] method.
      */
-    public fun resume() {
+    fun resume() {
         latch.openLatch()
     }
 

@@ -23,9 +23,7 @@ plugins {
 
 android {
     namespace = "androidx.privacysandbox.sdkruntime.integration.testsdk-asb"
-    compileSdk = 36
-    // Remove when b/411666019 is fixed
-    targetSdk = 35
+    compileSdk = 35
     compileSdkExtension = 14
     buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).getBuildToolsVersion()
     bundle {

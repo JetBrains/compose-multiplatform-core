@@ -16,28 +16,18 @@
 
 package androidx.camera.lifecycle;
 
-import static androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup.resolveFeatureGroup;
-
 import android.annotation.SuppressLint;
 import android.os.Build;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
-import androidx.camera.core.ExperimentalSessionConfig;
-import androidx.camera.core.LegacySessionConfig;
-import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
-import androidx.camera.core.featuregroup.GroupableFeature;
-import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup;
 import androidx.camera.core.impl.CameraConfig;
-import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
-import androidx.core.util.Preconditions;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.Lifecycle.State;
 import androidx.lifecycle.LifecycleObserver;
@@ -48,10 +38,9 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * A {@link CameraUseCaseAdapter} whose starting and stopping is controlled by a
@@ -60,7 +49,6 @@ import java.util.Set;
 @SuppressLint("UsesNonDefaultVisibleForTesting")
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@OptIn(markerClass = ExperimentalSessionConfig.class)
 public final class LifecycleCamera implements LifecycleObserver, Camera {
     private final Object mLock = new Object();
 
@@ -78,9 +66,6 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
 
     @GuardedBy("mLock")
     private boolean mReleased = false;
-
-    @GuardedBy("mLock")
-    private SessionConfig mBoundSessionConfig = null;
 
     /**
      * Wraps an existing {@link CameraUseCaseAdapter} so it is controlled by lifecycle transitions.
@@ -189,23 +174,9 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
         }
     }
 
-    /**
-     * Returns if the [UseCase] is bound to this camera.
-     */
     public boolean isBound(@NonNull UseCase useCase) {
         synchronized (mLock) {
             return mCameraUseCaseAdapter.getUseCases().contains(useCase);
-        }
-    }
-
-    /**
-     * Returns if the [SessionConfig] is bound to this camera.
-     */
-    public boolean isBound(@NonNull SessionConfig sessionConfig) {
-        // Should only be invoked on SessionConfig disallowing multiple binding.
-        Preconditions.checkState(!sessionConfig.isLegacy());
-        synchronized (mLock) {
-            return mBoundSessionConfig == sessionConfig;
         }
     }
 
@@ -229,127 +200,26 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
     }
 
     /**
-     * Binds the {@link SessionConfig} to the lifecycle camera.
+     * Bind the UseCases to the lifecycle camera.
      *
-     * <p>This will attach the UseCases to the CameraUseCaseAdapter if successful.
-     *
-     * <p>{@link SessionConfig} that can't allow multiple binding, must be bound without any
-     * other bound {@link SessionConfig}. If a {@link SessionConfig} that doesn't allow multiple
-     * binding is bound, then it can't allow any other binding unless it is unbound.
+     * <>This will attach the UseCases to the CameraUseCaseAdapter if successful.
      *
      * @throws CameraUseCaseAdapter.CameraException if unable to attach the UseCase to the camera.
-     * @throws IllegalStateException if the {@link SessionConfig} can't be bound because either the
-     * given {@link SessionConfig} or the previously bound {@link SessionConfig} disallows multiple
-     * binding.
      */
-    void bind(@NonNull SessionConfig sessionConfig)
-            throws CameraUseCaseAdapter.CameraException {
+    void bind(Collection<UseCase> useCases) throws CameraUseCaseAdapter.CameraException {
         synchronized (mLock) {
-            if (mBoundSessionConfig == null) {
-                mBoundSessionConfig = sessionConfig;
-            } else {
-                if (sessionConfig.isLegacy()) { // Bind use cases
-                    if (!mBoundSessionConfig.isLegacy()) {
-                        throw new IllegalStateException(
-                                "Cannot bind use cases when a SessionConfig is already bound to "
-                                        + "this LifecycleOwner. Please unbind first");
-                    }
-
-                    List<UseCase> boundUseCases =
-                            new ArrayList<>(mBoundSessionConfig.getUseCases());
-                    boundUseCases.addAll(sessionConfig.getUseCases());
-                    // Uses the latest SessionConfig parameters to update the mBoundSessionConfig.
-                    mBoundSessionConfig = new LegacySessionConfig(
-                            boundUseCases,
-                            sessionConfig.getViewPort(),
-                            sessionConfig.getEffects()
-                    );
-                }
-                else { // Bind sessionConfig.
-                    if (mBoundSessionConfig.isLegacy()) {
-                        throw new IllegalStateException(
-                                "Cannot bind the SessionConfig when use cases are bound to this"
-                                        + " LifecycleOwner already. Please unbind first");
-                    }
-                    mBoundSessionConfig = sessionConfig;
-                    // implicitly unbind the previous SessionConfig when SessionConfig is updated.
-                    mCameraUseCaseAdapter.removeUseCases(mCameraUseCaseAdapter.getUseCases());
-                }
-            }
-            mCameraUseCaseAdapter.setViewPort(sessionConfig.getViewPort());
-            mCameraUseCaseAdapter.setEffects(sessionConfig.getEffects());
-            mCameraUseCaseAdapter.setSessionType(sessionConfig.getSessionType());
-            mCameraUseCaseAdapter.setFrameRate(sessionConfig.getFrameRateRange());
-
-            ResolvedFeatureGroup resolvedFeatureGroup = resolveFeatureGroup(
-                    sessionConfig, (CameraInfoInternal) getCameraInfo());
-
-            sessionConfig.getFeatureSelectionListenerExecutor().execute(
-                    () -> {
-                        Set<GroupableFeature> features = new HashSet<>();
-
-                        if (resolvedFeatureGroup != null) {
-                            features.addAll(resolvedFeatureGroup.getFeatures());
-                        }
-
-                        sessionConfig.getFeatureSelectionListener().accept(features);
-                    });
-
-            mCameraUseCaseAdapter.addUseCases(sessionConfig.getUseCases(),
-                    resolvedFeatureGroup);
-        }
-    }
-
-    @Nullable
-    SessionConfig getBoundSessionConfig() {
-        synchronized (mLock) {
-            return mBoundSessionConfig;
-        }
-    }
-
-    boolean isLegacySessionConfigBound() {
-        synchronized (mLock) {
-            return mBoundSessionConfig == null ? false : mBoundSessionConfig.isLegacy();
+            mCameraUseCaseAdapter.addUseCases(useCases);
         }
     }
 
     /**
-     * Unbinds the SessionConfig from the lifecycle camera.
+     * Unbind the UseCases from the lifecycle camera.
      *
-     * <p>This will detach the UseCases from the CameraUseCaseAdapter.
+     * <>This will detach the UseCases from the CameraUseCaseAdapter.
      */
-    void unbind(@NonNull SessionConfig sessionConfig) {
+    void unbind(Collection<UseCase> useCases) {
         synchronized (mLock) {
-            if (mBoundSessionConfig == null
-                    || (mBoundSessionConfig.isLegacy() != sessionConfig.isLegacy())) {
-                // No-ops if no bound config or the unbinding SessionConfig is not compatible with
-                // bound SessionConfig.
-                return;
-            }
-
-            if (!mBoundSessionConfig.isLegacy() && !sessionConfig.isLegacy()) {
-                // Unbinding SessionConfig
-                if (mBoundSessionConfig == sessionConfig) {
-                    // Unbind the bound SessionConfig successfully only when they are identical.
-                    mBoundSessionConfig = null;
-                } else {
-                    // If the unbinding SessionConfig is different than the bound one. we do nothing
-                    // Returning here is necessary to avoid removing the use cases.
-                    return;
-                }
-            } else if (mBoundSessionConfig.isLegacy() && sessionConfig.isLegacy()) {
-                // Unbinding LegacySessionConfig (UseCases or UseCaseGroup)
-                List<UseCase> boundUseCases =
-                        new ArrayList<>(mBoundSessionConfig.getUseCases());
-                boundUseCases.removeAll(sessionConfig.getUseCases());
-                mBoundSessionConfig = boundUseCases.isEmpty() ? null
-                        : new LegacySessionConfig(
-                                boundUseCases,
-                                mBoundSessionConfig.getViewPort(),
-                                mBoundSessionConfig.getEffects()
-                        );
-            }
-            List<UseCase> useCasesToRemove = new ArrayList<>(sessionConfig.getUseCases());
+            List<UseCase> useCasesToRemove = new ArrayList<>(useCases);
             useCasesToRemove.retainAll(mCameraUseCaseAdapter.getUseCases());
             mCameraUseCaseAdapter.removeUseCases(useCasesToRemove);
         }
@@ -363,7 +233,6 @@ public final class LifecycleCamera implements LifecycleObserver, Camera {
     void unbindAll() {
         synchronized (mLock) {
             mCameraUseCaseAdapter.removeUseCases(mCameraUseCaseAdapter.getUseCases());
-            mBoundSessionConfig = null;
         }
     }
 

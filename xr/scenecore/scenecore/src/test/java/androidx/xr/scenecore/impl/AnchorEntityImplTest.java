@@ -32,7 +32,6 @@ import static org.mockito.Mockito.when;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -54,6 +53,7 @@ import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
@@ -61,7 +61,6 @@ import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeRepository;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
-import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -78,7 +77,6 @@ import java.time.Duration;
 import java.util.UUID;
 
 @RunWith(RobolectricTestRunner.class)
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     private static class FakeExportableAnchor implements ExportableAnchor {
         private final long mNativePointer;
@@ -161,7 +159,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     private long mCurrentTimeMillis = 1000000000L;
     private ActivitySpaceImpl mActivitySpace;
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();
-    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
+    private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
     private final SplitEngineSubspaceManager mSplitEngineSubspaceManager =
             Mockito.mock(SplitEngineSubspaceManager.class);
 
@@ -182,7 +180,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         mXrExtensions,
                         mEntityManager,
                         () -> mXrExtensions.getSpatialState(activity),
-                        /* unscaledGravityAlignedActivitySpace= */ false,
                         mExecutor);
         SystemClock.setCurrentTimeMillis(mCurrentTimeMillis);
 
@@ -1067,8 +1064,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         mSharedAnchorToken,
                         new Pose(),
-                        TrackingState.TRACKING,
-                        PersistenceState.NOT_PERSISTED,
+                        TrackingState.Tracking,
+                        PersistenceState.NotPersisted,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 
@@ -1086,8 +1083,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         mSharedAnchorToken,
                         new Pose(),
-                        TrackingState.TRACKING,
-                        PersistenceState.NOT_PERSISTED,
+                        TrackingState.Tracking,
+                        PersistenceState.NotPersisted,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 
@@ -1112,8 +1109,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                         NATIVE_POINTER,
                         null,
                         new Pose(),
-                        TrackingState.TRACKING,
-                        PersistenceState.NOT_PERSISTED,
+                        TrackingState.Tracking,
+                        PersistenceState.NotPersisted,
                         null);
         androidx.xr.arcore.Anchor perceptionAnchor = new androidx.xr.arcore.Anchor(fakeAnchor);
 

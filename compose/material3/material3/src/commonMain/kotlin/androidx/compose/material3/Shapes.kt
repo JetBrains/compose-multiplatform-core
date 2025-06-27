@@ -91,6 +91,8 @@ constructor(
     extraLargeIncreased: CornerBasedShape = ShapeDefaults.ExtraLargeIncreased,
     extraExtraLarge: CornerBasedShape = ShapeDefaults.ExtraExtraLarge,
 ) {
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /**
      * A shape style with 4 same-sized corners whose size are bigger than [Shapes.medium] and
@@ -98,6 +100,8 @@ constructor(
      */
     val largeIncreased = largeIncreased
 
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /**
      * A shape style with 4 same-sized corners whose size are bigger than [Shapes.large] and smaller
@@ -105,6 +109,8 @@ constructor(
      */
     val extraLargeIncreased = extraLargeIncreased
 
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /**
      * A shape style with 4 same-sized corners whose size are bigger than [Shapes.extraLarge] and
@@ -276,6 +282,8 @@ object ShapeDefaults {
     /** Large sized corner shape */
     val Large: CornerBasedShape = ShapeTokens.CornerLarge
 
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Large sized corner shape, slightly larger than [Large] */
     val LargeIncreased: CornerBasedShape = ShapeTokens.CornerLargeIncreased
@@ -283,10 +291,14 @@ object ShapeDefaults {
     /** Extra large sized corner shape */
     val ExtraLarge: CornerBasedShape = ShapeTokens.CornerExtraLarge
 
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** Extra large sized corner shape, slightly larger than [ExtraLarge] */
     val ExtraLargeIncreased: CornerBasedShape = ShapeTokens.CornerExtraLargeIncreased
 
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @get:ExperimentalMaterial3ExpressiveApi
     @ExperimentalMaterial3ExpressiveApi
     /** An extra extra large (XXL) sized corner shape */
     val ExtraExtraLarge: CornerBasedShape = ShapeTokens.CornerExtraExtraLarge

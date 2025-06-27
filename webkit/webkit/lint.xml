@@ -12,7 +12,7 @@
     </issue>
 
     <!-- Ignore all warnings for webview-support-interfaces, since it's external chromium code. -->
-    <issue id="all">
+    <issue id="all" severity="ignore">
         <ignore path="**/org/chromium/support_lib_boundary/**" />
     </issue>
 </lint>

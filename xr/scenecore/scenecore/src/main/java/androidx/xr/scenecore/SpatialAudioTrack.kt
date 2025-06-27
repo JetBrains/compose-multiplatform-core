@@ -73,7 +73,7 @@ public class SpatialAudioTrack {
         @JvmStatic
         public fun getSoundFieldAttributes(
             session: Session,
-            track: AudioTrack,
+            track: AudioTrack
         ): SoundFieldAttributes? {
             val rtAttributes =
                 session.platformAdapter.audioTrackExtensionsWrapper.getSoundFieldAttributes(track)
@@ -90,7 +90,7 @@ public class SpatialAudioTrack {
          *
          * @param session The current SceneCore [Session] instance.
          * @param track The [AudioTrack] on which to set the [PointSourceParams].
-         * @param params The [PointSourceParams] to be set.
+         * @param pointSourceParams The [PointSourceParams] to be set.
          * @throws IllegalStateException if the [SpatializerConstants.SourceType] of the
          *   [AudioTrack] is [SpatializerConstants.SOUND_FIELD].
          * @throws IllegalArgumentException if the [PointSourceParams] is not able to be set.

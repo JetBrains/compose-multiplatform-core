@@ -37,12 +37,12 @@ import kotlinx.coroutines.sync.withLock
  * without the client's involvement.
  */
 @ExperimentalFeatures.DelegatingAdapterApi
-public class DelegatingSandboxedUiAdapter(private var delegate: Bundle) : SandboxedUiAdapter {
+class DelegatingSandboxedUiAdapter(private var delegate: Bundle) : SandboxedUiAdapter {
 
     /** Listener that consumes events to process the delegate change for a client */
-    public interface DelegateChangeListener {
+    interface DelegateChangeListener {
         /** When invoked triggers processing of the delegate change for a client */
-        public suspend fun onDelegateChanged(delegate: Bundle) {}
+        suspend fun onDelegateChanged(delegate: Bundle) {}
     }
 
     /**
@@ -58,7 +58,7 @@ public class DelegatingSandboxedUiAdapter(private var delegate: Bundle) : Sandbo
      * process refresh we throw [IllegalStateException]. Cancellation of this API does not propagate
      * to the client side.
      */
-    public suspend fun updateDelegate(delegate: Bundle) {
+    suspend fun updateDelegate(delegate: Bundle) {
         // TODO(b/374955412): Support cancellation across process
         mutex.withLock {
             this.delegate = delegate
@@ -80,20 +80,20 @@ public class DelegatingSandboxedUiAdapter(private var delegate: Bundle) : Sandbo
 
     @SuppressLint("ExecutorRegistration")
     // Used by [updateDelegate] and therefore runs on updateDelegate's calling context
-    public fun addDelegateChangeListener(listener: DelegateChangeListener) {
+    fun addDelegateChangeListener(listener: DelegateChangeListener) {
         delegateChangeListeners.add(listener)
     }
 
     // TODO(b/350656753): Add tests to check functionality of DelegatingAdapters
     @SuppressLint("ExecutorRegistration")
     // Used by [updateDelegate] and therefore runs on updateDelegate's calling context
-    public fun removeDelegateChangeListener(listener: DelegateChangeListener) {
+    fun removeDelegateChangeListener(listener: DelegateChangeListener) {
         delegateChangeListeners.remove(listener)
     }
 
     /** Fetches the current delegate which is a [SandboxedUiAdapter] Bundle. */
     // TODO(b/375388971): Check coreLibInfo is present
-    public fun getDelegate(): Bundle {
+    fun getDelegate(): Bundle {
         return delegate
     }
 }

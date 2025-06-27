@@ -79,7 +79,7 @@ fun encodeWithExplicitSerializerAndConfig() {
         encodeToSavedState(
             serializer = PolymorphicSerializer(Any::class),
             value = value,
-            configuration = config,
+            configuration = config
         )
 }
 
@@ -125,13 +125,13 @@ fun decodeWithExplicitSerializerAndConfig() {
         encodeToSavedState(
             serializer = PolymorphicSerializer(Any::class),
             value = value,
-            configuration = config,
+            configuration = config
         )
     val decoded =
         decodeFromSavedState(
             deserializer = PolymorphicSerializer(Any::class),
             savedState = encoded,
-            configuration = config,
+            configuration = config
         )
 }
 
@@ -168,15 +168,13 @@ fun serializableSerializer() {
     )
 }
 
-// The class is only used to demonstrate that Parcelables can be used with SavedState Serialization.
-@Suppress("BanParcelableUsage", "ParcelCreator")
 private class MyParcelable : Parcelable {
     override fun describeContents(): Int {
-        error("Should not be called")
+        TODO("Not yet implemented")
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
-        error("Should not be called")
+        TODO("Not yet implemented")
     }
 }
 
@@ -211,12 +209,12 @@ fun config() {
         encodeToSavedState(
             serializer = PolymorphicSerializer(Any::class),
             value = value,
-            configuration = config,
+            configuration = config
         )
     val decoded =
         decodeFromSavedState(
             deserializer = PolymorphicSerializer(Any::class),
             savedState = encoded,
-            configuration = config,
+            configuration = config
         )
 }

@@ -34,7 +34,7 @@ internal expect class RoomConnectionManager
  * connections, including performing migrations if necessary and validating schema.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class BaseRoomConnectionManager {
+abstract class BaseRoomConnectionManager {
 
     protected abstract val configuration: DatabaseConfiguration
     protected abstract val openDelegate: RoomOpenDelegate
@@ -46,16 +46,13 @@ public abstract class BaseRoomConnectionManager {
     // Flag set during initialization to prevent recursive initialization.
     private var isInitializing = false
 
-    public abstract suspend fun <R> useConnection(
-        isReadOnly: Boolean,
-        block: suspend (Transactor) -> R,
-    ): R
+    abstract suspend fun <R> useConnection(isReadOnly: Boolean, block: suspend (Transactor) -> R): R
 
     // Lets impl class resolve driver file name if necessary.
     internal open fun resolveFileName(fileName: String): String = fileName
 
     /* A driver wrapper that configures opened connections per the manager. */
-    protected inner class DriverWrapper(private val actual: SQLiteDriver) : SQLiteDriver by actual {
+    protected inner class DriverWrapper(private val actual: SQLiteDriver) : SQLiteDriver {
         override fun open(fileName: String): SQLiteConnection {
             return openLocked(resolveFileName(fileName))
         }
@@ -63,7 +60,7 @@ public abstract class BaseRoomConnectionManager {
         private fun openLocked(filename: String) =
             ExclusiveLock(
                     filename = filename,
-                    useFileLock = !isConfigured && !isInitializing && filename != ":memory:",
+                    useFileLock = !isConfigured && !isInitializing && filename != ":memory:"
                 )
                 .withLock(
                     onLocked = {
@@ -91,9 +88,9 @@ public abstract class BaseRoomConnectionManager {
                         throw IllegalStateException(
                             "Unable to open database '$filename'. Was a proper path / " +
                                 "name used in Room's database builder?",
-                            error,
+                            error
                         )
-                    },
+                    }
                 )
     }
 
@@ -326,7 +323,7 @@ public abstract class BaseRoomConnectionManager {
             .use { it.step() && it.getLong(0) != 0L }
 
     @Suppress("REDUNDANT_ELSE_IN_WHEN") // Redundant in common but not in Android
-    protected fun RoomDatabase.JournalMode.getMaxNumberOfReaders(): Int =
+    protected fun RoomDatabase.JournalMode.getMaxNumberOfReaders() =
         when (this) {
             TRUNCATE -> 1
             WRITE_AHEAD_LOGGING -> 4
@@ -334,7 +331,7 @@ public abstract class BaseRoomConnectionManager {
         }
 
     @Suppress("REDUNDANT_ELSE_IN_WHEN") // Redundant in common but not in Android
-    protected fun RoomDatabase.JournalMode.getMaxNumberOfWriters(): Int =
+    protected fun RoomDatabase.JournalMode.getMaxNumberOfWriters() =
         when (this) {
             TRUNCATE -> 1
             WRITE_AHEAD_LOGGING -> 1
@@ -353,12 +350,12 @@ public abstract class BaseRoomConnectionManager {
         callbacks.forEach { it.onOpen(connection) }
     }
 
-    public companion object {
+    companion object {
         /*
          * Busy timeout amount. This wait time is relevant to same-process connections, if a
          * database is used across multiple processes, it is recommended that the developer sets a
          * higher timeout.
          */
-        public const val BUSY_TIMEOUT_MS: Int = 3000
+        const val BUSY_TIMEOUT_MS = 3000
     }
 }

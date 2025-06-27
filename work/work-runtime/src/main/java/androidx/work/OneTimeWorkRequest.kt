@@ -25,14 +25,14 @@ import kotlin.reflect.KClass
  * OneTimeWorkRequests can be put in simple or complex graphs of work by using methods like
  * [WorkManager.enqueue] or [WorkManager.beginWith].
  */
-public class OneTimeWorkRequest internal constructor(builder: Builder) :
+class OneTimeWorkRequest internal constructor(builder: Builder) :
     WorkRequest(builder.id, builder.workSpec, builder.tags) {
     /**
      * Builder for [OneTimeWorkRequest]s.
      *
      * @param workerClass The [ListenableWorker] class to run for this work
      */
-    public class Builder(workerClass: Class<out ListenableWorker>) :
+    class Builder(workerClass: Class<out ListenableWorker>) :
         WorkRequest.Builder<Builder, OneTimeWorkRequest>(workerClass) {
 
         /**
@@ -40,7 +40,7 @@ public class OneTimeWorkRequest internal constructor(builder: Builder) :
          *
          * @param workerClass The [ListenableWorker] class to run for this work
          */
-        public constructor(workerClass: KClass<out ListenableWorker>) : this(workerClass.java)
+        constructor(workerClass: KClass<out ListenableWorker>) : this(workerClass.java)
 
         /**
          * Specifies the [InputMerger] class name for this [OneTimeWorkRequest].
@@ -54,7 +54,7 @@ public class OneTimeWorkRequest internal constructor(builder: Builder) :
          * @param inputMerger The class name of the [InputMerger] for this [OneTimeWorkRequest]
          * @return The current [Builder]
          */
-        public fun setInputMerger(inputMerger: Class<out InputMerger>): Builder {
+        fun setInputMerger(inputMerger: Class<out InputMerger>): Builder {
             workSpec.inputMergerClassName = inputMerger.name
             return this
         }
@@ -74,7 +74,7 @@ public class OneTimeWorkRequest internal constructor(builder: Builder) :
             get() = this
     }
 
-    public companion object {
+    companion object {
         /**
          * Creates a [OneTimeWorkRequest] with defaults from a [ListenableWorker] class name.
          *
@@ -82,7 +82,7 @@ public class OneTimeWorkRequest internal constructor(builder: Builder) :
          * @return A [OneTimeWorkRequest] constructed by using defaults in the [Builder]
          */
         @JvmStatic
-        public fun from(workerClass: Class<out ListenableWorker>): OneTimeWorkRequest {
+        fun from(workerClass: Class<out ListenableWorker>): OneTimeWorkRequest {
             return Builder(workerClass).build()
         }
 
@@ -94,9 +94,7 @@ public class OneTimeWorkRequest internal constructor(builder: Builder) :
          * @return A list of [OneTimeWorkRequest] constructed by using defaults in the [ ]
          */
         @JvmStatic
-        public fun from(
-            workerClasses: List<Class<out ListenableWorker>>
-        ): List<OneTimeWorkRequest> {
+        fun from(workerClasses: List<Class<out ListenableWorker>>): List<OneTimeWorkRequest> {
             return workerClasses.map { Builder(it).build() }
         }
     }

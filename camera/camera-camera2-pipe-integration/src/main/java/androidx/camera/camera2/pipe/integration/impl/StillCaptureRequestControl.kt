@@ -42,8 +42,10 @@ import kotlinx.coroutines.sync.withLock
 @CameraScope
 public class StillCaptureRequestControl
 @Inject
-constructor(private val flashControl: FlashControl, private val threads: UseCaseThreads) :
-    UseCaseCameraControl {
+constructor(
+    private val flashControl: FlashControl,
+    private val threads: UseCaseThreads,
+) : UseCaseCameraControl {
     private val mutex = Mutex()
 
     private var _requestControl: UseCaseCameraRequestControl? = null
@@ -79,7 +81,7 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
                             ImageCaptureException(
                                 ImageCapture.ERROR_CAMERA_CLOSED,
                                 "Capture request is cancelled due to a reset",
-                                null,
+                                null
                             )
                         )
                 }
@@ -124,7 +126,7 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
                                 submitRequest(request, requestControl)
                                     .propagateResultOrEnqueueRequest(
                                         submittedRequest = request,
-                                        currentRequestControl = requestControl,
+                                        currentRequestControl = requestControl
                                     )
                             }
                         }
@@ -136,7 +138,7 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
 
     private suspend fun submitRequest(
         request: CaptureRequest,
-        requestControl: UseCaseCameraRequestControl,
+        requestControl: UseCaseCameraRequestControl
     ): Deferred<List<Void?>> {
         debug { "StillCaptureRequestControl: submitting $request at $requestControl" }
         // Prior to submitStillCaptures, wait until the pending flash mode session change is
@@ -164,7 +166,7 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
 
     private fun Deferred<List<Void?>>.propagateResultOrEnqueueRequest(
         submittedRequest: CaptureRequest,
-        currentRequestControl: UseCaseCameraRequestControl,
+        currentRequestControl: UseCaseCameraRequestControl
     ) {
         invokeOnCompletion { cause: Throwable? ->
             if (
@@ -180,7 +182,7 @@ constructor(private val flashControl: FlashControl, private val threads: UseCase
                             submitRequest(submittedRequest, latestRequestControl)
                                 .propagateResultOrEnqueueRequest(
                                     submittedRequest = submittedRequest,
-                                    currentRequestControl = latestRequestControl,
+                                    currentRequestControl = latestRequestControl
                                 )
                             isPending = false
                         }

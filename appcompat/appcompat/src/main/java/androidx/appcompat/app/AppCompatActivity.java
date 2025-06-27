@@ -30,6 +30,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
+import androidx.activity.ViewTreeOnBackPressedDispatcherOwner;
 import androidx.activity.contextaware.OnContextAvailableListener;
 import androidx.annotation.CallSuper;
 import androidx.annotation.ContentView;
@@ -45,7 +46,10 @@ import androidx.core.app.NavUtils;
 import androidx.core.app.TaskStackBuilder;
 import androidx.core.os.LocaleListCompat;
 import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.ViewTreeLifecycleOwner;
+import androidx.lifecycle.ViewTreeViewModelStoreOwner;
 import androidx.savedstate.SavedStateRegistry;
+import androidx.savedstate.ViewTreeSavedStateRegistryOwner;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -187,26 +191,35 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
 
     @Override
     public void setContentView(@LayoutRes int layoutResID) {
-        initializeViewTreeOwners();
+        initViewTreeOwners();
         getDelegate().setContentView(layoutResID);
     }
 
     @Override
     public void setContentView(View view) {
-        initializeViewTreeOwners();
+        initViewTreeOwners();
         getDelegate().setContentView(view);
     }
 
     @Override
     public void setContentView(View view, ViewGroup.LayoutParams params) {
-        initializeViewTreeOwners();
+        initViewTreeOwners();
         getDelegate().setContentView(view, params);
     }
 
     @Override
     public void addContentView(View view, ViewGroup.LayoutParams params) {
-        initializeViewTreeOwners();
+        initViewTreeOwners();
         getDelegate().addContentView(view, params);
+    }
+
+    private void initViewTreeOwners() {
+        // Set the view tree owners before setting the content view so that the inflation process
+        // and attach listeners will see them already present
+        ViewTreeLifecycleOwner.set(getWindow().getDecorView(), this);
+        ViewTreeViewModelStoreOwner.set(getWindow().getDecorView(), this);
+        ViewTreeSavedStateRegistryOwner.set(getWindow().getDecorView(), this);
+        ViewTreeOnBackPressedDispatcherOwner.set(getWindow().getDecorView(), this);
     }
 
     @Override

@@ -33,10 +33,7 @@ import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.C
 import androidx.privacysandbox.ui.integration.testapp.R
 
 @SuppressLint("NullAnnotationGroup")
-@OptIn(
-    ExperimentalFeatures.SharedUiPresentationApi::class,
-    ExperimentalFeatures.ChangingContentUiZOrderApi::class,
-)
+@OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
 class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(context, attrs) {
     private val nativeAdLoader = NativeAdLoader(context)
     private val bannerAdView: SandboxedSdkView = SandboxedSdkView(context)
@@ -50,7 +47,7 @@ class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(cont
                 AdFormat.NATIVE_AD ->
                     listOf(
                         nativeAdView.findViewById(R.id.native_ad_remote_overlay_icon),
-                        nativeAdView.findViewById(R.id.native_ad_media_view_1),
+                        nativeAdView.findViewById(R.id.native_ad_media_view_1)
                     )
                 else -> listOf()
             }
@@ -79,7 +76,7 @@ class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(cont
         ViewGroup.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
     var adViewBackgroundColor: Int = Color.WHITE
 
-    fun populateAd(sdkBundle: Bundle, @AdFormat adFormat: Int, zOrderOnTop: Boolean) {
+    fun populateAd(sdkBundle: Bundle, @AdFormat adFormat: Int) {
         currentAdFormat = adFormat
         removeAllViews()
         when (adFormat) {
@@ -88,7 +85,6 @@ class AdHolder(context: Context, attrs: AttributeSet? = null) : FrameLayout(cont
         }
         currentAdView.layoutParams = adViewLayoutParams
         currentAdView.setBackgroundColor(adViewBackgroundColor)
-        sandboxedSdkViews.forEach { it.orderProviderUiAboveClientUi(zOrderOnTop) }
         addView(currentAdView)
     }
 

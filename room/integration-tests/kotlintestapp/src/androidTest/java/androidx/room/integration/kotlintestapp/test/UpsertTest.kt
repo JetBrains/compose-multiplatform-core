@@ -59,7 +59,7 @@ class UpsertTest : TestDatabaseTest() {
 
         booksDao.upsertBookPublisher(
             TestUtil.PUBLISHER.copy(name = "changed name"),
-            TestUtil.BOOK_1.copy(title = "changed title"),
+            TestUtil.BOOK_1.copy(title = "changed title")
         )
         assertThat(booksDao.getPublisher(TestUtil.PUBLISHER.publisherId).name)
             .isEqualTo("changed name")
@@ -210,14 +210,12 @@ class UpsertTest : TestDatabaseTest() {
         booksDao.getBookFlowable(TestUtil.BOOK_1.bookId).subscribeWith(subscriber)
         drain()
         testObserver.assertComplete()
-        subscriber.awaitCount(1)
         assertThat(subscriber.values().size).isEqualTo(1)
         assertThat(subscriber.values()[0]).isEqualTo(TestUtil.BOOK_1)
         booksDao
             .upsertBookSingle(TestUtil.BOOK_1.copy(title = "changed title"))
             .subscribeWith(testObserver2)
         drain()
-        subscriber.awaitCount(2)
         assertThat(subscriber.values().size).isEqualTo(2)
         assertThat(subscriber.values()[1].title).isEqualTo("changed title")
     }
@@ -253,7 +251,6 @@ class UpsertTest : TestDatabaseTest() {
         drain()
         testObserver.await()
         testObserver.assertComplete()
-        subscriber.awaitCount(1)
         assertThat(subscriber.values().size).isEqualTo(1)
         assertThat(subscriber.values()[0]).isEqualTo(TestUtil.BOOK_1)
         booksDao
@@ -262,7 +259,6 @@ class UpsertTest : TestDatabaseTest() {
         drain()
         testObserver2.await()
         testObserver2.assertComplete()
-        subscriber.awaitCount(2)
         assertThat(subscriber.values().size).isEqualTo(2)
         assertThat(subscriber.values()[1].title).isEqualTo("changed title")
     }
@@ -312,7 +308,7 @@ class UpsertTest : TestDatabaseTest() {
                 listOf(
                     TestUtil.BOOK_1.copy(title = "changed title"),
                     TestUtil.BOOK_2,
-                    TestUtil.BOOK_3,
+                    TestUtil.BOOK_3
                 )
             )
     }
@@ -342,7 +338,7 @@ class UpsertTest : TestDatabaseTest() {
                 listOf(
                     TestUtil.BOOK_1.copy(title = "changed title"),
                     TestUtil.BOOK_2,
-                    TestUtil.BOOK_3,
+                    TestUtil.BOOK_3
                 )
             )
     }
@@ -378,7 +374,7 @@ class UpsertTest : TestDatabaseTest() {
 
     private fun <T> upsertReturnTypeBasic(
         upsertMethod: (book: Book) -> T,
-        insertedAlready: Boolean = false,
+        insertedAlready: Boolean = false
     ): T {
         if (insertedAlready) {
             return upsertMethod(TestUtil.BOOK_1.copy(title = "changed title"))

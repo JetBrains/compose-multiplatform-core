@@ -76,18 +76,6 @@ static jlong JNICALL nativeOpen(
     return reinterpret_cast<jlong>(db);
 }
 
-static jboolean JNICALL nativeInTransaction(
-        JNIEnv *env,
-        jclass clazz,
-        jlong dbPointer) {
-    sqlite3 *db = reinterpret_cast<sqlite3 *>(dbPointer);
-    if (sqlite3_get_autocommit(db) == 0) {
-        return JNI_TRUE;
-    } else {
-        return JNI_FALSE;
-    }
-}
-
 static jlong JNICALL nativePrepare(
         JNIEnv *env,
         jclass clazz,
@@ -328,9 +316,8 @@ static const JNINativeMethod sDriverMethods[] = {
 };
 
 static const JNINativeMethod sConnectionMethods[] = {
-        {"nativeInTransaction", "(J)Z",                   (void *) nativeInTransaction},
-        {"nativePrepare",       "(JLjava/lang/String;)J", (void *) nativePrepare},
-        {"nativeClose",         "(J)V",                   (void *) nativeConnectionClose}
+        {"nativePrepare", "(JLjava/lang/String;)J", (void *) nativePrepare},
+        {"nativeClose",   "(J)V",                   (void *) nativeConnectionClose}
 };
 
 static const JNINativeMethod sStatementMethods[] = {

@@ -19,10 +19,14 @@ package androidx.camera.core;
 import static androidx.camera.core.CameraEffect.IMAGE_CAPTURE;
 import static androidx.camera.core.CameraEffect.PREVIEW;
 import static androidx.camera.core.CameraEffect.VIDEO_CAPTURE;
+import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
 import static androidx.camera.core.processing.TargetUtils.checkSupportedTargets;
 import static androidx.camera.core.processing.TargetUtils.getHumanReadableName;
 import static androidx.core.util.Preconditions.checkArgument;
 
+import android.util.Range;
+
+import androidx.annotation.RestrictTo;
 import androidx.lifecycle.Lifecycle;
 
 import org.jspecify.annotations.NonNull;
@@ -45,12 +49,14 @@ public final class UseCaseGroup {
     private final @Nullable ViewPort mViewPort;
     private final @NonNull List<UseCase> mUseCases;
     private final @NonNull List<CameraEffect> mEffects;
+    private final @NonNull Range<Integer> mTargetHighSpeedFrameRate;
 
     UseCaseGroup(@Nullable ViewPort viewPort, @NonNull List<UseCase> useCases,
             @NonNull List<CameraEffect> effects) {
         mViewPort = viewPort;
         mUseCases = useCases;
         mEffects = effects;
+        mTargetHighSpeedFrameRate = FRAME_RATE_RANGE_UNSPECIFIED;
     }
 
     /**
@@ -72,6 +78,14 @@ public final class UseCaseGroup {
      */
     public @NonNull List<CameraEffect> getEffects() {
         return mEffects;
+    }
+
+    /**
+     * Gets the target high speed frame rate.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public @NonNull Range<Integer> getTargetHighSpeedFrameRate() {
+        return mTargetHighSpeedFrameRate;
     }
 
     /**

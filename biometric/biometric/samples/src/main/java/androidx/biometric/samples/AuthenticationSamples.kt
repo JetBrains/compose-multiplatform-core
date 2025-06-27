@@ -23,7 +23,6 @@ import androidx.biometric.AuthenticationRequest
 import androidx.biometric.AuthenticationRequest.Biometric
 import androidx.biometric.AuthenticationRequest.Companion.biometricRequest
 import androidx.biometric.AuthenticationResult
-import androidx.biometric.AuthenticationResultCallback
 import androidx.biometric.PromptContentItemBulletedText
 import androidx.biometric.registerForAuthenticationResult
 import androidx.fragment.app.Fragment
@@ -36,78 +35,20 @@ fun activitySample() {
     class MyActivityForBiometricAuth : FragmentActivity() {
         val requestAuthentication =
             registerForAuthenticationResult(
-                object : AuthenticationResultCallback {
-                    override fun onAuthResult(result: AuthenticationResult) {
-                        when (result) {
-                            // Handle successful authentication
-                            is AuthenticationResult.Success -> {
-                                Log.i(TAG, "onAuthenticationSucceeded with type ${result.authType}")
-                            }
-                            // Handle authentication error, e.g. negative button click, user
-                            // cancellation, etc
-                            is AuthenticationResult.Error -> {
-                                Log.i(
-                                    TAG,
-                                    "onAuthenticationError " +
-                                        "with error code: ${result.errorCode} " +
-                                        "and error string: ${result.errString}",
-                                )
-                            }
-                        }
-                    }
-
-                    // Handle intermediate authentication failure, this is optional and
-                    // not needed in most cases
-                    override fun onAuthFailure() {
-                        Log.i(TAG, "onAuthenticationFailed, try again")
-                    }
-                }
-            )
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            val authRequest =
-                biometricRequest(
-                    title = "Title",
-                    authFallback = Biometric.Fallback.DeviceCredential,
-                ) {
-                    setSubtitle("Subtitle")
-                    setContent(
-                        AuthenticationRequest.BodyContent.VerticalList(
-                            "Vertical list description",
-                            listOf(
-                                PromptContentItemBulletedText("test item1"),
-                                PromptContentItemBulletedText("test item2"),
-                            ),
-                        )
-                    )
-                    setMinStrength(Biometric.Strength.Class3(/*optional: cryptoObject*/ ))
-                    setIsConfirmationRequired(true)
-                }
-
-            Button(this).setOnClickListener { requestAuthentication.launch(authRequest) }
-        }
-    }
-}
-
-@Sampled
-fun fragmentSample() {
-    class MyFragmentForCredentialOnlyAuth : Fragment() {
-        val requestAuthentication =
-            registerForAuthenticationResult { result: AuthenticationResult ->
+                // Handle intermediate authentication failure, this is optional.
+                onAuthFailedCallback = { Log.i(TAG, "onAuthenticationFailed, try again") }
+            ) { result: AuthenticationResult ->
                 when (result) {
                     // Handle successful authentication
                     is AuthenticationResult.Success -> {
-                        Log.i(TAG, "onAuthenticationSucceeded with type ${result.authType}")
+                        Log.i(TAG, "onAuthenticationSucceeded with type" + result.authType)
                     }
-                    // Handle authentication error, e.g. negative button click, user
-                    // cancellation, etc
+                    // Handle authentication error, e.g. negative button click, user cancellation,
+                    // etc
                     is AuthenticationResult.Error -> {
                         Log.i(
                             TAG,
-                            "onAuthenticationError " +
-                                "with error code: ${result.errorCode} " +
-                                "and error string: ${result.errString}",
+                            "onAuthenticationError " + result.errorCode + " " + result.errString
                         )
                     }
                 }
@@ -126,8 +67,58 @@ fun fragmentSample() {
                             "Vertical list description",
                             listOf(
                                 PromptContentItemBulletedText("test item1"),
-                                PromptContentItemBulletedText("test item2"),
-                            ),
+                                PromptContentItemBulletedText("test item2")
+                            )
+                        )
+                    )
+                    setMinStrength(Biometric.Strength.Class3(/*optional: cryptoObject*/ ))
+                    setIsConfirmationRequired(true)
+                }
+
+            Button(this).setOnClickListener { requestAuthentication.launch(authRequest) }
+        }
+    }
+}
+
+@Sampled
+fun fragmentSample() {
+    class MyFragmentForCredentialOnlyAuth : Fragment() {
+        val requestAuthentication =
+            registerForAuthenticationResult(
+                // Handle intermediate authentication failure, this is optional.
+                onAuthFailedCallback = { Log.i(TAG, "onAuthenticationFailed, try again") }
+            ) { result: AuthenticationResult ->
+                when (result) {
+                    // Handle successful authentication
+                    is AuthenticationResult.Success -> {
+                        Log.i(TAG, "onAuthenticationSucceeded with type" + result.authType)
+                    }
+                    // Handle authentication error, e.g. negative button click, user cancellation,
+                    // etc
+                    is AuthenticationResult.Error -> {
+                        Log.i(
+                            TAG,
+                            "onAuthenticationError " + result.errorCode + " " + result.errString
+                        )
+                    }
+                }
+            }
+
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+            val authRequest =
+                biometricRequest(
+                    title = "Title",
+                    authFallback = Biometric.Fallback.DeviceCredential,
+                ) {
+                    setSubtitle("Subtitle")
+                    setContent(
+                        AuthenticationRequest.BodyContent.VerticalList(
+                            "Vertical list description",
+                            listOf(
+                                PromptContentItemBulletedText("test item1"),
+                                PromptContentItemBulletedText("test item2")
+                            )
                         )
                     )
                     setMinStrength(Biometric.Strength.Class3(/*optional: cryptoObject*/ ))

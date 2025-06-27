@@ -30,7 +30,7 @@ class HandStateTest {
     @Test
     fun constructor_ActiveButNoHandJoints_throwsIllegalArgumentException() {
         assertFailsWith<IllegalArgumentException> {
-            HandState(trackingState = TrackingState.TRACKING, emptyList())
+            HandState(trackingState = TrackingState.Tracking, emptyList())
         }
     }
 }

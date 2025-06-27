@@ -37,10 +37,10 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
  * to cast the binder object from [getInterface] to the prearranged interface before initiating the
  * communication.
  */
-public class AppOwnedSdkSandboxInterfaceCompat(
+class AppOwnedSdkSandboxInterfaceCompat(
     private val name: String,
     private val version: Long,
-    private val binder: IBinder,
+    private val binder: IBinder
 ) {
 
     /**
@@ -51,7 +51,7 @@ public class AppOwnedSdkSandboxInterfaceCompat(
     @RequiresApi(34)
     @RequiresExtension(extension = AD_SERVICES, version = 8)
     @RestrictTo(LIBRARY_GROUP)
-    public constructor(
+    constructor(
         appOwnedSdkInterface: AppOwnedSdkSandboxInterface
     ) : this(
         name = appOwnedSdkInterface.getName(),
@@ -64,7 +64,7 @@ public class AppOwnedSdkSandboxInterfaceCompat(
      *
      * App can register only one interface of given name.
      */
-    public fun getName(): String = name
+    fun getName(): String = name
 
     /**
      * Returns the version used to register the [AppOwnedSdkSandboxInterfaceCompat].
@@ -72,7 +72,7 @@ public class AppOwnedSdkSandboxInterfaceCompat(
      * A version may be chosen by an app, and used to communicate any updates the app makes to this
      * implementation.
      */
-    public fun getVersion(): Long = version
+    fun getVersion(): Long = version
 
     /**
      * Returns binder object associated with [AppOwnedSdkSandboxInterfaceCompat].
@@ -83,7 +83,7 @@ public class AppOwnedSdkSandboxInterfaceCompat(
      * The SDK in the sandbox will have to cast the binder object received from this method to the
      * agreed upon interface before using it.
      */
-    public fun getInterface(): IBinder = binder
+    fun getInterface(): IBinder = binder
 
     /**
      * Create [AppOwnedSdkSandboxInterface] from compat object.
@@ -93,6 +93,5 @@ public class AppOwnedSdkSandboxInterfaceCompat(
     @RequiresApi(34)
     @RequiresExtension(extension = AD_SERVICES, version = 8)
     @RestrictTo(LIBRARY_GROUP)
-    public fun toAppOwnedSdkSandboxInterface(): AppOwnedSdkSandboxInterface =
-        AppOwnedSdkSandboxInterface(name, version, binder)
+    fun toAppOwnedSdkSandboxInterface() = AppOwnedSdkSandboxInterface(name, version, binder)
 }

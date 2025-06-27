@@ -18,11 +18,9 @@ package androidx.lifecycle.viewmodel
 
 import androidx.kruth.assertThat
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.internal.canonicalName
 import kotlin.test.Test
 import kotlin.test.fail
 
-@IgnoreWebTarget
 class ViewModelInitializerTest {
 
     @Test
@@ -59,7 +57,7 @@ class ViewModelInitializerTest {
                 .hasMessageThat()
                 .isEqualTo(
                     "A `initializer` with the same `clazz` has already been added: " +
-                        "${TestViewModel1::class.canonicalName}."
+                        "${TestViewModel1::class.qualifiedName}."
                 )
         }
     }
@@ -73,7 +71,7 @@ class ViewModelInitializerTest {
             assertThat(e)
                 .hasMessageThat()
                 .isEqualTo(
-                    "No initializer set for given class ${TestViewModel1::class.canonicalName}"
+                    "No initializer set for given class ${TestViewModel1::class.qualifiedName}"
                 )
         }
     }

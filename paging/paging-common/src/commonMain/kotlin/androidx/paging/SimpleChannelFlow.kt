@@ -51,7 +51,10 @@ internal fun <T> simpleChannelFlow(block: suspend SimpleProducerScope<T>.() -> U
                         // to finish, in case it does more launches inside.
                         coroutineScope {
                             val producerScopeImpl =
-                                SimpleProducerScopeImpl(scope = this, channel = channel)
+                                SimpleProducerScopeImpl(
+                                    scope = this,
+                                    channel = channel,
+                                )
                             producerScopeImpl.block()
                         }
                         channel.close()

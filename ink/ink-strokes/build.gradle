@@ -19,13 +19,12 @@ import androidx.build.PlatformIdentifier
 
 plugins {
   id("AndroidXPlugin")
+  id("com.android.library")
 }
 
 androidXMultiplatform {
   jvm()
-  androidLibrary {
-    namespace = "androidx.ink.strokes"
-  }
+  androidTarget()
 
   defaultPlatform(PlatformIdentifier.JVM)
 
@@ -84,6 +83,10 @@ androidXMultiplatform {
       }
     }
   }
+}
+
+android {
+  namespace = "androidx.ink.strokes"
 }
 
 androidx {

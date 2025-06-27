@@ -27,10 +27,10 @@ import kotlinx.serialization.json.encodeToStream
 /** Data class that holds the information about a database schema export. */
 @Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public actual class SchemaBundle
+actual class SchemaBundle
 actual constructor(
-    @SerialName("formatVersion") public actual val formatVersion: Int,
-    @SerialName("database") public actual val database: DatabaseBundle,
+    @SerialName("formatVersion") actual val formatVersion: Int,
+    @SerialName("database") actual val database: DatabaseBundle
 ) : SchemaEquality<SchemaBundle> {
 
     actual override fun isSchemaEqual(other: SchemaBundle): Boolean {
@@ -38,8 +38,8 @@ actual constructor(
             SchemaEqualityUtil.checkSchemaEquality(database, other.database)
     }
 
-    public companion object {
-        public fun deserialize(fis: InputStream): SchemaBundle =
+    companion object {
+        fun deserialize(fis: InputStream): SchemaBundle =
             fis.use {
                 // TODO: Try to use decodeFromStream if possible, currently blocked by
                 //       https://github.com/Kotlin/kotlinx.serialization/issues/2457
@@ -47,7 +47,7 @@ actual constructor(
             }
 
         @OptIn(ExperimentalSerializationApi::class) // For encodeToStream() with OutputStream
-        public fun serialize(bundle: SchemaBundle, outputStream: OutputStream) {
+        fun serialize(bundle: SchemaBundle, outputStream: OutputStream) {
             outputStream.use { json.encodeToStream(bundle, it) }
         }
     }

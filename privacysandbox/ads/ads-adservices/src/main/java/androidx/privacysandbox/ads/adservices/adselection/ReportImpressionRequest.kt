@@ -36,13 +36,10 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  *   by [AdSelectionManager#getAdSelectionData} then the impression reporting request should only
  *   include the ad selection id.
  */
-public class ReportImpressionRequest
-public constructor(
-    public val adSelectionId: Long,
-    public val adSelectionConfig: AdSelectionConfig,
-) {
+class ReportImpressionRequest
+public constructor(val adSelectionId: Long, val adSelectionConfig: AdSelectionConfig) {
     @ExperimentalFeatures.Ext8OptIn
-    public constructor(adSelectionId: Long) : this(adSelectionId, AdSelectionConfig.EMPTY)
+    constructor(adSelectionId: Long) : this(adSelectionId, AdSelectionConfig.EMPTY)
 
     /** Checks whether two [ReportImpressionRequest] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -88,7 +85,7 @@ public constructor(
                 else
                     android.adservices.adselection.ReportImpressionRequest(
                         request.adSelectionId,
-                        request.adSelectionConfig.convertToAdServices(),
+                        request.adSelectionConfig.convertToAdServices()
                     )
             }
         }
@@ -108,7 +105,7 @@ public constructor(
                 }
                 return android.adservices.adselection.ReportImpressionRequest(
                     request.adSelectionId,
-                    request.adSelectionConfig.convertToAdServices(),
+                    request.adSelectionConfig.convertToAdServices()
                 )
             }
         }

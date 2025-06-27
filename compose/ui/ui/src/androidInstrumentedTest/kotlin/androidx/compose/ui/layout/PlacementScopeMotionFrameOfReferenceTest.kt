@@ -64,7 +64,12 @@ class PlacementScopeMotionFrameOfReferenceTest {
         var rootCoords: LayoutCoordinates? = null
         val state = LazyListState()
         val offsets =
-            listOf(IntOffset(0, 0), IntOffset(5, 20), IntOffset(25, 0), IntOffset(100, 10))
+            listOf(
+                IntOffset(0, 0),
+                IntOffset(5, 20),
+                IntOffset(25, 0),
+                IntOffset(100, 10),
+            )
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 Box(
@@ -98,10 +103,10 @@ class PlacementScopeMotionFrameOfReferenceTest {
                             .let {
                                 rootCoords!!.localPositionOf(
                                     it,
-                                    includeMotionFrameOfReference = false,
+                                    includeMotionFrameOfReference = false
                                 )
                             }
-                            .round(),
+                            .round()
                     )
                     assertEquals(
                         offset + IntOffset(0, it * 20),
@@ -109,10 +114,10 @@ class PlacementScopeMotionFrameOfReferenceTest {
                             .let {
                                 rootCoords!!.localPositionOf(
                                     it,
-                                    includeMotionFrameOfReference = true,
+                                    includeMotionFrameOfReference = true
                                 )
                             }
-                            .round(),
+                            .round()
                     )
                 }
             }
@@ -126,7 +131,12 @@ class PlacementScopeMotionFrameOfReferenceTest {
         var rootCoords: LayoutCoordinates? = null
         val state = LazyGridState()
         val offsets =
-            listOf(IntOffset(0, 0), IntOffset(5, 20), IntOffset(25, 0), IntOffset(100, 10))
+            listOf(
+                IntOffset(0, 0),
+                IntOffset(5, 20),
+                IntOffset(25, 0),
+                IntOffset(100, 10),
+            )
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 Box(
@@ -143,7 +153,7 @@ class PlacementScopeMotionFrameOfReferenceTest {
                     LazyVerticalGrid(
                         GridCells.Fixed(2),
                         modifier = Modifier.requiredHeight(100.dp).requiredWidth(40.dp),
-                        state = state,
+                        state = state
                     ) {
                         items(60) { index ->
                             Box(Modifier.size(20.dp).onGloballyPositioned { coords[index] = it })
@@ -164,10 +174,10 @@ class PlacementScopeMotionFrameOfReferenceTest {
                             .let {
                                 rootCoords!!.localPositionOf(
                                     it,
-                                    includeMotionFrameOfReference = false,
+                                    includeMotionFrameOfReference = false
                                 )
                             }
-                            .round(),
+                            .round()
                     )
                     assertEquals(
                         offset + IntOffset(0 + it % 2 * 20, it / 2 * 20),
@@ -175,10 +185,10 @@ class PlacementScopeMotionFrameOfReferenceTest {
                             .let {
                                 rootCoords!!.localPositionOf(
                                     it,
-                                    includeMotionFrameOfReference = true,
+                                    includeMotionFrameOfReference = true
                                 )
                             }
-                            .round(),
+                            .round()
                     )
                 }
             }
@@ -192,7 +202,12 @@ class PlacementScopeMotionFrameOfReferenceTest {
         var rootCoords: LayoutCoordinates? = null
         val state = LazyStaggeredGridState()
         val offsets =
-            listOf(IntOffset(0, 0), IntOffset(5, 20), IntOffset(25, 0), IntOffset(100, 10))
+            listOf(
+                IntOffset(0, 0),
+                IntOffset(5, 20),
+                IntOffset(25, 0),
+                IntOffset(100, 10),
+            )
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 Box(
@@ -209,7 +224,7 @@ class PlacementScopeMotionFrameOfReferenceTest {
                     LazyVerticalStaggeredGrid(
                         state = state,
                         columns = StaggeredGridCells.Fixed(2),
-                        modifier = Modifier.requiredHeight(100.dp).requiredWidth(40.dp),
+                        modifier = Modifier.requiredHeight(100.dp).requiredWidth(40.dp)
                     ) {
                         items(60) { index ->
                             Box(
@@ -233,10 +248,10 @@ class PlacementScopeMotionFrameOfReferenceTest {
                             .let {
                                 rootCoords!!.localPositionOf(
                                     it,
-                                    includeMotionFrameOfReference = false,
+                                    includeMotionFrameOfReference = false
                                 )
                             }
-                            .round(),
+                            .round()
                     )
                 }
             }
@@ -250,7 +265,12 @@ class PlacementScopeMotionFrameOfReferenceTest {
         var rootCoords: LayoutCoordinates? = null
         val state = PagerState { 30 }
         val offsets =
-            listOf(IntOffset(0, 0), IntOffset(5, 20), IntOffset(25, 0), IntOffset(100, 10))
+            listOf(
+                IntOffset(0, 0),
+                IntOffset(5, 20),
+                IntOffset(25, 0),
+                IntOffset(100, 10),
+            )
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 Box(
@@ -267,7 +287,7 @@ class PlacementScopeMotionFrameOfReferenceTest {
                     HorizontalPager(
                         state,
                         pageSize = PageSize.Fixed(20.dp),
-                        modifier = Modifier.requiredHeight(20.dp).requiredWidth(100.dp),
+                        modifier = Modifier.requiredHeight(20.dp).requiredWidth(100.dp)
                     ) { index ->
                         Box(Modifier.size(20.dp, 20.dp).onGloballyPositioned { coords[index] = it })
                     }
@@ -286,7 +306,7 @@ class PlacementScopeMotionFrameOfReferenceTest {
                             .let {
                                 rootCoords!!.localPositionOf(
                                     it,
-                                    includeMotionFrameOfReference = false,
+                                    includeMotionFrameOfReference = false
                                 )
                             }
                             .round(),

@@ -23,6 +23,7 @@ import android.view.View
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageCapture
@@ -58,7 +59,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class CameraControllerDeviceTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig,
+    private val cameraConfig: CameraXConfig
 ) {
 
     companion object {
@@ -69,13 +70,15 @@ class CameraControllerDeviceTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
             )
     }
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
     val useCamera =
@@ -86,18 +89,15 @@ class CameraControllerDeviceTest(
     private var activityScenario: ActivityScenario<FakeActivity>? = null
     private lateinit var context: Context
     private var cameraProvider: ProcessCameraProvider? = null
-    private lateinit var defaultCameraSelector: CameraSelector
 
     @Before
     fun setUp() {
-        context = ApplicationProvider.getApplicationContext()
+        context = ApplicationProvider.getApplicationContext<Context>()
         CoreAppTestUtil.prepareDeviceUI(instrumentation)
         ProcessCameraProvider.configureInstance(cameraConfig)
-        defaultCameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         cameraProvider = ProcessCameraProvider.getInstance(context).get()
         activityScenario = ActivityScenario.launch(FakeActivity::class.java)
         controller = LifecycleCameraController(context)
-        instrumentation.runOnMainSync { controller!!.cameraSelector = defaultCameraSelector }
         controller!!.initializationFuture.get()
     }
 
@@ -118,7 +118,7 @@ class CameraControllerDeviceTest(
             // Arrange.
             previewView = PreviewView(context)
             it.setContentView(previewView)
-            previewView.controller = controller
+            previewView!!.controller = controller
             controller!!.bindToLifecycle(FakeLifecycleOwner())
             controller!!.initializationFuture.get()
         }
@@ -142,7 +142,7 @@ class CameraControllerDeviceTest(
             // Arrange.
             previewView = PreviewView(context)
             it.setContentView(previewView)
-            previewView.controller = controller
+            previewView!!.controller = controller
             controller!!.bindToLifecycle(FakeLifecycleOwner())
             controller!!.initializationFuture.get()
         }
@@ -165,20 +165,15 @@ class CameraControllerDeviceTest(
 
     @Test
     fun setSelectorAfterBound_selectorSet() {
-        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
-        assumeTrue("No enough cameras to test.", cameraSelectors.size >= 2)
-        val cameraSelector0 = cameraSelectors[0]
-        val cameraSelector1 = cameraSelectors[1]
-
         // Act
         instrumentation.runOnMainSync {
-            controller!!.cameraSelector = cameraSelector0
-
-            assertThat(controller!!.cameraSelector.lensFacing).isEqualTo(cameraSelector0.lensFacing)
-            controller!!.cameraSelector = cameraSelector1
+            assertThat(controller!!.cameraSelector.lensFacing)
+                .isEqualTo(CameraSelector.LENS_FACING_BACK)
+            controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             // Assert.
-            assertThat(controller!!.cameraSelector.lensFacing).isEqualTo(cameraSelector1.lensFacing)
+            assertThat(controller!!.cameraSelector.lensFacing)
+                .isEqualTo(CameraSelector.LENS_FACING_FRONT)
         }
     }
 
@@ -189,8 +184,6 @@ class CameraControllerDeviceTest(
 
     @Test
     fun frontCameraFlipNotSet_imageIsMirrored() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
-
         // Arrange.
         instrumentation.runOnMainSync {
             controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -206,8 +199,6 @@ class CameraControllerDeviceTest(
 
     @Test
     fun frontCameraFlipSetToFalse_imageIsNotMirrored() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
-
         // Arrange.
         instrumentation.runOnMainSync {
             controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -225,8 +216,6 @@ class CameraControllerDeviceTest(
 
     @Test
     fun frontCameraFlipSetToTrue_imageIsMirrored() {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
-
         // Arrange.
         instrumentation.runOnMainSync {
             controller!!.cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
@@ -246,7 +235,7 @@ class CameraControllerDeviceTest(
         return ImageCapture.OutputFileOptions.Builder(
             instrumentation.context.contentResolver,
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            ContentValues(),
+            ContentValues()
         )
     }
 
@@ -273,16 +262,17 @@ class CameraControllerDeviceTest(
     @Test
     fun clearPreviewSurface_wontUnbindOthersUseCases() {
         // Arrange.
-        val cameraProvider =
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_BACK))
+        var cameraProvider =
             ProcessCameraProvider.getInstance(ApplicationProvider.getApplicationContext())[
                     10000, TimeUnit.MILLISECONDS]
 
-        val imageCapture = ImageCapture.Builder().build()
+        var imageCapture = ImageCapture.Builder().build()
         instrumentation.runOnMainSync {
             cameraProvider.bindToLifecycle(
                 FakeLifecycleOwner(),
-                defaultCameraSelector,
-                imageCapture,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                imageCapture
             )
         }
 
@@ -299,32 +289,36 @@ class CameraControllerDeviceTest(
 
     @Test
     fun setCameraSelector_wontUnbindOthersUseCases() {
-        val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
-        if (cameraSelectors.isNotEmpty()) {
-            val cameraSelector0 = cameraSelectors[0]
-            testCameraSelectorWontUnbindUseCases(cameraSelector0, cameraSelector0)
-        }
-        if (cameraSelectors.size > 1) {
-            val cameraSelector0 = cameraSelectors[0]
-            val cameraSelector1 = cameraSelectors[1]
-            testCameraSelectorWontUnbindUseCases(cameraSelector1, cameraSelector1)
-            testCameraSelectorWontUnbindUseCases(cameraSelector0, cameraSelector1)
-            testCameraSelectorWontUnbindUseCases(cameraSelector1, cameraSelector0)
-        }
+        testCameraSelectorWontUnbindUseCases(
+            CameraSelector.DEFAULT_BACK_CAMERA,
+            CameraSelector.DEFAULT_BACK_CAMERA
+        )
+        testCameraSelectorWontUnbindUseCases(
+            CameraSelector.DEFAULT_FRONT_CAMERA,
+            CameraSelector.DEFAULT_FRONT_CAMERA
+        )
+        testCameraSelectorWontUnbindUseCases(
+            CameraSelector.DEFAULT_BACK_CAMERA,
+            CameraSelector.DEFAULT_FRONT_CAMERA
+        )
+        testCameraSelectorWontUnbindUseCases(
+            CameraSelector.DEFAULT_FRONT_CAMERA,
+            CameraSelector.DEFAULT_BACK_CAMERA
+        )
     }
 
     private fun testCameraSelectorWontUnbindUseCases(
         firstCamera: CameraSelector,
-        secondCamera: CameraSelector,
+        secondCamera: CameraSelector
     ) {
         // Arrange.
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(firstCamera.lensFacing!!))
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(secondCamera.lensFacing!!))
-        val cameraProvider =
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_BACK))
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(LENS_FACING_FRONT))
+        var cameraProvider =
             ProcessCameraProvider.getInstance(ApplicationProvider.getApplicationContext())[
                     10000, TimeUnit.MILLISECONDS]
 
-        val imageCapture = ImageCapture.Builder().build()
+        var imageCapture = ImageCapture.Builder().build()
         instrumentation.runOnMainSync {
             cameraProvider.bindToLifecycle(FakeLifecycleOwner(), firstCamera, imageCapture)
         }
@@ -353,7 +347,7 @@ class CameraControllerDeviceTest(
                     oldLeft: Int,
                     oldTop: Int,
                     oldRight: Int,
-                    oldBottom: Int,
+                    oldBottom: Int
                 ) {
                     if (v.width > 0 && v.height > 0) {
                         countDownLatch.countDown()

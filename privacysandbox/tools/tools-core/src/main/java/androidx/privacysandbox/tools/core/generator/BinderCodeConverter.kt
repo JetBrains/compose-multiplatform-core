@@ -18,7 +18,6 @@ package androidx.privacysandbox.tools.core.generator
 
 import androidx.privacysandbox.tools.core.generator.SpecNames.bundleClass
 import androidx.privacysandbox.tools.core.generator.SpecNames.contextPropertyName
-import androidx.privacysandbox.tools.core.generator.SpecNames.toCoreLibInfoMethod
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.AnnotatedValue
 import androidx.privacysandbox.tools.core.model.ParsedApi
@@ -54,7 +53,7 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
             return CodeBlock.of(
                 "%L?.let { notNullValue -> %L }",
                 expression,
-                convertToModelCode(type.asNonNull(), "notNullValue"),
+                convertToModelCode(type.asNonNull(), "notNullValue")
             )
         }
         val value = api.valueMap[type]
@@ -67,7 +66,7 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
                 "%T(%L, %N)",
                 callback.clientProxyNameSpec(),
                 expression,
-                contextPropertyName,
+                contextPropertyName
             )
         }
         val sandboxInterface = api.interfaceMap[type]
@@ -81,18 +80,11 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
                 expression,
                 // Only convert the list elements if necessary.
                 if (convertToModelCodeBlock == CodeBlock.of("it")) CodeBlock.of("")
-                else CodeBlock.of(".map { %L }", convertToModelCodeBlock),
+                else CodeBlock.of(".map { %L }", convertToModelCodeBlock)
             )
         }
-
         if (type.qualifiedName == Types.sdkActivityLauncher.qualifiedName) {
             return convertToActivityLauncherModelCode(expression)
-        }
-
-        if (type.qualifiedName == Types.sandboxedUiAdapter.qualifiedName) {
-            val adapterFactoryClass: ClassName =
-                ClassName("androidx.privacysandbox.ui.client", "SandboxedUiAdapterFactory")
-            return CodeBlock.of("%T.createFromCoreLibInfo(%L)", adapterFactoryClass, expression)
         }
         if (type == Types.short) {
             return CodeBlock.of("%L.toShort()", expression)
@@ -120,7 +112,7 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
                     expression,
                     createBinderListFunction,
                     createBinderListFunction,
-                    expression,
+                    expression
                 )
             }
             // AIDL and parcelables support Bundles as is, without transformation.
@@ -130,7 +122,7 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
             return CodeBlock.of(
                 "%L?.let { notNullValue -> %L }",
                 expression,
-                convertToBinderCode(nonNullType, "notNullValue"),
+                convertToBinderCode(nonNullType, "notNullValue")
             )
         }
         val value = api.valueMap[type]
@@ -153,12 +145,8 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
                 // Only convert the list elements if necessary.
                 if (convertToBinderCodeBlock == CodeBlock.of("it")) CodeBlock.of("")
                 else CodeBlock.of(".map { %L }", convertToBinderCodeBlock),
-                toBinderList(type.typeParameters[0]),
+                toBinderList(type.typeParameters[0])
             )
-        }
-
-        if (type.qualifiedName == Types.sandboxedUiAdapter.qualifiedName) {
-            return CodeBlock.of("%L.%M(%L)", expression, toCoreLibInfoMethod, "context")
         }
         if (type.qualifiedName == Types.sdkActivityLauncher.qualifiedName) {
             return convertToActivityLauncherBinderCode(expression)
@@ -171,22 +159,22 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
 
     protected abstract fun convertToInterfaceModelCode(
         annotatedInterface: AnnotatedInterface,
-        expression: String,
+        expression: String
     ): CodeBlock
 
     protected abstract fun convertToInterfaceBinderCode(
         annotatedInterface: AnnotatedInterface,
-        expression: String,
+        expression: String
     ): CodeBlock
 
     protected abstract fun convertToValueModelCode(
         value: AnnotatedValue,
-        expression: String,
+        expression: String
     ): CodeBlock
 
     protected abstract fun convertToValueBinderCode(
         value: AnnotatedValue,
-        expression: String,
+        expression: String
     ): CodeBlock
 
     protected abstract fun convertToActivityLauncherBinderCode(expression: String): CodeBlock
@@ -241,9 +229,6 @@ abstract class BinderCodeConverter(private val api: ParsedApi) {
         val sandboxInterface = api.interfaceMap[type]
         if (sandboxInterface != null) {
             return convertToInterfaceBinderType(sandboxInterface)
-        }
-        if (type.qualifiedName == Types.sandboxedUiAdapter.qualifiedName) {
-            return ClassName("android.os", "Bundle") // The binder type is Bundle
         }
         if (type.qualifiedName == List::class.qualifiedName)
             return convertToBinderListType(type.typeParameters[0])

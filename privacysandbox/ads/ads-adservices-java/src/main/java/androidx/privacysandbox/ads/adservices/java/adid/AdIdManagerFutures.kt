@@ -35,7 +35,7 @@ import kotlinx.coroutines.async
  * provides developers with a simple, standard system to continue to monetize their apps via
  * personalized ads (formerly known as interest-based ads). This class can be used by Java clients.
  */
-public abstract class AdIdManagerFutures internal constructor() {
+abstract class AdIdManagerFutures internal constructor() {
     /**
      * Return the AdId.
      *
@@ -44,7 +44,7 @@ public abstract class AdIdManagerFutures internal constructor() {
      * @throws LimitExceededException if rate limit was reached.
      */
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_AD_ID)
-    public abstract fun getAdIdAsync(): ListenableFuture<AdId>
+    abstract fun getAdIdAsync(): ListenableFuture<AdId>
 
     private class Api33Ext4JavaImpl(private val mAdIdManager: AdIdManager) : AdIdManagerFutures() {
         @DoNotInline
@@ -56,7 +56,7 @@ public abstract class AdIdManagerFutures internal constructor() {
         }
     }
 
-    public companion object {
+    companion object {
         /**
          * Creates [AdIdManagerFutures].
          *
@@ -64,7 +64,7 @@ public abstract class AdIdManagerFutures internal constructor() {
          *   value returned is null.
          */
         @JvmStatic
-        public fun from(context: Context): AdIdManagerFutures? {
+        fun from(context: Context): AdIdManagerFutures? {
             return AdIdManager.obtain(context)?.let { Api33Ext4JavaImpl(it) }
         }
     }

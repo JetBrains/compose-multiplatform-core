@@ -28,14 +28,11 @@ import androidx.camera.camera2.pipe.integration.testing.FakeCameraInfoAdapterCre
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_CONCURRENT
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_SINGLE
 import androidx.camera.core.concurrent.CameraCoordinator.CAMERA_OPERATING_MODE_UNSPECIFIED
 import androidx.camera.core.impl.CameraInfoInternal
-import androidx.camera.core.impl.CameraRepository
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
-import androidx.camera.testing.impl.fakes.FakeCameraFactory
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -63,8 +60,8 @@ class CameraCoordinatorAdapterTest {
                     CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to
                         intArrayOf(
                             CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE
-                        )
-                ),
+                        ),
+                )
         )
     private val cameraMetadata1 =
         FakeCameraMetadata(
@@ -74,8 +71,8 @@ class CameraCoordinatorAdapterTest {
                     CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to
                         intArrayOf(
                             CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE
-                        )
-                ),
+                        ),
+                )
         )
 
     private val cameraMetadata2 = FakeCameraMetadata(cameraId = CameraId("2"))
@@ -86,13 +83,13 @@ class CameraCoordinatorAdapterTest {
             concurrentCameraBackendIds =
                 setOf(
                     setOf(CameraBackendId("0"), CameraBackendId("1")),
-                    setOf(CameraBackendId("0"), CameraBackendId("2")),
+                    setOf(CameraBackendId("0"), CameraBackendId("2"))
                 ),
             cameraMetadataMap =
                 mapOf(
                     CameraBackendId("0") to
                         listOf(cameraMetadata0, cameraMetadata1, cameraMetadata2)
-                ),
+                )
         )
 
     private val mockCameraInternalAdapter0: CameraInternalAdapter = mock()
@@ -113,7 +110,7 @@ class CameraCoordinatorAdapterTest {
                 mapOf(
                     cameraMetadata0.camera to cameraMetadata0,
                     cameraMetadata1.camera to cameraMetadata1,
-                    cameraMetadata2.camera to cameraMetadata2,
+                    cameraMetadata2.camera to cameraMetadata2
                 )
         )
     private val cameraPipe =
@@ -139,14 +136,9 @@ class CameraCoordinatorAdapterTest {
             .thenReturn(FakeCameraInfoInternal("1"))
         whenever(mockCameraInternalAdapter2.cameraInfoInternal)
             .thenReturn(FakeCameraInfoInternal("2"))
-        val fakeCameraFactory =
-            FakeCameraFactory().apply {
-                insertCamera(CameraSelector.LENS_FACING_BACK, "0", { mockCameraInternalAdapter0 })
-                insertCamera(CameraSelector.LENS_FACING_BACK, "1", { mockCameraInternalAdapter1 })
-                insertCamera(CameraSelector.LENS_FACING_BACK, "2", { mockCameraInternalAdapter2 })
-            }
-        val cameraRepository = CameraRepository().apply { init(fakeCameraFactory) }
-        cameraCoordinatorAdapter.init(cameraRepository)
+        cameraCoordinatorAdapter.registerCamera("0", mockCameraInternalAdapter0)
+        cameraCoordinatorAdapter.registerCamera("1", mockCameraInternalAdapter1)
+        cameraCoordinatorAdapter.registerCamera("2", mockCameraInternalAdapter2)
     }
 
     @Test
@@ -168,7 +160,7 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
             )
 
         assertThat(cameraCoordinatorAdapter.activeConcurrentCameraInfos.size).isEqualTo(2)
@@ -196,7 +188,7 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
             )
 
         assertThat(cameraCoordinatorAdapter.getPairedConcurrentCameraId("0")).isEqualTo("1")
@@ -216,7 +208,7 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
             )
 
         assertThat(cameraCoordinatorAdapter.getPairedConcurrentCameraId("0")).isEqualTo("1")
@@ -262,12 +254,12 @@ class CameraCoordinatorAdapterTest {
         cameraCoordinatorAdapter.activeConcurrentCameraInfos =
             mutableListOf(
                 FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("0")),
-                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1")),
+                FakeCameraInfoAdapterCreator.createCameraInfoAdapter(cameraId = CameraId("1"))
             )
 
         cameraCoordinatorAdapter.shutdown()
 
-        assertThat(cameraCoordinatorAdapter.cameraRepository).isNull()
+        assertThat(cameraCoordinatorAdapter.cameraInternalMap).isEmpty()
         assertThat(cameraCoordinatorAdapter.activeConcurrentCameraInfos).isEmpty()
         assertThat(cameraCoordinatorAdapter.concurrentCameraIdMap).isEmpty()
         assertThat(cameraCoordinatorAdapter.concurrentCameraIdsSet).isEmpty()

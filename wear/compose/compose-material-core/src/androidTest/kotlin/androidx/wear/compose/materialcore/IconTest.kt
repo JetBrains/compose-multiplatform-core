@@ -69,7 +69,10 @@ class IconTest {
         val vector = Icons.Filled.Menu
         rule
             .setContentForSizeAssertions {
-                IconWithDefaults(painter = rememberVectorPainter(vector), contentDescription = null)
+                IconWithDefaults(
+                    painter = rememberVectorPainter(vector),
+                    contentDescription = null,
+                )
             }
             .assertWidthIsEqualTo(width)
             .assertHeightIsEqualTo(height)
@@ -84,12 +87,15 @@ class IconTest {
                     defaultWidth = width,
                     defaultHeight = height,
                     viewportWidth = width.value,
-                    viewportHeight = height.value,
+                    viewportHeight = height.value
                 )
                 .build()
         rule
             .setContentForSizeAssertions {
-                IconWithDefaults(painter = rememberVectorPainter(vector), contentDescription = null)
+                IconWithDefaults(
+                    painter = rememberVectorPainter(vector),
+                    contentDescription = null,
+                )
             }
             .assertWidthIsEqualTo(width)
             .assertHeightIsEqualTo(height)
@@ -180,7 +186,7 @@ class IconTest {
                 painter = painter,
                 contentDescription = null,
                 modifier = Modifier.requiredSize(50.dp).testTag(TEST_TAG),
-                tint = Color.Unspecified,
+                tint = Color.Unspecified
             )
 
             with(LocalDensity.current) {
@@ -212,7 +218,7 @@ class IconTest {
                 painter = painter,
                 contentDescription = null,
                 modifier = Modifier.testTag(TEST_TAG),
-                tint = Color.Unspecified,
+                tint = Color.Unspecified
             )
         }
 
@@ -236,7 +242,7 @@ class IconTest {
                 painter = painter,
                 contentDescription = null,
                 modifier = Modifier.testTag(TEST_TAG),
-                tint = Color.Blue,
+                tint = Color.Blue
             )
         }
 
@@ -251,7 +257,7 @@ class IconTest {
             IconWithDefaults(
                 painter = painter,
                 contentDescription = "qwerty",
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -265,7 +271,7 @@ class IconTest {
         density: Density,
         width: Int,
         height: Int,
-        color: Color,
+        color: Color
     ): ImageBitmap {
         val size = Size(width.toFloat(), height.toFloat())
         val image = ImageBitmap(width, height)
@@ -281,12 +287,12 @@ internal fun IconWithDefaults(
     painter: Painter,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = Color.Red,
+    tint: Color = Color.Red
 ) {
     Icon(
         painter = painter,
         contentDescription = contentDescription,
         tint = tint,
-        modifier = modifier,
+        modifier = modifier
     )
 }

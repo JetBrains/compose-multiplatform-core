@@ -68,22 +68,26 @@ fun StandardCardContainer(
     subtitle: @Composable () -> Unit = {},
     description: @Composable () -> Unit = {},
     contentColor: CardContainerColors = CardContainerDefaults.contentColor(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val pressed by interactionSource.collectIsPressedAsState()
 
     Column(modifier = modifier) {
-        Box(contentAlignment = CardDefaults.ContentImageAlignment) { imageCard(interactionSource) }
+        Box(
+            contentAlignment = CardDefaults.ContentImageAlignment,
+        ) {
+            imageCard(interactionSource)
+        }
         Column(
             modifier = Modifier.align(Alignment.CenterHorizontally),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CardContainerContent(
                 title = title,
                 subtitle = subtitle,
                 description = description,
-                contentColor = contentColor.color(focused = focused, pressed = pressed),
+                contentColor = contentColor.color(focused = focused, pressed = pressed)
             )
         }
     }
@@ -124,7 +128,7 @@ fun WideCardContainer(
     subtitle: @Composable () -> Unit = {},
     description: @Composable () -> Unit = {},
     contentColor: CardContainerColors = CardContainerDefaults.contentColor(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
     val focused by interactionSource.collectIsFocusedAsState()
     val pressed by interactionSource.collectIsPressedAsState()
@@ -136,7 +140,7 @@ fun WideCardContainer(
                 title = title,
                 subtitle = subtitle,
                 description = description,
-                contentColor = contentColor.color(focused = focused, pressed = pressed),
+                contentColor = contentColor.color(focused = focused, pressed = pressed)
             )
         }
     }
@@ -147,7 +151,7 @@ internal fun CardContainerContent(
     title: @Composable () -> Unit,
     subtitle: @Composable () -> Unit = {},
     description: @Composable () -> Unit = {},
-    contentColor: Color,
+    contentColor: Color
 ) {
     CompositionLocalProvider(LocalContentColor provides contentColor) {
         CardContent(title, subtitle, description)
@@ -168,12 +172,12 @@ object CardContainerDefaults {
     fun contentColor(
         contentColor: Color = MaterialTheme.colorScheme.onSurface,
         focusedContentColor: Color = contentColor,
-        pressedContentColor: Color = focusedContentColor,
+        pressedContentColor: Color = focusedContentColor
     ) =
         CardContainerColors(
             contentColor = contentColor,
             focusedContentColor = focusedContentColor,
-            pressedContentColor = pressedContentColor,
+            pressedContentColor = pressedContentColor
         )
 }
 

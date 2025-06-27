@@ -90,7 +90,7 @@ fun Scaffold(
     containerColor: Color = MaterialTheme.colorScheme.background,
     contentColor: Color = contentColorFor(containerColor),
     contentWindowInsets: WindowInsets = ScaffoldDefaults.contentWindowInsets,
-    content: @Composable (PaddingValues) -> Unit,
+    content: @Composable (PaddingValues) -> Unit
 ) {
     val safeInsets = remember(contentWindowInsets) { MutableWindowInsets(contentWindowInsets) }
     Surface(
@@ -100,7 +100,7 @@ fun Scaffold(
                 safeInsets.insets = contentWindowInsets.exclude(consumedWindowInsets)
             },
         color = containerColor,
-        contentColor = contentColor,
+        contentColor = contentColor
     ) {
         ScaffoldLayout(
             fabPosition = floatingActionButtonPosition,
@@ -109,7 +109,7 @@ fun Scaffold(
             content = content,
             snackbar = snackbarHost,
             contentWindowInsets = safeInsets,
-            fab = floatingActionButton,
+            fab = floatingActionButton
         )
     }
 }
@@ -134,7 +134,7 @@ private fun ScaffoldLayout(
     snackbar: @Composable () -> Unit,
     fab: @Composable () -> Unit,
     contentWindowInsets: WindowInsets,
-    bottomBar: @Composable () -> Unit,
+    bottomBar: @Composable () -> Unit
 ) {
     // Create the backing value for the content padding
     // These values will be updated during measurement, but before subcomposing the body content
@@ -198,20 +198,20 @@ private fun ScaffoldLayout(
                     when (fabPosition) {
                         FabPosition.Start -> {
                             if (layoutDirection == LayoutDirection.Ltr) {
-                                FabSpacing.roundToPx() + leftInset
+                                FabSpacing.roundToPx()
                             } else {
-                                layoutWidth - FabSpacing.roundToPx() - fabWidth - rightInset
+                                layoutWidth - FabSpacing.roundToPx() - fabWidth
                             }
                         }
                         FabPosition.End,
                         FabPosition.EndOverlay -> {
                             if (layoutDirection == LayoutDirection.Ltr) {
-                                layoutWidth - FabSpacing.roundToPx() - fabWidth - rightInset
+                                layoutWidth - FabSpacing.roundToPx() - fabWidth
                             } else {
-                                FabSpacing.roundToPx() + leftInset
+                                FabSpacing.roundToPx()
                             }
                         }
-                        else -> (layoutWidth - fabWidth + leftInset - rightInset) / 2
+                        else -> (layoutWidth - fabWidth) / 2
                     }
 
                 FabPlacement(left = fabLeftOffset, width = fabWidth, height = fabHeight)
@@ -267,7 +267,7 @@ private fun ScaffoldLayout(
                         bottomBarPlaceable.height.toDp()
                     },
                 start = insets.calculateStartPadding(layoutDirection),
-                end = insets.calculateEndPadding(layoutDirection),
+                end = insets.calculateEndPadding(layoutDirection)
             )
 
         val bodyContentPlaceable =
@@ -280,10 +280,9 @@ private fun ScaffoldLayout(
             bodyContentPlaceable.place(0, 0)
             topBarPlaceable.place(0, 0)
             snackbarPlaceable.place(
-                (layoutWidth - snackbarPlaceable.width +
-                    contentWindowInsets.getLeft(this@SubcomposeLayout, layoutDirection) -
-                    contentWindowInsets.getRight(this@SubcomposeLayout, layoutDirection)) / 2,
-                layoutHeight - snackbarOffsetFromBottom,
+                (layoutWidth - snackbarPlaceable.width) / 2 +
+                    contentWindowInsets.getLeft(this@SubcomposeLayout, layoutDirection),
+                layoutHeight - snackbarOffsetFromBottom
             )
             // The bottom bar is always at the bottom of the layout
             bottomBarPlaceable.place(0, layoutHeight - (bottomBarPlaceable.height))
@@ -359,5 +358,5 @@ private enum class ScaffoldLayoutContent {
     MainContent,
     Snackbar,
     Fab,
-    BottomBar,
+    BottomBar
 }

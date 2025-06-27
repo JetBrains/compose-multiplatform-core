@@ -151,7 +151,6 @@ public class AlertDialogTest {
         });
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     @UiThreadTest
     public void testBuilderTheme() {
@@ -166,7 +165,6 @@ public class AlertDialogTest {
         assertEquals(0xFF0000FF, tv.data);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testBasicContent() {
         final Context context = mActivityTestRule.getActivity();
@@ -196,7 +194,7 @@ public class AlertDialogTest {
     }
 
     // Tests for message logic
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
+
     @Test
     public void testMessageString() {
         final String dialogMessage = "Dialog message";
@@ -209,7 +207,6 @@ public class AlertDialogTest {
         onView(withText(dialogMessage)).inRoot(isDialog()).check(matches(isDisplayed()));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testMessageStringPostCreation() throws Throwable {
         final String dialogInitialMessage = "Initial message";
@@ -237,7 +234,7 @@ public class AlertDialogTest {
     }
 
     // Tests for title
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
+
     @Test
     public void testThemeMainFontIsAppliedToTitle() {
         final Context context = mActivityTestRule.getActivity();
@@ -279,7 +276,6 @@ public class AlertDialogTest {
                 isBelow(withText(expectedCustomTitle)));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCustomTitle() {
         final Context context = mActivityTestRule.getActivity();
@@ -295,7 +291,6 @@ public class AlertDialogTest {
         verifyCustomTitle();
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCustomTitlePostCreation() {
         final Context context = mActivityTestRule.getActivity();
@@ -348,7 +343,6 @@ public class AlertDialogTest {
                 matches(not(hasEllipsizedText())));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCustomView() {
         final Context context = mActivityTestRule.getActivity();
@@ -364,7 +358,6 @@ public class AlertDialogTest {
         verifyCustomView();
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCustomViewById() {
         final Context context = mActivityTestRule.getActivity();
@@ -379,7 +372,6 @@ public class AlertDialogTest {
         verifyCustomView();
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCustomViewPostCreation() {
         final Context context = mActivityTestRule.getActivity();
@@ -409,7 +401,6 @@ public class AlertDialogTest {
 
     // Tests for cancel logic
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCancelCancelableDialog() {
         DialogInterface.OnCancelListener mockCancelListener =
@@ -430,7 +421,6 @@ public class AlertDialogTest {
         verify(mockCancelListener, times(1)).onCancel(mAlertDialog);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCancelNonCancelableDialog() {
         DialogInterface.OnCancelListener mockCancelListener =
@@ -485,7 +475,6 @@ public class AlertDialogTest {
         verify(onClickListener, times(1)).onClick(mAlertDialog, indexToClick);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testCustomAdapter() {
         final Context context = mActivityTestRule.getActivity();
@@ -502,7 +491,6 @@ public class AlertDialogTest {
         verifySimpleItemsContent(content, mockClickListener);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testSimpleItemsFromRuntimeArray() {
         final String[] content = new String[] { "Alice", "Bob", "Charlie", "Delta" };
@@ -516,7 +504,6 @@ public class AlertDialogTest {
         verifySimpleItemsContent(content, mockClickListener);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testSimpleItemsFromResourcesArray() {
         final DialogInterface.OnClickListener mockClickListener =
@@ -611,7 +598,6 @@ public class AlertDialogTest {
         verifyMultiChoiceItemsState(expectedContent, expectedAfterClickLast);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testMultiChoiceItemsFromRuntimeArray() {
         final String[] content = new String[] { "Alice", "Bob", "Charlie", "Delta" };
@@ -634,7 +620,6 @@ public class AlertDialogTest {
         verifyMultiChoiceItemsContent(content, checkedTracker);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testMultiChoiceItemsFromResourcesArray() {
         final boolean[] checkedTracker = new boolean[] { true, false, true, false };
@@ -731,7 +716,6 @@ public class AlertDialogTest {
         verifySingleChoiceItemsState(expectedContent, currentlyExpectedSelectionIndex);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testSingleChoiceItemsFromRuntimeArray() {
         final String[] content = new String[] { "Alice", "Bob", "Charlie", "Delta" };
@@ -745,7 +729,6 @@ public class AlertDialogTest {
         verifySingleChoiceItemsContent(content, 2, mockClickListener);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testSingleChoiceItemsFromResourcesArray() {
         final DialogInterface.OnClickListener mockClickListener =
@@ -761,7 +744,6 @@ public class AlertDialogTest {
 
     // Tests for icon logic
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconResource() {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -782,7 +764,6 @@ public class AlertDialogTest {
         titleIconInteraction.check(matches(TestUtilsMatchers.drawable(0xFFFF6030)));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconResourceChangeAfterInitialSetup() throws Throwable {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -814,7 +795,6 @@ public class AlertDialogTest {
         titleIconInteraction.check(matches(TestUtilsMatchers.drawable(0xFF50E080)));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconResourceChangeWithNoInitialSetup() throws Throwable {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -845,7 +825,6 @@ public class AlertDialogTest {
         titleIconInteraction.check(matches(TestUtilsMatchers.drawable(0xFF50E080)));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconResourceRemoveAfterInitialSetup() throws Throwable {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -877,7 +856,6 @@ public class AlertDialogTest {
         titleIconInteraction.check(doesNotExist());
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconDrawable() {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -898,7 +876,6 @@ public class AlertDialogTest {
         titleIconInteraction.check(matches(TestUtilsMatchers.drawable(0xFF807060)));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconResourceDrawableAfterInitialSetup() throws Throwable {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -930,7 +907,6 @@ public class AlertDialogTest {
         titleIconInteraction.check(matches(TestUtilsMatchers.drawable(0xFF503090)));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconDrawableChangeWithNoInitialSetup() throws Throwable {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -961,7 +937,6 @@ public class AlertDialogTest {
         titleIconInteraction.check(matches(TestUtilsMatchers.drawable(0xFF503090)));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testIconDrawableRemoveAfterInitialSetup() throws Throwable {
         AlertDialog.Builder builder = new AlertDialog.Builder(mActivityTestRule.getActivity())
@@ -1310,7 +1285,6 @@ public class AlertDialogTest {
         verifyPostButtonClickState(whichButtonToClick, mockDismissListener, mockMessageHandler);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testButtonVisibility() {
         final String positiveButtonText = "Positive button";
@@ -1344,7 +1318,6 @@ public class AlertDialogTest {
                 matches(not(hasEllipsizedText())));
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testButtons() {
         // Positive-only button
@@ -1386,7 +1359,6 @@ public class AlertDialogTest {
                 AlertDialog.BUTTON_POSITIVE);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     @UiThreadTest
     public void testBackgroundDrawable() throws Throwable {

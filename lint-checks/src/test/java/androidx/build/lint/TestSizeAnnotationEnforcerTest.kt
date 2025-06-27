@@ -31,7 +31,9 @@ class TestSizeAnnotationEnforcerTest : LintDetectorTest() {
     override fun getDetector(): Detector = TestSizeAnnotationEnforcer()
 
     override fun getIssues(): List<Issue> =
-        listOf(TestSizeAnnotationEnforcer.UNEXPECTED_TEST_SIZE_ANNOTATION)
+        listOf(
+            TestSizeAnnotationEnforcer.UNEXPECTED_TEST_SIZE_ANNOTATION,
+        )
 
     @Test
     fun allowJUnit4ForHostSideTests() {
@@ -52,7 +54,7 @@ class TestSizeAnnotationEnforcerTest : LintDetectorTest() {
             """
                     )
                     .within("src/test"),
-                *StubClasses,
+                *StubClasses
             )
             .skipTestModes(TestMode.JVM_OVERLOADS)
             .run()
@@ -87,7 +89,7 @@ class TestSizeAnnotationEnforcerTest : LintDetectorTest() {
             """
                     )
                     .within("src/test"),
-                *StubClasses,
+                *StubClasses
             )
             .run()
             .expect(

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // b/420551535
-
 package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -46,10 +44,6 @@ interface LazyGridPrefetchStrategy {
      * strategy implementation. If null, the default [PrefetchScheduler] for the platform will be
      * used.
      */
-    @Deprecated(
-        "Customization of PrefetchScheduler is no longer supported. LazyLayout will attach " +
-            "an appropriate scheduler internally."
-    )
     val prefetchScheduler: PrefetchScheduler?
         get() = null
 
@@ -126,7 +120,7 @@ interface LazyGridPrefetchScope {
      */
     fun scheduleLinePrefetch(
         lineIndex: Int,
-        onPrefetchFinished: (LazyGridPrefetchResultScope.() -> Unit)?,
+        onPrefetchFinished: (LazyGridPrefetchResultScope.() -> Unit)?
     ): List<LazyLayoutPrefetchState.PrefetchHandle> = scheduleLinePrefetch(lineIndex)
 }
 
@@ -169,16 +163,28 @@ private class DefaultLazyGridPrefetchStrategy(private val initialNestedPrefetchI
      */
     private var wasScrollingForward = false
 
-    private var previousPassItemCount = UnsetItemCount
-    private var previousPassDelta = 0f
-
     override fun LazyGridPrefetchScope.onScroll(delta: Float, layoutInfo: LazyGridLayoutInfo) {
         if (layoutInfo.visibleItemsInfo.isNotEmpty()) {
             val scrollingForward = delta < 0
-            val lineToPrefetch: Int = layoutInfo.calculateLineIndexToPrefetch(scrollingForward)
-            val closestNextItemToPrefetch: Int =
-                layoutInfo.calculateClosestNextItemToPrefetch(scrollingForward)
-
+            val lineToPrefetch: Int
+            val closestNextItemToPrefetch: Int
+            if (scrollingForward) {
+                lineToPrefetch =
+                    1 +
+                        layoutInfo.visibleItemsInfo.last().let {
+                            if (layoutInfo.orientation == Orientation.Vertical) it.row
+                            else it.column
+                        }
+                closestNextItemToPrefetch = layoutInfo.visibleItemsInfo.last().index + 1
+            } else {
+                lineToPrefetch =
+                    -1 +
+                        layoutInfo.visibleItemsInfo.first().let {
+                            if (layoutInfo.orientation == Orientation.Vertical) it.row
+                            else it.column
+                        }
+                closestNextItemToPrefetch = layoutInfo.visibleItemsInfo.first().index - 1
+            }
             if (closestNextItemToPrefetch in 0 until layoutInfo.totalItemsCount) {
                 if (
                     lineToPrefetch != this@DefaultLazyGridPrefetchStrategy.lineToPrefetch &&
@@ -219,36 +225,26 @@ private class DefaultLazyGridPrefetchStrategy(private val initialNestedPrefetchI
                 }
             }
         }
-        previousPassDelta = delta
     }
 
     override fun LazyGridPrefetchScope.onVisibleItemsUpdated(layoutInfo: LazyGridLayoutInfo) {
-        layoutInfo.evaluatePrefetchForCancellation(lineToPrefetch, wasScrollingForward)
-
-        val currentPassItemCount = layoutInfo.totalItemsCount
-        // total item count changed, re-trigger prefetch.
-        if (
-            previousPassItemCount != UnsetItemCount && // we already have info about the item count
-                previousPassDelta != 0.0f && // and scroll direction
-                previousPassItemCount != currentPassItemCount && // and the item count changed
-                layoutInfo.visibleItemsInfo.isNotEmpty()
-        ) {
-            val lineToPrefetch = layoutInfo.calculateLineIndexToPrefetch(previousPassDelta < 0)
-            val closestNextItemToPrefetch: Int =
-                layoutInfo.calculateClosestNextItemToPrefetch(previousPassDelta < 0)
-            if (closestNextItemToPrefetch in 0 until layoutInfo.totalItemsCount) {
-                if (
-                    lineToPrefetch != this@DefaultLazyGridPrefetchStrategy.lineToPrefetch &&
-                        lineToPrefetch >= 0
-                ) {
-                    this@DefaultLazyGridPrefetchStrategy.lineToPrefetch = lineToPrefetch
-                    currentLinePrefetchHandles.clear()
-                    currentLinePrefetchHandles.addAll(scheduleLinePrefetch(lineToPrefetch))
+        if (lineToPrefetch != -1 && layoutInfo.visibleItemsInfo.isNotEmpty()) {
+            val expectedLineToPrefetch =
+                if (wasScrollingForward) {
+                    layoutInfo.visibleItemsInfo.last().let {
+                        if (layoutInfo.orientation == Orientation.Vertical) it.row else it.column
+                    } + 1
+                } else {
+                    layoutInfo.visibleItemsInfo.first().let {
+                        if (layoutInfo.orientation == Orientation.Vertical) it.row else it.column
+                    } - 1
                 }
+            if (lineToPrefetch != expectedLineToPrefetch) {
+                lineToPrefetch = -1
+                currentLinePrefetchHandles.forEach { it.cancel() }
+                currentLinePrefetchHandles.clear()
             }
         }
-
-        previousPassItemCount = currentPassItemCount
     }
 
     override fun NestedPrefetchScope.onNestedPrefetch(firstVisibleItemIndex: Int) {
@@ -261,47 +257,6 @@ private class DefaultLazyGridPrefetchStrategy(private val initialNestedPrefetchI
         repeat(resolvedNestedPrefetchItemCount) { i ->
             schedulePrecomposition(firstVisibleItemIndex + i)
         }
-    }
-
-    private fun LazyGridLayoutInfo.evaluatePrefetchForCancellation(
-        currentPrefetchingLineIndex: Int,
-        scrollingForward: Boolean,
-    ) {
-        if (currentPrefetchingLineIndex != -1 && visibleItemsInfo.isNotEmpty()) {
-            val expectedLineToPrefetch = calculateLineIndexToPrefetch(scrollingForward)
-
-            if (currentPrefetchingLineIndex != expectedLineToPrefetch) {
-                resetPrefetchState()
-            }
-        }
-    }
-
-    private fun LazyGridLayoutInfo.calculateLineIndexToPrefetch(scrollingForward: Boolean): Int {
-        return if (scrollingForward) {
-            visibleItemsInfo.last().let {
-                if (orientation == Orientation.Vertical) it.row else it.column
-            } + 1
-        } else {
-            visibleItemsInfo.first().let {
-                if (orientation == Orientation.Vertical) it.row else it.column
-            } - 1
-        }
-    }
-
-    private fun LazyGridLayoutInfo.calculateClosestNextItemToPrefetch(
-        scrollingForward: Boolean
-    ): Int {
-        return if (scrollingForward) {
-            visibleItemsInfo.last().index + 1
-        } else {
-            visibleItemsInfo.first().index - 1
-        }
-    }
-
-    private fun resetPrefetchState() {
-        lineToPrefetch = -1
-        currentLinePrefetchHandles.forEach { it.cancel() }
-        currentLinePrefetchHandles.clear()
     }
 }
 
@@ -329,12 +284,10 @@ sealed interface LazyGridPrefetchResultScope {
 @Suppress("PrimitiveInCollection")
 internal class LazyGridPrefetchResultScopeImpl(
     override val lineIndex: Int,
-    private val mainAxisSizes: List<Int>,
+    private val mainAxisSizes: List<Int>
 ) : LazyGridPrefetchResultScope {
     override val lineItemCount: Int
         get() = mainAxisSizes.size
 
     override fun getMainAxisSize(itemIndexInLine: Int): Int = mainAxisSizes[itemIndexInLine]
 }
-
-private const val UnsetItemCount = -1

@@ -34,13 +34,13 @@ import androidx.fragment.app.strictmode.FragmentStrictMode.Policy
  * [Policy.Builder.penaltyLog] you can watch the output of `adb logcat` while you use your
  * application to see the violations as they happen.
  */
-public object FragmentStrictMode {
+object FragmentStrictMode {
     private const val TAG = "FragmentStrictMode"
     /**
      * The current policy for what actions should be detected, as well as the penalty if such
      * actions occur.
      */
-    public var defaultPolicy: Policy = Policy.LAX
+    var defaultPolicy = Policy.LAX
 
     private fun getNearestPolicy(fragment: Fragment?): Policy {
         var declaringFragment = fragment
@@ -59,7 +59,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onFragmentReuse(fragment: Fragment, previousFragmentId: String) {
+    fun onFragmentReuse(fragment: Fragment, previousFragmentId: String) {
         val violation: Violation = FragmentReuseViolation(fragment, previousFragmentId)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -74,7 +74,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onFragmentTagUsage(fragment: Fragment, container: ViewGroup?) {
+    fun onFragmentTagUsage(fragment: Fragment, container: ViewGroup?) {
         val violation: Violation = FragmentTagUsageViolation(fragment, container)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -89,10 +89,10 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onWrongNestedHierarchy(
+    fun onWrongNestedHierarchy(
         fragment: Fragment,
         expectedParentFragment: Fragment,
-        containerId: Int,
+        containerId: Int
     ) {
         val violation: Violation =
             WrongNestedHierarchyViolation(fragment, expectedParentFragment, containerId)
@@ -109,7 +109,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onSetRetainInstanceUsage(fragment: Fragment) {
+    fun onSetRetainInstanceUsage(fragment: Fragment) {
         val violation: Violation = SetRetainInstanceUsageViolation(fragment)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -124,7 +124,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onGetRetainInstanceUsage(fragment: Fragment) {
+    fun onGetRetainInstanceUsage(fragment: Fragment) {
         val violation: Violation = GetRetainInstanceUsageViolation(fragment)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -139,7 +139,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onSetUserVisibleHint(fragment: Fragment, isVisibleToUser: Boolean) {
+    fun onSetUserVisibleHint(fragment: Fragment, isVisibleToUser: Boolean) {
         val violation: Violation = SetUserVisibleHintViolation(fragment, isVisibleToUser)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -154,10 +154,10 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onSetTargetFragmentUsage(
+    fun onSetTargetFragmentUsage(
         violatingFragment: Fragment,
         targetFragment: Fragment,
-        requestCode: Int,
+        requestCode: Int
     ) {
         val violation: Violation =
             SetTargetFragmentUsageViolation(violatingFragment, targetFragment, requestCode)
@@ -168,7 +168,7 @@ public object FragmentStrictMode {
                 shouldHandlePolicyViolation(
                     policy,
                     violatingFragment.javaClass,
-                    violation.javaClass,
+                    violation.javaClass
                 )
         ) {
             handlePolicyViolation(policy, violation)
@@ -178,7 +178,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onGetTargetFragmentUsage(fragment: Fragment) {
+    fun onGetTargetFragmentUsage(fragment: Fragment) {
         val violation: Violation = GetTargetFragmentUsageViolation(fragment)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -193,7 +193,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onGetTargetFragmentRequestCodeUsage(fragment: Fragment) {
+    fun onGetTargetFragmentRequestCodeUsage(fragment: Fragment) {
         val violation: Violation = GetTargetFragmentRequestCodeUsageViolation(fragment)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -208,7 +208,7 @@ public object FragmentStrictMode {
     /**  */
     @JvmStatic
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public fun onWrongFragmentContainer(fragment: Fragment, container: ViewGroup) {
+    fun onWrongFragmentContainer(fragment: Fragment, container: ViewGroup) {
         val violation: Violation = WrongFragmentContainerViolation(fragment, container)
         logIfDebuggingEnabled(violation)
         val policy = getNearestPolicy(fragment)
@@ -221,7 +221,7 @@ public object FragmentStrictMode {
     }
 
     @VisibleForTesting
-    public fun onPolicyViolation(violation: Violation) {
+    fun onPolicyViolation(violation: Violation) {
         logIfDebuggingEnabled(violation)
         val fragment: Fragment = violation.fragment
         val policy = getNearestPolicy(fragment)
@@ -235,7 +235,7 @@ public object FragmentStrictMode {
             Log.d(
                 FragmentManager.TAG,
                 "StrictMode violation in ${violation.fragment.javaClass.name}",
-                violation,
+                violation
             )
         }
     }
@@ -243,7 +243,7 @@ public object FragmentStrictMode {
     private fun shouldHandlePolicyViolation(
         policy: Policy,
         fragmentClass: Class<out Fragment>,
-        violationClass: Class<out Violation>,
+        violationClass: Class<out Violation>
     ): Boolean {
         val fragmentClassString = fragmentClass.name
         val violationsToBypass = policy.mAllowedViolations[fragmentClassString] ?: return true
@@ -294,16 +294,16 @@ public object FragmentStrictMode {
         DETECT_RETAIN_INSTANCE_USAGE,
         DETECT_SET_USER_VISIBLE_HINT,
         DETECT_TARGET_FRAGMENT_USAGE,
-        DETECT_WRONG_FRAGMENT_CONTAINER,
+        DETECT_WRONG_FRAGMENT_CONTAINER
     }
 
     /**
      * When [Policy.Builder.penaltyListener] is enabled, the listener is called when a violation
      * occurs.
      */
-    public fun interface OnViolationListener {
+    fun interface OnViolationListener {
         /** Called on a policy violation. */
-        public fun onViolation(violation: Violation)
+        fun onViolation(violation: Violation)
     }
 
     /**
@@ -317,11 +317,11 @@ public object FragmentStrictMode {
      * severe (logging before process death, for example). There's currently no mechanism to choose
      * different penalties for different detected actions.
      */
-    public class Policy
+    class Policy
     internal constructor(
         internal val flags: Set<Flag>,
         listener: OnViolationListener?,
-        allowedViolations: Map<String, MutableSet<Class<out Violation>>>,
+        allowedViolations: Map<String, MutableSet<Class<out Violation>>>
     ) {
         internal val listener: OnViolationListener?
         internal val mAllowedViolations: Map<String, Set<Class<out Violation>>>
@@ -334,7 +334,7 @@ public object FragmentStrictMode {
          * You can call as many `detect` and `penalty` methods as you like. Currently order is
          * insignificant: all penalties apply to all detected problems.
          */
-        public class Builder {
+        class Builder {
             private val flags: MutableSet<Flag> = mutableSetOf()
             private var listener: OnViolationListener? = null
             private val mAllowedViolations: MutableMap<String, MutableSet<Class<out Violation>>> =
@@ -342,7 +342,7 @@ public object FragmentStrictMode {
 
             /** Log detected violations to the system log. */
             @SuppressLint("BuilderSetStyle")
-            public fun penaltyLog(): Builder {
+            fun penaltyLog(): Builder {
                 flags.add(Flag.PENALTY_LOG)
                 return this
             }
@@ -353,7 +353,7 @@ public object FragmentStrictMode {
              * is thrown.
              */
             @SuppressLint("BuilderSetStyle")
-            public fun penaltyDeath(): Builder {
+            fun penaltyDeath(): Builder {
                 flags.add(Flag.PENALTY_DEATH)
                 return this
             }
@@ -363,7 +363,7 @@ public object FragmentStrictMode {
              * called on the main thread of the fragment host.
              */
             @SuppressLint("BuilderSetStyle")
-            public fun penaltyListener(listener: OnViolationListener): Builder {
+            fun penaltyListener(listener: OnViolationListener): Builder {
                 this.listener = listener
                 return this
             }
@@ -373,14 +373,14 @@ public object FragmentStrictMode {
              * from a [FragmentManager].
              */
             @SuppressLint("BuilderSetStyle")
-            public fun detectFragmentReuse(): Builder {
+            fun detectFragmentReuse(): Builder {
                 flags.add(Flag.DETECT_FRAGMENT_REUSE)
                 return this
             }
 
             /** Detects usage of the <fragment> tag inside XML layouts. */
             @SuppressLint("BuilderSetStyle")
-            public fun detectFragmentTagUsage(): Builder {
+            fun detectFragmentTagUsage(): Builder {
                 flags.add(Flag.DETECT_FRAGMENT_TAG_USAGE)
                 return this
             }
@@ -389,21 +389,21 @@ public object FragmentStrictMode {
              * Detects nested fragments that do not use the expected parent's childFragmentManager.
              */
             @SuppressLint("BuilderSetStyle")
-            public fun detectWrongNestedHierarchy(): Builder {
+            fun detectWrongNestedHierarchy(): Builder {
                 flags.add(Flag.DETECT_WRONG_NESTED_HIERARCHY)
                 return this
             }
 
             /** Detects calls to [Fragment.setRetainInstance] and [Fragment.getRetainInstance]. */
             @SuppressLint("BuilderSetStyle")
-            public fun detectRetainInstanceUsage(): Builder {
+            fun detectRetainInstanceUsage(): Builder {
                 flags.add(Flag.DETECT_RETAIN_INSTANCE_USAGE)
                 return this
             }
 
             /** Detects calls to [Fragment.setUserVisibleHint]. */
             @SuppressLint("BuilderSetStyle")
-            public fun detectSetUserVisibleHint(): Builder {
+            fun detectSetUserVisibleHint(): Builder {
                 flags.add(Flag.DETECT_SET_USER_VISIBLE_HINT)
                 return this
             }
@@ -413,7 +413,7 @@ public object FragmentStrictMode {
              * [Fragment.getTargetRequestCode].
              */
             @SuppressLint("BuilderSetStyle")
-            public fun detectTargetFragmentUsage(): Builder {
+            fun detectTargetFragmentUsage(): Builder {
                 flags.add(Flag.DETECT_TARGET_FRAGMENT_USAGE)
                 return this
             }
@@ -423,7 +423,7 @@ public object FragmentStrictMode {
              * [androidx.fragment.app.FragmentContainerView].
              */
             @SuppressLint("BuilderSetStyle")
-            public fun detectWrongFragmentContainer(): Builder {
+            fun detectWrongFragmentContainer(): Builder {
                 flags.add(Flag.DETECT_WRONG_FRAGMENT_CONTAINER)
                 return this
             }
@@ -435,9 +435,9 @@ public object FragmentStrictMode {
              * By default, all [Fragment] classes will incur penalties for any detected [Violation].
              */
             @SuppressLint("BuilderSetStyle")
-            public fun allowViolation(
+            fun allowViolation(
                 fragmentClass: Class<out Fragment>,
-                violationClass: Class<out Violation>,
+                violationClass: Class<out Violation>
             ): Builder {
                 val fragmentClassString = fragmentClass.name
                 return allowViolation(fragmentClassString, violationClass)
@@ -454,9 +454,9 @@ public object FragmentStrictMode {
              * By default, all [Fragment] classes will incur penalties for any detected [Violation].
              */
             @SuppressLint("BuilderSetStyle")
-            public fun allowViolation(
+            fun allowViolation(
                 fragmentClass: String,
-                violationClass: Class<out Violation>,
+                violationClass: Class<out Violation>
             ): Builder {
                 var violationsToBypass = mAllowedViolations[fragmentClass]
                 if (violationsToBypass == null) {
@@ -473,7 +473,7 @@ public object FragmentStrictMode {
              * Note: if no penalties are enabled before calling `build`, [penaltyLog] is implicitly
              * set.
              */
-            public fun build(): Policy {
+            fun build(): Policy {
                 if (listener == null && !flags.contains(Flag.PENALTY_DEATH)) {
                     penaltyLog()
                 }

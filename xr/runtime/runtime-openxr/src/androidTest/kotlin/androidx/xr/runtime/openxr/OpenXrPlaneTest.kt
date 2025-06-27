@@ -16,12 +16,11 @@
 
 package androidx.xr.runtime.openxr
 
-import androidx.activity.ComponentActivity
+import android.app.Activity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.Config
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.Plane
@@ -52,24 +51,19 @@ class OpenXrPlaneTest {
         }
     }
 
-    @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
 
     private val planeId = 1L
 
-    private lateinit var openXrManager: OpenXrManager
-    private lateinit var xrResources: XrResources
-    private lateinit var underTest: OpenXrPlane
+    lateinit private var openXrManager: OpenXrManager
+    lateinit private var xrResources: XrResources
+    lateinit private var underTest: OpenXrPlane
 
     @Before
     fun setUp() {
         xrResources = XrResources()
         underTest =
-            OpenXrPlane(
-                planeId,
-                Plane.Type.HORIZONTAL_UPWARD_FACING,
-                OpenXrTimeSource(),
-                xrResources,
-            )
+            OpenXrPlane(planeId, Plane.Type.HorizontalUpwardFacing, OpenXrTimeSource(), xrResources)
         xrResources.addTrackable(planeId, underTest)
         xrResources.addUpdatable(underTest as Updatable)
     }
@@ -86,7 +80,7 @@ class OpenXrPlaneTest {
 
         val anchor = underTest.createAnchor(Pose())
 
-        assertThat(xrResources.updatables).contains(anchor as Updatable)
+        assertThat(xrResources.updatables).containsExactly(underTest, anchor as Updatable)
     }
 
     @Test
@@ -112,17 +106,17 @@ class OpenXrPlaneTest {
 
         anchor.detach()
 
-        assertThat(xrResources.updatables).doesNotContain(anchor)
+        assertThat(xrResources.updatables).containsExactly(underTest)
     }
 
     @Test
     fun update_updatesTrackingState() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
-        check(underTest.trackingState.equals(TrackingState.PAUSED))
+        check(underTest.trackingState.equals(TrackingState.Paused))
 
         underTest.update(xrTime)
 
-        assertThat(underTest.trackingState).isEqualTo(TrackingState.TRACKING)
+        assertThat(underTest.trackingState).isEqualTo(TrackingState.Tracking)
     }
 
     @Test
@@ -176,7 +170,7 @@ class OpenXrPlaneTest {
         val planeSubsumed: OpenXrPlane =
             OpenXrPlane(
                 planeSubsumedId,
-                Plane.Type.HORIZONTAL_UPWARD_FACING,
+                Plane.Type.HorizontalUpwardFacing,
                 OpenXrTimeSource(),
                 xrResources,
             )
@@ -204,7 +198,7 @@ class OpenXrPlaneTest {
     fun fromOpenXrType_withValidValue_convertsType() {
         val planeType: Plane.Type = Plane.Type.fromOpenXrType(0)
 
-        assertThat(planeType).isEqualTo(Plane.Type.HORIZONTAL_DOWNWARD_FACING)
+        assertThat(planeType).isEqualTo(Plane.Type.HorizontalDownwardFacing)
     }
 
     @Test
@@ -216,7 +210,7 @@ class OpenXrPlaneTest {
     fun fromOpenXrLabel_withValidValue_convertsLabel() {
         val planeLabel: Plane.Label = Plane.Label.fromOpenXrLabel(0)
 
-        assertThat(planeLabel).isEqualTo(Plane.Label.UNKNOWN)
+        assertThat(planeLabel).isEqualTo(Plane.Label.Unknown)
     }
 
     @Test
@@ -231,9 +225,6 @@ class OpenXrPlaneTest {
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
-            openXrManager.configure(
-                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
-            )
 
             testBody()
 

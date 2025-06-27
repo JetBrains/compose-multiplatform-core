@@ -17,13 +17,13 @@
 package androidx.work
 
 /** Represents exceptions occurred from initializing or executing a [ListenableWorker]. */
-public class WorkerExceptionInfo(
+class WorkerExceptionInfo(
     /** The class name of the worker */
-    public val workerClassName: String,
+    val workerClassName: String,
 
     /** Parameters for worker initialization */
-    public val workerParameters: WorkerParameters,
+    val workerParameters: WorkerParameters,
 
     /** The [Throwable] thrown while initializing or executing a [ListenableWorker] */
-    public val throwable: Throwable,
+    val throwable: Throwable
 )

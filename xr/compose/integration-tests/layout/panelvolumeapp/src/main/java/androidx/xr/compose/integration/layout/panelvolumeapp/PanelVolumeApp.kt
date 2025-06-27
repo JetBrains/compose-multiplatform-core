@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.Volume
 import androidx.xr.compose.subspace.layout.SubspaceModifier
@@ -57,7 +56,7 @@ import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import java.nio.file.Paths
+import kotlinx.coroutines.guava.await
 
 class PanelVolumeApp : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +64,6 @@ class PanelVolumeApp : ComponentActivity() {
         setContent { Subspace { SpatialContent() } }
     }
 
-    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Composable
     private fun SpatialContent() {
         val session =
@@ -75,9 +73,7 @@ class PanelVolumeApp : ComponentActivity() {
         var arrows by remember { mutableStateOf<GltfModel?>(null) }
         val gltfEntity = arrows?.let { remember { GltfModelEntity.create(session, it) } }
 
-        LaunchedEffect(Unit) {
-            arrows = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
-        }
+        LaunchedEffect(Unit) { arrows = GltfModel.create(session, "models/xyzArrows.glb").await() }
 
         val infiniteTransition = rememberInfiniteTransition()
         val panelYOffset by
@@ -109,7 +105,7 @@ class PanelVolumeApp : ComponentActivity() {
                                     SubspaceModifier.scale(.3f)
                                         .offset(x = 1.meters.toDp(), z = -0.5.meters.toDp())
                             ) {
-                                gltfEntity.parent = it
+                                gltfEntity.setParent(it)
                             }
                         }
                     }

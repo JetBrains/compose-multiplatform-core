@@ -27,7 +27,11 @@ import org.junit.runners.JUnit4
 class ToCharArrayTest {
 
     private val sources =
-        listOf("hello", TextFieldCharSequence("hello"), CustomCharSequence("hello"))
+        listOf(
+            "hello",
+            TextFieldCharSequence("hello"),
+            CustomCharSequence("hello"),
+        )
 
     private val dest = CharArray(10)
 
@@ -72,7 +76,7 @@ class ToCharArrayTest {
                     Char(0),
                     Char(0),
                     Char(0),
-                    Char(0),
+                    Char(0)
                 )
                 .inOrder()
         }
@@ -95,7 +99,7 @@ class ToCharArrayTest {
                     'e',
                     'l',
                     'l',
-                    'o',
+                    'o'
                 )
                 .inOrder()
         }

@@ -12,33 +12,15 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
+    id("androidx.baselineprofile")
 }
-
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.lifecycle.runtime"
-        withJava()
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-        androidResources.enable = true
-        // Needed for api tasks and docs generation
-        sourceSets {
-            androidMain {
-                kotlin.srcDirs += 'src/androidMain/java'
-            }
-        }
-    }
+    androidTarget()
     desktop()
     mac()
     linux()
     ios()
-    watchos()
-    tvos()
-    mingwX64()
-    js()
-    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -68,16 +50,12 @@ androidXMultiplatform {
             }
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-        }
-
         desktopMain {
             dependsOn(jvmMain)
         }
 
         desktopTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.kotlinCoroutinesSwing)
             }
@@ -87,7 +65,6 @@ androidXMultiplatform {
             dependsOn(jvmMain)
             dependencies {
                 api(libs.kotlinCoroutinesAndroid)
-                api(libs.jspecify)
                 implementation("androidx.core:core-viewtree:1.0.0")
                 implementation("androidx.arch.core:core-runtime:2.2.0")
                 implementation("androidx.profileinstaller:profileinstaller:1.4.0")
@@ -95,7 +72,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.mockitoCore4)
@@ -103,7 +80,7 @@ androidXMultiplatform {
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation("androidx.core:core-viewtree:1.0.0")
                 implementation(libs.junit)
@@ -119,10 +96,6 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        nonJvmTest {
-            dependsOn(commonTest)
-        }
-
         nativeMain {
             dependsOn(nonJvmMain)
 
@@ -132,48 +105,6 @@ androidXMultiplatform {
 
         nativeTest {
             dependsOn(commonTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
         }
 
         targets.configureEach { target ->
@@ -187,16 +118,27 @@ androidXMultiplatform {
                 target.compilations["test"].defaultSourceSet {
                     dependsOn(nativeTest)
                 }
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }
 }
 
 dependencies {
+    api(libs.jspecify)
     lintPublish(project(":lifecycle:lifecycle-runtime-lint"))
+}
+
+android {
+    buildTypes.configureEach {
+        consumerProguardFiles "proguard-rules.pro"
+    }
+
+    // Include `*.java` files into the build
+    sourceSets["main"].java.srcDir("src/androidMain/java")
+    sourceSets["test"].java.srcDir("src/androidUnitTest/kotlin")
+    namespace = "androidx.lifecycle.runtime"
+    // TODO(b/345531033)
+    experimentalProperties["android.lint.useK2Uast"] = false
 }
 
 androidx {

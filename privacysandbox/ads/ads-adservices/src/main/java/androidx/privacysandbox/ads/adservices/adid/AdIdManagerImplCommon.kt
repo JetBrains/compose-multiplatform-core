@@ -31,9 +31,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
-public open class AdIdManagerImplCommon(
-    private val mAdIdManager: android.adservices.adid.AdIdManager
-) : AdIdManager() {
+open class AdIdManagerImplCommon(private val mAdIdManager: android.adservices.adid.AdIdManager) :
+    AdIdManager() {
 
     @DoNotInline
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_AD_ID)

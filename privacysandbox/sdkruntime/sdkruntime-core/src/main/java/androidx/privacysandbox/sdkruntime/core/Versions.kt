@@ -30,14 +30,14 @@ import org.jetbrains.annotations.TestOnly
 @Suppress("unused")
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public object Versions {
+object Versions {
 
-    @JvmField public val API_VERSION: Int = ClientApiVersion.CURRENT_VERSION.apiLevel
+    @JvmField val API_VERSION = ClientApiVersion.CURRENT_VERSION.apiLevel
 
-    @JvmField public var CLIENT_VERSION: Int? = null
+    @JvmField var CLIENT_VERSION: Int? = null
 
     @JvmStatic
-    public fun handShake(clientVersion: Int): Int {
+    fun handShake(clientVersion: Int): Int {
         if (clientVersion < ClientApiVersion.MIN_SUPPORTED_CLIENT_VERSION.apiLevel) {
             throw IllegalArgumentException(
                 "Unsupported version of sdkruntime-client library. To load this SDK please use a more recent version."
@@ -50,7 +50,7 @@ public object Versions {
 
     @TestOnly
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun resetClientVersion() {
+    fun resetClientVersion() {
         CLIENT_VERSION = null
     }
 }

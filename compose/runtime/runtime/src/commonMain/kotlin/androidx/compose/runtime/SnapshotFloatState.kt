@@ -55,8 +55,7 @@ import kotlin.reflect.KProperty
  * @see mutableDoubleStateOf
  */
 @StateFactoryMarker
-public fun mutableFloatStateOf(value: Float): MutableFloatState =
-    createSnapshotMutableFloatState(value)
+fun mutableFloatStateOf(value: Float): MutableFloatState = createSnapshotMutableFloatState(value)
 
 /**
  * A value holder where reads to the [floatValue] property during the execution of a [Composable]
@@ -67,18 +66,17 @@ public fun mutableFloatStateOf(value: Float): MutableFloatState =
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface FloatState : State<Float> {
+interface FloatState : State<Float> {
     @get:AutoboxingStateValueProperty("floatValue")
     override val value: Float
         @Suppress("AutoBoxing") get() = floatValue
 
-    public val floatValue: Float
+    val floatValue: Float
 }
 
 /** Permits property delegation of `val`s using `by` for [FloatState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun FloatState.getValue(thisObj: Any?, property: KProperty<*>): Float =
-    floatValue
+inline operator fun FloatState.getValue(thisObj: Any?, property: KProperty<*>): Float = floatValue
 
 /**
  * A value holder where reads to the [floatValue] property during the execution of a [Composable]
@@ -92,7 +90,7 @@ public inline operator fun FloatState.getValue(thisObj: Any?, property: KPropert
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface MutableFloatState : FloatState, MutableState<Float> {
+interface MutableFloatState : FloatState, MutableState<Float> {
     @get:AutoboxingStateValueProperty("floatValue")
     @set:AutoboxingStateValueProperty("floatValue")
     override var value: Float
@@ -106,10 +104,10 @@ public interface MutableFloatState : FloatState, MutableState<Float> {
 
 /** Permits property delegation of `var`s using `by` for [MutableFloatState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun MutableFloatState.setValue(
+inline operator fun MutableFloatState.setValue(
     thisObj: Any?,
     property: KProperty<*>,
-    value: Float,
+    value: Float
 ) {
     this.floatValue = value
 }
@@ -165,7 +163,7 @@ internal open class SnapshotMutableFloatStateImpl(value: Float) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord,
+        applied: StateRecord
     ): StateRecord? {
         val currentRecord = current as FloatStateStateRecord
         val appliedRecord = applied as FloatStateStateRecord

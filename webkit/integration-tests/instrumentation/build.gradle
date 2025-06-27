@@ -42,7 +42,6 @@ dependencies {
     androidTestImplementation(project(":webkit:integration-tests:common"))
 
     androidTestImplementation(libs.okhttpMockwebserver)
-    androidTestImplementation(libs.okhttpTls)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)

@@ -18,10 +18,9 @@ package androidx.xr.scenecore.impl.perception;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +28,7 @@ import java.util.List;
 /**
  * A Plane is a type of Trackable that maps to a real world plane (e.g. a floor, a wall, or a table)
  */
+// TODO: b/329875042 - Add a utility to convert this to an ARCore plane.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Plane implements Trackable {
     private static final String TAG = "PerceptionPlane";
@@ -52,7 +52,8 @@ public class Plane implements Trackable {
      *     current time will be used.
      */
     @Override
-    public @Nullable Anchor createAnchor(
+    @Nullable
+    public Anchor createAnchor(
             @NonNull Pose pose, @SuppressWarnings("AutoBoxing") @Nullable Long timeNs) {
         Anchor.AnchorData anchorData =
                 createAnchorOnPlane(mPlaneId, pose, timeNs == null ? -1 : timeNs);
@@ -73,13 +74,15 @@ public class Plane implements Trackable {
      *     uptimeNanos() at which to get the pose, in nanoseconds. If time is null or negative, the
      *     current time will be used.
      */
-    public @Nullable PlaneData getData(@SuppressWarnings("AutoBoxing") @Nullable Long timeNs) {
+    @Nullable
+    public PlaneData getData(@SuppressWarnings("AutoBoxing") @Nullable Long timeNs) {
         return getPlaneData(mPlaneId, mReferenceSpaceType, timeNs == null ? -1 : timeNs);
     }
 
     /** Returns all anchors attached to this trackable. */
+    @NonNull
     @Override
-    public @NonNull List<Anchor> getAnchors() {
+    public List<Anchor> getAnchors() {
         return mAttachedAnchors;
     }
 
@@ -159,7 +162,7 @@ public class Plane implements Trackable {
          * The pose of the center of the plane. The positive y-axis of the pose will point
          * perpendicular out of the plane's surface.
          */
-        public final @NonNull Pose centerPose;
+        @NonNull public final Pose centerPose;
 
         /** The width of the plane. */
         public final float extentWidth;
@@ -168,10 +171,10 @@ public class Plane implements Trackable {
         public final float extentHeight;
 
         /** The direction of the plane. */
-        public final Plane.@NonNull Type type;
+        @NonNull public final Plane.Type type;
 
         /** A label that can be used to determine the type of object that the plane is. */
-        public final Plane.@NonNull Label label;
+        @NonNull public final Plane.Label label;
 
         public PlaneData(
                 @NonNull Pose centerPose,

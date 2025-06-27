@@ -34,11 +34,6 @@ androidXMultiplatform {
     mac()
     linux()
     ios()
-    watchos()
-    tvos()
-    mingwX64()
-    js()
-    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -73,23 +68,11 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
-            dependsOn(nonJvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        jsMain {
-            dependsOn(nonJvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nonJvmMain)
+                }
             }
         }
     }

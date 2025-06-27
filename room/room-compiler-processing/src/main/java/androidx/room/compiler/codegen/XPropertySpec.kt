@@ -31,8 +31,6 @@ interface XPropertySpec {
 
     val type: XTypeName
 
-    fun toBuilder(): Builder
-
     interface Builder {
         fun addAnnotation(annotation: XAnnotationSpec): Builder
 
@@ -68,7 +66,7 @@ interface XPropertySpec {
             typeName: XTypeName,
             visibility: VisibilityModifier,
             isMutable: Boolean = false,
-            addJavaNullabilityAnnotation: Boolean = true,
+            addJavaNullabilityAnnotation: Boolean = true
         ): Builder =
             XPropertySpecImpl.Builder(
                 name,
@@ -92,7 +90,7 @@ interface XPropertySpec {
                         if (!isMutable) {
                             addModifiers(JModifier.FINAL)
                         }
-                    },
+                    }
                 ),
                 KotlinPropertySpec.Builder(
                     name,
@@ -100,8 +98,8 @@ interface XPropertySpec {
                     KPropertySpec.builder(name, typeName.kotlin).apply {
                         mutable(isMutable)
                         addModifiers(visibility.toKotlinVisibilityModifier())
-                    },
-                ),
+                    }
+                )
             )
     }
 }

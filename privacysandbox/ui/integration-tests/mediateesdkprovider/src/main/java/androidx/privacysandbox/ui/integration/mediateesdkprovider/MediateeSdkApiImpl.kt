@@ -18,8 +18,11 @@ package androidx.privacysandbox.ui.integration.mediateesdkprovider
 
 import android.content.Context
 import android.os.Bundle
+import androidx.privacysandbox.ui.integration.sdkproviderutils.IAutomatedTestCallbackProxy
+import androidx.privacysandbox.ui.integration.sdkproviderutils.IMediationTestCallbackProxy
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MEDIATION_TEST_CALLBACK
 
 class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi {
     override suspend fun loadAd(
@@ -27,7 +30,7 @@ class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi {
         @AdType adType: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallbackBundle: Bundle,
+        mediationTestCallbackBundle: Bundle
     ): Bundle {
         return androidx.privacysandbox.ui.integration.sdkproviderutils.MediateeSdkApiImpl
             .loadAdUtil(
@@ -36,7 +39,21 @@ class MediateeSdkApiImpl(private val sdkContext: Context) : IMediateeSdkApi {
                 waitInsideOnDraw,
                 drawViewability,
                 sdkContext,
-                automatedTestCallbackBundle,
+                AutomatedTestCallbackProxy(mediationTestCallbackBundle)
             )
+    }
+
+    private class AutomatedTestCallbackProxy(mediationTestCallbackBundle: Bundle) :
+        IAutomatedTestCallbackProxy {
+        val mediationCallbackBinder = mediationTestCallbackBundle.getBinder(MEDIATION_TEST_CALLBACK)
+        val mediationTestCallback: IMediationTestCallbackProxy? =
+            mediationCallbackBinder?.let { IMediationTestCallbackProxy.Stub.asInterface(it) }
+                ?: throw IllegalStateException(
+                    "Received Binder for callback is not of expected type"
+                )
+
+        override fun onResizeOccurred(width: Int, height: Int) {
+            mediationTestCallback?.onResizeOccurred(width, height)
+        }
     }
 }

@@ -20,32 +20,32 @@ import androidx.annotation.RestrictTo
 
 /** Sets up trace spans when a {@link WorkRequest} is setup for execution by [WorkManager]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface Tracer {
+interface Tracer {
     /** Checks whether or not tracing is currently enabled. */
-    public fun isEnabled(): Boolean
+    fun isEnabled(): Boolean
 
     /**
      * Writes a trace message, with the provided [label] to indicate that a given section of code
      * has begun.
      */
-    public fun beginSection(label: String)
+    fun beginSection(label: String)
 
     /** Writes a trace message to indicate that a given section of code has ended. */
-    public fun endSection()
+    fun endSection()
 
     /**
      * Writes a trace span to indicate that a given section of code has begun.
      *
      * @see [androidx.tracing.Trace.beginAsyncSection]
      */
-    public fun beginAsyncSection(methodName: String, cookie: Int)
+    fun beginAsyncSection(methodName: String, cookie: Int)
 
     /**
      * Writes a trace span to indicate that a given section of code has ended.
      *
      * @see [androidx.tracing.Trace.endAsyncSection]
      */
-    public fun endAsyncSection(methodName: String, cookie: Int)
+    fun endAsyncSection(methodName: String, cookie: Int)
 }
 
 /** A helper that can insert trace sections around a [block] of code. */

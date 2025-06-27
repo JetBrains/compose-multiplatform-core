@@ -26,6 +26,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.filters.LargeTest
@@ -46,12 +47,12 @@ import org.junit.runners.Parameterized.Parameters
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 23)
-class RoomDriverBenchmark(private val useDriver: UseDriver) {
+class RoomDriverBenchmark(private val driver: SQLiteDriver?) {
 
     @get:Rule val benchmarkRule = BenchmarkRule()
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private var database: TestDatabase? = null
+    private lateinit var database: TestDatabase
 
     private fun createMemoryDatabase(): TestDatabase {
         return Room.inMemoryDatabaseBuilder<TestDatabase>(context).buildForTest()
@@ -62,12 +63,8 @@ class RoomDriverBenchmark(private val useDriver: UseDriver) {
     }
 
     private fun RoomDatabase.Builder<TestDatabase>.buildForTest(): TestDatabase {
-        when (useDriver) {
-            UseDriver.ANDROID -> setDriver(AndroidSQLiteDriver())
-            UseDriver.BUNDLED -> setDriver(BundledSQLiteDriver())
-            UseDriver.NONE -> {
-                /* no driver */
-            }
+        if (driver != null) {
+            setDriver(driver)
         }
         val db = build()
         database = db
@@ -81,7 +78,7 @@ class RoomDriverBenchmark(private val useDriver: UseDriver) {
 
     @After
     fun cleanup() {
-        database?.close()
+        database.close()
     }
 
     @Test
@@ -177,13 +174,9 @@ class RoomDriverBenchmark(private val useDriver: UseDriver) {
     }
 
     companion object {
-        @JvmStatic @Parameters(name = "driver = {0}") fun drivers() = UseDriver.entries
-
-        enum class UseDriver {
-            ANDROID,
-            BUNDLED,
-            NONE,
-        }
+        @JvmStatic
+        @Parameters(name = "driver = {0}")
+        fun drivers() = arrayOf(BundledSQLiteDriver(), AndroidSQLiteDriver(), null)
 
         const val SMALL_AMOUNT = 25
         const val LARGE_AMOUNT = 1000

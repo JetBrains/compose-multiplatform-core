@@ -24,9 +24,9 @@ import androidx.work.Data
 /** [androidx.work.Data] but [android.os.Parcelable]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressLint("BanParcelableUsage")
-public class ParcelableData(public val data: Data) : Parcelable {
+class ParcelableData(val data: Data) : Parcelable {
 
-    public constructor(
+    constructor(
         inParcel: Parcel
     ) : this(inParcel.createByteArray()?.let { Data.fromByteArray(it) } ?: Data.EMPTY)
 
@@ -38,9 +38,9 @@ public class ParcelableData(public val data: Data) : Parcelable {
         parcel.writeByteArray(data.toByteArray())
     }
 
-    public companion object {
+    companion object {
         @JvmField
-        public val CREATOR: Parcelable.Creator<ParcelableData> =
+        val CREATOR: Parcelable.Creator<ParcelableData> =
             object : Parcelable.Creator<ParcelableData> {
                 override fun createFromParcel(inParcel: Parcel): ParcelableData {
                     return ParcelableData(inParcel)

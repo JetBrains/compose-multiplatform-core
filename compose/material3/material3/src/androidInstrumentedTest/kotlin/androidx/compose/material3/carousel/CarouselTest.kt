@@ -133,18 +133,6 @@ class CarouselTest {
     }
 
     @Test
-    fun uncontainedCarousel_userScrollDisabled_doesNotScroll() {
-        createCarousel(userScrollEnabled = false)
-        assertThat(carouselState.pagerState.currentPage).isEqualTo(0)
-
-        rule.onNodeWithTag(CarouselTestTag).performTouchInput {
-            swipeWithVelocity(centerRight, centerLeft, 1000f)
-        }
-
-        rule.runOnIdle { assertThat(carouselState.pagerState.currentPage).isEqualTo(0) }
-    }
-
-    @Test
     fun carouselSingleAdvanceFling_capsScroll() {
         // Arrange
         createCarousel()
@@ -170,7 +158,7 @@ class CarouselTest {
         createCarousel(
             flingBehavior = { state: CarouselState ->
                 CarouselDefaults.multiBrowseFlingBehavior(state)
-            }
+            },
         )
         assertThat(carouselState.pagerState.currentPage).isEqualTo(0)
 
@@ -205,7 +193,7 @@ class CarouselTest {
                     availableSpace = 380f,
                     itemSpacing = 8f,
                     beforeContentPadding = 0f,
-                    afterContentPadding = 0f,
+                    afterContentPadding = 0f
                 )
 
             // Max offset should only add item spacing between each item
@@ -247,7 +235,7 @@ class CarouselTest {
     internal fun Item(index: Int) {
         Box(
             modifier = Modifier.fillMaxSize().background(Color.Blue).testTag("$index").focusable(),
-            contentAlignment = Alignment.Center,
+            contentAlignment = Alignment.Center
         ) {
             BasicText(text = index.toString())
         }
@@ -259,9 +247,12 @@ class CarouselTest {
         modifier: Modifier = Modifier.width(412.dp).height(221.dp),
         orientation: Orientation = Orientation.Horizontal,
         flingBehavior: @Composable (CarouselState) -> TargetedFlingBehavior =
-            @Composable { CarouselDefaults.singleAdvanceFlingBehavior(state = it) },
-        userScrollEnabled: Boolean = true,
-        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) },
+            @Composable {
+                CarouselDefaults.singleAdvanceFlingBehavior(
+                    state = it,
+                )
+            },
+        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) }
     ) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberCarouselState(initialItem, itemCount).also { carouselState = it }
@@ -279,7 +270,6 @@ class CarouselTest {
                     )
                 },
                 flingBehavior = flingBehavior(state),
-                userScrollEnabled = userScrollEnabled,
                 maxNonFocalVisibleItemCount = 2,
                 modifier = modifier.testTag(CarouselTestTag),
                 itemSpacing = 0.dp,
@@ -293,7 +283,7 @@ class CarouselTest {
         initialItem: Int = 0,
         itemCount: () -> Int = { DefaultItemCount },
         modifier: Modifier = Modifier.width(412.dp).height(221.dp),
-        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) },
+        content: @Composable CarouselItemScope.(item: Int) -> Unit = { Item(index = it) }
     ) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberCarouselState(initialItem, itemCount).also { carouselState = it }

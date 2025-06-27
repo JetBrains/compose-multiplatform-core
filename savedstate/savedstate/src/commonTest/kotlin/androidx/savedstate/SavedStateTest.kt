@@ -20,7 +20,6 @@ import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import kotlin.test.Test
 
-@IgnoreWebTarget
 internal class SavedStateTest : RobolectricTest() {
 
     @Test
@@ -1455,17 +1454,17 @@ internal class SavedStateTest : RobolectricTest() {
                 putChar(key = "KEY_${++key}", value = Char.MAX_VALUE)
                 putCharArray(
                     key = "KEY_${++key}",
-                    value = charArrayOf(Char.MIN_VALUE, Char.MAX_VALUE),
+                    value = charArrayOf(Char.MIN_VALUE, Char.MAX_VALUE)
                 )
                 putDouble(key = "KEY_${++key}", value = Double.MAX_VALUE)
                 putDoubleArray(
                     key = "KEY_${++key}",
-                    value = doubleArrayOf(Double.MIN_VALUE, Double.MAX_VALUE),
+                    value = doubleArrayOf(Double.MIN_VALUE, Double.MAX_VALUE)
                 )
                 putFloat(key = "KEY_${++key}", value = Float.MAX_VALUE)
                 putFloatArray(
                     key = "KEY_${++key}",
-                    value = floatArrayOf(Float.MIN_VALUE, Float.MAX_VALUE),
+                    value = floatArrayOf(Float.MIN_VALUE, Float.MAX_VALUE)
                 )
                 putInt(key = "KEY_${++key}", value = Int.MAX_VALUE)
                 putIntArray(key = "KEY_${++key}", value = intArrayOf(1, 2, 3))
@@ -1473,7 +1472,7 @@ internal class SavedStateTest : RobolectricTest() {
                 putLong(key = "KEY_${++key}", value = Long.MAX_VALUE)
                 putLongArray(
                     key = "KEY_${++key}",
-                    value = longArrayOf(Long.MIN_VALUE, Long.MAX_VALUE),
+                    value = longArrayOf(Long.MIN_VALUE, Long.MAX_VALUE)
                 )
                 putNull(key = "KEY_${++key}")
                 putString(key = "KEY_${++key}", value = "Text")

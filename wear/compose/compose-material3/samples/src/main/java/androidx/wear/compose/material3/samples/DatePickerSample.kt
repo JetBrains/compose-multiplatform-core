@@ -52,10 +52,13 @@ fun DatePickerSample() {
             onDatePicked = {
                 datePickerDate = it
                 showDatePicker = false
-            },
+            }
         )
     } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
             Button(
                 onClick = { showDatePicker = true },
                 label = { Text("Selected Date") },
@@ -79,10 +82,13 @@ fun DatePickerYearMonthDaySample() {
                 datePickerDate = it
                 showDatePicker = false
             },
-            datePickerType = DatePickerType.YearMonthDay,
+            datePickerType = DatePickerType.YearMonthDay
         )
     } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
             Button(
                 onClick = { showDatePicker = true },
                 label = { Text("Selected Date") },
@@ -110,10 +116,13 @@ fun DatePickerFutureOnlySample() {
                 showDatePicker = false
             },
             datePickerType = DatePickerType.YearMonthDay,
-            minValidDate = currentDate,
+            minValidDate = currentDate
         )
     } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
             Button(
                 onClick = { showDatePicker = true },
                 label = { Text("Selected Date") },

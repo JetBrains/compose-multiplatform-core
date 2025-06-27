@@ -63,8 +63,10 @@ public class RegisteredMediaRouteProviderWatcherTest {
 
         getInstrumentation()
                 .runOnMainSync(
-                        () -> mProviderWatcher =
-                                new RegisteredMediaRouteProviderWatcher(mContext, callback));
+                        () -> {
+                            mProviderWatcher =
+                                    new RegisteredMediaRouteProviderWatcher(mContext, callback);
+                        });
     }
 
     @SmallTest

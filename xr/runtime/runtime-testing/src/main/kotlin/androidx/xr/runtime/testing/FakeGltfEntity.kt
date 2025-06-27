@@ -25,8 +25,7 @@ import androidx.xr.runtime.internal.MaterialResource
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeGltfEntity : GltfEntity, FakeEntity() {
 
-    @GltfEntity.AnimationStateValue
-    override val animationState: Int = GltfEntity.AnimationState.STOPPED
+    @GltfEntity.AnimationState override val animationState: Int = GltfEntity.AnimationState.STOPPED
 
     override fun startAnimation(loop: Boolean, animationName: String?) {}
 

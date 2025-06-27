@@ -23,7 +23,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.MoveEventListener as RtMoveEventListener
-import androidx.xr.runtime.math.FloatSize3d
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
@@ -59,7 +58,7 @@ private constructor(
      * The current size of the entity, in meters. The size of the entity determines the size of the
      * bounding box that is used to draw the draggable move affordances around the entity.
      */
-    public var size: FloatSize3d = kDimensionsOneMeter
+    public var size: Dimensions = kDimensionsOneMeter
         set(value) {
             if (field != value) {
                 field = value
@@ -163,7 +162,7 @@ private constructor(
     }
 
     public companion object {
-        private val kDimensionsOneMeter = FloatSize3d(1f, 1f, 1f)
+        private val kDimensionsOneMeter = Dimensions(1f, 1f, 1f)
 
         /** Factory function for creating a MovableComponent. */
         internal fun create(

@@ -84,21 +84,6 @@ internal val STUBS =
         ),
         kotlin(
             """
-                package org.gradle.api.artifacts
-
-                import org.gradle.api.NamedDomainObjectContainer
-                import org.gradle.api.provider.Provider
-
-                class ConfigurationContainer : NamedDomainObjectContainer<Configuration> {
-                    override fun create(name: String): Configuration = TODO()
-                    override fun maybeCreate(name: String): Configuration = TODO()
-                    override fun register(name: String): Provider<Configuration> = TODO()
-                }
-            """
-                .trimIndent()
-        ),
-        kotlin(
-            """
                 package org.gradle.api.provider
                 interface Provider<T> {
                     fun get() : T
@@ -114,7 +99,6 @@ internal val STUBS =
                 package org.gradle.api
 
                 import groovy.lang.Closure
-                import org.gradle.api.artifacts.ConfigurationContainer
                 import org.gradle.api.tasks.TaskContainer
                 import java.lang.Class
 
@@ -125,12 +109,9 @@ internal val STUBS =
 
                 class Project {
                     val tasks: TaskContainer
-                    val configurations: ConfigurationContainer
                     fun getIsolated(): IsolatedProject
                     fun getRootProject(): Project = Project()
                     fun findProperty(propertyName: String): Object? = null
-                    fun evaluationDependsOn(path: String): Project = Project()
-                    fun evaluationDependsOnChildren() { }
                 }
 
                 interface NamedDomainObjectCollection<T> : Collection<T>, DomainObjectCollection<T>, Iterable<T> {
@@ -143,11 +124,6 @@ internal val STUBS =
                     fun configureEach(action: Action<in T>)
                     fun whenObjectAdded(action: Action<in T>)
                     fun withType(type: Class<S>)
-                }
-
-                interface NamedDomainObjectContainer<T> {
-                    fun create(name: String): T
-                    fun register(name: String): Provider<T>
                 }
 
                 interface Action<T>
@@ -217,7 +193,7 @@ internal val STUBS =
                 inline fun <reified S : Any> DomainObjectCollection<in S>.withType(): DomainObjectCollection<S> = TODO()
                 inline fun <reified S : Any> DomainObjectCollection<in S>.withType(noinline configuration: S.() -> Unit): DomainObjectCollection<S> = TODO()
             """
-                .trimIndent(),
+                .trimIndent()
         ),
         kotlin(
             """
@@ -232,22 +208,5 @@ internal val STUBS =
                 class ExecException : Exception()
             """
                 .trimIndent()
-        ),
-        kotlin(
-            """
-                package org.jetbrains.kotlin.gradle.internal
-
-                import java.io.File
-
-                fun File.ensureParentDirsCreated() {
-                    val parentFile = parentFile
-                    if (!parentFile.exists()) {
-                        check(parentFile.mkdirs()) {
-                            "Cannot create parent directories"
-                        }
-                    }
-                }
-            """
-                .trimIndent()
-        ),
+        )
     )

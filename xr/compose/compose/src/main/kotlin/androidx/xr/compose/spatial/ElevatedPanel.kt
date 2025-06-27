@@ -39,9 +39,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.xr.compose.platform.LocalCoreEntity
-import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.platform.coreMainPanelEntity
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SpatialShape
 import androidx.xr.compose.subspace.rememberComposeView
@@ -49,10 +49,10 @@ import androidx.xr.compose.subspace.rememberCorePanelEntity
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.Meter.Companion.meters
-import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.PixelDimensions
 
 internal object ElevatedPanelDefaults {
     /** Default shape for a Spatial Panel. */
@@ -65,23 +65,22 @@ internal object ElevatedPanelDefaults {
  */
 @Composable
 internal fun ElevatedPanel(
-    elevation: Dp,
+    spatialElevationLevel: SpatialElevationLevel,
     contentSize: IntSize,
     shape: SpatialShape = ElevatedPanelDefaults.shape,
     contentOffset: Offset? = null,
-    elevationTransitionSpec: @Composable Transition.Segment<Dp>.() -> FiniteAnimationSpec<Dp> = {
-        spring()
-    },
+    transitionSpec:
+        @Composable
+        Transition.Segment<SpatialElevationLevel>.() -> FiniteAnimationSpec<Dp> =
+        {
+            spring()
+        },
     content: @Composable () -> Unit,
 ) {
     val parentView = LocalView.current
     val zDepth by
-        updateTransition(targetState = elevation, label = "restingLevelTransition").animateDp(
-            transitionSpec = elevationTransitionSpec,
-            label = "zDepth",
-        ) { state ->
-            state
-        }
+        updateTransition(targetState = spatialElevationLevel, label = "restingLevelTransition")
+            .animateDp(transitionSpec = transitionSpec, label = "zDepth") { state -> state.level }
     var parentViewSize by remember { mutableStateOf(parentView.size) }
     DisposableEffect(parentView) {
         val listener =
@@ -113,18 +112,18 @@ internal fun ElevatedPanel(
     content: @Composable () -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
+    val parentEntity = LocalCoreEntity.current ?: session.coreMainPanelEntity
     val view = rememberComposeView()
     val panelEntity =
         rememberCorePanelEntity(shape = shape) {
             PanelEntity.create(
                 session = session,
                 view = view,
-                pixelDimensions = contentSize.run { IntSize2d(width, height) },
+                pixelDimensions = contentSize.run { PixelDimensions(width, height) },
                 name = "ElevatedPanel:${view.id}",
             )
         }
-    // TODO(b/416093964): Does ElevatedPanel's alpha still need to be dependent on Pose?
+
     view.setContent {
         CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
             Box(Modifier.alpha(if (pose == null) 0.0f else 1.0f)) { content() }
@@ -144,7 +143,7 @@ internal fun ElevatedPanel(
         panelEntity.size = IntVolumeSize(width = width, height = height, depth = 0)
     }
 
-    LaunchedEffect(parentEntity) { panelEntity.entity.parent = parentEntity.entity }
+    LaunchedEffect(parentEntity) { panelEntity.entity.setParent(parentEntity.entity) }
 }
 
 /** A 3D vector where each coordinate is [Meter]s. */

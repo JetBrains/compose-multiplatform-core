@@ -47,8 +47,10 @@ internal class TestBackend(
     fun getAllData() = TestPagingSource(this, loadDelay)
 }
 
-internal class TestPagingSource(private val backend: TestBackend, private val loadDelay: Long) :
-    PagingSource<Int, String>() {
+internal class TestPagingSource(
+    private val backend: TestBackend,
+    private val loadDelay: Long,
+) : PagingSource<Int, String>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, String> {
         // Simulate latency

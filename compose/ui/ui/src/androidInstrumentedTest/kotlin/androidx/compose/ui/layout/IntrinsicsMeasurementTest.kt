@@ -252,7 +252,7 @@ class IntrinsicsMeasurementTest {
             object : MeasurePolicy {
                 override fun MeasureScope.measure(
                     measurables: List<Measurable>,
-                    constraints: Constraints,
+                    constraints: Constraints
                 ): MeasureResult {
                     if (useIntrinsics) {
                         val placeable = measurables[0].measure(constraints)
@@ -264,7 +264,7 @@ class IntrinsicsMeasurementTest {
 
                 override fun IntrinsicMeasureScope.minIntrinsicHeight(
                     measurables: List<IntrinsicMeasurable>,
-                    width: Int,
+                    width: Int
                 ): Int {
                     if (useIntrinsics) {
                         return measurables[0].minIntrinsicHeight(width)
@@ -354,7 +354,7 @@ class IntrinsicsMeasurementTest {
             object : MeasurePolicy {
                 override fun MeasureScope.measure(
                     measurables: List<Measurable>,
-                    constraints: Constraints,
+                    constraints: Constraints
                 ): MeasureResult {
                     if (useIntrinsics) {
                         val placeable = measurables[0].measure(constraints)
@@ -368,7 +368,7 @@ class IntrinsicsMeasurementTest {
 
                 override fun IntrinsicMeasureScope.minIntrinsicHeight(
                     measurables: List<IntrinsicMeasurable>,
-                    width: Int,
+                    width: Int
                 ): Int {
                     if (useIntrinsics) {
                         return measurables[0].minIntrinsicHeight(width)
@@ -464,7 +464,9 @@ class IntrinsicsMeasurementTest {
                     }
                 }
             }
-            Layout(content = content) { measurables, _ ->
+            Layout(
+                content = content,
+            ) { measurables, _ ->
                 if (intrinsicsInMeasure) {
                     val intrinsicHeight = measurables[0].minIntrinsicHeight(Constraints.Infinity)
                     val placeable =
@@ -520,14 +522,14 @@ class IntrinsicsMeasurementTest {
             object : MeasurePolicy {
                 override fun MeasureScope.measure(
                     measurables: List<Measurable>,
-                    constraints: Constraints,
+                    constraints: Constraints
                 ): MeasureResult {
                     return layout(0, 0) {}
                 }
 
                 override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                     measurables: List<IntrinsicMeasurable>,
-                    height: Int,
+                    height: Int
                 ): Int = 1 shl 24
             }
         rule.setContent {
@@ -544,7 +546,7 @@ class IntrinsicsMeasurementTest {
                         val p = m.measure(c)
                         layout(p.width, p.height) { p.place(0, 0) }
                     },
-                measurePolicy = measurePolicy,
+                measurePolicy = measurePolicy
             )
         }
         rule.waitForIdle()
@@ -558,14 +560,14 @@ class IntrinsicsMeasurementTest {
             object : MeasurePolicy {
                 override fun MeasureScope.measure(
                     measurables: List<Measurable>,
-                    constraints: Constraints,
+                    constraints: Constraints
                 ): MeasureResult {
                     return layout(0, 0) {}
                 }
 
                 override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                     measurables: List<IntrinsicMeasurable>,
-                    width: Int,
+                    width: Int
                 ): Int = 1 shl 24
             }
         rule.setContent {
@@ -582,7 +584,7 @@ class IntrinsicsMeasurementTest {
                         val p = m.measure(c)
                         layout(p.width, p.height) { p.place(0, 0) }
                     },
-                measurePolicy = measurePolicy,
+                measurePolicy = measurePolicy
             )
         }
         rule.waitForIdle()

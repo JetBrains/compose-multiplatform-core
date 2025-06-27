@@ -76,7 +76,7 @@ class HapticDeviceProfileTest {
     fun hardwareOptimizedPredefinedEffects_withHintSdk29AndAbove_returnsOptimizedEffectsFromHint() {
         val profile =
             HapticDeviceProfile(
-                hardwareOptimizedPredefinedEffectsHint = setOf(predefinedTick(), predefinedClick())
+                hardwareOptimizedPredefinedEffectsHint = setOf(predefinedTick(), predefinedClick()),
             )
         assertThat(profile.hardwareOptimizedPredefinedEffects)
             .containsExactly(predefinedTick(), predefinedClick())
@@ -87,7 +87,7 @@ class HapticDeviceProfileTest {
     fun hardwareOptimizedPredefinedEffects_withHintBelowSdk29_returnsAlwaysEmpty() {
         val profile =
             HapticDeviceProfile(
-                hardwareOptimizedPredefinedEffectsHint = setOf(predefinedTick(), predefinedClick())
+                hardwareOptimizedPredefinedEffectsHint = setOf(predefinedTick(), predefinedClick()),
             )
         assertThat(profile.hardwareOptimizedPredefinedEffects).isEmpty()
     }
@@ -140,7 +140,8 @@ class HapticDeviceProfileTest {
             HapticDeviceProfile(
                 compositionProfile =
                     HapticCompositionProfile(
-                        supportedPrimitiveTypesHint = setOf(PrimitiveAtom.CLICK, PrimitiveAtom.TICK)
+                        supportedPrimitiveTypesHint =
+                            setOf(PrimitiveAtom.CLICK, PrimitiveAtom.TICK),
                     )
             )
         val supportedComposition =
@@ -189,7 +190,11 @@ class HapticCompositionProfileTest {
         val profile =
             HapticCompositionProfile(
                 supportedPrimitiveTypesHint =
-                    setOf(PrimitiveAtom.TICK, PrimitiveAtom.LOW_TICK, PrimitiveAtom.CLICK)
+                    setOf(
+                        PrimitiveAtom.TICK,
+                        PrimitiveAtom.LOW_TICK,
+                        PrimitiveAtom.CLICK,
+                    ),
             )
         assertThat(profile.supportedPrimitiveTypes)
             .containsExactly(PrimitiveAtom.CLICK, PrimitiveAtom.TICK)
@@ -200,7 +205,11 @@ class HapticCompositionProfileTest {
     fun supportedPrimitiveTypes_withHintSdk31AndAbove_returnsMatchingHints() {
         val profile =
             HapticCompositionProfile(
-                supportedPrimitiveTypesHint = setOf(PrimitiveAtom.TICK, PrimitiveAtom.LOW_TICK),
+                supportedPrimitiveTypesHint =
+                    setOf(
+                        PrimitiveAtom.TICK,
+                        PrimitiveAtom.LOW_TICK,
+                    ),
                 primitiveDurationMillisMapHint = null,
             )
         assertThat(profile.supportedPrimitiveTypes)
@@ -212,7 +221,11 @@ class HapticCompositionProfileTest {
     fun supportedPrimitiveTypes_withHintBelowSdk30_returnsEmpty() {
         val profile =
             HapticCompositionProfile(
-                supportedPrimitiveTypesHint = setOf(PrimitiveAtom.TICK, PrimitiveAtom.LOW_TICK)
+                supportedPrimitiveTypesHint =
+                    setOf(
+                        PrimitiveAtom.TICK,
+                        PrimitiveAtom.LOW_TICK,
+                    ),
             )
         assertThat(profile.supportedPrimitiveTypes).isEmpty()
     }
@@ -222,7 +235,11 @@ class HapticCompositionProfileTest {
     fun getPrimitiveDurationMillis_withNullDurationsSdk30AndAbove_returnsDurationReportedFalse() {
         val profile =
             HapticCompositionProfile(
-                supportedPrimitiveTypesHint = setOf(PrimitiveAtom.TICK, PrimitiveAtom.CLICK),
+                supportedPrimitiveTypesHint =
+                    setOf(
+                        PrimitiveAtom.TICK,
+                        PrimitiveAtom.CLICK,
+                    ),
                 primitiveDurationMillisMapHint = null,
             )
         assertThat(profile.isPrimitiveDurationReported).isFalse()
@@ -235,9 +252,16 @@ class HapticCompositionProfileTest {
     fun getPrimitiveDurationMillis_withDurationsSdk30AndAbove_returnsHintDurations() {
         val profile =
             HapticCompositionProfile(
-                supportedPrimitiveTypesHint = setOf(PrimitiveAtom.TICK, PrimitiveAtom.CLICK),
+                supportedPrimitiveTypesHint =
+                    setOf(
+                        PrimitiveAtom.TICK,
+                        PrimitiveAtom.CLICK,
+                    ),
                 primitiveDurationMillisMapHint =
-                    mapOf(PrimitiveAtom.TICK to 10L, PrimitiveAtom.CLICK to 20L),
+                    mapOf(
+                        PrimitiveAtom.TICK to 10L,
+                        PrimitiveAtom.CLICK to 20L,
+                    ),
             )
         assertThat(profile.isPrimitiveDurationReported).isTrue()
         assertThat(profile.getPrimitiveDurationMillis(PrimitiveAtom.TICK)).isEqualTo(10L)
@@ -253,7 +277,10 @@ class HapticCompositionProfileTest {
             HapticCompositionProfile(
                 supportedPrimitiveTypesHint = setOf(PrimitiveAtom.TICK),
                 primitiveDurationMillisMapHint =
-                    mapOf(PrimitiveAtom.TICK to 10L, PrimitiveAtom.CLICK to 20L),
+                    mapOf(
+                        PrimitiveAtom.TICK to 10L,
+                        PrimitiveAtom.CLICK to 20L,
+                    ),
             )
         assertThat(profile.isPrimitiveDurationReported).isTrue()
         assertThat(profile.getPrimitiveDurationMillis(PrimitiveAtom.TICK)).isEqualTo(10L)

@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.privacysandbox.ui.client.compose.SandboxedSdkUi
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
-import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
 import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.test.espresso.Espresso
@@ -61,7 +60,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import org.hamcrest.Matchers.instanceOf
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,9 +67,6 @@ import org.junit.runner.RunWith
 // TODO(b/374919355): Create a common test framework for testing Compose and View UI lib constructs
 @RunWith(AndroidJUnit4::class)
 @LargeTest
-// OptIn calling the experimental API SandboxedSdkUi(SandboxedUiAdapter, Modifier,
-// SandboxedSdkViewEventListener?, Boolean)
-@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class SandboxedSdkUiTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<UiLibComposeActivity>()
     private var testSandboxedUiAdapter by mutableStateOf(TestSandboxedUiAdapter())
@@ -96,7 +91,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = FailingTestSandboxedUiAdapter(),
                 modifier = Modifier,
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener,
+                sandboxedSdkViewEventListener = eventListener
             )
         }
         assertThat(eventListener.errorLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue()
@@ -207,13 +202,13 @@ class SandboxedSdkUiTest {
         uiDevice.performActionAndWait(
             { uiDevice.setOrientationLeft() },
             Until.newWindow(),
-            UI_INTENSIVE_TIMEOUT_MS,
+            UI_INTENSIVE_TIMEOUT_MS
         )
         testSandboxedUiAdapter.assertSessionNotClosed()
         uiDevice.performActionAndWait(
             { uiDevice.setOrientationNatural() },
             Until.newWindow(),
-            UI_INTENSIVE_TIMEOUT_MS,
+            UI_INTENSIVE_TIMEOUT_MS
         )
         testSandboxedUiAdapter.assertSessionNotClosed()
     }
@@ -236,7 +231,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.padding(all = padding),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener,
+                sandboxedSdkViewEventListener = eventListener
             )
         }
         testSandboxedUiAdapter.assertSessionOpened()
@@ -253,7 +248,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.padding(all = padding),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener,
+                sandboxedSdkViewEventListener = eventListener
             )
         }
         testSandboxedUiAdapter.assertSessionOpened()
@@ -275,7 +270,7 @@ class SandboxedSdkUiTest {
         assertThat(session.supportedSignalOptions)
             .containsExactly(
                 SandboxedUiAdapterSignalOptions.GEOMETRY,
-                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
             )
     }
 
@@ -324,7 +319,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.offset(offset),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener,
+                sandboxedSdkViewEventListener = eventListener
             )
         }
         testSandboxedUiAdapter.assertSessionOpened()
@@ -342,7 +337,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier,
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener,
+                    sandboxedSdkViewEventListener = eventListener
                 )
             }
         }
@@ -370,7 +365,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier,
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener,
+                    sandboxedSdkViewEventListener = eventListener
                 )
             }
         }
@@ -409,7 +404,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.fillMaxSize(),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener,
+                    sandboxedSdkViewEventListener = eventListener
                 )
             }
         }
@@ -466,7 +461,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.offset(x = xOffset, y = yOffset),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener,
+                    sandboxedSdkViewEventListener = eventListener
                 )
             }
         }
@@ -498,7 +493,6 @@ class SandboxedSdkUiTest {
         }
     }
 
-    @Ignore // b/406777552
     @Test
     fun signalsSentWhenPositionChangesTest() {
         var offset by mutableStateOf(0.dp)
@@ -507,7 +501,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.offset(x = offset),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener,
+                sandboxedSdkViewEventListener = eventListener
             )
         }
         val session = testSandboxedUiAdapter.testSession
@@ -579,7 +573,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.requiredSize(size),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener,
+                    sandboxedSdkViewEventListener = eventListener
                 )
             }
         }
@@ -603,7 +597,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.requiredSize(size),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener,
+                    sandboxedSdkViewEventListener = eventListener
                 )
             }
         }
@@ -626,7 +620,7 @@ class SandboxedSdkUiTest {
                     sandboxedUiAdapter = testSandboxedUiAdapter,
                     modifier = Modifier.requiredSize(size),
                     providerUiOnTop = providerUiOnTop,
-                    sandboxedSdkViewEventListener = eventListener,
+                    sandboxedSdkViewEventListener = eventListener
                 )
             }
         }
@@ -656,7 +650,7 @@ class SandboxedSdkUiTest {
                         sandboxedUiAdapter = testSandboxedUiAdapter,
                         modifier = Modifier.requiredSize(size),
                         providerUiOnTop = providerUiOnTop,
-                        sandboxedSdkViewEventListener = eventListener,
+                        sandboxedSdkViewEventListener = eventListener
                     )
                 }
             }
@@ -688,7 +682,7 @@ class SandboxedSdkUiTest {
                 sandboxedUiAdapter = testSandboxedUiAdapter,
                 modifier = Modifier.requiredSize(size),
                 providerUiOnTop = providerUiOnTop,
-                sandboxedSdkViewEventListener = eventListener,
+                sandboxedSdkViewEventListener = eventListener
             )
         }
     }

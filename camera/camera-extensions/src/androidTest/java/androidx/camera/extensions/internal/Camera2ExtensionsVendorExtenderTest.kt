@@ -44,16 +44,13 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 31)
 class Camera2ExtensionsVendorExtenderTest(
     @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int,
-    private val mode: Int,
+    private val mode: Int
 ) {
     private val context = InstrumentationRegistry.getInstrumentation().context
     private val cameraId2ExtensionCharacteristicsMap =
         Camera2ExtensionsUtil.createCameraId2CameraExtensionCharacteristicsMap(context)
     private val camera2ExtensionsVendorExtender =
-        Camera2ExtensionsVendorExtender(
-            mode,
-            Camera2ExtensionsInfo(context.getSystemService(CameraManager::class.java)),
-        )
+        Camera2ExtensionsVendorExtender(mode, context.getSystemService(CameraManager::class.java))
     private val cameraId = CameraUtil.getCameraIdWithLensFacing(lensFacing)!!
     private val camera2ExtensionMode = Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode(mode)
     private val cameraExtensionsCharacteristics = cameraId2ExtensionCharacteristicsMap[cameraId]!!
@@ -68,7 +65,7 @@ class Camera2ExtensionsVendorExtenderTest(
                 cameraProvider
                     .bindToLifecycle(
                         FakeLifecycleOwner(),
-                        CameraSelector.Builder().requireLensFacing(lensFacing).build(),
+                        CameraSelector.Builder().requireLensFacing(lensFacing).build()
                     )
                     .cameraInfo
         }
@@ -111,12 +108,12 @@ class Camera2ExtensionsVendorExtenderTest(
                 if (format != ImageFormat.PRIVATE) {
                     cameraExtensionsCharacteristics.getExtensionSupportedSizes(
                         camera2ExtensionMode,
-                        format,
+                        format
                     )
                 } else {
                     cameraExtensionsCharacteristics.getExtensionSupportedSizes(
                         camera2ExtensionMode,
-                        SurfaceTexture::class.java,
+                        SurfaceTexture::class.java
                     )
                 }
             )
@@ -134,7 +131,7 @@ class Camera2ExtensionsVendorExtenderTest(
                     cameraExtensionsCharacteristics.getPostviewSupportedSizes(
                         camera2ExtensionMode,
                         RESOLUTION_VGA,
-                        format,
+                        format
                     )
                 )
         }
@@ -202,7 +199,7 @@ class Camera2ExtensionsVendorExtenderTest(
                                 ExtensionMode.HDR,
                                 ExtensionMode.NIGHT,
                                 ExtensionMode.FACE_RETOUCH,
-                                ExtensionMode.AUTO,
+                                ExtensionMode.AUTO
                             )
                             .forEach { mode -> add(arrayOf(lensFacing, mode)) }
                     }

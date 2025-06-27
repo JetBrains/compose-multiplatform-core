@@ -20,7 +20,7 @@ import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
 import androidx.appfunctions.compiler.core.createElementWithTextNode
-import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
+import androidx.appfunctions.metadata.AppFunctionMetadataDocument
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -44,8 +44,9 @@ import org.w3c.dom.Element
  * The new indexer will index additional properties based on the schema defined in SDK instead of
  * the pre-defined one in AppSearch.
  */
-class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerator) :
-    SymbolProcessor {
+class AppFunctionLegacyIndexXmlProcessor(
+    private val codeGenerator: CodeGenerator,
+) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
@@ -55,7 +56,7 @@ class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerato
             )
         generateLegacyIndexXml(
             appFunctionSymbolResolver.getAnnotatedAppFunctionsFromAllModules(),
-            resolvedAnnotatedSerializableProxies,
+            resolvedAnnotatedSerializableProxies
         )
         return emptyList()
     }
@@ -68,7 +69,7 @@ class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerato
      */
     private fun generateLegacyIndexXml(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
-        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
     ) {
         if (appFunctionsByClass.isEmpty()) {
             return
@@ -110,11 +111,11 @@ class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerato
             .createNewFile(
                 Dependencies(
                     aggregating = true,
-                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray(),
+                    *appFunctionsByClass.flatMap { it.getSourceFiles() }.toTypedArray()
                 ),
                 XML_PACKAGE_NAME,
                 XML_FILE_NAME,
-                XML_EXTENSION,
+                XML_EXTENSION
             )
             .use { stream -> transformer.transform(DOMSource(xmlDocument), StreamResult(stream)) }
     }
@@ -138,7 +139,10 @@ class AppFunctionLegacyIndexXmlProcessor(private val codeGenerator: CodeGenerato
                     )
                 )
                 appendChild(
-                    createElementWithTextNode(XmlElement.APP_FUNCTION_SCHEMA_NAME_TAG, schemaName)
+                    createElementWithTextNode(
+                        XmlElement.APP_FUNCTION_SCHEMA_NAME_TAG,
+                        schemaName,
+                    )
                 )
                 appendChild(
                     createElementWithTextNode(

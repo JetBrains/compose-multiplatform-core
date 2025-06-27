@@ -42,4 +42,9 @@ fun TestSplitInfo(
     primaryActivityStack: ActivityStack = TestActivityStack(),
     secondActivityStack: ActivityStack = TestActivityStack(),
     splitAttributes: SplitAttributes = SplitAttributes.Builder().build(),
-): SplitInfo = SplitInfo(primaryActivityStack, secondActivityStack, splitAttributes)
+): SplitInfo =
+    SplitInfo(
+        primaryActivityStack,
+        secondActivityStack,
+        splitAttributes,
+    )

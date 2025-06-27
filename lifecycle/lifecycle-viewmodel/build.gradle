@@ -29,26 +29,15 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.lifecycle.viewmodel"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-        androidResources.enable = true
-    }
+    androidTarget()
     desktop()
     mac()
     linux()
     ios()
-    watchos()
-    tvos()
-    mingwX64()
-    js()
-    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -77,7 +66,7 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        jvmTest {
+        jvmCommonTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)
@@ -93,14 +82,14 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmCommonTest)
             dependencies {
                 implementation(libs.mockitoCore4)
             }
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation("androidx.core:core-ktx:1.2.0")
                 implementation(libs.testExtJunit)
@@ -110,91 +99,33 @@ androidXMultiplatform {
         }
 
         desktopMain { dependsOn(jvmMain) }
-        desktopTest { dependsOn(jvmTest) }
         nonJvmMain { dependsOn(commonMain) }
-        nonJvmTest { dependsOn(commonTest) }
         nativeMain { dependsOn(nonJvmMain) }
-        nativeTest { dependsOn(nonJvmTest) }
-
-        unixMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinMain {
-            dependsOn(unixMain)
-        }
-
-        linuxMain {
-            dependsOn(unixMain)
-        }
-
-        mingwMain {
-            dependsOn(nativeMain)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
+        darwinMain { dependsOn(nativeMain) }
+        linuxMain { dependsOn(nativeMain) }
 
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                } else if (target.konanTarget.family == Family.LINUX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                } else if (target.konanTarget.family == Family.MINGW) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(mingwMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+                target.compilations["main"].defaultSourceSet {
+                    def konanTargetFamily = target.konanTarget.family
+                    if (konanTargetFamily == Family.OSX || konanTargetFamily == Family.IOS) {
+                        dependsOn(darwinMain)
+                    } else if (konanTargetFamily == Family.LINUX) {
+                        dependsOn(linuxMain)
+                    } else {
+                        throw new GradleException("unknown native target ${target}")
+                    }
                 }
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }
+}
+
+android {
+    buildTypes.configureEach {
+        consumerProguardFiles "proguard-rules.pro"
+    }
+    namespace = "androidx.lifecycle.viewmodel"
 }
 
 androidx {
@@ -202,4 +133,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle ViewModel"
+    metalavaK2UastEnabled = false
 }

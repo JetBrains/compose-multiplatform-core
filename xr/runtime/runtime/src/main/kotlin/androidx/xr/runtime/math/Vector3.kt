@@ -60,20 +60,14 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
     /** Get a new vector multiplied by a scalar amount. */
     public operator fun times(c: Float): Vector3 = Vector3(x * c, y * c, z * c)
 
-    /**
-     * Returns a new vector with each component of this vector multiplied by each corresponding
-     * component of the [other] vector.
-     */
+    /** Returns a new vector with the product of this vector and the [other] vector. */
     public operator fun times(other: Vector3): Vector3 =
         Vector3(x * other.x, y * other.y, z * other.z)
 
     /** Returns a new vector with this vector divided by a scalar amount. */
     public operator fun div(c: Float): Vector3 = Vector3(x / c, y / c, z / c)
 
-    /**
-     * Returns a new vector with each component of this vector divided by each corresponding
-     * component of the [other] vector.
-     */
+    /** Returns a new vector with this vector divided by the [other] vector. */
     public operator fun div(other: Vector3): Vector3 =
         Vector3(x / other.x, y / other.y, z / other.z)
 
@@ -185,7 +179,7 @@ constructor(public val x: Float = 0F, public val y: Float = 0F, public val z: Fl
             Vector3(
                 lerp(start.x, end.x, ratio),
                 lerp(start.y, end.y, ratio),
-                lerp(start.z, end.z, ratio),
+                lerp(start.z, end.z, ratio)
             )
 
         /** Returns the minimum of each component of the two vectors. */

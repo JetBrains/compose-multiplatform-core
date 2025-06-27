@@ -89,6 +89,7 @@ class UseCaseCameraStateTest {
         UseCaseCameraState(
             useCaseGraphConfig = fakeUseCaseGraphConfig,
             threads = useCaseThreads,
+            sessionProcessorManager = null,
             templateParamsOverride = NoOpTemplateParamsOverride,
         )
 
@@ -204,6 +205,7 @@ class UseCaseCameraStateTest {
             UseCaseCameraState(
                 useCaseGraphConfig = fakeUseCaseGraphConfig,
                 threads = useCaseThreads,
+                sessionProcessorManager = null,
                 templateParamsOverride =
                     TemplateParamsQuirkOverride(
                         Quirks(listOf(object : CaptureIntentPreviewQuirk {}))
@@ -214,7 +216,10 @@ class UseCaseCameraStateTest {
         val template = RequestTemplate(TEMPLATE_RECORD)
         val result =
             useCaseCameraState
-                .updateAsync(streams = setOf(StreamId(0)), template = template)
+                .updateAsync(
+                    streams = setOf(StreamId(0)),
+                    template = template,
+                )
                 .asListenableFuture()
 
         // simulate startRepeating request being completed in camera

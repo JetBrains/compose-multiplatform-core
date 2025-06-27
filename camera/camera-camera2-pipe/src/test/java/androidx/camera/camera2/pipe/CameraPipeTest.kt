@@ -48,11 +48,11 @@ internal class CameraPipeTest {
         val context = ApplicationProvider.getApplicationContext() as Context
         val cameraPipe = CameraPipe(CameraPipe.Config(context))
         val cameraGraph =
-            cameraPipe.createCameraGraph(
+            cameraPipe.create(
                 CameraGraph.Config(
                     camera = fakeCameraId,
                     streams = listOf(),
-                    defaultTemplate = RequestTemplate(0),
+                    defaultTemplate = RequestTemplate(0)
                 )
             )
         assertThat(cameraGraph).isNotNull()

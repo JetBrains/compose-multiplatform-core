@@ -21,7 +21,10 @@ package androidx.health.connect.client.units
  * - millimeters of Mercury (mmHg) - see [Pressure.millimetersOfMercury],
  *   [Double.millimetersOfMercury].
  */
-class Pressure private constructor(private val value: Double) : Comparable<Pressure> {
+class Pressure
+private constructor(
+    private val value: Double,
+) : Comparable<Pressure> {
 
     /** Returns the pressure in millimeters of Mercury (mmHg). */
     @get:JvmName("getMillimetersOfMercury")

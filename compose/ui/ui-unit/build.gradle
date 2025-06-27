@@ -27,17 +27,12 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.compose.ui.unit"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-    }
+    androidTarget()
     jvmStubs()
     linuxX64Stubs()
 
@@ -120,4 +115,11 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-unit:ui-unit-samples"))
+}
+
+android {
+    namespace = "androidx.compose.ui.unit"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
 }

@@ -22,8 +22,6 @@
  * modifying its settings.
  */
 
-
-import androidx.build.KotlinTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import androidx.build.SoftwareType
 
@@ -56,7 +54,7 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "RxJava3 integration in Room Paging"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {

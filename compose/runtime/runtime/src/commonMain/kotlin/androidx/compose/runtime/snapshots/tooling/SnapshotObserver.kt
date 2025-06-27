@@ -39,7 +39,7 @@ import androidx.compose.runtime.snapshots.sync
  */
 @ExperimentalComposeRuntimeApi
 @Suppress("CallbackName")
-public interface SnapshotObserver {
+interface SnapshotObserver {
     /**
      * Called before a snapshot is created allowing reads and writes to the snapshot to be observed.
      *
@@ -50,7 +50,7 @@ public interface SnapshotObserver {
      * @param readonly whether the snapshot being created will be read-only.
      * @return optional read and write observers that will be added to the snapshot created.
      */
-    public fun onPreCreate(parent: Snapshot?, readonly: Boolean): SnapshotInstanceObservers? = null
+    fun onPreCreate(parent: Snapshot?, readonly: Boolean): SnapshotInstanceObservers? = null
 
     /**
      * Called after snapshot is created.
@@ -67,11 +67,7 @@ public interface SnapshotObserver {
      *   [onCreated]. This allows correlating which snapshot observers returned by [onPreCreate] to
      *   the [snapshot] that was created.
      */
-    public fun onCreated(
-        snapshot: Snapshot,
-        parent: Snapshot?,
-        observers: SnapshotInstanceObservers?,
-    ) {}
+    fun onCreated(snapshot: Snapshot, parent: Snapshot?, observers: SnapshotInstanceObservers?) {}
 
     /**
      * Called while a snapshot is being disposed.
@@ -80,7 +76,7 @@ public interface SnapshotObserver {
      *
      * @param snapshot information about the snapshot that was created.
      */
-    public fun onPreDispose(snapshot: Snapshot) {}
+    fun onPreDispose(snapshot: Snapshot) {}
 
     /**
      * Called after a snapshot is applied.
@@ -96,7 +92,7 @@ public interface SnapshotObserver {
      * @param snapshot the snapshot that was applied.
      * @param changed the set of objects that were modified during the snapshot.
      */
-    public fun onApplied(snapshot: Snapshot, changed: Set<Any>) {}
+    fun onApplied(snapshot: Snapshot, changed: Set<Any>) {}
 }
 
 /**
@@ -104,14 +100,14 @@ public interface SnapshotObserver {
  * the newly created snapshot to be observed
  */
 @ExperimentalComposeRuntimeApi
-public class SnapshotInstanceObservers(
+class SnapshotInstanceObservers(
     /**
      * Called whenever a state is read in the snapshot. This is called before the read observer
      * passed to [Snapshot.takeSnapshot] or [Snapshot.takeMutableSnapshot].
      *
      * This method is called in the same thread that reads snapshot state.
      */
-    public val readObserver: ((Any) -> Unit)? = null,
+    val readObserver: ((Any) -> Unit)? = null,
 
     /**
      * Called just before a state object is written to the first time in the snapshot or a nested
@@ -125,7 +121,7 @@ public class SnapshotInstanceObservers(
      *
      * This method is called in the same thread that writes to the snapshot state.
      */
-    public val writeObserver: ((Any) -> Unit)? = null,
+    val writeObserver: ((Any) -> Unit)? = null,
 )
 
 /**
@@ -143,7 +139,7 @@ public class SnapshotInstanceObservers(
  * @return [ObserverHandle] an instance to unregister the [snapshotObserver].
  */
 @ExperimentalComposeRuntimeApi
-public fun Snapshot.Companion.observeSnapshots(snapshotObserver: SnapshotObserver): ObserverHandle {
+fun Snapshot.Companion.observeSnapshots(snapshotObserver: SnapshotObserver): ObserverHandle {
     sync { observers = (observers ?: persistentListOf()).add(snapshotObserver) }
     return ObserverHandle {
         sync {
@@ -161,7 +157,7 @@ internal inline fun <R : Snapshot> creatingSnapshot(
     noinline readObserver: ((Any) -> Unit)?,
     noinline writeObserver: ((Any) -> Unit)?,
     readonly: Boolean,
-    crossinline block: (readObserver: ((Any) -> Unit)?, writeObserver: ((Any) -> Unit)?) -> R,
+    crossinline block: (readObserver: ((Any) -> Unit)?, writeObserver: ((Any) -> Unit)?) -> R
 ): R {
     var observerMap: Map<SnapshotObserver, SnapshotInstanceObservers>? = null
     val observers = observers
@@ -218,7 +214,7 @@ private fun mergeObservers(a: ((Any) -> Unit)?, b: ((Any) -> Unit)?): ((Any) -> 
 internal fun PersistentList<SnapshotObserver>.dispatchCreatedObservers(
     parent: Snapshot?,
     result: Snapshot,
-    observerMap: Map<SnapshotObserver, SnapshotInstanceObservers>?,
+    observerMap: Map<SnapshotObserver, SnapshotInstanceObservers>?
 ) {
     fastForEach { observer ->
         val instance = observerMap?.get(observer)

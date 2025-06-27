@@ -40,14 +40,14 @@ import androidx.privacysandbox.ads.adservices.measurement.WebSourceParams.Compan
  * @param verifiedDestination Verified destination by the caller. This is where the user actually
  *   landed.
  */
-public class WebSourceRegistrationRequest
+class WebSourceRegistrationRequest
 public constructor(
-    public val webSourceParams: List<WebSourceParams>,
-    public val topOriginUri: Uri,
-    public val inputEvent: InputEvent? = null,
-    public val appDestination: Uri? = null,
-    public val webDestination: Uri? = null,
-    public val verifiedDestination: Uri? = null,
+    val webSourceParams: List<WebSourceParams>,
+    val topOriginUri: Uri,
+    val inputEvent: InputEvent? = null,
+    val appDestination: Uri? = null,
+    val webDestination: Uri? = null,
+    val verifiedDestination: Uri? = null
 ) {
 
     override fun equals(other: Any?): Boolean {
@@ -99,7 +99,7 @@ public constructor(
         android.adservices.measurement.WebSourceRegistrationRequest {
         return android.adservices.measurement.WebSourceRegistrationRequest.Builder(
                 convertWebSourceParams(webSourceParams),
-                topOriginUri,
+                topOriginUri
             )
             .setWebDestination(webDestination)
             .setAppDestination(appDestination)
@@ -117,7 +117,7 @@ public constructor(
      */
     public class Builder(
         private val webSourceParams: List<WebSourceParams>,
-        private val topOriginUri: Uri,
+        private val topOriginUri: Uri
     ) {
         private var inputEvent: InputEvent? = null
         private var appDestination: Uri? = null
@@ -131,9 +131,7 @@ public constructor(
          *   distinguish clicks from views.
          * @return builder
          */
-        public fun setInputEvent(inputEvent: InputEvent): Builder = apply {
-            this.inputEvent = inputEvent
-        }
+        fun setInputEvent(inputEvent: InputEvent): Builder = apply { this.inputEvent = inputEvent }
 
         /**
          * Setter for app destination. It is the android app {@link Uri} where corresponding
@@ -142,7 +140,7 @@ public constructor(
          * @param appDestination app destination [Uri]
          * @return builder
          */
-        public fun setAppDestination(appDestination: Uri?): Builder = apply {
+        fun setAppDestination(appDestination: Uri?): Builder = apply {
             this.appDestination = appDestination
         }
 
@@ -153,7 +151,7 @@ public constructor(
          * @param webDestination web destination [Uri]
          * @return builder
          */
-        public fun setWebDestination(webDestination: Uri?): Builder = apply {
+        fun setWebDestination(webDestination: Uri?): Builder = apply {
             this.webDestination = webDestination
         }
 
@@ -163,19 +161,19 @@ public constructor(
          * @param verifiedDestination verified destination
          * @return builder
          */
-        public fun setVerifiedDestination(verifiedDestination: Uri?): Builder = apply {
+        fun setVerifiedDestination(verifiedDestination: Uri?): Builder = apply {
             this.verifiedDestination = verifiedDestination
         }
 
         /** Pre-validates parameters and builds [WebSourceRegistrationRequest]. */
-        public fun build(): WebSourceRegistrationRequest {
+        fun build(): WebSourceRegistrationRequest {
             return WebSourceRegistrationRequest(
                 webSourceParams,
                 topOriginUri,
                 inputEvent,
                 appDestination,
                 webDestination,
-                verifiedDestination,
+                verifiedDestination
             )
         }
     }

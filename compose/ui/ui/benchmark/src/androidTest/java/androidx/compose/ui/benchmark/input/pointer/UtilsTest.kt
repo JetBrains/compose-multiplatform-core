@@ -148,7 +148,11 @@ class UtilsTest {
         val view = View(context)
 
         val ups =
-            createUps(initialTime = initialTime, initialPointers = simplifiedUps, rootView = view)
+            createUps(
+                initialTime = initialTime,
+                initialPointers = simplifiedUps,
+                rootView = view,
+            )
 
         // Should just return an empty array
         assertThat(ups.size).isEqualTo(simplifiedUps.size)
@@ -167,7 +171,11 @@ class UtilsTest {
             arrayOf(BenchmarkSimplifiedPointerInputPointer(id = 0, x = xMoveInitial, y = y))
 
         val ups =
-            createUps(initialTime = initialTime, initialPointers = simplifiedUps, rootView = view)
+            createUps(
+                initialTime = initialTime,
+                initialPointers = simplifiedUps,
+                rootView = view,
+            )
 
         assertThat(ups.size).isEqualTo(simplifiedUps.size)
 
@@ -202,7 +210,7 @@ class UtilsTest {
                 BenchmarkSimplifiedPointerInputPointer(
                     id = index,
                     x = xMoveInitial + (index * DefaultPointerInputMoveAmountPx),
-                    y = y,
+                    y = y
                 )
             }
 
@@ -210,7 +218,11 @@ class UtilsTest {
         val view = View(context)
 
         val ups =
-            createUps(initialTime = initialTime, initialPointers = simplifiedUps, rootView = view)
+            createUps(
+                initialTime = initialTime,
+                initialPointers = simplifiedUps,
+                rootView = view,
+            )
 
         assertThat(ups.size).isEqualTo(simplifiedUps.size)
 
@@ -275,7 +287,7 @@ class UtilsTest {
                 numberOfMoveEvents = numberOfEvents,
                 enableFlingStyleHistory = enableFlingStyleHistory,
                 timeDelta = 100,
-                moveDelta = -DefaultPointerInputMoveAmountPx,
+                moveDelta = -DefaultPointerInputMoveAmountPx
             )
 
         assertThat(moves.size).isEqualTo(numberOfEvents)
@@ -312,7 +324,7 @@ class UtilsTest {
                     ),
                 rootView = view,
                 numberOfMoveEvents = numberOfEvents,
-                enableFlingStyleHistory = enableFlingStyleHistory,
+                enableFlingStyleHistory = enableFlingStyleHistory
             )
 
         assertThat(moves.size).isEqualTo(numberOfEvents)
@@ -349,7 +361,7 @@ class UtilsTest {
                     ),
                 rootView = view,
                 numberOfMoveEvents = numberOfEvents,
-                enableFlingStyleHistory = enableFlingStyleHistory,
+                enableFlingStyleHistory = enableFlingStyleHistory
             )
 
         assertThat(moves.size).isEqualTo(numberOfEvents)
@@ -389,7 +401,7 @@ class UtilsTest {
                 numberOfMoveEvents = numberOfEvents,
                 enableFlingStyleHistory = enableFlingStyleHistory,
                 timeDelta = 100,
-                moveDelta = -DefaultPointerInputMoveAmountPx,
+                moveDelta = -DefaultPointerInputMoveAmountPx
             )
         assertThat(moves.size).isEqualTo(numberOfEvents)
 
@@ -424,7 +436,7 @@ class UtilsTest {
                 BenchmarkSimplifiedPointerInputPointer(
                     id = simpleIndex,
                     x = xMoveInitial + (simpleIndex * DefaultPointerInputMoveAmountPx),
-                    y = y,
+                    y = y
                 )
             }
 
@@ -436,7 +448,7 @@ class UtilsTest {
                 numberOfMoveEvents = numberOfEvents,
                 enableFlingStyleHistory = enableFlingStyleHistory,
                 timeDelta = 100,
-                moveDelta = -DefaultPointerInputMoveAmountPx,
+                moveDelta = -DefaultPointerInputMoveAmountPx
             )
 
         assertThat(moves.size).isEqualTo(numberOfEvents)
@@ -478,7 +490,7 @@ class UtilsTest {
                 BenchmarkSimplifiedPointerInputPointer(
                     id = simpleIndex,
                     x = xMoveInitial + (simpleIndex * DefaultPointerInputMoveAmountPx),
-                    y = y,
+                    y = y
                 )
             }
 
@@ -488,7 +500,7 @@ class UtilsTest {
                 initialPointers = initialPointers,
                 rootView = view,
                 numberOfMoveEvents = numberOfEvents,
-                enableFlingStyleHistory = enableFlingStyleHistory,
+                enableFlingStyleHistory = enableFlingStyleHistory
             )
 
         assertThat(moves.size).isEqualTo(numberOfEvents)
@@ -530,7 +542,7 @@ class UtilsTest {
                 BenchmarkSimplifiedPointerInputPointer(
                     id = simpleIndex,
                     x = xMoveInitial + (simpleIndex * DefaultPointerInputMoveAmountPx),
-                    y = y,
+                    y = y
                 )
             }
 
@@ -542,7 +554,7 @@ class UtilsTest {
                 numberOfMoveEvents = numberOfEvents,
                 enableFlingStyleHistory = enableFlingStyleHistory,
                 timeDelta = 100,
-                moveDelta = -DefaultPointerInputMoveAmountPx,
+                moveDelta = -DefaultPointerInputMoveAmountPx
             )
 
         assertThat(moves.size).isEqualTo(numberOfEvents)
@@ -585,7 +597,7 @@ class UtilsTest {
                 BenchmarkSimplifiedPointerInputPointer(
                     id = simpleIndex,
                     x = xMoveInitial + (simpleIndex * DefaultPointerInputMoveAmountPx),
-                    y = y,
+                    y = y
                 )
             }
 
@@ -595,7 +607,7 @@ class UtilsTest {
                 initialPointers = initialPointers,
                 rootView = view,
                 numberOfMoveEvents = numberOfEvents,
-                enableFlingStyleHistory = enableFlingStyleHistory,
+                enableFlingStyleHistory = enableFlingStyleHistory
             )
 
         assertThat(moves.size).isEqualTo(numberOfEvents)

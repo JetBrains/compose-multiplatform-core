@@ -31,7 +31,9 @@ enum class CommonAdapterItemType(
 }
 
 /** Simple view holder for common type items that does nothing on bind. */
-class CommonViewHolder(parent: ViewGroup, type: CommonAdapterItemType) :
-    BaseViewHolder<Any>(parent, type.layoutResId) {
+class CommonViewHolder(
+    parent: ViewGroup,
+    type: CommonAdapterItemType,
+) : BaseViewHolder<Any>(parent, type.layoutResId) {
     override fun bind(viewModel: Any) {}
 }

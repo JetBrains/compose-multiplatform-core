@@ -47,12 +47,15 @@ private val RelocationDemos =
         ComposableDemo("Nested scrollables") { BringNestedIntoViewDemo() },
     )
 
-private val FocusDemos = listOf(ComposableDemo("Focus Group") { FocusGroupDemo() })
+private val FocusDemos =
+    listOf(
+        ComposableDemo("Focus Group") { FocusGroupDemo() },
+    )
 
 private val GestureDemos =
     listOf(
         ComposableDemo("AnchoredDraggable") { AnchoredDraggableDemo() },
-        ComposableDemo("Draggable, Scrollable, Zoomable, Focusable") { HighLevelGesturesDemo() },
+        ComposableDemo("Draggable, Scrollable, Zoomable, Focusable") { HighLevelGesturesDemo() }
     )
 
 private val NestedScrollDemos =
@@ -65,7 +68,7 @@ private val NestedScrollDemos =
 private val DragAndDropDemos =
     listOf(
         ComposableDemo("Multi app drag and drop") { DragAndDropMultiAppDemo() },
-        ComposableDemo("Nested Drag and drop") { DragAndDropNestedDemo() },
+        ComposableDemo("Nested Drag and drop") { DragAndDropNestedDemo() }
     )
 
 val FoundationDemos =
@@ -83,7 +86,6 @@ val FoundationDemos =
             ComposableDemo("Draw Modifiers") { DrawModifiersDemo() },
             ComposableDemo("External Surfaces") { AndroidExternalSurfaceDemo() },
             DemoCategory("Lazy lists", LazyListDemos),
-            DemoCategory("Lazy Layouts", LazyLayoutDemos),
             DemoCategory("Snapping", SnappingDemos),
             DemoCategory("Pagers", PagerDemos),
             ComposableDemo("Simple InteractionSource") { SimpleInteractionSourceSample() },
@@ -103,6 +105,5 @@ val FoundationDemos =
             DemoCategory("Pointer Icon", PointerIconDemos),
             DemoCategory("Long screenshots", LongScreenshotsDemos),
             DemoCategory("Context Menu", ContextMenuDemos),
-            ComposableDemo("Input Debugger") { InputDebuggerDemo() },
-        ),
+        )
     )

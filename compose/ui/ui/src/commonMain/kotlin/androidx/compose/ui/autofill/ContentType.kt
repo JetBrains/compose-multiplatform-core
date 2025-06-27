@@ -198,6 +198,4 @@ expect sealed interface ContentType {
          */
         val SmsOtpCode: ContentType
     }
-
-    operator fun plus(other: ContentType): ContentType
 }

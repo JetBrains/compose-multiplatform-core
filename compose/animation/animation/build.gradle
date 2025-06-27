@@ -34,7 +34,17 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.animation"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
+
         compileSdk = 35
+        aarMetadata.minCompileSdk = 35
     }
     jvmStubs()
     linuxX64Stubs()
@@ -55,7 +65,7 @@ androidXMultiplatform {
                 implementation(project(":compose:ui:ui-util"))
                 implementation(project(":compose:ui:ui-graphics"))
 
-                implementation("androidx.collection:collection:1.5.0")
+                implementation(project(":collection:collection"))
             }
         }
 

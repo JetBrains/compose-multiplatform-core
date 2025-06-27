@@ -85,7 +85,10 @@ internal class UpdatableAnimationState(animationSpec: AnimationSpec<Float>) {
      */
     @OptIn(ExperimentalContracts::class)
     @Suppress("LEAKED_IN_PLACE_LAMBDA")
-    suspend fun animateToZero(beforeFrame: (valueDelta: Float) -> Unit, afterFrame: () -> Unit) {
+    suspend fun animateToZero(
+        beforeFrame: (valueDelta: Float) -> Unit,
+        afterFrame: () -> Unit,
+    ) {
         contract { callsInPlace(beforeFrame) }
         checkPrecondition(!isRunning) { "animateToZero called while previous animation is running" }
 
@@ -110,7 +113,7 @@ internal class UpdatableAnimationState(animationSpec: AnimationSpec<Float>) {
                             vectorizedSpec.getDurationNanos(
                                 initialValue = AnimationVector1D(value),
                                 targetValue = ZeroVector,
-                                initialVelocity = lastVelocity,
+                                initialVelocity = lastVelocity
                             )
                         } else {
                             ((frameTime - lastFrameTime) / durationScale).roundToLong()
@@ -121,7 +124,7 @@ internal class UpdatableAnimationState(animationSpec: AnimationSpec<Float>) {
                                 playTimeNanos = playTime,
                                 initialValue = vectorizedCurrentValue,
                                 targetValue = ZeroVector,
-                                initialVelocity = lastVelocity,
+                                initialVelocity = lastVelocity
                             )
                             .value
                     lastVelocity =
@@ -129,7 +132,7 @@ internal class UpdatableAnimationState(animationSpec: AnimationSpec<Float>) {
                             playTimeNanos = playTime,
                             initialValue = vectorizedCurrentValue,
                             targetValue = ZeroVector,
-                            initialVelocity = lastVelocity,
+                            initialVelocity = lastVelocity
                         )
                     lastFrameTime = frameTime
 

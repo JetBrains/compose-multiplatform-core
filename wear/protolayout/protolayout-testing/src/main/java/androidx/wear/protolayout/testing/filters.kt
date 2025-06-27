@@ -53,7 +53,7 @@ public fun hasClickable(
     action: Action = loadAction(),
     id: String? = null,
     @Dimension(DP) minClickableWidth: Float = Float.NaN,
-    @Dimension(DP) minClickableHeight: Float = Float.NaN,
+    @Dimension(DP) minClickableHeight: Float = Float.NaN
 ): LayoutElementMatcher =
     LayoutElementMatcher("has clickable($action, $id, $minClickableWidth, $minClickableHeight)") {
         element ->
@@ -75,8 +75,8 @@ public fun hasClickable(
  * @param value Value to match with content description.
  */
 public fun hasContentDescription(value: String): LayoutElementMatcher =
-    LayoutElementMatcher("Content description = '$value'") { element, context ->
-        element.getContentDescription(context.dynamicData)?.equals(value) == true
+    LayoutElementMatcher("Content description = '$value'") { element ->
+        element.contentDescription?.value?.equals(value) == true
     }
 
 /**
@@ -86,17 +86,8 @@ public fun hasContentDescription(value: String): LayoutElementMatcher =
  * @param pattern String pattern to match with content description.
  */
 public fun hasContentDescription(pattern: Regex): LayoutElementMatcher =
-    LayoutElementMatcher("Content description matches $pattern.") { element, context ->
-        element.getContentDescription(context.dynamicData)?.let { pattern.matches(it) } ?: false
-    }
-
-/**
- * Returns a [LayoutElementMatcher] which checks whether the element is marked as heading for
- * accessibility purpose.
- */
-public fun isSemanticsHeading(): LayoutElementMatcher =
-    LayoutElementMatcher("Element is semantics heading.") { element ->
-        element.modifiers?.semantics?.isHeading ?: false
+    LayoutElementMatcher("Content description matches $pattern.") { element ->
+        element.contentDescription?.value?.let { pattern.matches(it) } ?: false
     }
 
 /**
@@ -128,7 +119,7 @@ public fun containsTag(value: String): LayoutElementMatcher =
 public fun hasText(
     value: String,
     subString: Boolean = false,
-    ignoreCase: Boolean = false,
+    ignoreCase: Boolean = false
 ): LayoutElementMatcher =
     if (subString) {
         LayoutElementMatcher("Element text contains '$value' (ignoreCase: $ignoreCase)") {
@@ -261,7 +252,10 @@ public fun hasAllCorners(radiusDp: Float): LayoutElementMatcher =
  * Returns a [LayoutElementMatcher] which checks whether the element has its top left corner with
  * the given radii.
  */
-public fun hasTopLeftCorner(xRadiusDp: Float, yRadiusDp: Float): LayoutElementMatcher =
+public fun hasTopLeftCorner(
+    xRadiusDp: Float,
+    yRadiusDp: Float,
+): LayoutElementMatcher =
     LayoutElementMatcher(
         "Element has its top left corner with radius of {$xRadiusDp, $yRadiusDp}"
     ) { element ->
@@ -273,7 +267,10 @@ public fun hasTopLeftCorner(xRadiusDp: Float, yRadiusDp: Float): LayoutElementMa
  * Returns a [LayoutElementMatcher] which checks whether the element has its top right corner with
  * the given radii.
  */
-public fun hasTopRightCorner(xRadiusDp: Float, yRadiusDp: Float): LayoutElementMatcher =
+public fun hasTopRightCorner(
+    xRadiusDp: Float,
+    yRadiusDp: Float,
+): LayoutElementMatcher =
     LayoutElementMatcher(
         "Element has its top right corner with radius of {$xRadiusDp, $yRadiusDp}"
     ) { element ->
@@ -285,7 +282,10 @@ public fun hasTopRightCorner(xRadiusDp: Float, yRadiusDp: Float): LayoutElementM
  * Returns a [LayoutElementMatcher] which checks whether the element has its bottom left corner with
  * the given radii.
  */
-public fun hasBottomLeftCorner(xRadiusDp: Float, yRadiusDp: Float): LayoutElementMatcher =
+public fun hasBottomLeftCorner(
+    xRadiusDp: Float,
+    yRadiusDp: Float,
+): LayoutElementMatcher =
     LayoutElementMatcher(
         "Element has its bottom left corner with radius of {$xRadiusDp, $yRadiusDp}"
     ) { element ->
@@ -297,7 +297,10 @@ public fun hasBottomLeftCorner(xRadiusDp: Float, yRadiusDp: Float): LayoutElemen
  * Returns a [LayoutElementMatcher] which checks whether the element has its bottom right corners
  * with the given radii.
  */
-public fun hasBottomRightCorner(xRadiusDp: Float, yRadiusDp: Float): LayoutElementMatcher =
+public fun hasBottomRightCorner(
+    xRadiusDp: Float,
+    yRadiusDp: Float,
+): LayoutElementMatcher =
     LayoutElementMatcher(
         "Element has its bottom right corner with radius of {$xRadiusDp, $yRadiusDp}"
     ) { element ->

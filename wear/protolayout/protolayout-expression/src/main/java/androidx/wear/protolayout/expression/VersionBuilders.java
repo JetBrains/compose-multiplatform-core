@@ -118,7 +118,7 @@ public final class VersionBuilders {
         @RestrictTo(Scope.LIBRARY_GROUP_PREFIX)
         public static final VersionInfo CURRENT = new VersionInfo.Builder()
                 .setMajor(1)
-                .setMinor(600)
+                .setMinor(500)
                 .build();
 
         /** Builder for {@link VersionInfo} */

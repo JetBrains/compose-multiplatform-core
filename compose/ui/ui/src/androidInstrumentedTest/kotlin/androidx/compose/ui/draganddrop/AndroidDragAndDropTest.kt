@@ -116,8 +116,8 @@ class DragAndDropNodeTest {
                 container,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                ),
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
             )
         }
         countDown(from = 1) { latch ->
@@ -158,7 +158,7 @@ class DragAndDropNodeTest {
                                 modifier =
                                     Modifier.offset(
                                             x = HalfContainerSize - HalfChildSize,
-                                            y = (HalfParentSize - HalfChildSize),
+                                            y = (HalfParentSize - HalfChildSize)
                                         )
                                         .requiredSize(ChildSize)
                                         .testDropTarget(acceptingOffsetInnerBottomStartDropTarget)
@@ -186,7 +186,12 @@ class DragAndDropNodeTest {
     @Test
     fun dispatchDragEvent_callsStartOnAllDragAndDropTargetsOn_ACTION_DRAG_STARTED() {
         rule.runOnUiThread {
-            val dragEvent = DragEvent(action = DragEvent.ACTION_DRAG_STARTED, x = 0f, y = 0f)
+            val dragEvent =
+                DragEvent(
+                    action = DragEvent.ACTION_DRAG_STARTED,
+                    x = 0f,
+                    y = 0f,
+                )
 
             val androidComposeView = findAndroidComposeView(container)!!
             // Act
@@ -239,7 +244,11 @@ class DragAndDropNodeTest {
                         y = with(density) { HalfContainerSize.toPx() },
                     ),
                     // Move to the top start
-                    DragEvent(action = DragEvent.ACTION_DRAG_LOCATION, x = 0f, y = 0f),
+                    DragEvent(
+                        action = DragEvent.ACTION_DRAG_LOCATION,
+                        x = 0f,
+                        y = 0f,
+                    ),
                     // Move across the top start
                     DragEvent(
                         action = DragEvent.ACTION_DRAG_LOCATION,
@@ -251,7 +260,7 @@ class DragAndDropNodeTest {
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { (ParentSize + ChildSize).toPx() },
                         y = 0f,
-                    ),
+                    )
                 )
             val (initialEvent, moveStartEvent, moveEndEvent, exitEvent) = events
 
@@ -373,13 +382,17 @@ class DragAndDropNodeTest {
                         y = with(density) { HalfContainerSize.toPx() },
                     ),
                     // Move across the top start
-                    DragEvent(action = DragEvent.ACTION_DRAG_LOCATION, x = 0f, y = 0f),
+                    DragEvent(
+                        action = DragEvent.ACTION_DRAG_LOCATION,
+                        x = 0f,
+                        y = 0f,
+                    ),
                     // Exit the top start and into the top right
                     DragEvent(
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { ContainerSize.toPx() - ParentSize.toPx() },
                         y = 0f,
-                    ),
+                    )
                 )
 
             val (initialEvent, farStartEvent, startToEndEvent) = events
@@ -433,7 +446,7 @@ class DragAndDropNodeTest {
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { HalfChildSize.toPx() },
                         y = with(density) { (ContainerSize - HalfChildSize).toPx() },
-                    ),
+                    )
                 )
 
             val androidComposeView = findAndroidComposeView(container)!!
@@ -446,7 +459,7 @@ class DragAndDropNodeTest {
                         "enter-parent",
                         // important bit is enter child is received before exit parent.
                         "enter-child",
-                        "exit-parent",
+                        "exit-parent"
                     )
                 )
         }
@@ -563,7 +576,7 @@ class DragAndDropNodeTest {
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { HalfContainerSize.toPx() },
                         y = with(density) { (ContainerSize - HalfParentSize).toPx() },
-                    ),
+                    )
                 )
             val (
                 initialEvent,

@@ -26,7 +26,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-public object SdkActivityLauncherFactory {
+object SdkActivityLauncherFactory {
 
     /**
      * Creates a [SdkActivityLauncher] using the given [launcherInfo] Bundle.
@@ -37,7 +37,7 @@ public object SdkActivityLauncherFactory {
      * a key, [IllegalArgumentException] is thrown otherwise.
      */
     @JvmStatic
-    public fun fromLauncherInfo(launcherInfo: Bundle): SdkActivityLauncher {
+    fun fromLauncherInfo(launcherInfo: Bundle): SdkActivityLauncher {
         val remote: ISdkActivityLauncher? =
             ISdkActivityLauncher.Stub.asInterface(
                 launcherInfo.getBinder(SDK_ACTIVITY_LAUNCHER_BINDER_KEY)
@@ -64,7 +64,7 @@ public object SdkActivityLauncherFactory {
                         override fun onLaunchError(message: String?) {
                             it.resumeWithException(RuntimeException(message))
                         }
-                    },
+                    }
                 )
             }
     }

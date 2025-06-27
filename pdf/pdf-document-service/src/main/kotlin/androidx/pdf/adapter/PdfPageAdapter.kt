@@ -17,15 +17,12 @@
 package androidx.pdf.adapter
 
 import android.graphics.Bitmap
-import android.graphics.Rect
 import android.graphics.pdf.PdfRenderer
 import android.graphics.pdf.RenderParams
 import android.graphics.pdf.content.PdfPageGotoLinkContent
 import android.graphics.pdf.content.PdfPageImageContent
 import android.graphics.pdf.content.PdfPageLinkContent
 import android.graphics.pdf.content.PdfPageTextContent
-import android.graphics.pdf.models.FormEditRecord
-import android.graphics.pdf.models.FormWidgetInfo
 import android.graphics.pdf.models.PageMatchBounds
 import android.graphics.pdf.models.selection.PageSelection
 import android.graphics.pdf.models.selection.SelectionBoundary
@@ -58,7 +55,7 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
         left: Int,
         top: Int,
         scaledPageWidth: Int,
-        scaledPageHeight: Int,
+        scaledPageHeight: Int
     ) {
         val transformationMatrix =
             getTransformationMatrix(
@@ -67,7 +64,7 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
                 scaledPageWidth.toFloat(),
                 scaledPageHeight.toFloat(),
                 width,
-                height,
+                height
             )
         page.render(bitmap, null, transformationMatrix, getRenderParams())
     }
@@ -78,14 +75,6 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
 
     override fun getPageImageContents(): List<PdfPageImageContent> {
         return page.imageContents
-    }
-
-    override fun getFormWidgetInfos(): List<FormWidgetInfo> {
-        return page.formWidgetInfos
-    }
-
-    override fun getFormWidgetInfos(types: IntArray): List<FormWidgetInfo> {
-        return page.getFormWidgetInfos(types)
     }
 
     override fun selectPageText(start: SelectionBoundary, stop: SelectionBoundary): PageSelection? {
@@ -115,9 +104,5 @@ internal class PdfPageAdapter(private val page: PdfRenderer.Page) : PdfPage {
                     RenderParams.FLAG_RENDER_TEXT_ANNOTATIONS
             )
             .build()
-    }
-
-    override fun applyEdit(editRecord: FormEditRecord): List<Rect> {
-        return page.applyEdit(editRecord)
     }
 }

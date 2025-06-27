@@ -184,7 +184,9 @@ final class DeviceUtils {
      */
     private static boolean isWearable(@NonNull PackageManager packageManager) {
         if (sIsWearable == null) {
-            sIsWearable = packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH);
+            sIsWearable =
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH
+                            && packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH);
         }
         return sIsWearable;
     }

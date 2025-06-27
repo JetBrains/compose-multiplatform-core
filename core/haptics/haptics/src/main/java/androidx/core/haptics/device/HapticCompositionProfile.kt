@@ -117,7 +117,10 @@ constructor(
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(supportedPrimitiveTypes, _primitiveDurationMillisMap)
+        return Objects.hash(
+            supportedPrimitiveTypes,
+            _primitiveDurationMillisMap,
+        )
     }
 
     override fun toString(): String {

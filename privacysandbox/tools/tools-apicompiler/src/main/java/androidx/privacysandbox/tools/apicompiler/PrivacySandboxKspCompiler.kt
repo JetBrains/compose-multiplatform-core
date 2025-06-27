@@ -74,7 +74,13 @@ class PrivacySandboxKspCompiler(
 
         val parsedApi = ApiParser(resolver, logger).parseApi()
 
-        SdkCodeGenerator(codeGenerator, parsedApi, aidlCompilerPath, frameworkAidlPath, target)
+        SdkCodeGenerator(
+                codeGenerator,
+                parsedApi,
+                aidlCompilerPath,
+                frameworkAidlPath,
+                target,
+            )
             .generate()
         return emptyList()
     }
@@ -84,7 +90,7 @@ class PrivacySandboxKspCompiler(
             return PrivacySandboxKspCompiler(
                 environment.logger,
                 environment.codeGenerator,
-                environment.options,
+                environment.options
             )
         }
     }

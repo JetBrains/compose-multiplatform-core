@@ -66,7 +66,10 @@ class StubDelegatesGenerator(
                 primaryConstructor(
                     buildList {
                         add(
-                            PropertySpec.builder("delegate", annotatedInterface.type.poetTypeName())
+                            PropertySpec.builder(
+                                    "delegate",
+                                    annotatedInterface.type.poetTypeName(),
+                                )
                                 .addModifiers(KModifier.PUBLIC)
                                 .build()
                         )
@@ -120,7 +123,7 @@ class StubDelegatesGenerator(
                         } else {
                             addStatement(
                                 "transactionCallback.onSuccess(%L)",
-                                binderCodeConverter.convertToBinderCode(method.returnType, "result"),
+                                binderCodeConverter.convertToBinderCode(method.returnType, "result")
                             )
                         }
                     }
@@ -129,13 +132,13 @@ class StubDelegatesGenerator(
                             "transactionCallback.onFailure(%M(t))",
                             ThrowableParcelConverterFileGenerator.toThrowableParcelNameSpec(
                                 basePackageName
-                            ),
+                            )
                         )
                     }
                 }
                 addStatement(
                     "val cancellationSignal = %T() { job.cancel() }",
-                    transportCancellationCallbackNameSpec(basePackageName),
+                    transportCancellationCallbackNameSpec(basePackageName)
                 )
                 addStatement("transactionCallback.onCancellable(cancellationSignal)")
             }
@@ -160,7 +163,7 @@ class StubDelegatesGenerator(
             method.parameters.map { parameter ->
                 ParameterSpec(
                     parameter.name,
-                    binderCodeConverter.convertToBinderType(parameter.type),
+                    binderCodeConverter.convertToBinderType(parameter.type)
                 )
             }
         )
@@ -170,8 +173,8 @@ class StubDelegatesGenerator(
                     "transactionCallback",
                     ClassName(
                         basePackageName,
-                        wrapWithListIfNeeded(method.returnType).transactionCallbackName(),
-                    ),
+                        wrapWithListIfNeeded(method.returnType).transactionCallbackName()
+                    )
                 )
             )
     }

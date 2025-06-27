@@ -21,7 +21,6 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.xr.compose.subspace.layout.CoreEntity
-import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.layout.OpaqueEntity
 
 /**
@@ -40,10 +39,4 @@ internal val LocalOpaqueEntity: ProvidableCompositionLocal<OpaqueEntity?> = comp
 internal val LocalCoreEntity: CompositionLocal<CoreEntity?> =
     compositionLocalWithComputedDefaultOf {
         LocalOpaqueEntity.currentValue as CoreEntity?
-    }
-
-internal val LocalCoreMainPanelEntity: CompositionLocal<CoreMainPanelEntity?> =
-    compositionLocalWithComputedDefaultOf {
-        LocalComposeXrOwners.currentValue?.coreMainPanelEntity
-            ?: LocalSession.currentValue?.let { CoreMainPanelEntity(it) }
     }

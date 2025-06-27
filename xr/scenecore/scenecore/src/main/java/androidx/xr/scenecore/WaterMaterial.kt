@@ -56,19 +56,16 @@ internal constructor(
     }
 
     /**
-     * Sets the reflection map texture for the water material.
+     * Sets the reflection cube texture for the water material.
      *
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
      *
-     * @param reflectionMap The [CubeMapTexture] to be used as the reflection cube.
+     * @param reflectionCube The [CubeMapTexture] to be used as the reflection cube.
      */
     @MainThread
-    public fun setReflectionMap(reflectionMap: CubeMapTexture) {
-        session.platformAdapter.setReflectionMapOnWaterMaterial(
-            materialResource,
-            reflectionMap.texture,
-        )
+    public fun setReflectionCube(reflectionCube: CubeMapTexture) {
+        session.platformAdapter.setReflectionCube(materialResource, reflectionCube.texture)
     }
 
     /**
@@ -81,7 +78,7 @@ internal constructor(
      */
     @MainThread
     public fun setNormalMap(normalMap: Texture) {
-        session.platformAdapter.setNormalMapOnWaterMaterial(materialResource, normalMap.texture)
+        session.platformAdapter.setNormalMap(materialResource, normalMap.texture)
     }
 
     /**
@@ -94,7 +91,7 @@ internal constructor(
      */
     @MainThread
     public fun setNormalTiling(normalTiling: Float) {
-        session.platformAdapter.setNormalTilingOnWaterMaterial(materialResource, normalTiling)
+        session.platformAdapter.setNormalTiling(materialResource, normalTiling)
     }
 
     /**
@@ -107,7 +104,7 @@ internal constructor(
      */
     @MainThread
     public fun setNormalSpeed(normalSpeed: Float) {
-        session.platformAdapter.setNormalSpeedOnWaterMaterial(materialResource, normalSpeed)
+        session.platformAdapter.setNormalSpeed(materialResource, normalSpeed)
     }
 
     /**
@@ -122,10 +119,7 @@ internal constructor(
     @MainThread
     public fun setAlphaStepMultiplier(alphaStepMultiplier: Float) {
         if (isAlphaMapVersion) {
-            session.platformAdapter.setAlphaStepMultiplierOnWaterMaterial(
-                materialResource,
-                alphaStepMultiplier,
-            )
+            session.platformAdapter.setAlphaStepMultiplier(materialResource, alphaStepMultiplier)
         } else {
             throw IllegalStateException(
                 "The alpha step multiplier can only be set for alpha map version of the water material."
@@ -145,7 +139,7 @@ internal constructor(
     @MainThread
     public fun setAlphaMap(alphaMap: Texture) {
         if (isAlphaMapVersion) {
-            session.platformAdapter.setAlphaMapOnWaterMaterial(materialResource, alphaMap.texture)
+            session.platformAdapter.setAlphaMap(materialResource, alphaMap.texture)
         } else {
             throw IllegalStateException(
                 "The alpha map can only be set for alpha map version of the water material."
@@ -165,7 +159,7 @@ internal constructor(
     @MainThread
     public fun setNormalZ(normalZ: Float) {
         if (isAlphaMapVersion) {
-            session.platformAdapter.setNormalZOnWaterMaterial(materialResource, normalZ)
+            session.platformAdapter.setNormalZ(materialResource, normalZ)
         } else {
             throw IllegalStateException(
                 "The normal Z can only be set for alpha map version of the water material.."
@@ -185,10 +179,7 @@ internal constructor(
     @MainThread
     public fun setNormalBoundary(normalBoundary: Float) {
         if (isAlphaMapVersion) {
-            session.platformAdapter.setNormalBoundaryOnWaterMaterial(
-                materialResource,
-                normalBoundary,
-            )
+            session.platformAdapter.setNormalBoundary(materialResource, normalBoundary)
         } else {
             throw IllegalStateException(
                 "The normal boundary can only be set for alpha map version of the water material."
@@ -242,7 +233,6 @@ internal constructor(
          */
         @MainThread
         @JvmStatic
-        @Suppress("AsyncSuffixFuture")
         public fun create(
             session: Session,
             isAlphaMapVersion: Boolean,

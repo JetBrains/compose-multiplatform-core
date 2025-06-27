@@ -1,3 +1,5 @@
 // Baseline format: 1.0
-AddedMethod: androidx.compose.foundation.layout.PaddingValues.Absolute#Absolute(float, float, float, float, kotlin.jvm.internal.DefaultConstructorMarker):
-    Added constructor androidx.compose.foundation.layout.PaddingValues.Absolute(float,float,float,float,kotlin.jvm.internal.DefaultConstructorMarker)
+ChangedStatic: androidx.compose.foundation.layout.WindowInsets_androidKt#getConsumeWindowInsets():
+    Method androidx.compose.foundation.layout.WindowInsets_androidKt.getConsumeWindowInsets has changed 'static' qualifier
+ChangedStatic: androidx.compose.foundation.layout.WindowInsets_androidKt#setConsumeWindowInsets(boolean):
+    Method androidx.compose.foundation.layout.WindowInsets_androidKt.setConsumeWindowInsets has changed 'static' qualifier

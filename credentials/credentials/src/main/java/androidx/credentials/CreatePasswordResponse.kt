@@ -20,7 +20,10 @@ import android.os.Bundle
 
 /** A response of a password saving flow. */
 class CreatePasswordResponse private constructor(data: Bundle) :
-    CreateCredentialResponse(PasswordCredential.TYPE_PASSWORD_CREDENTIAL, data) {
+    CreateCredentialResponse(
+        PasswordCredential.TYPE_PASSWORD_CREDENTIAL,
+        data,
+    ) {
 
     /** Constructs a [CreatePasswordResponse]. */
     constructor() : this(Bundle())

@@ -19,7 +19,7 @@ package androidx.mediarouter.media;
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 
@@ -39,7 +39,7 @@ public class MediaRouterInitializationTest {
      */
     @Test
     @MediumTest
-    public void testEmptyUserRoute() {
+    public void testEmptyUserRoute() throws Exception {
         getInstrumentation()
                 .runOnMainSync(
                         () -> {
@@ -56,7 +56,7 @@ public class MediaRouterInitializationTest {
                             router.addUserRoute(routeInfo);
 
                             MediaRouter mediaRouter = MediaRouter.getInstance(context);
-                            assertNotNull(mediaRouter.getDefaultRoute());
+                            assertTrue(mediaRouter.getDefaultRoute() != null);
                         });
     }
 }

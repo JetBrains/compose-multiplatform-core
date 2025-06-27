@@ -158,7 +158,10 @@ class SyncTriggersConcurrencyTest {
         @Delete fun delete(count: SampleEntity)
     }
 
-    @Entity class SampleEntity(@PrimaryKey val id: String)
+    @Entity
+    class SampleEntity(
+        @PrimaryKey val id: String,
+    )
 
     companion object {
 

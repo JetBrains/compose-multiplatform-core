@@ -22,11 +22,11 @@ package androidx.paging
  * The factory extending this interface can be used to instantiate a [Pager] as the
  * pagingSourceFactory.
  */
-public expect fun interface PagingSourceFactory<Key : Any, Value : Any> {
+public fun interface PagingSourceFactory<Key : Any, Value : Any> : () -> PagingSource<Key, Value> {
     /**
      * Returns a new PagingSource instance.
      *
      * This function can be invoked by calling pagingSourceFactory() or pagingSourceFactory::invoke.
      */
-    public operator fun invoke(): PagingSource<Key, Value>
+    public override operator fun invoke(): PagingSource<Key, Value>
 }

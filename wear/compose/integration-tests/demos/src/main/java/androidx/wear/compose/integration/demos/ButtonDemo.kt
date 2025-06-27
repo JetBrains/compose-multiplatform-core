@@ -54,11 +54,11 @@ fun ButtonSizes() {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
                 onClick = {},
@@ -67,7 +67,10 @@ fun ButtonSizes() {
             ) {
                 Text("Lrg")
             }
-            Button(onClick = {}, enabled = enabled) {
+            Button(
+                onClick = {},
+                enabled = enabled,
+            ) {
                 // NB Leave size as default for this one.
                 Text("Def")
             }
@@ -78,17 +81,22 @@ fun ButtonSizes() {
             ) {
                 Text("Sml")
             }
-            CompactButton(onClick = {}, enabled = enabled) { Text("XS") }
+            CompactButton(
+                onClick = {},
+                enabled = enabled,
+            ) {
+                Text("XS")
+            }
         }
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "Enabled", style = MaterialTheme.typography.caption2, color = Color.White)
             ToggleButton(
                 checked = enabled,
                 onCheckedChange = { enabled = it },
-                modifier = Modifier.size(ButtonDefaults.SmallButtonSize),
+                modifier = Modifier.size(ButtonDefaults.SmallButtonSize)
             ) {
                 Text(text = if (enabled) "Yes" else "No")
             }
@@ -103,13 +111,19 @@ fun ButtonStyles() {
 
     ScalingLazyColumn(
         modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        item { ListHeader { Text(text = "Styles (Click for details)") } }
+        item {
+            ListHeader {
+                Text(
+                    text = "Styles (Click for details)",
+                )
+            }
+        }
         item {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
                     onClick = {
@@ -135,20 +149,20 @@ fun ButtonStyles() {
         item {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
                     onClick = {
                         Toast.makeText(
                                 context,
                                 "Button: Small, icon only, $enabled",
-                                Toast.LENGTH_LONG,
+                                Toast.LENGTH_LONG
                             )
                             .show()
                     },
                     colors = ButtonDefaults.iconButtonColors(),
                     modifier = Modifier.size(ButtonDefaults.SmallButtonSize),
-                    enabled = enabled,
+                    enabled = enabled
                 ) {
                     DemoIcon(R.drawable.ic_accessibility_24px)
                 }
@@ -157,13 +171,13 @@ fun ButtonStyles() {
                         Toast.makeText(
                                 context,
                                 "Button: Large, icon only, $enabled",
-                                Toast.LENGTH_LONG,
+                                Toast.LENGTH_LONG
                             )
                             .show()
                     },
                     colors = ButtonDefaults.iconButtonColors(),
                     modifier = Modifier.size(ButtonDefaults.LargeButtonSize),
-                    enabled = enabled,
+                    enabled = enabled
                 ) {
                     DemoIcon(R.drawable.ic_accessibility_24px)
                 }
@@ -172,7 +186,7 @@ fun ButtonStyles() {
         item {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
                     onClick = {
@@ -188,7 +202,7 @@ fun ButtonStyles() {
                         Toast.makeText(
                                 context,
                                 "Button: Outlined Compact, $enabled",
-                                Toast.LENGTH_LONG,
+                                Toast.LENGTH_LONG
                             )
                             .show()
                     },
@@ -201,7 +215,7 @@ fun ButtonStyles() {
         item {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
                     onClick = {
@@ -210,7 +224,7 @@ fun ButtonStyles() {
                     colors = ButtonDefaults.secondaryButtonColors(),
                     modifier = Modifier,
                     enabled = enabled,
-                    shape = CutCornerShape(4.dp),
+                    shape = CutCornerShape(4.dp)
                 ) {
                     DemoIcon(R.drawable.ic_accessibility_24px)
                 }
@@ -219,14 +233,14 @@ fun ButtonStyles() {
                         Toast.makeText(
                                 context,
                                 "Button: Compact Button with Custom Shape",
-                                Toast.LENGTH_LONG,
+                                Toast.LENGTH_LONG
                             )
                             .show()
                     },
                     colors = ButtonDefaults.secondaryButtonColors(),
                     modifier = Modifier,
                     enabled = enabled,
-                    shape = CutCornerShape(4.dp),
+                    shape = CutCornerShape(4.dp)
                 ) {
                     DemoIcon(R.drawable.ic_accessibility_24px)
                 }
@@ -235,20 +249,20 @@ fun ButtonStyles() {
         item {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedCompactButton(
                     onClick = {
                         Toast.makeText(
                                 context,
                                 "Button: Outlined Compact Button with Custom Shape",
-                                Toast.LENGTH_LONG,
+                                Toast.LENGTH_LONG
                             )
                             .show()
                     },
                     modifier = Modifier,
                     enabled = enabled,
-                    shape = CutCornerShape(4.dp),
+                    shape = CutCornerShape(4.dp)
                 ) {
                     DemoIcon(R.drawable.ic_accessibility_24px)
                 }
@@ -257,13 +271,13 @@ fun ButtonStyles() {
                         Toast.makeText(
                                 context,
                                 "Button: Override primary colors",
-                                Toast.LENGTH_LONG,
+                                Toast.LENGTH_LONG
                             )
                             .show()
                     },
                     colors =
                         ButtonDefaults.primaryButtonColors(
-                            backgroundColor = AlternatePrimaryColor1
+                            backgroundColor = AlternatePrimaryColor1,
                         ),
                     enabled = enabled,
                 ) {
@@ -274,12 +288,12 @@ fun ButtonStyles() {
         item {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Buttons Enabled",
                     style = MaterialTheme.typography.caption2,
-                    color = Color.White,
+                    color = Color.White
                 )
                 ToggleButton(
                     checked = enabled,
@@ -336,17 +350,26 @@ fun ButtonGallery() {
         item { ListHeader { Text("Default - 52 x 52") } }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Button(onClick = {}, colors = ButtonDefaults.primaryButtonColors()) {
+                Button(
+                    onClick = {},
+                    colors = ButtonDefaults.primaryButtonColors(),
+                ) {
                     DemoIcon(resourceId = R.drawable.ic_check_24px, contentDescription = "Tick")
                 }
-                Button(onClick = {}, colors = ButtonDefaults.secondaryButtonColors()) {
+                Button(
+                    onClick = {},
+                    colors = ButtonDefaults.secondaryButtonColors(),
+                ) {
                     DemoIcon(resourceId = R.drawable.ic_clear_24px, contentDescription = "Cross")
                 }
             }
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Button(onClick = {}, colors = ButtonDefaults.iconButtonColors()) {
+                Button(
+                    onClick = {},
+                    colors = ButtonDefaults.iconButtonColors(),
+                ) {
                     DemoIcon(resourceId = R.drawable.ic_devices_24, contentDescription = "Devices")
                 }
                 Spacer(Modifier.width(ButtonDefaults.DefaultButtonSize))
@@ -388,13 +411,19 @@ fun ButtonGallery() {
         item { ListHeader { Text("Extra small - 32 x 32") } }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                CompactButton(onClick = {}, colors = ButtonDefaults.primaryButtonColors()) {
+                CompactButton(
+                    onClick = {},
+                    colors = ButtonDefaults.primaryButtonColors(),
+                ) {
                     DemoIcon(
                         resourceId = R.drawable.ic_arrow_left_modified,
                         contentDescription = "Left",
                     )
                 }
-                CompactButton(onClick = {}, colors = ButtonDefaults.secondaryButtonColors()) {
+                CompactButton(
+                    onClick = {},
+                    colors = ButtonDefaults.secondaryButtonColors(),
+                ) {
                     DemoIcon(
                         resourceId = R.drawable.ic_arrow_right_modified,
                         contentDescription = "Right",
@@ -404,13 +433,19 @@ fun ButtonGallery() {
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                CompactButton(onClick = {}, colors = ButtonDefaults.iconButtonColors()) {
+                CompactButton(
+                    onClick = {},
+                    colors = ButtonDefaults.iconButtonColors(),
+                ) {
                     DemoIcon(
                         resourceId = R.drawable.ic_arrow_left_modified,
                         contentDescription = "Left",
                     )
                 }
-                CompactButton(onClick = {}, colors = ButtonDefaults.iconButtonColors()) {
+                CompactButton(
+                    onClick = {},
+                    colors = ButtonDefaults.iconButtonColors(),
+                ) {
                     DemoIcon(
                         resourceId = R.drawable.ic_arrow_right_modified,
                         contentDescription = "Right",

@@ -39,6 +39,7 @@ import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.PerceptionLibraryConstants;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
@@ -47,7 +48,6 @@ import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.Vec3;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
-import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -99,13 +99,12 @@ public final class EntityTest {
                         mActivity,
                         mFakeScheduledExecutorService,
                         mXrExtensions,
-                        new FakeImpressApiImpl(),
+                        new FakeImpressApi(),
                         mEntityManager,
                         perceptionLibrary,
                         mock(SplitEngineSubspaceManager.class),
                         mock(ImpSplitEngineRenderer.class),
-                        false,
-                        /* unscaledGravityAlignedActivitySpace= */ false);
+                        false);
         mEntity =
                 new TestEntity(
                         mXrExtensions.createNode(),
@@ -254,8 +253,7 @@ public final class EntityTest {
                         mEntityManager,
                         mFakeScheduledExecutorService);
         child.setParent(mEntity);
-        child.setScale(scale.times(scale), Space.ACTIVITY);
-
+        child.setScale(scale, Space.PARENT);
         assertVector3(child.getScale(Space.ACTIVITY), scale.times(scale));
     }
 
@@ -273,7 +271,7 @@ public final class EntityTest {
                         mEntityManager,
                         mFakeScheduledExecutorService);
         child.setParent(mEntity);
-        child.setScale(scale.times(scale.times(activitySpace.mWorldSpaceScale)), Space.REAL_WORLD);
+        child.setScale(scale, Space.PARENT);
 
         assertVector3(
                 child.getScale(Space.REAL_WORLD),

@@ -40,17 +40,21 @@ import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
+abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
     private val sourceQuery: RoomSQLiteQuery,
     private val db: RoomDatabase,
-    vararg tables: String,
+    vararg tables: String
 ) : ListenableFuturePagingSource<Int, Value>() {
 
-    public constructor(
+    constructor(
         supportSQLiteQuery: SupportSQLiteQuery,
         db: RoomDatabase,
         vararg tables: String,
-    ) : this(sourceQuery = RoomSQLiteQuery.copyFrom(supportSQLiteQuery), db = db, tables = tables)
+    ) : this(
+        sourceQuery = RoomSQLiteQuery.copyFrom(supportSQLiteQuery),
+        db = db,
+        tables = tables,
+    )
 
     @VisibleForTesting internal val itemCount: AtomicInteger = AtomicInteger(INITIAL_ITEM_COUNT)
     private val observer = ThreadSafeInvalidationObserver(tables = tables, ::invalidate)
@@ -74,7 +78,7 @@ public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
                     nonInitialLoad(params, tempCount)
                 }
             },
-            db.queryExecutor,
+            db.queryExecutor
         )
     }
 
@@ -102,7 +106,7 @@ public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
                             db,
                             tempCount,
                             cancellationSignal,
-                            ::convertRows,
+                            ::convertRows
                         )
                     }
                 )
@@ -127,7 +131,7 @@ public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
      */
     private fun nonInitialLoad(
         params: LoadParams<Int>,
-        tempCount: Int,
+        tempCount: Int
     ): ListenableFuture<LoadResult<Int, Value>> {
         val cancellationSignal = CancellationSignal()
         val loadCallable =
@@ -139,7 +143,7 @@ public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
                         db,
                         tempCount,
                         cancellationSignal,
-                        ::convertRows,
+                        ::convertRows
                     )
                 db.invalidationTracker.refreshVersionsSync()
                 @Suppress("UNCHECKED_CAST")
@@ -153,7 +157,7 @@ public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
             loadCallable,
             sourceQuery,
             false,
-            cancellationSignal,
+            cancellationSignal
         )
     }
 
@@ -175,8 +179,8 @@ public abstract class LimitOffsetListenableFuturePagingSource<Value : Any>(
         return state.getClippedRefreshKey()
     }
 
-    public companion object {
-        public const val BUG_LINK: String =
+    companion object {
+        const val BUG_LINK =
             "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
     }
 }

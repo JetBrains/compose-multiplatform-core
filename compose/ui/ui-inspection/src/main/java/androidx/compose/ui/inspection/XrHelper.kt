@@ -60,7 +60,10 @@ class XrHelper(private val environment: InspectorEnvironment) {
         return viewHelper
     }
 
-    private data class ViewXrHelper(private val helper: Any, private val getViewsMethod: Method) {
+    private data class ViewXrHelper(
+        private val helper: Any,
+        private val getViewsMethod: Method,
+    ) {
         @RequiresApi(Build.VERSION_CODES.R)
         @Suppress("UNCHECKED_CAST")
         @SuppressLint("BanUncheckedReflection")

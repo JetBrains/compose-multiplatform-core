@@ -58,14 +58,18 @@ class EvCompControlTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val cameraScope = CoroutineScope(Job() + dispatcher)
 
-        UseCaseThreads(cameraScope, executor, dispatcher)
+        UseCaseThreads(
+            cameraScope,
+            executor,
+            dispatcher,
+        )
     }
     private val metadata =
         FakeCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE to Range.create(-4, 4),
                 CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP to Rational.parseRational("1/2"),
-            )
+            ),
         )
     private val comboRequestListener = ComboRequestListener()
     private lateinit var exposureControl: EvCompControl
@@ -129,7 +133,7 @@ class EvCompControlTest {
                 // Fake CameraProperties without CONTROL_AE_COMPENSATION related properties.
                 FakeCameraProperties(),
                 fakeUseCaseThreads,
-                comboRequestListener,
+                comboRequestListener
             )
         exposureControl = EvCompControl(evCompCompat)
         exposureControl.requestControl = FakeUseCaseCameraRequestControl()
@@ -183,7 +187,7 @@ class EvCompControlTest {
             FakeRequestMetadata(
                 requestParameters =
                     mapOf(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION to exposureValue),
-                requestNumber = RequestNumber(1),
+                requestNumber = RequestNumber(1)
             )
         val resultMetaData =
             FakeFrameMetadata(
@@ -198,7 +202,10 @@ class EvCompControlTest {
             onComplete(
                 requestMetadata,
                 frameNumber,
-                FakeFrameInfo(metadata = resultMetaData, requestMetadata = requestMetadata),
+                FakeFrameInfo(
+                    metadata = resultMetaData,
+                    requestMetadata = requestMetadata,
+                )
             )
         }
     }

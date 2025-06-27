@@ -28,19 +28,12 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 35
-        namespace = "androidx.compose.ui.text"
-        androidResources.enable = true
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-    }
+    androidTarget()
     jvmStubs()
     linuxX64Stubs()
 
@@ -63,7 +56,7 @@ androidXMultiplatform {
 
                 // TODO: Pin androidx.collection when SieveCache is available
                 // implementation("androidx.collection:collection:1.4.2")
-                implementation("androidx.collection:collection:1.5.0")
+                implementation(project(":collection:collection"))
             }
         }
 
@@ -151,4 +144,14 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-text:ui-text-samples"))
+}
+
+android {
+    compileSdk = 35
+    namespace = "androidx.compose.ui.text"
+    // TODO(b/328001575)
+    experimentalProperties["android.lint.useK2Uast"] = false
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
 }

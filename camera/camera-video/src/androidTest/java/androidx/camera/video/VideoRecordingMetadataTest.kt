@@ -70,7 +70,9 @@ class VideoRecordingMetadataTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
+        CameraPipeConfigTestRule(
+            active = implName.contains(CameraPipeConfig::class.simpleName!!),
+        )
 
     @get:Rule
     val cameraRule =
@@ -109,14 +111,6 @@ class VideoRecordingMetadataTest(
                     /*forceEnableStreamSharing=*/ false,
                 ),
                 arrayOf(
-                    "external+" + Camera2Config::class.simpleName,
-                    CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
-                        .build(),
-                    Camera2Config.defaultConfig(),
-                    /*forceEnableStreamSharing=*/ false,
-                ),
-                arrayOf(
                     "back+" + Camera2Config::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     Camera2Config.defaultConfig(),
@@ -125,14 +119,6 @@ class VideoRecordingMetadataTest(
                 arrayOf(
                     "front+" + Camera2Config::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config.defaultConfig(),
-                    /*forceEnableStreamSharing=*/ true,
-                ),
-                arrayOf(
-                    "external+" + Camera2Config::class.simpleName + "+streamSharing",
-                    CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
-                        .build(),
                     Camera2Config.defaultConfig(),
                     /*forceEnableStreamSharing=*/ true,
                 ),
@@ -149,14 +135,6 @@ class VideoRecordingMetadataTest(
                     /*forceEnableStreamSharing=*/ false,
                 ),
                 arrayOf(
-                    "external+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
-                        .build(),
-                    CameraPipeConfig.defaultConfig(),
-                    /*forceEnableStreamSharing=*/ false,
-                ),
-                arrayOf(
                     "back+" + CameraPipeConfig::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig.defaultConfig(),
@@ -165,14 +143,6 @@ class VideoRecordingMetadataTest(
                 arrayOf(
                     "front+" + CameraPipeConfig::class.simpleName + "+streamSharing",
                     CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                    /*forceEnableStreamSharing=*/ true,
-                ),
-                arrayOf(
-                    "external+" + CameraPipeConfig::class.simpleName + "+streamSharing",
-                    CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
-                        .build(),
                     CameraPipeConfig.defaultConfig(),
                     /*forceEnableStreamSharing=*/ true,
                 ),
@@ -201,7 +171,7 @@ class VideoRecordingMetadataTest(
         cameraProvider =
             ProcessCameraProviderWrapper(
                 ProcessCameraProvider.getInstance(context).get(),
-                forceEnableStreamSharing,
+                forceEnableStreamSharing
             )
         lifecycleOwner = FakeLifecycleOwner()
         lifecycleOwner.startAndResume()
@@ -263,7 +233,7 @@ class VideoRecordingMetadataTest(
             // Verify. SDR video is not expected to have BT2020 color standard.
             verifyVideoColorStandard(
                 unexpectedColorStandard = MediaFormat.COLOR_STANDARD_BT2020,
-                file = result.file,
+                file = result.file
             )
 
             instrumentation.runOnMainSync { cameraProvider.unbindAll() }
@@ -292,7 +262,7 @@ class VideoRecordingMetadataTest(
             // Verify. SDR video is not expected to have BT2020 color standard.
             verifyVideoColorStandard(
                 unexpectedColorStandard = MediaFormat.COLOR_STANDARD_BT2020,
-                file = result.file,
+                file = result.file
             )
 
             instrumentation.runOnMainSync { cameraProvider.unbindAll() }

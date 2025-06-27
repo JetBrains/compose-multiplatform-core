@@ -40,7 +40,9 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
-class PreviewTest(@CameraSelector.LensFacing private val lensFacing: Int) {
+class PreviewTest(
+    @CameraSelector.LensFacing private val lensFacing: Int,
+) {
     @get:Rule val fakeCameraRule = FakeCameraTestRule(ApplicationProvider.getApplicationContext())
 
     private lateinit var preview: Preview
@@ -76,7 +78,7 @@ class PreviewTest(@CameraSelector.LensFacing private val lensFacing: Int) {
 
             surfaceTexture.setOnFrameAvailableListener(
                 { countDownLatch.countDown() },
-                Handler(frameUpdateThread.getLooper()),
+                Handler(frameUpdateThread.getLooper())
             )
 
             val surface = Surface(surfaceTexture)

@@ -70,7 +70,7 @@ fun BadgeDemo() {
         Button(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             onClick = { badgeCount++ },
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Cyan),
+            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Cyan)
         ) {
             Text("+ badge number")
         }
@@ -79,7 +79,10 @@ fun BadgeDemo() {
 }
 
 @Composable
-fun TopAppBarWithBadge(onActionIcon1BadgeClick: () -> Unit, actionIcon1BadgeCount: Int) {
+fun TopAppBarWithBadge(
+    onActionIcon1BadgeClick: () -> Unit,
+    actionIcon1BadgeCount: Int,
+) {
     var showNavigationIconBadge by remember { mutableStateOf(true) }
     var showActionIcon2Badge by remember { mutableStateOf(true) }
     TopAppBar(
@@ -115,7 +118,7 @@ fun TopAppBarWithBadge(onActionIcon1BadgeClick: () -> Unit, actionIcon1BadgeCoun
                     Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                 }
             }
-        },
+        }
     )
 }
 
@@ -144,7 +147,7 @@ fun BottomNavigationWithBadge(onArtistsBadgeClick: () -> Unit, artistsBadgeCount
                         if (!showBadge) {
                             Icon(
                                 Icons.Filled.Favorite,
-                                contentDescription = "Localized description",
+                                contentDescription = "Localized description"
                             )
                         } else {
                             when (item) {
@@ -152,7 +155,7 @@ fun BottomNavigationWithBadge(onArtistsBadgeClick: () -> Unit, artistsBadgeCount
                                     DemoBadgedBox(artistsBadgeCount.toString()) {
                                         Icon(
                                             Icons.Filled.Favorite,
-                                            contentDescription = "Localized description",
+                                            contentDescription = "Localized description"
                                         )
                                     }
                                 }
@@ -165,7 +168,7 @@ fun BottomNavigationWithBadge(onArtistsBadgeClick: () -> Unit, artistsBadgeCount
                                     ) {
                                         Icon(
                                             Icons.Filled.Favorite,
-                                            contentDescription = "Localized description",
+                                            contentDescription = "Localized description"
                                         )
                                     }
                                 }
@@ -182,7 +185,7 @@ fun BottomNavigationWithBadge(onArtistsBadgeClick: () -> Unit, artistsBadgeCount
                             "Playlists" -> showPlaylistsBadge = false
                         }
                     },
-                    alwaysShowLabel = false,
+                    alwaysShowLabel = false
                 )
             }
         }
@@ -190,7 +193,7 @@ fun BottomNavigationWithBadge(onArtistsBadgeClick: () -> Unit, artistsBadgeCount
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Bottom nav with badge: ${selectedItem + 1} selected",
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.body1
         )
     }
 }
@@ -235,7 +238,7 @@ fun TextTabsWithBadge(onTab1BadgeClick: () -> Unit, tab1BadgeCount: Int) {
                             1 -> onTab1BadgeClick()
                             2 -> showTabBadgeList[1] = false
                         }
-                    },
+                    }
                 )
             }
         }
@@ -243,19 +246,22 @@ fun TextTabsWithBadge(onTab1BadgeClick: () -> Unit, tab1BadgeCount: Int) {
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Icon tab with badge: ${state + 1} selected",
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.body1
         )
     }
 }
 
 @Composable
-fun LeadingIconTabsWithBadge(onTab1BadgeClick: () -> Unit, tab1BadgeCount: Int) {
+fun LeadingIconTabsWithBadge(
+    onTab1BadgeClick: () -> Unit,
+    tab1BadgeCount: Int,
+) {
     var state by remember { mutableIntStateOf(0) }
     val titlesAndIcons =
         listOf(
             "TAB" to Icons.Filled.Favorite,
             "TAB & ICON" to Icons.Filled.Favorite,
-            "TAB 3 WITH LOTS OF TEXT" to Icons.Filled.Favorite,
+            "TAB 3 WITH LOTS OF TEXT" to Icons.Filled.Favorite
         )
     val showTabBadgeList = remember { mutableStateListOf(true, true) }
 
@@ -294,14 +300,14 @@ fun LeadingIconTabsWithBadge(onTab1BadgeClick: () -> Unit, tab1BadgeCount: Int) 
                             1 -> onTab1BadgeClick()
                             2 -> showTabBadgeList[1] = false
                         }
-                    },
+                    }
                 )
             }
         }
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Leading icon tab ${state + 1} selected",
-            style = MaterialTheme.typography.body1,
+            style = MaterialTheme.typography.body1
         )
     }
 }
@@ -320,7 +326,7 @@ private fun DemoBadgedBox(badgeText: String?, content: @Composable () -> Unit) {
                                 modifier =
                                     Modifier.semantics {
                                         this.contentDescription = "$badgeText notifications"
-                                    },
+                                    }
                             )
                         }
                     } else null

@@ -18,19 +18,18 @@ package androidx.compose.runtime.saveable
 
 import androidx.collection.MutableScatterMap
 import androidx.collection.mutableScatterMapOf
-import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.saveable.SaveableStateRegistry.Entry
 import androidx.compose.runtime.staticCompositionLocalOf
 
 /** Allows components to save and restore their state using the saved instance state mechanism. */
-public interface SaveableStateRegistry {
+interface SaveableStateRegistry {
     /**
      * Returns the restored value for the given key. Once being restored the value is cleared, so
      * you can't restore the same key twice.
      *
      * @param key Key used to save the value
      */
-    public fun consumeRestored(key: String): Any?
+    fun consumeRestored(key: String): Any?
 
     /**
      * Registers the value provider.
@@ -48,7 +47,7 @@ public interface SaveableStateRegistry {
      *   triggered to collect all the registered values
      * @return the registry entry which you can use to unregister the provider
      */
-    public fun registerProvider(key: String, valueProvider: () -> Any?): Entry
+    fun registerProvider(key: String, valueProvider: () -> Any?): Entry
 
     /**
      * Returns true if the value can be saved using this Registry. The default implementation will
@@ -56,18 +55,18 @@ public interface SaveableStateRegistry {
      *
      * @param value The value which we want to save using this Registry
      */
-    public fun canBeSaved(value: Any): Boolean
+    fun canBeSaved(value: Any): Boolean
 
     /**
      * Executes all the registered value providers and combines these values into a map. We have a
      * list of values for each key as it is allowed to have multiple providers for the same key.
      */
-    public fun performSave(): Map<String, List<Any?>>
+    fun performSave(): Map<String, List<Any?>>
 
     /** The registry entry which you get when you use [registerProvider]. */
-    public interface Entry {
+    interface Entry {
         /** Unregister previously registered entry. */
-        public fun unregister()
+        fun unregister()
     }
 }
 
@@ -77,14 +76,13 @@ public interface SaveableStateRegistry {
  * @param restoredValues The map of the restored values
  * @param canBeSaved Function which returns true if the given value can be saved by the registry
  */
-public fun SaveableStateRegistry(
+fun SaveableStateRegistry(
     restoredValues: Map<String, List<Any?>>?,
-    canBeSaved: (Any) -> Boolean,
+    canBeSaved: (Any) -> Boolean
 ): SaveableStateRegistry = SaveableStateRegistryImpl(restoredValues, canBeSaved)
 
 /** CompositionLocal with a current [SaveableStateRegistry] instance. */
-public val LocalSaveableStateRegistry: ProvidableCompositionLocal<SaveableStateRegistry?> =
-    staticCompositionLocalOf<SaveableStateRegistry?> { null }
+val LocalSaveableStateRegistry = staticCompositionLocalOf<SaveableStateRegistry?> { null }
 
 // CharSequence.isBlank() allocates an iterator because it calls indices.all{}
 private fun CharSequence.fastIsBlank(): Boolean {
@@ -104,7 +102,7 @@ private fun <K, V> Map<K, V>.toMutableScatterMap(): MutableScatterMap<K, V> {
 
 private class SaveableStateRegistryImpl(
     restored: Map<String, List<Any?>>?,
-    private val canBeSaved: (Any) -> Boolean,
+    private val canBeSaved: (Any) -> Boolean
 ) : SaveableStateRegistry {
 
     private val restored: MutableScatterMap<String, List<Any?>>? =

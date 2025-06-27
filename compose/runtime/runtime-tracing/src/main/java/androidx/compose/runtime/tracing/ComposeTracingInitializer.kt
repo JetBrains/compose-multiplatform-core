@@ -28,7 +28,7 @@ import androidx.tracing.perfetto.PerfettoSdkTrace
  * (e.g. Composable function names) in a Perfetto SDK trace
  */
 @OptIn(InternalComposeTracingApi::class)
-public class ComposeTracingInitializer : Initializer<Unit> {
+class ComposeTracingInitializer : Initializer<Unit> {
     override fun create(context: Context) {
         Composer.setTracer(
             object : CompositionTracer {

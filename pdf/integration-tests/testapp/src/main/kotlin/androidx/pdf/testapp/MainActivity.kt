@@ -30,12 +30,12 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.pdf.testapp.databinding.MainActivityBinding
 import androidx.pdf.testapp.databinding.ScenarioButtonsBinding
+import androidx.pdf.testapp.ui.BasicPdfFragment
 import androidx.pdf.testapp.ui.XmlStyledPdfFragment
 import androidx.pdf.testapp.ui.scenarios.PageObjectPdfFragment
 import androidx.pdf.testapp.ui.scenarios.SinglePdfFragment
 import androidx.pdf.testapp.ui.scenarios.TabsViewPdfFragment
 import androidx.pdf.testapp.ui.v2.TabbedPdfViewerFragment
-import androidx.pdf.testapp.ui.v2.compose.PdfComposeFragment
 import com.google.android.material.button.MaterialButton
 
 @SuppressLint("RestrictedApiAndroidX")
@@ -49,7 +49,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var styledPdfFragmentButton: MaterialButton
     private lateinit var xmlStyledPdfFragmentButton: MaterialButton
     private lateinit var pageObjectPdfButton: MaterialButton
-    private lateinit var composePdfButton: MaterialButton
     private lateinit var fragmentContainer: FrameLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +65,6 @@ class MainActivity : AppCompatActivity() {
         tabsViewV2Button = scenarioButtons.tabViewV2
         styledPdfFragmentButton = scenarioButtons.styledPdfFragment
         xmlStyledPdfFragmentButton = scenarioButtons.xmlStyledPdfFragment
-        composePdfButton = scenarioButtons.composeFragment
 
         pageObjectPdfButton = scenarioButtons.pageObjectPdf
         fragmentContainer = mainActivity.pdfInteractionFragmentContainerView
@@ -75,13 +73,16 @@ class MainActivity : AppCompatActivity() {
         tabsViewButton.setOnClickListener { loadFragment(TabsViewPdfFragment()) }
         pageObjectPdfButton.setOnClickListener { loadFragment(PageObjectPdfFragment()) }
         pdfFragmentV2Button.setOnClickListener {
-            launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.BASIC_FRAGMENT)
+            startActivity(Intent(this@MainActivity, MainActivityV2::class.java))
         }
         tabsViewV2Button.setOnClickListener { loadFragment(TabbedPdfViewerFragment()) }
         styledPdfFragmentButton.setOnClickListener {
-            launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.STYLED_FRAGMENT)
+            loadFragment(
+                BasicPdfFragment.newInstance(
+                    BasicPdfFragment.Companion.FragmentType.STYLED_FRAGMENT
+                )
+            )
         }
-        composePdfButton.setOnClickListener { loadFragment(PdfComposeFragment()) }
 
         xmlStyledPdfFragmentButton.setOnClickListener { loadFragment(XmlStyledPdfFragment()) }
 
@@ -96,14 +97,6 @@ class MainActivity : AppCompatActivity() {
             // Set Fragment Container Visible
             fragmentContainer.visibility = View.VISIBLE
         }
-    }
-
-    private fun launchPdfViewerFragmentV2(fragmentType: MainActivityV2.Companion.FragmentType) {
-        val intent = Intent(this, MainActivityV2::class.java)
-        val bundle = Bundle()
-        bundle.putSerializable(MainActivityV2.Companion.FRAGMENT_TYPE_KEY, fragmentType)
-        intent.putExtras(bundle)
-        startActivity(intent)
     }
 
     private fun handleBackPress() {
@@ -142,7 +135,7 @@ class MainActivity : AppCompatActivity() {
             .replace(
                 R.id.pdf_interaction_fragment_container_view,
                 fragment,
-                PDF_INTERACTION_FRAGMENT_TAG,
+                PDF_INTERACTION_FRAGMENT_TAG
             )
             .addToBackStack(null)
             .commitAllowingStateLoss()
@@ -171,7 +164,6 @@ class MainActivity : AppCompatActivity() {
         styledPdfFragmentButton.visibility = View.GONE
         xmlStyledPdfFragmentButton.visibility = View.GONE
         pageObjectPdfButton.visibility = View.GONE
-        composePdfButton.visibility = View.GONE
     }
 
     private fun handleWindowInsets() {
@@ -186,7 +178,7 @@ class MainActivity : AppCompatActivity() {
                 view.paddingLeft,
                 systemBarsInsets.top,
                 view.paddingRight,
-                systemBarsInsets.bottom,
+                systemBarsInsets.bottom
             )
 
             WindowInsetsCompat.CONSUMED

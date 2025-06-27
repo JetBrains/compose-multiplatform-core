@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.DialogProperties
 import androidx.wear.compose.integration.demos.common.ComposableDemo
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.MaterialTheme
@@ -50,7 +49,7 @@ fun OpenOnPhoneDialogWithCustomText() {
         FilledTonalButton(
             modifier = Modifier.align(Alignment.Center),
             onClick = { visible = true },
-            label = { Text("Open on phone") },
+            label = { Text("Open on phone") }
         )
     }
 
@@ -58,8 +57,7 @@ fun OpenOnPhoneDialogWithCustomText() {
     OpenOnPhoneDialog(
         visible = visible,
         onDismissRequest = { visible = false },
-        curvedText = { openOnPhoneDialogCurvedText(text = "Custom text", style = curvedTextStyle) },
-        properties = DialogProperties(windowTitle = " "),
+        curvedText = { openOnPhoneDialogCurvedText(text = "Custom text", style = curvedTextStyle) }
     )
 }
 
@@ -71,7 +69,7 @@ fun OpenOnPhoneDialogWithCustomColors() {
         FilledTonalButton(
             modifier = Modifier.align(Alignment.Center),
             onClick = { visible = true },
-            label = { Text("Open on phone") },
+            label = { Text("Open on phone") }
         )
     }
 
@@ -85,11 +83,10 @@ fun OpenOnPhoneDialogWithCustomColors() {
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 progressIndicatorColor = MaterialTheme.colorScheme.tertiary,
                 progressTrackColor = MaterialTheme.colorScheme.onTertiary,
-                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                textColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
         curvedText = {
             openOnPhoneDialogCurvedText(text = "Custom colors", style = curvedTextStyle)
-        },
-        properties = DialogProperties(windowTitle = " "),
+        }
     )
 }

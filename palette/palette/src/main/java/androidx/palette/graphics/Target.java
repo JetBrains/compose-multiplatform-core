@@ -17,8 +17,7 @@
 package androidx.palette.graphics;
 
 import androidx.annotation.FloatRange;
-
-import org.jspecify.annotations.NonNull;
+import androidx.annotation.NonNull;
 
 /**
  * A class which allows custom selection of colors in a {@link Palette}'s generation. Instances
@@ -304,7 +303,8 @@ public final class Target {
         /**
          * Set the minimum saturation value for this target.
          */
-        public @NonNull Builder setMinimumSaturation(@FloatRange(from = 0, to = 1) float value) {
+        @NonNull
+        public Builder setMinimumSaturation(@FloatRange(from = 0, to = 1) float value) {
             mTarget.mSaturationTargets[INDEX_MIN] = value;
             return this;
         }
@@ -312,7 +312,8 @@ public final class Target {
         /**
          * Set the target/ideal saturation value for this target.
          */
-        public @NonNull Builder setTargetSaturation(@FloatRange(from = 0, to = 1) float value) {
+        @NonNull
+        public Builder setTargetSaturation(@FloatRange(from = 0, to = 1) float value) {
             mTarget.mSaturationTargets[INDEX_TARGET] = value;
             return this;
         }
@@ -320,7 +321,8 @@ public final class Target {
         /**
          * Set the maximum saturation value for this target.
          */
-        public @NonNull Builder setMaximumSaturation(@FloatRange(from = 0, to = 1) float value) {
+        @NonNull
+        public Builder setMaximumSaturation(@FloatRange(from = 0, to = 1) float value) {
             mTarget.mSaturationTargets[INDEX_MAX] = value;
             return this;
         }
@@ -328,7 +330,8 @@ public final class Target {
         /**
          * Set the minimum lightness value for this target.
          */
-        public @NonNull Builder setMinimumLightness(@FloatRange(from = 0, to = 1) float value) {
+        @NonNull
+        public Builder setMinimumLightness(@FloatRange(from = 0, to = 1) float value) {
             mTarget.mLightnessTargets[INDEX_MIN] = value;
             return this;
         }
@@ -336,7 +339,8 @@ public final class Target {
         /**
          * Set the target/ideal lightness value for this target.
          */
-        public @NonNull Builder setTargetLightness(@FloatRange(from = 0, to = 1) float value) {
+        @NonNull
+        public Builder setTargetLightness(@FloatRange(from = 0, to = 1) float value) {
             mTarget.mLightnessTargets[INDEX_TARGET] = value;
             return this;
         }
@@ -344,7 +348,8 @@ public final class Target {
         /**
          * Set the maximum lightness value for this target.
          */
-        public @NonNull Builder setMaximumLightness(@FloatRange(from = 0, to = 1) float value) {
+        @NonNull
+        public Builder setMaximumLightness(@FloatRange(from = 0, to = 1) float value) {
             mTarget.mLightnessTargets[INDEX_MAX] = value;
             return this;
         }
@@ -360,7 +365,8 @@ public final class Target {
          *
          * @see #setTargetSaturation(float)
          */
-        public @NonNull Builder setSaturationWeight(@FloatRange(from = 0) float weight) {
+        @NonNull
+        public Builder setSaturationWeight(@FloatRange(from = 0) float weight) {
             mTarget.mWeights[INDEX_WEIGHT_SAT] = weight;
             return this;
         }
@@ -376,7 +382,8 @@ public final class Target {
          *
          * @see #setTargetLightness(float)
          */
-        public @NonNull Builder setLightnessWeight(@FloatRange(from = 0) float weight) {
+        @NonNull
+        public Builder setLightnessWeight(@FloatRange(from = 0) float weight) {
             mTarget.mWeights[INDEX_WEIGHT_LUMA] = weight;
             return this;
         }
@@ -391,7 +398,8 @@ public final class Target {
          * <p>A weight of 0 means that it has no weight, and thus has no
          * bearing on the selection.</p>
          */
-        public @NonNull Builder setPopulationWeight(@FloatRange(from = 0) float weight) {
+        @NonNull
+        public Builder setPopulationWeight(@FloatRange(from = 0) float weight) {
             mTarget.mWeights[INDEX_WEIGHT_POP] = weight;
             return this;
         }
@@ -403,7 +411,8 @@ public final class Target {
          * @param exclusive true if any the color is exclusive to this target, or false is the
          *                  color can be selected for other targets.
          */
-        public @NonNull Builder setExclusive(boolean exclusive) {
+        @NonNull
+        public Builder setExclusive(boolean exclusive) {
             mTarget.mIsExclusive = exclusive;
             return this;
         }
@@ -411,7 +420,8 @@ public final class Target {
         /**
          * Builds and returns the resulting {@link Target}.
          */
-        public @NonNull Target build() {
+        @NonNull
+        public Target build() {
             return mTarget;
         }
     }

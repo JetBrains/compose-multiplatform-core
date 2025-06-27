@@ -98,7 +98,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[0] = coordinates.size
                                     childPosition[0] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                         ) {}
 
                         Container(
@@ -109,7 +109,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[1] = coordinates.size
                                     childPosition[1] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                         ) {}
                     }
                 }
@@ -122,7 +122,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[0])
             assertEquals(
                 IntSize((sizeDp.toPx() * 2).roundToInt(), (sizeDp.toPx() * 2).roundToInt()),
-                childSize[1],
+                childSize[1]
             )
             assertEquals(Offset(0f, 0f), childPosition[0])
             assertEquals(Offset(size.toFloat(), 0f), childPosition[1])
@@ -148,7 +148,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
 
                         Container(
@@ -158,7 +158,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                     }
                 }
@@ -196,7 +196,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
 
                         Container(
@@ -206,7 +206,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height * 2,
+                            height = height * 2
                         ) {}
                     }
                 }
@@ -242,7 +242,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
 
                         Container(
@@ -252,7 +252,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                     }
                 }
@@ -290,7 +290,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
 
                         Container(
@@ -300,7 +300,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                     }
                 }
@@ -348,7 +348,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[0] = coordinates.size
                                     childPosition[0] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                         ) {}
                         Container(
                             width = (sizeDp * 2),
@@ -358,7 +358,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[1] = coordinates.size
                                     childPosition[1] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                         ) {}
                     }
                 }
@@ -371,7 +371,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[0])
             assertEquals(
                 IntSize((sizeDp.toPx() * 2).roundToInt(), (sizeDp.toPx() * 2).roundToInt()),
-                childSize[1],
+                childSize[1]
             )
             assertEquals(Offset(0f, 0f), childPosition[0])
             assertEquals(Offset(0f, size.toFloat()), childPosition[1])
@@ -397,7 +397,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
 
                         Container(
@@ -407,7 +407,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                     }
                 }
@@ -445,7 +445,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                         Container(
                             Modifier.weight(2f, fill = false).onGloballyPositioned { coordinates ->
@@ -454,7 +454,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                     }
                 }
@@ -490,7 +490,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
 
                         Container(
@@ -500,7 +500,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                     }
                 }
@@ -538,7 +538,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
 
                         Container(
@@ -548,7 +548,7 @@ class RowColumnTest : LayoutTest() {
                                 drawLatch.countDown()
                             },
                             width = width,
-                            height = height,
+                            height = height
                         ) {}
                     }
                 }
@@ -764,88 +764,6 @@ class RowColumnTest : LayoutTest() {
             assertEquals(columnHeight, height[0] + height[1])
         }
 
-    @Test
-    fun testRow_withCustomVertical_alignment() {
-        with(density) {
-            val rowHeight = 200.dp
-            val centerAt = 50.dp.roundToPx()
-            val boxSize = 20.dp
-            var boxOffset = 0f
-            val drawLatch = CountDownLatch(1)
-
-            show {
-                Row(
-                    modifier = Modifier.size(width = 200.dp, height = rowHeight),
-                    verticalAlignment =
-                        object : Alignment.Vertical {
-                            override fun align(size: Int, space: Int): Int {
-                                val offset = centerAt - size / 2
-                                return offset.coerceIn(0, space - size)
-                            }
-                        },
-                ) {
-                    Box(
-                        modifier =
-                            Modifier.size(boxSize).onGloballyPositioned { coordinates ->
-                                boxOffset = coordinates.positionInRoot().y
-                                drawLatch.countDown()
-                            }
-                    )
-                }
-            }
-
-            assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
-
-            val root = findComposeView()
-            waitForDraw(root)
-            val expectedOffset = (centerAt - boxSize.roundToPx() / 2).toFloat()
-            assertEquals(expectedOffset, boxOffset)
-        }
-    }
-
-    @Test
-    fun testColumn_withCustomHorizontal_alignment() {
-        with(density) {
-            val columnWidth = 300.dp
-            val centerAt = 100
-            val boxSize = 40.dp
-            var boxOffset = 0f
-            val drawLatch = CountDownLatch(1)
-
-            show {
-                Column(
-                    modifier = Modifier.size(width = columnWidth, height = 200.dp),
-                    horizontalAlignment =
-                        object : Alignment.Horizontal {
-                            override fun align(
-                                size: Int,
-                                space: Int,
-                                layoutDirection: LayoutDirection,
-                            ): Int {
-                                val offset = centerAt - size / 2
-                                return offset.coerceIn(0, space - size)
-                            }
-                        },
-                ) {
-                    Box(
-                        modifier =
-                            Modifier.size(boxSize).onGloballyPositioned { coordinates ->
-                                boxOffset = coordinates.positionInRoot().x
-                                drawLatch.countDown()
-                            }
-                    )
-                }
-            }
-
-            assertTrue(drawLatch.await(1, TimeUnit.SECONDS))
-
-            val root = findComposeView()
-            waitForDraw(root)
-            val expectedOffset = (centerAt - boxSize.roundToPx() / 2).toFloat()
-            assertEquals(expectedOffset, boxOffset)
-        }
-    }
-
     // endregion
 
     // region Cross axis alignment tests in Row
@@ -868,7 +786,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
 
                     Container(
@@ -879,7 +797,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[1] = coordinates.size
                                 childPosition[1] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -913,7 +831,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -923,7 +841,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[1] = coordinates.size
                                 childPosition[1] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -933,7 +851,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[2] = coordinates.size
                                 childPosition[2] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -949,13 +867,13 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[1])
             assertEquals(
                 Offset(size.toFloat(), ((rootHeight - size.toFloat()) / 2f).roundToInt().toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
 
             assertEquals(IntSize(size, size), childSize[2])
             assertEquals(
                 Offset((size.toFloat() * 2), (rootHeight - size.toFloat())),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -978,7 +896,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -989,7 +907,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[1] = coordinates.size
                                 childPosition[1] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -999,7 +917,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[2] = coordinates.size
                                 childPosition[2] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -1015,13 +933,13 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[1])
             assertEquals(
                 Offset(size.toFloat(), ((rootHeight - size.toFloat()) / 2f).roundToInt().toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
 
             assertEquals(IntSize(size, size), childSize[2])
             assertEquals(
                 Offset((size.toFloat() * 2), (rootHeight - size.toFloat())),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -1052,7 +970,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1063,7 +981,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[1] = coordinates.size
                                     childPosition[1] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                     ) {}
                     BaselineTestLayout(
                         baseline = baseline2Dp,
@@ -1075,7 +993,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[2] = coordinates.size
                                 childPosition[2] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1086,7 +1004,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[3] = coordinates.size
                                     childPosition[3] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                     ) {}
                     BaselineTestLayout(
                         baseline = baseline3Dp,
@@ -1098,7 +1016,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[4] = coordinates.size
                                 childPosition[4] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -1110,13 +1028,13 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[1])
             assertEquals(
                 Offset(size.toFloat(), (baseline1.toFloat() - (size.toFloat() / 2).roundToInt())),
-                childPosition[1],
+                childPosition[1]
             )
 
             assertEquals(IntSize(size, size), childSize[2])
             assertEquals(
                 Offset((size.toFloat() * 2), (baseline1 - baseline2).toFloat()),
-                childPosition[2],
+                childPosition[2]
             )
 
             assertEquals(IntSize(size, size), childSize[3])
@@ -1125,7 +1043,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[4])
             assertEquals(
                 Offset((size.toFloat() * 4), (baseline1 - baseline3).toFloat()),
-                childPosition[4],
+                childPosition[4]
             )
         }
 
@@ -1152,7 +1070,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         height = sizeDp,
@@ -1163,7 +1081,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[1] = coordinates.size
                                     childPosition[1] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                     ) {}
                 }
             }
@@ -1198,7 +1116,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
 
                     Container(
@@ -1209,7 +1127,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[1] = coordinates.size
                                 childPosition[1] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -1243,7 +1161,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1254,7 +1172,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[1] = coordinates.size
                                 childPosition[1] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1264,7 +1182,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[2] = coordinates.size
                                 childPosition[2] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -1280,7 +1198,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[1])
             assertEquals(
                 Offset(((rootWidth - size.toFloat()) / 2).roundToInt().toFloat(), size.toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
 
             assertEquals(IntSize(size, size), childSize[2])
@@ -1299,7 +1217,7 @@ class RowColumnTest : LayoutTest() {
             show {
                 Column(
                     Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Container(
                         width = sizeDp,
@@ -1309,7 +1227,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1319,7 +1237,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[1] = coordinates.size
                                 childPosition[1] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1329,7 +1247,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[2] = coordinates.size
                                 childPosition[2] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -1345,7 +1263,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[1])
             assertEquals(
                 Offset(((rootWidth - size.toFloat()) / 2).roundToInt().toFloat(), size.toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
 
             assertEquals(IntSize(size, size), childSize[2])
@@ -1374,7 +1292,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[0] = coordinates.size
                                     childPosition[0] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1385,7 +1303,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[1] = coordinates.size
                                     childPosition[1] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                     ) {}
                     BaselineTestLayout(
                         width = sizeDp,
@@ -1396,7 +1314,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[2] = coordinates.size
                                 childPosition[2] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     BaselineTestLayout(
                         width = sizeDp,
@@ -1407,7 +1325,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[3] = coordinates.size
                                 childPosition[3] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                 }
             }
@@ -1422,13 +1340,13 @@ class RowColumnTest : LayoutTest() {
             assertEquals(IntSize(size, size), childSize[2])
             assertEquals(
                 Offset((size - firstBaseline1Dp.roundToPx()).toFloat(), size.toFloat() * 2),
-                childPosition[2],
+                childPosition[2]
             )
 
             assertEquals(IntSize(size, size), childSize[3])
             assertEquals(
                 Offset((size - firstBaseline2Dp.roundToPx()).toFloat(), size.toFloat() * 3),
-                childPosition[3],
+                childPosition[3]
             )
         }
 
@@ -1454,7 +1372,7 @@ class RowColumnTest : LayoutTest() {
                                 childSize[0] = coordinates.size
                                 childPosition[0] = coordinates.positionInRoot()
                                 drawLatch.countDown()
-                            },
+                            }
                     ) {}
                     Container(
                         width = sizeDp,
@@ -1465,7 +1383,7 @@ class RowColumnTest : LayoutTest() {
                                     childSize[1] = coordinates.size
                                     childPosition[1] = coordinates.positionInRoot()
                                     drawLatch.countDown()
-                                },
+                                }
                     ) {}
                 }
             }
@@ -1477,7 +1395,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(size, childSize[1]!!.width)
             assertEquals(
                 Offset((baseline - (size / 2)).toFloat(), size.toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
         }
 
@@ -1559,7 +1477,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.weight(1f),
                             width = sizeDp,
                             height = sizeDp,
-                            content = {},
+                            content = {}
                         )
                         Container(width = (sizeDp * 2), height = (sizeDp * 2), content = {})
                     }
@@ -1681,7 +1599,7 @@ class RowColumnTest : LayoutTest() {
                                 Modifier.weight(1f),
                                 width = sizeDp,
                                 height = sizeDp,
-                                content = {},
+                                content = {}
                             )
                             Container(width = sizeDp * 2, height = sizeDp * 2, content = {})
                         }
@@ -1821,7 +1739,7 @@ class RowColumnTest : LayoutTest() {
                                         drawLatch.countDown()
                                     },
                                 width = sizeDp,
-                                height = sizeDp,
+                                height = sizeDp
                             ) {}
                         }
                     }
@@ -1857,11 +1775,11 @@ class RowColumnTest : LayoutTest() {
                             Layout({}, Modifier.weight(1f)) { _, constraints ->
                                 assertEquals(
                                     rowMinWidth.roundToPx() - noWeightChildWidth.roundToPx() * 2,
-                                    constraints.minWidth,
+                                    constraints.minWidth
                                 )
                                 assertEquals(
                                     rowMinWidth.roundToPx() - noWeightChildWidth.roundToPx() * 2,
-                                    constraints.maxWidth,
+                                    constraints.maxWidth
                                 )
                                 latch.countDown()
                                 layout(0, 0) {}
@@ -1911,7 +1829,7 @@ class RowColumnTest : LayoutTest() {
                             minWidth = availableWidth,
                             maxWidth = availableWidth,
                             minHeight = availableHeight,
-                            maxHeight = availableHeight,
+                            maxHeight = availableHeight
                         )
                     ) {
                         Row {
@@ -1919,14 +1837,14 @@ class RowColumnTest : LayoutTest() {
                                 assertEquals(
                                     Constraints(
                                         maxWidth = availableWidth.roundToPx(),
-                                        maxHeight = availableHeight.roundToPx(),
+                                        maxHeight = availableHeight.roundToPx()
                                     ),
-                                    constraints,
+                                    constraints
                                 )
                                 FixedSizeLayout(
                                     childWidth.roundToPx(),
                                     childHeight.roundToPx(),
-                                    mapOf(),
+                                    mapOf()
                                 )
                             }
                             BoxWithConstraints {
@@ -1934,14 +1852,14 @@ class RowColumnTest : LayoutTest() {
                                     Constraints(
                                         maxWidth =
                                             availableWidth.roundToPx() - childWidth.roundToPx(),
-                                        maxHeight = availableHeight.roundToPx(),
+                                        maxHeight = availableHeight.roundToPx()
                                     ),
-                                    constraints,
+                                    constraints
                                 )
                                 FixedSizeLayout(
                                     childWidth.roundToPx(),
                                     childHeight.roundToPx(),
-                                    mapOf(),
+                                    mapOf()
                                 )
                                 latch.countDown()
                             }
@@ -1981,7 +1899,7 @@ class RowColumnTest : LayoutTest() {
             show {
                 Row(
                     modifier = Modifier.widthIn(max = rowWidth.toDp()),
-                    horizontalArrangement = Arrangement.spacedBy(space.toDp()),
+                    horizontalArrangement = Arrangement.spacedBy(space.toDp())
                 ) {
                     Box(
                         Modifier.weight(1f).onGloballyPositioned {
@@ -1995,7 +1913,7 @@ class RowColumnTest : LayoutTest() {
                             assertEquals((rowWidth - space) / 2, it.size.width)
                             assertEquals(
                                 (rowWidth - space) / 2 + space,
-                                it.positionInRoot().x.toInt(),
+                                it.positionInRoot().x.toInt()
                             )
                             latch.countDown()
                         }
@@ -2083,7 +2001,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.weight(1f),
                             width = sizeDp,
                             height = sizeDp,
-                            content = {},
+                            content = {}
                         )
                         Container(width = (sizeDp * 2), height = (sizeDp * 2), content = {})
                     }
@@ -2205,7 +2123,7 @@ class RowColumnTest : LayoutTest() {
                                 Modifier.weight(1f),
                                 width = sizeDp,
                                 height = sizeDp,
-                                content = {},
+                                content = {}
                             )
                             Container(width = sizeDp * 2, height = sizeDp * 2, content = {})
                         }
@@ -2345,7 +2263,7 @@ class RowColumnTest : LayoutTest() {
                                     drawLatch.countDown()
                                 },
                                 width = sizeDp,
-                                height = sizeDp,
+                                height = sizeDp
                             ) {}
                         }
                     }
@@ -2382,12 +2300,12 @@ class RowColumnTest : LayoutTest() {
                                 assertEquals(
                                     columnMinHeight.roundToPx() -
                                         noWeightChildHeight.roundToPx() * 2,
-                                    constraints.minHeight,
+                                    constraints.minHeight
                                 )
                                 assertEquals(
                                     columnMinHeight.roundToPx() -
                                         noWeightChildHeight.roundToPx() * 2,
-                                    constraints.maxHeight,
+                                    constraints.maxHeight
                                 )
                                 latch.countDown()
                                 layout(0, 0) {}
@@ -2413,7 +2331,7 @@ class RowColumnTest : LayoutTest() {
                             minWidth = availableWidth,
                             maxWidth = availableWidth,
                             minHeight = availableHeight,
-                            maxHeight = availableHeight,
+                            maxHeight = availableHeight
                         )
                     ) {
                         Column {
@@ -2421,14 +2339,14 @@ class RowColumnTest : LayoutTest() {
                                 assertEquals(
                                     Constraints(
                                         maxWidth = availableWidth.roundToPx(),
-                                        maxHeight = availableHeight.roundToPx(),
+                                        maxHeight = availableHeight.roundToPx()
                                     ),
-                                    constraints,
+                                    constraints
                                 )
                                 FixedSizeLayout(
                                     childWidth.roundToPx(),
                                     childHeight.roundToPx(),
-                                    mapOf(),
+                                    mapOf()
                                 )
                             }
                             BoxWithConstraints {
@@ -2436,14 +2354,14 @@ class RowColumnTest : LayoutTest() {
                                     Constraints(
                                         maxWidth = availableWidth.roundToPx(),
                                         maxHeight =
-                                            availableHeight.roundToPx() - childHeight.roundToPx(),
+                                            availableHeight.roundToPx() - childHeight.roundToPx()
                                     ),
-                                    constraints,
+                                    constraints
                                 )
                                 FixedSizeLayout(
                                     childWidth.roundToPx(),
                                     childHeight.roundToPx(),
-                                    mapOf(),
+                                    mapOf()
                                 )
                                 latch.countDown()
                             }
@@ -2483,7 +2401,7 @@ class RowColumnTest : LayoutTest() {
             show {
                 Column(
                     modifier = Modifier.height(columnHeight.toDp()),
-                    verticalArrangement = Arrangement.spacedBy(space.toDp()),
+                    verticalArrangement = Arrangement.spacedBy(space.toDp())
                 ) {
                     Box(
                         Modifier.weight(1f).onGloballyPositioned {
@@ -2497,7 +2415,7 @@ class RowColumnTest : LayoutTest() {
                             assertEquals((columnHeight - space) / 2, it.size.height)
                             assertEquals(
                                 (columnHeight - space) / 2 + space,
-                                it.positionInRoot().y.toInt(),
+                                it.positionInRoot().y.toInt()
                             )
                             latch.countDown()
                         }
@@ -2537,7 +2455,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -2572,7 +2490,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        horizontalArrangement = Arrangement.End,
+                        horizontalArrangement = Arrangement.End
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -2582,7 +2500,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -2617,7 +2535,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        horizontalArrangement = Arrangement.Center,
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -2627,7 +2545,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -2644,11 +2562,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((extraSpace / 2f).roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -2669,7 +2587,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -2679,7 +2597,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -2696,11 +2614,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(gap.roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset((size.toFloat() + gap * 2f).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset((size.toFloat() * 2f + gap * 3f).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -2720,7 +2638,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -2730,7 +2648,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -2763,7 +2681,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -2773,7 +2691,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -2790,11 +2708,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(0f, 0f), childPosition[0])
             assertEquals(
                 Offset((gap + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset((gap * 2 + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -2815,7 +2733,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        horizontalArrangement = Arrangement.SpaceAround,
+                        horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -2825,7 +2743,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -2842,11 +2760,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((gap / 2f).roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset(((gap * 3 / 2) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(((gap * 5 / 2) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -2866,7 +2784,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.onGloballyPositioned {
                                 assertEquals((sizePx * 2 + spacePx).roundToInt(), it.size.width)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.requiredSize(size).onGloballyPositioned {
@@ -2904,13 +2822,13 @@ class RowColumnTest : LayoutTest() {
                             Modifier.requiredSize(rowSize).onGloballyPositioned {
                                 assertEquals(rowSizePx, it.size.width)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.requiredSize(size).onGloballyPositioned {
                                 assertEquals(
                                     rowSizePx - spacePx - sizePx * 2,
-                                    it.positionInParent().x,
+                                    it.positionInParent().x
                                 )
                                 latch.countDown()
                             }
@@ -2945,7 +2863,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.requiredSize(rowSize).onGloballyPositioned {
                                 assertEquals(rowSizePx.roundToInt(), it.size.width)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.size(size).onGloballyPositioned {
@@ -2959,7 +2877,7 @@ class RowColumnTest : LayoutTest() {
                                 assertEquals(sizePx + spacePx, it.positionInParent().x)
                                 assertEquals(
                                     (rowSizePx - spacePx - sizePx).roundToInt(),
-                                    it.size.width,
+                                    it.size.width
                                 )
                                 latch.countDown()
                             }
@@ -2993,7 +2911,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.requiredSize(rowSize).onGloballyPositioned {
                                 assertEquals(rowSizePx.roundToInt(), it.size.width)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.size(size).onGloballyPositioned {
@@ -3032,13 +2950,13 @@ class RowColumnTest : LayoutTest() {
                     Column {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(space),
-                            modifier = Modifier.requiredWidth(size * 2 + space + buffer),
+                            modifier = Modifier.requiredWidth(size * 2 + space + buffer)
                         ) {
                             Box(
                                 Modifier.requiredSize(size).onGloballyPositioned {
                                     assertEquals(
                                         sizePx + spacePx + bufferPx,
-                                        it.positionInParent().x,
+                                        it.positionInParent().x
                                     )
                                     latch.countDown()
                                 }
@@ -3085,7 +3003,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -3120,7 +3038,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        verticalArrangement = Arrangement.Bottom,
+                        verticalArrangement = Arrangement.Bottom
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -3130,7 +3048,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -3165,7 +3083,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        verticalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -3175,7 +3093,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -3192,11 +3110,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(0f, (extraSpace / 2).roundToInt().toFloat()), childPosition[0])
             assertEquals(
                 Offset(0f, ((extraSpace / 2) + size.toFloat()).roundToInt().toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(0f, ((extraSpace / 2) + size.toFloat() * 2f).roundToInt().toFloat()),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -3217,7 +3135,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        verticalArrangement = Arrangement.SpaceEvenly,
+                        verticalArrangement = Arrangement.SpaceEvenly
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -3227,7 +3145,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -3244,24 +3162,24 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(0f, gap.roundToInt().toFloat()), childPosition[0])
             assertEquals(
                 Offset(0f, (size.toFloat() + gap * 2).roundToInt().toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(0f, (size.toFloat() * 2 + gap * 3f).roundToInt().toFloat()),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
     private fun calculateChildPositions(
         childPosition: Array<Offset>,
         parentLayoutCoordinates: LayoutCoordinates?,
-        childLayoutCoordinates: Array<LayoutCoordinates?>,
+        childLayoutCoordinates: Array<LayoutCoordinates?>
     ) {
         for (i in childPosition.indices) {
             childPosition[i] =
                 parentLayoutCoordinates!!.localPositionOf(
                     childLayoutCoordinates[i]!!,
-                    Offset(0f, 0f),
+                    Offset(0f, 0f)
                 )
         }
     }
@@ -3283,7 +3201,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        verticalArrangement = Arrangement.SpaceBetween,
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -3293,7 +3211,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -3310,11 +3228,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(0f, 0f), childPosition[0])
             assertEquals(
                 Offset(0f, (gap + size.toFloat()).roundToInt().toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(0f, (gap * 2 + size.toFloat() * 2).roundToInt().toFloat()),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -3335,7 +3253,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        verticalArrangement = Arrangement.SpaceAround,
+                        verticalArrangement = Arrangement.SpaceAround
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -3345,7 +3263,7 @@ class RowColumnTest : LayoutTest() {
                                     Modifier.onGloballyPositioned { coordinates ->
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
-                                    },
+                                    }
                             ) {}
                         }
                     }
@@ -3362,11 +3280,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(0f, (gap / 2f).roundToInt().toFloat()), childPosition[0])
             assertEquals(
                 Offset(0f, ((gap * 3f / 2f) + size.toFloat()).roundToInt().toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(0f, ((gap * 5f / 2f) + size.toFloat() * 2f).roundToInt().toFloat()),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -3386,7 +3304,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.onGloballyPositioned {
                                 assertEquals((sizePx * 2 + spacePx).roundToInt(), it.size.height)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.requiredSize(size).onGloballyPositioned {
@@ -3424,13 +3342,13 @@ class RowColumnTest : LayoutTest() {
                             Modifier.requiredSize(columnSize).onGloballyPositioned {
                                 assertEquals(columnSizePx, it.size.height)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.requiredSize(size).onGloballyPositioned {
                                 assertEquals(
                                     columnSizePx - spacePx - sizePx * 2,
-                                    it.positionInParent().y,
+                                    it.positionInParent().y
                                 )
                                 latch.countDown()
                             }
@@ -3465,7 +3383,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.requiredSize(columnSize).onGloballyPositioned {
                                 assertEquals(columnSizePx.roundToInt(), it.size.height)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.size(size).onGloballyPositioned {
@@ -3479,7 +3397,7 @@ class RowColumnTest : LayoutTest() {
                                 assertEquals(sizePx + spacePx, it.positionInParent().y)
                                 assertEquals(
                                     (columnSizePx - spacePx - sizePx).roundToInt(),
-                                    it.size.height,
+                                    it.size.height
                                 )
                                 latch.countDown()
                             }
@@ -3513,7 +3431,7 @@ class RowColumnTest : LayoutTest() {
                             Modifier.requiredSize(columnSize).onGloballyPositioned {
                                 assertEquals(columnSizePx, it.size.height)
                                 latch.countDown()
-                            },
+                            }
                     ) {
                         Box(
                             Modifier.requiredSize(size).onGloballyPositioned {
@@ -3610,7 +3528,7 @@ class RowColumnTest : LayoutTest() {
                     Row {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(space),
-                            modifier = Modifier.fillMaxHeight(),
+                            modifier = Modifier.fillMaxHeight()
                         ) {
                             Box(
                                 Modifier.requiredSize(size).onGloballyPositioned {
@@ -3656,7 +3574,7 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.align(Alignment.CenterVertically),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3666,7 +3584,7 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.alignBy { it.measuredWidth },
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3680,12 +3598,12 @@ class RowColumnTest : LayoutTest() {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         Container(
                             Modifier.align(Alignment.CenterVertically).aspectRatio(2f),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.align(Alignment.CenterVertically),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3695,7 +3613,7 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.align(Alignment.Bottom),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3705,7 +3623,7 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.fillMaxHeight(),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3720,13 +3638,13 @@ class RowColumnTest : LayoutTest() {
                         Container(Modifier.aspectRatio(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(50.toDp(), 40.toDp()), content = {})
                     }
-                },
+                }
             ) { minIntrinsicWidth, minIntrinsicHeight, maxIntrinsicWidth, maxIntrinsicHeight ->
                 // Min width.
                 assertEquals(50.toDp().roundToPx(), minIntrinsicWidth(0.toDp().roundToPx()))
                 assertEquals(
                     25.toDp().roundToPx() * 2 + 50.toDp().roundToPx(),
-                    minIntrinsicWidth(25.toDp().roundToPx()),
+                    minIntrinsicWidth(25.toDp().roundToPx())
                 )
                 assertEquals(50.toDp().roundToPx(), minIntrinsicWidth(Constraints.Infinity))
                 // Min height.
@@ -3737,7 +3655,7 @@ class RowColumnTest : LayoutTest() {
                 assertEquals(50.toDp().roundToPx(), maxIntrinsicWidth(0.toDp().roundToPx()))
                 assertEquals(
                     25.toDp().roundToPx() * 2 + 50.toDp().roundToPx(),
-                    maxIntrinsicWidth(25.toDp().roundToPx()),
+                    maxIntrinsicWidth(25.toDp().roundToPx())
                 )
                 assertEquals(50.toDp().roundToPx(), maxIntrinsicWidth(Constraints.Infinity))
                 // Max height.
@@ -3796,12 +3714,12 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(20.toDp(), 30.toDp()),
                             Modifier.weight(3f),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 40.toDp()),
                             Modifier.weight(2f),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(2f).weight(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(20.toDp(), 30.toDp()), content = {})
@@ -3812,18 +3730,18 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(20.toDp(), 30.toDp()),
                             Modifier.weight(3f).align(Alignment.Top),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 40.toDp()),
                             Modifier.weight(2f).align(Alignment.CenterVertically),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(2f).weight(2f), content = {})
                         ConstrainedBox(
                             DpConstraints.fixed(20.toDp(), 30.toDp()),
                             Modifier.align(Alignment.Bottom),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3832,12 +3750,12 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(20.toDp(), 30.toDp()),
                             Modifier.weight(3f),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 40.toDp()),
                             Modifier.weight(2f),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(2f).weight(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(20.toDp(), 30.toDp()), content = {})
@@ -3848,21 +3766,21 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(20.toDp(), 30.toDp()),
                             modifier = Modifier.weight(3f).align(Alignment.CenterVertically),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 40.toDp()),
                             modifier = Modifier.weight(2f).align(Alignment.CenterVertically),
-                            content = {},
+                            content = {}
                         )
                         Container(
                             Modifier.aspectRatio(2f).weight(2f).align(Alignment.CenterVertically),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(20.toDp(), 30.toDp()),
                             modifier = Modifier.align(Alignment.CenterVertically),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3871,21 +3789,21 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(20.toDp(), 30.toDp()),
                             modifier = Modifier.weight(3f).align(Alignment.Bottom),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 40.toDp()),
                             modifier = Modifier.weight(2f).align(Alignment.Bottom),
-                            content = {},
+                            content = {}
                         )
                         Container(
                             Modifier.aspectRatio(2f).weight(2f).align(Alignment.Bottom),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(20.toDp(), 30.toDp()),
                             modifier = Modifier.align(Alignment.Bottom),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3894,18 +3812,18 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(20.toDp(), 30.toDp()),
                             modifier = Modifier.weight(3f).fillMaxHeight(),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 40.toDp()),
                             modifier = Modifier.weight(2f).fillMaxHeight(),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(2f).weight(2f).fillMaxHeight(), content = {})
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(20.toDp(), 30.toDp()),
                             modifier = Modifier.fillMaxHeight(),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -3914,12 +3832,12 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(20.toDp(), 30.toDp()),
                             Modifier.weight(3f),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 40.toDp()),
                             Modifier.weight(2f),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(2f).weight(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(20.toDp(), 30.toDp()), content = {})
@@ -3930,34 +3848,34 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(20.toDp(), 30.toDp()),
                             Modifier.weight(3f),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 40.toDp()),
                             Modifier.weight(2f),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(2f).weight(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(20.toDp(), 30.toDp()), content = {})
                     }
-                },
+                }
             ) { minIntrinsicWidth, minIntrinsicHeight, maxIntrinsicWidth, maxIntrinsicHeight ->
                 // Min width.
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicWidth(0),
+                    minIntrinsicWidth(0)
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicWidth(10.toDp().roundToPx()),
+                    minIntrinsicWidth(10.toDp().roundToPx())
                 )
                 assertEquals(
                     25.toDp().roundToPx() * 2 / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicWidth(25.toDp().roundToPx()),
+                    minIntrinsicWidth(25.toDp().roundToPx())
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicWidth(Constraints.Infinity),
+                    minIntrinsicWidth(Constraints.Infinity)
                 )
                 // Min height.
                 assertEquals(40.toDp().roundToPx(), minIntrinsicHeight(0.toDp().roundToPx()))
@@ -3967,19 +3885,19 @@ class RowColumnTest : LayoutTest() {
                 // Max width.
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicWidth(0),
+                    maxIntrinsicWidth(0)
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicWidth(10.toDp().roundToPx()),
+                    maxIntrinsicWidth(10.toDp().roundToPx())
                 )
                 assertEquals(
                     25.toDp().roundToPx() * 2 / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicWidth(25.toDp().roundToPx()),
+                    maxIntrinsicWidth(25.toDp().roundToPx())
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicWidth(Constraints.Infinity),
+                    maxIntrinsicWidth(Constraints.Infinity)
                 )
                 // Max height.
                 assertEquals(40.toDp().roundToPx(), maxIntrinsicHeight(0.toDp().roundToPx()))
@@ -4022,7 +3940,7 @@ class RowColumnTest : LayoutTest() {
                             rowHeight = it.height
                             latch.countDown()
                         },
-                    horizontalArrangement = Arrangement.spacedBy(spacing.toDp()),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.toDp())
                 ) {
                     Box(Modifier) // Empty box
                     Box(Modifier.width(rowWidth.toDp()).aspectRatio(1f))
@@ -4048,7 +3966,7 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.align(Alignment.End),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -4058,7 +3976,7 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.alignBy(TestVerticalLine),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
@@ -4078,7 +3996,7 @@ class RowColumnTest : LayoutTest() {
                     Column(Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
                         Container(
                             Modifier.align(Alignment.CenterHorizontally).aspectRatio(2f),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(DpConstraints.fixed(50.toDp(), 40.toDp()), content = {})
                     }
@@ -4089,27 +4007,27 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.align(Alignment.End),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
                 @Composable {
                     Column(
                         Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceAround,
+                        verticalArrangement = Arrangement.SpaceAround
                     ) {
                         Container(Modifier.fillMaxWidth().aspectRatio(2f), content = {})
                         ConstrainedBox(
                             DpConstraints.fixed(50.toDp(), 40.toDp()),
                             Modifier.fillMaxWidth(),
-                            content = {},
+                            content = {}
                         )
                     }
                 },
                 @Composable {
                     Column(
                         Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceBetween,
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Container(Modifier.aspectRatio(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(50.toDp(), 40.toDp()), content = {})
@@ -4118,12 +4036,12 @@ class RowColumnTest : LayoutTest() {
                 @Composable {
                     Column(
                         Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceEvenly,
+                        verticalArrangement = Arrangement.SpaceEvenly
                     ) {
                         Container(Modifier.aspectRatio(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(50.toDp(), 40.toDp()), content = {})
                     }
-                },
+                }
             ) { minIntrinsicWidth, minIntrinsicHeight, maxIntrinsicWidth, maxIntrinsicHeight ->
                 // Min width.
                 assertEquals(50.toDp().roundToPx(), minIntrinsicWidth(0.toDp().roundToPx()))
@@ -4133,7 +4051,7 @@ class RowColumnTest : LayoutTest() {
                 assertEquals(40.toDp().roundToPx(), minIntrinsicHeight(0.toDp().roundToPx()))
                 assertEquals(
                     50.toDp().roundToPx() / 2 + 40.toDp().roundToPx(),
-                    minIntrinsicHeight(50.toDp().roundToPx()),
+                    minIntrinsicHeight(50.toDp().roundToPx())
                 )
                 assertEquals(40.toDp().roundToPx(), minIntrinsicHeight(Constraints.Infinity))
                 // Max width.
@@ -4144,7 +4062,7 @@ class RowColumnTest : LayoutTest() {
                 assertEquals(40.toDp().roundToPx(), maxIntrinsicHeight(0.toDp().roundToPx()))
                 assertEquals(
                     50.toDp().roundToPx() / 2 + 40.toDp().roundToPx(),
-                    maxIntrinsicHeight(50.toDp().roundToPx()),
+                    maxIntrinsicHeight(50.toDp().roundToPx())
                 )
                 assertEquals(40.toDp().roundToPx(), maxIntrinsicHeight(Constraints.Infinity))
             }
@@ -4159,12 +4077,12 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 20.toDp()),
                             Modifier.weight(3f),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(40.toDp(), 30.toDp()),
                             Modifier.weight(2f),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(0.5f).weight(2f), content = {})
                         ConstrainedBox(DpConstraints.fixed(30.toDp(), 20.toDp()), content = {})
@@ -4175,17 +4093,17 @@ class RowColumnTest : LayoutTest() {
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 20.toDp()),
                             Modifier.weight(3f).align(Alignment.Start),
-                            content = {},
+                            content = {}
                         )
                         ConstrainedBox(
                             DpConstraints.fixed(40.toDp(), 30.toDp()),
                             Modifier.weight(2f).align(Alignment.CenterHorizontally),
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.aspectRatio(0.5f).weight(2f)) {}
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            Modifier.align(Alignment.End),
+                            Modifier.align(Alignment.End)
                         ) {}
                     }
                 },
@@ -4193,11 +4111,11 @@ class RowColumnTest : LayoutTest() {
                     Column(verticalArrangement = Arrangement.Top) {
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            Modifier.weight(3f),
+                            Modifier.weight(3f)
                         ) {}
                         ConstrainedBox(
                             DpConstraints.fixed(40.toDp(), 30.toDp()),
-                            Modifier.weight(2f),
+                            Modifier.weight(2f)
                         ) {}
                         Container(Modifier.aspectRatio(0.5f).weight(2f)) {}
                         ConstrainedBox(DpConstraints.fixed(30.toDp(), 20.toDp())) {}
@@ -4207,11 +4125,11 @@ class RowColumnTest : LayoutTest() {
                     Column(verticalArrangement = Arrangement.Center) {
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            modifier = Modifier.weight(3f).align(Alignment.CenterHorizontally),
+                            modifier = Modifier.weight(3f).align(Alignment.CenterHorizontally)
                         ) {}
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(40.toDp(), 30.toDp()),
-                            modifier = Modifier.weight(2f).align(Alignment.CenterHorizontally),
+                            modifier = Modifier.weight(2f).align(Alignment.CenterHorizontally)
                         ) {}
                         Container(
                             Modifier.aspectRatio(0.5f)
@@ -4220,7 +4138,7 @@ class RowColumnTest : LayoutTest() {
                         ) {}
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
                         ) {}
                     }
                 },
@@ -4228,16 +4146,16 @@ class RowColumnTest : LayoutTest() {
                     Column(verticalArrangement = Arrangement.Bottom) {
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            modifier = Modifier.weight(3f).align(Alignment.End),
+                            modifier = Modifier.weight(3f).align(Alignment.End)
                         ) {}
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(40.toDp(), 30.toDp()),
-                            modifier = Modifier.weight(2f).align(Alignment.End),
+                            modifier = Modifier.weight(2f).align(Alignment.End)
                         ) {}
                         Container(Modifier.aspectRatio(0.5f).weight(2f).align(Alignment.End)) {}
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            modifier = Modifier.align(Alignment.End),
+                            modifier = Modifier.align(Alignment.End)
                         ) {}
                     }
                 },
@@ -4245,16 +4163,16 @@ class RowColumnTest : LayoutTest() {
                     Column(verticalArrangement = Arrangement.SpaceAround) {
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            modifier = Modifier.weight(3f).fillMaxWidth(),
+                            modifier = Modifier.weight(3f).fillMaxWidth()
                         ) {}
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(40.toDp(), 30.toDp()),
-                            modifier = Modifier.weight(2f).fillMaxWidth(),
+                            modifier = Modifier.weight(2f).fillMaxWidth()
                         ) {}
                         Container(Modifier.aspectRatio(0.5f).weight(2f).fillMaxWidth()) {}
                         ConstrainedBox(
                             constraints = DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth()
                         ) {}
                     }
                 },
@@ -4262,11 +4180,11 @@ class RowColumnTest : LayoutTest() {
                     Column(verticalArrangement = Arrangement.SpaceBetween) {
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            Modifier.weight(3f),
+                            Modifier.weight(3f)
                         ) {}
                         ConstrainedBox(
                             DpConstraints.fixed(40.toDp(), 30.toDp()),
-                            Modifier.weight(2f),
+                            Modifier.weight(2f)
                         ) {}
                         Container(Modifier.aspectRatio(0.5f).then(Modifier.weight(2f))) {}
                         ConstrainedBox(DpConstraints.fixed(30.toDp(), 20.toDp())) {}
@@ -4276,16 +4194,16 @@ class RowColumnTest : LayoutTest() {
                     Column(verticalArrangement = Arrangement.SpaceEvenly) {
                         ConstrainedBox(
                             DpConstraints.fixed(30.toDp(), 20.toDp()),
-                            Modifier.weight(3f),
+                            Modifier.weight(3f)
                         ) {}
                         ConstrainedBox(
                             DpConstraints.fixed(40.toDp(), 30.toDp()),
-                            Modifier.weight(2f),
+                            Modifier.weight(2f)
                         ) {}
                         Container(Modifier.aspectRatio(0.5f).then(Modifier.weight(2f))) {}
                         ConstrainedBox(DpConstraints.fixed(30.toDp(), 20.toDp())) {}
                     }
-                },
+                }
             ) { minIntrinsicWidth, minIntrinsicHeight, maxIntrinsicWidth, maxIntrinsicHeight ->
                 // Min width.
                 assertEquals(40.toDp().roundToPx(), minIntrinsicWidth(0.toDp().roundToPx()))
@@ -4295,19 +4213,19 @@ class RowColumnTest : LayoutTest() {
                 // Min height.
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicHeight(0),
+                    minIntrinsicHeight(0)
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicHeight(10.toDp().roundToPx()),
+                    minIntrinsicHeight(10.toDp().roundToPx())
                 )
                 assertEquals(
                     25.toDp().roundToPx() * 2 / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicHeight(25.toDp().roundToPx()),
+                    minIntrinsicHeight(25.toDp().roundToPx())
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    minIntrinsicHeight(Constraints.Infinity),
+                    minIntrinsicHeight(Constraints.Infinity)
                 )
                 // Max width.
                 assertEquals(40.toDp().roundToPx(), maxIntrinsicWidth(0.toDp().roundToPx()))
@@ -4317,19 +4235,19 @@ class RowColumnTest : LayoutTest() {
                 // Max height.
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicHeight(0),
+                    maxIntrinsicHeight(0)
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicHeight(10.toDp().roundToPx()),
+                    maxIntrinsicHeight(10.toDp().roundToPx())
                 )
                 assertEquals(
                     25.toDp().roundToPx() * 2 / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicHeight(25.toDp().roundToPx()),
+                    maxIntrinsicHeight(25.toDp().roundToPx())
                 )
                 assertEquals(
                     30.toDp().roundToPx() / 2 * 7 + 20.toDp().roundToPx(),
-                    maxIntrinsicHeight(Constraints.Infinity),
+                    maxIntrinsicHeight(Constraints.Infinity)
                 )
             }
         }
@@ -4369,7 +4287,7 @@ class RowColumnTest : LayoutTest() {
                                 columnWidth = it.width
                                 latch.countDown()
                             },
-                    verticalArrangement = Arrangement.spacedBy(spacing.toDp()),
+                    verticalArrangement = Arrangement.spacedBy(spacing.toDp())
                 ) {
                     Box(Modifier) // Empty box
                     Box(Modifier.height(columnHeight.toDp()).aspectRatio(1f))
@@ -4392,7 +4310,7 @@ class RowColumnTest : LayoutTest() {
                         Modifier.requiredWidth(dividerWidth).fillMaxHeight().onGloballyPositioned {
                             assertEquals(
                                 it.size.height,
-                                (rowWidth.roundToPx() - dividerWidth.roundToPx()) / 2,
+                                (rowWidth.roundToPx() - dividerWidth.roundToPx()) / 2
                             )
                             positionedLatch.countDown()
                         }
@@ -4401,27 +4319,27 @@ class RowColumnTest : LayoutTest() {
                         object : MeasurePolicy {
                             override fun MeasureScope.measure(
                                 measurables: List<Measurable>,
-                                constraints: Constraints,
+                                constraints: Constraints
                             ) = layout(constraints.maxWidth, constraints.maxWidth / 2) {}
 
                             override fun IntrinsicMeasureScope.minIntrinsicWidth(
                                 measurables: List<IntrinsicMeasurable>,
-                                height: Int,
+                                height: Int
                             ) = rowWidth.roundToPx() / 10
 
                             override fun IntrinsicMeasureScope.minIntrinsicHeight(
                                 measurables: List<IntrinsicMeasurable>,
-                                width: Int,
+                                width: Int
                             ) = width / 2
 
                             override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                                 measurables: List<IntrinsicMeasurable>,
-                                height: Int,
+                                height: Int
                             ) = rowWidth.roundToPx() * 2
 
                             override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                                 measurables: List<IntrinsicMeasurable>,
-                                width: Int,
+                                width: Int
                             ) = width / 2
                         }
                     Layout(content = {}, measurePolicy = measurePolicy)
@@ -4444,7 +4362,7 @@ class RowColumnTest : LayoutTest() {
                         Modifier.requiredHeight(dividerHeight).fillMaxWidth().onGloballyPositioned {
                             assertEquals(
                                 it.size.width,
-                                (columnHeight.roundToPx() - dividerHeight.roundToPx()) / 2,
+                                (columnHeight.roundToPx() - dividerHeight.roundToPx()) / 2
                             )
                             positionedLatch.countDown()
                         }
@@ -4453,27 +4371,27 @@ class RowColumnTest : LayoutTest() {
                         object : MeasurePolicy {
                             override fun MeasureScope.measure(
                                 measurables: List<Measurable>,
-                                constraints: Constraints,
+                                constraints: Constraints
                             ) = layout(constraints.maxHeight / 2, constraints.maxHeight) {}
 
                             override fun IntrinsicMeasureScope.minIntrinsicWidth(
                                 measurables: List<IntrinsicMeasurable>,
-                                height: Int,
+                                height: Int
                             ) = height / 2
 
                             override fun IntrinsicMeasureScope.minIntrinsicHeight(
                                 measurables: List<IntrinsicMeasurable>,
-                                width: Int,
+                                width: Int
                             ) = columnHeight.roundToPx() / 10
 
                             override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                                 measurables: List<IntrinsicMeasurable>,
-                                height: Int,
+                                height: Int
                             ) = height / 2
 
                             override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                                 measurables: List<IntrinsicMeasurable>,
-                                width: Int,
+                                width: Int
                             ) = columnHeight.roundToPx() * 2
                         }
                     Layout(content = {}, measurePolicy = measurePolicy)
@@ -4517,7 +4435,7 @@ class RowColumnTest : LayoutTest() {
                                 containerHeight.value = coordinates.size.height
                                 positionedLatch.countDown()
                             },
-                            content = {},
+                            content = {}
                         )
                         Container(Modifier.weight(1f), content = {})
                     }
@@ -4544,7 +4462,7 @@ class RowColumnTest : LayoutTest() {
                         modifier = Modifier.alignBy { it.measuredHeight },
                         width = size,
                         height = size,
-                        content = {},
+                        content = {}
                     )
                     Container(
                         modifier =
@@ -4557,7 +4475,7 @@ class RowColumnTest : LayoutTest() {
                                 },
                         width = size,
                         height = size,
-                        content = {},
+                        content = {}
                     )
                 }
             }
@@ -4609,7 +4527,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((rootWidth - size.toFloat()), 0f), childPosition[0])
             assertEquals(
                 Offset((rootWidth - (sizeDp.toPx() * 3f).roundToInt()).toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
         }
 
@@ -4633,7 +4551,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.Center,
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -4644,7 +4562,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -4660,11 +4578,11 @@ class RowColumnTest : LayoutTest() {
             val extraSpace = root.width - size * 3
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[0],
+                childPosition[0]
             )
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(Offset((extraSpace / 2f).roundToInt().toFloat(), 0f), childPosition[2])
         }
@@ -4689,7 +4607,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -4700,7 +4618,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -4716,11 +4634,11 @@ class RowColumnTest : LayoutTest() {
             val gap = (root.width - size.toFloat() * 3f) / 4f
             assertEquals(
                 Offset((size.toFloat() * 2f + gap * 3f).roundToInt().toFloat(), 0f),
-                childPosition[0],
+                childPosition[0]
             )
             assertEquals(
                 Offset((size.toFloat() + gap * 2f).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(Offset(gap.roundToInt().toFloat(), 0f), childPosition[2])
         }
@@ -4745,7 +4663,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -4756,7 +4674,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -4793,7 +4711,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -4804,7 +4722,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -4820,11 +4738,11 @@ class RowColumnTest : LayoutTest() {
             val gap = (root.width - size.toFloat() * 3) / 2
             assertEquals(
                 Offset((gap * 2 + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[0],
+                childPosition[0]
             )
             assertEquals(
                 Offset((gap + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(Offset(0f, 0f), childPosition[2])
         }
@@ -4849,7 +4767,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.SpaceAround,
+                        horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -4860,7 +4778,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -4876,11 +4794,11 @@ class RowColumnTest : LayoutTest() {
             val gap = (root.width.toFloat() - size * 3) / 3
             assertEquals(
                 Offset(((gap * 5 / 2) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[0],
+                childPosition[0]
             )
             assertEquals(
                 Offset(((gap * 3 / 2) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(Offset((gap / 2f).roundToInt().toFloat(), 0f), childPosition[2])
         }
@@ -4941,7 +4859,7 @@ class RowColumnTest : LayoutTest() {
                                 Modifier.requiredSize(rowSize).onGloballyPositioned {
                                     assertEquals(rowSizePx, it.size.width)
                                     latch.countDown()
-                                },
+                                }
                         ) {
                             Box(
                                 Modifier.requiredSize(size).onGloballyPositioned {
@@ -5000,7 +4918,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((rootWidth - size.toFloat()), 0f), childPosition[0])
             assertEquals(
                 Offset((rootWidth - (sizeDp * 2f).toPx()).roundToInt().toFloat(), size.toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
         }
 
@@ -5084,7 +5002,7 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((rootWidth - size.toFloat()), 0f), childPosition[0])
             assertEquals(
                 Offset((rootWidth - size.toFloat() * 1.5f).roundToInt().toFloat(), size.toFloat()),
-                childPosition[1],
+                childPosition[1]
             )
         }
 
@@ -5107,7 +5025,7 @@ class RowColumnTest : LayoutTest() {
                         parentLayoutCoordinates = coordinates
                         drawLatch.countDown()
                     },
-                    horizontalArrangement = Arrangement.Absolute.Left,
+                    horizontalArrangement = Arrangement.Absolute.Left
                 ) {
                     for (i in childPosition.indices) {
                         Container(
@@ -5118,7 +5036,7 @@ class RowColumnTest : LayoutTest() {
                                     childLayoutCoordinates[i] = coordinates
                                     drawLatch.countDown()
                                 },
-                            content = {},
+                            content = {}
                         )
                     }
                 }
@@ -5154,7 +5072,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                        horizontalArrangement = Arrangement.Absolute.Left,
+                        horizontalArrangement = Arrangement.Absolute.Left
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -5165,7 +5083,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -5200,7 +5118,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                    horizontalArrangement = Arrangement.Absolute.Right,
+                    horizontalArrangement = Arrangement.Absolute.Right
                 ) {
                     for (i in childPosition.indices) {
                         Container(
@@ -5211,7 +5129,7 @@ class RowColumnTest : LayoutTest() {
                                     childLayoutCoordinates[i] = coordinates
                                     drawLatch.countDown()
                                 },
-                            content = {},
+                            content = {}
                         )
                     }
                 }
@@ -5248,7 +5166,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.Absolute.Right,
+                        horizontalArrangement = Arrangement.Absolute.Right
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -5259,7 +5177,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -5294,7 +5212,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                    horizontalArrangement = Arrangement.Absolute.Center,
+                    horizontalArrangement = Arrangement.Absolute.Center
                 ) {
                     for (i in 0 until childPosition.size) {
                         Container(
@@ -5305,7 +5223,7 @@ class RowColumnTest : LayoutTest() {
                                     childLayoutCoordinates[i] = coordinates
                                     drawLatch.countDown()
                                 },
-                            content = {},
+                            content = {}
                         )
                     }
                 }
@@ -5321,11 +5239,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((extraSpace / 2f).roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5349,7 +5267,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.Absolute.Center,
+                        horizontalArrangement = Arrangement.Absolute.Center
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -5360,7 +5278,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -5377,11 +5295,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((extraSpace / 2f).roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(((extraSpace / 2f) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5402,7 +5320,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                    horizontalArrangement = Arrangement.Absolute.SpaceEvenly,
+                    horizontalArrangement = Arrangement.Absolute.SpaceEvenly
                 ) {
                     for (i in childPosition.indices) {
                         Container(
@@ -5413,7 +5331,7 @@ class RowColumnTest : LayoutTest() {
                                     childLayoutCoordinates[i] = coordinates
                                     drawLatch.countDown()
                                 },
-                            content = {},
+                            content = {}
                         )
                     }
                 }
@@ -5429,11 +5347,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(gap.roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset((size.toFloat() + gap * 2f).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset((size.toFloat() * 2f + gap * 3f).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5457,7 +5375,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.Absolute.SpaceEvenly,
+                        horizontalArrangement = Arrangement.Absolute.SpaceEvenly
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -5468,7 +5386,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -5485,11 +5403,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(gap.roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset((size.toFloat() + gap * 2f).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset((size.toFloat() * 2f + gap * 3f).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5510,7 +5428,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                    horizontalArrangement = Arrangement.Absolute.SpaceBetween,
+                    horizontalArrangement = Arrangement.Absolute.SpaceBetween
                 ) {
                     for (i in childPosition.indices) {
                         Container(
@@ -5521,7 +5439,7 @@ class RowColumnTest : LayoutTest() {
                                     childLayoutCoordinates[i] = coordinates
                                     drawLatch.countDown()
                                 },
-                            content = {},
+                            content = {}
                         )
                     }
                 }
@@ -5537,11 +5455,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(0f, 0f), childPosition[0])
             assertEquals(
                 Offset((gap + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset((gap * 2 + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5565,7 +5483,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.Absolute.SpaceBetween,
+                        horizontalArrangement = Arrangement.Absolute.SpaceBetween
                     ) {
                         for (i in childPosition.indices) {
                             Container(
@@ -5576,7 +5494,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -5593,11 +5511,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset(0f, 0f), childPosition[0])
             assertEquals(
                 Offset((gap + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset((gap * 2 + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5618,7 +5536,7 @@ class RowColumnTest : LayoutTest() {
                             parentLayoutCoordinates = coordinates
                             drawLatch.countDown()
                         },
-                    horizontalArrangement = Arrangement.Absolute.SpaceAround,
+                    horizontalArrangement = Arrangement.Absolute.SpaceAround
                 ) {
                     for (i in 0 until childPosition.size) {
                         Container(
@@ -5629,7 +5547,7 @@ class RowColumnTest : LayoutTest() {
                                     childLayoutCoordinates[i] = coordinates
                                     drawLatch.countDown()
                                 },
-                            content = {},
+                            content = {}
                         )
                     }
                 }
@@ -5645,11 +5563,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((gap / 2f).roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset(((gap * 3 / 2) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(((gap * 5 / 2) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5673,7 +5591,7 @@ class RowColumnTest : LayoutTest() {
                                 parentLayoutCoordinates = coordinates
                                 drawLatch.countDown()
                             },
-                        horizontalArrangement = Arrangement.Absolute.SpaceAround,
+                        horizontalArrangement = Arrangement.Absolute.SpaceAround
                     ) {
                         for (i in 0 until childPosition.size) {
                             Container(
@@ -5684,7 +5602,7 @@ class RowColumnTest : LayoutTest() {
                                         childLayoutCoordinates[i] = coordinates
                                         drawLatch.countDown()
                                     },
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -5701,11 +5619,11 @@ class RowColumnTest : LayoutTest() {
             assertEquals(Offset((gap / 2f).roundToInt().toFloat(), 0f), childPosition[0])
             assertEquals(
                 Offset(((gap * 3 / 2) + size.toFloat()).roundToInt().toFloat(), 0f),
-                childPosition[1],
+                childPosition[1]
             )
             assertEquals(
                 Offset(((gap * 5 / 2) + size.toFloat() * 2).roundToInt().toFloat(), 0f),
-                childPosition[2],
+                childPosition[2]
             )
         }
 
@@ -5731,7 +5649,7 @@ class RowColumnTest : LayoutTest() {
                                 Modifier.requiredSize(rowSize).onGloballyPositioned {
                                     assertEquals(rowSizePx, it.size.width)
                                     latch.countDown()
-                                },
+                                }
                         ) {
                             Box(
                                 Modifier.requiredSize(size).onGloballyPositioned {
@@ -5821,7 +5739,7 @@ private fun BaselineTestLayout(
     baseline: Dp,
     modifier: Modifier,
     horizontalLine: HorizontalAlignmentLine = TestHorizontalLine,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     Layout(
         content = content,
@@ -5834,10 +5752,10 @@ private fun BaselineTestLayout(
                 heightPx,
                 mapOf(
                     horizontalLine to baseline.roundToPx(),
-                    TestVerticalLine to baseline.roundToPx(),
-                ),
+                    TestVerticalLine to baseline.roundToPx()
+                )
             ) {}
-        },
+        }
     )
 }
 
@@ -5870,7 +5788,7 @@ private fun Center(content: @Composable () -> Unit) {
                     Alignment.Center.align(
                         IntSize(placeable.width, placeable.height),
                         IntSize(layoutWidth, layoutHeight),
-                        layoutDirection,
+                        layoutDirection
                     )
                 placeable.placeRelative(position.x, position.y)
             }

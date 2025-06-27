@@ -65,7 +65,10 @@ internal interface LazyLayoutItemProvider {
  * Finds a position of the item with the given key in the lists. This logic allows us to detect when
  * there were items added or removed before our current first item.
  */
-internal fun LazyLayoutItemProvider.findIndexByKey(key: Any?, lastKnownIndex: Int): Int {
+internal fun LazyLayoutItemProvider.findIndexByKey(
+    key: Any?,
+    lastKnownIndex: Int,
+): Int {
     if (key == null || itemCount == 0) {
         // there were no real item during the previous measure
         return lastKnownIndex

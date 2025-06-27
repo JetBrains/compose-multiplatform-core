@@ -97,7 +97,7 @@ actual sealed interface ContentType {
         actual val SmsOtpCode = ContentType(AUTOFILL_HINT_SMS_OTP)
     }
 
-    actual operator fun plus(other: ContentType): ContentType
+    operator fun plus(other: ContentType): ContentType
 }
 
 private class AndroidContentType(val androidAutofillHints: Set<String>) : ContentType {

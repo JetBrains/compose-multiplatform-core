@@ -50,7 +50,7 @@ class KspClassFileUtilityTest(val preCompile: Boolean) {
                 val isC:String = TODO()
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(libSource)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("KotlinClass")
@@ -75,9 +75,11 @@ class KspClassFileUtilityTest(val preCompile: Boolean) {
                 String isC;
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
-        runTest(sources = listOf(libSource)) { invocation ->
+        runTest(
+            sources = listOf(libSource),
+        ) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("JavaClass")
             assertThat(element.getAllFieldNames())
                 .containsExactly("b", "a", "c", "isB", "isA", "isC")
@@ -100,7 +102,7 @@ class KspClassFileUtilityTest(val preCompile: Boolean) {
                 fun isC(): String = TODO()
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(libSource)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("KotlinClass")
@@ -125,9 +127,11 @@ class KspClassFileUtilityTest(val preCompile: Boolean) {
                 String isC() { return ""; }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
-        runTest(sources = listOf(libSource)) { invocation ->
+        runTest(
+            sources = listOf(libSource),
+        ) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("JavaClass")
             assertThat(element.getDeclaredMethods().map { it.jvmName })
                 .containsExactly("b", "a", "c", "isB", "isA", "isC")
@@ -147,7 +151,7 @@ class KspClassFileUtilityTest(val preCompile: Boolean) {
                 package $pkg;
                 public class JavaClass {}
                 """
-                        .trimIndent(),
+                        .trimIndent()
                 ),
                 Source.kotlin(
                     "$pkg/KotlinClass.kt",
@@ -155,8 +159,8 @@ class KspClassFileUtilityTest(val preCompile: Boolean) {
                 package $pkg;
                 class KotlinClass {}
                 """
-                        .trimIndent(),
-                ),
+                        .trimIndent()
+                )
             )
 
         fun XTestInvocation.findOrigin(qName: String) =
@@ -182,7 +186,7 @@ class KspClassFileUtilityTest(val preCompile: Boolean) {
         runProcessorTest(
             sources = sources + Source.kotlin("Placeholder.kt", ""),
             classpath = classpath,
-            handler = handler,
+            handler = handler
         )
     }
 

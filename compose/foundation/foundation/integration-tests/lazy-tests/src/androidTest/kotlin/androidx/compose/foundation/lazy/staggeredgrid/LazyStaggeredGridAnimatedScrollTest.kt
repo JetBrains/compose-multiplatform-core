@@ -49,7 +49,11 @@ class LazyStaggeredGridAnimatedScrollTest(orientation: Orientation) :
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> = arrayOf(Orientation.Vertical, Orientation.Horizontal)
+        fun initParameters(): Array<Any> =
+            arrayOf(
+                Orientation.Vertical,
+                Orientation.Horizontal,
+            )
     }
 
     internal lateinit var state: LazyStaggeredGridState
@@ -209,7 +213,7 @@ class LazyStaggeredGridAnimatedScrollTest(orientation: Orientation) :
         toOffset: Int = 0,
         fromIndex: Int = 0,
         fromOffset: Int = 0,
-        spacingPx: Int = 0,
+        spacingPx: Int = 0
     ) {
         if (fromIndex != 0 || fromOffset != 0) {
             rule.runOnIdle { runBlocking { state.scrollToItem(fromIndex, fromOffset) } }
@@ -266,7 +270,7 @@ class LazyStaggeredGridAnimatedScrollTest(orientation: Orientation) :
             lanes = 2,
             state = state,
             modifier = Modifier.axisSize(itemSizeDp * 2, itemSizeDp * 5),
-            mainAxisSpacing = spacingDp,
+            mainAxisSpacing = spacingDp
         ) {
             items(
                 count = 100,
@@ -274,7 +278,7 @@ class LazyStaggeredGridAnimatedScrollTest(orientation: Orientation) :
                     // mark a span to check scroll through
                     if (it == 50) StaggeredGridItemSpan.FullLine
                     else StaggeredGridItemSpan.SingleLane
-                },
+                }
             ) {
                 BasicText("$it", Modifier.mainAxisSize(itemSizeDp).testTag("$it").debugBorder())
             }

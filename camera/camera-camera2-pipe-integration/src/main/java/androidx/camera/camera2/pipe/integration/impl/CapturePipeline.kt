@@ -80,10 +80,13 @@ import androidx.camera.core.ImageCapture.FlashType
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.TorchState
 import androidx.camera.core.imagecapture.CameraCapturePipeline
+import androidx.camera.core.impl.CameraCaptureFailure
 import androidx.camera.core.impl.CameraCaptureResult
+import androidx.camera.core.impl.CameraCaptureResult.EmptyCameraCaptureResult
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
 import androidx.camera.core.impl.ConvergenceUtils
+import androidx.camera.core.impl.SessionProcessor.CaptureCallback
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -117,7 +120,7 @@ public interface CapturePipeline {
     public suspend fun getCameraCapturePipeline(
         @CaptureMode captureMode: Int,
         @FlashMode flashMode: Int,
-        @FlashType flashType: Int,
+        @FlashType flashType: Int
     ): CameraCapturePipeline
 }
 
@@ -136,6 +139,7 @@ constructor(
     cameraProperties: CameraProperties,
     private val useCaseCameraState: UseCaseCameraState,
     useCaseGraphConfig: UseCaseGraphConfig,
+    private val sessionProcessorManager: SessionProcessorManager?,
 ) : CapturePipeline {
     private val graph = useCaseGraphConfig.graph
 
@@ -183,11 +187,25 @@ constructor(
         }
 
         return if (flashMode == FLASH_MODE_SCREEN) {
-            screenFlashCapture(mainCaptureParams, captureMode, pipelineTasks)
+            screenFlashCapture(
+                mainCaptureParams,
+                captureMode,
+                pipelineTasks,
+            )
         } else if (isTorchAsFlash(flashType)) {
-            torchAsFlashCapture(mainCaptureParams, captureMode, flashMode, pipelineTasks)
+            torchAsFlashCapture(
+                mainCaptureParams,
+                captureMode,
+                flashMode,
+                pipelineTasks,
+            )
         } else {
-            defaultCapture(mainCaptureParams, captureMode, flashMode, pipelineTasks)
+            defaultCapture(
+                mainCaptureParams,
+                captureMode,
+                flashMode,
+                pipelineTasks,
+            )
         }
     }
 
@@ -210,7 +228,7 @@ constructor(
     override suspend fun getCameraCapturePipeline(
         captureMode: Int,
         flashMode: Int,
-        flashType: Int,
+        flashType: Int
     ): CameraCapturePipeline {
         return object : CameraCapturePipeline {
             override fun invokePreCapture(): ListenableFuture<Void?> {
@@ -263,7 +281,9 @@ constructor(
             preCapture()
         }
         return if (contains(MAIN_CAPTURE)) {
-                submitRequestInternal(checkNotNull(mainCaptureParams))
+                submitRequestInternal(
+                    checkNotNull(mainCaptureParams),
+                )
             } else {
                 listOf(CompletableDeferred(value = null))
             }
@@ -318,12 +338,25 @@ constructor(
                 if (isFlashRequired) CHECK_3A_WITH_FLASH_TIMEOUT_IN_NS else CHECK_3A_TIMEOUT_IN_NS
 
             if (isFlashRequired || captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY) {
-                aePreCaptureApplyCapture(mainCaptureParams, timeout, captureMode, pipelineTasks)
+                aePreCaptureApplyCapture(
+                    mainCaptureParams,
+                    timeout,
+                    captureMode,
+                    pipelineTasks,
+                )
             } else {
-                defaultNoFlashCapture(mainCaptureParams, captureMode, pipelineTasks)
+                defaultNoFlashCapture(
+                    mainCaptureParams,
+                    captureMode,
+                    pipelineTasks,
+                )
             }
         } else {
-            defaultNoFlashCapture(mainCaptureParams, captureMode, pipelineTasks)
+            defaultNoFlashCapture(
+                mainCaptureParams,
+                captureMode,
+                pipelineTasks,
+            )
         }
     }
 
@@ -349,7 +382,7 @@ constructor(
                     unlockAf(CHECK_3A_TIMEOUT_IN_NS)
                     debug { "CapturePipeline#defaultNoFlashCapture: Unlocking 3A done" }
                 }
-            },
+            }
         )
     }
 
@@ -404,7 +437,7 @@ constructor(
                             waitForResult(waitTimeoutNanos = timeLimitNs) {
                                 ConvergenceUtils.is3AConverged(
                                     it.metadata.toCameraCaptureResult(),
-                                    /* isTorchAsFlash = */ true,
+                                    /* isTorchAsFlash = */ true
                                 )
                             }
                             debug {
@@ -425,7 +458,7 @@ constructor(
                     @Suppress("DeferredResultUnused")
                     graph.acquireSession().use {
                         it.unlock3APostCapture(
-                            cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY
+                            cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
                         )
                     }
                 } else {
@@ -435,7 +468,7 @@ constructor(
                         debug { "CapturePipeline#torchApplyCapture: Unlocking 3A done" }
                     }
                 }
-            },
+            }
         )
     }
 
@@ -476,7 +509,7 @@ constructor(
                     it.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A done" }
                 }
-            },
+            }
         )
     }
 
@@ -490,7 +523,7 @@ constructor(
         return pipelineTasks.invoke(
             mainCaptureParams = mainCaptureParams,
             preCapture = { invokeScreenFlashPreCaptureTasks(captureMode) },
-            postCapture = { invokeScreenFlashPostCaptureTasks(captureMode) },
+            postCapture = { invokeScreenFlashPostCaptureTasks(captureMode) }
         )
     }
 
@@ -553,7 +586,7 @@ constructor(
                     awbLockBehavior = null,
                     convergedCondition = getConvergeCondition(isTorchAsFlash),
                     convergedTimeLimitNs = convergedTimeLimitNs,
-                    lockedTimeLimitNs = CHECK_3A_TIMEOUT_IN_NS,
+                    lockedTimeLimitNs = CHECK_3A_TIMEOUT_IN_NS
                 )
             }
             .await()
@@ -609,9 +642,22 @@ constructor(
 
     /** Unlocks any active AF lock by triggering an AF cancel. */
     private suspend fun unlockAf(timeLimitNs: Long): Result3A =
-        graph.acquireSession().use { it.unlock3A(af = true, timeLimitNs = timeLimitNs) }.await()
+        graph
+            .acquireSession()
+            .use {
+                it.unlock3A(
+                    af = true,
+                    timeLimitNs = timeLimitNs,
+                )
+            }
+            .await()
 
-    private fun submitRequestInternal(params: MainCaptureParams): List<Deferred<Void?>> {
+    private fun submitRequestInternal(
+        params: MainCaptureParams,
+    ): List<Deferred<Void?>> {
+        if (sessionProcessorManager != null) {
+            return submitRequestInternalWithSessionProcessor(params.configs)
+        }
         debug {
             "CapturePipeline#submitRequestInternal; Submitting ${params.configs} with CameraPipe"
         }
@@ -631,7 +677,7 @@ constructor(
                                         ImageCaptureException(
                                             ERROR_CAMERA_CLOSED,
                                             "Capture request is cancelled because camera is closed",
-                                            null,
+                                            null
                                         )
                                     )
                                 }
@@ -647,19 +693,19 @@ constructor(
                                 override fun onFailed(
                                     requestMetadata: RequestMetadata,
                                     frameNumber: FrameNumber,
-                                    requestFailure: RequestFailure,
+                                    requestFailure: RequestFailure
                                 ) {
                                     completeSignal.completeExceptionally(
                                         ImageCaptureException(
                                             ERROR_CAPTURE_FAILED,
                                             "Capture request failed with reason " +
                                                 requestFailure.reason,
-                                            null,
+                                            null
                                         )
                                     )
                                 }
                             }
-                        ),
+                        )
                     )
                 } catch (e: IllegalStateException) {
                     info(e) {
@@ -669,7 +715,7 @@ constructor(
                         ImageCaptureException(
                             ERROR_CAPTURE_FAILED,
                             "Capture request failed with reason " + e.message,
-                            e,
+                            e
                         )
                     )
                     null
@@ -702,7 +748,7 @@ constructor(
                         ImageCaptureException(
                             ERROR_CAMERA_CLOSED,
                             "Capture request is cancelled because camera is closed",
-                            null,
+                            null
                         )
                     )
                 }
@@ -727,6 +773,78 @@ constructor(
         return deferredList
     }
 
+    private fun submitRequestInternalWithSessionProcessor(
+        configs: List<CaptureConfig>
+    ): List<Deferred<Void?>> {
+        debug {
+            "CapturePipeline#submitRequestInternal: Submitting $configs using SessionProcessor"
+        }
+        val deferredList = mutableListOf<CompletableDeferred<Void?>>()
+        val callbacks =
+            configs.map {
+                val completeSignal = CompletableDeferred<Void?>().also { deferredList.add(it) }
+                object : CaptureCallback {
+                    private var cameraCaptureResult: CameraCaptureResult? = null
+
+                    override fun onCaptureStarted(captureSequenceId: Int, timestamp: Long) {
+                        for (captureCallback in it.cameraCaptureCallbacks) {
+                            captureCallback.onCaptureStarted(it.id)
+                        }
+                    }
+
+                    override fun onCaptureFailed(captureSequenceId: Int) {
+                        completeSignal.completeExceptionally(
+                            ImageCaptureException(
+                                ERROR_CAPTURE_FAILED,
+                                "Capture request failed",
+                                null
+                            )
+                        )
+                        for (captureCallback in it.cameraCaptureCallbacks) {
+                            captureCallback.onCaptureFailed(
+                                it.id,
+                                CameraCaptureFailure(CameraCaptureFailure.Reason.ERROR)
+                            )
+                        }
+                    }
+
+                    override fun onCaptureCompleted(
+                        timestamp: Long,
+                        captureSequenceId: Int,
+                        captureResult: CameraCaptureResult
+                    ) {
+                        cameraCaptureResult = captureResult
+                    }
+
+                    override fun onCaptureSequenceCompleted(captureSequenceId: Int) {
+                        completeSignal.complete(null)
+                        val captureResult = cameraCaptureResult ?: EmptyCameraCaptureResult()
+                        for (captureCallback in it.cameraCaptureCallbacks) {
+                            captureCallback.onCaptureCompleted(it.id, captureResult)
+                        }
+                    }
+
+                    override fun onCaptureProcessProgressed(progress: Int) {
+                        for (captureCallback in it.cameraCaptureCallbacks) {
+                            captureCallback.onCaptureProcessProgressed(it.id, progress)
+                        }
+                    }
+
+                    override fun onCaptureSequenceAborted(captureSequenceId: Int) {
+                        completeSignal.completeExceptionally(
+                            ImageCaptureException(
+                                ERROR_CAMERA_CLOSED,
+                                "Capture request is cancelled because camera is closed",
+                                null
+                            )
+                        )
+                    }
+                }
+            }
+        sessionProcessorManager!!.submitCaptureConfigs(configs, callbacks)
+        return deferredList
+    }
+
     private suspend fun isPhysicalFlashRequired(@FlashMode flashMode: Int): Boolean =
         when (flashMode) {
             FLASH_MODE_ON -> true
@@ -742,7 +860,7 @@ constructor(
 
     private suspend fun waitForResult(
         waitTimeoutNanos: Long,
-        checker: (totalCaptureResult: FrameInfo) -> Boolean = { _ -> true },
+        checker: (totalCaptureResult: FrameInfo) -> Boolean = { _ -> true }
     ): FrameInfo? {
         val resultListener =
             ResultListener(waitTimeoutNanos, checker).also { listener ->

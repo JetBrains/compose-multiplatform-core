@@ -22,7 +22,6 @@ import androidx.kruth.assertThat
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
-import java.io.FileNotFoundException
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -76,7 +75,7 @@ class DirectBootDataStoreFactoryTest {
                 context = deContext,
                 serializer = TestingSerializer(),
                 scope = dataStoreScope,
-                fileName = "testFile",
+                fileName = "testFile"
             )
         val expectedByte = 123.toByte()
 
@@ -100,20 +99,5 @@ class DirectBootDataStoreFactoryTest {
                     .deviceProtectedDataStoreFile("testFile")
                     .path
             )
-    }
-
-    @Test
-    fun testPhoneUnlockedReturnsOriginalException() {
-        // Get a path to a datastore file in CE storage
-        assertThat(context.isDeviceProtectedStorage).isFalse()
-        val filePath = File(context.filesDir, "testFile")
-        val noOpException = FileNotFoundException()
-
-        if (noOpException.isDeviceUnlocked()) {
-            // If the phone is UNLOCKED and the path is in CE storage, the exception should
-            // be returned as is.
-            assertThat(wrapExceptionIfDueToDirectBoot(filePath.parent, noOpException))
-                .isSameInstanceAs(noOpException)
-        }
     }
 }

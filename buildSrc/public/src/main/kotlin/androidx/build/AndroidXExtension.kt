@@ -16,8 +16,7 @@
 
 package androidx.build
 
-import com.android.build.api.variant.AndroidComponentsExtension
-import com.android.build.api.variant.HasAndroidTest
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import groovy.lang.Closure
 import java.io.File
 import javax.inject.Inject
@@ -138,7 +137,7 @@ abstract class AndroidXExtension(
     // gets the library group from the project path, including special cases
     private fun getLibraryGroupFromProjectPath(
         projectPath: String,
-        explanationBuilder: MutableList<String>? = null,
+        explanationBuilder: MutableList<String>? = null
     ): LibraryGroup? {
         val overridden = overrideLibraryGroupsByProjectPath[projectPath]
         explanationBuilder?.add(
@@ -161,7 +160,7 @@ abstract class AndroidXExtension(
     // simple function to get the library group from the project path, without special cases
     private fun getStandardLibraryGroupFromProjectPath(
         projectPath: String,
-        explanationBuilder: MutableList<String>?,
+        explanationBuilder: MutableList<String>?
     ): LibraryGroup? {
         // Get the text of the library group, something like "androidx.core"
         val parentPath = substringBeforeLastColon(projectPath)
@@ -317,8 +316,7 @@ abstract class AndroidXExtension(
 
     var type: SoftwareType = SoftwareType.UNSET
 
-    val failOnDeprecationWarnings: Property<Boolean> =
-        project.objects.property(Boolean::class.java).convention(true)
+    val failOnDeprecationWarnings = project.objects.property(Boolean::class.java).convention(true)
 
     /** Whether this project should fail on javac compilation warnings */
     fun failOnDeprecationWarnings(enabled: Boolean) = failOnDeprecationWarnings.set(enabled)
@@ -346,7 +344,7 @@ abstract class AndroidXExtension(
                 project.path.startsWith(":privacysandbox:ads:") ->
                     mutableListOf("privacysandbox", "privacysandbox_ads")
                 project.path.startsWith(":privacysandbox:") -> mutableListOf("privacysandbox")
-                project.path.startsWith(":wear:watchface") -> mutableListOf("wear_optin")
+                project.path.startsWith(":wear:") -> mutableListOf("wear")
                 else -> mutableListOf()
             }
         if (deviceTests.enableAlsoRunningOnPhysicalDevices) {
@@ -415,22 +413,16 @@ abstract class AndroidXExtension(
 
     /** Adds golden image assets to Android test APKs to use for screenshot tests. */
     fun addGoldenImageAssets() {
-        project.extensions.findByType(AndroidComponentsExtension::class.java)?.onVariants { variant
-            ->
+        project.extensions.findByType(LibraryAndroidComponentsExtension::class.java)?.onVariants {
+            variant ->
             val subdirectory = project.path.replace(":", "/")
-            (variant as? HasAndroidTest)
-                ?.androidTest
+            variant.androidTest
                 ?.sources
                 ?.assets
                 ?.addStaticSourceDirectory(
                     File(project.rootDir, "../../golden$subdirectory").absolutePath
                 )
         }
-    }
-
-    /** Enable Robolectric tests for Android Host Tests. */
-    fun enableRobolectric() {
-        configureRobolectric(project)
     }
 
     /** Locates a project by path. */

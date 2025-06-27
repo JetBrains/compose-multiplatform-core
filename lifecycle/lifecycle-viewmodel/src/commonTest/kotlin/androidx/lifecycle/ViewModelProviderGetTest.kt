@@ -18,11 +18,9 @@ package androidx.lifecycle
 
 import androidx.kruth.assertThat
 import androidx.lifecycle.viewmodel.CreationExtras
-import androidx.lifecycle.viewmodel.IgnoreWebTarget
 import kotlin.reflect.KClass
 import kotlin.test.Test
 
-@IgnoreWebTarget
 class ViewModelProviderGetTest {
     @Test
     fun get_withReifiedType() {
@@ -31,7 +29,7 @@ class ViewModelProviderGetTest {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(
                     modelClass: KClass<T>,
-                    extras: CreationExtras,
+                    extras: CreationExtras
                 ): T = TestViewModel() as T
             }
         val provider = ViewModelProvider.create(ViewModelStore(), factory)

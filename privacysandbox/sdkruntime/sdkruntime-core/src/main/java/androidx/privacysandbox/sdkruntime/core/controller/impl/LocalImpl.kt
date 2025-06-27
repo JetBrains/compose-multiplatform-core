@@ -18,32 +18,29 @@ package androidx.privacysandbox.sdkruntime.core.controller.impl
 
 import android.os.Bundle
 import android.os.IBinder
-import androidx.annotation.RestrictTo
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
 import androidx.privacysandbox.sdkruntime.core.internal.ClientFeature
 import java.util.concurrent.Executor
 
 /**
- * Wrapper for client provided implementation of [SdkSandboxControllerBackend]. Checks client
- * version to determine if method supported.
+ * Wrapper for client provided implementation of [SdkSandboxControllerCompat]. Checks client version
+ * to determine if method supported.
  */
-// TODO(b/426122358) Make it internal after finishing migration
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class LocalImpl(
-    private val implFromClient: SdkSandboxControllerBackend,
-    private val clientVersion: Int,
-) : SdkSandboxControllerBackend {
+internal class LocalImpl(
+    private val implFromClient: SdkSandboxControllerCompat.SandboxControllerImpl,
+    private val clientVersion: Int
+) : SdkSandboxControllerCompat.SandboxControllerImpl {
 
     override fun loadSdk(
         sdkName: String,
         params: Bundle,
         executor: Executor,
-        callback: LoadSdkCallback,
+        callback: LoadSdkCallback
     ) {
         implFromClient.loadSdk(sdkName, params, executor, callback)
     }
@@ -74,7 +71,7 @@ public class LocalImpl(
 
     override fun registerSdkSandboxClientImportanceListener(
         executor: Executor,
-        listenerCompat: SdkSandboxClientImportanceListenerCompat,
+        listenerCompat: SdkSandboxClientImportanceListenerCompat
     ) {
         if (ClientFeature.CLIENT_IMPORTANCE_LISTENER.isAvailable(clientVersion)) {
             implFromClient.registerSdkSandboxClientImportanceListener(executor, listenerCompat)

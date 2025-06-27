@@ -40,7 +40,6 @@ import androidx.wear.protolayout.material3.Typography.TITLE_LARGE
 import androidx.wear.protolayout.material3.Typography.TITLE_MEDIUM
 import androidx.wear.protolayout.material3.Typography.TITLE_SMALL
 import androidx.wear.protolayout.material3.Typography.TypographyToken
-import androidx.wear.protolayout.material3.Versions.isAtLeastBaklava
 
 /**
  * Helper object for determining additional font specifics that should be used for each Typography.
@@ -53,7 +52,6 @@ internal object TypographyFontSelection {
      */
     @OptIn(ProtoLayoutExperimental::class)
     fun getFontVariant(@TypographyToken typographyToken: Int): FontVariantProp =
-        // This is used only pre API 36 so no need for the version check.
         FontVariantProp.Builder()
             .setValue(
                 when (typographyToken) {
@@ -86,56 +84,27 @@ internal object TypographyFontSelection {
     fun getFontWeight(@TypographyToken typographyToken: Int): FontWeightProp =
         FontWeightProp.Builder()
             .setValue(
-                if (isAtLeastBaklava()) {
-                    when (typographyToken) {
-                        DISPLAY_MEDIUM,
-                        DISPLAY_SMALL,
-                        TITLE_LARGE,
-                        TITLE_MEDIUM,
-                        TITLE_SMALL,
-                        LABEL_LARGE,
-                        LABEL_MEDIUM,
-                        LABEL_SMALL,
-                        BODY_LARGE,
-                        BODY_MEDIUM,
-                        BODY_EXTRA_SMALL,
-                        BODY_SMALL,
-                        NUMERAL_EXTRA_LARGE,
-                        NUMERAL_LARGE,
-                        NUMERAL_MEDIUM,
-                        NUMERAL_SMALL,
-                        NUMERAL_EXTRA_SMALL -> LayoutElementBuilders.FONT_WEIGHT_MEDIUM
-                        DISPLAY_LARGE -> LayoutElementBuilders.FONT_WEIGHT_NORMAL
-                        else ->
-                            throw IllegalArgumentException(
-                                "Typography $typographyToken does not exit."
-                            )
-                    }
-                } else {
-                    when (typographyToken) {
-                        DISPLAY_SMALL,
-                        TITLE_MEDIUM,
-                        TITLE_SMALL,
-                        LABEL_LARGE,
-                        LABEL_MEDIUM,
-                        LABEL_SMALL,
-                        BODY_EXTRA_SMALL,
-                        BODY_SMALL,
-                        NUMERAL_EXTRA_LARGE,
-                        NUMERAL_LARGE,
-                        NUMERAL_MEDIUM,
-                        NUMERAL_SMALL,
-                        NUMERAL_EXTRA_SMALL -> LayoutElementBuilders.FONT_WEIGHT_MEDIUM
-                        DISPLAY_LARGE,
-                        DISPLAY_MEDIUM,
-                        TITLE_LARGE,
-                        BODY_LARGE,
-                        BODY_MEDIUM -> LayoutElementBuilders.FONT_WEIGHT_NORMAL
-                        else ->
-                            throw IllegalArgumentException(
-                                "Typography $typographyToken does not exit."
-                            )
-                    }
+                when (typographyToken) {
+                    DISPLAY_SMALL,
+                    TITLE_MEDIUM,
+                    TITLE_SMALL,
+                    LABEL_LARGE,
+                    LABEL_MEDIUM,
+                    LABEL_SMALL,
+                    BODY_EXTRA_SMALL,
+                    BODY_SMALL,
+                    NUMERAL_EXTRA_LARGE,
+                    NUMERAL_LARGE,
+                    NUMERAL_MEDIUM,
+                    NUMERAL_SMALL,
+                    NUMERAL_EXTRA_SMALL -> LayoutElementBuilders.FONT_WEIGHT_MEDIUM
+                    DISPLAY_LARGE,
+                    DISPLAY_MEDIUM,
+                    TITLE_LARGE,
+                    BODY_LARGE,
+                    BODY_MEDIUM -> LayoutElementBuilders.FONT_WEIGHT_NORMAL
+                    else ->
+                        throw IllegalArgumentException("Typography $typographyToken does not exit.")
                 }
             )
             .build()
@@ -143,9 +112,9 @@ internal object TypographyFontSelection {
     /** Returns whether the given typography should be scaled with the user font size changing. */
     fun getFontScalability(@TypographyToken typographyToken: Int): Boolean =
         when (typographyToken) {
-            TITLE_LARGE,
             TITLE_MEDIUM,
             TITLE_SMALL,
+            LABEL_LARGE,
             LABEL_MEDIUM,
             LABEL_SMALL,
             BODY_EXTRA_SMALL,
@@ -155,7 +124,7 @@ internal object TypographyFontSelection {
             DISPLAY_LARGE,
             DISPLAY_MEDIUM,
             DISPLAY_SMALL,
-            LABEL_LARGE,
+            TITLE_LARGE,
             NUMERAL_EXTRA_LARGE,
             NUMERAL_EXTRA_SMALL,
             NUMERAL_LARGE,

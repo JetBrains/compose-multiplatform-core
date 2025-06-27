@@ -45,7 +45,7 @@ import io.reactivex.plugins.RxJavaPlugins
  *   with the real one once we receive it from the stream
  */
 @Composable
-public fun <R, T : R> Observable<T>.subscribeAsState(initial: R): State<R> =
+fun <R, T : R> Observable<T>.subscribeAsState(initial: R): State<R> =
     asState(initial) { subscribe(it) }
 
 /**
@@ -64,7 +64,7 @@ public fun <R, T : R> Observable<T>.subscribeAsState(initial: R): State<R> =
  *   with the real one once we receive it from the stream
  */
 @Composable
-public fun <R, T : R> Flowable<T>.subscribeAsState(initial: R): State<R> =
+fun <R, T : R> Flowable<T>.subscribeAsState(initial: R): State<R> =
     asState(initial) { subscribe(it) }
 
 /**
@@ -83,8 +83,7 @@ public fun <R, T : R> Flowable<T>.subscribeAsState(initial: R): State<R> =
  *   with the real one once we receive it from the stream
  */
 @Composable
-public fun <R, T : R> Single<T>.subscribeAsState(initial: R): State<R> =
-    asState(initial) { subscribe(it) }
+fun <R, T : R> Single<T>.subscribeAsState(initial: R): State<R> = asState(initial) { subscribe(it) }
 
 /**
  * Subscribes to this [Maybe] and represents its value via [State]. Once the value would be posted
@@ -102,8 +101,7 @@ public fun <R, T : R> Single<T>.subscribeAsState(initial: R): State<R> =
  *   with the real one once we receive it from the stream
  */
 @Composable
-public fun <R, T : R> Maybe<T>.subscribeAsState(initial: R): State<R> =
-    asState(initial) { subscribe(it) }
+fun <R, T : R> Maybe<T>.subscribeAsState(initial: R): State<R> = asState(initial) { subscribe(it) }
 
 /**
  * Subscribes to this [Completable] and represents its completed state via [State]. Once the
@@ -119,13 +117,13 @@ public fun <R, T : R> Maybe<T>.subscribeAsState(initial: R): State<R> =
  * @sample androidx.compose.runtime.rxjava2.samples.CompletableSample
  */
 @Composable
-public fun Completable.subscribeAsState(): State<Boolean> =
+fun Completable.subscribeAsState(): State<Boolean> =
     asState(false) { callback -> subscribe { callback(true) } }
 
 @Composable
 private inline fun <T, S> S.asState(
     initial: T,
-    crossinline subscribe: S.((T) -> Unit) -> Disposable,
+    crossinline subscribe: S.((T) -> Unit) -> Disposable
 ): State<T> {
     val state = remember { mutableStateOf(initial) }
     DisposableEffect(this) {

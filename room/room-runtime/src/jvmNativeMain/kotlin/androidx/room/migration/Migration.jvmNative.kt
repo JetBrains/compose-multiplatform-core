@@ -33,8 +33,8 @@ import androidx.sqlite.SQLiteConnection
  *
  * @constructor Creates a new migration between [startVersion] and [endVersion] inclusive.
  */
-public actual abstract class Migration
-actual constructor(public actual val startVersion: Int, public actual val endVersion: Int) {
+actual abstract class Migration
+actual constructor(actual val startVersion: Int, actual val endVersion: Int) {
     /**
      * Should run the necessary migrations.
      *
@@ -43,5 +43,5 @@ actual constructor(public actual val startVersion: Int, public actual val endVer
      *
      * @param connection The database connection
      */
-    public actual open fun migrate(connection: SQLiteConnection) {}
+    actual open fun migrate(connection: SQLiteConnection) {}
 }

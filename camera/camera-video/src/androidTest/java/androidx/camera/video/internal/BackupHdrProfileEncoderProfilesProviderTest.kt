@@ -24,6 +24,7 @@ import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.internal.Camera2EncoderProfilesProvider
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
@@ -61,11 +62,13 @@ import org.junit.runners.Parameterized
 class BackupHdrProfileEncoderProfilesProviderTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
-    private val quality: Int,
+    private val quality: Int
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
     val cameraRule =
@@ -106,7 +109,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
                                     Camera2Config::class.simpleName -> Camera2Config.defaultConfig()
                                     else -> Camera2Config.defaultConfig()
                                 },
-                                quality,
+                                quality
                             )
                         )
                     }
@@ -119,6 +122,7 @@ class BackupHdrProfileEncoderProfilesProviderTest(
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     private lateinit var cameraId: String
     private lateinit var cameraInfo: CameraInfoInternal
@@ -126,12 +130,12 @@ class BackupHdrProfileEncoderProfilesProviderTest(
 
     @Before
     fun setup() {
-        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+        assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
 
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator(),
+            Build.VERSION.SDK_INT == 30 && isEmulator()
         )
 
         CameraXUtil.initialize(context, cameraConfig).get()

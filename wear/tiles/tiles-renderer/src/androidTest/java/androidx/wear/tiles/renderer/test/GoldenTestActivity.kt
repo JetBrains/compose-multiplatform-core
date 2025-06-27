@@ -27,7 +27,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.wear.protolayout.proto.LayoutElementProto
 import androidx.wear.protolayout.proto.ResourceProto
-import androidx.wear.protolayout.renderer.ProtoLayoutVisibilityState
 import androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance
 import com.google.common.util.concurrent.MoreExecutors
 import java.util.concurrent.ExecutionException
@@ -50,11 +49,11 @@ class GoldenTestActivity : Activity() {
                         applicationContext,
                         mainExecutor,
                         mainExecutor,
-                        "androidx.wear.tiles.extra.CLICKABLE_ID",
+                        "androidx.wear.tiles.extra.CLICKABLE_ID"
                     )
+                    .setIsViewFullyVisible(true)
                     .build()
             )
-        instance.setLayoutVisibility(ProtoLayoutVisibilityState.VISIBILITY_STATE_FULLY_VISIBLE)
 
         try {
             instance.renderAndAttach(layoutProto, generateResourcesProto(), root).get()
@@ -93,7 +92,7 @@ class GoldenTestActivity : Activity() {
                             ResourceProto.AndroidImageResourceByResId.newBuilder()
                                 .setResourceId(R.drawable.android_24dp)
                         )
-                        .build(),
+                        .build()
                 )
                 .putIdToImage(
                     "android_withbg_120dp",
@@ -102,7 +101,7 @@ class GoldenTestActivity : Activity() {
                             ResourceProto.AndroidImageResourceByResId.newBuilder()
                                 .setResourceId(R.drawable.android_withbg_120dp)
                         )
-                        .build(),
+                        .build()
                 )
                 .putIdToImage(
                     "broken_image",
@@ -111,7 +110,7 @@ class GoldenTestActivity : Activity() {
                             ResourceProto.AndroidImageResourceByResId.newBuilder()
                                 .setResourceId(R.drawable.broken_drawable)
                         )
-                        .build(),
+                        .build()
                 )
                 .putIdToImage(
                     "missing_image",
@@ -119,7 +118,7 @@ class GoldenTestActivity : Activity() {
                         .setAndroidResourceByResId(
                             ResourceProto.AndroidImageResourceByResId.newBuilder().setResourceId(-1)
                         )
-                        .build(),
+                        .build()
                 )
                 .build()
     }

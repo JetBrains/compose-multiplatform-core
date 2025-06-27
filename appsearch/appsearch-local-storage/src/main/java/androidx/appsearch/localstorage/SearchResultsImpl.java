@@ -21,7 +21,7 @@ import androidx.appsearch.app.SearchResult;
 import androidx.appsearch.app.SearchResultPage;
 import androidx.appsearch.app.SearchResults;
 import androidx.appsearch.app.SearchSpec;
-import androidx.appsearch.localstorage.stats.QueryStats;
+import androidx.appsearch.localstorage.stats.SearchStats;
 import androidx.appsearch.localstorage.util.FutureUtil;
 import androidx.appsearch.localstorage.visibilitystore.CallerAccess;
 import androidx.core.util.Preconditions;
@@ -31,7 +31,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -63,8 +62,8 @@ class SearchResultsImpl implements SearchResults {
 
     // Visibility Scope(local vs global) for 1st query, so it can be used for the visibility
     // scope for getNextPage().
-    @QueryStats.VisibilityScope
-    private int mVisibilityScope = QueryStats.VISIBILITY_SCOPE_UNKNOWN;
+    @SearchStats.VisibilityScope
+    private int mVisibilityScope = SearchStats.VISIBILITY_SCOPE_UNKNOWN;
 
     SearchResultsImpl(
             @NonNull AppSearchImpl appSearchImpl,
@@ -92,27 +91,21 @@ class SearchResultsImpl implements SearchResults {
             if (mIsFirstLoad) {
                 mIsFirstLoad = false;
                 if (mDatabaseName == null) {
-                    mVisibilityScope = QueryStats.VISIBILITY_SCOPE_GLOBAL;
+                    mVisibilityScope = SearchStats.VISIBILITY_SCOPE_GLOBAL;
                     // Global queries aren't restricted to a single database
                     searchResultPage = mAppSearchImpl.globalQuery(
                             mQueryExpression, mSearchSpec, mSelfCallerAccess, mLogger);
                 } else {
-                    mVisibilityScope = QueryStats.VISIBILITY_SCOPE_LOCAL;
+                    mVisibilityScope = SearchStats.VISIBILITY_SCOPE_LOCAL;
                     // Normal local query, pass in specified database.
                     searchResultPage = mAppSearchImpl.query(
                             mPackageName, mDatabaseName, mQueryExpression, mSearchSpec, mLogger);
                 }
             } else {
-                if (mNextPageToken == SearchResultPage.EMPTY_PAGE_TOKEN) {
-                    // Return an empty list directly if the next page token is empty token. This
-                    // will save a binder call.
-                    return Collections.emptyList();
-                }
-
-                QueryStats.Builder sStatsBuilder = null;
+                SearchStats.Builder sStatsBuilder = null;
                 if (mLogger != null) {
                     sStatsBuilder =
-                            new QueryStats.Builder(mVisibilityScope, mPackageName);
+                            new SearchStats.Builder(mVisibilityScope, mPackageName);
                     if (mDatabaseName != null) {
                         sStatsBuilder.setDatabase(mDatabaseName);
                     }
@@ -139,17 +132,11 @@ class SearchResultsImpl implements SearchResults {
         // Checking the future result is not needed here since this is a cleanup step which is not
         // critical to the correct functioning of the system; also, the return value is void.
         if (!mIsClosed) {
-            if (mNextPageToken == SearchResultPage.EMPTY_PAGE_TOKEN) {
-                // Save a binder call for invalidateNextPageToken if the next page token is empty
-                // token.
+            FutureUtil.execute(mExecutor, () -> {
+                mAppSearchImpl.invalidateNextPageToken(mPackageName, mNextPageToken);
                 mIsClosed = true;
-            } else {
-                FutureUtil.execute(mExecutor, () -> {
-                    mAppSearchImpl.invalidateNextPageToken(mPackageName, mNextPageToken);
-                    mIsClosed = true;
-                    return null;
-                });
-            }
+                return null;
+            });
         }
     }
 }

@@ -40,7 +40,11 @@ fun SurfaceSample() {
 @Composable
 fun ClickableSurfaceSample() {
     var count by remember { mutableStateOf(0) }
-    Surface(onClick = { count++ }) { Text("Clickable Surface. Count: $count") }
+    Surface(
+        onClick = { count++ },
+    ) {
+        Text("Clickable Surface. Count: $count")
+    }
 }
 
 @Preview
@@ -48,7 +52,10 @@ fun ClickableSurfaceSample() {
 @Composable
 fun SelectableSurfaceSample() {
     var selected by remember { mutableStateOf(false) }
-    Surface(selected = selected, onClick = { selected = !selected }) {
+    Surface(
+        selected = selected,
+        onClick = { selected = !selected },
+    ) {
         Text(text = if (selected) "Selected" else "Not Selected", textAlign = TextAlign.Center)
     }
 }
@@ -66,7 +73,7 @@ fun ToggleableSurfaceSample() {
                 MaterialTheme.colorScheme.surfaceVariant
             } else {
                 MaterialTheme.colorScheme.surface
-            },
+            }
     ) {
         Text(text = if (checked) "ON" else "OFF", textAlign = TextAlign.Center)
     }

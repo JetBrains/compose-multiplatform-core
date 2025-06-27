@@ -27,10 +27,10 @@ import okio.BufferedSource
 
 @Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public actual class SchemaBundle
+actual class SchemaBundle
 actual constructor(
-    @SerialName("formatVersion") public actual val formatVersion: Int,
-    @SerialName("database") public actual val database: DatabaseBundle,
+    @SerialName("formatVersion") actual val formatVersion: Int,
+    @SerialName("database") actual val database: DatabaseBundle
 ) : SchemaEquality<SchemaBundle> {
 
     actual override fun isSchemaEqual(other: SchemaBundle): Boolean {
@@ -38,13 +38,13 @@ actual constructor(
             SchemaEqualityUtil.checkSchemaEquality(database, other.database)
     }
 
-    public companion object {
+    companion object {
         @OptIn(ExperimentalSerializationApi::class) // For decodeFromBufferedSource
-        public fun deserialize(source: BufferedSource): SchemaBundle =
+        fun deserialize(source: BufferedSource): SchemaBundle =
             json.decodeFromBufferedSource(source)
 
         @OptIn(ExperimentalSerializationApi::class) // For encodeToBufferedSink
-        public fun serialize(bundle: SchemaBundle, sink: BufferedSink) {
+        fun serialize(bundle: SchemaBundle, sink: BufferedSink) {
             json.encodeToBufferedSink(bundle, sink)
         }
     }

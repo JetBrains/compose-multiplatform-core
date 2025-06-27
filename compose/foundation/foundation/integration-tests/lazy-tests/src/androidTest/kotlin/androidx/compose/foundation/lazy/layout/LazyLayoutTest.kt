@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // b/420551535
-
 package androidx.compose.foundation.lazy.layout
 
 import android.os.Parcelable
@@ -85,7 +83,7 @@ class LazyLayoutTest {
                 measurePolicy = policy,
                 // this will return a new object everytime causing LazyLayout recomposition
                 // without causing remeasure
-                modifier = Modifier.composed { Modifier },
+                modifier = Modifier.composed { Modifier }
             )
         }
 
@@ -103,8 +101,8 @@ class LazyLayoutTest {
             itemProvider({ 2 }) { index -> Box(Modifier.fillMaxSize().testTag("$index")) }
         rule.setContent {
             LazyLayout(itemProvider) {
-                val item1 = compose(0)[0].measure(Constraints.fixed(50, 50))
-                val item2 = compose(1)[0].measure(Constraints.fixed(20, 20))
+                val item1 = measure(0, Constraints.fixed(50, 50))[0]
+                val item2 = measure(1, Constraints.fixed(20, 20))[0]
                 layout(100, 100) {
                     item1.place(0, 0)
                     item2.place(80, 80)
@@ -130,7 +128,7 @@ class LazyLayoutTest {
 
         rule.setContent {
             LazyLayout(itemProvider) {
-                val items = compose(0).map { it.measure(Constraints.fixed(50, 50)) }
+                val items = measure(0, Constraints.fixed(50, 50))
                 layout(100, 100) {
                     items[0].place(0, 0)
                     items[1].place(50, 50)
@@ -158,7 +156,7 @@ class LazyLayoutTest {
                 val constraints = Constraints.fixed(100, 100)
                 val items = mutableListOf<Placeable>()
                 repeat(itemProvider().itemCount) { index ->
-                    items.addAll(compose(index).map { it.measure(constraints) })
+                    items.addAll(measure(index, constraints))
                 }
                 layout(100, 100) { items.forEach { it.place(0, 0) } }
             }
@@ -187,7 +185,7 @@ class LazyLayoutTest {
                 val constraints = Constraints.fixed(100, 100)
                 val items = mutableListOf<Placeable>()
                 repeat(itemProvider().itemCount) { index ->
-                    items.addAll(compose(index).map { it.measure(constraints) })
+                    items.addAll(measure(index, constraints))
                 }
                 layout(100, 100) { items.forEach { it.place(0, 0) } }
             }
@@ -232,7 +230,7 @@ class LazyLayoutTest {
             LazyLayout(itemProvider, prefetchState = prefetchState) {
                 val item =
                     if (needToCompose) {
-                        compose(0)[0].measure(constraints)
+                        measure(0, constraints)[0]
                     } else null
                 layout(100, 100) { item?.place(0, 0) }
             }
@@ -281,7 +279,7 @@ class LazyLayoutTest {
             LazyLayout(itemProvider, prefetchState = prefetchState) {
                 val item =
                     if (needToCompose) {
-                        compose(0)[0].measure(constraints)
+                        measure(0, constraints)[0]
                     } else null
                 layout(100, 100) { item?.place(0, 0) }
             }
@@ -325,7 +323,7 @@ class LazyLayoutTest {
             LazyLayout(itemProvider, prefetchState = prefetchState) {
                 val item =
                     if (needToCompose) {
-                        compose(0)[0].measure(constraints)
+                        measure(0, constraints)[0]
                     } else null
                 layout(100, 100) { item?.place(0, 0) }
             }
@@ -479,7 +477,7 @@ class LazyLayoutTest {
         rule.setContent {
             LazyLayout(itemProvider) { constraints ->
                 if (needChild.value) {
-                    compose(0).map { it.measure(constraints) }
+                    measure(0, constraints)
                 }
                 layout(10, 10) {}
             }
@@ -510,7 +508,7 @@ class LazyLayoutTest {
             LazyLayout(itemProvider) { constraints ->
                 val node =
                     if (indexToCompose != null) {
-                        compose(indexToCompose!!).first().measure(constraints)
+                        measure(indexToCompose!!, constraints).first()
                     } else {
                         null
                     }
@@ -550,7 +548,7 @@ class LazyLayoutTest {
             LazyLayout(itemProvider) { constraints ->
                 val node =
                     if (itemCount == 1) {
-                        compose(0).first().measure(constraints)
+                        measure(0, constraints).first()
                     } else {
                         null
                     }
@@ -592,7 +590,7 @@ class LazyLayoutTest {
             }
         rule.setContent {
             LazyLayout({ itemProvider }) { constraint ->
-                compose(0).map { it.measure(constraint) }
+                measure(0, constraint)
                 layout(100, 100) {}
             }
         }
@@ -624,9 +622,9 @@ class LazyLayoutTest {
                         override fun onRemeasurementAvailable(value: Remeasurement) {
                             remeasurement = value
                         }
-                    },
+                    }
             ) { constraints ->
-                val node = compose(indexToCompose).first().measure(constraints)
+                val node = measure(indexToCompose, constraints).first()
                 layout(node.width, node.height) { node.place(0, 0) }
             }
         }
@@ -650,7 +648,7 @@ class LazyLayoutTest {
     private fun itemProvider(
         itemCount: () -> Int,
         hasContentType: Boolean? = false,
-        itemContent: @Composable (Int) -> Unit,
+        itemContent: @Composable (Int) -> Unit
     ): () -> LazyLayoutItemProvider {
         val provider =
             object : LazyLayoutItemProvider {

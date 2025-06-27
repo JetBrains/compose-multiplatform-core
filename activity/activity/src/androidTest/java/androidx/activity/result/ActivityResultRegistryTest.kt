@@ -45,7 +45,7 @@ class ActivityResultRegistryTest {
                 requestCode: Int,
                 contract: ActivityResultContract<I, O>,
                 input: I,
-                options: ActivityOptionsCompat?,
+                options: ActivityOptionsCompat?
             ) {
                 dispatchResult(requestCode, RESULT_OK, Intent())
             }
@@ -175,7 +175,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     dispatchResult(requestCode, true)
                 }
@@ -183,7 +183,11 @@ class ActivityResultRegistryTest {
 
         var resultReturned = false
         val activityResult =
-            dispatchResultRegistry.register("test", lifecycleOwner, TakePicture()) {
+            dispatchResultRegistry.register(
+                "test",
+                lifecycleOwner,
+                TakePicture(),
+            ) {
                 resultReturned = true
             }
 
@@ -218,7 +222,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     dispatchResult(requestCode, null)
                 }
@@ -226,7 +230,11 @@ class ActivityResultRegistryTest {
 
         var resultReturned = false
         val activityResult =
-            dispatchResultRegistry.register("test", lifecycleOwner, TakePicturePreview()) {
+            dispatchResultRegistry.register(
+                "test",
+                lifecycleOwner,
+                TakePicturePreview(),
+            ) {
                 resultReturned = true
             }
 
@@ -306,7 +314,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     dispatchResult(requestCode, RESULT_OK, Intent())
                 }
@@ -351,7 +359,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     dispatchResult(requestCode, RESULT_OK, Intent())
                 }
@@ -377,7 +385,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     code = requestCode
                 }
@@ -405,7 +413,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     code = requestCode
                 }
@@ -454,7 +462,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     code = requestCode
                 }
@@ -477,7 +485,7 @@ class ActivityResultRegistryTest {
                     requestCode: Int,
                     contract: ActivityResultContract<I, O>,
                     input: I,
-                    options: ActivityOptionsCompat?,
+                    options: ActivityOptionsCompat?
                 ) {
                     code = requestCode
                 }

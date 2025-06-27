@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.modifiers
 
-import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.toIntPx
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -92,7 +91,7 @@ class ParagraphLayoutCacheTest {
                         text = text,
                         style = createTextStyle(fontSize = fontSize),
                         fontFamilyResolver = fontFamilyResolver,
-                        minLines = 1,
+                        minLines = 1
                     )
                     .also { it.density = this }
             val withMinLinesLayout =
@@ -100,7 +99,7 @@ class ParagraphLayoutCacheTest {
                         text = text,
                         style = createTextStyle(fontSize = fontSize),
                         fontFamilyResolver = fontFamilyResolver,
-                        minLines = 3,
+                        minLines = 3
                     )
                     .also { it.density = this }
 
@@ -313,7 +312,7 @@ class ParagraphLayoutCacheTest {
         val constraints =
             Constraints(
                 maxWidth = textDelegate.maxIntrinsicWidth(LayoutDirection.Ltr) / 4,
-                maxHeight = (fontSize * 2.7).roundToInt(), // fully fits at most 2 lines
+                maxHeight = (fontSize * 2.7).roundToInt() // fully fits at most 2 lines
             )
         textDelegate.layoutWithConstraints(constraints, LayoutDirection.Ltr)
         val layoutResult = textDelegate.paragraph!!
@@ -352,7 +351,7 @@ class ParagraphLayoutCacheTest {
                     style = createTextStyle(fontSize = 1.sp),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 5,
+                    maxLines = 5
                 )
                 .also { it.density = density }
         textDelegate.layoutWithConstraints(Constraints(), LayoutDirection.Ltr)
@@ -367,7 +366,7 @@ class ParagraphLayoutCacheTest {
                 fontFamilyResolver,
                 emptyList(),
                 maxLines = 5,
-                overflow = TextOverflow.Ellipsis,
+                overflow = TextOverflow.Ellipsis
             )
         assertThat(actual.height).isEqualTo(expected.height)
     }
@@ -413,41 +412,14 @@ class ParagraphLayoutCacheTest {
         subject.layoutWithConstraints(Constraints(), LayoutDirection.Ltr)
     }
 
-    @Test
-    fun history_isRecorded() {
-        val text = "Hello, World"
-        val subject =
-            ParagraphLayoutCache(
-                    text = text,
-                    style = TextStyle(fontSize = 100.sp),
-                    fontFamilyResolver = fontFamilyResolver,
-                )
-                .also { it.density = density }
-
-        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
-        subject.update(
-            text = "Hello again, World",
-            style = TextStyle(fontSize = 100.sp),
-            fontFamilyResolver = fontFamilyResolver,
-            overflow = TextOverflow.Clip,
-            softWrap = true,
-            maxLines = Int.MAX_VALUE,
-            minLines = DefaultMinLines,
-        )
-        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
-        subject.density = Density(2f, 3f)
-
-        assertThat(subject.historyFlag).isEqualTo(0b011101101)
-    }
-
     private fun createTextStyle(
         fontSize: TextUnit,
-        letterSpacing: TextUnit = TextUnit.Unspecified,
+        letterSpacing: TextUnit = TextUnit.Unspecified
     ): TextStyle {
         return TextStyle(
             fontSize = fontSize,
             fontFamily = fontFamily,
-            letterSpacing = letterSpacing,
+            letterSpacing = letterSpacing
         )
     }
 }

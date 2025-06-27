@@ -225,16 +225,6 @@ interface BooksDao {
     )
     fun getBooksMultiLineQuery(bookIds: List<String>): List<Book>
 
-    @Query(
-        """
-            --- this is a comment
-            SELECT * FROM book WHERE
-            bookId IN(:bookIds)
-            order by bookId DESC
-            """
-    )
-    fun getBooksMultiLineQueryWithComment(bookIds: List<String>): List<Book>
-
     @Query("SELECT * FROM book WHERE bookId = :bookId")
     fun getBookLiveData(bookId: String): LiveData<Book>
 
@@ -325,7 +315,7 @@ interface BooksDao {
     fun deleteAndAddPublisher(
         oldPublisher: Publisher,
         newPublisher: Publisher,
-        fail: Boolean = false,
+        fail: Boolean = false
     ) {
         deletePublishers(oldPublisher)
         if (fail) {
@@ -420,13 +410,13 @@ interface BooksDao {
     @Transaction
     fun functionWithSuspendFunctionalParam(
         input: Book,
-        action: suspend (input: Book) -> Book,
+        action: suspend (input: Book) -> Book
     ): Book = runBlocking { action(input) }
 
     @Transaction
     suspend fun suspendFunctionWithSuspendFunctionalParam(
         input: Book,
-        action: suspend (input: Book) -> Book,
+        action: suspend (input: Book) -> Book
     ): Book = action(input)
 
     // Commented out because of https://youtrack.jetbrains.com/issue/KT-48013
@@ -495,16 +485,11 @@ interface BooksDao {
         val publisherId: String,
         @ColumnInfo(defaultValue = "0") val name: String,
         @Relation(parentColumn = "publisherId", entityColumn = "publisherId")
-        val relationEntity: Publisher,
+        val relationEntity: Publisher
     )
 
     @Transaction
     fun executeTransaction(block: () -> Unit) {
-        block.invoke()
-    }
-
-    @Transaction
-    suspend fun executeTransactionSuspending(block: suspend () -> Unit) {
         block.invoke()
     }
 }

@@ -23,20 +23,16 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 
 // TODO(b/403525399): Add support for checking optional property.
 /** A wrapper class to store the property declaration in a class. */
-data class AppFunctionPropertyDeclaration(
-    val name: String,
-    val type: KSTypeReference,
-    val description: String,
-) {
+data class AppFunctionPropertyDeclaration(val name: String, val type: KSTypeReference) {
     /** Creates an [AppFunctionPropertyDeclaration] from [KSPropertyDeclaration]. */
     constructor(
         property: KSPropertyDeclaration
-    ) : this(checkNotNull(property.simpleName).asString(), property.type, property.docString ?: "")
+    ) : this(checkNotNull(property.simpleName).asString(), property.type)
 
     /** Creates an [AppFunctionPropertyDeclaration] from [KSValueParameter]. */
     constructor(
         valueParameter: KSValueParameter
-    ) : this(checkNotNull(valueParameter.name).asString(), valueParameter.type, "")
+    ) : this(checkNotNull(valueParameter.name).asString(), valueParameter.type)
 
     /** Indicates whether the [type] is a generic type or not. */
     val isGenericType: Boolean by lazy { type.resolve().declaration is KSTypeParameter }

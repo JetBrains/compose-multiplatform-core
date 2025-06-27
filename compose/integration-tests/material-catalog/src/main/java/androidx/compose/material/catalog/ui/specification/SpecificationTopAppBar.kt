@@ -39,18 +39,21 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SpecificationTopAppBar(title: String, scrollBehavior: TopAppBarScrollBehavior? = null) {
+fun SpecificationTopAppBar(
+    title: String,
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+) {
     val backgroundColor =
         lerp(
             MaterialTheme.colorScheme.surface,
             MaterialTheme.colorScheme.surfaceColorAtElevation(elevation = 3.dp),
-            FastOutLinearInEasing.transform(scrollBehavior?.state?.overlappedFraction ?: 0f),
+            FastOutLinearInEasing.transform(scrollBehavior?.state?.overlappedFraction ?: 0f)
         )
 
     val foregroundColors =
         TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
-            scrolledContainerColor = Color.Transparent,
+            scrolledContainerColor = Color.Transparent
         )
     // Wrapping in a Surface to handle window insets
     // https://issuetracker.google.com/issues/183161866
@@ -64,7 +67,7 @@ fun SpecificationTopAppBar(title: String, scrollBehavior: TopAppBarScrollBehavio
                     WindowInsets.safeDrawing.only(
                         WindowInsetsSides.Horizontal + WindowInsetsSides.Top
                     )
-                ),
+                )
         )
     }
 }

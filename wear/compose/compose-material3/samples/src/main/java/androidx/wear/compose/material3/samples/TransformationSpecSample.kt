@@ -60,29 +60,31 @@ fun CustomTransformationSpecSample() {
 
     TransformingLazyColumn(
         contentPadding = PaddingValues(20.dp),
-        modifier = Modifier.background(Color.Black),
+        modifier = Modifier.background(Color.Black)
     ) {
         items(count = 100) { index ->
-            Button(
-                onClick = {},
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .transformedHeight(this, morphingTransformationSpec)
-                        .graphicsLayer {
-                            with(morphingTransformationSpec) {
-                                applyContainerTransformation(scrollProgress)
-                            }
-                        },
-            ) {
-                Text(
-                    "Item $index",
+            TransformExclusion {
+                Button(
+                    onClick = {},
                     modifier =
-                        Modifier.graphicsLayer {
-                            with(morphingTransformationSpec) {
-                                applyContentTransformation(scrollProgress)
+                        Modifier.fillMaxWidth()
+                            .transformedHeight(this, morphingTransformationSpec)
+                            .graphicsLayer {
+                                with(morphingTransformationSpec) {
+                                    applyContainerTransformation(scrollProgress)
+                                }
+                            },
+                ) {
+                    Text(
+                        "Item $index",
+                        modifier =
+                            Modifier.graphicsLayer {
+                                with(morphingTransformationSpec) {
+                                    applyContentTransformation(scrollProgress)
+                                }
                             }
-                        },
-                )
+                    )
+                }
             }
         }
     }
@@ -106,16 +108,18 @@ fun ResponsiveTransformationSpecButtonSample() {
         )
     TransformingLazyColumn(
         contentPadding = PaddingValues(20.dp),
-        modifier = Modifier.background(Color.Black),
+        modifier = Modifier.background(Color.Black)
     ) {
         items(count = 100) { index ->
-            Button(
-                onClick = {},
-                modifier =
-                    Modifier.fillMaxWidth().transformedHeight(this@items, transformationSpec),
-                transformation = SurfaceTransformation(transformationSpec),
-            ) {
-                Text("Item $index")
+            TransformExclusion {
+                Button(
+                    onClick = {},
+                    modifier =
+                        Modifier.fillMaxWidth().transformedHeight(this@items, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
+                ) {
+                    Text("Item $index")
+                }
             }
         }
     }
@@ -130,54 +134,56 @@ fun TransformationSpecButtonRowSample() {
 
     TransformingLazyColumn(
         contentPadding = PaddingValues(20.dp),
-        modifier = Modifier.background(Color.Black),
+        modifier = Modifier.background(Color.Black)
     ) {
         items(count = 100) {
-            val interactionSource1 = remember { MutableInteractionSource() }
-            val interactionSource2 = remember { MutableInteractionSource() }
+            TransformExclusion {
+                val interactionSource1 = remember { MutableInteractionSource() }
+                val interactionSource2 = remember { MutableInteractionSource() }
 
-            ButtonGroup(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .graphicsLayer {
-                            with(transformationSpec) {
-                                applyContainerTransformation(scrollProgress)
+                ButtonGroup(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .graphicsLayer {
+                                with(transformationSpec) {
+                                    applyContainerTransformation(scrollProgress)
+                                }
                             }
+                            .transformedHeight(this, transformationSpec)
+                ) {
+                    Button(
+                        onClick = {},
+                        modifier = Modifier.animateWidth(interactionSource1),
+                        interactionSource = interactionSource1,
+                    ) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "L",
+                                modifier =
+                                    Modifier.graphicsLayer {
+                                        with(transformationSpec) {
+                                            applyContentTransformation(scrollProgress)
+                                        }
+                                    }
+                            )
                         }
-                        .transformedHeight(this, transformationSpec)
-            ) {
-                Button(
-                    onClick = {},
-                    modifier = Modifier.animateWidth(interactionSource1),
-                    interactionSource = interactionSource1,
-                ) {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "L",
-                            modifier =
-                                Modifier.graphicsLayer {
-                                    with(transformationSpec) {
-                                        applyContentTransformation(scrollProgress)
-                                    }
-                                },
-                        )
                     }
-                }
-                Button(
-                    onClick = {},
-                    modifier = Modifier.animateWidth(interactionSource2),
-                    interactionSource = interactionSource2,
-                ) {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(
-                            "R",
-                            modifier =
-                                Modifier.graphicsLayer {
-                                    with(transformationSpec) {
-                                        applyContentTransformation(scrollProgress)
+                    Button(
+                        onClick = {},
+                        modifier = Modifier.animateWidth(interactionSource2),
+                        interactionSource = interactionSource2,
+                    ) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "R",
+                                modifier =
+                                    Modifier.graphicsLayer {
+                                        with(transformationSpec) {
+                                            applyContentTransformation(scrollProgress)
+                                        }
                                     }
-                                },
-                        )
+                            )
+                        }
                     }
                 }
             }

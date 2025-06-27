@@ -180,8 +180,11 @@ internal class StrokeInputPool(preAllocatedInstances: Int = 15) {
                     strokeStartTimeMillis,
                     strokeUnitLengthCm,
                 )
-            runCatching { outBatch.add(input) }
-            recycle(input)
+            try {
+                outBatch.addOrIgnore(input)
+            } finally {
+                recycle(input)
+            }
         }
     }
 
@@ -231,7 +234,7 @@ internal class StrokeInputPool(preAllocatedInstances: Int = 15) {
                         .getMaybeHistoricalAxisValue(
                             MotionEvent.AXIS_PRESSURE,
                             pointerIndex,
-                            historyIndex,
+                            historyIndex
                         )
                         .coerceIn(0f, 1f)
                 } else {
@@ -243,7 +246,7 @@ internal class StrokeInputPool(preAllocatedInstances: Int = 15) {
                         .getMaybeHistoricalAxisValue(
                             MotionEvent.AXIS_TILT,
                             pointerIndex,
-                            historyIndex,
+                            historyIndex
                         )
                         .coerceIn(0f, Math.PI.toFloat() / 2F)
                 } else {

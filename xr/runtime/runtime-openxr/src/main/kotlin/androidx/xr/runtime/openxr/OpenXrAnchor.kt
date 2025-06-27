@@ -17,15 +17,12 @@
 package androidx.xr.runtime.openxr
 
 import android.os.IBinder
-import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.math.Pose
 import java.nio.ByteBuffer
 import java.util.UUID
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 /** Wraps the native [XrSpace] with the [Anchor] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -41,33 +38,27 @@ internal constructor(
     override var pose: Pose = Pose()
         private set
 
-    override var trackingState: TrackingState = TrackingState.PAUSED
+    override var trackingState: TrackingState = TrackingState.Paused
         private set
 
-    @GuardedBy("lock")
-    override var persistenceState: Anchor.PersistenceState = Anchor.PersistenceState.NOT_PERSISTED
+    override var persistenceState: Anchor.PersistenceState = Anchor.PersistenceState.NotPersisted
         private set
 
-    @GuardedBy("lock")
     override var uuid: UUID? = loadedUuid
         private set
 
-    private val lock = ReentrantLock()
-
     override fun persist() {
-        lock.withLock {
-            if (
-                persistenceState == Anchor.PersistenceState.PERSISTED ||
-                    persistenceState == Anchor.PersistenceState.PENDING
-            ) {
-                return
-            }
-            val uuidBytes =
-                checkNotNull(nativePersistAnchor(nativePointer)) { "Failed to persist anchor." }
-            UUIDFromByteArray(uuidBytes)?.let {
-                uuid = it
-                persistenceState = Anchor.PersistenceState.PENDING
-            }
+        if (
+            persistenceState == Anchor.PersistenceState.Persisted ||
+                persistenceState == Anchor.PersistenceState.Pending
+        ) {
+            return
+        }
+        val uuidBytes =
+            checkNotNull(nativePersistAnchor(nativePointer)) { "Failed to persist anchor." }
+        UUIDFromByteArray(uuidBytes)?.let {
+            uuid = it
+            persistenceState = Anchor.PersistenceState.Pending
         }
     }
 
@@ -77,18 +68,16 @@ internal constructor(
     }
 
     override fun update(xrTime: Long) {
-        val anchorState = nativeGetAnchorState(nativePointer, xrTime)
-        if (anchorState == null) {
-            trackingState = TrackingState.PAUSED
-            return
-        }
+        val anchorState: AnchorState =
+            nativeGetAnchorState(nativePointer, xrTime)
+                ?: throw IllegalStateException(
+                    "Could not retrieve data for anchor. Is the anchor valid?"
+                )
 
         trackingState = anchorState.trackingState
         anchorState.pose?.let { pose = it }
-        lock.withLock {
-            if (uuid != null && persistenceState == Anchor.PersistenceState.PENDING) {
-                persistenceState = nativeGetPersistenceState(uuid!!)
-            }
+        if (uuid != null && persistenceState == Anchor.PersistenceState.Pending) {
+            persistenceState = nativeGetPersistenceState(uuid!!)
         }
     }
 
@@ -121,9 +110,9 @@ internal fun Anchor.PersistenceState.Companion.fromOpenXrPersistenceState(
     when (value) {
         0 ->
             Anchor.PersistenceState
-                .NOT_PERSISTED // XR_ANCHOR_PERSIST_STATE_PERSIST_NOT_REQUESTED_ANDROID
-        1 -> Anchor.PersistenceState.PENDING // XR_ANCHOR_PERSIST_STATE_PERSIST_PENDING_ANDROID
-        2 -> Anchor.PersistenceState.PERSISTED // XR_ANCHOR_PERSIST_STATE_PERSISTED_ANDROID
+                .NotPersisted // XR_ANCHOR_PERSIST_STATE_PERSIST_NOT_REQUESTED_ANDROID
+        1 -> Anchor.PersistenceState.Pending // XR_ANCHOR_PERSIST_STATE_PERSIST_PENDING_ANDROID
+        2 -> Anchor.PersistenceState.Persisted // XR_ANCHOR_PERSIST_STATE_PERSISTED_ANDROID
         else -> {
             throw IllegalArgumentException("Invalid persistence state value.")
         }

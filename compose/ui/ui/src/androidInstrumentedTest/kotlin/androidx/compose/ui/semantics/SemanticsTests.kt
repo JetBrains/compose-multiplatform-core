@@ -46,7 +46,6 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.platform.InspectableValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ValueElement
@@ -147,7 +146,9 @@ class SemanticsTests {
         fun Modifier.count() = semantics { count++ }
         rule.setContent {
             recomposeScope = currentRecomposeScope
-            Box(modifier = Modifier.count().count().count())
+            Box(
+                modifier = Modifier.count().count().count(),
+            )
         }
         rule.runOnIdle {
             if (ComposeUiFlags.isSemanticAutofillEnabled) {
@@ -774,7 +775,7 @@ class SemanticsTests {
                         }
                     )
                 },
-                content = content,
+                content = content
             )
         }
 
@@ -996,8 +997,8 @@ class SemanticsTests {
                     ValueElement("mergeDescendants", true),
                     ValueElement(
                         "properties",
-                        mapOf("PaneTitle" to "testTitle", "Focused" to false, "Role" to Role.Image),
-                    ),
+                        mapOf("PaneTitle" to "testTitle", "Focused" to false, "Role" to Role.Image)
+                    )
                 )
         }
     }
@@ -1048,7 +1049,7 @@ class SemanticsTests {
     }
 
     @Test
-    fun testBoundsInParent() {
+    fun testBoundInParent() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp()).padding(10.toDp(), 20.toDp()).semantics {}) {
@@ -1066,38 +1067,10 @@ class SemanticsTests {
     }
 
     @Test
-    fun testBoundsInParent_boundsInRootWhenNoParent() {
+    fun testBoundInParent_boundInRootWhenNoParent() {
         rule.setContent {
             with(LocalDensity.current) {
                 Box(Modifier.size(100.toDp()).padding(10.toDp(), 20.toDp())) {
-                    Box(Modifier.size(10.toDp()).offset(20.toDp(), 30.toDp())) {
-                        Box(Modifier.size(1.toDp()).testTag(TestTag)) {}
-                    }
-                }
-            }
-        }
-
-        rule.waitForIdle()
-
-        val bounds = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().boundsInParent
-        assertEquals(Rect(30.0f, 50.0f, 31.0f, 51.0f), bounds)
-    }
-
-    @Test
-    fun testBoundsInParent_boundsInRootWhenParentIsNotImportantForBounds() {
-        val notImportantForBoundsSemanticsModifier =
-            object : SemanticsModifierNode, Modifier.Node() {
-                override val isImportantForBounds = false
-
-                override fun SemanticsPropertyReceiver.applySemantics() {}
-            }
-        rule.setContent {
-            with(LocalDensity.current) {
-                Box(
-                    Modifier.size(100.toDp())
-                        .padding(10.toDp(), 20.toDp())
-                        .elementFor(notImportantForBoundsSemanticsModifier)
-                ) {
                     Box(Modifier.size(10.toDp()).offset(20.toDp(), 30.toDp())) {
                         Box(Modifier.size(1.toDp()).testTag(TestTag)) {}
                     }
@@ -1144,7 +1117,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
         )
         assertEquals(false, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
 
@@ -1160,7 +1133,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
         )
         assertEquals(true, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
     }
@@ -1187,7 +1160,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
         )
         assertEquals(false, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
 
@@ -1203,7 +1176,7 @@ class SemanticsTests {
             .containsExactly(AnnotatedString("hello"))
         assertEquals(
             AnnotatedString("bonjour"),
-            newConfig.getOrNull(SemanticsProperties.TextSubstitution),
+            newConfig.getOrNull(SemanticsProperties.TextSubstitution)
         )
         assertEquals(true, newConfig.getOrNull(SemanticsProperties.IsShowingTextSubstitution))
     }
@@ -1213,7 +1186,13 @@ class SemanticsTests {
         var density = Float.NaN
         rule.setContent {
             with(LocalDensity.current) { density = 1.sp.toPx() }
-            Surface { Text(AnnotatedString("hello"), Modifier.testTag(TestTag), fontSize = 14.sp) }
+            Surface {
+                Text(
+                    AnnotatedString("hello"),
+                    Modifier.testTag(TestTag),
+                    fontSize = 14.sp,
+                )
+            }
         }
 
         val config = rule.onNodeWithTag(TestTag, true).fetchSemanticsNode().config
@@ -1264,7 +1243,7 @@ private fun CountingLayout(modifier: Modifier, counter: Counter) {
                     counter.count++
                     layout(constraints.minWidth, constraints.minHeight) {}
                 }
-            },
+            }
     )
 }
 
@@ -1283,7 +1262,7 @@ private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable
                 with(placeables.filterNotNull()) {
                     Pair(
                         max(maxByOrNull { it.width }?.width ?: 0, constraints.minWidth),
-                        max(maxByOrNull { it.height }?.height ?: 0, constraints.minHeight),
+                        max(maxByOrNull { it.height }?.height ?: 0, constraints.minHeight)
                     )
                 }
             layout(width, height) {
@@ -1307,7 +1286,7 @@ private fun SimpleSubcomposeLayout(
     contentOne: @Composable () -> Unit,
     positionOne: Offset,
     contentTwo: @Composable () -> Unit,
-    positionTwo: Offset,
+    positionTwo: Offset
 ) {
     SubcomposeLayout(modifier) { constraints ->
         val layoutWidth = constraints.maxWidth
@@ -1331,12 +1310,12 @@ private fun SimpleSubcomposeLayout(
 
 private enum class TestSlot {
     First,
-    Second,
+    Second
 }
 
 internal fun SemanticsMod(
     mergeDescendants: Boolean = false,
-    properties: SemanticsPropertyReceiver.() -> Unit,
+    properties: SemanticsPropertyReceiver.() -> Unit
 ): CoreSemanticsModifierNode {
     return CoreSemanticsModifierNode(
         mergeDescendants = mergeDescendants,

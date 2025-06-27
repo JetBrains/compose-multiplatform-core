@@ -341,21 +341,22 @@ val DEFERRED_TYPES =
         GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE,
         KotlinTypeNames.FLOW,
         ReactiveStreamsTypeNames.PUBLISHER,
-        PagingTypeNames.PAGING_SOURCE,
+        PagingTypeNames.PAGING_SOURCE
     )
 
-fun XTypeName.defaultValue(): String =
-    when (this) {
-        XTypeName.PRIMITIVE_BOOLEAN -> "false"
-        XTypeName.PRIMITIVE_DOUBLE -> "0.0"
-        XTypeName.PRIMITIVE_FLOAT -> "0f"
-        XTypeName.PRIMITIVE_CHAR -> "' '"
-        XTypeName.PRIMITIVE_LONG,
-        XTypeName.PRIMITIVE_INT,
-        XTypeName.PRIMITIVE_BYTE,
-        XTypeName.PRIMITIVE_SHORT -> "0"
-        else -> "null"
+fun XTypeName.defaultValue(): String {
+    return if (!isPrimitive) {
+        "null"
+    } else if (this == XTypeName.PRIMITIVE_BOOLEAN) {
+        "false"
+    } else if (this == XTypeName.PRIMITIVE_DOUBLE) {
+        "0.0"
+    } else if (this == XTypeName.PRIMITIVE_FLOAT) {
+        "0f"
+    } else {
+        "0"
     }
+}
 
 fun CallableTypeSpecBuilder(parameterTypeName: XTypeName, callBody: XFunSpec.Builder.() -> Unit) =
     XTypeSpec.anonymousClassBuilder("").apply {
@@ -364,7 +365,7 @@ fun CallableTypeSpecBuilder(parameterTypeName: XTypeName, callBody: XFunSpec.Bui
             XFunSpec.builder(
                     name = "call",
                     visibility = VisibilityModifier.PUBLIC,
-                    isOverride = true,
+                    isOverride = true
                 )
                 .apply {
                     returns(parameterTypeName)
@@ -379,7 +380,7 @@ fun Function1TypeSpec(
     parameterTypeName: XTypeName,
     parameterName: String,
     returnTypeName: XTypeName,
-    callBody: XFunSpec.Builder.() -> Unit,
+    callBody: XFunSpec.Builder.() -> Unit
 ) =
     XTypeSpec.anonymousClassBuilder("")
         .apply {
@@ -390,7 +391,7 @@ fun Function1TypeSpec(
                 XFunSpec.builder(
                         name = "invoke",
                         visibility = VisibilityModifier.PUBLIC,
-                        isOverride = true,
+                        isOverride = true
                     )
                     .apply {
                         addParameter(parameterName, parameterTypeName)
@@ -412,7 +413,7 @@ fun InvokeWithLambdaParameter(
     argFormat: List<String>,
     args: List<Any>,
     continuationParamName: String? = null,
-    lambdaSpec: LambdaSpec,
+    lambdaSpec: LambdaSpec
 ): XCodeBlock {
     val functionCall = XCodeBlock.of("%M", functionName)
     return InvokeWithLambdaParameter(
@@ -421,7 +422,7 @@ fun InvokeWithLambdaParameter(
         argFormat,
         args,
         continuationParamName,
-        lambdaSpec,
+        lambdaSpec
     )
 }
 
@@ -456,7 +457,7 @@ fun InvokeWithLambdaParameter(
     argFormat: List<String>,
     args: List<Any>,
     continuationParamName: String? = null,
-    lambdaSpec: LambdaSpec,
+    lambdaSpec: LambdaSpec
 ) = buildCodeBlock { language ->
     check(argFormat.size == args.size)
     when (language) {
@@ -467,7 +468,7 @@ fun InvokeWithLambdaParameter(
                     "%L($argsFormatString, (%L) -> {\n",
                     functionCall,
                     *args.toTypedArray(),
-                    lambdaSpec.parameterName,
+                    lambdaSpec.parameterName
                 )
                 indent()
                 val bodyScope = scope.fork()
@@ -500,14 +501,18 @@ fun InvokeWithLambdaParameter(
                                 val bodyScope = scope.fork()
                                 with(lambdaSpec) { bodyScope.builder.body(bodyScope) }
                                 addCode(bodyScope.generate())
-                            },
+                            }
                         )
                     )
                     if (continuationParamName != null) {
                         add(continuationParamName)
                     }
                 }
-                add("%L($adjustedArgsFormatString);\n", functionCall, *adjustedArgs.toTypedArray())
+                add(
+                    "%L($adjustedArgsFormatString);\n",
+                    functionCall,
+                    *adjustedArgs.toTypedArray(),
+                )
             }
         }
         CodeLanguage.KOTLIN -> {
@@ -517,10 +522,14 @@ fun InvokeWithLambdaParameter(
                     "%L($argsFormatString) { %L ->\n",
                     functionCall,
                     *args.toTypedArray(),
-                    lambdaSpec.parameterName,
+                    lambdaSpec.parameterName
                 )
             } else {
-                add("%L($argsFormatString) {\n", functionCall, *args.toTypedArray())
+                add(
+                    "%L($argsFormatString) {\n",
+                    functionCall,
+                    *args.toTypedArray(),
+                )
             }
             indent()
             val bodyScope = scope.fork()
@@ -537,7 +546,7 @@ abstract class LambdaSpec(
     val parameterTypeName: XTypeName,
     val parameterName: String,
     val returnTypeName: XTypeName,
-    val javaLambdaSyntaxAvailable: Boolean,
+    val javaLambdaSyntaxAvailable: Boolean
 ) {
     abstract fun XCodeBlock.Builder.body(scope: CodeGenScope)
 }
@@ -584,7 +593,7 @@ fun ArrayLiteral(type: XTypeName, vararg values: Any) = buildCodeBlock { languag
                 val placeholders = joining.joinToString(separator = ",$space") { "%L" }
                 add(placeholders, *joining)
             }
-            .build(),
+            .build()
     )
 }
 
@@ -615,7 +624,7 @@ fun DoubleArrayLiteral(
     type: XTypeName,
     rowSize: Int,
     columnSizeProducer: (Int) -> Int,
-    valueProducer: (Int, Int) -> Any,
+    valueProducer: (Int, Int) -> Any
 ) = buildCodeBlock { language ->
     val space =
         when (language) {
@@ -658,20 +667,20 @@ fun DoubleArrayLiteral(
                                         Array(columnSizeProducer(i)) { j ->
                                             XCodeBlock.of(
                                                 if (type == CommonTypeNames.STRING) "%S" else "%L",
-                                                valueProducer(i, j),
+                                                valueProducer(i, j)
                                             )
                                         }
                                     val placeholders =
                                         joining.joinToString(separator = ",$space") { "%L" }
                                     add(placeholders, *joining)
                                 }
-                                .build(),
+                                .build()
                         )
                     }
                 val placeholders = joining.joinToString(separator = ",$space") { "%L" }
                 add(placeholders, *joining)
             }
-            .build(),
+            .build()
     )
 }
 
@@ -708,7 +717,7 @@ fun CollectionsSizeExprCode(varName: String) = buildCodeBlock { language ->
             CodeLanguage.JAVA -> "%L.size()" // java.util.Collections.size()
             CodeLanguage.KOTLIN -> "%L.size" // kotlin.collections.Collection.size
         },
-        varName,
+        varName
     )
 }
 
@@ -719,7 +728,7 @@ fun ArraySizeExprCode(varName: String) = buildCodeBlock { language ->
             CodeLanguage.JAVA -> "%L.length" // Just `arr.length`
             CodeLanguage.KOTLIN -> "%L.size" // kotlin.Array.size and primitives (e.g. IntArray)
         },
-        varName,
+        varName
     )
 }
 
@@ -730,6 +739,6 @@ fun MapKeySetExprCode(varName: String) = buildCodeBlock { language ->
             CodeLanguage.JAVA -> "%L.keySet()" // java.util.Map.keySet()
             CodeLanguage.KOTLIN -> "%L.keys" // kotlin.collections.Map.keys
         },
-        varName,
+        varName
     )
 }

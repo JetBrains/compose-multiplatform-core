@@ -72,7 +72,7 @@ fun CraneDemo() {
             Box(
                 Modifier.sharedElementBasedOnProgress(
                         this@movableContentWithReceiverOf,
-                        progressProvider,
+                        progressProvider
                     )
                     .background(Color(0xffff6f69), RoundedCornerShape(20))
                     .fillMaxSize()
@@ -86,13 +86,14 @@ fun CraneDemo() {
                 modifier =
                     Modifier.sharedElementBasedOnProgress(
                             this@movableContentWithReceiverOf,
-                            progressProvider,
+                            progressProvider
                         )
                         .background(Color(0xfffdedac)),
                 color = Color(0xfffdedac),
-                shape = RoundedCornerShape(10.dp),
-                content = child,
-            )
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                child()
+            }
         }
     }
 
@@ -153,7 +154,7 @@ fun CraneDemo() {
                             progressProvider.progress = 1f
                         }
                     },
-                    orientation = Orientation.Horizontal,
+                    orientation = Orientation.Horizontal
                 )
         )
     }
@@ -174,7 +175,7 @@ interface ProgressProvider<T> {
 @SuppressLint("PrimitiveInCollection")
 fun <T> Modifier.sharedElementBasedOnProgress(
     lookaheadScope: LookaheadScope,
-    provider: ProgressProvider<T>,
+    provider: ProgressProvider<T>
 ) =
     with(lookaheadScope) {
         composed {
@@ -186,7 +187,7 @@ fun <T> Modifier.sharedElementBasedOnProgress(
                     lerp(
                         sizeMap[provider.initialState]!!.toSize(),
                         sizeMap[provider.targetState]!!.toSize(),
-                        provider.progress,
+                        provider.progress
                     )
                 IntSize(width.roundToInt(), height.roundToInt())
             }
@@ -200,12 +201,12 @@ fun <T> Modifier.sharedElementBasedOnProgress(
                             lerp(
                                 offsetMap[provider.initialState]!!,
                                 offsetMap[provider.targetState]!!,
-                                provider.progress,
+                                provider.progress
                             )
                         val currentOffset =
                             lookaheadScopeCoordinates.localPositionOf(
                                 it,
-                                androidx.compose.ui.geometry.Offset.Zero,
+                                androidx.compose.ui.geometry.Offset.Zero
                             )
                         (lerpedOffset - currentOffset).round()
                     } ?: IntOffset(0, 0)

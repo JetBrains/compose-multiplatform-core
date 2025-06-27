@@ -8,7 +8,6 @@ package androidx.activity {
 
   public final class BackEventCompat {
     ctor @RequiresApi(34) public BackEventCompat(android.window.BackEvent backEvent);
-    ctor public BackEventCompat(androidx.navigationevent.NavigationEvent navigationEvent);
     ctor @VisibleForTesting public BackEventCompat(float touchX, float touchY, @FloatRange(from=0.0, to=1.0) float progress, int swipeEdge);
     ctor @VisibleForTesting public BackEventCompat(float touchX, float touchY, @FloatRange(from=0.0, to=1.0) float progress, int swipeEdge, optional long frameTimeMillis);
     method public long getFrameTimeMillis();
@@ -17,7 +16,6 @@ package androidx.activity {
     method public float getTouchX();
     method public float getTouchY();
     method @RequiresApi(34) public android.window.BackEvent toBackEvent();
-    method public androidx.navigationevent.NavigationEvent toNavigationEvent();
     property public long frameTimeMillis;
     property @FloatRange(from=0.0, to=1.0) public float progress;
     property public int swipeEdge;
@@ -35,7 +33,7 @@ package androidx.activity {
     property public static int EDGE_RIGHT;
   }
 
-  public class ComponentActivity extends androidx.core.app.ComponentActivity implements androidx.activity.result.ActivityResultCaller androidx.activity.result.ActivityResultRegistryOwner androidx.activity.contextaware.ContextAware androidx.activity.FullyDrawnReporterOwner androidx.lifecycle.HasDefaultViewModelProviderFactory androidx.lifecycle.LifecycleOwner androidx.core.view.MenuHost androidx.navigationevent.NavigationEventDispatcherOwner androidx.activity.OnBackPressedDispatcherOwner androidx.core.content.OnConfigurationChangedProvider androidx.core.app.OnMultiWindowModeChangedProvider androidx.core.app.OnNewIntentProvider androidx.core.app.OnPictureInPictureModeChangedProvider androidx.core.content.OnTrimMemoryProvider androidx.core.app.OnUserLeaveHintProvider androidx.savedstate.SavedStateRegistryOwner androidx.lifecycle.ViewModelStoreOwner {
+  public class ComponentActivity extends androidx.core.app.ComponentActivity implements androidx.activity.result.ActivityResultCaller androidx.activity.result.ActivityResultRegistryOwner androidx.activity.contextaware.ContextAware androidx.activity.FullyDrawnReporterOwner androidx.lifecycle.HasDefaultViewModelProviderFactory androidx.lifecycle.LifecycleOwner androidx.core.view.MenuHost androidx.activity.OnBackPressedDispatcherOwner androidx.core.content.OnConfigurationChangedProvider androidx.core.app.OnMultiWindowModeChangedProvider androidx.core.app.OnNewIntentProvider androidx.core.app.OnPictureInPictureModeChangedProvider androidx.core.content.OnTrimMemoryProvider androidx.core.app.OnUserLeaveHintProvider androidx.savedstate.SavedStateRegistryOwner androidx.lifecycle.ViewModelStoreOwner {
     ctor public ComponentActivity();
     ctor @ContentView public ComponentActivity(@LayoutRes int contentLayoutId);
     method public void addMenuProvider(androidx.core.view.MenuProvider provider);
@@ -52,7 +50,6 @@ package androidx.activity {
     method public androidx.lifecycle.ViewModelProvider.Factory getDefaultViewModelProviderFactory();
     method public androidx.activity.FullyDrawnReporter getFullyDrawnReporter();
     method @Deprecated public Object? getLastCustomNonConfigurationInstance();
-    method public androidx.navigationevent.NavigationEventDispatcher getNavigationEventDispatcher();
     method public final androidx.activity.OnBackPressedDispatcher getOnBackPressedDispatcher();
     method public final androidx.savedstate.SavedStateRegistry getSavedStateRegistry();
     method public androidx.lifecycle.ViewModelStore getViewModelStore();
@@ -83,23 +80,20 @@ package androidx.activity {
     property public androidx.activity.FullyDrawnReporter fullyDrawnReporter;
     property @Deprecated public Object? lastCustomNonConfigurationInstance;
     property public androidx.lifecycle.Lifecycle lifecycle;
-    property public androidx.navigationevent.NavigationEventDispatcher navigationEventDispatcher;
     property public final androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher;
     property public final androidx.savedstate.SavedStateRegistry savedStateRegistry;
     property public androidx.lifecycle.ViewModelStore viewModelStore;
   }
 
-  public class ComponentDialog extends android.app.Dialog implements androidx.lifecycle.LifecycleOwner androidx.navigationevent.NavigationEventDispatcherOwner androidx.activity.OnBackPressedDispatcherOwner androidx.savedstate.SavedStateRegistryOwner {
+  public class ComponentDialog extends android.app.Dialog implements androidx.lifecycle.LifecycleOwner androidx.activity.OnBackPressedDispatcherOwner androidx.savedstate.SavedStateRegistryOwner {
     ctor public ComponentDialog(android.content.Context context);
     ctor public ComponentDialog(android.content.Context context, optional @StyleRes int themeResId);
     method public androidx.lifecycle.Lifecycle getLifecycle();
-    method public androidx.navigationevent.NavigationEventDispatcher getNavigationEventDispatcher();
     method public final androidx.activity.OnBackPressedDispatcher getOnBackPressedDispatcher();
     method public androidx.savedstate.SavedStateRegistry getSavedStateRegistry();
     method @CallSuper public void initializeViewTreeOwners();
     method @CallSuper public void onBackPressed();
     property public androidx.lifecycle.Lifecycle lifecycle;
-    property public androidx.navigationevent.NavigationEventDispatcher navigationEventDispatcher;
     property public final androidx.activity.OnBackPressedDispatcher onBackPressedDispatcher;
     property public androidx.savedstate.SavedStateRegistry savedStateRegistry;
   }

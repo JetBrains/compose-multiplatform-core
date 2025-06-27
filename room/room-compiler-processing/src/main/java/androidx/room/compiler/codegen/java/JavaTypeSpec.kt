@@ -35,11 +35,9 @@ import com.squareup.kotlinpoet.javapoet.JTypeSpec
 import com.squareup.kotlinpoet.javapoet.JTypeVariableName
 import javax.lang.model.element.Modifier
 
-internal class JavaTypeSpec(override val actual: JTypeSpec) : JavaSpec<JTypeSpec>(), XTypeSpec {
+internal class JavaTypeSpec(internal val actual: JTypeSpec) : XSpec(), XTypeSpec {
 
     override val name = actual.name?.let { XName.of(it) }
-
-    override fun toBuilder() = Builder(actual.toBuilder())
 
     internal class Builder(internal val actual: JTypeSpecBuilder) :
         XSpec.Builder(), XTypeSpec.Builder {

@@ -129,6 +129,8 @@ const val ALLOW_CUSTOM_COMPILE_SDK = "androidx.allowCustomCompileSdk"
 /** If true, yarn dependencies are fetched from an offline mirror */
 const val YARN_OFFLINE_MODE = "androidx.yarnOfflineMode"
 
+const val FORCE_KOTLIN_2_0_TARGET = "androidx.forceKotlin20Target"
+
 /** Defined by AndroidX Benchmark Plugin, may be used for local experiments with compilation */
 const val FORCE_BENCHMARK_AOT_COMPILATION = "androidx.benchmark.forceaotcompilation"
 
@@ -164,14 +166,18 @@ val ALL_ANDROIDX_PROPERTIES =
         FilteredAnchorTask.PROP_TASK_NAME,
         FilteredAnchorTask.PROP_PATH_PREFIX,
         YARN_OFFLINE_MODE,
+        FORCE_KOTLIN_2_0_TARGET,
         FORCE_BENCHMARK_AOT_COMPILATION,
     ) + AndroidConfigImpl.GRADLE_PROPERTIES
+
+fun Project.shouldForceKotlin20Target() =
+    project.providers.gradleProperty(FORCE_KOTLIN_2_0_TARGET).map { it.toBoolean() }.orElse(false)
 
 /**
  * Whether to enable constraints for projects in same-version groups See the property definition for
  * more details
  */
-fun Project.shouldAddGroupConstraints(): Provider<Boolean> =
+fun Project.shouldAddGroupConstraints() =
     project.providers.gradleProperty(ADD_GROUP_CONSTRAINTS).map { s -> s.toBoolean() }.orElse(true)
 
 /**

@@ -68,7 +68,11 @@ fun Project.configureKtfmt() {
     }
 }
 
-private val ExcludedDirectories = listOf("test-data", "external")
+private val ExcludedDirectories =
+    listOf(
+        "test-data",
+        "external",
+    )
 
 private val ExcludedDirectoryGlobs = ExcludedDirectories.map { "**/$it/**/*.kt" }
 private const val MainClass = "com.facebook.ktfmt.cli.Main"
@@ -80,7 +84,7 @@ private fun Project.getKtfmtConfiguration(): FileCollection {
     conf.attributes {
         it.attribute(
             TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-            project.objects.named(TargetJvmEnvironment.STANDARD_JVM),
+            project.objects.named(TargetJvmEnvironment.STANDARD_JVM)
         )
     }
     return files(conf)
@@ -224,7 +228,7 @@ abstract class KtfmtCheckFileTask : BaseKtfmtTask() {
         option = "file",
         description =
             "File to check. This option can be used multiple times: --file file1.kt " +
-                "--file file2.kt",
+                "--file file2.kt"
     )
     var files: List<String> = emptyList()
 
@@ -233,7 +237,7 @@ abstract class KtfmtCheckFileTask : BaseKtfmtTask() {
         option = "format",
         description =
             "Use --format to auto-correct style violations (if some errors cannot be " +
-                "fixed automatically they will be printed to stderr)",
+                "fixed automatically they will be printed to stderr)"
     )
     var format = false
 

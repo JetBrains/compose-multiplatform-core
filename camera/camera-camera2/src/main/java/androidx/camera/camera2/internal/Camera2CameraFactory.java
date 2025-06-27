@@ -17,11 +17,9 @@
 package androidx.camera.camera2.internal;
 
 import static androidx.camera.camera2.internal.CameraIdUtil.isBackwardCompatible;
-import static androidx.camera.core.internal.StreamSpecsCalculator.NO_OP_STREAM_SPECS_CALCULATOR;
 
 import android.content.Context;
 
-import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.camera2.internal.concurrent.Camera2CameraCoordinator;
@@ -34,7 +32,6 @@ import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CameraStateRegistry;
 import androidx.camera.core.impl.CameraThreadConfig;
-import androidx.camera.core.internal.StreamSpecsCalculator;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -63,23 +60,12 @@ public final class Camera2CameraFactory implements CameraFactory {
     private final DisplayInfoManager mDisplayInfoManager;
     private final long mCameraOpenRetryMaxTimeoutInMs;
     private final Map<String, Camera2CameraInfoImpl> mCameraInfos = new HashMap<>();
-    private final StreamSpecsCalculator mStreamSpecsCalculator;
-
-    @VisibleForTesting
-    public Camera2CameraFactory(@NonNull Context context,
-            @NonNull CameraThreadConfig threadConfig,
-            @Nullable CameraSelector availableCamerasSelector,
-            long cameraOpenRetryMaxTimeoutInMs) throws InitializationException {
-        this(context, threadConfig, availableCamerasSelector, cameraOpenRetryMaxTimeoutInMs,
-                NO_OP_STREAM_SPECS_CALCULATOR);
-    }
 
     /** Creates a Camera2 implementation of CameraFactory */
     public Camera2CameraFactory(@NonNull Context context,
             @NonNull CameraThreadConfig threadConfig,
             @Nullable CameraSelector availableCamerasSelector,
-            long cameraOpenRetryMaxTimeoutInMs,
-            @NonNull StreamSpecsCalculator streamSpecsCalculator) throws InitializationException {
+            long cameraOpenRetryMaxTimeoutInMs) throws InitializationException {
         mContext = context;
         mThreadConfig = threadConfig;
         mCameraManager = CameraManagerCompat.from(context, mThreadConfig.getSchedulerHandler());
@@ -93,7 +79,6 @@ public final class Camera2CameraFactory implements CameraFactory {
                 DEFAULT_ALLOWED_CONCURRENT_OPEN_CAMERAS);
         mCameraCoordinator.addListener(mCameraStateRegistry);
         mCameraOpenRetryMaxTimeoutInMs = cameraOpenRetryMaxTimeoutInMs;
-        mStreamSpecsCalculator = streamSpecsCalculator;
     }
 
     @Override
@@ -120,7 +105,7 @@ public final class Camera2CameraFactory implements CameraFactory {
             Camera2CameraInfoImpl camera2CameraInfoImpl = mCameraInfos.get(cameraId);
             if (camera2CameraInfoImpl == null) {
                 camera2CameraInfoImpl = new Camera2CameraInfoImpl(
-                        cameraId, mCameraManager, mStreamSpecsCalculator);
+                        cameraId, mCameraManager);
                 mCameraInfos.put(cameraId, camera2CameraInfoImpl);
             }
             return camera2CameraInfoImpl;
@@ -128,7 +113,6 @@ public final class Camera2CameraFactory implements CameraFactory {
             throw CameraUnavailableExceptionHelper.createFrom(e);
         }
     }
-
     @Override
     public @NonNull Set<String> getAvailableCameraIds() {
         // Use a LinkedHashSet to preserve order
@@ -143,11 +127,6 @@ public final class Camera2CameraFactory implements CameraFactory {
     @Override
     public @NonNull CameraManagerCompat getCameraManager() {
         return mCameraManager;
-    }
-
-    @Override
-    public void shutdown() {
-        mCameraCoordinator.shutdown();
     }
 
     private List<String> getBackwardCompatibleCameraIds(

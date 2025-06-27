@@ -19,6 +19,8 @@ package androidx.camera.camera2.pipe
 import android.view.Surface
 import androidx.annotation.GuardedBy
 import androidx.annotation.RestrictTo
+import androidx.camera.camera2.pipe.CameraSurfaceManager.SurfaceListener
+import androidx.camera.camera2.pipe.CameraSurfaceManager.SurfaceToken
 import androidx.camera.camera2.pipe.core.Log
 import kotlinx.atomicfu.atomic
 
@@ -58,9 +60,7 @@ public class CameraSurfaceManager {
 
         override fun close() {
             if (closed.compareAndSet(expect = false, update = true)) {
-                if (DEBUG) {
-                    Log.debug { "SurfaceToken $this closed" }
-                }
+                Log.debug { "SurfaceToken $this closed" }
                 onTokenClosed(this)
             }
         }
@@ -129,9 +129,7 @@ public class CameraSurfaceManager {
             }
 
             if (newUseCount == 1) {
-                if (DEBUG) {
-                    Log.debug { "$surface for $surfaceToken is active" }
-                }
+                Log.debug { "$surface for $surfaceToken is active" }
                 listenersToInvoke = listeners.toList()
             }
         }
@@ -159,9 +157,7 @@ public class CameraSurfaceManager {
                 }
             }
             if (newUseCount == 0) {
-                if (DEBUG) {
-                    Log.debug { "$surface for $surfaceToken is inactive" }
-                }
+                Log.debug { "$surface for $surfaceToken is inactive" }
                 listenersToInvoke = listeners.toList()
                 useCountMap.remove(surface)
             }

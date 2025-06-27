@@ -42,7 +42,7 @@ internal data class ComposableInfo(
     val isComposable: Boolean,
     val realParamsCount: Int,
     val changedParams: Int,
-    val defaultParams: Int,
+    val defaultParams: Int
 )
 
 /**
@@ -67,7 +67,7 @@ private fun Method.getComposableInfo(): ComposableInfo {
         totalParamsWithoutDefaults + defaultParams == totalParams,
         realParamsCount,
         changedParams,
-        defaultParams,
+        defaultParams
     )
 }
 
@@ -89,21 +89,21 @@ private fun Class<*>.getDefaultValue(): Any? =
     }
 
 /** Represents the @Composable method. */
-public class ComposableMethod
+class ComposableMethod
 internal constructor(private val method: Method, private val composableInfo: ComposableInfo) {
     /** Returns the backing [Method]. */
-    public fun asMethod(): Method = method
+    fun asMethod() = method
 
     /** Returns the count of method parameters excluding the utility Compose-specific parameters. */
-    public val parameterCount: Int
+    val parameterCount
         get() = composableInfo.realParamsCount
 
     /** Returns method parameters excluding the utility Compose-specific parameters. */
-    public val parameters: Array<Parameter>
+    val parameters: Array<Parameter>
         @Suppress("NewApi") get() = method.parameters.copyOfRange(0, composableInfo.realParamsCount)
 
     /** Returns method parameters types excluding the utility Compose-specific parameters. */
-    public val parameterTypes: Array<Class<*>>
+    val parameterTypes: Array<Class<*>>
         get() = method.parameterTypes.copyOfRange(0, composableInfo.realParamsCount)
 
     /**
@@ -111,7 +111,7 @@ internal constructor(private val method: Method, private val composableInfo: Com
      * this function will call it with the correct options set.
      */
     @Suppress("BanUncheckedReflection", "ListIterator")
-    public operator fun invoke(composer: Composer, instance: Any?, vararg args: Any?): Any? {
+    operator fun invoke(composer: Composer, instance: Any?, vararg args: Any?): Any? {
         val (_, realParamsCount, changedParams, defaultParams) = composableInfo
 
         val totalParams = method.parameterTypes.size
@@ -149,16 +149,16 @@ internal constructor(private val method: Method, private val composableInfo: Com
         return method.invoke(instance, *arguments)
     }
 
-    override fun equals(other: Any?): Boolean =
+    override fun equals(other: Any?) =
         when (other) {
             is ComposableMethod -> method == other.method
             else -> false
         }
 
-    override fun hashCode(): Int = method.hashCode()
+    override fun hashCode() = method.hashCode()
 }
 
-public fun Method.asComposableMethod(): ComposableMethod? {
+fun Method.asComposableMethod(): ComposableMethod? {
     val composableInfo = getComposableInfo()
     if (composableInfo.isComposable) {
         return ComposableMethod(this, composableInfo)
@@ -172,9 +172,9 @@ private inline fun <reified T> T.dup(count: Int): Array<T> {
 
 /** Find the given @Composable method by name. */
 @Throws(NoSuchMethodException::class)
-public fun Class<*>.getDeclaredComposableMethod(
+fun Class<*>.getDeclaredComposableMethod(
     methodName: String,
-    vararg args: Class<*>,
+    vararg args: Class<*>
 ): ComposableMethod {
     val changedParams = changedParamCount(args.size, 0)
     val method =
@@ -184,7 +184,7 @@ public fun Class<*>.getDeclaredComposableMethod(
                 methodName,
                 *args,
                 Composer::class.java, // composer param
-                *Int::class.java.dup(changedParams), // changed params
+                *Int::class.java.dup(changedParams) // changed params
             )
         } catch (e: ReflectiveOperationException) {
             val defaultParams = defaultParamCount(args.size)
@@ -194,7 +194,7 @@ public fun Class<*>.getDeclaredComposableMethod(
                     *args,
                     Composer::class.java, // composer param
                     *Int::class.java.dup(changedParams), // changed param
-                    *Int::class.java.dup(defaultParams), // default param
+                    *Int::class.java.dup(defaultParams) // default param
                 )
             } catch (e2: ReflectiveOperationException) {
                 null

@@ -17,11 +17,9 @@
 package androidx.savedstate.serialization
 
 import androidx.savedstate.serialization.SavedStateConfiguration.Builder
-import androidx.savedstate.serialization.serializers.MutableStateFlowSerializer
 import androidx.savedstate.serialization.serializers.SavedStateSerializer
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.modules.SerializersModule
@@ -136,9 +134,4 @@ public fun SavedStateConfiguration(
 internal expect fun getDefaultSerializersModuleOnPlatform(): SerializersModule
 
 private val DEFAULT_SERIALIZERS_MODULE: SerializersModule =
-    SerializersModule {
-        contextual(SavedStateSerializer)
-        contextual(MutableStateFlow::class) { elementSerializers ->
-            MutableStateFlowSerializer(elementSerializers.first())
-        }
-    } + getDefaultSerializersModuleOnPlatform()
+    SerializersModule { contextual(SavedStateSerializer) } + getDefaultSerializersModuleOnPlatform()

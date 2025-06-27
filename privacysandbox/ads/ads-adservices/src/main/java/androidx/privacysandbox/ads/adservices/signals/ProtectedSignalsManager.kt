@@ -25,7 +25,7 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
 
 /** This class provides APIs for app and ad-SDKs to join / leave custom audiences. */
-public abstract class ProtectedSignalsManager internal constructor() {
+abstract class ProtectedSignalsManager internal constructor() {
     /**
      * The updateSignals API will retrieve a JSON from the URI that describes which signals to add
      * or remove. This API also allows registering the encoder endpoint. The endpoint is used to
@@ -90,9 +90,9 @@ public abstract class ProtectedSignalsManager internal constructor() {
      */
     @ExperimentalFeatures.Ext12OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_PROTECTED_SIGNALS)
-    public abstract suspend fun updateSignals(request: UpdateSignalsRequest)
+    abstract suspend fun updateSignals(request: UpdateSignalsRequest)
 
-    public companion object {
+    companion object {
         private const val TAG = "ProtectedSignalsManager"
 
         /**
@@ -104,7 +104,7 @@ public abstract class ProtectedSignalsManager internal constructor() {
         @JvmStatic
         @SuppressLint("NewApi")
         @ExperimentalFeatures.Ext12OptIn
-        public fun obtain(context: Context): ProtectedSignalsManager? {
+        fun obtain(context: Context): ProtectedSignalsManager? {
             return if (AdServicesInfo.adServicesVersion() >= 12) {
                 Log.d(TAG, "Adservices version 12 detected, obtaining ProtectedSignalsManagerImpl.")
                 ProtectedSignalsManagerImpl(
@@ -113,7 +113,7 @@ public abstract class ProtectedSignalsManager internal constructor() {
             } else {
                 Log.d(
                     TAG,
-                    "Adservices less than 12, returning null for ProtectedSignalsManager.obtain.",
+                    "Adservices less than 12, returning null for ProtectedSignalsManager.obtain."
                 )
                 null
             }

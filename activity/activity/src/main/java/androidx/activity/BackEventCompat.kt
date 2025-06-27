@@ -23,7 +23,6 @@ import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
-import androidx.navigationevent.NavigationEvent
 
 /** Compat around the [BackEvent] class */
 class BackEventCompat
@@ -45,17 +44,9 @@ constructor(
     /** Indicates which edge the swipe starts from. */
     val swipeEdge: @SwipeEdge Int,
     /** Frame time of the back event. */
-    val frameTimeMillis: Long = 0,
+    val frameTimeMillis: Long = 0
 ) {
 
-    /**
-     * Constructs a [BackEventCompat] from a [BackEvent] object.
-     *
-     * This constructor is used for API level 34 and above, mapping the [BackEvent]'s properties to
-     * the corresponding values in [BackEventCompat].
-     *
-     * @param backEvent The [BackEvent] instance to convert.
-     */
     @RequiresApi(34)
     constructor(
         backEvent: BackEvent
@@ -68,25 +59,7 @@ constructor(
             Api36Impl.frameTimeMillis(backEvent)
         } else {
             0
-        },
-    )
-
-    /**
-     * Constructs a [BackEventCompat] from a [NavigationEvent] object.
-     *
-     * This constructor is used for compatibility with [NavigationEvent] and maps its properties to
-     * the corresponding values in [BackEventCompat].
-     *
-     * @param navigationEvent The [NavigationEvent] instance to convert.
-     */
-    constructor(
-        navigationEvent: NavigationEvent
-    ) : this(
-        navigationEvent.touchX,
-        navigationEvent.touchY,
-        navigationEvent.progress,
-        navigationEvent.swipeEdge,
-        navigationEvent.frameTimeMillis,
+        }
     )
 
     /**  */
@@ -97,9 +70,9 @@ constructor(
     annotation class SwipeEdge
 
     /**
-     * Convert this [BackEventCompat] object to a [BackEvent] object.
+     * Convert this compat object to [BackEvent] object.
      *
-     * @return A new [BackEvent] object populated with this [BackEventCompat] data.
+     * @return [BackEvent] object
      * @throws UnsupportedOperationException if this API is called on an API prior to 34.
      */
     @RequiresApi(34)
@@ -109,15 +82,6 @@ constructor(
         } else {
             Api34Impl.createOnBackEvent(touchX, touchY, progress, swipeEdge)
         }
-    }
-
-    /**
-     * Convert this [BackEventCompat] object to a [NavigationEvent] object.
-     *
-     * @return A new [NavigationEvent] object populated with this [BackEventCompat] data.
-     */
-    fun toNavigationEvent(): NavigationEvent {
-        return NavigationEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
     }
 
     override fun toString(): String {
@@ -162,7 +126,7 @@ internal object Api36Impl {
         touchY: Float,
         progress: Float,
         swipeEdge: Int,
-        frameTimeMillis: Long,
+        frameTimeMillis: Long
     ) = BackEvent(touchX, touchY, progress, swipeEdge, frameTimeMillis)
 
     fun frameTimeMillis(backEvent: BackEvent) = backEvent.frameTimeMillis

@@ -16,10 +16,10 @@
 
 package androidx.xr.scenecore.impl;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Rect;
 
+import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
 import androidx.xr.runtime.internal.PixelDimensions;
@@ -28,8 +28,6 @@ import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -37,7 +35,6 @@ import java.util.concurrent.ScheduledExecutorService;
  * node. The content of this PanelEntity is assumed to have been previously defined and associated
  * with the Window Leash Node.
  */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
     Activity mRuntimeActivity;
 
@@ -67,8 +64,9 @@ final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
         return mRuntimeActivity.getWindowManager().getCurrentWindowMetrics().getBounds();
     }
 
+    @NonNull
     @Override
-    public @NonNull Dimensions getSize() {
+    public Dimensions getSize() {
         // The main panel bounds can change in HSM without JXRCore. Always read the bounds from the
         // WindowManager.
         Rect bounds = getBoundsFromWindowManager();
@@ -76,8 +74,9 @@ final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
         return new Dimensions(bounds.width() / pixelDensity, bounds.height() / pixelDensity, 0);
     }
 
+    @NonNull
     @Override
-    public @NonNull PixelDimensions getSizeInPixels() {
+    public PixelDimensions getSizeInPixels() {
         // The main panel bounds can change in HSM without JXRCore. Always read the bounds from the
         // WindowManager.
         Rect bounds = getBoundsFromWindowManager();
@@ -95,7 +94,7 @@ final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
                 mRuntimeActivity,
                 dimensions.width,
                 dimensions.height,
-                Runnable::run,
-                (result) -> {});
+                (result) -> {},
+                Runnable::run);
     }
 }

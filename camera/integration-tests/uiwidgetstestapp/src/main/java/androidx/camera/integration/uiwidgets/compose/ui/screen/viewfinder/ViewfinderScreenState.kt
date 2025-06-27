@@ -137,7 +137,11 @@ class ViewfinderScreenState(initialLensFacing: Int = DEFAULT_LENS_FACING) {
                 try {
                     cameraProvider.unbindAll()
                     val camera =
-                        cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+                        cameraProvider.bindToLifecycle(
+                            lifecycleOwner,
+                            cameraSelector,
+                            preview,
+                        )
 
                     // Setup components that require Camera
                     this.camera = camera
@@ -148,7 +152,7 @@ class ViewfinderScreenState(initialLensFacing: Int = DEFAULT_LENS_FACING) {
                     Log.e(TAG, "Use Cases binding failed", exc)
                 }
             },
-            ContextCompat.getMainExecutor(context),
+            ContextCompat.getMainExecutor(context)
         )
     }
 
@@ -183,7 +187,7 @@ class ViewfinderScreenState(initialLensFacing: Int = DEFAULT_LENS_FACING) {
         val saver: Saver<ViewfinderScreenState, *> =
             listSaver(
                 save = { listOf(it.lensFacing) },
-                restore = { ViewfinderScreenState(initialLensFacing = it[0]) },
+                restore = { ViewfinderScreenState(initialLensFacing = it[0]) }
             )
     }
 }
@@ -193,6 +197,8 @@ fun rememberViewfinderScreenState(
     initialLensFacing: Int = DEFAULT_LENS_FACING
 ): ViewfinderScreenState {
     return rememberSaveable(initialLensFacing, saver = ViewfinderScreenState.saver) {
-        ViewfinderScreenState(initialLensFacing = initialLensFacing)
+        ViewfinderScreenState(
+            initialLensFacing = initialLensFacing,
+        )
     }
 }

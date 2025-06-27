@@ -16,12 +16,13 @@
 
 package androidx.compose.material3.adaptive
 
+import android.content.res.Configuration
+import android.graphics.Rect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
@@ -29,15 +30,23 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import androidx.window.layout.WindowMetrics
+import androidx.window.testing.layout.WindowMetricsCalculatorRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
+import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class CurrentWindowSizeTest {
-    @get:Rule val rule = createComposeRule()
+    private val composeRule = createComposeRule()
+    private val windowMetricsCalculatorRule = WindowMetricsCalculatorRule()
+
+    @get:Rule
+    val rule: TestRule = RuleChain.outerRule(windowMetricsCalculatorRule).around(composeRule)
 
     @Test
     fun test_currentWindowSize() {
@@ -45,17 +54,21 @@ class CurrentWindowSizeTest {
 
         val mockWindowSize = mutableStateOf(MockWindowSize1)
 
-        rule.setContent {
-            CompositionLocalProvider(LocalWindowInfo provides MockWindowInfo(mockWindowSize)) {
+        composeRule.setContent {
+            val testConfiguration = Configuration(LocalConfiguration.current)
+            testConfiguration.screenWidthDp = mockWindowSize.value.width
+            testConfiguration.screenHeightDp = mockWindowSize.value.height
+            windowMetricsCalculatorRule.overrideWindowSize(mockWindowSize)
+            CompositionLocalProvider(LocalConfiguration provides testConfiguration) {
                 actualWindowSize = currentWindowSize()
             }
         }
 
-        rule.runOnIdle { assertThat(actualWindowSize).isEqualTo(MockWindowSize1) }
+        composeRule.runOnIdle { assertThat(actualWindowSize).isEqualTo(MockWindowSize1) }
 
         mockWindowSize.value = MockWindowSize2
 
-        rule.runOnIdle { assertThat(actualWindowSize).isEqualTo(MockWindowSize2) }
+        composeRule.runOnIdle { assertThat(actualWindowSize).isEqualTo(MockWindowSize2) }
     }
 
     @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -65,33 +78,40 @@ class CurrentWindowSizeTest {
 
         val mockWindowSize = mutableStateOf(MockWindowSize1)
 
-        rule.setContent {
+        composeRule.setContent {
+            val testConfiguration = Configuration(LocalConfiguration.current)
+            testConfiguration.screenWidthDp = mockWindowSize.value.width
+            testConfiguration.screenHeightDp = mockWindowSize.value.height
+            windowMetricsCalculatorRule.overrideWindowSize(mockWindowSize)
             CompositionLocalProvider(
-                LocalDensity provides MockWindowDensity,
-                LocalWindowInfo provides MockWindowInfo(mockWindowSize),
+                LocalConfiguration provides testConfiguration,
+                LocalDensity provides MockWindowDensity
             ) {
                 actualWindowSize = currentWindowDpSize()
             }
         }
 
-        rule.runOnIdle {
+        composeRule.runOnIdle {
             assertThat(actualWindowSize)
                 .isEqualTo(with(MockWindowDensity) { MockWindowSize1.toSize().toDpSize() })
         }
 
         mockWindowSize.value = MockWindowSize2
 
-        rule.runOnIdle {
+        composeRule.runOnIdle {
             assertThat(actualWindowSize)
                 .isEqualTo(with(MockWindowDensity) { MockWindowSize2.toSize().toDpSize() })
         }
     }
 }
 
-internal class MockWindowInfo(private val mockWindowSize: State<IntSize>) : WindowInfo {
-    override val isWindowFocused: Boolean = false
-    override val containerSize: IntSize
-        get() = mockWindowSize.value
+internal fun WindowMetricsCalculatorRule.overrideWindowSize(mockWindowSize: State<IntSize>) {
+    overrideCurrentWindowBounds(
+        WindowMetrics(
+            Rect(0, 0, mockWindowSize.value.width, mockWindowSize.value.height),
+            MockWindowDensity.density
+        )
+    )
 }
 
 private val MockWindowSize1 = IntSize(1000, 600)

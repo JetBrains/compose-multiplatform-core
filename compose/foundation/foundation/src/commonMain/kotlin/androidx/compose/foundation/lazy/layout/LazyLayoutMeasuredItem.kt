@@ -16,8 +16,6 @@
 
 package androidx.compose.foundation.lazy.layout
 
-import androidx.collection.mutableIntObjectMapOf
-import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.util.fastForEach
@@ -40,28 +38,8 @@ internal interface LazyLayoutMeasuredItem {
     fun getParentData(index: Int): Any?
 }
 
-internal abstract class LazyLayoutMeasuredItemProvider<T : LazyLayoutMeasuredItem> {
-    /**
-     * A cache of the previously composed items. It allows us to support [get] re-executions with
-     * the same index during the same measure pass.
-     */
-    private val placeablesCache = mutableIntObjectMapOf<List<Placeable>>()
-
-    abstract fun getAndMeasure(index: Int, lane: Int, span: Int, constraints: Constraints): T
-
-    fun LazyLayoutMeasureScope.getPlaceables(
-        index: Int,
-        constraints: Constraints,
-    ): List<Placeable> {
-        val cachedPlaceable = placeablesCache[index]
-        return if (cachedPlaceable != null) {
-            cachedPlaceable
-        } else {
-            val mensurables = compose(index)
-            List(mensurables.size) { i -> mensurables[i].measure(constraints) }
-                .also { placeablesCache[index] = it }
-        }
-    }
+internal interface LazyLayoutMeasuredItemProvider<T : LazyLayoutMeasuredItem> {
+    fun getAndMeasure(index: Int, lane: Int, span: Int, constraints: Constraints): T
 }
 
 internal fun <T : LazyLayoutMeasuredItem> updatedVisibleItems(

@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 
 /** Allows for emitting trace events using Perfetto SDK. */
-public object PerfettoSdkTrace {
+object PerfettoSdkTrace {
     /**
      * Checks whether the tracing library has been loaded and the app has been registered with
      * Perfetto SDK tracing server. This is useful to avoid intermediate string creation for trace
@@ -47,7 +47,7 @@ public object PerfettoSdkTrace {
     // Note: some of class' code relies on the field never changing from true -> false,
     // which is realistic (at the time of writing this, we are unable to unload the library and
     // unregister the app with Perfetto).
-    public var isEnabled: Boolean = false
+    var isEnabled: Boolean = false
         private set
 
     /**
@@ -107,7 +107,7 @@ public object PerfettoSdkTrace {
         if (nativeVersion != javaVersion) {
             return Response(
                 RESULT_CODE_ERROR_BINARY_VERSION_MISMATCH,
-                "Binary and Java version mismatch. Binary: $nativeVersion. Java: $javaVersion",
+                "Binary and Java version mismatch. Binary: $nativeVersion. Java: $javaVersion"
             )
         }
 
@@ -128,7 +128,7 @@ public object PerfettoSdkTrace {
      *
      * @param sectionName The name of the code section to appear in the trace.
      */
-    public fun beginSection(sectionName: String) {
+    fun beginSection(sectionName: String) {
         if (isEnabled) {
             // Note: key is not currently used, so passing 0 for now
             PerfettoNative.nativeTraceEventBegin(key = 0, traceInfo = sectionName)
@@ -141,7 +141,7 @@ public object PerfettoSdkTrace {
      * the most recently begun section of code, so care must be taken to ensure that [beginSection]
      * / [endSection] pairs are properly nested and called from the same thread.
      */
-    public fun endSection() {
+    fun endSection() {
         if (isEnabled) PerfettoNative.nativeTraceEventEnd()
     }
 

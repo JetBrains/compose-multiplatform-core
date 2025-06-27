@@ -61,13 +61,13 @@ class TextFieldState
 internal constructor(
     initialText: String,
     initialSelection: TextRange,
-    initialTextUndoManager: TextUndoManager,
+    initialTextUndoManager: TextUndoManager
 ) {
 
     @RememberInComposition
     constructor(
         initialText: String = "",
-        initialSelection: TextRange = TextRange(initialText.length),
+        initialSelection: TextRange = TextRange(initialText.length)
     ) : this(initialText, initialSelection, TextUndoManager())
 
     /** Manages the history of edit operations that happen in this [TextFieldState]. */
@@ -83,7 +83,7 @@ internal constructor(
             initialValue =
                 TextFieldCharSequence(
                     text = initialText,
-                    selection = initialSelection.coerceIn(0, initialText.length),
+                    selection = initialSelection.coerceIn(0, initialText.length)
                 )
         )
 
@@ -188,7 +188,10 @@ internal constructor(
      */
     // TextField does not implement UndoState because Undo related APIs should be able to remain
     // separately experimental than TextFieldState
-    @ExperimentalFoundationApi val undoState: UndoState = UndoState(this)
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+    @ExperimentalFoundationApi
+    @get:ExperimentalFoundationApi
+    val undoState: UndoState = UndoState(this)
 
     @Suppress("ShowingMemberInHiddenClass")
     @PublishedApi
@@ -213,17 +216,6 @@ internal constructor(
     internal fun commitEdit(newValue: TextFieldBuffer) {
         val textChanged = newValue.changes.changeCount > 0
         val selectionChanged = newValue.selection != mainBuffer.selection
-
-        // TODO(135556699): Remove this when [TextFieldBuffer.addStyle] is supported by all
-        //  TextFieldBuffer instances when multi styled editing is implemented.
-        // Context; b/424167352
-        if (!textChanged && !selectionChanged) {
-            // Probably the Material layer created a TextFieldBuffer specifically to run
-            // OutputTransformation on. We should leave this TextFieldBuffer in a way that
-            // OutputTransformation can call `addStyle` on it.
-            newValue.canCallAddStyle = true
-        }
-
         if (textChanged) {
             // clear the undo history after a programmatic edit if the text content has changed
             textUndoManager.clearHistory()
@@ -231,7 +223,7 @@ internal constructor(
         syncMainBufferToTemporaryBuffer(
             temporaryBuffer = newValue,
             textChanged = textChanged,
-            selectionChanged = selectionChanged,
+            selectionChanged = selectionChanged
         )
     }
 
@@ -265,7 +257,7 @@ internal constructor(
         inputTransformation: InputTransformation?,
         restartImeIfContentChanges: Boolean = true,
         undoBehavior: TextFieldEditUndoBehavior = TextFieldEditUndoBehavior.MergeIfPossible,
-        block: TextFieldBuffer.() -> Unit,
+        block: TextFieldBuffer.() -> Unit
     ) {
         mainBuffer.changeTracker.clearChanges()
         mainBuffer.block()
@@ -273,7 +265,7 @@ internal constructor(
         commitEditAsUser(
             inputTransformation = inputTransformation,
             restartImeIfContentChanges = restartImeIfContentChanges,
-            undoBehavior = undoBehavior,
+            undoBehavior = undoBehavior
         )
     }
 
@@ -296,7 +288,7 @@ internal constructor(
         updateValueAndNotifyListeners(
             oldValue = value,
             newValue = afterEditValue,
-            restartImeIfContentChanges = true,
+            restartImeIfContentChanges = true
         )
     }
 
@@ -336,10 +328,10 @@ internal constructor(
                             composingAnnotations =
                                 finalizeComposingAnnotations(
                                     composition = mainBuffer.composition,
-                                    annotationList = mainBuffer.composingAnnotations,
-                                ),
+                                    annotationList = mainBuffer.composingAnnotations
+                                )
                         ),
-                    restartImeIfContentChanges = restartImeIfContentChanges,
+                    restartImeIfContentChanges = restartImeIfContentChanges
                 )
             }
             return
@@ -365,8 +357,8 @@ internal constructor(
                 composingAnnotations =
                     finalizeComposingAnnotations(
                         composition = mainBuffer.composition,
-                        annotationList = mainBuffer.composingAnnotations,
-                    ),
+                        annotationList = mainBuffer.composingAnnotations
+                    )
             )
 
         // if there's no filter; just record the undo, update the snapshot value, end.
@@ -378,13 +370,13 @@ internal constructor(
                 // skip doing string equality check. Here we add our own flag to indicate the
                 // possibility of content changing. Since false value is a string indicator,
                 // this added logic works.
-                restartImeIfContentChanges = contentMayHaveChanged && restartImeIfContentChanges,
+                restartImeIfContentChanges = contentMayHaveChanged && restartImeIfContentChanges
             )
             recordEditForUndo(
                 previousValue = beforeEditValue,
                 postValue = afterEditValue,
                 changes = mainBuffer.changeTracker,
-                undoBehavior = undoBehavior,
+                undoBehavior = undoBehavior
             )
             return
         }
@@ -396,7 +388,7 @@ internal constructor(
             TextFieldBuffer(
                 originalValue = beforeEditValue,
                 initialValue = afterEditValue,
-                initialChanges = mainBuffer.changeTracker,
+                initialChanges = mainBuffer.changeTracker
             )
 
         // apply the inputTransformation.
@@ -408,7 +400,7 @@ internal constructor(
             syncMainBufferToTemporaryBuffer(
                 temporaryBuffer = textFieldBuffer,
                 textChanged = textChangedByFilter,
-                selectionChanged = selectionChangedByFilter,
+                selectionChanged = selectionChangedByFilter
             )
         } else {
             updateValueAndNotifyListeners(
@@ -419,7 +411,7 @@ internal constructor(
                     textFieldBuffer.toTextFieldCharSequence(
                         composition = afterEditValue.composition
                     ),
-                restartImeIfContentChanges = restartImeIfContentChanges,
+                restartImeIfContentChanges = restartImeIfContentChanges
             )
         }
         // textFieldBuffer contains all the changes from both the user and the filter.
@@ -427,7 +419,7 @@ internal constructor(
             previousValue = beforeEditValue,
             postValue = value,
             changes = textFieldBuffer.changes,
-            undoBehavior = undoBehavior,
+            undoBehavior = undoBehavior
         )
     }
 
@@ -446,7 +438,7 @@ internal constructor(
     private fun updateValueAndNotifyListeners(
         oldValue: TextFieldCharSequence,
         newValue: TextFieldCharSequence,
-        restartImeIfContentChanges: Boolean,
+        restartImeIfContentChanges: Boolean
     ) {
         // value must be set before notifyImeListeners are called. Even though we are sending the
         // previous and current values, a system callback may request the latest state e.g. IME
@@ -464,7 +456,7 @@ internal constructor(
                         // No need to restart the IME if there wasn't a composing region. This is
                         // useful to not unnecessarily restart digit only, or password fields.
                         &&
-                        oldValue.composition != null,
+                        oldValue.composition != null
             )
         }
     }
@@ -477,7 +469,7 @@ internal constructor(
         previousValue: TextFieldCharSequence,
         postValue: TextFieldCharSequence,
         changes: TextFieldBuffer.ChangeList,
-        undoBehavior: TextFieldEditUndoBehavior,
+        undoBehavior: TextFieldEditUndoBehavior
     ) {
         when (undoBehavior) {
             TextFieldEditUndoBehavior.ClearHistory -> {
@@ -488,7 +480,7 @@ internal constructor(
                     pre = previousValue,
                     post = postValue,
                     changes = changes,
-                    allowMerge = true,
+                    allowMerge = true
                 )
             }
             TextFieldEditUndoBehavior.NeverMerge -> {
@@ -496,7 +488,7 @@ internal constructor(
                     pre = previousValue,
                     post = postValue,
                     changes = changes,
-                    allowMerge = false,
+                    allowMerge = false
                 )
             }
         }
@@ -540,7 +532,7 @@ internal constructor(
         fun onChange(
             oldValue: TextFieldCharSequence,
             newValue: TextFieldCharSequence,
-            restartIme: Boolean,
+            restartIme: Boolean
         )
     }
 
@@ -560,7 +552,7 @@ internal constructor(
     internal fun syncMainBufferToTemporaryBuffer(
         temporaryBuffer: TextFieldBuffer,
         textChanged: Boolean,
-        selectionChanged: Boolean,
+        selectionChanged: Boolean
     ) {
         val oldValue = mainBuffer.toTextFieldCharSequence()
 
@@ -571,8 +563,8 @@ internal constructor(
                     initialValue =
                         TextFieldCharSequence(
                             text = temporaryBuffer.toString(),
-                            selection = temporaryBuffer.selection,
-                        )
+                            selection = temporaryBuffer.selection
+                        ),
                 )
         } else if (selectionChanged) {
             mainBuffer.selection =
@@ -596,7 +588,7 @@ internal constructor(
         updateValueAndNotifyListeners(
             oldValue = oldValue,
             newValue = finalValue,
-            restartImeIfContentChanges = true,
+            restartImeIfContentChanges = true
         )
     }
 
@@ -616,7 +608,7 @@ internal constructor(
                 value.text.toString(),
                 value.selection.start,
                 value.selection.end,
-                with(TextUndoManager.Companion.Saver) { save(value.textUndoManager) },
+                with(TextUndoManager.Companion.Saver) { save(value.textUndoManager) }
             )
         }
 
@@ -627,7 +619,7 @@ internal constructor(
                 initialSelection =
                     TextRange(start = selectionStart as Int, end = selectionEnd as Int),
                 initialTextUndoManager =
-                    with(TextUndoManager.Companion.Saver) { restore(savedTextUndoManager!!) }!!,
+                    with(TextUndoManager.Companion.Saver) { restore(savedTextUndoManager!!) }!!
             )
         }
     }
@@ -650,7 +642,7 @@ internal constructor(
 @Composable
 fun rememberTextFieldState(
     initialText: String = "",
-    initialSelection: TextRange = TextRange(initialText.length),
+    initialSelection: TextRange = TextRange(initialText.length)
 ): TextFieldState =
     rememberSaveable(saver = TextFieldState.Saver) { TextFieldState(initialText, initialSelection) }
 
@@ -732,7 +724,7 @@ fun TextFieldState.clearText() {
 @Suppress("ListIterator")
 private fun finalizeComposingAnnotations(
     composition: TextRange?,
-    annotationList: MutableVector<PlacedAnnotation>?,
+    annotationList: MutableVector<PlacedAnnotation>?
 ): List<PlacedAnnotation> =
     when {
         annotationList != null && annotationList.isNotEmpty() -> {
@@ -746,7 +738,7 @@ private fun finalizeComposingAnnotations(
                 AnnotatedString.Range(
                     SpanStyle(textDecoration = TextDecoration.Underline),
                     start = composition.min,
-                    end = composition.max,
+                    end = composition.max
                 )
             )
         }
@@ -764,11 +756,11 @@ private fun finalizeComposingAnnotations(
  * This is similar to calling [TextFieldState.edit], but without committing the changes back to the
  * [TextFieldState].
  *
- * **Important:** A [TextFieldBuffer] is intended for short-term use. Let the garbage collector
+ * **Important:** A [TextFieldBuffer] is intended for short-term use. Let the garbage collecter
  * dispose of it when you're finished to avoid unnecessary memory usage.
  *
  * @sample androidx.compose.foundation.samples.TextFieldStateApplyOutputTransformation
  */
 fun TextFieldState.toTextFieldBuffer(): TextFieldBuffer {
-    return TextFieldBuffer(value).apply { canCallAddStyle = true }
+    return TextFieldBuffer(value)
 }

@@ -157,7 +157,10 @@ public final class MediaRouteSelector {
      */
     public boolean isValid() {
         ensureControlCategories();
-        return !mControlCategories.contains(null);
+        if (mControlCategories.contains(null)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -230,7 +233,7 @@ public final class MediaRouteSelector {
 
             selector.ensureControlCategories();
             if (!selector.mControlCategories.isEmpty()) {
-                mControlCategories = new ArrayList<>(selector.mControlCategories);
+                mControlCategories = new ArrayList<String>(selector.mControlCategories);
             }
         }
 
@@ -248,7 +251,7 @@ public final class MediaRouteSelector {
             }
 
             if (mControlCategories == null) {
-                mControlCategories = new ArrayList<>();
+                mControlCategories = new ArrayList<String>();
             }
             if (!mControlCategories.contains(category)) {
                 mControlCategories.add(category);

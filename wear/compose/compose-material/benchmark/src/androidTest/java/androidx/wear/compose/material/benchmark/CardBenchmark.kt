@@ -84,7 +84,11 @@ internal class CardTestCase : LayeredComposeTestCase() {
 
     @Composable
     override fun MeasuredContent() {
-        TitleCard(onClick = {}, time = { Text("now") }, title = { Text("TitleCard") }) {
+        TitleCard(
+            onClick = {},
+            time = { Text("now") },
+            title = { Text("TitleCard") },
+        ) {
             Text("body")
         }
     }

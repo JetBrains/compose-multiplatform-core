@@ -45,7 +45,11 @@ class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> = arrayOf(Orientation.Vertical, Orientation.Horizontal)
+        fun initParameters(): Array<Any> =
+            arrayOf(
+                Orientation.Vertical,
+                Orientation.Horizontal,
+            )
     }
 
     private var itemSizeDp: Dp = Dp.Unspecified
@@ -80,7 +84,7 @@ class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2),
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
                 items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
@@ -97,7 +101,7 @@ class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
                             0 to axisIntOffset(mainAxis = -10, crossAxis = 0),
                             1 to axisIntOffset(mainAxis = -10, crossAxis = itemSizePx),
                             2 to axisIntOffset(mainAxis = itemSizePx - 10, crossAxis = 0),
-                            3 to axisIntOffset(mainAxis = itemSizePx - 10, crossAxis = itemSizePx),
+                            3 to axisIntOffset(mainAxis = itemSizePx - 10, crossAxis = itemSizePx)
                         )
                     )
             }
@@ -114,7 +118,7 @@ class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2),
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
                 items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
@@ -134,13 +138,13 @@ class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
                             2 to
                                 axisIntOffset(
                                     mainAxis = itemSizePx - expectedOffset,
-                                    crossAxis = 0,
+                                    crossAxis = 0
                                 ),
                             3 to
                                 axisIntOffset(
                                     mainAxis = itemSizePx - expectedOffset,
-                                    crossAxis = itemSizePx,
-                                ),
+                                    crossAxis = itemSizePx
+                                )
                         )
                     )
             }
@@ -155,7 +159,7 @@ class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2),
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
                 items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }
@@ -185,7 +189,7 @@ class LazyStaggeredGridLayoutInfoTest(orientation: Orientation) :
             LazyStaggeredGrid(
                 lanes = 2,
                 state = state,
-                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2),
+                modifier = Modifier.mainAxisSize(itemSizeDp * 1.5f).crossAxisSize(itemSizeDp * 2)
             ) {
                 items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp)) }
             }

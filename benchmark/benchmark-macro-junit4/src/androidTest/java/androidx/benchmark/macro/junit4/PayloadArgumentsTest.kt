@@ -25,6 +25,10 @@ class PayloadArgumentsTest {
     fun checkPayloadArguments() {
         // these values are set in the build.gradle file.
         assertThat(Arguments.payload)
-            .containsExactlyEntriesIn(mapOf("simpleValue" to "simple_value"))
+            .containsExactlyEntriesIn(
+                mapOf(
+                    "simpleValue" to "simple_value",
+                )
+            )
     }
 }

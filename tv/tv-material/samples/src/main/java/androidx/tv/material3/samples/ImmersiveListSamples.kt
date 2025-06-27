@@ -76,8 +76,11 @@ fun SampleImmersiveList() {
                     border =
                         ClickableSurfaceDefaults.border(
                             focusedBorder =
-                                Border(border = BorderStroke(2.dp, Color.White), inset = 4.dp)
-                        ),
+                                Border(
+                                    border = BorderStroke(2.dp, Color.White),
+                                    inset = 4.dp,
+                                )
+                        )
                 ) {}
             }
         }

@@ -124,7 +124,7 @@ fun NavigationRail(
     contentColor: Color = contentColorFor(containerColor),
     header: @Composable (ColumnScope.() -> Unit)? = null,
     windowInsets: WindowInsets = NavigationRailDefaults.windowInsets,
-    content: @Composable ColumnScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit
 ) {
     with(LocalNavigationRailOverride.current) {
         NavigationRailOverrideScope(
@@ -148,7 +148,11 @@ fun NavigationRail(
 object DefaultNavigationRailOverride : NavigationRailOverride {
     @Composable
     override fun NavigationRailOverrideScope.NavigationRail() {
-        Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
+        Surface(
+            color = containerColor,
+            contentColor = contentColor,
+            modifier = modifier,
+        ) {
             Column(
                 Modifier.fillMaxHeight()
                     .windowInsetsPadding(windowInsets)
@@ -157,7 +161,7 @@ object DefaultNavigationRailOverride : NavigationRailOverride {
                     .selectableGroup()
                     .semantics { isTraversalGroup = true },
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(NavigationRailVerticalPadding),
+                verticalArrangement = Arrangement.spacedBy(NavigationRailVerticalPadding)
             ) {
                 val header = header
                 if (header != null) {
@@ -219,7 +223,7 @@ fun NavigationRailItem(
             val iconColor by
                 animateColorAsState(
                     targetValue = colors.iconColor(selected = selected, enabled = enabled),
-                    animationSpec = colorAnimationSpec,
+                    animationSpec = colorAnimationSpec
                 )
             // If there's a label, don't have a11y services repeat the icon description.
             val clearSemantics = label != null && (alwaysShowLabel || selected)
@@ -235,12 +239,12 @@ fun NavigationRailItem(
                 val textColor by
                     animateColorAsState(
                         targetValue = colors.textColor(selected = selected, enabled = enabled),
-                        animationSpec = colorAnimationSpec,
+                        animationSpec = colorAnimationSpec
                     )
                 ProvideContentColorTextStyle(
                     contentColor = textColor,
                     textStyle = style,
-                    content = label,
+                    content = label
                 )
             }
         }
@@ -264,13 +268,13 @@ fun NavigationRailItem(
             animateFloatAsState(
                 targetValue = if (selected) 1f else 0f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
+                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
             )
         val sizeAnimationProgress: State<Float> =
             animateFloatAsState(
                 targetValue = if (selected) 1f else 0f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
+                animationSpec = MotionSchemeKeyTokens.FastSpatial.value()
             )
 
         // The entire item is selectable, but only the indicator pill shows the ripple. To achieve
@@ -405,7 +409,7 @@ object NavigationRailItemDefaults {
 
     @Deprecated(
         "Use overload with disabledIconColor and disabledTextColor",
-        level = DeprecationLevel.HIDDEN,
+        level = DeprecationLevel.HIDDEN
     )
     @Composable
     fun colors(
@@ -575,7 +579,7 @@ private fun NavigationRailItemLayout(
                     label()
                 }
             }
-        },
+        }
     ) { measurables, constraints ->
         @Suppress("NAME_SHADOWING")
         // Ensure that the progress is >= 0. It may be negative on bouncy springs, for example.
@@ -638,7 +642,7 @@ private fun MeasureScope.placeIcon(
             maxOf(
                 iconPlaceable.width,
                 indicatorRipplePlaceable.width,
-                indicatorPlaceable?.width ?: 0,
+                indicatorPlaceable?.width ?: 0
             )
         )
     val height = constraints.constrainHeight(NavigationRailItemHeight.roundToPx())
@@ -835,6 +839,8 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [NavigationRailOverride]. */
+@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+@get:ExperimentalMaterial3ComponentOverrideApi
 @ExperimentalMaterial3ComponentOverrideApi
 val LocalNavigationRailOverride: ProvidableCompositionLocal<NavigationRailOverride> =
     compositionLocalOf {

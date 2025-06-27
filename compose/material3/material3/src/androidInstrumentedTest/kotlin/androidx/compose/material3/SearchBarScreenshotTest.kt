@@ -551,7 +551,10 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberSearchBarState(initialValue = SearchBarValue.Expanded)
             val colors =
-                SearchBarDefaults.colors(containerColor = Color.Yellow, dividerColor = Color.Green)
+                SearchBarDefaults.colors(
+                    containerColor = Color.Yellow,
+                    dividerColor = Color.Green,
+                )
             ExpandedFullScreenSearchBar(
                 modifier = Modifier.testTag(testTag),
                 state = state,
@@ -638,7 +641,10 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(lightColorScheme()) {
             val state = rememberSearchBarState(initialValue = SearchBarValue.Expanded)
             val colors =
-                SearchBarDefaults.colors(containerColor = Color.Yellow, dividerColor = Color.Green)
+                SearchBarDefaults.colors(
+                    containerColor = Color.Yellow,
+                    dividerColor = Color.Green,
+                )
             ExpandedDockedSearchBar(
                 modifier = Modifier.testTag(testTag),
                 state = state,
@@ -687,7 +693,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     touchX = 0f,
                     touchY = 0f,
                     progress = 0f,
-                    swipeEdge = BackEventCompat.EDGE_LEFT,
+                    swipeEdge = BackEventCompat.EDGE_LEFT
                 )
             )
         }
@@ -697,7 +703,7 @@ class SearchBarScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     touchX = 0f,
                     touchY = 0f,
                     progress = progress,
-                    swipeEdge = BackEventCompat.EDGE_LEFT,
+                    swipeEdge = BackEventCompat.EDGE_LEFT
                 )
             )
         }

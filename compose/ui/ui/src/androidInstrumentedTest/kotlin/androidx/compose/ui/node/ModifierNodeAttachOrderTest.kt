@@ -49,8 +49,10 @@ private class LoggerNode(var log: MutableList<String>, name: String) : Modifier.
     }
 }
 
-private class LoggerElement(val log: MutableList<String>, val name: String) :
-    ModifierNodeElement<LoggerNode>() {
+private class LoggerElement(
+    val log: MutableList<String>,
+    val name: String,
+) : ModifierNodeElement<LoggerNode>() {
     override fun create(): LoggerNode = LoggerNode(log, name)
 
     override fun hashCode(): Int = name.hashCode()
@@ -84,7 +86,13 @@ class ModifierNodeAttachOrderTest {
         rule.setContent { Box(modifierOf(a, b)) { Box(modifierOf(c, d)) } }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("attach(a)", "attach(b)", "attach(c)", "attach(d)")
+            assertThat(log)
+                .containsExactly(
+                    "attach(a)",
+                    "attach(b)",
+                    "attach(c)",
+                    "attach(d)",
+                )
         }
     }
 
@@ -109,7 +117,13 @@ class ModifierNodeAttachOrderTest {
         }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("attach(a)", "attach(b)", "attach(c)", "attach(d)")
+            assertThat(log)
+                .containsExactly(
+                    "attach(a)",
+                    "attach(b)",
+                    "attach(c)",
+                    "attach(d)",
+                )
         }
     }
 
@@ -123,21 +137,34 @@ class ModifierNodeAttachOrderTest {
         rule.setContent { Box(parentChain) }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("attach(a)", "attach(b)", "attach(c)")
+            assertThat(log)
+                .containsExactly(
+                    "attach(a)",
+                    "attach(b)",
+                    "attach(c)",
+                )
             log.clear()
         }
 
         rule.runOnIdle { parentChain = Modifier.logger(log, "a").logger(log, "c") }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("detach(c)", "update(b -> c)")
+            assertThat(log)
+                .containsExactly(
+                    "detach(c)",
+                    "update(b -> c)",
+                )
             log.clear()
         }
 
         rule.runOnIdle { parentChain = Modifier.logger(log, "a").logger(log, "b").logger(log, "c") }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("attach(c)", "update(c -> b)")
+            assertThat(log)
+                .containsExactly(
+                    "attach(c)",
+                    "update(c -> b)",
+                )
             log.clear()
         }
     }
@@ -154,7 +181,11 @@ class ModifierNodeAttachOrderTest {
         rule.setContent { Box(parentChain) }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("attach(a)", "attach(z)")
+            assertThat(log)
+                .containsExactly(
+                    "attach(a)",
+                    "attach(z)",
+                )
             log.clear()
         }
 
@@ -169,7 +200,11 @@ class ModifierNodeAttachOrderTest {
         }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("attach(c)", "attach(b)")
+            assertThat(log)
+                .containsExactly(
+                    "attach(c)",
+                    "attach(b)",
+                )
             log.clear()
         }
     }
@@ -191,7 +226,13 @@ class ModifierNodeAttachOrderTest {
         rule.setContent { Box(parentChain) { Box(childChain) } }
 
         rule.runOnIdle {
-            assertThat(log).containsExactly("attach(a)", "attach(d)", "attach(e)", "attach(h)")
+            assertThat(log)
+                .containsExactly(
+                    "attach(a)",
+                    "attach(d)",
+                    "attach(e)",
+                    "attach(h)",
+                )
             log.clear()
         }
 

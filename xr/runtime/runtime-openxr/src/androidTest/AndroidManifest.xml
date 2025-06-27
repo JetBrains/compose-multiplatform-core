@@ -16,6 +16,9 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <activity android:name="androidx.activity.ComponentActivity" />
+        <activity
+            android:name="android.app.Activity"
+            android:theme="@style/Theme.AppCompat"
+            android:exported="true"/>
     </application>
 </manifest>

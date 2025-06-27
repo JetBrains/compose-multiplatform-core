@@ -33,7 +33,6 @@ internal enum class KeyCommand(
     LINE_RIGHT(false),
     UP(false),
     DOWN(false),
-    CENTER(false),
     PAGE_UP(false),
     PAGE_DOWN(false),
     HOME(false),
@@ -69,5 +68,5 @@ internal enum class KeyCommand(
     TAB(true),
     UNDO(true),
     REDO(true),
-    CHARACTER_PALETTE(true),
+    CHARACTER_PALETTE(true)
 }

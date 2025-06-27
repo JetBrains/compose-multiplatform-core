@@ -22,22 +22,22 @@ import kotlin.jvm.JvmStatic
 
 /** A data class that holds the information about an FTS table. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public expect class FtsTableInfo {
+expect class FtsTableInfo {
     /** The table name */
-    public val name: String
+    val name: String
 
     /** The column names */
-    public val columns: Set<String>
+    val columns: Set<String>
 
     /**
      * The set of options. Each value in the set contains the option in the following format: <key,
      * value>.
      */
-    public val options: Set<String>
+    val options: Set<String>
 
-    public constructor(name: String, columns: Set<String>, createSql: String)
+    constructor(name: String, columns: Set<String>, createSql: String)
 
-    public companion object {
+    companion object {
         /**
          * Reads the table information from the given database.
          *
@@ -45,7 +45,7 @@ public expect class FtsTableInfo {
          * @param tableName The table name.
          * @return A FtsTableInfo containing the columns and options for the provided table name.
          */
-        @JvmStatic public fun read(connection: SQLiteConnection, tableName: String): FtsTableInfo
+        @JvmStatic fun read(connection: SQLiteConnection, tableName: String): FtsTableInfo
     }
 }
 

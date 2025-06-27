@@ -41,7 +41,8 @@
 
             <service android:name=".services.InCallServiceImpl"
                 android:permission="android.permission.BIND_INCALL_SERVICE"
-                android:exported="true">
+                android:exported="true"
+                tools:ignore="MissingServiceExportedEqualsTrue">
                 <meta-data android:name="android.telecom.IN_CALL_SERVICE_UI" android:value="true" />
                 <meta-data android:name="android.telecom.INCLUDE_SELF_MANAGED_CALLS" android:value="true" />
                 <intent-filter>

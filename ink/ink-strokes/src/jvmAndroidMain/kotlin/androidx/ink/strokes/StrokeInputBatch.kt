@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,12 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
      */
     public fun populate(index: Int, outStrokeInput: StrokeInput): StrokeInput {
         require(index < size && index >= 0) { "index ($index) must be in [0, size=$size)" }
-        StrokeInputBatchNative.populate(nativePointer, index, outStrokeInput)
+        StrokeInputBatchNative.populate(
+            nativePointer,
+            index,
+            outStrokeInput,
+            InputToolType::class.java
+        )
         return outStrokeInput
     }
 
@@ -182,22 +187,78 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
     public fun clear(): Unit = MutableStrokeInputBatchNative.clear(nativePointer)
 
     /**
-     * Adds an [input] to the batch if valid.
-     *
-     * Inputs are invalid if they contain values out of the valid range, duplicate a previous input,
-     * have an elapsed time before a previous input, or have a different tool type or set different
-     * optional fields (pressure, tilt, or orientation) than the inputs already in the batch.
-     *
-     * Returns this instance to allow call chaining.
-     *
-     * @param input The [StrokeInput] to add to the batch.
-     * @return `this`
-     * @throws IllegalArgumentException If the input is not valid. Note that this can be a common
-     *   occurrence with real user input on certain devices, in particular due to duplicate or
-     *   out-of-order inputs. Therefore, users should either catch and handle this exception or
-     *   sanitize the input to avoid ensure validity before passing it to this function.
+     * Validates and appends an [input]. Invalid [input] will result in no change. An exception will
+     * be thrown for invalid additions.
      */
-    public fun add(input: StrokeInput): MutableStrokeInputBatch {
+    public fun addOrThrow(input: StrokeInput): MutableStrokeInputBatch =
+        add(input, throwOnError = true)
+
+    /**
+     * Validates and appends an input. Invalid input will result in no change. An exception will be
+     * thrown for invalid additions.
+     */
+    @JvmOverloads
+    public fun addOrThrow(
+        type: InputToolType,
+        x: Float,
+        y: Float,
+        elapsedTimeMillis: Long,
+        strokeUnitLengthCm: Float = StrokeInput.NO_STROKE_UNIT_LENGTH,
+        pressure: Float = StrokeInput.NO_PRESSURE,
+        tiltRadians: Float = StrokeInput.NO_TILT,
+        orientationRadians: Float = StrokeInput.NO_ORIENTATION,
+    ): MutableStrokeInputBatch =
+        add(
+            type,
+            x,
+            y,
+            elapsedTimeMillis,
+            strokeUnitLengthCm,
+            pressure,
+            tiltRadians,
+            orientationRadians,
+            throwOnError = true,
+        )
+
+    /**
+     * Validates and appends an [input]. Invalid [input] will result in no change. No exception will
+     * be thrown for invalid additions.
+     */
+    public fun addOrIgnore(input: StrokeInput): MutableStrokeInputBatch =
+        add(input, throwOnError = false)
+
+    /**
+     * Validates and appends an input. Invalid input will result in no change. No exception will be
+     * thrown for invalid additions.
+     */
+    @JvmOverloads
+    public fun addOrIgnore(
+        type: InputToolType,
+        x: Float,
+        y: Float,
+        elapsedTimeMillis: Long,
+        strokeUnitLengthCm: Float = StrokeInput.NO_STROKE_UNIT_LENGTH,
+        pressure: Float = StrokeInput.NO_PRESSURE,
+        tiltRadians: Float = StrokeInput.NO_TILT,
+        orientationRadians: Float = StrokeInput.NO_ORIENTATION,
+    ): MutableStrokeInputBatch =
+        add(
+            type,
+            x,
+            y,
+            elapsedTimeMillis,
+            strokeUnitLengthCm,
+            pressure,
+            tiltRadians,
+            orientationRadians,
+            throwOnError = false,
+        )
+
+    /**
+     * Validates and appends an [input]. Invalid [input] will result in no change. If [throwOnError]
+     * is true, an exception will be thrown for invalid additions.
+     */
+    private fun add(input: StrokeInput, throwOnError: Boolean = false): MutableStrokeInputBatch {
         return add(
             input.toolType,
             input.x,
@@ -207,53 +268,26 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
             input.pressure,
             input.tiltRadians,
             input.orientationRadians,
+            throwOnError,
         )
     }
 
     /**
-     * Variant of [add] that takes individual parameters instead of a [StrokeInput].
-     *
-     * Returns this instance to allow call chaining.
-     *
-     * @param type The [InputToolType] to use for the input.
-     * @param x The x-coordinate of the input position in stroke space.
-     * @param y The y-coordinate of the input position in stroke space.
-     * @param elapsedTimeMillis Marks the number of milliseconds since the stroke started. It is a
-     *   non-negative timestamp in the [android.os.SystemClock.elapsedRealtime] time base.
-     * @param strokeUnitLengthCm The physical distance in centimeters that the pointer must travel
-     *   in order to produce an input motion of one stroke unit. For stylus/touch, this is the
-     *   real-world distance that the stylus/fingertip must move in physical space; for mouse, this
-     *   is the visual distance that the mouse pointer must travel along the surface of the display.
-     *   A value of [StrokeInput.NO_STROKE_UNIT_LENGTH] indicates that the relationship between
-     *   stroke space and physical space is unknown or ill-defined.
-     * @param pressure Should be within [0, 1] but it's not enforced until added to a
-     *   [StrokeInputBatch] object. Absence of [pressure] data is represented with
-     *   [StrokeInput.NO_PRESSURE].
-     * @param tiltRadians The angle in radians between a stylus and the line perpendicular to the
-     *   plane of the screen. 0 is perpendicular to the screen and PI/2 is flat against the drawing
-     *   surface. Absence of [tiltRadians] data is represented with [StrokeInput.NO_TILT].
-     * @param orientationRadians Indicates the direction in which the stylus is pointing in relation
-     *   to the positive x axis in radians. A value of 0 means the ray from the stylus tip to the
-     *   end is along positive x and values increase towards the positive y-axis. Absence of
-     *   [orientationRadians] data is represented with [StrokeInput.NO_ORIENTATION].
-     * @return `this`
-     * @throws IllegalArgumentException If the input is not valid. Note that this can be a common
-     *   occurrence with real user input on certain devices, in particular due to duplicate or
-     *   out-of-order inputs. Therefore, users should either catch and handle this exception or
-     *   sanitize the input to avoid ensure validity before passing it to this function.
+     * Validates and appends an input. Invalid input will result in no change. If [throwOnError] is
+     * true, an exception will be thrown for invalid additions.
      */
-    @JvmOverloads
-    public fun add(
+    private fun add(
         type: InputToolType,
         x: Float,
         y: Float,
         elapsedTimeMillis: Long,
-        strokeUnitLengthCm: Float = StrokeInput.NO_STROKE_UNIT_LENGTH,
-        pressure: Float = StrokeInput.NO_PRESSURE,
-        tiltRadians: Float = StrokeInput.NO_TILT,
-        orientationRadians: Float = StrokeInput.NO_ORIENTATION,
+        strokeUnitLengthCm: Float,
+        pressure: Float,
+        tiltRadians: Float,
+        orientationRadians: Float,
+        throwOnError: Boolean,
     ): MutableStrokeInputBatch {
-        val success =
+        val errorMessage =
             MutableStrokeInputBatchNative.appendSingle(
                 nativePointer,
                 type.value,
@@ -265,42 +299,71 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
                 tiltRadians,
                 orientationRadians,
             )
-        check(success) { "Should have thrown an exception if add failed." }
+        if (throwOnError) {
+            require(errorMessage == null) { errorMessage!! }
+        }
         return this
     }
+
+    /**
+     * Validates and appends an [inputBatch]. Invalid [inputBatch] will result in no change. No
+     * exception will be thrown for invalid additions.
+     */
+    public fun addOrIgnore(inputBatch: StrokeInputBatch): MutableStrokeInputBatch =
+        add(inputBatch.nativePointer, throwOnError = false)
 
     /**
      * Validates and appends an [inputBatch]. Invalid [inputBatch] will result in no change. An
      * exception will be thrown for invalid additions.
      */
-    public fun add(inputBatch: StrokeInputBatch): MutableStrokeInputBatch {
-        val success =
-            MutableStrokeInputBatchNative.appendBatch(nativePointer, inputBatch.nativePointer)
-        check(success) { "Should have thrown an exception if add failed." }
+    public fun addOrThrow(inputBatch: StrokeInputBatch): MutableStrokeInputBatch =
+        add(inputBatch.nativePointer, throwOnError = true)
+
+    /**
+     * Validates and appends the native representation of a [StrokeInputBatch]. Invalid inputs will
+     * result in no change. If [throwOnError] is true, an exception will be thrown for invalid
+     * additions.
+     */
+    private fun add(inputBatchNativePointer: Long, throwOnError: Boolean): MutableStrokeInputBatch {
+        val errorMessage =
+            MutableStrokeInputBatchNative.appendBatch(nativePointer, inputBatchNativePointer)
+        if (throwOnError) {
+            require(errorMessage == null) { errorMessage!! }
+        }
         return this
     }
 
     /**
      * Validates and appends a collection of [StrokeInput]. Invalid [inputs] will result in no
-     * change. An exception will be thrown for invalid additions.
-     *
-     * Returns this instance to allow call chaining.
-     *
-     * @param inputs [Collection] of [StrokeInput]s to add to the batch.
-     * @return `this`
-     * @throws IllegalArgumentException If the input is not valid. Note that this can be a common
-     *   occurrence with real user input on certain devices, in particular due to duplicate or
-     *   out-of-order inputs. Therefore, users should either catch and handle this exception or
-     *   sanitize the input to avoid ensure validity before passing it to this function.
+     * change. No exception will be thrown for invalid additions.
      */
-    public fun add(inputs: Collection<StrokeInput>): MutableStrokeInputBatch {
+    public fun addOrIgnore(inputs: Collection<StrokeInput>): MutableStrokeInputBatch =
+        add(inputs, throwOnError = false)
+
+    /**
+     * Validates and appends a collection of [StrokeInput]. Invalid [inputs] will result in no
+     * change. An exception will be thrown for invalid additions.
+     */
+    public fun addOrThrow(inputs: Collection<StrokeInput>): MutableStrokeInputBatch =
+        add(inputs, throwOnError = true)
+
+    /**
+     * Validates and appends a collection of [StrokeInput]. Invalid [inputs] will result in no
+     * change. If [throwOnError] is true, an exception will be thrown for invalid additions.
+     */
+    private fun add(
+        inputs: Collection<StrokeInput>,
+        throwOnError: Boolean = false,
+    ): MutableStrokeInputBatch {
         val tempBatchBuilder = MutableStrokeInputBatch()
+        var errorMessage: String?
 
         // Confirm all inputs are valid by first adding them to their own StrokeInputBatch in order
         // to
-        // perform a group add operation to *this* batch.
+        // perform a group add operation to *this*
+        // batch.
         for (input in inputs) {
-            val success =
+            errorMessage =
                 MutableStrokeInputBatchNative.appendSingle(
                     tempBatchBuilder.nativePointer,
                     input.toolType.value,
@@ -312,11 +375,15 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
                     input.tiltRadians,
                     input.orientationRadians,
                 )
-            check(success) { "Should have thrown an exception if add failed." }
+            if (throwOnError) {
+                require(errorMessage == null) { errorMessage!! }
+            }
         }
-        val success =
+        errorMessage =
             MutableStrokeInputBatchNative.appendBatch(nativePointer, tempBatchBuilder.nativePointer)
-        check(success) { "Should have thrown an exception if add failed." }
+        if (throwOnError) {
+            require(errorMessage == null) { errorMessage!! }
+        }
         return this
     }
 
@@ -372,7 +439,17 @@ private object StrokeInputBatchNative {
 
     @UsedByNative external fun getNoiseSeed(nativePointer: Long): Int
 
-    @UsedByNative external fun populate(nativePointer: Long, index: Int, input: StrokeInput)
+    /**
+     * The [toolTypeClass] parameter is passed as a convenience to native JNI code, to avoid it
+     * needing to do a reflection-based FindClass lookup.
+     */
+    @UsedByNative
+    external fun populate(
+        nativePointer: Long,
+        index: Int,
+        input: StrokeInput,
+        toolTypeClass: Class<InputToolType>,
+    )
 }
 
 @UsedByNative
@@ -383,7 +460,6 @@ private object MutableStrokeInputBatchNative {
 
     @UsedByNative external fun clear(nativePointer: Long)
 
-    /** Returns whether the input was successfully added. */
     @UsedByNative
     external fun appendSingle(
         nativePointer: Long,
@@ -395,10 +471,9 @@ private object MutableStrokeInputBatchNative {
         pressure: Float,
         tilt: Float,
         orientation: Float,
-    ): Boolean
+    ): String?
 
-    /** Returns whether the inputs were successfully added. */
-    @UsedByNative external fun appendBatch(nativePointer: Long, addedNativePointer: Long): Boolean
+    @UsedByNative external fun appendBatch(nativePointer: Long, addedNativePointer: Long): String?
 
     @UsedByNative external fun newCopy(nativePointer: Long): Long
 

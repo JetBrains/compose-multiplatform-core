@@ -17,7 +17,7 @@
 package androidx.compose.foundation.text.contextmenu.provider
 
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuData
-import androidx.compose.foundation.text.contextmenu.modifier.appendTextContextMenuComponents
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponents
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
@@ -34,10 +34,11 @@ import androidx.compose.ui.layout.LayoutCoordinates
  * [CompositionLocalProvider].
  *
  * If you want to modify the contents of the context menu, see
- * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] and
+ * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] and
  * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents]
  */
-interface TextContextMenuProvider {
+// TODO(grantapher-cm-api-publicize) Make interface public
+internal interface TextContextMenuProvider {
     /**
      * Shows the text context menu.
      *
@@ -50,13 +51,17 @@ interface TextContextMenuProvider {
 }
 
 /** Provide a [TextContextMenuProvider] to be used for the text context menu dropdown. */
-val LocalTextContextMenuDropdownProvider: ProvidableCompositionLocal<TextContextMenuProvider?> =
+// TODO(grantapher-cm-api-publicize) Make val public
+internal val LocalTextContextMenuDropdownProvider:
+    ProvidableCompositionLocal<TextContextMenuProvider?> =
     compositionLocalOf {
         null
     }
 
 /** Provide a [TextContextMenuProvider] to be used for the text context menu toolbar. */
-val LocalTextContextMenuToolbarProvider: ProvidableCompositionLocal<TextContextMenuProvider?> =
+// TODO(grantapher-cm-api-publicize) Make val public
+internal val LocalTextContextMenuToolbarProvider:
+    ProvidableCompositionLocal<TextContextMenuProvider?> =
     compositionLocalOf {
         null
     }
@@ -66,7 +71,8 @@ val LocalTextContextMenuToolbarProvider: ProvidableCompositionLocal<TextContextM
  *
  * All functions on this interface are expected to be snapshot-aware.
  */
-interface TextContextMenuDataProvider {
+// TODO(grantapher-cm-api-publicize) Make interface public
+internal interface TextContextMenuDataProvider {
     /**
      * Provides the position to place the context menu around. The position should be relative to
      * the provided [destinationCoordinates].

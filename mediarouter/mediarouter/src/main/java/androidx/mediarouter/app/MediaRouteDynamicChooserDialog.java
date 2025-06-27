@@ -80,7 +80,7 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
     private RecyclerView mRecyclerView;
     private boolean mAttachedToWindow;
     MediaRouter.RouteInfo mSelectingRoute;
-    private final long mUpdateRoutesDelayMs;
+    private long mUpdateRoutesDelayMs;
     private long mLastUpdateTime;
     @SuppressWarnings({"unchecked", "deprecation"})
     private final Handler mHandler = new Handler() {
@@ -183,7 +183,12 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
 
         mRoutes = new ArrayList<>();
         mCloseButton = findViewById(R.id.mr_picker_close_button);
-        mCloseButton.setOnClickListener(v -> dismiss());
+        mCloseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismiss();
+            }
+        });
 
         mAdapter = new RecyclerAdapter();
         mRecyclerView = findViewById(R.id.mr_picker_list);
@@ -274,8 +279,7 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
 
         @Override
         public void onRouteSelected(@NonNull MediaRouter router,
-                @NonNull MediaRouter.RouteInfo selectedRoute, int reason,
-                @NonNull MediaRouter.RouteInfo requestedRoute) {
+                @NonNull MediaRouter.RouteInfo route) {
             dismiss();
         }
     }
@@ -476,11 +480,14 @@ public class MediaRouteDynamicChooserDialog extends AppCompatDialog {
                 final MediaRouter.RouteInfo route = (MediaRouter.RouteInfo) item.getData();
                 mItemView.setVisibility(View.VISIBLE);
                 mProgressBar.setVisibility(View.INVISIBLE);
-                mItemView.setOnClickListener(view -> {
-                    mSelectingRoute = route;
-                    route.select();
-                    mImageView.setVisibility(View.INVISIBLE);
-                    mProgressBar.setVisibility(View.VISIBLE);
+                mItemView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        mSelectingRoute = route;
+                        route.select();
+                        mImageView.setVisibility(View.INVISIBLE);
+                        mProgressBar.setVisibility(View.VISIBLE);
+                    }
                 });
                 mTextView.setText(route.getName());
                 mImageView.setImageDrawable(getIconDrawable(route));

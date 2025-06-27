@@ -31,22 +31,22 @@ import java.util.UUID
  * Example: `(id1 OR id2 OR ...) AND (name1 OR name2 OR ...) AND (tag1 OR tag2 OR ...) AND (state1
  * OR state2 OR ...)`
  */
-public class WorkQuery
+class WorkQuery
 internal constructor(
     /** The [List] of [WorkRequest] ids being queried. */
-    public val ids: List<UUID> = emptyList(),
+    val ids: List<UUID> = emptyList(),
 
     /** The [List] of unique works name being queried */
-    public val uniqueWorkNames: List<String> = emptyList(),
+    val uniqueWorkNames: List<String> = emptyList(),
 
     /** The [List] of tags being queried */
-    public val tags: List<String> = emptyList(),
+    val tags: List<String> = emptyList(),
 
     /** The [List] of [WorkInfo.State]s being queried */
-    public val states: List<WorkInfo.State> = emptyList(),
+    val states: List<WorkInfo.State> = emptyList(),
 ) {
     /** A builder for [WorkQuery]. */
-    public class Builder private constructor() {
+    class Builder private constructor() {
         private val ids = mutableListOf<UUID>()
         private val uniqueWorkNames = mutableListOf<String>()
         private val tags = mutableListOf<String>()
@@ -58,7 +58,7 @@ internal constructor(
          * @param ids The [List] [WorkRequest] `ids` to add
          * @return the instance of the [Builder]
          */
-        public fun addIds(ids: List<UUID>): Builder {
+        fun addIds(ids: List<UUID>): Builder {
             this.ids += ids
             return this
         }
@@ -69,7 +69,7 @@ internal constructor(
          * @param uniqueWorkNames The [List] of unique work names to add
          * @return the instance of the [Builder]
          */
-        public fun addUniqueWorkNames(uniqueWorkNames: List<String>): Builder {
+        fun addUniqueWorkNames(uniqueWorkNames: List<String>): Builder {
             this.uniqueWorkNames += uniqueWorkNames
             return this
         }
@@ -80,7 +80,7 @@ internal constructor(
          * @param tags The [List] of [WorkRequest] tags to add
          * @return the instance of the [Builder]
          */
-        public fun addTags(tags: List<String>): Builder {
+        fun addTags(tags: List<String>): Builder {
             this.tags += tags
             return this
         }
@@ -91,7 +91,7 @@ internal constructor(
          * @param states The [List] of [WorkInfo.State]s to add
          * @return the instance of the [Builder]
          */
-        public fun addStates(states: List<WorkInfo.State>): Builder {
+        fun addStates(states: List<WorkInfo.State>): Builder {
             this.states += states
             return this
         }
@@ -103,7 +103,7 @@ internal constructor(
          * @throws IllegalArgumentException if neither of ids, uniqueWorkNames, tags or states is
          *   set.
          */
-        public fun build(): WorkQuery {
+        fun build(): WorkQuery {
             if (ids.isEmpty() && uniqueWorkNames.isEmpty() && tags.isEmpty() && states.isEmpty()) {
                 val message =
                     "Must specify ids, uniqueNames, tags or states when building a WorkQuery"
@@ -117,7 +117,7 @@ internal constructor(
             )
         }
 
-        public companion object {
+        companion object {
             /**
              * Creates a [WorkQuery.Builder] with a [List] of [WorkRequest] ids.
              *
@@ -126,7 +126,7 @@ internal constructor(
              */
             @JvmStatic
             @SuppressLint("BuilderSetStyle")
-            public fun fromIds(ids: List<UUID>): Builder {
+            fun fromIds(ids: List<UUID>): Builder {
                 val builder = Builder()
                 builder.addIds(ids)
                 return builder
@@ -140,7 +140,7 @@ internal constructor(
              */
             @JvmStatic
             @SuppressLint("BuilderSetStyle")
-            public fun fromUniqueWorkNames(uniqueWorkNames: List<String>): Builder {
+            fun fromUniqueWorkNames(uniqueWorkNames: List<String>): Builder {
                 val builder = Builder()
                 builder.addUniqueWorkNames(uniqueWorkNames)
                 return builder
@@ -154,7 +154,7 @@ internal constructor(
              */
             @JvmStatic
             @SuppressLint("BuilderSetStyle")
-            public fun fromTags(tags: List<String>): Builder {
+            fun fromTags(tags: List<String>): Builder {
                 val builder = Builder()
                 builder.addTags(tags)
                 return builder
@@ -168,7 +168,7 @@ internal constructor(
              */
             @JvmStatic
             @SuppressLint("BuilderSetStyle")
-            public fun fromStates(states: List<WorkInfo.State>): Builder {
+            fun fromStates(states: List<WorkInfo.State>): Builder {
                 val builder = Builder()
                 builder.addStates(states)
                 return builder
@@ -176,14 +176,14 @@ internal constructor(
         }
     }
 
-    public companion object {
+    companion object {
         /**
          * Creates a query for [WorkRequest]s with the given ids.
          *
          * @param ids list of ids of [WorkRequest]s
          * @return a requested WorkQuery
          */
-        @JvmStatic public fun fromIds(ids: List<UUID>): WorkQuery = WorkQuery(ids = ids)
+        @JvmStatic fun fromIds(ids: List<UUID>): WorkQuery = WorkQuery(ids = ids)
 
         /**
          * Creates a query for [WorkRequest]s with the given ids.
@@ -191,7 +191,7 @@ internal constructor(
          * @param ids ids of [WorkRequest]s
          * @return a requested WorkQuery
          */
-        @JvmStatic public fun fromIds(vararg ids: UUID): WorkQuery = WorkQuery(ids = ids.toList())
+        @JvmStatic fun fromIds(vararg ids: UUID): WorkQuery = WorkQuery(ids = ids.toList())
 
         /**
          * Creates a query for [WorkRequest]s with the given tags.
@@ -199,7 +199,7 @@ internal constructor(
          * @param tags tags of [WorkRequest]s
          * @return a requested WorkQuery
          */
-        @JvmStatic public fun fromTags(tags: List<String>): WorkQuery = WorkQuery(tags = tags)
+        @JvmStatic fun fromTags(tags: List<String>): WorkQuery = WorkQuery(tags = tags)
 
         /**
          * Creates a query for [WorkRequest]s with the given tags.
@@ -207,8 +207,7 @@ internal constructor(
          * @param tags tags of [WorkRequest]s
          * @return a requested WorkQuery
          */
-        @JvmStatic
-        public fun fromTags(vararg tags: String): WorkQuery = WorkQuery(tags = tags.toList())
+        @JvmStatic fun fromTags(vararg tags: String): WorkQuery = WorkQuery(tags = tags.toList())
 
         /**
          * Creates a query for [WorkRequest]s with the given unique names.
@@ -217,7 +216,7 @@ internal constructor(
          * @return a requested WorkQuery
          */
         @JvmStatic
-        public fun fromUniqueWorkNames(vararg uniqueWorkNames: String): WorkQuery =
+        fun fromUniqueWorkNames(vararg uniqueWorkNames: String): WorkQuery =
             WorkQuery(uniqueWorkNames = uniqueWorkNames.toList())
 
         /**
@@ -227,7 +226,7 @@ internal constructor(
          * @return a requested WorkQuery
          */
         @JvmStatic
-        public fun fromUniqueWorkNames(uniqueWorkNames: List<String>): WorkQuery =
+        fun fromUniqueWorkNames(uniqueWorkNames: List<String>): WorkQuery =
             WorkQuery(uniqueWorkNames = uniqueWorkNames)
 
         /**
@@ -237,7 +236,7 @@ internal constructor(
          * @return a requested WorkQuery
          */
         @JvmStatic
-        public fun fromStates(states: List<WorkInfo.State>): WorkQuery = WorkQuery(states = states)
+        fun fromStates(states: List<WorkInfo.State>): WorkQuery = WorkQuery(states = states)
 
         /**
          * Creates a [WorkQuery] for the workers in the given [WorkInfo.State] states.
@@ -246,7 +245,7 @@ internal constructor(
          * @return a requested WorkQuery
          */
         @JvmStatic
-        public fun fromStates(vararg states: WorkInfo.State): WorkQuery =
+        fun fromStates(vararg states: WorkInfo.State): WorkQuery =
             WorkQuery(states = states.toList())
     }
 }

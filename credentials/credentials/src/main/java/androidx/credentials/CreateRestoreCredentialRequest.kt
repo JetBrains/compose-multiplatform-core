@@ -46,7 +46,10 @@ import org.json.JSONObject
  */
 class CreateRestoreCredentialRequest
 @JvmOverloads
-constructor(val requestJson: String, val isCloudBackupEnabled: Boolean = true) :
+constructor(
+    val requestJson: String,
+    val isCloudBackupEnabled: Boolean = true,
+) :
     CreateCredentialRequest(
         type = RestoreCredential.TYPE_RESTORE_CREDENTIAL,
         credentialData = toCredentialDataBundle(requestJson, isCloudBackupEnabled),
@@ -55,7 +58,7 @@ constructor(val requestJson: String, val isCloudBackupEnabled: Boolean = true) :
         origin = null,
         preferImmediatelyAvailableCredentials = false,
         isAutoSelectAllowed = false,
-        candidateQueryData = Bundle(),
+        candidateQueryData = Bundle()
     ) {
     companion object {
         private const val BUNDLE_KEY_CREATE_RESTORE_CREDENTIAL_REQUEST =
@@ -75,7 +78,7 @@ constructor(val requestJson: String, val isCloudBackupEnabled: Boolean = true) :
 
         private fun toCredentialDataBundle(
             requestJson: String,
-            isCloudBackupEnabled: Boolean,
+            isCloudBackupEnabled: Boolean
         ): Bundle {
             val bundle = Bundle()
             bundle.putString(BUNDLE_KEY_CREATE_RESTORE_CREDENTIAL_REQUEST, requestJson)

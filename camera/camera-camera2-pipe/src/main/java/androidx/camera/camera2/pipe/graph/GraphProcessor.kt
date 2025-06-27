@@ -77,10 +77,10 @@ internal interface GraphProcessor {
      */
     fun trigger(parameters: Map<*, Any?>): Boolean
 
-    /** Update [androidx.camera.camera2.pipe.Parameters] changes to current repeating request. */
+    /** Update [CameraGraph.Parameters] changes to current repeating request. */
     fun updateGraphParameters(parameters: Map<*, Any?>)
 
-    /** Update [androidx.camera.camera2.pipe.Parameters] changes to current repeating request. */
+    /** Update [CameraGraph.Parameters] changes to current repeating request. */
     fun update3AParameters(parameters: Map<*, Any?>)
 
     /**
@@ -146,8 +146,8 @@ constructor(
                 requiredParameters = requiredParameters,
                 graphListeners = graphListeners + listOfNotNull(captureLimiter),
                 listeners = listOfNotNull(graphListener3A, captureLimiter),
-                shutdownScope = threads.cameraPipeScope,
-                dispatcher = threads.lightweightDispatcher,
+                shutdownScope = threads.globalScope,
+                dispatcher = threads.lightweightDispatcher
             )
 
         captureLimiter?.graphLoop = graphLoop

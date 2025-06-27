@@ -28,7 +28,6 @@ import androidx.compose.foundation.text.input.TextHighlightType
 import androidx.compose.foundation.text.input.internal.selection.TextFieldSelectionState
 import androidx.compose.foundation.text.input.internal.selection.textFieldMagnifierNode
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
-import androidx.compose.foundation.text.selection.PlatformSelectionBehaviors
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
@@ -92,7 +91,6 @@ internal data class TextFieldCoreModifier(
     private val scrollState: ScrollState,
     private val orientation: Orientation,
     private val toolbarRequester: ToolbarRequester,
-    private val platformSelectionBehaviors: PlatformSelectionBehaviors?,
 ) : ModifierNodeElement<TextFieldCoreModifierNode>() {
 
     override fun create(): TextFieldCoreModifierNode =
@@ -107,7 +105,6 @@ internal data class TextFieldCoreModifier(
             scrollState = scrollState,
             orientation = orientation,
             toolbarRequester = toolbarRequester,
-            platformSelectionBehaviors = platformSelectionBehaviors,
         )
 
     override fun update(node: TextFieldCoreModifierNode) {
@@ -122,7 +119,6 @@ internal data class TextFieldCoreModifier(
             scrollState = scrollState,
             orientation = orientation,
             toolbarRequester = toolbarRequester,
-            platformSelectionBehaviors = platformSelectionBehaviors,
         )
     }
 
@@ -144,7 +140,6 @@ internal class TextFieldCoreModifierNode(
     private var scrollState: ScrollState,
     private var orientation: Orientation,
     private var toolbarRequester: ToolbarRequester,
-    private var platformSelectionBehaviors: PlatformSelectionBehaviors?,
 ) :
     DelegatingNode(),
     LayoutModifierNode,
@@ -197,7 +192,7 @@ internal class TextFieldCoreModifierNode(
                 textFieldState = textFieldState,
                 textFieldSelectionState = textFieldSelectionState,
                 textLayoutState = textLayoutState,
-                visible = isFocused || isDragHovered,
+                visible = isFocused || isDragHovered
             )
         )
 
@@ -207,10 +202,6 @@ internal class TextFieldCoreModifierNode(
                 requester = toolbarRequester,
                 onShow = {
                     textFieldSelectionState.updateClipboardEntry()
-                    platformSelectionBehaviors?.onShowContextMenu(
-                        text = textFieldSelectionState.textFieldState.visualText.text,
-                        selection = textFieldSelectionState.textFieldState.visualText.selection,
-                    )
                     textFieldSelectionState.textToolbarShown = true
                 },
                 onHide = { textFieldSelectionState.textToolbarShown = false },
@@ -224,7 +215,7 @@ internal class TextFieldCoreModifierNode(
                         localCoordinates = localCoordinates,
                         destinationCoordinates = destinationCoordinates,
                     )
-                },
+                }
             )
         )
     }
@@ -250,7 +241,6 @@ internal class TextFieldCoreModifierNode(
         scrollState: ScrollState,
         orientation: Orientation,
         toolbarRequester: ToolbarRequester,
-        platformSelectionBehaviors: PlatformSelectionBehaviors?,
     ) {
         val previousShowCursor = this.showCursor
         val wasFocused = this.isFocused
@@ -269,13 +259,12 @@ internal class TextFieldCoreModifierNode(
         this.scrollState = scrollState
         this.orientation = orientation
         this.toolbarRequester = toolbarRequester
-        this.platformSelectionBehaviors = platformSelectionBehaviors
 
         textFieldMagnifierNode.update(
             textFieldState = textFieldState,
             textFieldSelectionState = textFieldSelectionState,
             textLayoutState = textLayoutState,
-            visible = isFocused || isDragHovered,
+            visible = isFocused || isDragHovered
         )
 
         if (!showCursor) {
@@ -328,7 +317,7 @@ internal class TextFieldCoreModifierNode(
 
     private fun MeasureScope.measureVerticalScroll(
         measurable: Measurable,
-        constraints: Constraints,
+        constraints: Constraints
     ): MeasureResult {
         // remove any height constraints for TextField since it'll be able to scroll vertically.
         val childConstraints = constraints.copy(maxHeight = Constraints.Infinity)
@@ -343,7 +332,7 @@ internal class TextFieldCoreModifierNode(
                 containerSize = height,
                 textLayoutSize = placeable.height,
                 currSelection = textFieldState.visualText.selection,
-                layoutDirection = layoutDirection,
+                layoutDirection = layoutDirection
             )
 
             placeable.placeRelative(0, -scrollState.value)
@@ -352,7 +341,7 @@ internal class TextFieldCoreModifierNode(
 
     private fun MeasureScope.measureHorizontalScroll(
         measurable: Measurable,
-        constraints: Constraints,
+        constraints: Constraints
     ): MeasureResult {
         // remove any width constraints for TextField since it'll be able to scroll horizontally.
         val placeable = measurable.measure(constraints.copy(maxWidth = Constraints.Infinity))
@@ -365,7 +354,7 @@ internal class TextFieldCoreModifierNode(
                 containerSize = width,
                 textLayoutSize = placeable.width,
                 currSelection = textFieldState.visualText.selection,
-                layoutDirection = layoutDirection,
+                layoutDirection = layoutDirection
             )
 
             placeable.placeRelative(-scrollState.value, 0)
@@ -376,7 +365,7 @@ internal class TextFieldCoreModifierNode(
     private fun calculateOffsetToFollow(
         currSelection: TextRange,
         currContainerSize: Int,
-        currTextLayoutSize: Int,
+        currTextLayoutSize: Int
     ): Int {
         return when {
             currSelection.end != previousSelection?.end -> currSelection.end
@@ -402,7 +391,7 @@ internal class TextFieldCoreModifierNode(
         containerSize: Int,
         textLayoutSize: Int,
         currSelection: TextRange,
-        layoutDirection: LayoutDirection,
+        layoutDirection: LayoutDirection
     ) {
         // update the viewport size
         scrollState.viewportSize = containerSize
@@ -427,7 +416,7 @@ internal class TextFieldCoreModifierNode(
             getCursorRectInScroller(
                 cursorRect = rawCursorRect,
                 rtl = layoutDirection == LayoutDirection.Rtl,
-                textLayoutSize = textLayoutSize,
+                textLayoutSize = textLayoutSize
             )
 
         val shouldBringIntoView =
@@ -525,7 +514,7 @@ internal class TextFieldCoreModifierNode(
 
     private fun DrawScope.drawHighlight(
         highlight: Pair<TextHighlightType, TextRange>,
-        textLayoutResult: TextLayoutResult,
+        textLayoutResult: TextLayoutResult
     ) {
         val (type, range) = highlight
 
@@ -575,7 +564,7 @@ internal class TextFieldCoreModifierNode(
             cursorRect.topCenter,
             cursorRect.bottomCenter,
             alpha = cursorAlphaValue,
-            strokeWidth = cursorRect.width,
+            strokeWidth = cursorRect.width
         )
     }
 
@@ -650,7 +639,7 @@ private val Brush.isSpecified: Boolean
 private fun Density.getCursorRectInScroller(
     cursorRect: Rect,
     rtl: Boolean,
-    textLayoutSize: Int,
+    textLayoutSize: Int
 ): Rect {
     val thickness = DefaultCursorThickness.roundToPx()
 

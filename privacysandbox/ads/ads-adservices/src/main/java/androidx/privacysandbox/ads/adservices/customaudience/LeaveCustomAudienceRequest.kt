@@ -24,8 +24,7 @@ import androidx.privacysandbox.ads.adservices.common.AdTechIdentifier
  * @param buyer an [AdTechIdentifier] containing the custom audience's buyer's domain.
  * @param name the String name of the custom audience.
  */
-public class LeaveCustomAudienceRequest
-public constructor(public val buyer: AdTechIdentifier, public val name: String) {
+class LeaveCustomAudienceRequest public constructor(val buyer: AdTechIdentifier, val name: String) {
 
     /** Checks whether two [LeaveCustomAudienceRequest] objects contain the same information. */
     override fun equals(other: Any?): Boolean {

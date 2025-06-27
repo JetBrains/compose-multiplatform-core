@@ -26,7 +26,6 @@ import androidx.savedstate.read
 import androidx.savedstate.write
 import kotlin.reflect.typeOf
 import kotlinx.serialization.Serializable
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -92,7 +91,6 @@ class TestSavedStateHandleBuilder {
         assertThat(arg).isNull()
     }
 
-    @Ignore // b/422731018
     @Test(expected = NotImplementedError::class)
     fun nullLiteralArgument() {
         @Serializable class TestClass(val arg: String)
@@ -103,7 +101,6 @@ class TestSavedStateHandleBuilder {
         assertThat(arg).isEqualTo("null")
     }
 
-    @Ignore // b/422731018
     @Test(expected = NotImplementedError::class)
     fun emptyStringArgument() {
         @Serializable class TestClass(val arg: String)

@@ -46,13 +46,13 @@ import kotlinx.coroutines.withContext
  * starts being collected, if a database operation changes one of the tables that the [Flow] was
  * created from, then such table is considered 'invalidated' and the [Flow] will emit a new value.
  */
-public expect class InvalidationTracker
+expect class InvalidationTracker
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 constructor(
     database: RoomDatabase,
     shadowTablesMap: Map<String, String>,
     viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-    vararg tableNames: String,
+    vararg tableNames: String
 ) {
     /**
      * Internal function to initialize tracker for a given connection. Invoked by generated code.
@@ -85,10 +85,7 @@ constructor(
      *   `true`.
      */
     @JvmOverloads
-    public fun createFlow(
-        vararg tables: String,
-        emitInitialState: Boolean = true,
-    ): Flow<Set<String>>
+    fun createFlow(vararg tables: String, emitInitialState: Boolean = true): Flow<Set<String>>
 
     /**
      * Synchronize created [Flow]s with their tables.
@@ -110,7 +107,7 @@ constructor(
      * via another connection or through [RoomDatabase.useConnection] you might need to invoke this
      * function manually to trigger invalidation.
      */
-    public fun refreshAsync()
+    fun refreshAsync()
 
     /**
      * Non-asynchronous version of [refreshAsync] with the addition that it will return true if
@@ -119,8 +116,7 @@ constructor(
      * An optional array of tables can be given to validate if any of those tables had pending
      * invalidations, if so causing this function to return true.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public suspend fun refresh(vararg tables: String): Boolean
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) suspend fun refresh(vararg tables: String): Boolean
 
     /** Stops invalidation tracker operations. */
     internal fun stop()
@@ -154,7 +150,7 @@ internal class TriggerBasedInvalidationTracker(
     private val useTempTable: Boolean,
     // Callback function for when a set of tables are invalidated, the 'id' of a table is its
     // index in the given `tableNames`
-    private val onInvalidatedTablesIds: (Set<Int>) -> Unit,
+    private val onInvalidatedTablesIds: (Set<Int>) -> Unit
 ) {
     /** Table name (lowercase) to index (id) in [tablesNames], used as a quick lookup map. */
     private val tableIdLookup: Map<String, Int>
@@ -227,7 +223,7 @@ internal class TriggerBasedInvalidationTracker(
     internal fun createFlow(
         resolvedTableNames: Array<String>,
         tableIds: IntArray,
-        emitInitialState: Boolean,
+        emitInitialState: Boolean
     ): Flow<Set<String>> {
         return flow {
             val shouldSync = observedTableStates.onObserverAdded(tableIds)
@@ -572,7 +568,7 @@ internal class ObservedTableStates(size: Int) {
     internal enum class ObserveOp {
         NO_OP, // Don't change observation / tracking state for a table
         ADD, // Starting observation / tracking of a table
-        REMOVE, // Stop observation / tracking of a table
+        REMOVE // Stop observation / tracking of a table
     }
 }
 

@@ -26,7 +26,10 @@ class LifecycleRuntimeTestingIssueRegistry : IssueRegistry() {
     override val api = 16
     override val minApi = CURRENT_API
     override val issues
-        get() = listOf(TestLifecycleOwnerInCoroutineDetector.ISSUE)
+        get() =
+            listOf(
+                TestLifecycleOwnerInCoroutineDetector.ISSUE,
+            )
 
     override val vendor =
         Vendor(

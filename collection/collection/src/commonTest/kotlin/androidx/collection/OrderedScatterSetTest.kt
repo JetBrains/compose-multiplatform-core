@@ -552,7 +552,10 @@ class OrderedScatterSetTest {
 
             val elements = Array(i) { -1 }
             var index = 0
-            set.forEach { element -> elements[index++] = element }
+            set.forEach { element ->
+                println(element)
+                elements[index++] = element
+            }
 
             index = 0
             elements.forEach { element ->
@@ -564,7 +567,16 @@ class OrderedScatterSetTest {
 
     @Test
     fun forEachIsOrdered() {
-        val expected = mutableListOf("Hello", "World", "Hola", "Mundo", "Bonjour", "Monde", "Hallo")
+        val expected =
+            mutableListOf(
+                "Hello",
+                "World",
+                "Hola",
+                "Mundo",
+                "Bonjour",
+                "Monde",
+                "Hallo",
+            )
         val set = mutableOrderedScatterSetOf<String>()
 
         set += expected
@@ -602,7 +614,16 @@ class OrderedScatterSetTest {
 
     @Test
     fun iteratorIsOrdered() {
-        val expected = mutableListOf("Hello", "World", "Hola", "Mundo", "Bonjour", "Monde", "Hallo")
+        val expected =
+            mutableListOf(
+                "Hello",
+                "World",
+                "Hola",
+                "Mundo",
+                "Bonjour",
+                "Monde",
+                "Hallo",
+            )
         val set = mutableOrderedScatterSetOf<String>()
 
         set += expected
@@ -655,7 +676,7 @@ class OrderedScatterSetTest {
                 "Mundo",
                 "Bonjour",
                 "Monde",
-                "Hallo",
+                "Hallo"
             )
 
         val size = set.size
@@ -721,20 +742,20 @@ class OrderedScatterSetTest {
         set.forEach { element -> order[index++] = element }
         assertEquals(
             "${order[0]}, ${order[1]}, ${order[2]}, ${order[3]}, ${order[4]}",
-            set.joinToString(),
+            set.joinToString()
         )
         assertEquals(
             "x${order[0]}, ${order[1]}, ${order[2]}...",
-            set.joinToString(prefix = "x", postfix = "y", limit = 3),
+            set.joinToString(prefix = "x", postfix = "y", limit = 3)
         )
         assertEquals(
             ">${order[0]}-${order[1]}-${order[2]}-${order[3]}-${order[4]}<",
-            set.joinToString(separator = "-", prefix = ">", postfix = "<"),
+            set.joinToString(separator = "-", prefix = ">", postfix = "<")
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
             "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
-            set.joinToString(limit = 3) { names[it] },
+            set.joinToString(limit = 3) { names[it] }
         )
     }
 
@@ -1005,7 +1026,7 @@ class OrderedScatterSetTest {
                 "Ciao",
                 "Mondo",
                 "Annyeong",
-                "Sesang",
+                "Sesang"
             )
         )
         set.removeAll(
@@ -1237,7 +1258,7 @@ class OrderedScatterSetTest {
                 "Ciao",
                 "Mondo",
                 "Annyeong",
-                "Sesang",
+                "Sesang"
             )
 
         val content = listOf("Monde", "Hallo", "Sekai", "Ciao")
@@ -1274,7 +1295,7 @@ class OrderedScatterSetTest {
                 "Ciao",
                 "Mondo",
                 "Annyeong",
-                "Sesang",
+                "Sesang"
             )
 
         val content = orderedScatterSetOf("Monde", "Hallo", "Sekai", "Ciao")
@@ -1311,7 +1332,7 @@ class OrderedScatterSetTest {
                 "Ciao",
                 "Mondo",
                 "Annyeong",
-                "Sesang",
+                "Sesang"
             )
 
         val content = listOf("World", "Welt")

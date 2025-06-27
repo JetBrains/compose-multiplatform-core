@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -69,7 +68,7 @@ fun Component(
         onThemeChange = onThemeChange,
         onBackClick = onBackClick,
         favorite = favorite,
-        onFavoriteClick = onFavoriteClick,
+        onFavoriteClick = onFavoriteClick
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.consumeWindowInsets(paddingValues),
@@ -78,8 +77,8 @@ fun Component(
                     start = paddingValues.calculateStartPadding(ltr) + ComponentPadding,
                     top = paddingValues.calculateTopPadding() + ComponentPadding,
                     end = paddingValues.calculateEndPadding(ltr) + ComponentPadding,
-                    bottom = paddingValues.calculateBottomPadding() + ComponentPadding,
-                ),
+                    bottom = paddingValues.calculateBottomPadding() + ComponentPadding
+                )
         ) {
             item {
                 Box(
@@ -95,14 +94,14 @@ fun Component(
                                 ColorFilter.tint(LocalContentColor.current)
                             } else {
                                 null
-                            },
+                            }
                     )
                 }
             }
             item {
                 Text(
                     text = stringResource(id = R.string.description),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(ComponentPadding))
                 Text(text = component.description, style = MaterialTheme.typography.bodyMedium)
@@ -111,35 +110,22 @@ fun Component(
             item {
                 Text(
                     text = stringResource(id = R.string.examples),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(modifier = Modifier.height(ComponentPadding))
             }
-            // In case the theme has a showOnlyExpressiveComponents setting, filter the
-            // examples list to include only those that are expressive.
-            val filteredExamples =
-                if (theme.showOnlyExpressiveComponents) {
-                    component.examples.filter { it.isExpressive }
-                } else {
-                    component.examples
-                }
-            if (filteredExamples.isNotEmpty()) {
-                items(filteredExamples) { example ->
-                    ExampleItem(
-                        example = example,
-                        markExpressiveComponents = theme.markExpressiveComponents,
-                        onClick = onExampleClick,
-                    )
+            if (component.examples.isNotEmpty()) {
+                items(component.examples) { example ->
+                    ExampleItem(example = example, onClick = onExampleClick)
                     Spacer(modifier = Modifier.height(ExampleItemPadding))
                 }
             } else {
                 item {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = stringResource(id = R.string.no_examples),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
+                    Text(
+                        text = stringResource(id = R.string.no_examples),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(ComponentPadding))
                 }
             }
         }

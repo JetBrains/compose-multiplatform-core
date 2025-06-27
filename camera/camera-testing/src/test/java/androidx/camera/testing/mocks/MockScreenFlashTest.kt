@@ -57,7 +57,14 @@ class MockScreenFlashTest {
         )
         mMockScreenFlash.clear()
 
-        assertThat(mMockScreenFlash.screenFlashEvents).isEqualTo(listOf(CLEAR, APPLY, CLEAR))
+        assertThat(mMockScreenFlash.screenFlashEvents)
+            .isEqualTo(
+                listOf(
+                    CLEAR,
+                    APPLY,
+                    CLEAR,
+                )
+            )
     }
 
     @Test
@@ -99,7 +106,7 @@ class MockScreenFlashTest {
                     }
                     mMockScreenFlash.clear()
                 },
-                "test thread",
+                "test thread"
             )
             .start()
 

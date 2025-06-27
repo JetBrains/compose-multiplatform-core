@@ -33,7 +33,7 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
  *
  * @see [SandboxedSdk]
  */
-public class SandboxedSdkCompat private constructor(private val sdkImpl: SandboxedSdkImpl) {
+class SandboxedSdkCompat private constructor(private val sdkImpl: SandboxedSdkImpl) {
 
     /**
      * Creates SandboxedSdkCompat from SDK Binder object.
@@ -46,7 +46,7 @@ public class SandboxedSdkCompat private constructor(private val sdkImpl: Sandbox
      *
      * @see [SandboxedSdk]
      */
-    public constructor(sdkInterface: IBinder) : this(sdkInterface, sdkInfo = null)
+    constructor(sdkInterface: IBinder) : this(sdkInterface, sdkInfo = null)
 
     /**
      * Creates SandboxedSdkCompat from SDK [IBinder] object and [SandboxedSdkInfo].
@@ -56,9 +56,9 @@ public class SandboxedSdkCompat private constructor(private val sdkImpl: Sandbox
      */
     @Keep // Reflection call from client part
     @RestrictTo(LIBRARY_GROUP)
-    public constructor(
+    constructor(
         sdkInterface: IBinder,
-        sdkInfo: SandboxedSdkInfo?,
+        sdkInfo: SandboxedSdkInfo?
     ) : this(CompatImpl(sdkInterface, sdkInfo))
 
     /**
@@ -68,7 +68,7 @@ public class SandboxedSdkCompat private constructor(private val sdkImpl: Sandbox
      */
     @RequiresApi(34)
     @RestrictTo(LIBRARY_GROUP)
-    public constructor(sandboxedSdk: SandboxedSdk) : this(Api34Impl(sandboxedSdk))
+    constructor(sandboxedSdk: SandboxedSdk) : this(Api34Impl(sandboxedSdk))
 
     /**
      * Returns the interface to the loaded SDK. A null interface is returned if the Binder has since
@@ -77,7 +77,7 @@ public class SandboxedSdkCompat private constructor(private val sdkImpl: Sandbox
      * @return [IBinder] object for loaded SDK.
      * @see [SandboxedSdk.getInterface]
      */
-    public fun getInterface(): IBinder? = sdkImpl.getInterface()
+    fun getInterface() = sdkImpl.getInterface()
 
     /**
      * Returns information about loaded SDK.
@@ -85,16 +85,14 @@ public class SandboxedSdkCompat private constructor(private val sdkImpl: Sandbox
      * @return [SandboxedSdkInfo] object for loaded SDK or null if no information available.
      * @see [SandboxedSdk.getSharedLibraryInfo]
      */
-    public fun getSdkInfo(): SandboxedSdkInfo? = sdkImpl.getSdkInfo()
+    fun getSdkInfo(): SandboxedSdkInfo? = sdkImpl.getSdkInfo()
 
     /**
      * Create [SandboxedSdk] from compat object.
      *
      * @return Platform SandboxedSdk
      */
-    @RequiresApi(34)
-    @RestrictTo(LIBRARY_GROUP)
-    public fun toSandboxedSdk(): SandboxedSdk = sdkImpl.toSandboxedSdk()
+    @RequiresApi(34) @RestrictTo(LIBRARY_GROUP) fun toSandboxedSdk() = sdkImpl.toSandboxedSdk()
 
     internal interface SandboxedSdkImpl {
         fun getInterface(): IBinder?
@@ -132,7 +130,7 @@ public class SandboxedSdkCompat private constructor(private val sdkImpl: Sandbox
 
     private class CompatImpl(
         private val sdkInterface: IBinder,
-        private val sdkInfo: SandboxedSdkInfo?,
+        private val sdkInfo: SandboxedSdkInfo?
     ) : SandboxedSdkImpl {
 
         override fun getInterface(): IBinder {

@@ -95,7 +95,10 @@ class MaterialThemeTest {
 
         rule.setContentWithTheme {
             expectedStyle = MaterialTheme.typography.button
-            Chip(onClick = {}, label = { Text("Test") })
+            Chip(
+                onClick = {},
+                label = { Text("Test") },
+            )
         }
 
         assertTextTypographyEquals(expectedStyle!!, rule.textStyleOf("Test"))
@@ -108,11 +111,14 @@ class MaterialThemeTest {
                 fontFamily = FontFamily.Default,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
-                letterSpacing = 0.sp,
+                letterSpacing = 0.sp
             )
         rule.setContentWithTheme {
             MaterialTheme(typography = MaterialTheme.typography.copy(button = override)) {
-                Chip(onClick = {}, label = { Text("Test") })
+                Chip(
+                    onClick = {},
+                    label = { Text("Test") },
+                )
             }
         }
 
@@ -125,7 +131,7 @@ class MaterialThemeTest {
         verifyBackgroundColorIsDynamic(
             initial = { MaterialTheme.colors.primary },
             selectChipColors = { ChipDefaults.primaryChipColors() },
-            updateThemeColors = { colors, primary -> colors.copy(primary = primary) },
+            updateThemeColors = { colors, primary -> colors.copy(primary = primary) }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -140,7 +146,7 @@ class MaterialThemeTest {
             },
             updateThemeColors = { colors, primaryVariant ->
                 colors.copy(primaryVariant = primaryVariant)
-            },
+            }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -151,7 +157,7 @@ class MaterialThemeTest {
             selectChipColors = {
                 ChipDefaults.secondaryChipColors(backgroundColor = MaterialTheme.colors.secondary)
             },
-            updateThemeColors = { colors, secondary -> colors.copy(secondary = secondary) },
+            updateThemeColors = { colors, secondary -> colors.copy(secondary = secondary) }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -166,7 +172,7 @@ class MaterialThemeTest {
             },
             updateThemeColors = { colors, secondaryVariant ->
                 colors.copy(secondaryVariant = secondaryVariant)
-            },
+            }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -177,7 +183,7 @@ class MaterialThemeTest {
             selectChipColors = {
                 ChipDefaults.secondaryChipColors(backgroundColor = MaterialTheme.colors.error)
             },
-            updateThemeColors = { colors, error -> colors.copy(error = error) },
+            updateThemeColors = { colors, error -> colors.copy(error = error) }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -202,7 +208,7 @@ class MaterialThemeTest {
                             rememberedColors.value = colors.copy(primary = overrideBackground)
                         },
                         label = {},
-                        modifier = Modifier.testTag("button"),
+                        modifier = Modifier.testTag("button")
                     )
                 }
             }
@@ -217,77 +223,77 @@ class MaterialThemeTest {
     fun sets_button_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.button },
-            updateTextStyle = { typography, button -> typography.copy(button = button) },
+            updateTextStyle = { typography, button -> typography.copy(button = button) }
         )
 
     @Test
     fun sets_display1_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.display1 },
-            updateTextStyle = { typography, display1 -> typography.copy(display1 = display1) },
+            updateTextStyle = { typography, display1 -> typography.copy(display1 = display1) }
         )
 
     @Test
     fun sets_display2_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.display2 },
-            updateTextStyle = { typography, display2 -> typography.copy(display2 = display2) },
+            updateTextStyle = { typography, display2 -> typography.copy(display2 = display2) }
         )
 
     @Test
     fun sets_display3_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.display3 },
-            updateTextStyle = { typography, display3 -> typography.copy(display3 = display3) },
+            updateTextStyle = { typography, display3 -> typography.copy(display3 = display3) }
         )
 
     @Test
     fun sets_title1_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.title1 },
-            updateTextStyle = { typography, title1 -> typography.copy(title1 = title1) },
+            updateTextStyle = { typography, title1 -> typography.copy(title1 = title1) }
         )
 
     @Test
     fun sets_title2_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.title2 },
-            updateTextStyle = { typography, title2 -> typography.copy(title2 = title2) },
+            updateTextStyle = { typography, title2 -> typography.copy(title2 = title2) }
         )
 
     @Test
     fun sets_title3_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.title3 },
-            updateTextStyle = { typography, title3 -> typography.copy(title3 = title3) },
+            updateTextStyle = { typography, title3 -> typography.copy(title3 = title3) }
         )
 
     @Test
     fun sets_body1_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.body1 },
-            updateTextStyle = { typography, body1 -> typography.copy(body1 = body1) },
+            updateTextStyle = { typography, body1 -> typography.copy(body1 = body1) }
         )
 
     @Test
     fun sets_body2_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.body2 },
-            updateTextStyle = { typography, body2 -> typography.copy(body2 = body2) },
+            updateTextStyle = { typography, body2 -> typography.copy(body2 = body2) }
         )
 
     @Test
     fun sets_caption1_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.caption1 },
-            updateTextStyle = { typography, caption1 -> typography.copy(caption1 = caption1) },
+            updateTextStyle = { typography, caption1 -> typography.copy(caption1 = caption1) }
         )
 
     @Test
     fun sets_caption2_textstyle_dynamically() =
         verifyTextStyleIsDynamic(
             selectStyle = { it.caption2 },
-            updateTextStyle = { typography, caption2 -> typography.copy(caption2 = caption2) },
+            updateTextStyle = { typography, caption2 -> typography.copy(caption2 = caption2) }
         )
 
     @Test
@@ -298,7 +304,7 @@ class MaterialThemeTest {
                 fontFamily = FontFamily.Default,
                 fontWeight = FontWeight.Normal,
                 fontSize = 8.sp,
-                letterSpacing = 0.sp,
+                letterSpacing = 0.sp
             )
 
         rule.setContentWithTheme {
@@ -317,7 +323,7 @@ class MaterialThemeTest {
                             rememberedTypography.value = typography.copy(button = overrideTextStyle)
                         },
                         label = {},
-                        modifier = Modifier.testTag("button"),
+                        modifier = Modifier.testTag("button")
                     )
                 }
             }
@@ -332,7 +338,7 @@ class MaterialThemeTest {
     private fun verifyBackgroundColorIsDynamic(
         initial: @Composable () -> Color,
         selectChipColors: @Composable () -> ChipColors,
-        updateThemeColors: (Colors, Color) -> Colors,
+        updateThemeColors: (Colors, Color) -> Colors
     ) {
         var initialColor = Color.Transparent
         val overrideColor = Color.Cyan
@@ -344,11 +350,15 @@ class MaterialThemeTest {
             val themeColors = updateThemeColors(colors, dynamicColor.value)
             MaterialTheme(colors = themeColors) {
                 Column {
-                    Chip(onClick = {}, colors = selectChipColors(), label = { Text("Test") })
+                    Chip(
+                        onClick = {},
+                        colors = selectChipColors(),
+                        label = { Text("Test") },
+                    )
                     Chip(
                         onClick = { dynamicColor.value = overrideColor },
                         label = {},
-                        modifier = Modifier.testTag("button"),
+                        modifier = Modifier.testTag("button")
                     )
                 }
             }
@@ -362,7 +372,7 @@ class MaterialThemeTest {
     private fun verifyContentColorIsDynamic(
         initial: @Composable () -> Color,
         selectChipColors: @Composable () -> ChipColors,
-        updateThemeColors: (Colors, Color) -> Colors,
+        updateThemeColors: (Colors, Color) -> Colors
     ) {
         var initialColor = Color.White
         val overrideColor = Color.Cyan
@@ -374,11 +384,15 @@ class MaterialThemeTest {
             val themeColors = updateThemeColors(colors, dynamicColor.value)
             MaterialTheme(colors = themeColors) {
                 Column {
-                    Chip(onClick = {}, colors = selectChipColors(), label = { Text("Test") })
+                    Chip(
+                        onClick = {},
+                        colors = selectChipColors(),
+                        label = { Text("Test") },
+                    )
                     Chip(
                         onClick = { dynamicColor.value = overrideColor },
                         label = { Text("Test") },
-                        modifier = Modifier.testTag("button"),
+                        modifier = Modifier.testTag("button")
                     )
                 }
             }
@@ -391,7 +405,7 @@ class MaterialThemeTest {
 
     private fun verifyTextStyleIsDynamic(
         selectStyle: (Typography) -> TextStyle,
-        updateTextStyle: (Typography, TextStyle) -> Typography,
+        updateTextStyle: (Typography, TextStyle) -> Typography
     ) {
         var initialStyle = TextStyle()
         val overrideTextStyle =
@@ -399,7 +413,7 @@ class MaterialThemeTest {
                 fontFamily = FontFamily.Default,
                 fontWeight = FontWeight.Normal,
                 fontSize = 8.sp,
-                letterSpacing = 0.sp,
+                letterSpacing = 0.sp
             )
         val typography = Typography()
 
@@ -413,11 +427,14 @@ class MaterialThemeTest {
                 typography = rememberedTypography.copy(button = selectStyle(rememberedTypography))
             ) {
                 Column {
-                    Chip(onClick = {}, label = { Text("Test") })
+                    Chip(
+                        onClick = {},
+                        label = { Text("Test") },
+                    )
                     Chip(
                         onClick = { dynamicStyle.value = overrideTextStyle },
                         label = {},
-                        modifier = Modifier.testTag("button"),
+                        modifier = Modifier.testTag("button")
                     )
                 }
             }

@@ -64,6 +64,7 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureChain;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
+import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -149,7 +150,6 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
 
     // Workarounds
     private final AutoFlashAEModeDisabler mAutoFlashAEModeDisabler;
-    private boolean mIsRepeatingRequestAvailable = true;
 
     static final String TAG_SESSION_UPDATE_ID = "CameraControlSessionUpdateId";
     private final AtomicLong mNextSessionUpdateId = new AtomicLong(0);
@@ -346,12 +346,6 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
         }
-        if (!mIsRepeatingRequestAvailable) {
-            return Futures.immediateFailedFuture(
-                    new OperationCanceledException(
-                            "Repeating request is not available possibly because it's disable for"
-                                    + " the ImageCapture."));
-        }
         return Futures.nonCancellationPropagating(
                 mFocusMeteringControl.startFocusAndMetering(action));
     }
@@ -361,12 +355,6 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
-        }
-        if (!mIsRepeatingRequestAvailable) {
-            return Futures.immediateFailedFuture(
-                    new OperationCanceledException(
-                            "Repeating request is not available possibly because it's disable for"
-                                    + " the ImageCapture."));
         }
         return Futures.nonCancellationPropagating(mFocusMeteringControl.cancelFocusAndMetering());
     }
@@ -549,11 +537,6 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         }
     }
 
-    @ExecutedBy("mExecutor")
-    void setIsRepeatingRequestAvailable(boolean isRepeatingRequestAvailable) {
-        mIsRepeatingRequestAvailable = isRepeatingRequestAvailable;
-    }
-
     /** {@inheritDoc} */
     @Override
     public @NonNull ListenableFuture<List<Void>> submitStillCaptureRequests(
@@ -664,6 +647,17 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
     @ExecutedBy("mExecutor")
     @NonNull Rect getCropSensorRegion() {
         return mZoomControl.getCropSensorRegion();
+    }
+
+    @Override
+    @ExecutedBy("mExecutor")
+    public @NonNull Rect getSensorRect() {
+        Rect sensorRect =
+                mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+        if ("robolectric".equals(Build.FINGERPRINT) && sensorRect == null) {
+            return new Rect(0, 0, 4000, 3000);
+        }
+        return Preconditions.checkNotNull(sensorRect);
     }
 
     @ExecutedBy("mExecutor")

@@ -77,7 +77,7 @@ public fun SwipeDismissableNavHost(
     userSwipeEnabled: Boolean = true,
     state: SwipeDismissableNavHostState = rememberSwipeDismissableNavHostState(),
     route: String? = null,
-    builder: NavGraphBuilder.() -> Unit,
+    builder: NavGraphBuilder.() -> Unit
 ): Unit =
     SwipeDismissableNavHost(
         navController,
@@ -107,9 +107,7 @@ public fun SwipeDismissableNavHost(
  * [BasicSwipeToDismissBox] to detect swipe back gestures.
  *
  * API level 36 onwards, [SwipeDismissableNavHost] listens to platform predictive back events for
- * navigation, and [BasicSwipeToDismissBox] is not used for swipe gesture detection. Therefore,
- * [Modifier.edgeSwipeToDismiss] is not compatible with [SwipeDismissableNavHost] for API level 36
- * onwards.
+ * navigation, and [BasicSwipeToDismissBox] is not used for swipe gesture detection.
  *
  * Example of a [SwipeDismissableNavHost] alternating between 2 screens:
  *
@@ -185,7 +183,7 @@ public fun SwipeDismissableNavHost(
 @Deprecated(
     "This overload is provided for backwards compatibility. " +
         "A newer overload is available with an additional userSwipeEnabled param.",
-    level = DeprecationLevel.HIDDEN,
+    level = DeprecationLevel.HIDDEN
 )
 @Composable
 public fun SwipeDismissableNavHost(
@@ -194,7 +192,7 @@ public fun SwipeDismissableNavHost(
     modifier: Modifier = Modifier,
     state: SwipeDismissableNavHostState = rememberSwipeDismissableNavHostState(),
     route: String? = null,
-    builder: NavGraphBuilder.() -> Unit,
+    builder: NavGraphBuilder.() -> Unit
 ): Unit =
     SwipeDismissableNavHost(
         navController = navController,
@@ -203,7 +201,7 @@ public fun SwipeDismissableNavHost(
         userSwipeEnabled = true,
         state = state,
         route = route,
-        builder = builder,
+        builder = builder
     )
 
 /**
@@ -237,7 +235,7 @@ public fun SwipeDismissableNavHost(
 @Deprecated(
     "This overload is provided for backwards compatibility. " +
         "A newer overload is available with an additional userSwipeEnabled param.",
-    level = DeprecationLevel.HIDDEN,
+    level = DeprecationLevel.HIDDEN
 )
 @Composable
 public fun SwipeDismissableNavHost(
@@ -251,7 +249,7 @@ public fun SwipeDismissableNavHost(
         graph = graph,
         modifier = modifier,
         userSwipeEnabled = true,
-        state = state,
+        state = state
     )
 
 /**
@@ -295,7 +293,7 @@ public fun rememberSwipeDismissableNavHostState(
 @Deprecated(
     "This overload is provided for backward compatibility. A newer overload is available " +
         "which uses SwipeToDismissBoxState from androidx.wear.compose.foundation package.",
-    level = DeprecationLevel.HIDDEN,
+    level = DeprecationLevel.HIDDEN
 )
 @Composable
 public fun rememberSwipeDismissableNavHostState(

@@ -35,7 +35,7 @@ internal constructor(
 ) {
 
     /**
-     * Disposes the given [Texture].
+     * Disposes the given texture resource.
      *
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
@@ -86,16 +86,13 @@ internal constructor(
          *
          * Currently, only URLs and relative paths from the android_assets/ directory are supported.
          *
-         * @param session The [Session] to use for loading the [Texture].
-         * @param name The URL or asset-relative path of a [Texture] to be loaded
-         * @param sampler A [TextureSampler] descriptor which describes how the texture will be
-         *   filtered
+         * @param session The [Session] to use for loading the model.
+         * @param name The URL or asset-relative path of a texture to be loaded
          * @return a ListenableFuture<Texture>. Listeners will be called on the main thread if
          *   Runnable::run is supplied.
          */
         @MainThread
         @JvmStatic
-        @Suppress("AsyncSuffixFuture")
         public fun create(
             session: Session,
             name: String,

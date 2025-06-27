@@ -78,7 +78,7 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                                 it,
                                 node,
                                 isImport = false,
-                                contextMsg = " (field ${element.name} from ${it.qualifiedName})",
+                                contextMsg = " (field ${element.name} from ${it.qualifiedName})"
                             )
                         }
                     is PsiClass -> checkClassUsage(element, node, isImport = false)
@@ -121,13 +121,13 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                     reportIncidentForNode(
                         INTERNAL_GRADLE_ISSUE,
                         node,
-                        "Avoid using internal Gradle APIs $contextMsg",
+                        "Avoid using internal Gradle APIs $contextMsg"
                     )
                 } else if (cls.isInternalAgpApi() && method.hasOnlyInternalSuperMethods()) {
                     reportIncidentForNode(
                         INTERNAL_AGP_ISSUE,
                         node,
-                        "Avoid using internal Android Gradle Plugin APIs $contextMsg",
+                        "Avoid using internal Android Gradle Plugin APIs $contextMsg"
                     )
                 }
             }
@@ -142,14 +142,14 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                 cls: PsiClass,
                 node: UElement,
                 isImport: Boolean,
-                contextMsg: String = "",
+                contextMsg: String = ""
             ) {
                 if (cls.isInternalGradleApi()) {
                     if (isImport || !isImported(cls, node)) {
                         reportIncidentForNode(
                             INTERNAL_GRADLE_ISSUE,
                             node,
-                            "Avoid using internal Gradle APIs$contextMsg",
+                            "Avoid using internal Gradle APIs$contextMsg"
                         )
                     }
                 } else if (cls.isInternalAgpApi()) {
@@ -157,15 +157,7 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                         reportIncidentForNode(
                             INTERNAL_AGP_ISSUE,
                             node,
-                            "Avoid using internal Android Gradle Plugin APIs$contextMsg",
-                        )
-                    }
-                } else if (cls.isInternalKgpApi()) {
-                    if (isImport || !isImported(cls, node)) {
-                        reportIncidentForNode(
-                            INTERNAL_KGP_ISSUE,
-                            node,
-                            "Avoid using internal Kotlin Gradle Plugin APIs$contextMsg",
+                            "Avoid using internal Android Gradle Plugin APIs$contextMsg"
                         )
                     }
                 }
@@ -198,12 +190,6 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                     className.contains(".internal.")
             }
 
-            private fun PsiClass.isInternalKgpApi(): Boolean {
-                val className = qualifiedName ?: return false
-                return className.startsWith("org.jetbrains.kotlin.") &&
-                    className.contains(".internal.")
-            }
-
             /**
              * Checks that this method's super methods are all implemented in either internal gradle
              * or AGP classes.
@@ -229,7 +215,7 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                 Category.CORRECTNESS,
                 5,
                 Severity.ERROR,
-                Implementation(InternalApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE),
+                Implementation(InternalApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
             )
         val INTERNAL_AGP_ISSUE =
             Issue.create(
@@ -243,21 +229,7 @@ class InternalApiUsageDetector : Detector(), Detector.UastScanner {
                 Category.CORRECTNESS,
                 5,
                 Severity.ERROR,
-                Implementation(InternalApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            )
-        val INTERNAL_KGP_ISSUE =
-            Issue.create(
-                "InternalKgpApiUsage",
-                "Avoid using internal Kotlin Gradle Plugin APIs",
-                """
-                Using internal APIs results in fragile plugin behavior as these types have no binary
-                compatibility guarantees. It is best to create a feature request to open up these
-                APIs if you find them useful.
-            """,
-                Category.CORRECTNESS,
-                5,
-                Severity.ERROR,
-                Implementation(InternalApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE),
+                Implementation(InternalApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
             )
     }
 }

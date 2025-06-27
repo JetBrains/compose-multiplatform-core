@@ -36,8 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.material3.tokens.ListHeaderTokens
@@ -68,7 +66,7 @@ public fun ListHeader(
     contentColor: Color = ListHeaderDefaults.contentColor,
     contentPadding: PaddingValues = ListHeaderDefaults.ContentPadding,
     transformation: SurfaceTransformation? = null,
-    content: @Composable RowScope.() -> Unit,
+    content: @Composable RowScope.() -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.Center,
@@ -76,19 +74,16 @@ public fun ListHeader(
             modifier
                 .defaultMinSize(minHeight = ListHeaderTokens.Height)
                 .wrapContentSize()
-                .surface(transformation = transformation, painter = ColorPainter(backgroundColor))
+                .surface(
+                    transformation = transformation,
+                    painter = ColorPainter(backgroundColor),
+                )
                 .padding(contentPadding)
-                .semantics(mergeDescendants = true) { heading() },
+                .semantics(mergeDescendants = true) { heading() }
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
             LocalTextStyle provides ListHeaderTokens.ContentTypography.value,
-            LocalTextConfiguration provides
-                TextConfiguration(
-                    textAlign = TextAlign.Center,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 3,
-                ),
         ) {
             content()
         }
@@ -135,22 +130,16 @@ public fun ListSubHeader(
                 .wrapContentSize(align = Alignment.CenterStart)
                 .surface(painter = ColorPainter(backgroundColor), transformation = transformation)
                 .padding(contentPadding)
-                .semantics(mergeDescendants = true) { heading() },
+                .semantics(mergeDescendants = true) { heading() }
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
-            LocalTextStyle provides ListSubHeaderTokens.ContentTypography.value,
-            LocalTextConfiguration provides
-                TextConfiguration(
-                    textAlign = TextAlign.Start,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 3,
-                ),
+            LocalTextStyle provides ListSubHeaderTokens.ContentTypography.value
         ) {
             if (icon != null) {
                 Box(
                     modifier = Modifier.wrapContentSize(align = Alignment.CenterStart),
-                    content = icon,
+                    content = icon
                 )
                 Spacer(modifier = Modifier.width(6.dp))
             }

@@ -28,18 +28,12 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 35
-        namespace = "androidx.compose.animation.core"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-    }
+    androidTarget()
     jvmStubs()
     linuxX64Stubs()
 
@@ -53,7 +47,7 @@ androidXMultiplatform {
                 implementation(project(":compose:ui:ui-unit"))
                 implementation(project(":compose:ui:ui-graphics"))
                 implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.5.0")
+                implementation(project(":collection:collection"))
                 implementation(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
             }
@@ -134,4 +128,12 @@ androidx {
     description = "Animation engine and animation primitives that are the building blocks of the Compose animation library"
     metalavaK2UastEnabled = false
     samples(project(":compose:animation:animation-core:animation-core-samples"))
+}
+
+android {
+    compileSdk = 35
+    namespace = "androidx.compose.animation.core"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
 }

@@ -41,6 +41,7 @@ interface WindowInfo {
     val isWindowFocused: Boolean
 
     /** Indicates the state of keyboard modifiers (pressed or not). */
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     val keyboardModifiers: PointerKeyboardModifiers
         get() = WindowInfoImpl.GlobalKeyboardModifiers.value
 

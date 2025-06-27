@@ -84,7 +84,10 @@ class HoverableTest {
     fun hoverableTest_equality() {
         val interactionSource = MutableInteractionSource()
         assertModifierIsPure { toggleInput ->
-            Modifier.hoverable(interactionSource = interactionSource, enabled = toggleInput)
+            Modifier.hoverable(
+                interactionSource = interactionSource,
+                enabled = toggleInput,
+            )
         }
     }
 
@@ -365,7 +368,7 @@ class HoverableTest {
                             .testTag(hoverTag)
                             .hoverable(
                                 interactionSource = interactionSource,
-                                enabled = enableHoverable,
+                                enabled = enableHoverable
                             )
                 )
             }

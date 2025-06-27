@@ -71,6 +71,7 @@ public class PaginatedViewTest {
         mContext = ApplicationProvider.getApplicationContext();
         mDimensions = new Dimensions(100, 200);
 
+        PdfViewer.setScreenForTest(mContext);
         // Setting uninitialized model.
         mPaginatedView = new PaginatedView(mContext);
         mPaginationModel = new PaginationModel(mContext);

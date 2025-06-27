@@ -128,6 +128,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -341,7 +342,9 @@ public final class Recorder implements VideoOutput {
      *
      * @see QualitySelector
      */
-    public static final QualitySelector DEFAULT_QUALITY_SELECTOR = VideoSpec.QUALITY_SELECTOR_AUTO;
+    public static final QualitySelector DEFAULT_QUALITY_SELECTOR =
+            QualitySelector.fromOrderedList(Arrays.asList(Quality.FHD, Quality.HD, Quality.SD),
+                    FallbackStrategy.higherQualityOrLowerThan(Quality.FHD));
 
     private static final VideoSpec VIDEO_SPEC_DEFAULT =
             VideoSpec.builder()
@@ -766,46 +769,6 @@ public final class Recorder implements VideoOutput {
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public @NonNull Observable<Range<Integer>> getVideoEncoderBitrateRange() {
         return mVideoEncoderBitrateRange;
-    }
-
-    /**
-     * Gets the video encoding frame rate of the Recorder.
-     *
-     * @return the value provided to {@link Builder#setVideoEncodingFrameRate(int)} on the builder
-     * used to create this recorder. Returns 0, if {@link Builder#setVideoEncodingFrameRate(int)}
-     * is not called.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public int getVideoEncodingFrameRate() {
-        return getObservableData(mMediaSpec).getVideoSpec().getEncodeFrameRate();
-    }
-
-    /**
-     * Sets the intended video encoding frame rate for recording, enabling video speed
-     * adjustment.
-     *
-     * <p>This method is primarily intended for creating slow-motion video effects. It allows
-     * you to specify a different frame rate for the encoded video than the actual capture
-     * frame rate. Timestamps of the captured frames will be adjusted to achieve the desired
-     * encoding frame rate, resulting in a speed adjustment.
-     *
-     * <p>For example, to create a 1/4 slow-motion effect, you could configure the capture
-     * frame rate to 120fps and set the encoding frame rate to 30fps using this method.
-     *
-     * <p>If you only need to configure the capture frame rate without any speed adjustment,
-     * use {@link VideoCapture.Builder#setTargetFrameRate(Range)} instead.
-     *
-     * <p>By default, if this method is not called, the incoming frame rate from the camera
-     * will be used for encoding, resulting in no speed adjustment.
-     *
-     * @param frameRate the video encoding frame rate in frames per second.
-     * @throws IllegalArgumentException if frame rate is 0 or less.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public void setVideoEncodingFrameRate(@IntRange(from = 1) int frameRate) {
-        checkArgument(frameRate >= 1, "frameRate must be greater than 0.");
-        mMediaSpec.setState(getObservableData(mMediaSpec).toBuilder().configureVideo(
-                builder -> builder.setEncodeFrameRate(frameRate)).build());
     }
 
     /**
@@ -2474,11 +2437,6 @@ public final class Recorder implements VideoOutput {
         switch (audioState) {
             case DISABLED:
                 // Fall-through
-            case IDLING:
-                // Audio state will be transitioning to IDLING after the recording is stopped. If
-                // the next recording is stopped immediately such as encounter insufficient storage,
-                // consider the audio is disabled.
-                // Fall-through
             case INITIALIZING:
                 // Audio will not be initialized until the first recording with audio enabled is
                 // started. So if the audio state is INITIALIZING, consider the audio is disabled.
@@ -2495,6 +2453,9 @@ public final class Recorder implements VideoOutput {
                 return AudioStats.AUDIO_STATE_ENCODER_ERROR;
             case ERROR_SOURCE:
                 return AudioStats.AUDIO_STATE_SOURCE_ERROR;
+            case IDLING:
+                // AudioStats should not be produced when audio is in IDLING state.
+                break;
         }
         // Should not reach.
         throw new AssertionError("Invalid internal audio state: " + audioState);
@@ -2589,8 +2550,8 @@ public final class Recorder implements VideoOutput {
 
         switch (mAudioState) {
             case IDLING:
-                // No-op, the audio is not started, Keep it in IDLING state.
-                break;
+                throw new AssertionError(
+                        "Incorrectly finalize recording when audio state is IDLING");
             case INITIALIZING:
                 // No-op, the audio hasn't been initialized. Keep it in INITIALIZING state.
                 break;
@@ -3111,16 +3072,11 @@ public final class Recorder implements VideoOutput {
      * Returns the high-speed {@link VideoCapabilities} of Recorder with respect to input camera
      * information.
      *
-     * <p>The returned {@link VideoCapabilities} provides methods to query supported dynamic
-     * ranges, qualities for high-speed video. For recording high-speed and slow-motion
-     * videos, refer to {@link HighSpeedVideoSessionConfig}.
-     *
      * @param cameraInfo info about the camera.
      * @return high-speed VideoCapabilities with respect to the input camera info, or null if
-     * high-speed video is not supported.
-     * @see HighSpeedVideoSessionConfig
+     * high-speed recording is not supported.
      */
-    @ExperimentalHighSpeedVideo
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO(b/404096374): High-speed public API
     public static @Nullable VideoCapabilities getHighSpeedVideoCapabilities(
             @NonNull CameraInfo cameraInfo) {
         return getHighSpeedVideoCapabilities(cameraInfo,
@@ -3131,22 +3087,12 @@ public final class Recorder implements VideoOutput {
      * Returns the high-speed {@link VideoCapabilities} of Recorder with respect to input camera
      * information and video capabilities source.
      *
-     * <p>The returned {@link VideoCapabilities} provides methods to query supported dynamic
-     * ranges, qualities for high-speed video. For recording high-speed and slow-motion
-     * videos, refer to {@link HighSpeedVideoSessionConfig}.
-     *
-     * <p>The possible video capabilities sources include
-     * {@link #VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE} and
-     * {@link #VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES}.
-     *
      * @param cameraInfo              info about the camera.
      * @param videoCapabilitiesSource the video capabilities source.
      * @return high-speed VideoCapabilities with respect to the input camera info and video
-     * capabilities source, or null if high-speed video is not supported.
-     * @see HighSpeedVideoSessionConfig
+     * capabilities source, or null if high-speed recording is not supported.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY) // Don't expose this API for the initial version.
-    @ExperimentalHighSpeedVideo
+    @RestrictTo(RestrictTo.Scope.LIBRARY) // TODO(b/404096374): High-speed public API
     public static @Nullable VideoCapabilities getHighSpeedVideoCapabilities(
             @NonNull CameraInfo cameraInfo,
             @VideoCapabilitiesSource int videoCapabilitiesSource) {

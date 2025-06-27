@@ -67,18 +67,7 @@ import androidx.xr.runtime.math.Quaternion
 class MovablePanelApp : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            // 2D Content rendered to the MainPanel
-            MainPanelContent()
-
-            // 3D Content for the whole scene
-            Subspace { SpatialContent() }
-        }
-    }
-
-    @Composable
-    fun MainPanelContent() {
-        PanelContent("[MOVABLE] - Main Panel")
+        setContent { Subspace { SpatialContent() } }
     }
 
     @Composable
@@ -103,7 +92,7 @@ class MovablePanelApp : ComponentActivity() {
                 animationSpec =
                     infiniteRepeatable(
                         tween(30000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
+                        repeatMode = RepeatMode.Reverse
                     ),
                 label = "moving",
             )

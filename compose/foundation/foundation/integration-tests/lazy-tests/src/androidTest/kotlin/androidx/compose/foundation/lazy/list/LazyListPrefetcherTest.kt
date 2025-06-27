@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // b/420551535
-
 package androidx.compose.foundation.lazy.list
 
 import androidx.compose.foundation.AutoTestFrameClock
@@ -60,7 +58,7 @@ class LazyListPrefetcherTest(val config: Config) :
                 Config(Orientation.Vertical, 0),
                 Config(Orientation.Vertical, 1),
                 Config(Orientation.Horizontal, 0),
-                Config(Orientation.Horizontal, 1),
+                Config(Orientation.Horizontal, 1)
             )
 
         class Config(val orientation: Orientation, val beyondBoundsItemCount: Int) {
@@ -239,7 +237,7 @@ class LazyListPrefetcherTest(val config: Config) :
         composeList(
             firstItem = initialIndex,
             itemOffset = 5,
-            contentPadding = PaddingValues(mainAxis = halfItemSize),
+            contentPadding = PaddingValues(mainAxis = halfItemSize)
         )
 
         rule.onNodeWithTag("${initialIndex - 1}").assertIsDisplayed()
@@ -277,9 +275,12 @@ class LazyListPrefetcherTest(val config: Config) :
             state =
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = 1,
-                    initialFirstVisibleItemScrollOffset = itemsSizePx / 2,
+                    initialFirstVisibleItemScrollOffset = itemsSizePx / 2
                 )
-            LazyColumnOrRow(Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
+            LazyColumnOrRow(
+                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
+                state,
+            ) {
                 stickyHeader {
                     Spacer(
                         Modifier.mainAxisSize(itemsSizeDp)
@@ -321,7 +322,10 @@ class LazyListPrefetcherTest(val config: Config) :
                     if (emit) {
                         subcompose(Unit) {
                                 state = rememberLazyListState()
-                                LazyColumnOrRow(Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
+                                LazyColumnOrRow(
+                                    Modifier.mainAxisSize(itemsSizeDp * 1.5f),
+                                    state,
+                                ) {
                                     items(1000) {
                                         Spacer(
                                             Modifier.mainAxisSize(itemsSizeDp)
@@ -355,7 +359,10 @@ class LazyListPrefetcherTest(val config: Config) :
         val composedItems = mutableListOf<Int>()
         rule.setContent {
             state = rememberLazyListState()
-            LazyColumnOrRow(Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
+            LazyColumnOrRow(
+                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
+                state,
+            ) {
                 items(1000) {
                     composedItems.add(it)
                     Spacer(Modifier.mainAxisSize(itemsSizeDp).then(fillParentMaxCrossAxis()))
@@ -425,7 +432,7 @@ class LazyListPrefetcherTest(val config: Config) :
         firstItem: Int = 0,
         itemOffset: Int = 0,
         reverseLayout: Boolean = false,
-        contentPadding: PaddingValues = PaddingValues(0.dp),
+        contentPadding: PaddingValues = PaddingValues(0.dp)
     ) {
         rule.setContent {
             @OptIn(ExperimentalFoundationApi::class)
@@ -433,14 +440,14 @@ class LazyListPrefetcherTest(val config: Config) :
                 rememberLazyListState(
                     initialFirstVisibleItemIndex = firstItem,
                     initialFirstVisibleItemScrollOffset = itemOffset,
-                    prefetchStrategy = strategy,
+                    prefetchStrategy = strategy
                 )
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemsSizeDp * 1.5f),
                 state,
                 reverseLayout = reverseLayout,
                 contentPadding = contentPadding,
-                beyondBoundsItemCount = config.beyondBoundsItemCount,
+                beyondBoundsItemCount = config.beyondBoundsItemCount
             ) {
                 items(100) {
                     DisposableEffect(it) {

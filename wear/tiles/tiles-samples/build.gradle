@@ -30,6 +30,7 @@ android {
     defaultConfig {
         applicationId = "androidx.wear.tiles.samples"
         minSdk = 30
+        targetSdk = 35
     }
 
     buildTypes {

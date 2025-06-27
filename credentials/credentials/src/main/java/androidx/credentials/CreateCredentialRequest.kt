@@ -67,7 +67,7 @@ internal constructor(
         credentialData.putBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, isAutoSelectAllowed)
         credentialData.putBoolean(
             BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
-            preferImmediatelyAvailableCredentials,
+            preferImmediatelyAvailableCredentials
         )
         candidateQueryData.putBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, isAutoSelectAllowed)
     }
@@ -104,7 +104,12 @@ internal constructor(
         constructor(
             userId: CharSequence,
             userDisplayName: CharSequence? = null,
-        ) : this(userId, userDisplayName, null, null)
+        ) : this(
+            userId,
+            userDisplayName,
+            null,
+            null,
+        )
 
         /**
          * Constructs a [DisplayInfo].
@@ -123,8 +128,13 @@ internal constructor(
         constructor(
             userId: CharSequence,
             userDisplayName: CharSequence?,
-            preferDefaultProvider: String?,
-        ) : this(userId, userDisplayName, null, preferDefaultProvider)
+            preferDefaultProvider: String?
+        ) : this(
+            userId,
+            userDisplayName,
+            null,
+            preferDefaultProvider,
+        )
 
         init {
             require(userId.isNotEmpty()) { "userId should not be empty" }
@@ -222,7 +232,7 @@ internal constructor(
                 request.credentialData,
                 request.candidateQueryData,
                 request.isSystemProviderRequired,
-                request.origin,
+                request.origin
             )
         }
 
@@ -248,7 +258,6 @@ internal constructor(
          * @param origin the origin of a different application if the request is being made on
          *   behalf of that application
          */
-        @OptIn(ExperimentalDigitalCredentialApi::class)
         @JvmStatic
         @JvmOverloads
         @RequiresApi(23)
@@ -270,16 +279,10 @@ internal constructor(
                                 CreatePublicKeyCredentialRequest.createFrom(
                                     credentialData,
                                     origin,
-                                    candidateQueryData,
+                                    candidateQueryData
                                 )
                             else -> throw FrameworkClassParsingException()
                         }
-                    DigitalCredential.TYPE_DIGITAL_CREDENTIAL ->
-                        CreateDigitalCredentialRequest.createFrom(
-                            credentialData,
-                            origin,
-                            candidateQueryData,
-                        )
                     else -> throw FrameworkClassParsingException()
                 }
             } catch (e: FrameworkClassParsingException) {
@@ -295,7 +298,7 @@ internal constructor(
                     origin,
                     credentialData.getBoolean(
                         BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
-                        false,
+                        false
                     ),
                 )
             }

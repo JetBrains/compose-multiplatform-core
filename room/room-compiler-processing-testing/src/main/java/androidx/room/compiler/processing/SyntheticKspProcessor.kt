@@ -17,9 +17,7 @@ package androidx.room.compiler.processing
 
 import androidx.room.compiler.processing.ksp.KspBasicAnnotationProcessor
 import androidx.room.compiler.processing.util.XTestInvocation
-import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
-import com.google.devtools.ksp.processing.SymbolProcessorProvider
 
 @ExperimentalProcessingApi
 class SyntheticKspProcessor
@@ -28,30 +26,17 @@ private constructor(
     config: XProcessingEnvConfig,
     private val impl: SyntheticProcessorImpl,
 ) : KspBasicAnnotationProcessor(symbolProcessorEnvironment, config), SyntheticProcessor by impl {
+    constructor(
+        symbolProcessorEnvironment: SymbolProcessorEnvironment,
+        config: XProcessingEnvConfig,
+        handlers: List<(XTestInvocation) -> Unit>,
+    ) : this(symbolProcessorEnvironment, config, SyntheticProcessorImpl(handlers))
+
     override fun processingSteps(): Iterable<XProcessingStep> = impl.processingSteps()
 
-    override fun postRound(env: XProcessingEnv, round: XRoundEnv) = impl.postRound(env, round)
-
-    internal class Provider(
-        private val config: XProcessingEnvConfig,
-        private val handlers: List<(XTestInvocation) -> Unit>,
-    ) : SymbolProcessorProvider {
-        constructor(
-            config: XProcessingEnvConfig = XProcessingEnvConfig.DEFAULT,
-            handler: (XTestInvocation) -> Unit,
-        ) : this(config, listOf(handler))
-
-        lateinit var processor: SyntheticKspProcessor
-
-        override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-            return SyntheticKspProcessor(
-                    symbolProcessorEnvironment = environment,
-                    config = config,
-                    impl = SyntheticProcessorImpl(handlers),
-                )
-                .also { processor = it }
+    override fun postRound(env: XProcessingEnv, round: XRoundEnv) {
+        if (!round.isProcessingOver) {
+            impl.postRound(env, round)
         }
-
-        fun isProcessorInitialized() = this::processor.isInitialized
     }
 }

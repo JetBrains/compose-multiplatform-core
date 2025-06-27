@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.input.indirect
 
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
@@ -31,12 +31,12 @@ import androidx.compose.ui.platform.InspectorInfo
  *   [IndirectTouchEvent]'s parent.
  * @return true if the event is consumed, false otherwise.
  */
-@ExperimentalIndirectTouchTypeApi
+@ExperimentalComposeUiApi
 fun Modifier.onIndirectTouchEvent(onIndirectTouchEvent: (IndirectTouchEvent) -> Boolean): Modifier =
     this then
         IndirectTouchInputElement(
             onIndirectTouchEvent = onIndirectTouchEvent,
-            onPreIndirectTouchEvent = null,
+            onPreIndirectTouchEvent = null
         )
 
 /**
@@ -50,20 +50,20 @@ fun Modifier.onIndirectTouchEvent(onIndirectTouchEvent: (IndirectTouchEvent) -> 
  *   event and want to stop propagation of this event.
  * @return true if the event is consumed, false otherwise.
  */
-@ExperimentalIndirectTouchTypeApi
+@ExperimentalComposeUiApi
 fun Modifier.onPreIndirectTouchEvent(
     onPreIndirectTouchEvent: (IndirectTouchEvent) -> Boolean
 ): Modifier =
     this then
         IndirectTouchInputElement(
             onIndirectTouchEvent = null,
-            onPreIndirectTouchEvent = onPreIndirectTouchEvent,
+            onPreIndirectTouchEvent = onPreIndirectTouchEvent
         )
 
-@ExperimentalIndirectTouchTypeApi
+@ExperimentalComposeUiApi
 private class IndirectTouchInputElement(
     val onIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?,
-    val onPreIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?,
+    val onPreIndirectTouchEvent: ((IndirectTouchEvent) -> Boolean)?
 ) : ModifierNodeElement<IndirectTouchInputNode>() {
     override fun create() =
         IndirectTouchInputNode(onEvent = onIndirectTouchEvent, onPreEvent = onPreIndirectTouchEvent)
@@ -101,10 +101,10 @@ private class IndirectTouchInputElement(
     }
 }
 
-@ExperimentalIndirectTouchTypeApi
+@ExperimentalComposeUiApi
 private class IndirectTouchInputNode(
     var onEvent: ((IndirectTouchEvent) -> Boolean)?,
-    var onPreEvent: ((IndirectTouchEvent) -> Boolean)?,
+    var onPreEvent: ((IndirectTouchEvent) -> Boolean)?
 ) : IndirectTouchInputModifierNode, Modifier.Node() {
     override fun onIndirectTouchEvent(event: IndirectTouchEvent) = onEvent?.invoke(event) == true
 

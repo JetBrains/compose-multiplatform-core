@@ -39,16 +39,16 @@ import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicInteger
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class LimitOffsetRxPagingSource<Value : Any>(
+abstract class LimitOffsetRxPagingSource<Value : Any>(
     private val sourceQuery: RoomSQLiteQuery,
     private val db: RoomDatabase,
     vararg tables: String,
 ) : RxPagingSource<Int, Value>() {
 
-    public constructor(
+    constructor(
         supportSQLiteQuery: SupportSQLiteQuery,
         db: RoomDatabase,
-        vararg tables: String,
+        vararg tables: String
     ) : this(sourceQuery = RoomSQLiteQuery.copyFrom(supportSQLiteQuery), db = db, tables = tables)
 
     @VisibleForTesting internal val itemCount: AtomicInteger = AtomicInteger(INITIAL_ITEM_COUNT)
@@ -79,7 +79,7 @@ public abstract class LimitOffsetRxPagingSource<Value : Any>(
                     sourceQuery = sourceQuery,
                     db = db,
                     itemCount = tempCount,
-                    convertRows = ::convertRows,
+                    convertRows = ::convertRows
                 )
             }
         )
@@ -92,7 +92,7 @@ public abstract class LimitOffsetRxPagingSource<Value : Any>(
                 sourceQuery = sourceQuery,
                 db = db,
                 itemCount = tempCount,
-                convertRows = ::convertRows,
+                convertRows = ::convertRows
             )
         // manually check if database has been updated. If so, the observer's
         // invalidation callback will invalidate this paging source
@@ -119,7 +119,7 @@ public abstract class LimitOffsetRxPagingSource<Value : Any>(
     override val jumpingSupported: Boolean
         get() = true
 
-    private companion object {
+    companion object {
         const val BUG_LINK =
             "https://issuetracker.google.com/issues/new?component=413107&template=1096568"
     }

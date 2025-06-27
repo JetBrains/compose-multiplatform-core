@@ -58,7 +58,12 @@ public fun <V> intObjectMapOf(key1: Int, value1: V): IntObjectMap<V> =
  * Returns a new [IntObjectMap] with [key1], and [key2] associated with [value1], and [value2],
  * respectively.
  */
-public fun <V> intObjectMapOf(key1: Int, value1: V, key2: Int, value2: V): IntObjectMap<V> =
+public fun <V> intObjectMapOf(
+    key1: Int,
+    value1: V,
+    key2: Int,
+    value2: V,
+): IntObjectMap<V> =
     MutableIntObjectMap<V>().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -222,7 +227,7 @@ public fun <V> mutableIntObjectMapOf(
  * @param builderAction Lambda in which the [MutableIntObjectMap] can be populated.
  */
 public inline fun <V> buildIntObjectMap(
-    builderAction: MutableIntObjectMap<V>.() -> Unit
+    builderAction: MutableIntObjectMap<V>.() -> Unit,
 ): IntObjectMap<V> {
     contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
     return MutableIntObjectMap<V>().apply(builderAction)
@@ -317,8 +322,7 @@ public sealed class IntObjectMap<V> {
      */
     public operator fun get(key: Int): V? {
         val index = findKeyIndex(key)
-        @Suppress("UNCHECKED_CAST")
-        return if (index >= 0) values[index] as V? else null
+        @Suppress("UNCHECKED_CAST") return if (index >= 0) values[index] as V? else null
     }
 
     /**
@@ -328,8 +332,7 @@ public sealed class IntObjectMap<V> {
     public fun getOrDefault(key: Int, defaultValue: V): V {
         val index = findKeyIndex(key)
         if (index >= 0) {
-            @Suppress("UNCHECKED_CAST")
-            return values[index] as V
+            @Suppress("UNCHECKED_CAST") return values[index] as V
         }
         return defaultValue
     }
@@ -479,7 +482,7 @@ public sealed class IntObjectMap<V> {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: Int, value: V) -> CharSequence,
+        crossinline transform: (key: Int, value: V) -> CharSequence
     ): String = buildString {
         append(prefix)
         var index = 0
@@ -701,8 +704,7 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
         keys[index] = key
         values[index] = value
 
-        @Suppress("UNCHECKED_CAST")
-        return oldValue as V?
+        @Suppress("UNCHECKED_CAST") return oldValue as V?
     }
 
     /** Puts all the key/value mappings in the [from] map into this map. */
@@ -782,8 +784,7 @@ public class MutableIntObjectMap<V>(initialCapacity: Int = DefaultScatterCapacit
         val oldValue = values[index]
         values[index] = null
 
-        @Suppress("UNCHECKED_CAST")
-        return oldValue as V?
+        @Suppress("UNCHECKED_CAST") return oldValue as V?
     }
 
     /** Removes all mappings from this map. */

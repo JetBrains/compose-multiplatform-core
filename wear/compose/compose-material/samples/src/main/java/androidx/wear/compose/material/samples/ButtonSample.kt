@@ -34,7 +34,10 @@ import androidx.wear.compose.material.Text
 @Sampled
 @Composable
 fun ButtonWithIcon() {
-    Button(onClick = { /* Do something */ }, enabled = true) {
+    Button(
+        onClick = { /* Do something */ },
+        enabled = true,
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
             contentDescription = "airplane",
@@ -48,7 +51,10 @@ fun ButtonWithIcon() {
 @Sampled
 @Composable
 fun OutlinedButtonWithIcon() {
-    OutlinedButton(onClick = { /* Do something */ }, enabled = true) {
+    OutlinedButton(
+        onClick = { /* Do something */ },
+        enabled = true,
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
             contentDescription = "airplane",
@@ -65,7 +71,7 @@ fun LargeButtonWithIcon() {
     Button(
         onClick = { /* Do something */ },
         enabled = true,
-        modifier = Modifier.size(ButtonDefaults.LargeButtonSize),
+        modifier = Modifier.size(ButtonDefaults.LargeButtonSize)
     ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
@@ -83,7 +89,7 @@ fun ButtonWithText() {
     Button(
         onClick = { /* Do something */ },
         enabled = true,
-        modifier = Modifier.size(ButtonDefaults.LargeButtonSize),
+        modifier = Modifier.size(ButtonDefaults.LargeButtonSize)
     ) {
         Text("Big")
     }
@@ -92,7 +98,10 @@ fun ButtonWithText() {
 @Sampled
 @Composable
 fun CompactButtonWithIcon() {
-    CompactButton(onClick = { /* Do something */ }, enabled = true) {
+    CompactButton(
+        onClick = { /* Do something */ },
+        enabled = true,
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
             contentDescription = "airplane",
@@ -106,7 +115,10 @@ fun CompactButtonWithIcon() {
 @Sampled
 @Composable
 fun OutlinedCompactButtonWithIcon() {
-    OutlinedCompactButton(onClick = { /* Do something */ }, enabled = true) {
+    OutlinedCompactButton(
+        onClick = { /* Do something */ },
+        enabled = true,
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
             contentDescription = "airplane",

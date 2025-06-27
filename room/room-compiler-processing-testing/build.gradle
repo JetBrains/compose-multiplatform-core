@@ -21,8 +21,6 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -33,6 +31,7 @@ plugins {
 
 dependencies {
     api(project(":room:room-compiler-processing"))
+    implementation(libs.kotlinStdlibJdk8)
     // For Java source compilation
     implementation(libs.googleCompileTesting)
     // For KSP processing
@@ -96,5 +95,4 @@ androidx {
     type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
     inceptionYear = "2020"
     description = "Testing helpers for Room XProcessing APIs"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

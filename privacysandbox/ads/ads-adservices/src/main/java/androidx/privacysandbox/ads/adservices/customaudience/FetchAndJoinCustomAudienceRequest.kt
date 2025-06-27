@@ -36,14 +36,14 @@ import java.time.Instant
  *   for the custom audience.
  */
 @ExperimentalFeatures.Ext10OptIn
-public class FetchAndJoinCustomAudienceRequest
+class FetchAndJoinCustomAudienceRequest
 @JvmOverloads
 public constructor(
-    public val fetchUri: Uri,
-    public val name: String? = null,
-    public val activationTime: Instant? = null,
-    public val expirationTime: Instant? = null,
-    public val userBiddingSignals: AdSelectionSignals? = null,
+    val fetchUri: Uri,
+    val name: String? = null,
+    val activationTime: Instant? = null,
+    val expirationTime: Instant? = null,
+    val userBiddingSignals: AdSelectionSignals? = null
 ) {
     /**
      * Checks whether two [FetchAndJoinCustomAudienceRequest] objects contain the same information.

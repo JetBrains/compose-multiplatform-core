@@ -36,7 +36,7 @@ import androidx.compose.runtime.mutableStateOf
  * @see [MutableState]
  * @see [mutableStateOf]
  */
-public interface SnapshotMutableState<T> : MutableState<T> {
+interface SnapshotMutableState<T> : MutableState<T> {
     /** A policy to control how changes are handled in a mutable snapshot. */
-    public val policy: SnapshotMutationPolicy<T>
+    val policy: SnapshotMutationPolicy<T>
 }

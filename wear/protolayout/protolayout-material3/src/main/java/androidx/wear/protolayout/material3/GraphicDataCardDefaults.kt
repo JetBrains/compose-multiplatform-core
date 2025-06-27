@@ -62,7 +62,7 @@ public object GraphicDataCardDefaults {
         graphic: LayoutElement,
         style: GraphicDataCardStyle,
         height: ContainerDimension,
-        @HorizontalAlignment horizontalAlignment: Int,
+        @HorizontalAlignment horizontalAlignment: Int
     ): LayoutElement {
         val verticalElementBuilder: Column.Builder =
             Column.Builder().setWidth(expand()).setHorizontalAlignment(HORIZONTAL_ALIGN_START)
@@ -71,7 +71,7 @@ public object GraphicDataCardDefaults {
 
         ContainerWithSpacersBuilder<LayoutElement>(
                 { it: LayoutElement? -> verticalElementBuilder.addContent(it!!) },
-                title,
+                title
             )
             .addElement(content)
 
@@ -163,7 +163,7 @@ public object GraphicDataCardDefaults {
     public fun MaterialScope.constructGraphic(
         mainContent: (MaterialScope.() -> Box),
         iconContent: (MaterialScope.() -> LayoutElement),
-        iconSizeRatio: Float = CENTER_ICON_SIZE_RATIO_IN_GRAPHIC,
+        iconSizeRatio: Float = CENTER_ICON_SIZE_RATIO_IN_GRAPHIC
     ): LayoutElement {
         val contentMain = mainContent()
         val size: ContainerDimension =
@@ -196,19 +196,18 @@ public object GraphicDataCardDefaults {
                             .setHeight(expand())
                             .addContent(
                                 withStyle(
-                                    defaultIconStyle =
-                                        IconStyle(
-                                            width = expand(),
-                                            height =
-                                                ProportionalDimensionProp.Builder()
-                                                    .setAspectRatioHeight(1)
-                                                    .setAspectRatioWidth(1)
-                                                    .build(),
-                                            tintColor = defaultIconStyle.tintColor,
-                                        )
-                                ) {
-                                    iconContent()
-                                }
+                                        defaultIconStyle =
+                                            IconStyle(
+                                                width = expand(),
+                                                height =
+                                                    ProportionalDimensionProp.Builder()
+                                                        .setAspectRatioHeight(1)
+                                                        .setAspectRatioWidth(1)
+                                                        .build(),
+                                                tintColor = defaultIconStyle.tintColor
+                                            )
+                                    )
+                                    .iconContent()
                             )
                             .build()
                     )
@@ -226,15 +225,14 @@ public object GraphicDataCardDefaults {
                             }))
                         .dp
                 withStyle(
-                    defaultIconStyle =
-                        IconStyle(
-                            width = iconSize,
-                            height = iconSize,
-                            tintColor = defaultIconStyle.tintColor,
-                        )
-                ) {
-                    iconContent()
-                }
+                        defaultIconStyle =
+                            IconStyle(
+                                width = iconSize,
+                                height = iconSize,
+                                tintColor = defaultIconStyle.tintColor
+                            )
+                    )
+                    .iconContent()
             }
 
         return Box.Builder()
@@ -274,7 +272,7 @@ internal constructor(
                 innerPadding =
                     padding(
                         top = DEFAULT_VERTICAL_PADDING_DP,
-                        bottom = DEFAULT_VERTICAL_PADDING_DP,
+                        bottom = DEFAULT_VERTICAL_PADDING_DP
                     ),
                 titleTypography = Typography.DISPLAY_SMALL,
                 contentTypography = Typography.LABEL_SMALL,
@@ -293,7 +291,7 @@ internal constructor(
                 innerPadding =
                     padding(
                         top = DEFAULT_VERTICAL_PADDING_DP,
-                        bottom = DEFAULT_VERTICAL_PADDING_DP,
+                        bottom = DEFAULT_VERTICAL_PADDING_DP
                     ),
                 titleTypography = Typography.DISPLAY_MEDIUM,
                 contentTypography = Typography.LABEL_MEDIUM,

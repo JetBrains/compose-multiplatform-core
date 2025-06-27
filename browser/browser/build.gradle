@@ -22,6 +22,7 @@ android {
             version = 1
         }
     }
+    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.browser"
 }
 
@@ -45,7 +46,10 @@ dependencies {
 
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
+    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
+    testImplementation("org.robolectric:annotations:4.14")
+    testImplementation("org.robolectric:shadowapi:4.14")
     testImplementation(libs.guavaAndroid)
     testImplementation(libs.junit)
 
@@ -66,5 +70,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2015"
     description = "Provides support for embedding Custom Tabs in an app."
-    enableRobolectric()
 }

@@ -44,7 +44,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,9 +66,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.Navigator
 import androidx.navigation.compose.LocalOwnersProvider
 import androidx.navigation.get
-import androidx.wear.compose.foundation.LocalScreenIsActive
 import androidx.wear.compose.foundation.LocalSwipeToDismissBackgroundScrimColor
-import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -205,11 +202,11 @@ internal fun PredictiveBackNavHost(
                     if (wearNavigator.isPop.value || inPredictiveBack) POP_EXIT_TRANSITION
                     else EXIT_TRANSITION,
                 targetContentZIndex = targetZIndex,
-                sizeTransform = null,
+                sizeTransform = null
             )
         },
         contentAlignment = Alignment.Center,
-        contentKey = { it.id },
+        contentKey = { it.id }
     ) {
         // In some specific cases, such as popping your back stack or changing your
         // start destination, AnimatedContent can contain an entry that is no longer
@@ -224,39 +221,33 @@ internal fun PredictiveBackNavHost(
             }
 
         if (currentEntry != null) {
-            val parentScreenActive = LocalScreenIsActive.current
-            CompositionLocalProvider(
-                LocalScreenIsActive provides (currentEntry == current && parentScreenActive)
-            ) {
-                Box(
-                    modifier =
-                        Modifier.background(
-                                scrimColor,
-                                if (isRoundDevice) CircleShape else RectangleShape,
-                            )
-                            .fillMaxSize()
-                            .hierarchicalFocusGroup(currentEntry == current)
-                ) {
-                    // while in the scope of the composable, we provide the navBackStackEntry as the
-                    // ViewModelStoreOwner and LifecycleOwner
-                    if (currentEntry.lifecycle.currentState != Lifecycle.State.DESTROYED) {
-                        currentEntry.LocalOwnersProvider(stateHolder) {
-                            DestinationContent(backStackEntry = currentEntry)
-                        }
-                    }
-                    if (currentEntry != current) {
-                        Box(
-                            modifier =
-                                Modifier.clickable(
-                                        enabled = false,
-                                        indication = null,
-                                        interactionSource = remember { MutableInteractionSource() },
-                                    ) {
-                                        // Ignore taps on previous backstack entries
-                                    }
-                                    .fillMaxSize()
+            Box(
+                modifier =
+                    Modifier.background(
+                            scrimColor,
+                            if (isRoundDevice) CircleShape else RectangleShape
                         )
+                        .fillMaxSize()
+            ) {
+                // while in the scope of the composable, we provide the navBackStackEntry as the
+                // ViewModelStoreOwner and LifecycleOwner
+                if (currentEntry.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+                    currentEntry.LocalOwnersProvider(stateHolder) {
+                        DestinationContent(backStackEntry = currentEntry)
                     }
+                }
+                if (currentEntry != current) {
+                    Box(
+                        modifier =
+                            Modifier.clickable(
+                                    enabled = false,
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() }
+                                ) {
+                                    // Ignore taps on previous backstack entries
+                                }
+                                .fillMaxSize()
+                    )
                 }
             }
         }
@@ -294,7 +285,7 @@ private val POP_ENTER_TRANSITION =
     scaleIn(initialScale = 0.8f, animationSpec = tween(easing = LinearEasing)) +
         slideInHorizontally(
             initialOffsetX = { -it / 2 },
-            animationSpec = tween(easing = LinearEasing),
+            animationSpec = tween(easing = LinearEasing)
         ) +
         fadeIn(initialAlpha = 0.5f, animationSpec = tween(easing = LinearEasing))
 private val POP_EXIT_TRANSITION =

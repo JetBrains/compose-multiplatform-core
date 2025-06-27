@@ -36,7 +36,7 @@ import java.util.concurrent.Executors;
 
 /**
  * An {@link Activity} that calls
- * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
+ * {@link androidx.webkit.WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
  * to startup WebView asynchronously and displays the summary of startup.
  */
 public class AsyncStartUpActivity extends AppCompatActivity {
@@ -87,6 +87,6 @@ public class AsyncStartUpActivity extends AppCompatActivity {
             wv.loadUrl("www.example.com");
         };
         mStartCaptureTime = System.currentTimeMillis();
-        WebViewCompat.startUpWebView(getApplicationContext(), config, callback);
+        WebViewCompat.startUpWebView(config, callback);
     }
 }
