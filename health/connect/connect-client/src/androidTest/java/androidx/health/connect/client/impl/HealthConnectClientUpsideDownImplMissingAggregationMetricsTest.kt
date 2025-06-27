@@ -63,7 +63,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @SdkSuppress(
     minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-    maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
+    maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 )
 class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
 
@@ -78,7 +78,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
             TEST_RECORD_TYPES.flatMap {
                     listOf(
                         HealthPermission.getReadPermission(it),
-                        HealthPermission.getWritePermission(it),
+                        HealthPermission.getWritePermission(it)
                     )
                 }
                 .toTypedArray()
@@ -126,15 +126,15 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endTime = START_TIME + 6.minutes,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    transFat = 5.grams,
+                    transFat = 5.grams
                 ),
                 BloodPressureRecord(
                     time = START_TIME,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury,
-                ),
+                    diastolic = 80.millimetersOfMercury
+                )
             )
         )
 
@@ -142,7 +142,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
             healthConnectClient.aggregate(
                 AggregateRequest(
                     setOf(BloodPressureRecord.DIASTOLIC_AVG, NutritionRecord.TRANS_FAT_TOTAL),
-                    TimeRangeFilter.Companion.after(Instant.EPOCH),
+                    TimeRangeFilter.Companion.after(Instant.EPOCH)
                 )
             )
 
@@ -153,9 +153,9 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     doubleValues =
                         mapOf(
                             NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.5,
-                            BloodPressureRecord.DIASTOLIC_AVG.metricKey to 80.0,
+                            BloodPressureRecord.DIASTOLIC_AVG.metricKey to 80.0
                         ),
-                    dataOrigins = setOf(DataOrigin(context.packageName)),
+                    dataOrigins = setOf(DataOrigin(context.packageName))
                 )
             )
     }
@@ -171,7 +171,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = .5.grams,
-                    energy = 100.kilocalories,
+                    energy = 100.kilocalories
                 ),
                 NutritionRecord(
                     startTime = START_TIME + 5.minutes,
@@ -180,7 +180,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = 5.grams,
-                    energy = 500.kilocalories,
+                    energy = 500.kilocalories
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 5.minutes,
@@ -188,7 +188,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100)),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100))
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 10.minutes,
@@ -196,16 +196,19 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50)),
-                ),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50))
+                )
             )
         )
 
         val aggregateResponse =
             healthConnectClient.aggregate(
                 AggregateRequest(
-                    setOf(HeartRateRecord.BPM_AVG, NutritionRecord.ENERGY_TOTAL),
-                    TimeRangeFilter.after(START_TIME),
+                    setOf(
+                        HeartRateRecord.BPM_AVG,
+                        NutritionRecord.ENERGY_TOTAL,
+                    ),
+                    TimeRangeFilter.after(START_TIME)
                 )
             )
 
@@ -214,7 +217,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                 AggregationResult(
                     longValues = mapOf(HeartRateRecord.BPM_AVG.metricKey to 75),
                     doubleValues = mapOf(NutritionRecord.ENERGY_TOTAL.metricKey to 600.0),
-                    dataOrigins = setOf(DataOrigin(context.packageName)),
+                    dataOrigins = setOf(DataOrigin(context.packageName))
                 )
             )
     }
@@ -230,7 +233,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = .5.grams,
-                    energy = 100.kilocalories,
+                    energy = 100.kilocalories
                 ),
                 NutritionRecord(
                     startTime = START_TIME + 5.minutes,
@@ -239,7 +242,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = 5.grams,
-                    energy = 500.kilocalories,
+                    energy = 500.kilocalories
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 5.minutes,
@@ -247,7 +250,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100)),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100))
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 10.minutes,
@@ -255,8 +258,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50)),
-                ),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50))
+                )
             )
         )
 
@@ -266,9 +269,9 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     setOf(
                         HeartRateRecord.BPM_AVG,
                         NutritionRecord.ENERGY_TOTAL,
-                        NutritionRecord.TRANS_FAT_TOTAL,
+                        NutritionRecord.TRANS_FAT_TOTAL
                     ),
-                    TimeRangeFilter.after(START_TIME),
+                    TimeRangeFilter.after(START_TIME)
                 )
             )
 
@@ -279,9 +282,9 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     doubleValues =
                         mapOf(
                             NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.5,
-                            NutritionRecord.ENERGY_TOTAL.metricKey to 600.0,
+                            NutritionRecord.ENERGY_TOTAL.metricKey to 600.0
                         ),
-                    dataOrigins = setOf(DataOrigin(context.packageName)),
+                    dataOrigins = setOf(DataOrigin(context.packageName))
                 )
             )
     }
@@ -305,15 +308,15 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endTime = START_TIME + 6.minutes,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    transFat = 5.grams,
+                    transFat = 5.grams
                 ),
                 BloodPressureRecord(
                     time = START_TIME,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury,
-                ),
+                    diastolic = 80.millimetersOfMercury
+                )
             )
         )
 
@@ -322,10 +325,10 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                 AggregateGroupByDurationRequest(
                     setOf(
                         BloodPressureRecord.Companion.DIASTOLIC_AVG,
-                        NutritionRecord.Companion.TRANS_FAT_TOTAL,
+                        NutritionRecord.Companion.TRANS_FAT_TOTAL
                     ),
                     TimeRangeFilter.Companion.after(Instant.EPOCH),
-                    5.minutes,
+                    5.minutes
                 )
             )
 
@@ -343,8 +346,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                                     NutritionRecord.TRANS_FAT_TOTAL.metricKey to 0.5,
                                     BloodPressureRecord.DIASTOLIC_AVG.metricKey to 80.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 5.minutes,
@@ -355,10 +358,10 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                             longValues = emptyMap(),
                             doubleValues =
                                 mapOf<String, Double>(
-                                    NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.0
+                                    NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
             )
     }
@@ -383,7 +386,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = 5.grams,
-                    energy = 500.kilocalories,
+                    energy = 500.kilocalories
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 5.minutes,
@@ -391,7 +394,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100)),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100))
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 10.minutes,
@@ -399,15 +402,18 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50)),
-                ),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50))
+                )
             )
         )
 
         val aggregateResponse =
             healthConnectClient.aggregateGroupByDuration(
                 AggregateGroupByDurationRequest(
-                    setOf(HeartRateRecord.BPM_AVG, NutritionRecord.ENERGY_TOTAL),
+                    setOf(
+                        HeartRateRecord.BPM_AVG,
+                        NutritionRecord.ENERGY_TOTAL,
+                    ),
                     TimeRangeFilter.between(START_TIME, START_TIME + 15.minutes),
                     5.minutes,
                 )
@@ -423,8 +429,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                         AggregationResult(
                             longValues = emptyMap(),
                             doubleValues = mapOf(NutritionRecord.ENERGY_TOTAL.metricKey to 100.0),
-                            dataOrigins = emptySet(),
-                        ),
+                            dataOrigins = emptySet()
+                        )
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 5.minutes,
@@ -433,9 +439,12 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     result =
                         AggregationResult(
                             longValues = mapOf(HeartRateRecord.BPM_AVG.metricKey to 100),
-                            doubleValues = mapOf(NutritionRecord.ENERGY_TOTAL.metricKey to 500.0),
-                            dataOrigins = emptySet(),
-                        ),
+                            doubleValues =
+                                mapOf(
+                                    NutritionRecord.ENERGY_TOTAL.metricKey to 500.0,
+                                ),
+                            dataOrigins = emptySet()
+                        )
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 10.minutes,
@@ -445,9 +454,9 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                         AggregationResult(
                             longValues = mapOf(HeartRateRecord.BPM_AVG.metricKey to 50),
                             doubleValues = emptyMap(),
-                            dataOrigins = emptySet(),
-                        ),
-                ),
+                            dataOrigins = emptySet()
+                        )
+                )
             )
     }
 
@@ -462,7 +471,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = .5.grams,
-                    energy = 100.kilocalories,
+                    energy = 100.kilocalories
                 ),
                 NutritionRecord(
                     startTime = START_TIME + 5.minutes,
@@ -471,7 +480,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = 5.grams,
-                    energy = 500.kilocalories,
+                    energy = 500.kilocalories
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 5.minutes,
@@ -479,7 +488,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100)),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 5.minutes, 100))
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + 10.minutes,
@@ -487,8 +496,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50)),
-                ),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + 10.minutes, 50))
+                )
             )
         )
 
@@ -498,7 +507,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     setOf(
                         HeartRateRecord.BPM_AVG,
                         NutritionRecord.ENERGY_TOTAL,
-                        NutritionRecord.TRANS_FAT_TOTAL,
+                        NutritionRecord.TRANS_FAT_TOTAL
                     ),
                     TimeRangeFilter.between(START_TIME, START_TIME + 15.minutes),
                     5.minutes,
@@ -519,8 +528,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                                     NutritionRecord.TRANS_FAT_TOTAL.metricKey to .5,
                                     NutritionRecord.ENERGY_TOTAL.metricKey to 100.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 5.minutes,
@@ -534,8 +543,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                                     NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.0,
                                     NutritionRecord.ENERGY_TOTAL.metricKey to 500.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 10.minutes,
@@ -545,8 +554,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                         AggregationResult(
                             longValues = mapOf(HeartRateRecord.BPM_AVG.metricKey to 50),
                             doubleValues = emptyMap(),
-                            dataOrigins = emptySet(),
-                        ),
+                            dataOrigins = emptySet()
+                        )
                 ),
             )
     }
@@ -561,7 +570,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endTime = START_TIME + 1.minutes,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    transFat = 0.5.grams,
+                    transFat = 0.5.grams
                 ),
                 NutritionRecord(
                     startTime = START_TIME + Duration.ofDays(1),
@@ -569,15 +578,15 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endTime = START_TIME + Duration.ofDays(1) + 1.minutes,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    transFat = 5.grams,
+                    transFat = 5.grams
                 ),
                 BloodPressureRecord(
                     time = START_TIME,
                     zoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     systolic = 120.millimetersOfMercury,
-                    diastolic = 80.millimetersOfMercury,
-                ),
+                    diastolic = 80.millimetersOfMercury
+                )
             )
         )
 
@@ -586,10 +595,10 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                 AggregateGroupByPeriodRequest(
                     setOf(
                         BloodPressureRecord.Companion.DIASTOLIC_AVG,
-                        NutritionRecord.Companion.TRANS_FAT_TOTAL,
+                        NutritionRecord.Companion.TRANS_FAT_TOTAL
                     ),
                     TimeRangeFilter.after(LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)),
-                    Period.ofDays(1),
+                    Period.ofDays(1)
                 )
             )
 
@@ -607,8 +616,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                                     NutritionRecord.TRANS_FAT_TOTAL.metricKey to 0.5,
                                     BloodPressureRecord.DIASTOLIC_AVG.metricKey to 80.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
                 AggregationResultGroupedByPeriod(
                     startTime =
@@ -618,9 +627,12 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     result =
                         AggregationResult(
                             longValues = emptyMap(),
-                            doubleValues = mapOf(NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.0),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            doubleValues =
+                                mapOf(
+                                    NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.0,
+                                ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
             )
     }
@@ -636,7 +648,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = .5.grams,
-                    energy = 100.kilocalories,
+                    energy = 100.kilocalories
                 ),
                 NutritionRecord(
                     startTime = START_TIME + Duration.ofDays(1),
@@ -645,7 +657,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = 5.grams,
-                    energy = 500.kilocalories,
+                    energy = 500.kilocalories
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + Duration.ofDays(1),
@@ -653,7 +665,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(1), 100)),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(1), 100))
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + Duration.ofDays(2),
@@ -661,18 +673,21 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(2), 50)),
-                ),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(2), 50))
+                )
             )
         )
 
         val aggregateResponse =
             healthConnectClient.aggregateGroupByPeriod(
                 AggregateGroupByPeriodRequest(
-                    setOf(HeartRateRecord.BPM_AVG, NutritionRecord.ENERGY_TOTAL),
+                    setOf(
+                        HeartRateRecord.BPM_AVG,
+                        NutritionRecord.ENERGY_TOTAL,
+                    ),
                     TimeRangeFilter.between(
                         LocalDateTime.ofInstant(START_TIME, ZoneOffset.UTC),
-                        LocalDateTime.ofInstant(START_TIME + Duration.ofDays(3), ZoneOffset.UTC),
+                        LocalDateTime.ofInstant(START_TIME + Duration.ofDays(3), ZoneOffset.UTC)
                     ),
                     Period.ofDays(1),
                 )
@@ -687,9 +702,12 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     result =
                         AggregationResult(
                             longValues = emptyMap(),
-                            doubleValues = mapOf(NutritionRecord.ENERGY_TOTAL.metricKey to 100.0),
-                            dataOrigins = emptySet(),
-                        ),
+                            doubleValues =
+                                mapOf(
+                                    NutritionRecord.ENERGY_TOTAL.metricKey to 100.0,
+                                ),
+                            dataOrigins = emptySet()
+                        )
                 ),
                 AggregationResultGroupedByPeriod(
                     startTime =
@@ -699,9 +717,12 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     result =
                         AggregationResult(
                             longValues = mapOf(HeartRateRecord.BPM_AVG.metricKey to 100),
-                            doubleValues = mapOf(NutritionRecord.ENERGY_TOTAL.metricKey to 500.0),
-                            dataOrigins = emptySet(),
-                        ),
+                            doubleValues =
+                                mapOf(
+                                    NutritionRecord.ENERGY_TOTAL.metricKey to 500.0,
+                                ),
+                            dataOrigins = emptySet()
+                        )
                 ),
                 AggregationResultGroupedByPeriod(
                     startTime =
@@ -712,8 +733,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                         AggregationResult(
                             longValues = mapOf(HeartRateRecord.BPM_AVG.metricKey to 50),
                             doubleValues = emptyMap(),
-                            dataOrigins = emptySet(),
-                        ),
+                            dataOrigins = emptySet()
+                        )
                 ),
             )
     }
@@ -729,7 +750,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = .5.grams,
-                    energy = 100.kilocalories,
+                    energy = 100.kilocalories
                 ),
                 NutritionRecord(
                     startTime = START_TIME + Duration.ofDays(1),
@@ -738,7 +759,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
                     transFat = 5.grams,
-                    energy = 500.kilocalories,
+                    energy = 500.kilocalories
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + Duration.ofDays(1),
@@ -746,7 +767,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(1), 100)),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(1), 100))
                 ),
                 HeartRateRecord(
                     startTime = START_TIME + Duration.ofDays(2),
@@ -754,8 +775,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(2), 50)),
-                ),
+                    samples = listOf(HeartRateRecord.Sample(START_TIME + Duration.ofDays(2), 50))
+                )
             )
         )
 
@@ -769,7 +790,7 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                     ),
                     TimeRangeFilter.between(
                         LocalDateTime.ofInstant(START_TIME, ZoneOffset.UTC),
-                        LocalDateTime.ofInstant(START_TIME + Duration.ofDays(3), ZoneOffset.UTC),
+                        LocalDateTime.ofInstant(START_TIME + Duration.ofDays(3), ZoneOffset.UTC)
                     ),
                     Period.ofDays(1),
                 )
@@ -789,8 +810,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                                     NutritionRecord.TRANS_FAT_TOTAL.metricKey to .5,
                                     NutritionRecord.ENERGY_TOTAL.metricKey to 100.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
                 AggregationResultGroupedByPeriod(
                     startTime =
@@ -805,8 +826,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                                     NutritionRecord.TRANS_FAT_TOTAL.metricKey to 5.0,
                                     NutritionRecord.ENERGY_TOTAL.metricKey to 500.0,
                                 ),
-                            dataOrigins = setOf(DataOrigin(context.packageName)),
-                        ),
+                            dataOrigins = setOf(DataOrigin(context.packageName))
+                        )
                 ),
                 AggregationResultGroupedByPeriod(
                     startTime =
@@ -817,8 +838,8 @@ class HealthConnectClientUpsideDownImplMissingAggregationMetricsTest {
                         AggregationResult(
                             longValues = mapOf(HeartRateRecord.BPM_AVG.metricKey to 50),
                             doubleValues = emptyMap(),
-                            dataOrigins = emptySet(),
-                        ),
+                            dataOrigins = emptySet()
+                        )
                 ),
             )
     }

@@ -40,8 +40,9 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun ListPane(navigator: ThreePaneScaffoldNavigator<Destination>) {
     val coroutineScope = rememberCoroutineScope()
-    Scaffold(topBar = { TopAppBar(title = { Text("XR Compose Adaptive Sample") }) }) { innerPadding
-        ->
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("XR Compose Adaptive Sample") }) },
+    ) { innerPadding ->
         LazyColumn(Modifier.fillMaxSize().padding(innerPadding)) {
             items(Destination.values()) { destination ->
                 Surface(
@@ -52,7 +53,7 @@ internal fun ListPane(navigator: ThreePaneScaffoldNavigator<Destination>) {
                                 contentKey = destination,
                             )
                         }
-                    }
+                    },
                 ) {
                     ListItem(headlineContent = { Text(destination.label) })
                 }

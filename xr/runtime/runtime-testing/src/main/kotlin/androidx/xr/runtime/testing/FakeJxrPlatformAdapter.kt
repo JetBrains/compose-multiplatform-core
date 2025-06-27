@@ -37,7 +37,6 @@ import androidx.xr.runtime.internal.HeadActivityPose
 import androidx.xr.runtime.internal.InputEventListener
 import androidx.xr.runtime.internal.InteractableComponent
 import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.KhronosPbrMaterialSpec
 import androidx.xr.runtime.internal.LoggingEntity
 import androidx.xr.runtime.internal.MaterialResource
 import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper
@@ -52,20 +51,14 @@ import androidx.xr.runtime.internal.ResizableComponent
 import androidx.xr.runtime.internal.SoundPoolExtensionsWrapper
 import androidx.xr.runtime.internal.SpatialCapabilities
 import androidx.xr.runtime.internal.SpatialEnvironment
-import androidx.xr.runtime.internal.SpatialModeChangeListener
-import androidx.xr.runtime.internal.SpatialPointerComponent
 import androidx.xr.runtime.internal.SpatialVisibility
 import androidx.xr.runtime.internal.SubspaceNodeEntity
 import androidx.xr.runtime.internal.SurfaceEntity
 import androidx.xr.runtime.internal.TextureResource
 import androidx.xr.runtime.internal.TextureSampler
-import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.math.Vector4
 import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.util.concurrent.Futures.immediateFailedFuture
-import com.google.common.util.concurrent.Futures.immediateFuture
 import com.google.common.util.concurrent.ListenableFuture
 import java.time.Duration
 import java.util.UUID
@@ -76,24 +69,6 @@ import java.util.function.Consumer
 /** Test-only implementation of [JxrPlatformAdapter] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
-    /* Tracks the current state of the adapter according to where it is in its lifecycle. */
-    public enum class State {
-        CREATED,
-        STARTED,
-        PAUSED,
-        DESTROYED,
-    }
-
-    private var _state: Enum<State> = State.CREATED
-
-    /**
-     * The current state of the adapter will transition based on the lifecycle of the adapter. It
-     * starts off as [State.CREATED] and transitions to [State.STARTED] when startRenderer is
-     * called. When stopRenderer is called, it transitions to [State.PAUSED]. When dispose is
-     * called, it transitions to [State.DESTROYED].
-     */
-    public val state: Enum<State>
-        get() = _state
 
     override val spatialEnvironment: SpatialEnvironment = FakeSpatialEnvironment()
 
@@ -101,10 +76,9 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override val activitySpace: ActivitySpace = FakeActivitySpace()
 
-    override val headActivityPose: HeadActivityPose? =
-        object : HeadActivityPose, FakeActivityPose() {}
+    override val headActivityPose: HeadActivityPose? = null
 
-    override val activitySpaceRootImpl: Entity = activitySpace
+    override val activitySpaceRootImpl: Entity = FakeEntity()
 
     override val spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
 
@@ -120,35 +94,28 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     override val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper =
         FakeMediaPlayerExtensionsWrapper()
 
-    override var spatialModeChangeListener: SpatialModeChangeListener =
-        FakeSpatialModeChangeListener()
-
     override fun getCameraViewActivityPose(
         @CameraViewActivityPose.CameraType cameraType: Int
-    ): CameraViewActivityPose? = FakeCameraViewActivityPose()
+    ): CameraViewActivityPose? = null
 
-    @Suppress("AsyncSuffixFuture")
     override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
-        immediateFuture(FakeGltfModelResource(0))
+        immediateFailedFuture<GltfModelResource>(NotImplementedError())
 
-    @Suppress("AsyncSuffixFuture")
     override fun loadGltfByByteArray(
         assetData: ByteArray,
         assetKey: String,
-    ): ListenableFuture<GltfModelResource> = immediateFuture(FakeGltfModelResource(0))
+    ): ListenableFuture<GltfModelResource> =
+        immediateFailedFuture<GltfModelResource>(NotImplementedError())
 
-    @Suppress("AsyncSuffixFuture")
     override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> =
-        immediateFuture(FakeExrImageResource(0))
+        immediateFailedFuture<ExrImageResource>(NotImplementedError())
 
-    @Suppress("AsyncSuffixFuture")
     override fun loadExrImageByByteArray(
         assetData: ByteArray,
         assetKey: String,
     ): ListenableFuture<ExrImageResource> =
         immediateFailedFuture<ExrImageResource>(NotImplementedError())
 
-    @Suppress("AsyncSuffixFuture")
     override fun loadTexture(
         assetName: String,
         sampler: TextureSampler,
@@ -161,7 +128,6 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun getReflectionTextureFromIbl(iblToken: ExrImageResource): TextureResource? = null
 
-    @Suppress("AsyncSuffixFuture")
     override fun createWaterMaterial(
         isAlphaMapVersion: Boolean
     ): ListenableFuture<MaterialResource>? =
@@ -169,185 +135,21 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun destroyWaterMaterial(material: MaterialResource) {}
 
-    override fun setReflectionMapOnWaterMaterial(
-        material: MaterialResource,
-        reflectionMap: TextureResource,
-    ) {}
+    override fun setReflectionCube(material: MaterialResource, reflectionCube: TextureResource) {}
 
-    override fun setNormalMapOnWaterMaterial(
-        material: MaterialResource,
-        normalMap: TextureResource,
-    ) {}
+    override fun setNormalMap(material: MaterialResource, normalMap: TextureResource) {}
 
-    override fun setNormalTilingOnWaterMaterial(material: MaterialResource, normalTiling: Float) {}
+    override fun setNormalTiling(material: MaterialResource, normalTiling: Float) {}
 
-    override fun setNormalSpeedOnWaterMaterial(material: MaterialResource, normalSpeed: Float) {}
+    override fun setNormalSpeed(material: MaterialResource, normalSpeed: Float) {}
 
-    override fun setAlphaStepMultiplierOnWaterMaterial(
-        material: MaterialResource,
-        alphaStepMultiplier: Float,
-    ) {}
+    override fun setAlphaStepMultiplier(material: MaterialResource, alphaStepMultiplier: Float) {}
 
-    override fun setAlphaMapOnWaterMaterial(
-        material: MaterialResource,
-        alphaMap: TextureResource,
-    ) {}
+    override fun setAlphaMap(material: MaterialResource, alphaMap: TextureResource) {}
 
-    override fun setNormalZOnWaterMaterial(material: MaterialResource, normalZ: Float) {}
+    override fun setNormalZ(material: MaterialResource, normalZ: Float) {}
 
-    override fun setNormalBoundaryOnWaterMaterial(
-        material: MaterialResource,
-        normalBoundary: Float,
-    ) {}
-
-    @Suppress("AsyncSuffixFuture")
-    override fun createKhronosPbrMaterial(
-        spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>? =
-        immediateFailedFuture<MaterialResource>(NotImplementedError())
-
-    override fun destroyKhronosPbrMaterial(material: MaterialResource) {}
-
-    override fun setBaseColorTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        baseColor: TextureResource,
-    ) {}
-
-    override fun setBaseColorUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    ) {}
-
-    override fun setBaseColorFactorsOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factors: Vector4,
-    ) {}
-
-    override fun setMetallicRoughnessTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        metallicRoughness: TextureResource,
-    ) {}
-
-    override fun setMetallicRoughnessUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    ) {}
-
-    override fun setMetallicFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float) {}
-
-    override fun setRoughnessFactorOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factor: Float,
-    ) {}
-
-    override fun setNormalTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        normal: TextureResource,
-    ) {}
-
-    override fun setNormalUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    ) {}
-
-    override fun setNormalFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float) {}
-
-    override fun setAmbientOcclusionTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        ambientOcclusion: TextureResource,
-    ) {}
-
-    override fun setAmbientOcclusionUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    ) {}
-
-    override fun setAmbientOcclusionFactorOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factor: Float,
-    ) {}
-
-    override fun setEmissiveTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        emissive: TextureResource,
-    ) {}
-
-    override fun setEmissiveUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    ) {}
-
-    override fun setEmissiveFactorsOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factors: Vector3,
-    ) {}
-
-    override fun setClearcoatTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        clearcoat: TextureResource,
-    ) {}
-
-    override fun setClearcoatNormalTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        clearcoatNormal: TextureResource,
-    ) {}
-
-    override fun setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        clearcoatRoughness: TextureResource,
-    ) {}
-
-    override fun setClearcoatFactorsOnKhronosPbrMaterial(
-        material: MaterialResource,
-        intensity: Float,
-        roughness: Float,
-        normal: Float,
-    ) {}
-
-    override fun setSheenColorTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        sheenColor: TextureResource,
-    ) {}
-
-    override fun setSheenColorFactorsOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factors: Vector3,
-    ) {}
-
-    override fun setSheenRoughnessTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        sheenRoughness: TextureResource,
-    ) {}
-
-    override fun setSheenRoughnessFactorOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factor: Float,
-    ) {}
-
-    override fun setTransmissionTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        transmission: TextureResource,
-    ) {}
-
-    override fun setTransmissionUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    ) {}
-
-    override fun setTransmissionFactorOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factor: Float,
-    ) {}
-
-    override fun setIndexOfRefractionOnKhronosPbrMaterial(
-        material: MaterialResource,
-        indexOfRefraction: Float,
-    ) {}
-
-    override fun setAlphaCutoffOnKhronosPbrMaterial(
-        material: MaterialResource,
-        alphaCutoff: Float,
-    ) {}
+    override fun setNormalBoundary(material: MaterialResource, normalBoundary: Float) {}
 
     override fun createGltfEntity(
         pose: Pose,
@@ -357,14 +159,10 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun createSurfaceEntity(
         stereoMode: Int,
-        pose: Pose,
         canvasShape: SurfaceEntity.CanvasShape,
-        contentSecurityLevel: Int,
-        superSampling: Int,
+        pose: Pose,
         parentEntity: Entity,
     ): SurfaceEntity = FakeSurfaceEntity()
-
-    override fun enablePanelDepthTest(enabled: Boolean) {}
 
     override fun addSpatialCapabilitiesChangedListener(
         callbackExecutor: Executor,
@@ -381,13 +179,6 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
     ) {}
 
     override fun clearSpatialVisibilityChangedListener() {}
-
-    override fun addPerceivedResolutionChangedListener(
-        callbackExecutor: Executor,
-        listener: Consumer<PixelDimensions>,
-    ) {}
-
-    override fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>) {}
 
     override fun createLoggingEntity(pose: Pose): LoggingEntity =
         object : LoggingEntity, FakeEntity() {}
@@ -431,7 +222,7 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun createAnchorEntity(anchor: Anchor): AnchorEntity = FakeAnchorEntity()
 
-    override fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity = FakeEntity()
+    override fun createEntity(pose: Pose, name: String, parent: Entity): Entity = FakeEntity()
 
     override fun createSubspaceNodeEntity(
         subspaceNode: SubspaceNode,
@@ -468,9 +259,6 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
         inputListener: InputEventListener,
     ): PointerCaptureComponent = object : PointerCaptureComponent, FakeComponent() {}
 
-    override fun createSpatialPointerComponent(): SpatialPointerComponent =
-        FakeSpatialPointerComponent()
-
     override fun createPersistedAnchorEntity(uuid: UUID, searchTimeout: Duration): AnchorEntity =
         FakeAnchorEntity()
 
@@ -480,15 +268,9 @@ public class FakeJxrPlatformAdapter : JxrPlatformAdapter {
 
     override fun setPreferredAspectRatio(activity: Activity, preferredRatio: Float) {}
 
-    override fun startRenderer() {
-        _state = State.STARTED
-    }
+    override fun startRenderer() {}
 
-    override fun stopRenderer() {
-        _state = State.PAUSED
-    }
+    override fun stopRenderer() {}
 
-    override fun dispose() {
-        _state = State.DESTROYED
-    }
+    override fun dispose() {}
 }

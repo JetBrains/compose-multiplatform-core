@@ -22,7 +22,7 @@ pluginManagement {
         google()
         val allowJetbrains = "androidx.allowJetbrainsDev"
         if (settings.extra.has(allowJetbrains) && settings.extra.get(allowJetbrains) == "true") {
-            maven(url = "https://packages.jetbrains.team/maven/p/kt/dev")
+            maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/")
         }
     }
 }
@@ -34,7 +34,7 @@ dependencyResolutionManagement {
         gradlePluginPortal()
         val allowJetbrains = "androidx.allowJetbrainsDev"
         if (settings.extra.has(allowJetbrains) && settings.extra.get(allowJetbrains) == "true") {
-            maven(url = "https://packages.jetbrains.team/maven/p/kt/dev")
+            maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev/")
         }
     }
     versionCatalogs {

@@ -55,6 +55,7 @@ dependencies {
 
     // Android Support Library
     implementation("androidx.appcompat:appcompat:1.1.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
     implementation(libs.constraintLayout)
 
     // Camera Pipe
@@ -64,12 +65,6 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-
-    // Transitive dependencies
-    implementation 'androidx.lifecycle:lifecycle-common:2.8.7'
-    implementation libs.androidx.annotation
-    implementation libs.androidx.core
-    implementation libs.kotlinCoroutinesCore
 
     debugImplementation(libs.testCore)
 }

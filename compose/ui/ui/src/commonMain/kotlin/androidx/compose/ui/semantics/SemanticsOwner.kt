@@ -27,14 +27,13 @@ import androidx.compose.ui.semantics.SemanticsProperties.InvisibleToUser
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.trace
 
 /** Owns [SemanticsNode] objects and notifies listeners of changes to the semantics tree */
 class SemanticsOwner
 internal constructor(
     private val rootNode: LayoutNode,
     private val outerSemanticsNode: EmptySemanticsModifier,
-    private val nodes: IntObjectMap<LayoutNode>,
+    private val nodes: IntObjectMap<LayoutNode>
 ) {
     /**
      * The root node of the semantics tree. Does not contain any unmerged data. May contain merged
@@ -55,7 +54,7 @@ internal constructor(
                 // have an empty config, but if we don't pass this in explicitly here it will try
                 // to call `rootNode.collapsedSemantics` which will fail because the LayoutNode
                 // is not yet attached when this getter is first called.
-                unmergedConfig = SemanticsConfiguration(),
+                unmergedConfig = SemanticsConfiguration()
             )
         }
 
@@ -70,7 +69,7 @@ internal constructor(
 
     internal fun notifySemanticsChange(
         semanticsInfo: SemanticsInfo,
-        previousSemanticsConfiguration: SemanticsConfiguration?,
+        previousSemanticsConfiguration: SemanticsConfiguration?
     ) {
         listeners.forEach { it.onSemanticsChanged(semanticsInfo, previousSemanticsConfiguration) }
     }
@@ -87,11 +86,11 @@ internal constructor(
  */
 fun SemanticsOwner.getAllSemanticsNodes(
     mergingEnabled: Boolean,
-    skipDeactivatedNodes: Boolean = true,
+    skipDeactivatedNodes: Boolean = true
 ): List<SemanticsNode> {
     return getAllSemanticsNodesToMap(
             useUnmergedTree = !mergingEnabled,
-            skipDeactivatedNodes = skipDeactivatedNodes,
+            skipDeactivatedNodes = skipDeactivatedNodes
         )
         .values
         .toList()
@@ -108,7 +107,7 @@ fun SemanticsOwner.getAllSemanticsNodes(mergingEnabled: Boolean) =
  */
 internal fun SemanticsOwner.getAllSemanticsNodesToMap(
     useUnmergedTree: Boolean = false,
-    skipDeactivatedNodes: Boolean = true,
+    skipDeactivatedNodes: Boolean = true
 ): Map<Int, SemanticsNode> {
     val nodes = mutableMapOf<Int, SemanticsNode>()
 
@@ -147,7 +146,7 @@ private val DefaultFakeNodeBounds = Rect(0f, 0f, 10f, 10f)
 /** Semantics node with adjusted bounds for the uncovered(by siblings) part. */
 internal class SemanticsNodeWithAdjustedBounds(
     val semanticsNode: SemanticsNode,
-    val adjustedBounds: IntRect,
+    val adjustedBounds: IntRect
 )
 
 /**
@@ -157,89 +156,78 @@ internal class SemanticsNodeWithAdjustedBounds(
 internal fun SemanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
     customRootNodeId: Int
 ): IntObjectMap<SemanticsNodeWithAdjustedBounds> {
-    trace("getAllUncoveredSemanticsNodesToIntObjectMap") {
-        val root = unmergedRootSemanticsNode
-        if (!root.layoutNode.isPlaced || !root.layoutNode.isAttached) {
-            return emptyIntObjectMap()
-        }
-
-        // Default capacity chosen to accommodate common scenarios
-        val nodes = MutableIntObjectMap<SemanticsNodeWithAdjustedBounds>(48)
-
-        val unaccountedSpace = SemanticsRegion()
-        unaccountedSpace.set(root.boundsInRoot.roundToIntRect())
-
-        fun findAllSemanticNodesRecursive(currentNode: SemanticsNode, region: SemanticsRegion) {
-            val notAttachedOrPlaced =
-                !currentNode.layoutNode.isPlaced || !currentNode.layoutNode.isAttached
-            if (
-                (unaccountedSpace.isEmpty && currentNode.id != root.id) ||
-                    (notAttachedOrPlaced && !currentNode.isFake)
-            ) {
-                return
-            }
-            val touchBoundsInRoot = currentNode.touchBoundsInRoot.roundToIntRect()
-
-            region.set(touchBoundsInRoot)
-
-            val virtualViewId =
-                if (currentNode.id == root.id) {
-                    customRootNodeId
-                } else {
-                    currentNode.id
-                }
-            if (region.intersect(unaccountedSpace)) {
-                nodes[virtualViewId] = SemanticsNodeWithAdjustedBounds(currentNode, region.bounds)
-                // Children could be drawn outside of parent, but we are using clipped bounds for
-                // accessibility now, so let's put the children recursion inside of this if. If
-                // later
-                // we decide to support children drawn outside of parent, we can move it out of the
-                // if block.
-                val children = currentNode.replacedChildren
-                for (i in children.size - 1 downTo 0) {
-                    // Links in text nodes are semantics children. But for Android accessibility
-                    // support
-                    // we don't publish them to the accessibility services because they are exposed
-                    // as UrlSpan/ClickableSpan spans instead
-                    if (children[i].config.contains(SemanticsProperties.LinkTestMarker)) {
-                        continue
-                    }
-                    findAllSemanticNodesRecursive(children[i], region)
-                }
-                if (currentNode.isImportantForAccessibility()) {
-                    unaccountedSpace.difference(touchBoundsInRoot)
-                }
-            } else {
-                if (currentNode.isFake) {
-                    val parentNode = currentNode.parent
-                    // use parent bounds for fake node
-                    val boundsForFakeNode =
-                        if (parentNode?.layoutInfo?.isPlaced == true) {
-                            parentNode.boundsInRoot
-                        } else {
-                            DefaultFakeNodeBounds
-                        }
-                    nodes[virtualViewId] =
-                        SemanticsNodeWithAdjustedBounds(
-                            currentNode,
-                            boundsForFakeNode.roundToIntRect(),
-                        )
-                } else if (virtualViewId == customRootNodeId) {
-                    // Root view might have WRAP_CONTENT layout params in which case it will have
-                    // zero
-                    // bounds if there is no other content with semantics. But we need to always
-                    // send
-                    // the
-                    // root view info as there are some other apps (e.g. Google Assistant) that
-                    // depend
-                    // on accessibility info
-                    nodes[virtualViewId] =
-                        SemanticsNodeWithAdjustedBounds(currentNode, region.bounds)
-                }
-            }
-        }
-
-        findAllSemanticNodesRecursive(root, SemanticsRegion())
-        return nodes
+    val root = unmergedRootSemanticsNode
+    if (!root.layoutNode.isPlaced || !root.layoutNode.isAttached) {
+        return emptyIntObjectMap()
     }
+
+    // Default capacity chosen to accommodate common scenarios
+    val nodes = MutableIntObjectMap<SemanticsNodeWithAdjustedBounds>(48)
+
+    val unaccountedSpace = SemanticsRegion()
+    unaccountedSpace.set(root.boundsInRoot.roundToIntRect())
+
+    fun findAllSemanticNodesRecursive(currentNode: SemanticsNode, region: SemanticsRegion) {
+        val notAttachedOrPlaced =
+            !currentNode.layoutNode.isPlaced || !currentNode.layoutNode.isAttached
+        if (
+            (unaccountedSpace.isEmpty && currentNode.id != root.id) ||
+                (notAttachedOrPlaced && !currentNode.isFake)
+        ) {
+            return
+        }
+        val touchBoundsInRoot = currentNode.touchBoundsInRoot.roundToIntRect()
+
+        region.set(touchBoundsInRoot)
+
+        val virtualViewId =
+            if (currentNode.id == root.id) {
+                customRootNodeId
+            } else {
+                currentNode.id
+            }
+        if (region.intersect(unaccountedSpace)) {
+            nodes[virtualViewId] = SemanticsNodeWithAdjustedBounds(currentNode, region.bounds)
+            // Children could be drawn outside of parent, but we are using clipped bounds for
+            // accessibility now, so let's put the children recursion inside of this if. If later
+            // we decide to support children drawn outside of parent, we can move it out of the
+            // if block.
+            val children = currentNode.replacedChildren
+            for (i in children.size - 1 downTo 0) {
+                // Links in text nodes are semantics children. But for Android accessibility support
+                // we don't publish them to the accessibility services because they are exposed
+                // as UrlSpan/ClickableSpan spans instead
+                if (children[i].config.contains(SemanticsProperties.LinkTestMarker)) {
+                    continue
+                }
+                findAllSemanticNodesRecursive(children[i], region)
+            }
+            if (currentNode.isImportantForAccessibility()) {
+                unaccountedSpace.difference(touchBoundsInRoot)
+            }
+        } else {
+            if (currentNode.isFake) {
+                val parentNode = currentNode.parent
+                // use parent bounds for fake node
+                val boundsForFakeNode =
+                    if (parentNode?.layoutInfo?.isPlaced == true) {
+                        parentNode.boundsInRoot
+                    } else {
+                        DefaultFakeNodeBounds
+                    }
+                nodes[virtualViewId] =
+                    SemanticsNodeWithAdjustedBounds(currentNode, boundsForFakeNode.roundToIntRect())
+            } else if (virtualViewId == customRootNodeId) {
+                // Root view might have WRAP_CONTENT layout params in which case it will have zero
+                // bounds if there is no other content with semantics. But we need to always send
+                // the
+                // root view info as there are some other apps (e.g. Google Assistant) that depend
+                // on accessibility info
+                nodes[virtualViewId] = SemanticsNodeWithAdjustedBounds(currentNode, region.bounds)
+            }
+        }
+    }
+
+    findAllSemanticNodesRecursive(root, SemanticsRegion())
+    return nodes
 }

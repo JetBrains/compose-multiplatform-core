@@ -43,7 +43,7 @@ class ProjectXmlTest {
     private val classpathDir = File(root, "classpath")
 
     @Test
-    fun testEmptyAndroidSourceSetXml() {
+    fun testEmptySourceSetXml() {
         val element =
             ProjectXml.createSourceSetElement(
                 "androidMain",
@@ -56,29 +56,7 @@ class ProjectXmlTest {
         checkElementXml(
             element,
             """
-                <module name="androidMain" android="true" kotlinPlatforms="JVM [1.8]">
-                  <src jar="/fake/path/root/compiledSources.jar"/>
-                </module>
-            """
-                .trimIndent()
-        )
-    }
-
-    @Test
-    fun testEmptyCommonSourceSetXml() {
-        val element =
-            ProjectXml.createSourceSetElement(
-                "commonMain",
-                emptyList(),
-                emptyList(),
-                emptyList(),
-                compiledSources,
-            )
-
-        checkElementXml(
-            element,
-            """
-                <module name="commonMain" kotlinPlatforms="JVM [1.8]">
+                <module name="androidMain" android="true">
                   <src jar="/fake/path/root/compiledSources.jar"/>
                 </module>
             """
@@ -108,7 +86,7 @@ class ProjectXmlTest {
         checkElementXml(
             element,
             """
-                <module name="androidMain" android="true" kotlinPlatforms="JVM [1.8]">
+                <module name="androidMain" android="true">
                   <dep module="commonMain" kind="dependsOn"/>
                   <dep module="jvmMain" kind="dependsOn"/>
                   <src file="/fake/path/root/sources/Foo.kt"/>

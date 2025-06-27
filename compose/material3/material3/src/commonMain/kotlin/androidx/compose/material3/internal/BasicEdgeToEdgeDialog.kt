@@ -70,8 +70,7 @@ internal sealed interface BackEventProgress {
 
 internal enum class SwipeEdge {
     Left,
-    Right,
-    None,
+    Right
 }
 
 @Composable
@@ -94,8 +93,9 @@ internal fun PredictiveBackStateHandler(
 
     key(state) {
         state as PredictiveBackStateImpl
-        PredictiveBackHandler(enabled = enabled && state.value !is BackEventProgress.Completed) {
-            progress ->
+        PredictiveBackHandler(
+            enabled = enabled && state.value !is BackEventProgress.Completed,
+        ) { progress ->
             try {
                 progress.collect { backEvent ->
                     state.value =
@@ -106,7 +106,7 @@ internal fun PredictiveBackStateHandler(
                             when (backEvent.swipeEdge) {
                                 BackEventCompat.EDGE_LEFT -> SwipeEdge.Left
                                 BackEventCompat.EDGE_RIGHT -> SwipeEdge.Right
-                                else -> SwipeEdge.None
+                                else -> error("Unknown swipe edge")
                             },
                         )
                 }

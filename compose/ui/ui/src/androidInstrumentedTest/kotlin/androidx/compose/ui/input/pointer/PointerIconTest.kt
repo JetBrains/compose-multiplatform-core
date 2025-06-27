@@ -114,7 +114,10 @@ class PointerIconTest {
             assertThat(modifier.nameFallback).isEqualTo("pointerHoverIcon")
             assertThat(modifier.valueOverride).isNull()
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
-                .containsExactly("icon", "overrideDescendants")
+                .containsExactly(
+                    "icon",
+                    "overrideDescendants",
+                )
         }
         isDebugInspectorInfoEnabled = false
     }
@@ -496,7 +499,7 @@ class PointerIconTest {
                                 if (isVisible.value)
                                     Modifier.pointerHoverIcon(
                                         desiredParentIcon,
-                                        overrideDescendants = true,
+                                        overrideDescendants = true
                                     )
                                 else Modifier
                             )
@@ -557,7 +560,7 @@ class PointerIconTest {
                                 if (isVisible.value)
                                     Modifier.pointerHoverIcon(
                                         desiredParentIcon,
-                                        overrideDescendants = true,
+                                        overrideDescendants = true
                                     )
                                 else Modifier
                             )
@@ -630,7 +633,7 @@ class PointerIconTest {
                             .then(
                                 Modifier.pointerHoverIcon(
                                     desiredParentIcon,
-                                    overrideDescendants = parentOverrideDescendants,
+                                    overrideDescendants = parentOverrideDescendants
                                 )
                             )
                 ) {
@@ -726,7 +729,7 @@ class PointerIconTest {
                             .testTag(parentIconTag)
                             .pointerHoverIcon(
                                 desiredParentIcon,
-                                overrideDescendants = parentOverrideState.value,
+                                overrideDescendants = parentOverrideState.value
                             )
                 ) {
                     Box(
@@ -794,7 +797,7 @@ class PointerIconTest {
                                 .then(
                                     Modifier.pointerHoverIcon(
                                         desiredParentIcon,
-                                        overrideDescendants = parentOverrideDescendants,
+                                        overrideDescendants = parentOverrideDescendants
                                     )
                                 )
                     ) {
@@ -910,7 +913,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -968,7 +971,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -1382,7 +1385,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -1485,7 +1488,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -1590,7 +1593,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -1694,7 +1697,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -1800,7 +1803,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -1907,7 +1910,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -2014,7 +2017,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -2121,7 +2124,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -2230,7 +2233,7 @@ class PointerIconTest {
                                 .testTag(grandchildIconTag)
                                 .pointerHoverIcon(
                                     desiredGrandchildIcon,
-                                    overrideDescendants = false,
+                                    overrideDescendants = false
                                 )
                         )
                     }
@@ -2377,7 +2380,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -2448,7 +2451,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = true),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -2524,7 +2527,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     if (areDescendantsVisible.value) {
                         Box(
@@ -2535,9 +2538,9 @@ class PointerIconTest {
                                     .testTag(childIconTag)
                                     .pointerHoverIcon(
                                         desiredChildIcon,
-                                        overrideDescendants = false,
+                                        overrideDescendants = false
                                     ),
-                            contentAlignment = Alignment.Center,
+                            contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier =
@@ -2547,7 +2550,7 @@ class PointerIconTest {
                                         .testTag(grandchildIconTag)
                                         .pointerHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = false,
+                                            overrideDescendants = false
                                         )
                             )
                         }
@@ -2621,7 +2624,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     if (areDescendantsVisible.value) {
                         Box(
@@ -2632,9 +2635,9 @@ class PointerIconTest {
                                     .testTag(childIconTag)
                                     .pointerHoverIcon(
                                         desiredChildIcon,
-                                        overrideDescendants = false,
+                                        overrideDescendants = false
                                     ),
-                            contentAlignment = Alignment.Center,
+                            contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier =
@@ -2644,7 +2647,7 @@ class PointerIconTest {
                                         .testTag(grandchildIconTag)
                                         .pointerHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = true,
+                                            overrideDescendants = true
                                         )
                             )
                         }
@@ -2716,7 +2719,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     if (areDescendantsVisible.value) {
                         Box(
@@ -2726,7 +2729,7 @@ class PointerIconTest {
                                     .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                                     .testTag(childIconTag)
                                     .pointerHoverIcon(desiredChildIcon, overrideDescendants = true),
-                            contentAlignment = Alignment.Center,
+                            contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier =
@@ -2736,7 +2739,7 @@ class PointerIconTest {
                                         .testTag(grandchildIconTag)
                                         .pointerHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = false,
+                                            overrideDescendants = false
                                         )
                             )
                         }
@@ -2815,7 +2818,7 @@ class PointerIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .testTag(parentIconTag)
                                 .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                        contentAlignment = Alignment.Center,
+                        contentAlignment = Alignment.Center
                     ) {
                         child()
                     }
@@ -2893,7 +2896,7 @@ class PointerIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .testTag(parentIconTag)
                                 .pointerHoverIcon(desiredParentIcon, overrideDescendants = true),
-                        contentAlignment = Alignment.Center,
+                        contentAlignment = Alignment.Center
                     ) {
                         child()
                     }
@@ -2973,7 +2976,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -2983,9 +2986,9 @@ class PointerIconTest {
                                     .testTag(childIconTag)
                                     .pointerHoverIcon(
                                         desiredChildIcon,
-                                        overrideDescendants = false,
+                                        overrideDescendants = false
                                     ),
-                            contentAlignment = Alignment.Center,
+                            contentAlignment = Alignment.Center
                         ) {
                             grandchild()
                         }
@@ -3075,7 +3078,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     if (isChildVisible.value) {
                         Box(
@@ -3084,7 +3087,7 @@ class PointerIconTest {
                                     .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                     .testTag(childIconTag)
                                     .pointerHoverIcon(desiredChildIcon, overrideDescendants = true),
-                            contentAlignment = Alignment.Center,
+                            contentAlignment = Alignment.Center
                         ) {
                             grandchild()
                         }
@@ -3175,7 +3178,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(grandparentIconTag)
                             .pointerHoverIcon(desiredGrandparentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier =
@@ -3183,7 +3186,7 @@ class PointerIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                                 .testTag(parentIconTag)
                                 .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                        contentAlignment = Alignment.Center,
+                        contentAlignment = Alignment.Center
                     ) {
                         if (isChildVisible.value) {
                             Box(
@@ -3193,9 +3196,9 @@ class PointerIconTest {
                                         .testTag(childIconTag)
                                         .pointerHoverIcon(
                                             desiredChildIcon,
-                                            overrideDescendants = false,
+                                            overrideDescendants = false
                                         ),
-                                contentAlignment = Alignment.Center,
+                                contentAlignment = Alignment.Center
                             ) {
                                 grandchild()
                             }
@@ -3272,7 +3275,7 @@ class PointerIconTest {
                             .border(BorderStroke(2.dp, SolidColor(Color.Red)))
                             .testTag(parentIconTag)
                             .pointerHoverIcon(desiredParentIcon, overrideDescendants = false),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier =
@@ -3280,7 +3283,7 @@ class PointerIconTest {
                                 .border(BorderStroke(2.dp, SolidColor(Color.Black)))
                                 .testTag(childIconTag)
                                 .pointerHoverIcon(desiredChildIcon, overrideDescendants = false),
-                        contentAlignment = Alignment.Center,
+                        contentAlignment = Alignment.Center
                     ) {
                         if (isGrandchildVisible.value) {
                             Box(
@@ -3290,7 +3293,7 @@ class PointerIconTest {
                                         .testTag(grandchildIconTag)
                                         .pointerHoverIcon(
                                             desiredGrandchildIcon,
-                                            overrideDescendants = false,
+                                            overrideDescendants = false
                                         )
                             )
                         }
@@ -3380,7 +3383,7 @@ class PointerIconTest {
                                     .testTag(grandchildIconTag)
                                     .pointerHoverIcon(
                                         desiredGrandchildIcon,
-                                        overrideDescendants = false,
+                                        overrideDescendants = false
                                     )
                             )
                         }
@@ -3477,7 +3480,7 @@ class PointerIconTest {
                                     .testTag(grandchildIconTag)
                                     .pointerHoverIcon(
                                         desiredGrandchildIcon,
-                                        overrideDescendants = false,
+                                        overrideDescendants = false
                                     )
                             )
                         }
@@ -3564,7 +3567,7 @@ class PointerIconTest {
                                     .testTag(grandchildIconTag)
                                     .pointerHoverIcon(
                                         desiredGrandchildIcon,
-                                        overrideDescendants = false,
+                                        overrideDescendants = false
                                     )
                             )
                         }

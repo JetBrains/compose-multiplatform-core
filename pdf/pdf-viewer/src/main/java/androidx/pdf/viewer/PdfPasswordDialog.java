@@ -26,6 +26,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * This instance requires a {@link #getTargetFragment} to be set to give back the typed password.
+ * Currently, this target Fragment must be a {@link PdfViewer}.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressWarnings("deprecation")

@@ -82,6 +82,7 @@ public class SelectedMatchValueObserverTest {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         displayMetrics.density = 1f;
         mContext.getResources().getDisplayMetrics().setTo(displayMetrics);
+        PdfViewer.setScreenForTest(mContext);
 
         SelectedMatchValueObserver selectedMatchValueObserver = new SelectedMatchValueObserver(
                 mMockPaginatedView, mMockPageViewFactory, mMockZoomView,

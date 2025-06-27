@@ -18,6 +18,8 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
@@ -29,6 +31,7 @@ import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.common.BaseEntity;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;
@@ -39,8 +42,6 @@ import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.ReformOptions;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,7 +67,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     Optional<Executor> mPointerCaptureExecutor = Optional.empty();
     final ConcurrentHashMap<Consumer<ReformEvent>, Executor> mReformEventConsumerMap =
             new ConcurrentHashMap<>();
-    protected final EntityManager mEntityManager;
+    private final EntityManager mEntityManager;
     private ReformOptions mReformOptions;
 
     AndroidXrEntity(
@@ -81,8 +82,9 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         mEntityManager.setEntityForNode(node, (Entity) this);
     }
 
+    @NonNull
     @Override
-    public @NonNull Pose getPose(@SpaceValue int relativeTo) {
+    public Pose getPose(@SpaceValue int relativeTo) {
         switch (relativeTo) {
             case Space.PARENT:
                 return super.getPose(relativeTo);
@@ -97,6 +99,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
 
     @Override
     public void setPose(@NonNull Pose pose, @SpaceValue int relativeTo) {
+        // TODO: b/321268237 - Minimize the number of node transactions
         Pose localPose;
         switch (relativeTo) {
             case Space.PARENT:
@@ -144,8 +147,11 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     /** Returns the pose for this entity, relative to the activity space root. */
     @Override
     public Pose getPoseInActivitySpace() {
-        // This code might produce unexpected results when non-uniform scale
-        // is involved in the parent-child entity hierarchy.
+        // TODO: b/355680575 - Revisit if we need to account for parent rotation when calculating
+        // the
+        // scale. This code might produce unexpected results when non-uniform scale is involved in
+        // the
+        // parent-child entity hierarchy.
 
         // Any parentless "space" entities (such as the root and anchor entities) are expected to
         // override this method non-recursively so that this error is never thrown.
@@ -275,7 +281,6 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         }
         getNode()
                 .requestPointerCapture(
-                        executor,
                         (pcState) -> {
                             if (pcState == Node.POINTER_CAPTURE_STATE_PAUSED) {
                                 stateListener.onStateChanged(
@@ -292,7 +297,8 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                             } else {
                                 Log.e("Runtime", "Invalid state received for pointer capture");
                             }
-                        });
+                        },
+                        executor);
 
         addPointerCaptureInputListener(executor, eventListener);
         return true;
@@ -308,7 +314,6 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     private void maybeSetupInputListeners() {
         if (mInputEventListenerMap.isEmpty() && mPointerCaptureInputEventListener.isEmpty()) {
             mNode.listenForInput(
-                    mExecutor,
                     (xrInputEvent) -> {
                         if (xrInputEvent.getDispatchFlags()
                                 == InputEvent.DISPATCH_FLAG_CAPTURED_POINTER) {
@@ -333,7 +338,8 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                                                                             xrInputEvent,
                                                                             mEntityManager))));
                         }
-                    });
+                    },
+                    mExecutor);
         }
     }
 
@@ -412,7 +418,7 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
                                         consumerExecutor.execute(
                                                 () -> eventConsumer.accept(reformEvent)));
                     };
-            mReformOptions = mExtensions.createReformOptions(mExecutor, reformEventConsumer);
+            mReformOptions = mExtensions.createReformOptions(reformEventConsumer, mExecutor);
         }
         return mReformOptions;
     }
@@ -445,7 +451,8 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
     }
 
     @Override
-    public @NonNull ListenableFuture<HitTestResult> hitTest(
+    @NonNull
+    public ListenableFuture<HitTestResult> hitTest(
             @NonNull Vector3 origin,
             @NonNull Vector3 direction,
             @HitTestFilterValue int hitTestFilter) {

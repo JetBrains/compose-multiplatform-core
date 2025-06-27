@@ -33,6 +33,7 @@ dependencies {
     testImplementation(libs.truth)
 }
 android {
+    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.enterprise.feedback.testing"
 }
 androidx {

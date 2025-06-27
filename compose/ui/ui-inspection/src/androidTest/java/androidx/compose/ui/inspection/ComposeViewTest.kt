@@ -75,7 +75,7 @@ class ComposeViewTest {
 
     private fun Iterable<ComposableNode>.findNode(
         name: String,
-        strings: Map<Int, String>,
+        strings: Map<Int, String>
     ): ComposableNode? = flatMap { it.flatten() }.singleOrNull { strings[it.name] == name }
 
     private val ComposableNode.textParameter: String?
@@ -86,12 +86,12 @@ class ComposeViewTest {
                         GetParametersByIdCommand(
                             rule.rootId,
                             skipSystemComposables = false,
-                            composableId = id,
+                            composableId = id
                         )
                     )
                     .getParametersResponse
             val strings = params.stringsList.toMap()
-            val param = params.parameterGroup.parameterList.single { strings[it.name] == "text" }
+            val param = params.parameterGroup.parameterList.single { strings[it.name] == "$0" }
             strings[param.int32Value]
         }
 }

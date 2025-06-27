@@ -23,7 +23,6 @@ import androidx.datastore.core.StorageConnection
 import androidx.datastore.core.WriteScope
 import androidx.datastore.core.createSingleProcessCoordinator
 import androidx.datastore.core.use
-import androidx.datastore.core.wrapExceptionIfDueToDirectBoot
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import okio.FileNotFoundException
@@ -49,7 +48,7 @@ public class OkioStorage<T>(
     private val coordinatorProducer: (Path, FileSystem) -> InterProcessCoordinator = { path, _ ->
         createSingleProcessCoordinator(path)
     },
-    private val producePath: () -> Path,
+    private val producePath: () -> Path
 ) : Storage<T> {
     private val canonicalPath by lazy {
         val path = producePath()
@@ -76,7 +75,7 @@ public class OkioStorage<T>(
             fileSystem,
             canonicalPath,
             serializer,
-            coordinatorProducer(canonicalPath, fileSystem),
+            coordinatorProducer(canonicalPath, fileSystem)
         ) {
             activeFilesLock.withLock { activeFiles.remove(canonicalPath.toString()) }
         }
@@ -93,7 +92,7 @@ internal class OkioStorageConnection<T>(
     private val path: Path,
     private val serializer: OkioSerializer<T>,
     override val coordinator: InterProcessCoordinator,
-    private val onClose: () -> Unit,
+    private val onClose: () -> Unit
 ) : StorageConnection<T> {
 
     private val closed = AtomicBoolean(false)
@@ -156,7 +155,7 @@ internal class OkioStorageConnection<T>(
 internal open class OkioReadScope<T>(
     protected val fileSystem: FileSystem,
     protected val path: Path,
-    protected val serializer: OkioSerializer<T>,
+    protected val serializer: OkioSerializer<T>
 ) : ReadScope<T> {
 
     private val closed = AtomicBoolean(false)
@@ -171,16 +170,7 @@ internal open class OkioReadScope<T>(
                 // Attempt a second read in case a race condition resulted in the file being created
                 // by a different process. If we can't read again, a FileNotFoundException is
                 // thrown.
-                try {
-                    fileSystem.read(file = path) { serializer.readFrom(this) }
-                } catch (e: Exception) {
-                    throw if (e is FileNotFoundException) {
-                        wrapExceptionIfDueToDirectBoot(
-                            parentDirPath = path.parent.toString(),
-                            exception = e,
-                        )
-                    } else e
-                }
+                fileSystem.read(file = path) { serializer.readFrom(this) }
             } else {
                 // File does not exist, return default value.
                 serializer.defaultValue
@@ -200,26 +190,17 @@ internal open class OkioReadScope<T>(
 internal class OkioWriteScope<T>(
     fileSystem: FileSystem,
     path: Path,
-    serializer: OkioSerializer<T>,
+    serializer: OkioSerializer<T>
 ) : OkioReadScope<T>(fileSystem, path, serializer), WriteScope<T> {
 
     override suspend fun writeData(value: T) {
         checkClose()
-        try {
-            val fileHandle = fileSystem.openReadWrite(path)
-            fileHandle.use { handle ->
-                handle.sink().buffer().use { sink ->
-                    serializer.writeTo(value, sink)
-                    handle.flush()
-                }
+        val fileHandle = fileSystem.openReadWrite(path)
+        fileHandle.use { handle ->
+            handle.sink().buffer().use { sink ->
+                serializer.writeTo(value, sink)
+                handle.flush()
             }
-        } catch (e: Exception) {
-            throw if (e is FileNotFoundException) {
-                wrapExceptionIfDueToDirectBoot(
-                    parentDirPath = path.parent.toString(),
-                    exception = e,
-                )
-            } else e
         }
     }
 }

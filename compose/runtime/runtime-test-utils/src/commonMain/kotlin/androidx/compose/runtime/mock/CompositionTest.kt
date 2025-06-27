@@ -25,7 +25,7 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.tooling.CompositionObserver
 import androidx.compose.runtime.tooling.CompositionObserverHandle
-import androidx.compose.runtime.tooling.setObserver
+import androidx.compose.runtime.tooling.observe
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
@@ -36,7 +36,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 
 @OptIn(InternalComposeApi::class, ExperimentalCoroutinesApi::class)
-fun compositionTest(block: suspend CompositionTestScope.() -> Unit) = runTest {
+fun compositionTest(
+    block: suspend CompositionTestScope.() -> Unit,
+) = runTest {
     withContext(TestMonotonicFrameClock(this)) {
         // Start the recomposer
         val recomposer = Recomposer(coroutineContext)
@@ -66,13 +68,13 @@ fun compositionTest(block: suspend CompositionTestScope.() -> Unit) = runTest {
                 @OptIn(ExperimentalComposeRuntimeApi::class)
                 override fun compose(
                     observer: CompositionObserver,
-                    block: @Composable () -> Unit,
+                    block: @Composable () -> Unit
                 ): CompositionObserverHandle? {
                     check(!composed) { "Compose should only be called once" }
                     composed = true
                     root = View().apply { name = "root" }
                     val composition = Composition(ViewApplier(root), recomposer)
-                    val result = composition.setObserver(observer)
+                    val result = composition.observe(observer)
                     this.composition = composition
                     composition.setContent(block)
                     return result
@@ -129,7 +131,7 @@ interface CompositionTestScope : CoroutineScope {
     @OptIn(ExperimentalComposeRuntimeApi::class)
     fun compose(
         observer: CompositionObserver,
-        block: @Composable () -> Unit,
+        block: @Composable () -> Unit
     ): CompositionObserverHandle?
 
     /**

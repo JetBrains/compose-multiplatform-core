@@ -17,11 +17,8 @@
 package androidx.compose.foundation.text
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.Default
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 import androidx.compose.foundation.text.input.TextFieldBuffer
@@ -113,8 +110,6 @@ import kotlinx.coroutines.flow.consumeAsFlow
  * @param textObfuscationMode Determines the method used to obscure the input text.
  * @param textObfuscationCharacter Which character to use while obfuscating the text. It doesn't
  *   have an effect when [textObfuscationMode] is set to [TextObfuscationMode.Visible].
- * @param scrollState The scroll state of the text field. Since [BasicSecureTextField] is always
- *   single line, this scroll state always controls a horizontal scroll.
  */
 // This takes a composable lambda, but it is not primarily a container.
 @Suppress("ComposableLambdaParameterPosition")
@@ -134,9 +129,8 @@ fun BasicSecureTextField(
     decorator: TextFieldDecorator? = null,
     // Last parameter must not be a function unless it's intended to be commonly used as a trailing
     // lambda.
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.Default,
+    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
     textObfuscationCharacter: Char = DefaultObfuscationCharacter,
-    scrollState: ScrollState = rememberScrollState(),
 ) {
     val obfuscationMaskState = rememberUpdatedState(textObfuscationCharacter)
     val secureTextFieldController = remember { SecureTextFieldController(obfuscationMaskState) }
@@ -148,9 +142,7 @@ fun BasicSecureTextField(
     // revealing last typed character depends on two conditions;
     // 1 - Requested Obfuscation method
     // 2 - if the system allows it
-    val revealLastTypedEnabled =
-        textObfuscationMode == TextObfuscationMode.RevealLastTyped &&
-            platformAllowsRevealLastTyped()
+    val revealLastTypedEnabled = textObfuscationMode == TextObfuscationMode.RevealLastTyped
 
     // while toggling between obfuscation methods if the revealing gets disabled, reset the reveal.
     LaunchedEffect(revealLastTypedEnabled) {
@@ -209,7 +201,6 @@ fun BasicSecureTextField(
             codepointTransformation = codepointTransformation,
             decorator = decorator,
             isPassword = true,
-            scrollState = scrollState,
         )
     }
 }
@@ -320,7 +311,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
                     onPasteRequested: (() -> Unit)?,
                     onCutRequested: (() -> Unit)?,
                     onSelectAllRequested: (() -> Unit)?,
-                    onAutofillRequested: (() -> Unit)?,
+                    onAutofillRequested: (() -> Unit)?
                 ) {
                     currentToolbar.showMenu(
                         rect = rect,
@@ -328,7 +319,7 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
                         onSelectAllRequested = onSelectAllRequested,
                         onCopyRequested = null,
                         onCutRequested = null,
-                        onAutofillRequested = onAutofillRequested,
+                        onAutofillRequested = onAutofillRequested
                     )
                 }
             }
@@ -336,12 +327,9 @@ private fun DisableCutCopy(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalTextToolbar provides copyDisabledToolbar, content)
 }
 
-/** Whether the underlying platform allows the reveal last typed behavior. */
-@Composable internal expect fun platformAllowsRevealLastTyped(): Boolean
-
 @Deprecated(
     message = "Please use the overload that takes in readOnly parameter.",
-    level = DeprecationLevel.HIDDEN,
+    level = DeprecationLevel.HIDDEN
 )
 @Suppress("ComposableLambdaParameterPosition")
 @Composable
@@ -376,49 +364,6 @@ fun BasicSecureTextField(
         cursorBrush = cursorBrush,
         decorator = decorator,
         textObfuscationMode = textObfuscationMode,
-        textObfuscationCharacter = textObfuscationCharacter,
-    )
-}
-
-@Deprecated(
-    message = "Please use the overload that takes in scrollState parameter.",
-    level = DeprecationLevel.HIDDEN,
-)
-@Suppress("ComposableLambdaParameterPosition")
-@Composable
-fun BasicSecureTextField(
-    state: TextFieldState,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    readOnly: Boolean = false,
-    inputTransformation: InputTransformation? = null,
-    textStyle: TextStyle = TextStyle.Default,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.SecureTextField,
-    onKeyboardAction: KeyboardActionHandler? = null,
-    onTextLayout: (Density.(getResult: () -> TextLayoutResult?) -> Unit)? = null,
-    interactionSource: MutableInteractionSource? = null,
-    cursorBrush: Brush = SolidColor(Color.Black),
-    decorator: TextFieldDecorator? = null,
-    // Last parameter must not be a function unless it's intended to be commonly used as a trailing
-    // lambda.
-    textObfuscationMode: TextObfuscationMode = TextObfuscationMode.RevealLastTyped,
-    textObfuscationCharacter: Char = DefaultObfuscationCharacter,
-) {
-    BasicSecureTextField(
-        state = state,
-        modifier = modifier,
-        enabled = enabled,
-        readOnly = false,
-        inputTransformation = inputTransformation,
-        textStyle = textStyle,
-        keyboardOptions = keyboardOptions,
-        onKeyboardAction = onKeyboardAction,
-        onTextLayout = onTextLayout,
-        interactionSource = interactionSource,
-        cursorBrush = cursorBrush,
-        decorator = decorator,
-        textObfuscationMode = textObfuscationMode,
-        textObfuscationCharacter = textObfuscationCharacter,
-        scrollState = rememberScrollState(),
+        textObfuscationCharacter = textObfuscationCharacter
     )
 }

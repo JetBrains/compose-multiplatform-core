@@ -29,8 +29,7 @@ import androidx.sqlite.db.SupportSQLiteStatement
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 @Deprecated("No longer used by generated code.", ReplaceWith("EntityInsertAdapter"))
-public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
-    SharedSQLiteStatement(database) {
+abstract class EntityInsertionAdapter<T>(database: RoomDatabase) : SharedSQLiteStatement(database) {
     /**
      * Binds the entity into the given statement.
      *
@@ -45,7 +44,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      *
      * @param entity The entity to insert
      */
-    public fun insert(entity: T) {
+    fun insert(entity: T) {
         val stmt: SupportSQLiteStatement = acquire()
         try {
             bind(stmt, entity)
@@ -60,7 +59,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      *
      * @param entities Entities to insert
      */
-    public fun insert(entities: Array<out T>) {
+    fun insert(entities: Array<out T>) {
         val stmt: SupportSQLiteStatement = acquire()
         try {
             entities.forEach { entity ->
@@ -77,7 +76,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      *
      * @param entities Entities to insert
      */
-    public fun insert(entities: Iterable<T>) {
+    fun insert(entities: Iterable<T>) {
         val stmt: SupportSQLiteStatement = acquire()
         try {
             entities.forEach { entity ->
@@ -95,7 +94,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      * @param entity The entity to insert
      * @return The SQLite row id or -1 if no row is inserted
      */
-    public fun insertAndReturnId(entity: T): Long {
+    fun insertAndReturnId(entity: T): Long {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             bind(stmt, entity)
@@ -111,7 +110,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArray(entities: Collection<T>): LongArray {
+    fun insertAndReturnIdsArray(entities: Collection<T>): LongArray {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             val result = LongArray(entities.size)
@@ -131,7 +130,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArray(entities: Array<out T>): LongArray {
+    fun insertAndReturnIdsArray(entities: Array<out T>): LongArray {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             val result = LongArray(entities.size)
@@ -151,7 +150,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArrayBox(entities: Collection<T>): Array<out Long> {
+    fun insertAndReturnIdsArrayBox(entities: Collection<T>): Array<out Long> {
         val stmt: SupportSQLiteStatement = acquire()
         val iterator = entities.iterator()
         return try {
@@ -173,7 +172,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArrayBox(entities: Array<out T>): Array<out Long> {
+    fun insertAndReturnIdsArrayBox(entities: Array<out T>): Array<out Long> {
         val stmt: SupportSQLiteStatement = acquire()
         val iterator = entities.iterator()
         return try {
@@ -195,7 +194,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsList(entities: Array<out T>): List<Long> {
+    fun insertAndReturnIdsList(entities: Array<out T>): List<Long> {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             buildList {
@@ -215,7 +214,7 @@ public abstract class EntityInsertionAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsList(entities: Collection<T>): List<Long> {
+    fun insertAndReturnIdsList(entities: Collection<T>): List<Long> {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             buildList {

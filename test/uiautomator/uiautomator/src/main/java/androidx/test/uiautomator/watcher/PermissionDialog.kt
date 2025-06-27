@@ -17,8 +17,8 @@
 package androidx.test.uiautomator.watcher
 
 import androidx.test.uiautomator.internal.uiDevice
-import androidx.test.uiautomator.onElement
-import androidx.test.uiautomator.onElementOrNull
+import androidx.test.uiautomator.onView
+import androidx.test.uiautomator.onViewOrNull
 
 /** Allows easy interaction with the permission dialog. */
 public object PermissionDialog : ScopedUiWatcher<PermissionDialog.Scope> {
@@ -35,16 +35,16 @@ public object PermissionDialog : ScopedUiWatcher<PermissionDialog.Scope> {
         "com.android.permissioncontroller:id/permission_allow_button"
 
     public override fun isVisible(): Boolean =
-        uiDevice.onElementOrNull(0) { packageName == PACKAGE_NAME } != null
+        uiDevice.onViewOrNull(0) { packageName == PACKAGE_NAME } != null
 
     override fun scope(): Scope = Scope
 
     public object Scope {
 
         public fun clickAllow(): Unit =
-            uiDevice.onElement { viewIdResourceName == VIEW_ID_RESOURCE_NAME_BUTTON_ALLOW }.click()
+            uiDevice.onView { viewIdResourceName == VIEW_ID_RESOURCE_NAME_BUTTON_ALLOW }.click()
 
         public fun clickDeny(): Unit =
-            uiDevice.onElement { viewIdResourceName == VIEW_ID_RESOURCE_NAME_BUTTON_DENY }.click()
+            uiDevice.onView { viewIdResourceName == VIEW_ID_RESOURCE_NAME_BUTTON_DENY }.click()
     }
 }

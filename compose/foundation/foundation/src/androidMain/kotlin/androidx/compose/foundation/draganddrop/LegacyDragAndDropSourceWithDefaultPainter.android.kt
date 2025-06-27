@@ -43,11 +43,14 @@ import androidx.compose.ui.platform.InspectorInfo
     message =
         "Replaced by overload with a callback for obtain a transfer data," +
             "start detection is performed by Compose itself",
-    replaceWith = ReplaceWith("Modifier.dragAndDropSource(transferData)"),
+    replaceWith = ReplaceWith("Modifier.dragAndDropSource(transferData)")
 )
 @ExperimentalFoundationApi
 fun Modifier.dragAndDropSource(block: suspend DragAndDropSourceScope.() -> Unit): Modifier =
-    this then LegacyDragAndDropSourceWithDefaultShadowElement(dragAndDropSourceHandler = block)
+    this then
+        LegacyDragAndDropSourceWithDefaultShadowElement(
+            dragAndDropSourceHandler = block,
+        )
 
 @ExperimentalFoundationApi
 private class LegacyDragAndDropSourceWithDefaultShadowElement(
@@ -55,7 +58,9 @@ private class LegacyDragAndDropSourceWithDefaultShadowElement(
     val dragAndDropSourceHandler: suspend DragAndDropSourceScope.() -> Unit
 ) : ModifierNodeElement<LegacyDragSourceNodeWithDefaultPainter>() {
     override fun create() =
-        LegacyDragSourceNodeWithDefaultPainter(dragAndDropSourceHandler = dragAndDropSourceHandler)
+        LegacyDragSourceNodeWithDefaultPainter(
+            dragAndDropSourceHandler = dragAndDropSourceHandler,
+        )
 
     override fun update(node: LegacyDragSourceNodeWithDefaultPainter) =
         with(node) {
@@ -93,7 +98,7 @@ private class LegacyDragSourceNodeWithDefaultPainter(
         delegate(
             LegacyDragAndDropSourceNode(
                 drawDragDecoration = { cacheDrawScopeDragShadowCallback.drawDragShadow(this) },
-                dragAndDropSourceHandler = { dragAndDropSourceHandler.invoke(this) },
+                dragAndDropSourceHandler = { dragAndDropSourceHandler.invoke(this) }
             )
         )
     }

@@ -18,15 +18,14 @@ package androidx.xr.scenecore.impl;
 
 import android.media.AudioTrack;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.AudioTrackExtensionsWrapper;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.PointSourceParams;
 import androidx.xr.runtime.internal.SoundFieldAttributes;
 
 import com.android.extensions.xr.media.AudioTrackExtensions;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /** Implementation of the {@link AudioTrackExtensionsWrapper} */
 final class AudioTrackExtensionsWrapperImpl implements AudioTrackExtensionsWrapper {
@@ -39,8 +38,9 @@ final class AudioTrackExtensionsWrapperImpl implements AudioTrackExtensionsWrapp
         mEntityManager = entityManager;
     }
 
+    @Nullable
     @Override
-    public @Nullable PointSourceParams getPointSourceParams(@NonNull AudioTrack audioTrack) {
+    public PointSourceParams getPointSourceParams(@NonNull AudioTrack audioTrack) {
         com.android.extensions.xr.media.PointSourceParams extParams =
                 mExtensions.getPointSourceParams(audioTrack);
 
@@ -57,8 +57,9 @@ final class AudioTrackExtensionsWrapperImpl implements AudioTrackExtensionsWrapp
         return new PointSourceParams(entity);
     }
 
+    @Nullable
     @Override
-    public @Nullable SoundFieldAttributes getSoundFieldAttributes(@NonNull AudioTrack audioTrack) {
+    public SoundFieldAttributes getSoundFieldAttributes(@NonNull AudioTrack audioTrack) {
         com.android.extensions.xr.media.SoundFieldAttributes extAttributes =
                 mExtensions.getSoundFieldAttributes(audioTrack);
 
@@ -84,8 +85,9 @@ final class AudioTrackExtensionsWrapperImpl implements AudioTrackExtensionsWrapp
     }
 
     @Override
-    public AudioTrack.@NonNull Builder setPointSourceParams(
-            AudioTrack.@NonNull Builder builder, @NonNull PointSourceParams params) {
+    @NonNull
+    public AudioTrack.Builder setPointSourceParams(
+            @NonNull AudioTrack.Builder builder, @NonNull PointSourceParams params) {
         com.android.extensions.xr.media.PointSourceParams extParams =
                 MediaUtils.convertPointSourceParamsToExtensions(params);
 
@@ -93,8 +95,9 @@ final class AudioTrackExtensionsWrapperImpl implements AudioTrackExtensionsWrapp
     }
 
     @Override
-    public AudioTrack.@NonNull Builder setSoundFieldAttributes(
-            AudioTrack.@NonNull Builder builder, @NonNull SoundFieldAttributes attributes) {
+    @NonNull
+    public AudioTrack.Builder setSoundFieldAttributes(
+            @NonNull AudioTrack.Builder builder, @NonNull SoundFieldAttributes attributes) {
         com.android.extensions.xr.media.SoundFieldAttributes extAttributes =
                 MediaUtils.convertSoundFieldAttributesToExtensions(attributes);
 

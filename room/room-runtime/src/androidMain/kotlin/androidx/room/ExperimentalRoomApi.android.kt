@@ -20,4 +20,4 @@ package androidx.room
 @Suppress("UnsafeOptInUsageError")
 @RequiresOptIn
 @Retention(AnnotationRetention.BINARY)
-public annotation class ExperimentalRoomApi
+annotation class ExperimentalRoomApi

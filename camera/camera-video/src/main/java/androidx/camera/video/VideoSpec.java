@@ -37,12 +37,13 @@ import java.util.Arrays;
 public abstract class VideoSpec {
 
     /**
-     * Frame rate representing no preference for encode frame rate.
+     * Frame rate range representing no preference for frame rate.
      *
-     * <p>Using this value with {@link Builder#setEncodeFrameRate(int)} informs the encoder should
-     * follow the incoming frame rate, i.e. capturing frame rate.
+     * <p>Using this value with {@link Builder#setFrameRate(Range)} informs the video frame producer
+     * it should choose any appropriate frame rate given the device and codec constraints.
      */
-    public static final int ENCODE_FRAME_RATE_AUTO = 0;
+    public static final @NonNull Range<Integer> FRAME_RATE_RANGE_AUTO = new Range<>(0,
+            Integer.MAX_VALUE);
 
     /**
      * Bitrate range representing no preference for bitrate.
@@ -71,7 +72,7 @@ public abstract class VideoSpec {
     public static @NonNull Builder builder() {
         return new AutoValue_VideoSpec.Builder()
                 .setQualitySelector(QUALITY_SELECTOR_AUTO)
-                .setEncodeFrameRate(ENCODE_FRAME_RATE_AUTO)
+                .setFrameRate(FRAME_RATE_RANGE_AUTO)
                 .setBitrate(BITRATE_RANGE_AUTO)
                 .setAspectRatio(AspectRatio.RATIO_DEFAULT);
     }
@@ -79,8 +80,8 @@ public abstract class VideoSpec {
     /** Gets the {@link QualitySelector}. */
     public abstract @NonNull QualitySelector getQualitySelector();
 
-    /** Gets the encode frame rate. */
-    public abstract int getEncodeFrameRate();
+    /** Gets the frame rate. */
+    public abstract @NonNull Range<Integer> getFrameRate();
 
     /** Gets the bitrate. */
     public abstract @NonNull Range<Integer> getBitrate();
@@ -110,7 +111,7 @@ public abstract class VideoSpec {
          *
          * <p>Video encoding parameters such as frame rate and bitrate will often be automatically
          * determined according to quality. If video parameters are not set directly (such as
-         * through {@link #setBitrate(Range)}, the device will choose values calibrated for the
+         * through {@link #setFrameRate(Range)}, the device will choose values calibrated for the
          * quality on that device.
          *
          * <p>If not set, defaults to {@link #QUALITY_SELECTOR_AUTO}.
@@ -119,11 +120,11 @@ public abstract class VideoSpec {
                 @NonNull QualitySelector qualitySelector);
 
         /**
-         * Sets the encode frame rate.
+         * Sets the frame rate.
          *
-         * <p>If not set, defaults to {@link #ENCODE_FRAME_RATE_AUTO}.
+         * <p>If not set, defaults to {@link #FRAME_RATE_RANGE_AUTO}.
          */
-        public abstract @NonNull Builder setEncodeFrameRate(int frameRate);
+        public abstract @NonNull Builder setFrameRate(@NonNull Range<Integer> frameRate);
 
         /**
          * Sets the bitrate.

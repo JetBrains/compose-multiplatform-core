@@ -74,9 +74,7 @@ class SurfaceViewImplementationTest {
 
     @After
     fun tearDown() {
-        if (::mSurfaceRequest.isInitialized) {
-            mSurfaceRequest.deferrableSurface.close()
-        }
+        mSurfaceRequest.deferrableSurface.close()
     }
 
     @Test
@@ -163,7 +161,7 @@ class SurfaceViewImplementationTest {
 
     private fun SurfaceViewImplementation.testSurfaceRequest(
         surfaceRequest: SurfaceRequest,
-        listener: OnSurfaceNotInUseListener? = null,
+        listener: OnSurfaceNotInUseListener? = null
     ) {
         mInstrumentation.runOnMainSync { onSurfaceRequested(surfaceRequest, listener) }
 

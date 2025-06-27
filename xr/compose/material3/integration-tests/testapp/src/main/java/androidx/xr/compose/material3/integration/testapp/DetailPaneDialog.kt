@@ -65,14 +65,13 @@ private fun MaterialAlertDialog() {
     DialogWithShowButton("Material Alert Dialog") { showDialog ->
         AlertDialog(
             onDismissRequest = { showDialog.value = false },
-            title = { Text("AlertDialog") },
             text = { Text("This is a Material AlertDialog") },
             confirmButton = {
                 Button(
                     onClick = {
                         Toast.makeText(context, "Confirm button clicked", Toast.LENGTH_LONG).show()
                         showDialog.value = false
-                    }
+                    },
                 ) {
                     Text("Confirm")
                 }

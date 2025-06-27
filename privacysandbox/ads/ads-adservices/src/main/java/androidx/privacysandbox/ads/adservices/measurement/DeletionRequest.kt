@@ -54,14 +54,14 @@ import java.time.Instant
  *   https://example.com}, {@code https://b.example.com} and {@code https://abcexample.com} will NOT
  *   match. A null or empty list will match everything.
  */
-@RequiresApi(Build.VERSION_CODES.O)
-public class DeletionRequest(
-    @DeletionMode public val deletionMode: Int,
-    @MatchBehavior public val matchBehavior: Int,
-    public val start: Instant = Instant.MIN,
-    public val end: Instant = Instant.MAX,
-    public val domainUris: List<Uri> = emptyList(),
-    public val originUris: List<Uri> = emptyList(),
+@RequiresApi(android.os.Build.VERSION_CODES.O)
+class DeletionRequest(
+    @DeletionMode val deletionMode: Int,
+    @MatchBehavior val matchBehavior: Int,
+    val start: Instant = Instant.MIN,
+    val end: Instant = Instant.MAX,
+    val domainUris: List<Uri> = emptyList(),
+    val originUris: List<Uri> = emptyList(),
 ) {
 
     override fun hashCode(): Int {
@@ -111,34 +111,34 @@ public class DeletionRequest(
             .build()
     }
 
-    public companion object {
+    companion object {
         /** Deletion mode to delete all data associated with the selected records. */
-        public const val DELETION_MODE_ALL: Int = 0
+        public const val DELETION_MODE_ALL = 0
 
         /**
          * Deletion mode to delete all data except the internal data (e.g. rate limits) for the
          * selected records.
          */
-        public const val DELETION_MODE_EXCLUDE_INTERNAL_DATA: Int = 1
+        public const val DELETION_MODE_EXCLUDE_INTERNAL_DATA = 1
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(DELETION_MODE_ALL, DELETION_MODE_EXCLUDE_INTERNAL_DATA)
-        public annotation class DeletionMode
+        annotation class DeletionMode
 
         /** Match behavior option to delete the supplied params (Origin/Domains). */
-        public const val MATCH_BEHAVIOR_DELETE: Int = 0
+        public const val MATCH_BEHAVIOR_DELETE = 0
 
         /**
          * Match behavior option to preserve the supplied params (Origin/Domains) and delete
          * everything else.
          */
-        public const val MATCH_BEHAVIOR_PRESERVE: Int = 1
+        public const val MATCH_BEHAVIOR_PRESERVE = 1
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(MATCH_BEHAVIOR_DELETE, MATCH_BEHAVIOR_PRESERVE)
-        public annotation class MatchBehavior
+        annotation class MatchBehavior
     }
 
     /**
@@ -154,11 +154,11 @@ public class DeletionRequest(
      *   option will preserve the data associated with the supplied params (Origin URIs & Domain
      *   URIs) and select remaining records for deletion.
      */
-    @RequiresApi(Build.VERSION_CODES.O)
+    @RequiresApi(android.os.Build.VERSION_CODES.O)
     public class Builder
     constructor(
         @DeletionMode private val deletionMode: Int,
-        @MatchBehavior private val matchBehavior: Int,
+        @MatchBehavior private val matchBehavior: Int
     ) {
         private var start: Instant = Instant.MIN
         private var end: Instant = Instant.MAX
@@ -170,14 +170,14 @@ public class DeletionRequest(
          * java.time.Instant#MIN} will cause everything from the oldest record to the specified end
          * be deleted.
          */
-        public fun setStart(start: Instant): Builder = apply { this.start = start }
+        fun setStart(start: Instant): Builder = apply { this.start = start }
 
         /**
          * Sets the end of the deletion range. Not setting this or passing in {@link
          * java.time.Instant#MAX} will cause everything from the specified start until the newest
          * record to be deleted.
          */
-        public fun setEnd(end: Instant): Builder = apply { this.end = end }
+        fun setEnd(end: Instant): Builder = apply { this.end = end }
 
         /**
          * Set the list of domain URI which will be used for matching. These will be matched with
@@ -186,9 +186,7 @@ public class DeletionRequest(
          * {@code https://b.example.com} will match; {@code https://abcexample.com} will NOT match.
          * A null or empty list will match everything.
          */
-        public fun setDomainUris(domainUris: List<Uri>): Builder = apply {
-            this.domainUris = domainUris
-        }
+        fun setDomainUris(domainUris: List<Uri>): Builder = apply { this.domainUris = domainUris }
 
         /**
          * Set the list of origin URI which will be used for matching. These will be matched with
@@ -197,12 +195,10 @@ public class DeletionRequest(
          * https://example.com}, {@code https://b.example.com} and {@code https://abcexample.com}
          * will NOT match. A null or empty list will match everything.
          */
-        public fun setOriginUris(originUris: List<Uri>): Builder = apply {
-            this.originUris = originUris
-        }
+        fun setOriginUris(originUris: List<Uri>): Builder = apply { this.originUris = originUris }
 
         /** Builds a {@link DeletionRequest} instance. */
-        public fun build(): DeletionRequest {
+        fun build(): DeletionRequest {
             return DeletionRequest(deletionMode, matchBehavior, start, end, domainUris, originUris)
         }
     }

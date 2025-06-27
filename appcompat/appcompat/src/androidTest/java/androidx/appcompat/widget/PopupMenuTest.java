@@ -125,7 +125,6 @@ public class PopupMenuTest {
         }
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testBasicContent() throws Throwable {
         final Builder menuBuilder = new Builder();
@@ -346,7 +345,6 @@ public class PopupMenuTest {
                 popupOnScreenXY[1], 1);
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testDismissalViaAPI() throws Throwable {
         Builder menuBuilder = new Builder().withDismissListener();
@@ -370,7 +368,6 @@ public class PopupMenuTest {
         onView(withClassName(Matchers.is(DROP_DOWN_CLASS_NAME))).check(doesNotExist());
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testDismissalViaTouch() throws Throwable {
         Builder menuBuilder = new Builder().withDismissListener();
@@ -426,7 +423,6 @@ public class PopupMenuTest {
         onView(withClassName(Matchers.is(DROP_DOWN_CLASS_NAME))).check(doesNotExist());
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testSimpleMenuItemClickViaEvent() {
         Builder menuBuilder = new Builder().withMenuItemClickListener();
@@ -449,7 +445,6 @@ public class PopupMenuTest {
         onView(withClassName(Matchers.is(DROP_DOWN_CLASS_NAME))).check(doesNotExist());
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testSimpleMenuItemClickViaAPI() throws Throwable {
         Builder menuBuilder = new Builder().withMenuItemClickListener();
@@ -475,7 +470,6 @@ public class PopupMenuTest {
         onView(withClassName(Matchers.is(DROP_DOWN_CLASS_NAME))).check(doesNotExist());
     }
 
-    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     public void testSubMenuClicksViaEvent() throws Throwable {
         Builder menuBuilder = new Builder().withMenuItemClickListener();
@@ -606,9 +600,7 @@ public class PopupMenuTest {
         onView(withClassName(Matchers.is(DROP_DOWN_CLASS_NAME))).check(doesNotExist());
     }
 
-    // minSdkVersion as touch mode hides selection prior to SDK 26.
-    // maxSdkVersion due to b/427246833
-    @SdkSuppress(minSdkVersion = 26, maxSdkVersion = 34)
+    @SdkSuppress(minSdkVersion = 26) // Touch mode hides selection prior to SDK 26.
     @Test
     public void testHoverSelectsMenuItem() throws Throwable {
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();

@@ -89,13 +89,7 @@ private constructor(
         }
     }
 
-    /**
-     * Fills this [MutableParallelogram] with the same values contained in [input].
-     *
-     * Returns the modified instance to allow chaining calls.
-     *
-     * @return `this`
-     */
+    /** Fills this [MutableParallelogram] with the same values contained in [input]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun populateFrom(input: Parallelogram): MutableParallelogram {
         center.x = input.center.x

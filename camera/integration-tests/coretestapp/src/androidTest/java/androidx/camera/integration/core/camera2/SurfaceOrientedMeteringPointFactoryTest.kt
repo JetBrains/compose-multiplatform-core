@@ -20,6 +20,7 @@ import android.util.Rational
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.MeteringPointFactory
@@ -33,6 +34,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
 import java.util.concurrent.TimeUnit
 import org.junit.After
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,7 +46,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class SurfaceOrientedMeteringPointFactoryTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig,
+    private val cameraConfig: CameraXConfig
 ) {
     @get:Rule
     val cameraRule =
@@ -112,8 +114,10 @@ class SurfaceOrientedMeteringPointFactoryTest(
 
     @Test
     fun createPointWithFoVUseCase_success() {
-        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
         val imageAnalysis = ImageAnalysis.Builder().setTargetName("ImageAnalysis").build()
+        val cameraSelector =
+            CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
         val camera =
             CameraUtil.createCameraAndAttachUseCase(context!!, cameraSelector, imageAnalysis)
         val surfaceResolution = imageAnalysis.attachedSurfaceResolution
@@ -131,6 +135,7 @@ class SurfaceOrientedMeteringPointFactoryTest(
     @Suppress("DEPRECATION") // test for legacy resolution API
     @Test(expected = IllegalStateException::class)
     fun createPointWithFoVUseCase_FailedNotBound() {
+        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
         val imageAnalysis =
             ImageAnalysis.Builder()
                 .setTargetAspectRatio(AspectRatio.RATIO_4_3)
@@ -150,7 +155,7 @@ class SurfaceOrientedMeteringPointFactoryTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
             )
     }
 }

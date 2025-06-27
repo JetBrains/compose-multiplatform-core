@@ -24,7 +24,7 @@ import androidx.annotation.RestrictTo
  * [WorkManager] (see [WorkManager.initialize] and specifying a new WorkerFactory in
  * [Configuration.Builder.setWorkerFactory].
  */
-public abstract class WorkerFactory {
+abstract class WorkerFactory {
     /**
      * Override this method to implement your custom worker-creation logic. Use
      * [Configuration.Builder.setWorkerFactory] to use your custom class.
@@ -43,10 +43,10 @@ public abstract class WorkerFactory {
      * @return A new [ListenableWorker] instance of type `workerClassName`, or `null` if the worker
      *   could not be created
      */
-    public abstract fun createWorker(
+    abstract fun createWorker(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters,
+        workerParameters: WorkerParameters
     ): ListenableWorker?
 
     /**
@@ -64,10 +64,10 @@ public abstract class WorkerFactory {
      *   [WorkerFactory] returns an instance of the [ListenableWorker] which is used.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun createWorkerWithDefaultFallback(
+    fun createWorkerWithDefaultFallback(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters,
+        workerParameters: WorkerParameters
     ): ListenableWorker {
         fun getWorkerClass(workerClassName: String): Class<out ListenableWorker> {
             return try {
@@ -79,7 +79,7 @@ public abstract class WorkerFactory {
         }
         fun fallbackToReflection(
             workerClassName: String,
-            workerParameters: WorkerParameters,
+            workerParameters: WorkerParameters
         ): ListenableWorker {
             val clazz = getWorkerClass(workerClassName)
             return try {
@@ -106,12 +106,12 @@ public abstract class WorkerFactory {
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public object DefaultWorkerFactory : WorkerFactory() {
+object DefaultWorkerFactory : WorkerFactory() {
     override fun createWorker(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters,
-    ): Nothing? = null
+        workerParameters: WorkerParameters
+    ) = null
 }
 
 private val TAG = Logger.tagWithPrefix("WorkerFactory")

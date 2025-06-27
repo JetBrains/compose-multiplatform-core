@@ -16,24 +16,23 @@
 
 package androidx.appfunctions.compiler.core
 
-import androidx.appfunctions.compiler.core.metadata.AppFunctionAllOfTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionArrayTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionNamedDataTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionObjectTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionSchemaMetadata
-import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.APP_FUNCTION_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.COMPONENT_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.FUNCTION_ID_TO_METADATA_MAP_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.PARAMETER_METADATA_LIST_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.RESPONSE_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.SCHEMA_METADATA_PROPERTY_NAME
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParameterMetadata
+import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -42,7 +41,9 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.buildCodeBlock
 
 /** The helper class to build AppFunctionInventory class. */
-class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpec.Builder) {
+class AppFunctionInventoryCodeBuilder(
+    private val inventoryClassBuilder: TypeSpec.Builder,
+) {
     /**
      * Adds properties to the `AppFunctionInventory` class for the list of
      * [CompileTimeAppFunctionMetadata].
@@ -50,7 +51,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
      * @param appFunctionMetadataList The list of CompileTimeAppFunctionMetadata.
      */
     fun addFunctionMetadataProperties(
-        appFunctionMetadataList: List<CompileTimeAppFunctionMetadata>
+        appFunctionMetadataList: List<CompileTimeAppFunctionMetadata>,
     ) {
         for (functionMetadata in appFunctionMetadataList) {
             val functionMetadataObjectClassBuilder =
@@ -58,19 +59,19 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     .addModifiers(KModifier.PRIVATE)
             addSchemaMetadataPropertyForFunction(
                 functionMetadataObjectClassBuilder,
-                functionMetadata.schema,
+                functionMetadata.schema
             )
             addPropertiesForParameterMetadataList(
                 functionMetadataObjectClassBuilder,
-                functionMetadata.parameters,
+                functionMetadata.parameters
             )
             addPropertyForResponseMetadata(
                 functionMetadataObjectClassBuilder,
-                functionMetadata.response,
+                functionMetadata.response
             )
             addPropertyForComponentsMetadata(
                 functionMetadataObjectClassBuilder,
-                functionMetadata.components,
+                functionMetadata.components
             )
             addPropertyForAppFunctionMetadata(functionMetadataObjectClassBuilder, functionMetadata)
             inventoryClassBuilder.addType(functionMetadataObjectClassBuilder.build())
@@ -80,12 +81,12 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
 
     private fun addPropertyForAppFunctionMetadata(
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        functionMetadata: CompileTimeAppFunctionMetadata,
+        functionMetadata: CompileTimeAppFunctionMetadata
     ) {
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     APP_FUNCTION_METADATA_PROPERTY_NAME,
-                    IntrospectionHelper.APP_FUNCTION_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PUBLIC)
                 .initializer(
@@ -108,7 +109,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             SCHEMA_METADATA_PROPERTY_NAME,
                             PARAMETER_METADATA_LIST_PROPERTY_NAME,
                             RESPONSE_METADATA_PROPERTY_NAME,
-                            COMPONENT_METADATA_PROPERTY_NAME,
+                            COMPONENT_METADATA_PROPERTY_NAME
                         )
                     }
                 )
@@ -118,18 +119,18 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
 
     private fun addPropertyForComponentsMetadata(
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        appFunctionComponentsMetadata: AppFunctionComponentsMetadata,
+        appFunctionComponentsMetadata: AppFunctionComponentsMetadata
     ) {
         val componentDataTypesPropertyName = COMPONENT_METADATA_PROPERTY_NAME + "_DATA_TYPES_MAP"
         addPropertyForComponentsDataTypes(
             componentDataTypesPropertyName,
             functionMetadataObjectClassBuilder,
-            appFunctionComponentsMetadata.dataTypes,
+            appFunctionComponentsMetadata.dataTypes
         )
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     COMPONENT_METADATA_PROPERTY_NAME,
-                    IntrospectionHelper.APP_FUNCTION_COMPONENTS_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_COMPONENTS_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -142,7 +143,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             """
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_COMPONENTS_METADATA_CLASS,
-                            componentDataTypesPropertyName,
+                            componentDataTypesPropertyName
                         )
                     }
                 )
@@ -153,7 +154,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     private fun addPropertyForComponentsDataTypes(
         propertyName: String,
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        dataTypes: Map<String, AppFunctionDataTypeMetadata>,
+        dataTypes: Map<String, AppFunctionDataTypeMetadata>
     ) {
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
@@ -161,7 +162,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     Map::class.asClassName()
                         .parameterizedBy(
                             String::class.asClassName(),
-                            IntrospectionHelper.APP_FUNCTION_DATA_TYPE_METADATA,
+                            IntrospectionHelper.APP_FUNCTION_DATA_TYPE_METADATA
                         ),
                 )
                 .addModifiers(KModifier.PRIVATE)
@@ -180,7 +181,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                         addPropertyForObjectTypeMetadata(
                                             objectTypeMetadataPropertyName,
                                             functionMetadataObjectClassBuilder,
-                                            componentReferenceTypeMetadata,
+                                            componentReferenceTypeMetadata
                                         )
                                         objectTypeMetadataPropertyName
                                     }
@@ -192,7 +193,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                         addPropertyForAllOfTypeMetadata(
                                             allOfTypeMetadataPropertyName,
                                             functionMetadataObjectClassBuilder,
-                                            componentReferenceTypeMetadata,
+                                            componentReferenceTypeMetadata
                                         )
                                         allOfTypeMetadataPropertyName
                                     }
@@ -201,7 +202,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                         throw ProcessingException(
                                             "Component types contains unsupported datatype: " +
                                                 componentReferenceTypeMetadata,
-                                            null,
+                                            null
                                         )
                                     }
                                 }
@@ -211,7 +212,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 """
                                     .trimIndent(),
                                 componentReferenceKey,
-                                datatypeVariableName,
+                                datatypeVariableName
                             )
                         }
                         addStatement(")")
@@ -224,7 +225,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
 
     private fun addPropertyForResponseMetadata(
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        appFunctionResponseMetadata: AppFunctionResponseMetadata,
+        appFunctionResponseMetadata: AppFunctionResponseMetadata
     ) {
         val responseMetadataValueTypeName =
             when (val castDataType = appFunctionResponseMetadata.valueType) {
@@ -233,7 +234,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForPrimitiveTypeMetadata(
                         primitiveReturnTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     primitiveReturnTypeMetadataPropertyName
                 }
@@ -242,7 +243,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForArrayTypeMetadata(
                         arrayReturnTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     arrayReturnTypeMetadataPropertyName
                 }
@@ -251,7 +252,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForObjectTypeMetadata(
                         objectReturnTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     objectReturnTypeMetadataPropertyName
                 }
@@ -260,7 +261,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForReferenceTypeMetadata(
                         referenceReturnTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     referenceReturnTypeMetadataPropertyName
                 }
@@ -268,14 +269,14 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     // TODO provide KSNode to improve error message
                     throw ProcessingException(
                         "Unable to build parameter metadata for unknown datatype: $castDataType",
-                        null,
+                        null
                     )
                 }
             }
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     RESPONSE_METADATA_PROPERTY_NAME,
-                    IntrospectionHelper.APP_FUNCTION_RESPONSE_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_RESPONSE_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -288,7 +289,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             """
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_RESPONSE_METADATA_CLASS,
-                            responseMetadataValueTypeName,
+                            responseMetadataValueTypeName
                         )
                     }
                 )
@@ -298,13 +299,13 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
 
     private fun addPropertiesForParameterMetadataList(
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        parameterMetadataList: List<AppFunctionParameterMetadata>,
+        parameterMetadataList: List<AppFunctionParameterMetadata>
     ) {
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     PARAMETER_METADATA_LIST_PROPERTY_NAME,
                     List::class.asClassName()
-                        .parameterizedBy(IntrospectionHelper.APP_FUNCTION_PARAMETER_METADATA_CLASS),
+                        .parameterizedBy(IntrospectionHelper.APP_FUNCTION_PARAMETER_METADATA_CLASS)
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -314,11 +315,11 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                         for (parameterMetadata in parameterMetadataList) {
                             addPropertiesForParameterMetadata(
                                 parameterMetadata,
-                                functionMetadataObjectClassBuilder,
+                                functionMetadataObjectClassBuilder
                             )
                             addStatement(
                                 "%L,",
-                                "${parameterMetadata.name.uppercase()}_PARAMETER_METADATA",
+                                "${parameterMetadata.name.uppercase()}_PARAMETER_METADATA"
                             )
                         }
                         unindent()
@@ -343,7 +344,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForPrimitiveTypeMetadata(
                         primitiveTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     primitiveTypeMetadataPropertyName
                 }
@@ -353,7 +354,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForArrayTypeMetadata(
                         arrayTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     arrayTypeMetadataPropertyName
                 }
@@ -363,7 +364,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForObjectTypeMetadata(
                         objectTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     objectTypeMetadataPropertyName
                 }
@@ -373,7 +374,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForReferenceTypeMetadata(
                         referenceTypeMetadataPropertyName,
                         functionMetadataObjectClassBuilder,
-                        castDataType,
+                        castDataType
                     )
                     referenceTypeMetadataPropertyName
                 }
@@ -381,14 +382,14 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     // TODO provide KSNode to improve error message
                     throw ProcessingException(
                         "Unable to build parameter metadata for unknown datatype: $castDataType",
-                        null,
+                        null
                     )
                 }
             }
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     parameterMetadataPropertyName,
-                    IntrospectionHelper.APP_FUNCTION_PARAMETER_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_PARAMETER_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -405,7 +406,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             IntrospectionHelper.APP_FUNCTION_PARAMETER_METADATA_CLASS,
                             parameterMetadata.name,
                             parameterMetadata.isRequired,
-                            datatypeVariableName,
+                            datatypeVariableName
                         )
                     }
                 )
@@ -416,12 +417,12 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     private fun addPropertyForPrimitiveTypeMetadata(
         propertyName: String,
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        primitiveTypeMetadata: AppFunctionPrimitiveTypeMetadata,
+        primitiveTypeMetadata: AppFunctionPrimitiveTypeMetadata
     ) {
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     propertyName,
-                    IntrospectionHelper.APP_FUNCTION_PRIMITIVE_TYPE_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_PRIMITIVE_TYPE_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -436,7 +437,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_PRIMITIVE_TYPE_METADATA_CLASS,
                             primitiveTypeMetadata.type,
-                            primitiveTypeMetadata.isNullable,
+                            primitiveTypeMetadata.isNullable
                         )
                     }
                 )
@@ -447,7 +448,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     private fun addPropertyForArrayTypeMetadata(
         propertyName: String,
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        arrayTypeMetadata: AppFunctionArrayTypeMetadata,
+        arrayTypeMetadata: AppFunctionArrayTypeMetadata
     ) {
         val itemTypeVariableName =
             when (val castItemType = arrayTypeMetadata.itemType) {
@@ -456,7 +457,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForPrimitiveTypeMetadata(
                         primitiveItemTypeVariableName,
                         functionMetadataObjectClassBuilder,
-                        castItemType,
+                        castItemType
                     )
                     primitiveItemTypeVariableName
                 }
@@ -465,7 +466,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForObjectTypeMetadata(
                         objectItemTypeVariableName,
                         functionMetadataObjectClassBuilder,
-                        castItemType,
+                        castItemType
                     )
                     objectItemTypeVariableName
                 }
@@ -474,7 +475,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     addPropertyForReferenceTypeMetadata(
                         referenceItemTypeVariableName,
                         functionMetadataObjectClassBuilder,
-                        castItemType,
+                        castItemType
                     )
                     referenceItemTypeVariableName
                 }
@@ -483,14 +484,14 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     throw ProcessingException(
                         "Unable to build parameter item type metadata for unknown itemType: " +
                             "$castItemType",
-                        null,
+                        null
                     )
                 }
             }
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     propertyName,
-                    IntrospectionHelper.APP_FUNCTION_ARRAY_TYPE_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_ARRAY_TYPE_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -505,7 +506,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_ARRAY_TYPE_METADATA_CLASS,
                             itemTypeVariableName,
-                            arrayTypeMetadata.isNullable,
+                            arrayTypeMetadata.isNullable
                         )
                     }
                 )
@@ -521,7 +522,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     propertyName,
-                    IntrospectionHelper.APP_FUNCTION_REFERENCE_TYPE_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_REFERENCE_TYPE_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -536,7 +537,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_REFERENCE_TYPE_METADATA_CLASS,
                             referenceTypeMetadata.referenceDataType,
-                            referenceTypeMetadata.isNullable,
+                            referenceTypeMetadata.isNullable
                         )
                     }
                 )
@@ -553,18 +554,18 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
         addPropertyForObjectPropertiesMap(
             objectPropertiesMapPropertyName,
             functionMetadataObjectClassBuilder,
-            objectTypeMetadata.properties,
+            objectTypeMetadata.properties
         )
         val requiredPropertiesListPropertyName = propertyName + "_REQUIRED_PROPERTIES_LIST"
         addPropertyForListOfRequiredObjectProperties(
             requiredPropertiesListPropertyName,
             functionMetadataObjectClassBuilder,
-            objectTypeMetadata.required,
+            objectTypeMetadata.required
         )
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     propertyName,
-                    IntrospectionHelper.APP_FUNCTION_OBJECT_TYPE_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_OBJECT_TYPE_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -600,12 +601,12 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
         addPropertyForMatchAllList(
             matchAllListPropertyName,
             functionMetadataObjectClassBuilder,
-            allOfTypeMetadata.matchAll,
+            allOfTypeMetadata.matchAll
         )
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     propertyName,
-                    IntrospectionHelper.APP_FUNCTION_ALL_OF_TYPE_METADATA_CLASS,
+                    IntrospectionHelper.APP_FUNCTION_ALL_OF_TYPE_METADATA_CLASS
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -622,7 +623,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             IntrospectionHelper.APP_FUNCTION_ALL_OF_TYPE_METADATA_CLASS,
                             matchAllListPropertyName,
                             allOfTypeMetadata.qualifiedName,
-                            allOfTypeMetadata.isNullable,
+                            allOfTypeMetadata.isNullable
                         )
                     }
                 )
@@ -633,12 +634,12 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     private fun addPropertyForListOfRequiredObjectProperties(
         propertyName: String,
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        requiredProperties: List<String>,
+        requiredProperties: List<String>
     ) {
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     propertyName,
-                    List::class.asClassName().parameterizedBy(String::class.asClassName()),
+                    List::class.asClassName().parameterizedBy(String::class.asClassName())
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -659,7 +660,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     private fun addPropertyForObjectPropertiesMap(
         propertyName: String,
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        properties: List<AppFunctionNamedDataTypeMetadata>,
+        propertiesMap: Map<String, AppFunctionDataTypeMetadata>,
     ) {
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
@@ -667,7 +668,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     Map::class.asClassName()
                         .parameterizedBy(
                             String::class.asClassName(),
-                            IntrospectionHelper.APP_FUNCTION_DATA_TYPE_METADATA,
+                            IntrospectionHelper.APP_FUNCTION_DATA_TYPE_METADATA
                         ),
                 )
                 .addModifiers(KModifier.PRIVATE)
@@ -675,40 +676,40 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     buildCodeBlock {
                         addStatement("mapOf(")
                         indent()
-                        for (property in properties) {
+                        for ((objectPropertyName, objectPropertyTypeMetadata) in propertiesMap) {
                             val dataTypeVariableName =
-                                propertyName + "_${property.name.uppercase()}"
-                            when (property.dataTypeMetadata) {
+                                propertyName + "_${objectPropertyName.uppercase()}"
+                            when (objectPropertyTypeMetadata) {
                                 is AppFunctionPrimitiveTypeMetadata ->
                                     addPropertyForPrimitiveTypeMetadata(
                                         dataTypeVariableName,
                                         functionMetadataObjectClassBuilder,
-                                        property.dataTypeMetadata,
+                                        objectPropertyTypeMetadata
                                     )
                                 is AppFunctionArrayTypeMetadata ->
                                     addPropertyForArrayTypeMetadata(
                                         dataTypeVariableName,
                                         functionMetadataObjectClassBuilder,
-                                        property.dataTypeMetadata,
+                                        objectPropertyTypeMetadata
                                     )
                                 is AppFunctionObjectTypeMetadata ->
                                     addPropertyForObjectTypeMetadata(
                                         dataTypeVariableName,
                                         functionMetadataObjectClassBuilder,
-                                        property.dataTypeMetadata,
+                                        objectPropertyTypeMetadata
                                     )
                                 is AppFunctionReferenceTypeMetadata ->
                                     addPropertyForReferenceTypeMetadata(
                                         dataTypeVariableName,
                                         functionMetadataObjectClassBuilder,
-                                        property.dataTypeMetadata,
+                                        objectPropertyTypeMetadata
                                     )
                                 else -> {
                                     // TODO provide KSNode to improve error message
                                     throw ProcessingException(
                                         "Unable to build metadata for unknown object property " +
-                                            "datatype: $property.dataTypeMetadata",
-                                        null,
+                                            "datatype: $objectPropertyTypeMetadata",
+                                        null
                                     )
                                 }
                             }
@@ -717,8 +718,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 %S to %L,
                                 """
                                     .trimIndent(),
-                                property.name,
-                                dataTypeVariableName,
+                                objectPropertyName,
+                                dataTypeVariableName
                             )
                         }
                         unindent()
@@ -738,7 +739,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
             PropertySpec.builder(
                     propertyName,
                     List::class.asClassName()
-                        .parameterizedBy(IntrospectionHelper.APP_FUNCTION_DATA_TYPE_METADATA),
+                        .parameterizedBy(IntrospectionHelper.APP_FUNCTION_DATA_TYPE_METADATA)
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -750,7 +751,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             addPropertyForDataTypeToMatch(
                                 dataTypeToMatchPropertyName,
                                 functionMetadataObjectClassBuilder,
-                                dataTypeToMatch,
+                                dataTypeToMatch
                             )
                             addStatement("%L,", dataTypeToMatchPropertyName)
                         }
@@ -765,27 +766,27 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     private fun addPropertyForDataTypeToMatch(
         propertyName: String,
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        dataTypeToMatch: AppFunctionDataTypeMetadata,
+        dataTypeToMatch: AppFunctionDataTypeMetadata
     ) {
         when (dataTypeToMatch) {
             is AppFunctionReferenceTypeMetadata ->
                 addPropertyForReferenceTypeMetadata(
                     propertyName,
                     functionMetadataObjectClassBuilder,
-                    dataTypeToMatch,
+                    dataTypeToMatch
                 )
             is AppFunctionObjectTypeMetadata ->
                 addPropertyForObjectTypeMetadata(
                     propertyName,
                     functionMetadataObjectClassBuilder,
-                    dataTypeToMatch,
+                    dataTypeToMatch
                 )
             else ->
                 // TODO provide KSNode to improve error message
                 throw ProcessingException(
                     "Invalid datatype metadata to match in allOf type. Only object and reference " +
                         "types are supported: $dataTypeToMatch",
-                    null,
+                    null
                 )
         }
     }
@@ -793,7 +794,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
     /** Creates the `functionIdToMetadataMap` property of the `AppFunctionInventory`. */
     private fun addFunctionIdToMetadataMapProperty(
         inventoryClassBuilder: TypeSpec.Builder,
-        appFunctionMetadataList: List<CompileTimeAppFunctionMetadata>,
+        appFunctionMetadataList: List<CompileTimeAppFunctionMetadata>
     ) {
         inventoryClassBuilder.addProperty(
             PropertySpec.builder(
@@ -801,7 +802,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                     Map::class.asClassName()
                         .parameterizedBy(
                             String::class.asClassName(),
-                            IntrospectionHelper.APP_FUNCTION_METADATA_CLASS,
+                            IntrospectionHelper.APP_FUNCTION_METADATA_CLASS
                         ),
                 )
                 .addModifiers(KModifier.OVERRIDE)
@@ -817,7 +818,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                     .trimIndent(),
                                 appFunctionMetadata.id,
                                 getFunctionMetadataObjectClassName(appFunctionMetadata.id),
-                                APP_FUNCTION_METADATA_PROPERTY_NAME,
+                                APP_FUNCTION_METADATA_PROPERTY_NAME
                             )
                         }
                         unindent()
@@ -830,12 +831,12 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
 
     private fun addSchemaMetadataPropertyForFunction(
         functionMetadataObjectClassBuilder: TypeSpec.Builder,
-        schemaMetadata: AppFunctionSchemaMetadata?,
+        schemaMetadata: AppFunctionSchemaMetadata?
     ) {
         functionMetadataObjectClassBuilder.addProperty(
             PropertySpec.builder(
                     SCHEMA_METADATA_PROPERTY_NAME,
-                    IntrospectionHelper.APP_FUNCTION_SCHEMA_METADATA_CLASS.copy(nullable = true),
+                    IntrospectionHelper.APP_FUNCTION_SCHEMA_METADATA_CLASS.copy(nullable = true)
                 )
                 .addModifiers(KModifier.PRIVATE)
                 .initializer(
@@ -848,7 +849,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 IntrospectionHelper.APP_FUNCTION_SCHEMA_METADATA_CLASS,
                                 schemaMetadata.category,
                                 schemaMetadata.name,
-                                schemaMetadata.version,
+                                schemaMetadata.version
                             )
                         }
                     }
@@ -924,7 +925,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
      * @return The name of the property.
      */
     private fun getObjectTypeMetadataPropertyNameForComponent(componentName: String): String {
-        return "${componentName.uppercase().replace(Regex("[.<>$]"), "_").replace("?", "_NULLABLE")}_OBJECT_DATA_TYPE"
+        return "${componentName.uppercase().replace(Regex("[.<>]"), "_").replace("?", "_NULLABLE")}_OBJECT_DATA_TYPE"
     }
 
     /**
@@ -934,6 +935,6 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
      * @return The name of the property.
      */
     private fun getAllOfTypeMetadataPropertyNameForComponent(componentName: String): String {
-        return "${componentName.uppercase().replace(Regex("[.<>$]"), "_")}_ALL_OF_DATA_TYPE"
+        return "${componentName.uppercase().replace(".", "_")}_ALL_OF_DATA_TYPE"
     }
 }

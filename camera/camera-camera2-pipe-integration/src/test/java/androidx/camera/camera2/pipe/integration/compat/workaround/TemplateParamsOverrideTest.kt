@@ -65,7 +65,13 @@ class TemplateParamsOverrideTest(
         @ParameterizedRobolectricTestRunner.Parameters(name = "testName={0}")
         fun data() =
             mutableListOf<Array<Any?>>().apply {
-                add(arrayOf("no quirk", null, emptyParamsMap))
+                add(
+                    arrayOf(
+                        "no quirk",
+                        null,
+                        emptyParamsMap,
+                    )
+                )
                 add(
                     arrayOf(
                         "CaptureIntentPreviewQuirk with false workaround flag",
@@ -105,9 +111,9 @@ class TemplateParamsOverrideTest(
                     StreamConfigurationMapBuilder.newBuilder().build(),
                     OutputSizesCorrector(
                         FakeCameraMetadata(),
-                        StreamConfigurationMapBuilder.newBuilder().build(),
-                    ),
-                ),
+                        StreamConfigurationMapBuilder.newBuilder().build()
+                    )
+                )
             )
         if (quirk != null) {
             cameraQuirks.quirks.addQuirkForTesting(quirk)
@@ -123,7 +129,7 @@ class TemplateParamsOverrideTest(
                 TEMPLATE_STILL_CAPTURE,
                 TEMPLATE_MANUAL,
                 TEMPLATE_VIDEO_SNAPSHOT,
-                TEMPLATE_ZERO_SHUTTER_LAG,
+                TEMPLATE_ZERO_SHUTTER_LAG
             )) {
             val templateParamsOverride =
                 TemplateParamsOverride_Bindings_Companion_ProvideTemplateParamsOverrideFactory

@@ -17,9 +17,6 @@
 package androidx.wear.compose.material3
 
 import android.os.Build
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +48,7 @@ class OpenOnPhoneDialogTest {
                 visible = true,
                 modifier = Modifier.testTag(TEST_TAG),
                 onDismissRequest = {},
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -71,7 +68,7 @@ class OpenOnPhoneDialogTest {
                     dismissCounter++
                 },
                 visible = visible,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             )
         }
         rule.mainClock.advanceTimeBy(OpenOnPhoneDialogDefaults.DurationMillis / 2)
@@ -90,13 +87,12 @@ class OpenOnPhoneDialogTest {
                 visible = false,
                 modifier = Modifier.testTag(TEST_TAG),
                 onDismissRequest = {},
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     @Test
     fun openOnPhone_displays_icon() {
         rule.setContentWithTheme {
@@ -104,13 +100,12 @@ class OpenOnPhoneDialogTest {
             OpenOnPhoneDialog(
                 onDismissRequest = {},
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
-                modifier = Modifier.testTag(TEST_TAG),
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             ) {
-                Box(modifier = Modifier.fillMaxSize().background(Color.Red))
+                TestImage(IconTestTag)
             }
         }
-        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(Color.Red)
+        rule.onNodeWithTag(IconTestTag).assertExists()
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -125,7 +120,7 @@ class OpenOnPhoneDialogTest {
                 onDismissRequest = { dismissCounter++ },
                 durationMillis = 1000,
                 visible = visible.value,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             )
         }
         rule.waitForIdle()
@@ -155,7 +150,7 @@ class OpenOnPhoneDialogTest {
                 },
                 durationMillis = 100,
                 visible = visible.value,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             )
         }
         rule.waitUntilDoesNotExist(hasTestTag(TEST_TAG))
@@ -171,7 +166,7 @@ class OpenOnPhoneDialogTest {
             OpenOnPhoneDialog(
                 onDismissRequest = { dismissed = true },
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             ) {}
         }
         // Timeout longer than default confirmation duration
@@ -193,7 +188,7 @@ class OpenOnPhoneDialogTest {
                 onDismissRequest = {},
                 modifier = Modifier.testTag(TEST_TAG),
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             )
             expectedIconColor = MaterialTheme.colorScheme.primary
             expectedIconContainerColor = MaterialTheme.colorScheme.primaryContainer
@@ -237,10 +232,10 @@ class OpenOnPhoneDialogTest {
                         iconColor = customIconColor,
                         iconContainerColor = customIconContainerColor,
                         progressIndicatorColor = customProgressIndicatorColor,
-                        progressTrackColor = customProgressTrackColor,
+                        progressTrackColor = customProgressTrackColor
                     ),
                 visible = true,
-                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) },
+                curvedText = { openOnPhoneDialogCurvedText(text = CurvedText, style = style) }
             )
         }
         // Advance time by half of the default confirmation duration, so that the track and

@@ -25,29 +25,28 @@ import androidx.work.Data
 /** A DAO for [WorkProgress]. */
 @Dao
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface WorkProgressDao {
+interface WorkProgressDao {
     /**
      * Inserts a [WorkProgress] into the database.
      *
      * @param progress The [WorkProgress]
      */
-    @Insert(onConflict = OnConflictStrategy.REPLACE) public fun insert(progress: WorkProgress)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) fun insert(progress: WorkProgress)
 
     /**
      * Deletes a [WorkProgress] from the database.
      *
      * @param workSpecId The [WorkSpec] id
      */
-    @Query("DELETE from WorkProgress where work_spec_id=:workSpecId")
-    public fun delete(workSpecId: String)
+    @Query("DELETE from WorkProgress where work_spec_id=:workSpecId") fun delete(workSpecId: String)
 
     /** Removes all [WorkProgress] entries from the [WorkProgress] table. */
-    @Query("DELETE FROM WorkProgress") public fun deleteAll()
+    @Query("DELETE FROM WorkProgress") fun deleteAll()
 
     /**
      * @param workSpecId The [String] workSpec id
      * @return The progress [Data] associated with the given [String] workSpec id.
      */
     @Query("SELECT progress FROM WorkProgress WHERE work_spec_id=:workSpecId")
-    public fun getProgressForWorkSpecId(workSpecId: String): Data?
+    fun getProgressForWorkSpecId(workSpecId: String): Data?
 }

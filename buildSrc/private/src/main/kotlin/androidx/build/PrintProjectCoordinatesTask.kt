@@ -105,4 +105,8 @@ abstract class PrintProjectCoordinatesTask : DefaultTask() {
         }
         return maxLengths
     }
+
+    private fun formatTableLine(prefix: String, suffix: String): String {
+        return prefix.padEnd(10) + suffix
+    }
 }

@@ -22,8 +22,10 @@ import java.math.BigDecimal
 
 /** Propositions for [BigDecimal] typed subjects. */
 class BigDecimalSubject
-internal constructor(actual: BigDecimal?, metadata: FailureMetadata = FailureMetadata()) :
-    ComparableSubject<BigDecimal>(actual, metadata = metadata) {
+internal constructor(
+    actual: BigDecimal?,
+    metadata: FailureMetadata = FailureMetadata(),
+) : ComparableSubject<BigDecimal>(actual, metadata = metadata) {
 
     /**
      * Fails if the subject's value is not equal to the value of the given [BigDecimal]. (i.e.,

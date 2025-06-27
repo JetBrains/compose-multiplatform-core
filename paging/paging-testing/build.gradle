@@ -40,6 +40,11 @@ androidXMultiplatform {
     tvos()
     androidLibrary {
         namespace = "androidx.paging.testing"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)

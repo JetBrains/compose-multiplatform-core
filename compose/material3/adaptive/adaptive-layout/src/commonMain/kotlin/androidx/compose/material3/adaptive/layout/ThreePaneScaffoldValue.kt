@@ -49,13 +49,13 @@ fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     currentDestination: ThreePaneScaffoldDestinationItem<*>?,
-    maxVerticalPartitions: Int = 1,
+    maxVerticalPartitions: Int = 1
 ): ThreePaneScaffoldValue =
     calculateThreePaneScaffoldValue(
         maxHorizontalPartitions,
         adaptStrategies,
         listOfNotNull(currentDestination),
-        maxVerticalPartitions,
+        maxVerticalPartitions
     )
 
 /**
@@ -87,7 +87,7 @@ fun calculateThreePaneScaffoldValue(
     maxHorizontalPartitions: Int,
     adaptStrategies: ThreePaneScaffoldAdaptStrategies,
     destinationHistory: List<ThreePaneScaffoldDestinationItem<*>>,
-    maxVerticalPartitions: Int = 1,
+    maxVerticalPartitions: Int = 1
 ): ThreePaneScaffoldValue {
     var expandedCount = 0
     var primaryPaneAdaptedValue: PaneAdaptedValue? = null
@@ -109,24 +109,12 @@ fun calculateThreePaneScaffoldValue(
         }
     }
 
-    fun AdaptStrategy.Levitate.canOnlyLevitate() =
-        maxHorizontalPartitions == 1 || strategy == AdaptStrategy.Levitate.Strategy.Always
-
     var checkReflowedPane =
         maxHorizontalPartitions == 1 &&
             maxVerticalPartitions > 1 &&
             (adaptStrategies[ThreePaneScaffoldRole.Primary] is AdaptStrategy.Reflow ||
                 adaptStrategies[ThreePaneScaffoldRole.Secondary] is AdaptStrategy.Reflow ||
                 adaptStrategies[ThreePaneScaffoldRole.Tertiary] is AdaptStrategy.Reflow)
-
-    // Only levitate a pane when it is the current destination and cannot be expanded
-    destinationHistory.lastOrNull()?.apply {
-        (adaptStrategies[pane] as? AdaptStrategy.Levitate)?.apply {
-            if (canOnlyLevitate()) {
-                setAdaptedValue(pane, PaneAdaptedValue.Levitated(alignment, scrim))
-            }
-        }
-    }
 
     run {
         forEachPaneByPriority(destinationHistory) { pane ->
@@ -151,13 +139,7 @@ fun calculateThreePaneScaffoldValue(
             }
             when (anchorPaneValue) {
                 null ->
-                    if (
-                        (adaptStrategies[anchorPane] as? AdaptStrategy.Levitate)?.canOnlyLevitate()
-                            ?: false
-                    ) {
-                        // The anchor pane can only be levitated, continue;
-                        return@forEachPaneByPriority
-                    } else if (hasAvailablePartition) {
+                    if (hasAvailablePartition) {
                         // Expand the anchor pane to reflow the pane
                         setAdaptedValue(anchorPane, PaneAdaptedValue.Expanded)
                         expandedCount++
@@ -186,7 +168,7 @@ fun calculateThreePaneScaffoldValue(
 @ExperimentalMaterial3AdaptiveApi
 private inline fun forEachPaneByPriority(
     destinationHistory: List<ThreePaneScaffoldDestinationItem<*>>,
-    action: (ThreePaneScaffoldRole) -> Unit,
+    action: (ThreePaneScaffoldRole) -> Unit
 ) {
     destinationHistory.fastForEachReversed { action(it.pane) }
     action(ThreePaneScaffoldRole.Primary)
@@ -214,14 +196,18 @@ private inline fun forEachPaneByPriority(
 class ThreePaneScaffoldValue(
     val primary: PaneAdaptedValue,
     val secondary: PaneAdaptedValue,
-    val tertiary: PaneAdaptedValue,
+    val tertiary: PaneAdaptedValue
 ) : PaneScaffoldValue<ThreePaneScaffoldRole>, PaneExpansionStateKeyProvider {
     internal val expandedCount by lazy {
         var count = 0
-        forEach { _, value ->
-            if (value == PaneAdaptedValue.Expanded) {
-                count++
-            }
+        if (primary == PaneAdaptedValue.Expanded) {
+            count++
+        }
+        if (secondary == PaneAdaptedValue.Expanded) {
+            count++
+        }
+        if (tertiary == PaneAdaptedValue.Expanded) {
+            count++
         }
         count
     }
@@ -232,19 +218,17 @@ class ThreePaneScaffoldValue(
         } else {
             val expandedPanes = Array<ThreePaneScaffoldRole?>(2) { null }
             var count = 0
-            forEach { role, value ->
-                if (value == PaneAdaptedValue.Expanded) {
-                    expandedPanes[count++] = role
-                }
+            if (primary == PaneAdaptedValue.Expanded) {
+                expandedPanes[count++] = ThreePaneScaffoldRole.Primary
+            }
+            if (secondary == PaneAdaptedValue.Expanded) {
+                expandedPanes[count++] = ThreePaneScaffoldRole.Secondary
+            }
+            if (tertiary == PaneAdaptedValue.Expanded) {
+                expandedPanes[count] = ThreePaneScaffoldRole.Tertiary
             }
             TwoPaneExpansionStateKeyImpl(expandedPanes[0]!!, expandedPanes[1]!!)
         }
-    }
-
-    internal inline fun forEach(action: (ThreePaneScaffoldRole, PaneAdaptedValue) -> Unit) {
-        action(ThreePaneScaffoldRole.Primary, primary)
-        action(ThreePaneScaffoldRole.Secondary, secondary)
-        action(ThreePaneScaffoldRole.Tertiary, tertiary)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -280,7 +264,7 @@ class ThreePaneScaffoldValue(
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 internal class TwoPaneExpansionStateKeyImpl(
     val firstExpandedPane: ThreePaneScaffoldRole,
-    val secondExpandedPane: ThreePaneScaffoldRole,
+    val secondExpandedPane: ThreePaneScaffoldRole
 ) : PaneExpansionStateKey {
     override fun hashCode(): Int {
         return firstExpandedPane.hashCode() * 31 + secondExpandedPane.hashCode()
@@ -300,9 +284,9 @@ internal class TwoPaneExpansionStateKeyImpl(
                 restore = {
                     TwoPaneExpansionStateKeyImpl(
                         firstExpandedPane = it[0],
-                        secondExpandedPane = it[1],
+                        secondExpandedPane = it[1]
                     )
-                },
+                }
             )
     }
 }

@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+@RequiresApi(34)
 package androidx.xr.compose.spatial;
+
+import androidx.annotation.RequiresApi;

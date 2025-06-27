@@ -17,6 +17,7 @@
 package androidx.compose.foundation.lazy.grid
 
 import androidx.collection.IntList
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import androidx.compose.foundation.lazy.layout.LazyLayoutPinnableItem
@@ -28,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 
 @Suppress("PrimitiveInCollection")
+@OptIn(ExperimentalFoundationApi::class)
 internal interface LazyGridItemProvider : LazyLayoutItemProvider {
     val keyIndexMap: LazyLayoutKeyIndexMap
     val spanLayoutProvider: LazyGridSpanLayoutProvider
@@ -52,7 +54,7 @@ internal fun rememberLazyGridItemProviderLambda(
                 LazyGridItemProviderImpl(
                     state = state,
                     intervalContent = intervalContent,
-                    keyIndexMap = map,
+                    keyIndexMap = map
                 )
             }
         itemProviderState::value

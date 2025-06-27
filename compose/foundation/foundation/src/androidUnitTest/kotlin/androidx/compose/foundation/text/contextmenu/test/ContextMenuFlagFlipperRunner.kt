@@ -73,8 +73,10 @@ class ContextMenuFlagFlipperRunner(clazz: Class<*>) : Suite(clazz, buildRunners(
     }
 }
 
-private class TestClassRunnerForFlagValue(clazz: Class<*>, private val flagValue: Boolean) :
-    BlockJUnit4ClassRunner(clazz) {
+private class TestClassRunnerForFlagValue(
+    clazz: Class<*>,
+    private val flagValue: Boolean,
+) : BlockJUnit4ClassRunner(clazz) {
     private var initialFlagValue: Boolean? = null
 
     init {
@@ -88,7 +90,7 @@ private class TestClassRunnerForFlagValue(clazz: Class<*>, private val flagValue
     override fun withBefores(
         method: FrameworkMethod,
         target: Any?,
-        statement: Statement,
+        statement: Statement
     ): Statement =
         RunBefore(statement = super.withBefores(method, target, statement)) {
             initialFlagValue = ComposeFoundationFlags.isNewContextMenuEnabled
@@ -98,7 +100,7 @@ private class TestClassRunnerForFlagValue(clazz: Class<*>, private val flagValue
     override fun withAfters(
         method: FrameworkMethod,
         target: Any?,
-        statement: Statement,
+        statement: Statement
     ): Statement =
         RunAfter(statement = super.withAfters(method, target, statement)) {
             ComposeFoundationFlags.isNewContextMenuEnabled =
@@ -128,8 +130,10 @@ private class TestClassRunnerForFlagValue(clazz: Class<*>, private val flagValue
  * Akin to [RunBefores][org.junit.internal.runners.statements.RunBefores] but runs a block directly
  * instead of annotated methods on a class.
  */
-private class RunBefore(private val statement: Statement, private val beforeBlock: () -> Unit) :
-    Statement() {
+private class RunBefore(
+    private val statement: Statement,
+    private val beforeBlock: () -> Unit,
+) : Statement() {
     override fun evaluate() {
         beforeBlock()
         statement.evaluate()
@@ -140,8 +144,10 @@ private class RunBefore(private val statement: Statement, private val beforeBloc
  * Akin to [RunAfters][org.junit.internal.runners.statements.RunAfters] but runs a block directly
  * instead of annotated methods on a class.
  */
-private class RunAfter(private val statement: Statement, private val afterBlock: () -> Unit) :
-    Statement() {
+private class RunAfter(
+    private val statement: Statement,
+    private val afterBlock: () -> Unit,
+) : Statement() {
     override fun evaluate() {
         val errors = mutableListOf<Throwable>()
         try {

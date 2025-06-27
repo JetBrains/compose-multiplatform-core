@@ -30,17 +30,17 @@ import kotlin.jvm.JvmStatic
  * Even though SQLite column names are case insensitive, this class uses case sensitive matching.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public expect class TableInfo(
+expect class TableInfo(
     name: String,
     columns: Map<String, Column>,
     foreignKeys: Set<ForeignKey>,
-    indices: Set<Index>? = null,
+    indices: Set<Index>? = null
 ) {
     /** The table name. */
-    public val name: String
-    public val columns: Map<String, Column>
-    public val foreignKeys: Set<ForeignKey>
-    public val indices: Set<Index>?
+    val name: String
+    val columns: Map<String, Column>
+    val foreignKeys: Set<ForeignKey>
+    val indices: Set<Index>?
 
     override fun equals(other: Any?): Boolean
 
@@ -48,21 +48,21 @@ public expect class TableInfo(
 
     override fun toString(): String
 
-    public companion object {
+    companion object {
         /** Identifier for when the info is created from an unknown source. */
-        public val CREATED_FROM_UNKNOWN: Int
+        val CREATED_FROM_UNKNOWN: Int
 
         /**
          * Identifier for when the info is created from an entity definition, such as generated code
          * by the compiler or at runtime from a schema bundle, parsed from a schema JSON file.
          */
-        public val CREATED_FROM_ENTITY: Int
+        val CREATED_FROM_ENTITY: Int
 
         /**
          * Identifier for when the info is created from the database itself, reading information
          * from a PRAGMA, such as table_info.
          */
-        public val CREATED_FROM_DATABASE: Int
+        val CREATED_FROM_DATABASE: Int
 
         /**
          * Reads the table information from the given database.
@@ -71,28 +71,28 @@ public expect class TableInfo(
          * @param tableName The table name.
          * @return A TableInfo containing the schema information for the provided table name.
          */
-        @JvmStatic public fun read(connection: SQLiteConnection, tableName: String): TableInfo
+        @JvmStatic fun read(connection: SQLiteConnection, tableName: String): TableInfo
     }
 
     /** Holds the information about a database column. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public class Column(
+    class Column(
         name: String,
         type: String,
         notNull: Boolean,
         primaryKeyPosition: Int,
         defaultValue: String?,
-        createdFrom: Int,
+        createdFrom: Int
     ) {
         /** The column name. */
-        public val name: String
+        val name: String
         /** The column type affinity. */
-        public val type: String
+        val type: String
         /** Whether or not the column can be NULL. */
-        public val notNull: Boolean
-        public val primaryKeyPosition: Int
-        public val defaultValue: String?
-        public val createdFrom: Int
+        val notNull: Boolean
+        val primaryKeyPosition: Int
+        val defaultValue: String?
+        val createdFrom: Int
 
         /**
          * The column type after it is normalized to one of the basic types according to
@@ -100,14 +100,14 @@ public expect class TableInfo(
          *
          * This is the value Room uses for equality check.
          */
-        @SQLiteTypeAffinity public val affinity: Int
+        @SQLiteTypeAffinity val affinity: Int
 
         /**
          * Returns whether this column is part of the primary key or not.
          *
          * @return True if this column is part of the primary key, false otherwise.
          */
-        public val isPrimaryKey: Boolean
+        val isPrimaryKey: Boolean
 
         override fun equals(other: Any?): Boolean
 
@@ -118,18 +118,18 @@ public expect class TableInfo(
 
     /** Holds the information about an SQLite foreign key */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public class ForeignKey(
+    class ForeignKey(
         referenceTable: String,
         onDelete: String,
         onUpdate: String,
         columnNames: List<String>,
-        referenceColumnNames: List<String>,
+        referenceColumnNames: List<String>
     ) {
-        public val referenceTable: String
-        public val onDelete: String
-        public val onUpdate: String
-        public val columnNames: List<String>
-        public val referenceColumnNames: List<String>
+        val referenceTable: String
+        val onDelete: String
+        val onUpdate: String
+        val columnNames: List<String>
+        val referenceColumnNames: List<String>
 
         override fun equals(other: Any?): Boolean
 
@@ -140,23 +140,23 @@ public expect class TableInfo(
 
     /** Holds the information about an SQLite index */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public class Index(name: String, unique: Boolean, columns: List<String>, orders: List<String>) {
+    class Index(name: String, unique: Boolean, columns: List<String>, orders: List<String>) {
 
-        public val name: String
-        public val unique: Boolean
-        public val columns: List<String>
-        public var orders: List<String>
+        val name: String
+        val unique: Boolean
+        val columns: List<String>
+        var orders: List<String>
 
-        public companion object {
+        companion object {
             // should match the value in Index.kt
-            public val DEFAULT_PREFIX: String
+            val DEFAULT_PREFIX: String
         }
 
         override fun equals(other: Any?): Boolean
 
         override fun hashCode(): Int
 
-        public override fun toString(): String
+        override fun toString(): String
     }
 }
 

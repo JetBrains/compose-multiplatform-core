@@ -41,26 +41,25 @@ class AudioSettingsDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator(),
+            Build.VERSION.SDK_INT == 30 && isEmulator()
         )
         val audioSpecs =
             listOf(
                 AudioSpec.builder().build(),
                 AudioSpec.builder().setSampleRate(Range(0, 1000)).build(),
                 AudioSpec.builder().setSampleRate(Range(1000, 10000)).build(),
-                AudioSpec.builder().setSampleRate(Range(10000, 100000)).build(),
+                AudioSpec.builder().setSampleRate(Range(10000, 100000)).build()
             )
 
         audioSpecs.forEach {
             val audioSettings = AudioSettingsDefaultResolver(it, null).get()
             assertThat(
-                    AudioSource.isSettingsSupported(
-                        audioSettings.captureSampleRate,
-                        audioSettings.channelCount,
-                        audioSettings.audioFormat,
-                    )
+                AudioSource.isSettingsSupported(
+                    audioSettings.captureSampleRate,
+                    audioSettings.channelCount,
+                    audioSettings.audioFormat
                 )
-                .isTrue()
+            )
         }
     }
 
@@ -69,7 +68,7 @@ class AudioSettingsDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator(),
+            Build.VERSION.SDK_INT == 30 && isEmulator()
         )
         val audioSpec = AudioSpec.builder().build()
         val resolvedAudioSourceEnum =
@@ -84,7 +83,7 @@ class AudioSettingsDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator(),
+            Build.VERSION.SDK_INT == 30 && isEmulator()
         )
         val audioSpec = AudioSpec.builder().build()
         val resolvedAudioSourceFormat =

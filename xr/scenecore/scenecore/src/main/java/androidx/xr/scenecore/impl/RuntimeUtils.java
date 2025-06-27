@@ -18,7 +18,8 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.VisibleForTesting;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.CameraViewActivityPose.Fov;
@@ -26,14 +27,10 @@ import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEvent;
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo;
-import androidx.xr.runtime.internal.KhronosPbrMaterialSpec;
-import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
 import androidx.xr.runtime.internal.ResizeEvent;
 import androidx.xr.runtime.internal.SpatialCapabilities;
-import androidx.xr.runtime.internal.SpatialPointerIcon;
-import androidx.xr.runtime.internal.SpatialPointerIconType;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.internal.TextureSampler;
 import androidx.xr.runtime.math.Matrix4;
@@ -46,14 +43,10 @@ import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.node.Mat4f;
-import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Quatf;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.VisibilityState;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 final class RuntimeUtils {
     private RuntimeUtils() {}
@@ -120,8 +113,8 @@ final class RuntimeUtils {
         }
     }
 
-    @VisibleForTesting
-    static @Nullable HitInfo getHitInfo(
+    @Nullable
+    private static HitInfo getHitInfo(
             com.android.extensions.xr.node.InputEvent.HitInfo xrHitInfo,
             EntityManager entityManager) {
         if (xrHitInfo == null
@@ -135,7 +128,7 @@ final class RuntimeUtils {
             return null;
         }
         return new HitInfo(
-                hitEntity,
+                entityManager.getEntityForNode(xrHitInfo.getInputNode()),
                 (xrHitInfo.getHitPosition() == null)
                         ? null
                         : getVector3(xrHitInfo.getHitPosition()),
@@ -152,7 +145,7 @@ final class RuntimeUtils {
      *     input event.
      */
     static InputEvent getInputEvent(
-            com.android.extensions.xr.node.@NonNull InputEvent xrInputEvent,
+            @NonNull com.android.extensions.xr.node.InputEvent xrInputEvent,
             @NonNull EntityManager entityManager) {
         Vector3 origin = getVector3(xrInputEvent.getOrigin());
         Vector3 direction = getVector3(xrInputEvent.getDirection());
@@ -265,10 +258,6 @@ final class RuntimeUtils {
         return new Vector3(vec3.x, vec3.y, vec3.z);
     }
 
-    static Quaternion getQuaternion(Quatf quatf) {
-        return new Quaternion(quatf.x, quatf.y, quatf.z, quatf.w);
-    }
-
     /**
      * Converts from a perception pose type.
      *
@@ -336,7 +325,7 @@ final class RuntimeUtils {
      */
     static SpatialCapabilities convertSpatialCapabilities(
             com.android.extensions.xr.space.SpatialCapabilities extCapabilities) {
-        int capabilities = 0;
+        @SpatialCapabilities.SpatialCapability int capabilities = 0;
         if (extCapabilities.get(
                 com.android.extensions.xr.space.SpatialCapabilities.SPATIAL_UI_CAPABLE)) {
             capabilities |= SpatialCapabilities.SPATIAL_CAPABILITY_UI;
@@ -367,25 +356,14 @@ final class RuntimeUtils {
     }
 
     /**
-     * Converts from the Extensions perceived resolution to the runtime perceived resolution.
-     *
-     * @param extResolution a {@link com.android.extensions.xr.space.PerceivedResolution} instance
-     *     to be converted.
-     */
-    static PixelDimensions convertPerceivedResolution(
-            com.android.extensions.xr.space.PerceivedResolution extResolution) {
-        return new PixelDimensions(extResolution.getWidth(), extResolution.getHeight());
-    }
-
-    /**
      * Converts from the Extensions spatial visibility to the runtime spatial visibility.
      *
-     * @param extVisibility a {@link com.android.extensions.xr.space.VisibilityState.S} instance to
-     *     be converted.
+     * @param extVisibility a {@link com.android.extensions.xr.space.VisibilityState} instance to be
+     *     converted.
      */
-    static SpatialVisibility convertSpatialVisibility(int extVisibility) {
+    static SpatialVisibility convertSpatialVisibility(VisibilityState extVisibility) {
         int visibility;
-        switch (extVisibility) {
+        switch (extVisibility.getVisibility()) {
             case VisibilityState.UNKNOWN:
                 visibility = SpatialVisibility.UNKNOWN;
                 break;
@@ -399,7 +377,8 @@ final class RuntimeUtils {
                 visibility = SpatialVisibility.WITHIN_FOV;
                 break;
             default:
-                throw new IllegalArgumentException("Unknown Spatial Visibility: " + extVisibility);
+                throw new IllegalArgumentException(
+                        "Unknown Spatial Visibility: " + extVisibility.getVisibility());
         }
         return new SpatialVisibility(visibility);
     }
@@ -412,7 +391,7 @@ final class RuntimeUtils {
      *     com.android.extensions.xr.environment.EnvironmentVisibilityState} instance to be
      *     converted.
      */
-    static boolean getIsPreferredSpatialEnvironmentActive(int environmentState) {
+    static boolean getIsSpatialEnvironmentPreferenceActive(int environmentState) {
         return environmentState == EnvironmentVisibilityState.APP_VISIBLE;
     }
 
@@ -539,65 +518,6 @@ final class RuntimeUtils {
         }
     }
 
-    /**
-     * Converts from JXR Core's KhronosPbrMaterialSpec to Impress' API bindings
-     * KhronosPbrMaterialSpec.
-     *
-     * @param spec a {@link com.google.vr.androidx.xr.core.KhronosPbrMaterialSpec} instance to be
-     *     converted.
-     */
-    static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec getKhronosPbrMaterialSpec(
-            @NonNull KhronosPbrMaterialSpec spec) {
-        return new com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.Builder()
-                .setLightingModel(getLightingModel(spec.getLightingModel()))
-                .setBlendMode(getBlendMode(spec.getBlendMode()))
-                .setDoubleSidedMode(getDoubleSidedMode(spec.getDoubleSidedMode()))
-                .build();
-    }
-
-    private static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.LightingModel
-            getLightingModel(@KhronosPbrMaterialSpec.LightingModel int lightingModel) {
-        switch (lightingModel) {
-            case KhronosPbrMaterialSpec.LIT:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.LightingModel.LIT;
-            case KhronosPbrMaterialSpec.UNLIT:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.LightingModel.UNLIT;
-            default:
-                throw new IllegalArgumentException("Unknown LightingModel value: " + lightingModel);
-        }
-    }
-
-    private static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode getBlendMode(
-            @KhronosPbrMaterialSpec.BlendMode int blendMode) {
-        switch (blendMode) {
-            case KhronosPbrMaterialSpec.OPAQUE:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.OPAQUE;
-            case KhronosPbrMaterialSpec.MASKED:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.MASKED;
-            case KhronosPbrMaterialSpec.TRANSPARENT:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.TRANSPARENT;
-            case KhronosPbrMaterialSpec.REFRACTIVE:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.BlendMode.REFRACTIVE;
-            default:
-                throw new IllegalArgumentException("Unknown BlendMode value: " + blendMode);
-        }
-    }
-
-    private static com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.DoubleSidedMode
-            getDoubleSidedMode(@KhronosPbrMaterialSpec.DoubleSidedMode int doubleSidedMode) {
-        switch (doubleSidedMode) {
-            case KhronosPbrMaterialSpec.SINGLE_SIDED:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.DoubleSidedMode
-                        .SINGLE_SIDED;
-            case KhronosPbrMaterialSpec.DOUBLE_SIDED:
-                return com.google.ar.imp.apibindings.KhronosPbrMaterialSpec.DoubleSidedMode
-                        .DOUBLE_SIDED;
-            default:
-                throw new IllegalArgumentException(
-                        "Unknown DoubleSidedMode value: " + doubleSidedMode);
-        }
-    }
-
     private static int getHitTestSurfaceType(int extSurfaceType) {
         switch (extSurfaceType) {
             case com.android.extensions.xr.space.HitTestResult.SURFACE_PANEL:
@@ -645,19 +565,5 @@ final class RuntimeUtils {
             hitTestFilterResult |= XrExtensions.HIT_TEST_FILTER_INCLUDE_OUTSIDE_ACTIVITY;
         }
         return hitTestFilterResult;
-    }
-
-    static int convertSpatialPointerIconType(@SpatialPointerIconType int rtIconType) {
-        switch (rtIconType) {
-            case SpatialPointerIcon.TYPE_NONE:
-                return NodeTransaction.POINTER_ICON_TYPE_NONE;
-            case SpatialPointerIcon.TYPE_DEFAULT:
-                return NodeTransaction.POINTER_ICON_TYPE_DEFAULT;
-            case SpatialPointerIcon.TYPE_CIRCLE:
-                return NodeTransaction.POINTER_ICON_TYPE_CIRCLE;
-            default:
-                Log.e("RuntimeUtils", "Unknown Spatial Pointer Icon Type: " + rtIconType);
-                return NodeTransaction.POINTER_ICON_TYPE_DEFAULT;
-        }
     }
 }

@@ -21,28 +21,28 @@ import androidx.sqlite.SQLiteDriver
 import kotlin.coroutines.CoroutineContext
 
 /** Configuration class for a [RoomDatabase]. */
-public expect class DatabaseConfiguration {
+expect class DatabaseConfiguration {
     /* The name of the database file or null if it is an in-memory database. */
-    public val name: String?
+    val name: String?
     /* Collection of available migrations. */
-    public val migrationContainer: RoomDatabase.MigrationContainer
+    val migrationContainer: RoomDatabase.MigrationContainer
     /* Database callbacks. */
-    public val callbacks: List<RoomDatabase.Callback>?
+    val callbacks: List<RoomDatabase.Callback>?
     /* The journal mode for this database. */
-    public val journalMode: RoomDatabase.JournalMode
+    val journalMode: RoomDatabase.JournalMode
     /* Whether Room should throw an exception for missing migrations. */
-    public val requireMigration: Boolean
+    val requireMigration: Boolean
     /* Whether Room will fallback to destructive migrations on downgrades only .*/
-    public val allowDestructiveMigrationOnDowngrade: Boolean
+    val allowDestructiveMigrationOnDowngrade: Boolean
     internal val migrationNotRequiredFrom: Set<Int>?
     /* List of provided type converters. */
-    public val typeConverters: List<Any>
+    val typeConverters: List<Any>
     /* List of provided auto migration specs. */
-    public val autoMigrationSpecs: List<AutoMigrationSpec>
+    val autoMigrationSpecs: List<AutoMigrationSpec>
     /* Whether Room will delete all tables or only known tables during destructive migrations. */
-    public val allowDestructiveMigrationForAllTables: Boolean
+    val allowDestructiveMigrationForAllTables: Boolean
     /* The SQLite Driver for the database. */
-    public val sqliteDriver: SQLiteDriver?
+    val sqliteDriver: SQLiteDriver?
     /* The Coroutine context for the database. */
-    public val queryCoroutineContext: CoroutineContext?
+    val queryCoroutineContext: CoroutineContext?
 }

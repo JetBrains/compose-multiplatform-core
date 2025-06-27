@@ -47,7 +47,6 @@ import androidx.wear.protolayout.renderer.inflater.ProtoLayoutInflater.ViewGroup
 import androidx.wear.protolayout.renderer.inflater.RenderedMetadata.ViewProperties
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -92,7 +91,6 @@ class ProtoLayoutInflaterKtTest {
         }
     }
 
-    @Ignore // b/427234180
     @Test
     fun inflate_boxWithLinearGradientBackground_withBoundingBoxRatioPoints() {
         val boxElement = expandedBox {

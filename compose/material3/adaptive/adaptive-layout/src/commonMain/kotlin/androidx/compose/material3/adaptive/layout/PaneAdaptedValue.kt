@@ -17,9 +17,7 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.Alignment
 
 /**
  * The adapted state of a pane. It gives clues to pane scaffolds about if a certain pane should be
@@ -39,7 +37,6 @@ sealed interface PaneAdaptedValue {
      * @param targetPane the target pane of the reflowing, i.e., the pane that the reflowed pane
      *   will be put under.
      */
-    @Immutable
     class Reflowed(val targetPane: Any) : PaneAdaptedValue {
         override fun toString() = "PaneAdaptedValue[Reflowed to $targetPane]"
 
@@ -51,35 +48,6 @@ sealed interface PaneAdaptedValue {
 
         override fun hashCode(): Int {
             return targetPane.hashCode()
-        }
-    }
-
-    /**
-     * Indicates that the associated pane should be levitated with the specified [alignment].
-     *
-     * @param alignment the alignment of the levitated pane relative to the pane scaffold; the
-     *   alignment can also be provided as anchoring to a certain alignment line or a certain
-     *   element in the window. See [Alignment] for more information.
-     * @param scrim the scrim to show when the levitated pane is shown to block user interaction
-     *   with the underlying layout and emphasize the levitated pane; by default it will be `null`
-     *   and no scrim will show.
-     */
-    @Immutable
-    class Levitated(val alignment: Alignment, val scrim: Scrim? = null) : PaneAdaptedValue {
-        override fun toString() = "PaneAdaptedValue[Levitated with $alignment and scrim=$scrim]"
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Levitated) return false
-            if (alignment != other.alignment) return false
-            if (scrim != other.scrim) return false
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = alignment.hashCode()
-            result = 31 * result + scrim.hashCode()
-            return result
         }
     }
 

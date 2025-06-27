@@ -113,7 +113,7 @@ public fun TextButton(
             pressedShape = shapes.pressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
-            interactionSource = interactionSource,
+            interactionSource = interactionSource
         )
 
     RoundButton(
@@ -131,8 +131,8 @@ public fun TextButton(
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
                 TextButtonTokens.ContentFont.value,
-                content,
-            ),
+                content
+            )
     )
 }
 
@@ -155,8 +155,9 @@ public object TextButtonDefaults {
      * @param shape The normal shape of the TextButton.
      */
     @Composable
-    public fun shapes(shape: Shape): TextButtonShapes =
-        MaterialTheme.shapes.defaultTextButtonShapes.copy(shape = shape)
+    public fun shapes(
+        shape: Shape,
+    ): TextButtonShapes = MaterialTheme.shapes.defaultTextButtonShapes.copy(shape = shape)
 
     /**
      * Returns the default [TextButtonShapes] for a [TextButton ] with an animation between two
@@ -188,7 +189,7 @@ public object TextButtonDefaults {
     ): TextButtonShapes =
         MaterialTheme.shapes.defaultTextButtonAnimatedShapes.copy(
             shape = shape,
-            pressedShape = pressedShape,
+            pressedShape = pressedShape
         )
 
     /**
@@ -224,7 +225,7 @@ public object TextButtonDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor,
+            disabledContentColor = disabledContentColor
         )
 
     /**
@@ -266,7 +267,7 @@ public object TextButtonDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor,
+            disabledContentColor = disabledContentColor
         )
 
     /**
@@ -302,7 +303,7 @@ public object TextButtonDefaults {
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = disabledContainerColor,
-            disabledContentColor = disabledContentColor,
+            disabledContentColor = disabledContentColor
         )
 
     /**
@@ -335,7 +336,7 @@ public object TextButtonDefaults {
             containerColor = Color.Transparent,
             contentColor = contentColor,
             disabledContainerColor = Color.Transparent,
-            disabledContentColor = disabledContentColor,
+            disabledContentColor = disabledContentColor
         )
 
     /**
@@ -416,7 +417,7 @@ public object TextButtonDefaults {
             return defaultTextButtonAnimatedShapesCached
                 ?: TextButtonShapes(
                         shape = TextButtonDefaults.shape,
-                        pressedShape = TextButtonDefaults.pressedShape,
+                        pressedShape = TextButtonDefaults.pressedShape
                     )
                     .also { defaultTextButtonAnimatedShapesCached = it }
         }
@@ -436,7 +437,7 @@ public object TextButtonDefaults {
                             fromToken(FilledTextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = FilledTextButtonTokens.DisabledContentOpacity
-                                ),
+                                )
                     )
                     .also { defaultFilledTextButtonColorsCached = it }
         }
@@ -456,7 +457,7 @@ public object TextButtonDefaults {
                             fromToken(FilledTextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = FilledTextButtonTokens.DisabledContentOpacity
-                                ),
+                                )
                     )
                     .also { defaultFilledVariantTextButtonColorsCached = it }
         }
@@ -478,7 +479,7 @@ public object TextButtonDefaults {
                                 .toDisabledColor(
                                     disabledAlpha =
                                         FilledTonalTextButtonTokens.DisabledContentOpacity
-                                ),
+                                )
                     )
                     .also { defaultFilledTonalTextButtonColorsCached = it }
         }
@@ -494,7 +495,7 @@ public object TextButtonDefaults {
                             fromToken(OutlinedTextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = OutlinedTextButtonTokens.DisabledContentOpacity
-                                ),
+                                )
                     )
                     .also { defaultOutlinedTextButtonColorsCached = it }
         }
@@ -510,7 +511,7 @@ public object TextButtonDefaults {
                             fromToken(TextButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = TextButtonTokens.DisabledContentOpacity
-                                ),
+                                )
                     )
                     .also { defaultTextButtonColorsCached = it }
         }
@@ -549,14 +550,14 @@ public class TextButtonColors(
         containerColor: Color = this.containerColor,
         contentColor: Color = this.contentColor,
         disabledContainerColor: Color = this.disabledContainerColor,
-        disabledContentColor: Color = this.disabledContentColor,
+        disabledContentColor: Color = this.disabledContentColor
     ): TextButtonColors =
         TextButtonColors(
             containerColor = containerColor.takeOrElse { this.containerColor },
             contentColor = contentColor.takeOrElse { this.contentColor },
             disabledContainerColor =
                 disabledContainerColor.takeOrElse { this.disabledContainerColor },
-            disabledContentColor = disabledContentColor.takeOrElse { this.disabledContentColor },
+            disabledContentColor = disabledContentColor.takeOrElse { this.disabledContentColor }
         )
 
     /**
@@ -609,14 +610,17 @@ public class TextButtonColors(
  * @param shape the shape of the text button when enabled
  * @param pressedShape the shape of the text button when pressed
  */
-public class TextButtonShapes(public val shape: Shape, public val pressedShape: Shape = shape) {
+public class TextButtonShapes(
+    public val shape: Shape,
+    public val pressedShape: Shape = shape,
+) {
     public fun copy(
         shape: Shape? = this.shape,
         pressedShape: Shape? = this.pressedShape,
     ): TextButtonShapes =
         TextButtonShapes(
             shape = shape ?: this.shape,
-            pressedShape = pressedShape ?: this.pressedShape,
+            pressedShape = pressedShape ?: this.pressedShape
         )
 
     override fun equals(other: Any?): Boolean {

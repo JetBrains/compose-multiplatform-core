@@ -37,7 +37,7 @@ import android.os.Bundle
  * observer.
  */
 @SuppressWarnings("CallbackName")
-public interface SessionObserver {
+interface SessionObserver {
 
     /**
      * Called exactly once per session, when the
@@ -46,7 +46,7 @@ public interface SessionObserver {
      * lifetime of the UI session. The resources associated with the [sessionObserverContext] will
      * be released when [onSessionClosed] is called.
      */
-    public fun onSessionOpened(sessionObserverContext: SessionObserverContext)
+    fun onSessionOpened(sessionObserverContext: SessionObserverContext)
 
     /**
      * Called when the UI container has changed its presentation state. Note that these updates will
@@ -54,7 +54,7 @@ public interface SessionObserver {
      * changes on the client side as it is not sent in real time.
      */
     // TODO(b/326942993): Decide on the correct data type to send.
-    public fun onUiContainerChanged(uiContainerInfo: android.os.Bundle)
+    fun onUiContainerChanged(uiContainerInfo: android.os.Bundle)
 
     /**
      * Called exactly once per session when the
@@ -62,5 +62,5 @@ public interface SessionObserver {
      * observer closes. No more callbacks will be made on this observer after this point, and any
      * resources associated with it can be freed.
      */
-    public fun onSessionClosed()
+    fun onSessionClosed()
 }

@@ -35,8 +35,12 @@ import androidx.core.graphics.applyCanvas
 import androidx.emoji2.text.EmojiCompat
 
 /** A customized view to support drawing emojis asynchronously. */
-internal class EmojiView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
-    View(context, attrs) {
+internal class EmojiView
+@JvmOverloads
+constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+) : View(context, attrs) {
 
     companion object {
         private const val EMOJI_DRAW_TEXT_SIZE_SP = 30
@@ -55,7 +59,7 @@ internal class EmojiView @JvmOverloads constructor(context: Context, attrs: Attr
                 TypedValue.applyDimension(
                     TypedValue.COMPLEX_UNIT_SP,
                     EMOJI_DRAW_TEXT_SIZE_SP.toFloat(),
-                    context.resources.displayMetrics,
+                    context.resources.displayMetrics
                 )
         }
 
@@ -78,7 +82,7 @@ internal class EmojiView @JvmOverloads constructor(context: Context, attrs: Attr
             save()
             scale(
                 width.toFloat() / offscreenCanvasBitmap.width,
-                height.toFloat() / offscreenCanvasBitmap.height,
+                height.toFloat() / offscreenCanvasBitmap.height
             )
             drawBitmap(offscreenCanvasBitmap, 0f, 0f, null)
             restore()
@@ -98,9 +102,9 @@ internal class EmojiView @JvmOverloads constructor(context: Context, attrs: Attr
                             drawVariantIndicator =
                                 willDrawVariantIndicator &&
                                     BundledEmojiListLoader.getEmojiVariantsLookup()
-                                        .containsKey(value),
+                                        .containsKey(value)
                         )
-                        contentDescription = context.getString(R.string.emoji_content_desc, emoji)
+                        contentDescription = value
                     }
                     invalidate()
                 } else {
@@ -144,7 +148,7 @@ internal class EmojiView @JvmOverloads constructor(context: Context, attrs: Attr
                                 canvasWidth - indicatorWidth,
                                 canvasHeight - indicatorHeight,
                                 canvasWidth,
-                                canvasHeight,
+                                canvasHeight
                             )
                     }!!
                     .draw(this)

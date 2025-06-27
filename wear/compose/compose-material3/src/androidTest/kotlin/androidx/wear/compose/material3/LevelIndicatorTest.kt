@@ -21,7 +21,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -115,7 +114,7 @@ class LevelIndicatorTest {
             // Show level = 100 so that the indicator color is shown
             StepperLevelIndicator(
                 value = 100f,
-                colors = LevelIndicatorDefaults.colors(indicatorColor = customColor),
+                colors = LevelIndicatorDefaults.colors(indicatorColor = customColor)
             )
         }
 
@@ -131,7 +130,7 @@ class LevelIndicatorTest {
             LevelIndicator(
                 value = { 1f },
                 colors = LevelIndicatorDefaults.colors(indicatorColor = customColor),
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -146,7 +145,7 @@ class LevelIndicatorTest {
             // Show level = 0 so that the track color is shown
             StepperLevelIndicator(
                 value = 0f,
-                colors = LevelIndicatorDefaults.colors(trackColor = customColor),
+                colors = LevelIndicatorDefaults.colors(trackColor = customColor)
             )
         }
 
@@ -162,7 +161,7 @@ class LevelIndicatorTest {
             LevelIndicator(
                 value = { 0f },
                 colors = LevelIndicatorDefaults.colors(trackColor = customColor),
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -175,7 +174,7 @@ class LevelIndicatorTest {
         colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
         enabled: Boolean = true,
     ) {
-        val valueRange = remember { 0f..100f }
+        val valueRange = 0f..100f
 
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             StepperLevelIndicator(
@@ -183,7 +182,7 @@ class LevelIndicatorTest {
                 valueRange = valueRange,
                 modifier = Modifier.testTag(TEST_TAG).align(Alignment.CenterStart),
                 colors = colors,
-                enabled = enabled,
+                enabled = enabled
             )
         }
     }

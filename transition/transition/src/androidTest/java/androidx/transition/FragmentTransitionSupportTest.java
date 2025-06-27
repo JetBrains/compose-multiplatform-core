@@ -37,7 +37,6 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.transition.test.R;
 
@@ -46,7 +45,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-@SdkSuppress(minSdkVersion = 22) // The Instrumentation doesn't actually wait on Idle on API 21
 @MediumTest
 @RunWith(Parameterized.class)
 public class FragmentTransitionSupportTest extends BaseTest {

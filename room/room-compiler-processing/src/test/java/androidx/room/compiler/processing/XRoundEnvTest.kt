@@ -51,7 +51,7 @@ class XRoundEnvTest {
                 fun myFunction() { }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runProcessorTest(listOf(source)) { testInvocation ->
@@ -64,7 +64,11 @@ class XRoundEnvTest {
             assertThat(annotatedElementsByClass).containsExactlyElementsIn(annotatedElementsByName)
             if (testInvocation.isKsp) {
                 assertThat(annotatedElementsByClass.map { it.name })
-                    .containsExactly("Baz", "myProperty", "myFunction")
+                    .containsExactly(
+                        "Baz",
+                        "myProperty",
+                        "myFunction",
+                    )
             } else {
                 assertThat(annotatedElementsByClass.map { it.name })
                     .containsExactly(
@@ -101,7 +105,7 @@ class XRoundEnvTest {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runProcessorTest(listOf(source)) { testInvocation ->
@@ -116,7 +120,7 @@ class XRoundEnvTest {
                     "myProperty3",
                     "getMyProperty1",
                     "setMyProperty2",
-                    "getMyProperty4",
+                    "getMyProperty4"
                 )
             baz.getDeclaredMethods().forEach { method ->
                 assertWithMessage("Enclosing element of method ${method.jvmName}")
@@ -137,7 +141,7 @@ class XRoundEnvTest {
             package foo.bar.foobar;
             import androidx.room.compiler.processing.testcode.OtherAnnotation;
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runProcessorTest(listOf(source)) { testInvocation ->
@@ -172,7 +176,7 @@ class XRoundEnvTest {
                 """
             class FooBar {}
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val kotlinSource =
             Source.kotlin(
@@ -180,7 +184,7 @@ class XRoundEnvTest {
                 """
             class FooBarKt
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runProcessorTest(listOf(javaSource, kotlinSource)) { testInvocation ->
             testInvocation.processingEnv.requireTypeElement("FooBar").apply {
@@ -204,7 +208,7 @@ class XRoundEnvTest {
                 fun myFun(): Int = 0
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runProcessorTest(listOf(source)) { testInvocation ->
@@ -222,7 +226,7 @@ class XRoundEnvTest {
             @TopLevelAnnotation
             fun myFun(): Int = 0
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runProcessorTest(listOf(source)) { testInvocation ->
@@ -253,7 +257,7 @@ class XRoundEnvTest {
             @field:TopLevelAnnotation
             var myProperty: Int = 0
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runKspTest(listOf(source)) { testInvocation ->
@@ -304,7 +308,7 @@ class XRoundEnvTest {
             package foo
             class Baz 
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runProcessorTest(listOf(source)) { testInvocation ->
@@ -353,7 +357,7 @@ class XRoundEnvTest {
             val p: Int = TODO()
             fun f(): String = TODO()
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runProcessorTest(listOf(source)) { invocation ->
             val elements = invocation.processingEnv.getElementsFromPackage("foo.bar")
@@ -375,7 +379,7 @@ class XRoundEnvTest {
             val p: Int = TODO()
             fun f(): String = TODO()
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runProcessorTest(classpath = compileFiles(listOf(source))) { invocation ->
             val elements = invocation.processingEnv.getElementsFromPackage("foo.bar")
@@ -414,7 +418,7 @@ class XRoundEnvTest {
                         fun method(@TopLevelAnnotation methodParam: String) {}
                     }
                     """
-                        .trimIndent(),
+                        .trimIndent()
                 )
             )
         ) { testInvocation ->
@@ -433,7 +437,7 @@ class XRoundEnvTest {
                     listOf(
                         "methodParam",
                         "methodParam",
-                        typeElement.getDeclaredMethodByJvmName("method"),
+                        typeElement.getDeclaredMethodByJvmName("method")
                     ),
                 )
         }
@@ -448,7 +452,7 @@ class XRoundEnvTest {
                     """
                     class Foo {}
                     """
-                        .trimIndent(),
+                        .trimIndent()
                 )
             )
         ) { testInvocation ->
@@ -502,11 +506,11 @@ class XRoundEnvTest {
                         """
                     @PublishedApi internal class Foo {}
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 ),
             javacProcessors = listOf(javaProcessor),
-            symbolProcessorProviders = listOf(kspProcessorProvider),
+            symbolProcessorProviders = listOf(kspProcessorProvider)
         ) {}
     }
 

@@ -81,7 +81,7 @@ public class StubMediaRouteProviderService extends MediaRouteProviderService {
         return new StubMediaRouteProvider(this);
     }
 
-    static class StubMediaRouteProvider extends MediaRouteProvider {
+    class StubMediaRouteProvider extends MediaRouteProvider {
         Map<String, MediaRouteDescriptor> mRoutes = new ArrayMap<>();
         Map<String, StubRouteController> mControllers = new ArrayMap<>();
         boolean mSupportsDynamicGroup = false;
@@ -91,10 +91,8 @@ public class StubMediaRouteProviderService extends MediaRouteProviderService {
         }
 
         @Override
-        public RouteController onCreateRouteController(
-                @NonNull String routeId, @NonNull RouteControllerOptions routeControllerOptions) {
-            StubRouteController newController =
-                    new StubRouteController(routeId, routeControllerOptions);
+        public RouteController onCreateRouteController(@NonNull String routeId) {
+            StubRouteController newController = new StubRouteController(routeId);
             mControllers.put(routeId, newController);
             return newController;
         }
@@ -117,15 +115,13 @@ public class StubMediaRouteProviderService extends MediaRouteProviderService {
                     .build());
         }
 
-        // TODO: Implement DynamicGroupRouteController
+        //TODO: Implement DynamicGroupRouteController
         class StubRouteController extends RouteController {
             final String mRouteId;
-            final RouteControllerOptions mRouteControllerOptions;
             @Nullable Integer mLastSetVolume;
 
-            StubRouteController(String routeId, RouteControllerOptions routeControllerOptions) {
+            StubRouteController(String routeId) {
                 mRouteId = routeId;
-                mRouteControllerOptions = routeControllerOptions;
             }
 
             @Override

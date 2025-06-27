@@ -59,6 +59,7 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
+    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinTest)
 }
@@ -75,6 +76,8 @@ android {
     defaultConfig {
         minSdk = 26
     }
+    // Use Robolectric 4.+
+    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.watchface"
 }
 
@@ -86,6 +89,5 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:watchface:watchface-samples"))
     addGoldenImageAssets()
-    enableRobolectric()
     failOnDeprecationWarnings = false
 }

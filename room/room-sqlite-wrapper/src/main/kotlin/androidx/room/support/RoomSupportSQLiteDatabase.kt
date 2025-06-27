@@ -89,12 +89,18 @@ internal class RoomSupportSQLiteDatabase(roomDatabase: RoomDatabase) : SupportSQ
     override val isDbLockedByCurrentThread: Boolean
         get() = false
 
+    // TODO(b/408061621): Implement operation
     override fun yieldIfContendedSafely(): Boolean {
-        return session.yieldIfContended()
+        throw UnsupportedOperationException(
+            "yieldIfContendedSafely() is not supported by the wrapper"
+        )
     }
 
+    // TODO(b/408061621): Implement operation
     override fun yieldIfContendedSafely(sleepAfterYieldDelayMillis: Long): Boolean {
-        return session.yieldIfContended(sleepAfterYieldDelayMillis)
+        throw UnsupportedOperationException(
+            "yieldIfContendedSafely() is not supported by the wrapper"
+        )
     }
 
     override var version: Int
@@ -234,7 +240,7 @@ internal class RoomSupportSQLiteDatabase(roomDatabase: RoomDatabase) : SupportSQ
         conflictAlgorithm: Int,
         values: ContentValues,
         whereClause: String?,
-        whereArgs: Array<out Any?>?,
+        whereArgs: Array<out Any?>?
     ): Int {
         val valuesSize = values.size()
         require(valuesSize > 0) { "Empty values" }

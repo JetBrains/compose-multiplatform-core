@@ -17,6 +17,7 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
@@ -93,7 +94,7 @@ fun Modifier.focusRestorer(fallback: FocusRequester = Default): Modifier =
 @Deprecated(
     "Use focusRestorer(FocusRequester) instead",
     ReplaceWith("this.focusRestorer(onRestoreFailed())"),
-    DeprecationLevel.WARNING,
+    DeprecationLevel.WARNING
 )
 fun Modifier.focusRestorer(onRestoreFailed: (() -> FocusRequester)?): Modifier =
     focusRestorer(fallback = onRestoreFailed?.invoke() ?: Default)
@@ -104,9 +105,22 @@ internal class FocusRestorerNode(var fallback: FocusRequester) :
     FocusRequesterModifierNode,
     Modifier.Node() {
 
-    private val onExit: FocusEnterExitScope.() -> Unit = { saveFocusedChild() }
+    private var pinnedHandle: PinnedHandle? = null
+    private val onExit: FocusEnterExitScope.() -> Unit = {
+        saveFocusedChild()
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
+            pinnedHandle?.release()
+            pinnedHandle = pinFocusedChild()
+        }
+    }
 
     private val onEnter: FocusEnterExitScope.() -> Unit = {
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
+            pinnedHandle?.release()
+            pinnedHandle = null
+        }
         // Restoring the focused child involved calling requestFocus() and will automatically cancel
         // the current focus change. If restoration fails, we don't need to do anything for the
         // default case, where focus will enter this block. We have to handle the non-default case.
@@ -118,6 +132,15 @@ internal class FocusRestorerNode(var fallback: FocusRequester) :
     override fun applyFocusProperties(focusProperties: FocusProperties) {
         focusProperties.onEnter = onEnter
         focusProperties.onExit = onExit
+    }
+
+    override fun onDetach() {
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
+            pinnedHandle?.release()
+            pinnedHandle = null
+        }
+        super.onDetach()
     }
 }
 

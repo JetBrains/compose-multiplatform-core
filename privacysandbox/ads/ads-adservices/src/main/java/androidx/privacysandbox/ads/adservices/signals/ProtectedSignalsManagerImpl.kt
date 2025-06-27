@@ -31,7 +31,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 12)
-public open class ProtectedSignalsManagerImpl(
+open class ProtectedSignalsManagerImpl(
     private val protectedSignalsManager: android.adservices.signals.ProtectedSignalsManager
 ) : ProtectedSignalsManager() {
     @DoNotInline
@@ -41,7 +41,7 @@ public open class ProtectedSignalsManagerImpl(
             protectedSignalsManager.updateSignals(
                 convertUpdateRequest(request),
                 Runnable::run,
-                continuation.asOutcomeReceiver(),
+                continuation.asOutcomeReceiver()
             )
         }
     }

@@ -23,7 +23,10 @@ package androidx.window.demo.embedding
  * corresponding views in each item.
  */
 class SplitActivityRecyclerViewBindingData {
-    class Item(val type: Int, val withDivider: Boolean = false) {
+    class Item(
+        val type: Int,
+        val withDivider: Boolean = false,
+    ) {
         companion object {
             const val TYPE_TEXT = 0
             const val TYPE_CHECKBOX = 1

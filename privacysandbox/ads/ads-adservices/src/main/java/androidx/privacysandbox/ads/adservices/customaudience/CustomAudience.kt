@@ -22,7 +22,6 @@ import androidx.annotation.RestrictTo
 import androidx.privacysandbox.ads.adservices.common.AdData
 import androidx.privacysandbox.ads.adservices.common.AdSelectionSignals
 import androidx.privacysandbox.ads.adservices.common.AdTechIdentifier
-import androidx.privacysandbox.ads.adservices.common.ComponentAdData
 import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 import java.time.Instant
 
@@ -58,37 +57,24 @@ import java.time.Instant
  *   during the buyer input generation in the getAdSelectionData call, the service will attempt to
  *   include the highest priority custom audiences first.
  */
-@OptIn(ExperimentalFeatures.Ext14OptIn::class, ExperimentalFeatures.Ext16OptIn::class)
-public class CustomAudience
+@OptIn(ExperimentalFeatures.Ext14OptIn::class)
+class CustomAudience
 @ExperimentalFeatures.Ext14OptIn
 public constructor(
-    public val buyer: AdTechIdentifier,
-    public val name: String,
-    public val dailyUpdateUri: Uri,
-    public val biddingLogicUri: Uri,
-    public val ads: List<AdData>,
-    public val activationTime: Instant? = null,
-    public val expirationTime: Instant? = null,
-    public val userBiddingSignals: AdSelectionSignals? = null,
-    public val trustedBiddingSignals: TrustedBiddingData? = null,
-    // Note: public experimental properties are not allowed because the accessors will not appear
-    // experimental to Java clients. There are public accessors for these properties below.
+    val buyer: AdTechIdentifier,
+    val name: String,
+    val dailyUpdateUri: Uri,
+    val biddingLogicUri: Uri,
+    val ads: List<AdData>,
+    val activationTime: Instant? = null,
+    val expirationTime: Instant? = null,
+    val userBiddingSignals: AdSelectionSignals? = null,
+    val trustedBiddingSignals: TrustedBiddingData? = null,
     @property:ExperimentalFeatures.Ext14OptIn
     @AuctionServerRequestFlag
-    private val auctionServerRequestFlags: Int = 0,
-    @property:ExperimentalFeatures.Ext14OptIn private val priority: Double = 0.0,
+    val auctionServerRequestFlags: Int = 0,
+    @property:ExperimentalFeatures.Ext14OptIn val priority: Double = 0.0,
 ) {
-
-    @ExperimentalFeatures.Ext16OptIn private var componentAds: List<ComponentAdData> = emptyList()
-
-    /**
-     * Creates a custom getter of componentAds property for serving Java client as an experimental
-     * public API.
-     */
-    @ExperimentalFeatures.Ext16OptIn
-    public fun getComponentAds(): List<ComponentAdData> {
-        return componentAds.toList()
-    }
 
     /**
      * Represents the information necessary for a custom audience to participate in ad selection.
@@ -118,7 +104,7 @@ public constructor(
      * @param trustedBiddingSignals optional trusted bidding data, consists of a URI pointing to a
      *   trusted server for buyers' bidding data and a list of keys to query the server with.
      */
-    public constructor(
+    constructor(
         buyer: AdTechIdentifier,
         name: String,
         dailyUpdateUri: Uri,
@@ -127,7 +113,7 @@ public constructor(
         activationTime: Instant? = null,
         expirationTime: Instant? = null,
         userBiddingSignals: AdSelectionSignals? = null,
-        trustedBiddingSignals: TrustedBiddingData? = null,
+        trustedBiddingSignals: TrustedBiddingData? = null
     ) : this(
         buyer,
         name,
@@ -139,74 +125,8 @@ public constructor(
         userBiddingSignals,
         trustedBiddingSignals,
         0,
-        0.0,
+        0.0
     )
-
-    /**
-     * Represents the information necessary for a custom audience to participate in ad selection.
-     *
-     * A custom audience is an abstract grouping of users with similar demonstrated interests. This
-     * class is a collection of some data stored on a device that is necessary to serve
-     * advertisements targeting a single custom audience.
-     *
-     * @param buyer A buyer is identified by a domain in the form "buyerexample.com".
-     * @param name The custom audience's name is an arbitrary string provided by the owner and buyer
-     *   on creation of the [CustomAudience] object.
-     * @param dailyUpdateUri a URI that points to a buyer-operated server that hosts updated bidding
-     *   data and ads metadata to be used in the on-device ad selection process. The URI must use
-     *   HTTPS.
-     * @param biddingLogicUri the target URI used to fetch bidding logic when a custom audience
-     *   participates in the ad selection process. The URI must use HTTPS.
-     * @param ads the list of [AdData] objects is a full and complete list of the ads that will be
-     *   served by this [CustomAudience] during the ad selection process.
-     * @param activationTime optional activation time may be set in the future, in order to serve a
-     *   delayed activation. If the field is not set, the object will be activated at the time of
-     *   joining.
-     * @param expirationTime optional expiration time. Once it has passed, a custom audience is no
-     *   longer eligible for daily ad/bidding data updates or participation in the ad selection
-     *   process. The custom audience will then be deleted from memory by the next daily update.
-     * @param userBiddingSignals optional User bidding signals, provided by buyers to be consumed by
-     *   buyer-provided JavaScript during ad selection in an isolated execution environment.
-     * @param trustedBiddingSignals optional trusted bidding data, consists of a URI pointing to a
-     *   trusted server for buyers' bidding data and a list of keys to query the server with.
-     * @param auctionServerRequestFlags the bitfield of auction server request flags. These are
-     *   flags that influence the creation of the payload generated by the getAdSelectionData API.
-     * @param priority representing the priority of this custom audience. If there is insufficient
-     *   space during the buyer input generation in the getAdSelectionData call, the service will
-     *   attempt to include the highest priority custom audiences first.
-     * @param componentAds representing data specific to a component ad that is necessary for ad
-     *   selection and rendering. This is to support use case for ads composed of multiple pieces,
-     *   such as an ad displaying multiple products at once.
-     */
-    @ExperimentalFeatures.Ext16OptIn
-    public constructor(
-        buyer: AdTechIdentifier,
-        name: String,
-        dailyUpdateUri: Uri,
-        biddingLogicUri: Uri,
-        ads: List<AdData>,
-        activationTime: Instant? = null,
-        expirationTime: Instant? = null,
-        userBiddingSignals: AdSelectionSignals? = null,
-        trustedBiddingSignals: TrustedBiddingData? = null,
-        auctionServerRequestFlags: Int = 0,
-        priority: Double = 0.0,
-        componentAds: List<ComponentAdData> = emptyList(),
-    ) : this(
-        buyer,
-        name,
-        dailyUpdateUri,
-        biddingLogicUri,
-        ads,
-        activationTime,
-        expirationTime,
-        userBiddingSignals,
-        trustedBiddingSignals,
-        auctionServerRequestFlags,
-        priority,
-    ) {
-        this.componentAds = componentAds.toList()
-    }
 
     /** Checks whether two [CustomAudience] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -220,7 +140,6 @@ public constructor(
             this.userBiddingSignals == other.userBiddingSignals &&
             this.trustedBiddingSignals == other.trustedBiddingSignals &&
             this.ads == other.ads &&
-            this.componentAds == other.componentAds &&
             this.priority == other.priority &&
             this.auctionServerRequestFlags == other.auctionServerRequestFlags
     }
@@ -236,7 +155,6 @@ public constructor(
         hash = 31 * hash + trustedBiddingSignals.hashCode()
         hash = 31 * hash + biddingLogicUri.hashCode()
         hash = 31 * hash + ads.hashCode()
-        hash = 31 * hash + componentAds.hashCode()
         hash = 31 * hash + auctionServerRequestFlags.hashCode()
         hash = 31 * hash + priority.hashCode()
         return hash
@@ -249,8 +167,7 @@ public constructor(
             "userBiddingSignals=$userBiddingSignals, " +
             "trustedBiddingSignals=$trustedBiddingSignals, " +
             "biddingLogicUri=$biddingLogicUri, ads=$ads, " +
-            "auctionServerRequestFlags=$auctionServerRequestFlags, priority=$priority, " +
-            "componentAds=$componentAds"
+            "auctionServerRequestFlags=$auctionServerRequestFlags, priority=$priority"
     }
 
     @ExperimentalFeatures.Ext14OptIn
@@ -258,46 +175,25 @@ public constructor(
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         flag = true,
-        value = [FLAG_AUCTION_SERVER_REQUEST_DEFAULT, FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS],
+        value = [FLAG_AUCTION_SERVER_REQUEST_DEFAULT, FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS]
     )
-    public annotation class AuctionServerRequestFlag
-
-    /**
-     * Gets the bitfield of auction server request flags. These are flags that influence the
-     * creation of the payload generated by the getAdSelectionData API.
-     */
-    @ExperimentalFeatures.Ext14OptIn
-    @AuctionServerRequestFlag
-    public fun getAuctionServerRequestFlags(): Int {
-        return auctionServerRequestFlags
-    }
-
-    /**
-     * Gets the priority of this custom audience. If there is insufficient space during the buyer
-     * input generation in the getAdSelectionData call, the service will attempt to include the
-     * highest priority custom audiences first.
-     */
-    @ExperimentalFeatures.Ext14OptIn
-    public fun getPriority(): Double {
-        return priority
-    }
+    annotation class AuctionServerRequestFlag
 
     @ExperimentalFeatures.Ext14OptIn
-    public companion object {
+    companion object {
         /**
          * This auction server request flag indicates to the service that ads for this Custom
          * Audience can be omitted in the server auction payload.
          */
         @ExperimentalFeatures.Ext14OptIn
-        public const val FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS: Int =
+        const val FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS: Int =
             android.adservices.customaudience.CustomAudience.FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS
 
         /** Default value for auction server request flag. */
-        @ExperimentalFeatures.Ext14OptIn
-        public const val FLAG_AUCTION_SERVER_REQUEST_DEFAULT: Int = 0
+        @ExperimentalFeatures.Ext14OptIn const val FLAG_AUCTION_SERVER_REQUEST_DEFAULT: Int = 0
 
         /** Default priority for this custom audience. */
-        @ExperimentalFeatures.Ext14OptIn public const val PRIORITY_DEFAULT: Double = 0.0
+        @ExperimentalFeatures.Ext14OptIn const val PRIORITY_DEFAULT: Double = 0.0
     }
 
     /** Builder for [CustomAudience] objects. */
@@ -307,23 +203,22 @@ public constructor(
         private var name: String,
         private var dailyUpdateUri: Uri,
         private var biddingLogicUri: Uri,
-        private var ads: List<AdData>,
+        private var ads: List<AdData>
     ) {
         private var activationTime: Instant? = null
         private var expirationTime: Instant? = null
         private var userBiddingSignals: AdSelectionSignals? = null
         private var trustedBiddingData: TrustedBiddingData? = null
-        @AuctionServerRequestFlag
-        private var auctionServerRequestFlag: Int = FLAG_AUCTION_SERVER_REQUEST_DEFAULT
+        private @AuctionServerRequestFlag var auctionServerRequestFlag: Int =
+            FLAG_AUCTION_SERVER_REQUEST_DEFAULT
         private var priority: Double = PRIORITY_DEFAULT
-        private var componentAds: List<ComponentAdData> = emptyList()
 
         /**
          * Sets the buyer [AdTechIdentifier].
          *
          * @param buyer A buyer is identified by a domain in the form "buyerexample.com".
          */
-        public fun setBuyer(buyer: AdTechIdentifier): Builder = apply { this.buyer = buyer }
+        fun setBuyer(buyer: AdTechIdentifier): Builder = apply { this.buyer = buyer }
 
         /**
          * Sets the [CustomAudience] object's name.
@@ -331,7 +226,7 @@ public constructor(
          * @param name The custom audience's name is an arbitrary string provided by the owner and
          *   buyer on creation of the [CustomAudience] object.
          */
-        public fun setName(name: String): Builder = apply { this.name = name }
+        fun setName(name: String): Builder = apply { this.name = name }
 
         /**
          * On creation of the [CustomAudience] object, an optional activation time may be set in the
@@ -350,7 +245,7 @@ public constructor(
          * @param activationTime activation time, truncated to milliseconds, after which the
          *   [CustomAudience] will serve ads.
          */
-        public fun setActivationTime(activationTime: Instant): Builder = apply {
+        fun setActivationTime(activationTime: Instant): Builder = apply {
             this.activationTime = activationTime
         }
 
@@ -367,7 +262,7 @@ public constructor(
          * @param expirationTime the timestamp [Instant], truncated to milliseconds, after which the
          *   custom audience should be removed.
          */
-        public fun setExpirationTime(expirationTime: Instant): Builder = apply {
+        fun setExpirationTime(expirationTime: Instant): Builder = apply {
             this.expirationTime = expirationTime
         }
 
@@ -377,7 +272,7 @@ public constructor(
          *
          * @param dailyUpdateUri the custom audience's daily update URI
          */
-        public fun setDailyUpdateUri(dailyUpdateUri: Uri): Builder = apply {
+        fun setDailyUpdateUri(dailyUpdateUri: Uri): Builder = apply {
             this.dailyUpdateUri = dailyUpdateUri
         }
 
@@ -394,7 +289,7 @@ public constructor(
          * @param userBiddingSignals an [AdSelectionSignals] object representing the user bidding
          *   signals for the custom audience
          */
-        public fun setUserBiddingSignals(userBiddingSignals: AdSelectionSignals): Builder = apply {
+        fun setUserBiddingSignals(userBiddingSignals: AdSelectionSignals): Builder = apply {
             this.userBiddingSignals = userBiddingSignals
         }
 
@@ -411,10 +306,9 @@ public constructor(
          *   audience's trusted bidding data.
          */
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        public fun setTrustedBiddingData(trustedBiddingSignals: TrustedBiddingData): Builder =
-            apply {
-                this.trustedBiddingData = trustedBiddingSignals
-            }
+        fun setTrustedBiddingData(trustedBiddingSignals: TrustedBiddingData): Builder = apply {
+            this.trustedBiddingData = trustedBiddingSignals
+        }
 
         /**
          * Returns the target URI used to fetch bidding logic when a custom audience participates in
@@ -422,7 +316,7 @@ public constructor(
          *
          * @param biddingLogicUri the URI for fetching buyer bidding logic
          */
-        public fun setBiddingLogicUri(biddingLogicUri: Uri): Builder = apply {
+        fun setBiddingLogicUri(biddingLogicUri: Uri): Builder = apply {
             this.biddingLogicUri = biddingLogicUri
         }
 
@@ -437,7 +331,7 @@ public constructor(
          * @param ads a [List] of [AdData] objects representing ads currently served by the custom
          *   audience.
          */
-        public fun setAds(ads: List<AdData>): Builder = apply { this.ads = ads }
+        fun setAds(ads: List<AdData>): Builder = apply { this.ads = ads }
 
         /**
          * Sets the priority for this CustomAudience with respect to other CustomAudiences for this
@@ -454,7 +348,7 @@ public constructor(
          */
         @OptIn(ExperimentalFeatures.Ext14OptIn::class)
         @ExperimentalFeatures.Ext14OptIn
-        public fun setPriority(priority: Double): Builder = apply { this.priority = priority }
+        fun setPriority(priority: Double): Builder = apply { this.priority = priority }
 
         /**
          * Returns the bitfield of auction server request flags. These are flags that influence the
@@ -469,24 +363,12 @@ public constructor(
          */
         @OptIn(ExperimentalFeatures.Ext14OptIn::class)
         @ExperimentalFeatures.Ext14OptIn
-        public fun setAuctionServerRequestFlags(
+        fun setAuctionServerRequestFlags(
             @AuctionServerRequestFlag auctionServerRequestFlag: Int
         ): Builder = apply { this.auctionServerRequestFlag = auctionServerRequestFlag }
 
-        /**
-         * Sets the components ads served by the custom audience.
-         *
-         * @param componentAds a [List] of [ComponentAdData] objects representing component ads
-         *   currently served by the custom audience.
-         */
-        @OptIn(ExperimentalFeatures.Ext16OptIn::class)
-        @ExperimentalFeatures.Ext16OptIn
-        public fun setComponentAds(componentAds: List<ComponentAdData>): Builder = apply {
-            this.componentAds = componentAds
-        }
-
         /** Builds an instance of a [CustomAudience]. */
-        public fun build(): CustomAudience {
+        fun build(): CustomAudience {
             return CustomAudience(
                 buyer,
                 name,
@@ -498,8 +380,7 @@ public constructor(
                 userBiddingSignals,
                 trustedBiddingData,
                 auctionServerRequestFlag,
-                priority,
-                componentAds,
+                priority
             )
         }
     }

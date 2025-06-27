@@ -30,7 +30,11 @@ import androidx.credentials.internal.FrameworkClassParsingException
  * @property data the credential data in the [Bundle] format
  */
 @OptIn(ExperimentalDigitalCredentialApi::class)
-abstract class Credential internal constructor(val type: String, val data: Bundle) {
+abstract class Credential
+internal constructor(
+    val type: String,
+    val data: Bundle,
+) {
     companion object {
         /**
          * Parses the raw data into an instance of [Credential].

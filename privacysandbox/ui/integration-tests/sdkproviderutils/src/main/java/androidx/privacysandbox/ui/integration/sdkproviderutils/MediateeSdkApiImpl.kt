@@ -38,7 +38,7 @@ class MediateeSdkApiImpl() {
             withSlowDraw: Boolean,
             drawViewability: Boolean,
             sdkContext: Context,
-            automatedTestCallbackBundle: Bundle,
+            automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
         ): Bundle =
             when (adFormat) {
                 AdFormat.BANNER_AD ->
@@ -47,7 +47,7 @@ class MediateeSdkApiImpl() {
                         withSlowDraw,
                         drawViewability,
                         sdkContext,
-                        automatedTestCallbackBundle,
+                        automatedTestCallbackProxy
                     )
                 AdFormat.NATIVE_AD -> loadNativeAdUtil(adType, sdkContext)
                 else -> Bundle()
@@ -58,7 +58,7 @@ class MediateeSdkApiImpl() {
             waitInsideOnDraw: Boolean,
             drawViewability: Boolean,
             sdkContext: Context,
-            automatedTestCallbackBundle: Bundle,
+            automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
         ): Bundle {
             val testAdapters = TestAdapters(sdkContext)
             val mediationDescription =
@@ -71,19 +71,12 @@ class MediateeSdkApiImpl() {
                     AdType.WEBVIEW_FROM_LOCAL_ASSETS ->
                         loadWebViewBannerAdFromLocalAssets(testAdapters)
                     AdType.NON_WEBVIEW_VIDEO -> loadVideoAd(testAdapters)
-                    AdType.SCROLL_VIEW -> loadScrollView(testAdapters, automatedTestCallbackBundle)
-                    AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL ->
-                        loadScrollView(
-                            testAdapters,
-                            automatedTestCallbackBundle, /* appCanScroll */
-                            false,
-                        )
                     else ->
                         loadNonWebViewBannerAd(
                             testAdapters,
                             mediationDescription,
                             waitInsideOnDraw,
-                            automatedTestCallbackBundle,
+                            automatedTestCallbackProxy
                         )
                 }
             ViewabilityHandler.addObserverFactoryToAdapter(adapter, drawViewability)
@@ -95,7 +88,7 @@ class MediateeSdkApiImpl() {
                 NativeAdGenerator(
                     sdkContext,
                     if (CompatImpl.isAppOwnedMediatee()) MediationOption.IN_APP_MEDIATEE
-                    else MediationOption.SDK_RUNTIME_MEDIATEE,
+                    else MediationOption.SDK_RUNTIME_MEDIATEE
                 )
             return nativeAdGenerator.generateAdBundleWithAssets(adType)
         }
@@ -121,17 +114,9 @@ class MediateeSdkApiImpl() {
             testAdapters: TestAdapters,
             text: String,
             waitInsideOnDraw: Boolean,
-            automatedTestCallbackBundle: Bundle,
+            automatedTestCallbackProxy: IAutomatedTestCallbackProxy?
         ): AbstractSandboxedUiAdapter {
-            return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallbackBundle)
-        }
-
-        private fun loadScrollView(
-            testAdapters: TestAdapters,
-            automatedTestCallbackBundle: Bundle,
-            appCanScroll: Boolean = true,
-        ): AbstractSandboxedUiAdapter {
-            return testAdapters.ScrollViewAd(automatedTestCallbackBundle, appCanScroll)
+            return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallbackProxy)
         }
     }
 

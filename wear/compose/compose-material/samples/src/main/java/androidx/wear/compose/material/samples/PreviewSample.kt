@@ -48,7 +48,10 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewSquare
 @Sampled
 @Composable
 fun ButtonWithIconPreview() {
-    Button(onClick = { /* Do something */ }, enabled = true) {
+    Button(
+        onClick = { /* Do something */ },
+        enabled = true,
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
             contentDescription = "airplane",
@@ -82,7 +85,11 @@ fun TitleCardWithImagePreview() {
 @Composable
 fun ToggleButtonWithIconPreview() {
     var checked by remember { mutableStateOf(true) }
-    ToggleButton(checked = checked, onCheckedChange = { checked = it }, enabled = true) {
+    ToggleButton(
+        checked = checked,
+        onCheckedChange = { checked = it },
+        enabled = true,
+    ) {
         Icon(
             painter = painterResource(id = R.drawable.ic_airplanemode_active_24px),
             contentDescription = "airplane",

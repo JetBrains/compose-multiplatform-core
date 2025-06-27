@@ -83,14 +83,13 @@ internal abstract class GenerateApiTask @Inject constructor(workerExecutor: Work
                 projectApiDirectory.asFile,
                 getPastApiFiles(),
                 currentVersion.get(),
-                apiLocation.get().apiLevelsFile,
+                apiLocation.get().apiLevelsFile
             )
 
         generateApi(
             metalavaClasspath,
             createProjectXmlFile(),
             sourcePaths.files,
-            compiledSources.files.singleOrNull(),
             apiLocation.get(),
             ApiLintMode.CheckBaseline(baselines.get().apiLintFile, targetsJavaConsumers.get()),
             generateRestrictToLibraryGroupAPIs,
@@ -98,7 +97,7 @@ internal abstract class GenerateApiTask @Inject constructor(workerExecutor: Work
             k2UastEnabled.get(),
             kotlinSourceLevel.get(),
             workerExecutor,
-            manifestPath.orNull?.asFile?.absolutePath,
+            manifestPath.orNull?.asFile?.absolutePath
         )
     }
 }

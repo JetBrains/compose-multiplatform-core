@@ -88,7 +88,7 @@ class ScrollIndicatorTest {
         verifySlcPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 40,
+            itemsCount = 40
         )
     }
 
@@ -97,7 +97,7 @@ class ScrollIndicatorTest {
         verifySlcPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 15,
+            itemsCount = 15
         )
     }
 
@@ -106,7 +106,7 @@ class ScrollIndicatorTest {
         verifySlcPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.5f,
-            itemsCount = 6,
+            itemsCount = 6
         )
     }
 
@@ -115,7 +115,7 @@ class ScrollIndicatorTest {
         verifySlcPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.7f,
-            itemsCount = 3,
+            itemsCount = 3
         )
     }
 
@@ -124,7 +124,7 @@ class ScrollIndicatorTest {
         verifySlcPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.7f,
-            itemsCount = 1,
+            itemsCount = 1
         )
     }
 
@@ -151,7 +151,7 @@ class ScrollIndicatorTest {
             autoCentering = null,
             initialCenterItemIndex = 1,
             itemsCount = itemsCount,
-            contentPaddingDp = contentPadding,
+            contentPaddingDp = contentPadding
         )
     }
 
@@ -195,7 +195,7 @@ class ScrollIndicatorTest {
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.5f,
             reverseLayout = true,
-            itemsCount = 6,
+            itemsCount = 6
         )
     }
 
@@ -213,7 +213,7 @@ class ScrollIndicatorTest {
                     ScalingLazyColumnStateAdapter(
                         state,
                         rememberOverscrollEffect() as OffsetOverscrollEffect,
-                        false,
+                        false
                     )
                 ScalingLazyColumn(
                     state = state,
@@ -246,7 +246,7 @@ class ScrollIndicatorTest {
         verifyLazyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 40,
+            itemsCount = 40
         )
     }
 
@@ -255,7 +255,7 @@ class ScrollIndicatorTest {
         verifyLazyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 15,
+            itemsCount = 15
         )
     }
 
@@ -264,7 +264,7 @@ class ScrollIndicatorTest {
         verifyLazyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.5f,
-            itemsCount = 6,
+            itemsCount = 6
         )
     }
 
@@ -296,7 +296,7 @@ class ScrollIndicatorTest {
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.5f,
             reverseLayout = true,
-            itemsCount = 6,
+            itemsCount = 6
         )
     }
 
@@ -314,7 +314,7 @@ class ScrollIndicatorTest {
                     LazyColumnStateAdapter(
                         state,
                         rememberOverscrollEffect() as OffsetOverscrollEffect,
-                        false,
+                        false
                     )
                 LazyColumn(
                     state = state,
@@ -347,7 +347,7 @@ class ScrollIndicatorTest {
         verifyTransformingLazyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 40,
+            itemsCount = 40
         )
     }
 
@@ -356,7 +356,7 @@ class ScrollIndicatorTest {
         verifyTransformingLazyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 15,
+            itemsCount = 15
         )
     }
 
@@ -365,7 +365,7 @@ class ScrollIndicatorTest {
         verifyTransformingLazyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.5f,
-            itemsCount = 6,
+            itemsCount = 6
         )
     }
 
@@ -389,7 +389,7 @@ class ScrollIndicatorTest {
                 Truth.assertThat(it).isWithin(0.05f).of(expectedIndicatorSize)
             },
             itemsCount = itemsCount,
-            contentPaddingDp = contentPadding,
+            contentPaddingDp = contentPadding
         )
     }
 
@@ -407,7 +407,7 @@ class ScrollIndicatorTest {
                     TransformingLazyColumnStateAdapter(
                         state,
                         rememberOverscrollEffect() as OffsetOverscrollEffect,
-                        false,
+                        false
                     )
                 TransformingLazyColumn(
                     state = state,
@@ -424,13 +424,6 @@ class ScrollIndicatorTest {
             indicatorState.sizeFraction - ScrollIndicatorDefaults.overscrollShrinkSizeFraction
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput {
-            // TODO(b/416503918): Overscroll is not triggered during the first touch. This behavior
-            //  was only observed in this test - in real use case it works as expected.
-            // Triggering the first touch as a workaround for this issue
-            down(center)
-            moveTo(Offset(center.x, center.y + 100))
-            up()
-
             down(center)
             moveTo(Offset(center.x, center.y + 2000))
             // We don't lift the finger as otherwise overscroll will be reset
@@ -447,7 +440,7 @@ class ScrollIndicatorTest {
         verifyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 40,
+            itemsCount = 40
         )
     }
 
@@ -456,7 +449,7 @@ class ScrollIndicatorTest {
         verifyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.3f,
-            itemsCount = 15,
+            itemsCount = 15
         )
     }
 
@@ -465,7 +458,7 @@ class ScrollIndicatorTest {
         verifyColumnPositionAndSize(
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.5f,
-            itemsCount = 6,
+            itemsCount = 6
         )
     }
 
@@ -497,7 +490,7 @@ class ScrollIndicatorTest {
             expectedIndicatorPosition = 0f,
             expectedIndicatorSize = 0.5f,
             reverseLayout = true,
-            itemsCount = 6,
+            itemsCount = 6
         )
     }
 
@@ -513,13 +506,13 @@ class ScrollIndicatorTest {
             ScreenScaffold(
                 modifier =
                     Modifier.onSizeChanged { viewPortSize = it }.requiredSize(viewportSizeDp),
-                scrollState = state,
+                scrollState = state
             ) {
                 indicatorState =
                     ScrollStateAdapter(
                         scrollState = state,
                         overscrollEffect = rememberOverscrollEffect() as OffsetOverscrollEffect,
-                        false,
+                        false
                     ) {
                         viewPortSize
                     }
@@ -557,7 +550,7 @@ class ScrollIndicatorTest {
                     state = state,
                     contentPadding = PaddingValues(100.dp),
                     autoCentering = null,
-                    modifier = Modifier.background(Color.Black),
+                    modifier = Modifier.background(Color.Black)
                 ) {
                     items(10) {
                         Text("item $it", modifier = Modifier.height(100.dp), color = Color.Blue)
@@ -566,7 +559,7 @@ class ScrollIndicatorTest {
                 ScrollIndicator(
                     state = state,
                     modifier = Modifier.align(Alignment.CenterEnd).testTag(TEST_TAG),
-                    colors = ScrollIndicatorDefaults.colors(indicatorColor = customIndicatorColor),
+                    colors = ScrollIndicatorDefaults.colors(indicatorColor = customIndicatorColor)
                 )
             }
         }
@@ -585,7 +578,7 @@ class ScrollIndicatorTest {
                     state = state,
                     contentPadding = PaddingValues(100.dp),
                     autoCentering = null,
-                    modifier = Modifier.background(Color.Black),
+                    modifier = Modifier.background(Color.Black)
                 ) {
                     items(10) {
                         Text("item $it", modifier = Modifier.height(100.dp), color = Color.Blue)
@@ -594,7 +587,7 @@ class ScrollIndicatorTest {
                 ScrollIndicator(
                     state = state,
                     modifier = Modifier.align(Alignment.CenterEnd).testTag(TEST_TAG),
-                    colors = ScrollIndicatorDefaults.colors(trackColor = customTrackColor),
+                    colors = ScrollIndicatorDefaults.colors(trackColor = customTrackColor)
                 )
             }
         }
@@ -612,7 +605,7 @@ class ScrollIndicatorTest {
             // Scrolling by half of the total list height, minus original central position of the
             // list, which is 0.5th item.
             scrollByItems = itemsCount / 2f - 0.5f,
-            itemsCount = itemsCount,
+            itemsCount = itemsCount
         )
     }
 
@@ -630,7 +623,7 @@ class ScrollIndicatorTest {
                 Truth.assertThat(it).isWithin(0.05f).of(expectedIndicatorSize)
             },
             reverseLayout = reverseLayout,
-            itemsCount = itemsCount,
+            itemsCount = itemsCount
         )
     }
 
@@ -658,7 +651,7 @@ class ScrollIndicatorTest {
                 reverseLayout = reverseLayout,
                 modifier = Modifier.requiredSize(viewportSizeDp),
                 autoCentering = autoCentering,
-                contentPadding = PaddingValues(contentPaddingDp),
+                contentPadding = PaddingValues(contentPaddingDp)
             ) {
                 items(itemsCount) { Box(Modifier.requiredSize(itemSizeDp).background(Color.Red)) }
             }
@@ -685,7 +678,7 @@ class ScrollIndicatorTest {
             // Scrolling by half of the list height, minus original central position of the list,
             // which is 1.5th item.
             scrollByItems = itemsCount / 2f - 1.5f,
-            itemsCount = itemsCount,
+            itemsCount = itemsCount
         )
     }
 
@@ -738,7 +731,7 @@ class ScrollIndicatorTest {
             // Scrolling by half of the list height, minus original central position of the list,
             // which is 1.5th item.
             scrollByItems = itemsCount / 2f - 1.5f,
-            itemsCount = itemsCount,
+            itemsCount = itemsCount
         )
     }
 
@@ -763,7 +756,7 @@ class ScrollIndicatorTest {
                 Column(
                     verticalArrangement = verticalArrangement,
                     modifier =
-                        Modifier.verticalScroll(state = state, reverseScrolling = reverseLayout),
+                        Modifier.verticalScroll(state = state, reverseScrolling = reverseLayout)
                 ) {
                     for (it in 0 until itemsCount) {
                         Box(Modifier.requiredSize(itemSizeDp).background(Color.Red)) { Text("$it") }
@@ -799,7 +792,7 @@ class ScrollIndicatorTest {
             expectedIndicatorSize = {
                 Truth.assertThat(it).isWithin(0.05f).of(expectedIndicatorSize)
             },
-            itemsCount = itemsCount,
+            itemsCount = itemsCount
         )
     }
 

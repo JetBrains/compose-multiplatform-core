@@ -101,7 +101,7 @@ import java.util.Set;
 
     @VisibleForTesting
     RegisteredMediaRouteProviderWatcher mRegisteredProviderWatcher;
-    @Nullable MediaRouter.RouteInfo mSelectedRoute;
+    MediaRouter.RouteInfo mSelectedRoute;
     MediaRouteProvider.RouteController mSelectedRouteController;
     MediaRouter.OnPrepareTransferListener mOnPrepareTransferListener;
     MediaRouter.PrepareTransferNotifier mTransferNotifier;
@@ -119,9 +119,9 @@ import java.util.Set;
     private final boolean mLowRam;
     private final boolean mTransferReceiverDeclared;
 
-    private final boolean mUseMediaRouter2ForSystemRouting;
+    private boolean mUseMediaRouter2ForSystemRouting;
     private MediaRoute2Provider mMr2Provider;
-    private final PlatformMediaRouter1RouteProvider mPlatformMediaRouter1RouteProvider;
+    private PlatformMediaRouter1RouteProvider mPlatformMediaRouter1RouteProvider;
     private DisplayManagerCompat mDisplayManager;
     private MediaRouterActiveScanThrottlingHelper mActiveScanThrottlingHelper;
     private MediaRouterParams mRouterParams;
@@ -376,7 +376,7 @@ import java.util.Set;
     }
 
     @NonNull
-    /* package */ MediaRouter.RouteInfo getSelectedRoute() {
+        /* package */ MediaRouter.RouteInfo getSelectedRoute() {
         if (mSelectedRoute == null) {
             // This should never happen once the media router has been fully
             // initialized but it is good to check for the error in case there
@@ -600,10 +600,7 @@ import java.util.Set;
             Log.w(TAG, "Ignoring attempt to select disabled route: " + route);
             return;
         }
-        if (isRouteSelected(route)) {
-            Log.w(TAG, "Ignoring attempt to select selected route: " + route);
-            return;
-        }
+
         // Check whether the route comes from MediaRouter2. The SDK check is required to avoid a
         // lint error but is not needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
@@ -650,9 +647,7 @@ import java.util.Set;
                 route.getProviderInstance()
                         .onCreateDynamicGroupRouteController(
                                 route.mDescriptorId,
-                                new MediaRouteProvider.RouteControllerOptions.Builder()
-                                        .setClientPackageName(mApplicationContext.getPackageName())
-                                        .build());
+                                MediaRouteProvider.RouteControllerOptions.EMPTY);
         if (controller == null) {
             Log.w(TAG, "connectRoute: controller == null for : " + route);
             notifyRouteConnectionFailed(
@@ -670,25 +665,6 @@ import java.util.Set;
             routeConnection.disconnect();
             mRouteIdToRouteConnectionMap.remove(route.getId());
         }
-    }
-
-    private boolean isRouteSelected(MediaRouter.RouteInfo route) {
-        if (mSelectedRoute == route) {
-            return true;
-        }
-        MediaRouter.GroupRouteInfo selectedGroupRoute =
-                (mSelectedRoute != null) ? mSelectedRoute.asGroup() : null;
-        if (selectedGroupRoute != null
-                && selectedGroupRoute.getSelectedRoutesInGroup().size() == 1) {
-            int selectionState = selectedGroupRoute.getSelectionState(route);
-            return selectionState
-                            == MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor
-                                    .SELECTED
-                    || selectionState
-                            == MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor
-                                    .SELECTING;
-        }
-        return false;
     }
 
     private void notifyRouteConnectionFailed(
@@ -1255,7 +1231,7 @@ import java.util.Set;
         if (mBluetoothRoute != null && targetIsDefaultRoute) {
             StackTraceElement[] callStack = Thread.currentThread().getStackTrace();
             StringBuilder readableStacktraceBuilder = new StringBuilder();
-            readableStacktraceBuilder.append("- Stacktrace: [");
+            readableStacktraceBuilder.append("- Stracktrace: [");
             // callStack[3] is the caller of this method.
             for (int i = 3; i < callStack.length; i++) {
                 StackTraceElement caller = callStack[i];
@@ -1305,10 +1281,7 @@ import java.util.Set;
                     route.getProviderInstance()
                             .onCreateDynamicGroupRouteController(
                                     route.mDescriptorId,
-                                    new MediaRouteProvider.RouteControllerOptions.Builder()
-                                            .setClientPackageName(
-                                                    mApplicationContext.getPackageName())
-                                            .build());
+                                    MediaRouteProvider.RouteControllerOptions.EMPTY);
             // Select route asynchronously.
             if (dynamicGroupRouteController != null) {
                 dynamicGroupRouteController.setOnDynamicRoutesChangedListener(
@@ -1327,12 +1300,7 @@ import java.util.Set;
         }
 
         MediaRouteProvider.RouteController routeController =
-                route.getProviderInstance()
-                        .onCreateRouteController(
-                                route.mDescriptorId,
-                                new MediaRouteProvider.RouteControllerOptions.Builder()
-                                        .setClientPackageName(mApplicationContext.getPackageName())
-                                        .build());
+                route.getProviderInstance().onCreateRouteController(route.mDescriptorId);
         if (routeController != null) {
             routeController.onSelect();
         }
@@ -1667,9 +1635,7 @@ import java.util.Set;
                 // Nothing to do.
                 Log.d(
                         TAG,
-                        "A RouteController unrelated to the selected route ("
-                                + mSelectedRouteController
-                                + ") is released."
+                        "A RouteController unrelated to the selected route is released."
                                 + " controller="
                                 + controller);
             }
@@ -2113,7 +2079,7 @@ import java.util.Set;
         // Using Pair<RouteInfo, RouteInfo>
         @SuppressWarnings({"unchecked"})
         private void syncWithPlatformMediaRouter1RouteProvider(int what, Object obj) {
-            RouteSelectedMessageParams params;
+            RouteSelectedMessageParams params = null;
             switch (what) {
                 case MSG_ROUTE_ADDED:
                     mPlatformMediaRouter1RouteProvider.onSyncRouteAdded(
@@ -2159,7 +2125,7 @@ import java.util.Set;
             final MediaRouter.Callback callback = record.mCallback;
             switch (what & MSG_TYPE_MASK) {
                 case MSG_TYPE_ROUTE:
-                    MediaRouter.RouteInfo route;
+                    MediaRouter.RouteInfo route = null;
                     MediaRouter.RouteInfo optionalRoute = null;
                     if (what == MSG_ROUTE_ANOTHER_SELECTED || what == MSG_ROUTE_SELECTED) {
                         RouteSelectedMessageParams selectedMessageParams =

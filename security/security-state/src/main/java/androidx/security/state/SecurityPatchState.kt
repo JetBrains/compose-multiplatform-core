@@ -78,7 +78,7 @@ constructor(
     private val context: Context,
     private val systemModulePackageNames: List<String> = DEFAULT_SYSTEM_MODULES,
     private val customSecurityStateManagerCompat: SecurityStateManagerCompat? = null,
-    vulnerabilityReportJsonString: String? = null,
+    vulnerabilityReportJsonString: String? = null
 ) {
     init {
         if (vulnerabilityReportJsonString != null) {
@@ -99,7 +99,7 @@ constructor(
                 "com.google.mainline.telemetry",
                 "com.google.mainline.adservices",
                 "com.google.mainline.go.primary",
-                "com.google.mainline.go.telemetry",
+                "com.google.mainline.go.telemetry"
             )
 
         /** URL for the Google-provided data of vulnerabilities from Android Security Bulletin. */
@@ -145,7 +145,7 @@ constructor(
         @JvmStatic
         public fun getComponentSecurityPatchLevel(
             @Component component: String,
-            securityPatchLevel: String,
+            securityPatchLevel: String
         ): SecurityPatchLevel {
             val exception = IllegalArgumentException("Unknown component: $component")
             return when (component) {
@@ -188,7 +188,13 @@ constructor(
     @Retention(AnnotationRetention.SOURCE)
     @StringDef(
         open = true,
-        value = [COMPONENT_SYSTEM, COMPONENT_SYSTEM_MODULES, COMPONENT_KERNEL, COMPONENT_VENDOR],
+        value =
+            [
+                COMPONENT_SYSTEM,
+                COMPONENT_SYSTEM_MODULES,
+                COMPONENT_KERNEL,
+                COMPONENT_VENDOR,
+            ]
     )
     internal annotation class Component
 
@@ -201,7 +207,7 @@ constructor(
         /** Moderate severity issues from Android Security Bulletin. */
         MODERATE,
         /** Low severity issues from Android Security Bulletin. */
-        LOW,
+        LOW
     }
 
     /** Abstract base class representing a security patch level. */
@@ -230,7 +236,7 @@ constructor(
     public class DateBasedSecurityPatchLevel(
         private val year: Int,
         private val month: Int,
-        private val day: Int,
+        private val day: Int
     ) : SecurityPatchLevel() {
 
         public companion object {
@@ -268,7 +274,7 @@ constructor(
                     return DateBasedSecurityPatchLevel(year, month, day)
                 } else {
                     throw IllegalArgumentException(
-                        "Invalid date format. Expected formats: $DATE_FORMATS"
+                        "Invalid date format. Expected formats: $DATE_FORMATS",
                     )
                 }
             }
@@ -304,7 +310,7 @@ constructor(
         private val majorVersion: Int,
         private val minorVersion: Int,
         private val buildVersion: Int = 0,
-        private val patchVersion: Int = 0,
+        private val patchVersion: Int = 0
     ) : SecurityPatchLevel() {
 
         public companion object {
@@ -358,7 +364,7 @@ constructor(
                         majorVersion,
                         minorVersion,
                         buildVersion,
-                        patchVersion,
+                        patchVersion
                     )
                 patchVersion > 0 ->
                     String.format("%d.%d.%d", majorVersion, minorVersion, patchVersion)
@@ -400,7 +406,7 @@ constructor(
         val vulnerabilities: Map<String, List<VulnerabilityGroup>>,
 
         /* Key is the SPL date yyyy-MM-dd, values are kernel versions */
-        @SerialName("kernel_lts_versions") val kernelLtsVersions: Map<String, List<String>>,
+        @SerialName("kernel_lts_versions") val kernelLtsVersions: Map<String, List<String>>
     )
 
     @Serializable
@@ -408,7 +414,7 @@ constructor(
         @SerialName("cve_identifiers") val cveIdentifiers: List<String>,
         @SerialName("asb_identifiers") val asbIdentifiers: List<String>,
         val severity: String,
-        val components: List<String>,
+        val components: List<String>
     )
 
     /**
@@ -725,14 +731,14 @@ constructor(
      */
     public open fun getPatchedCves(
         @Component component: String,
-        spl: SecurityPatchLevel,
+        spl: SecurityPatchLevel
     ): Map<Severity, Set<String>> {
         // Check if the component is valid for this operation
         val validComponents =
             listOfNotNull(
                 COMPONENT_SYSTEM,
                 if (USE_VENDOR_SPL) COMPONENT_VENDOR else null,
-                COMPONENT_SYSTEM_MODULES,
+                COMPONENT_SYSTEM_MODULES
             )
         if (component !in validComponents) {
             throw IllegalArgumentException(
@@ -780,7 +786,12 @@ constructor(
         checkVulnerabilityReport()
 
         val components =
-            listOf(COMPONENT_SYSTEM, COMPONENT_SYSTEM_MODULES, COMPONENT_VENDOR, COMPONENT_KERNEL)
+            listOf(
+                COMPONENT_SYSTEM,
+                COMPONENT_SYSTEM_MODULES,
+                COMPONENT_VENDOR,
+                COMPONENT_KERNEL,
+            )
 
         components.forEach { component ->
             if (component == COMPONENT_VENDOR && !USE_VENDOR_SPL) return@forEach
@@ -790,7 +801,7 @@ constructor(
                 } catch (e: Exception) {
                     throw IllegalStateException(
                         "Failed to retrieve device SPL for component: $component",
-                        e,
+                        e
                     )
                 }
 
@@ -816,7 +827,7 @@ constructor(
             } catch (e: Exception) {
                 throw IllegalStateException(
                     "Published SPL not available for component: $component",
-                    e,
+                    e
                 )
             }
         }
@@ -837,7 +848,7 @@ constructor(
             listOfNotNull(
                 COMPONENT_SYSTEM,
                 if (USE_VENDOR_SPL) COMPONENT_VENDOR else null,
-                COMPONENT_SYSTEM_MODULES,
+                COMPONENT_SYSTEM_MODULES
             )
         val allPatchedCves = mutableSetOf<String>()
 

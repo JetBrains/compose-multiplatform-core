@@ -52,6 +52,7 @@ dependencies {
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testRunner)
+    testImplementation(libs.robolectric)
     testImplementation("androidx.collection:collection:1.4.2")
     testImplementation(libs.truth)
 }
@@ -69,5 +70,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Render ProtoLayouts to an Android surface"
-    enableRobolectric()
 }

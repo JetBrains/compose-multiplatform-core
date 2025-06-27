@@ -18,7 +18,6 @@ package androidx.build.clang
 
 import org.gradle.api.Action
 import org.gradle.api.Project
-import org.jetbrains.kotlin.konan.target.LinkerOutputKind
 
 /** Not internal to be able to use in buildSrc-tests */
 class AndroidXClang(val project: Project) {
@@ -26,16 +25,11 @@ class AndroidXClang(val project: Project) {
 
     fun createNativeCompilation(
         archiveName: String,
-        outputKind: LinkerOutputKind,
         configure: Action<MultiTargetNativeCompilation>,
     ): MultiTargetNativeCompilation {
         val multiTargetNativeCompilation =
             multiTargetNativeCompilations.getOrPut(archiveName) {
-                MultiTargetNativeCompilation(
-                    project = project,
-                    archiveName = archiveName,
-                    outputKind = outputKind,
-                )
+                MultiTargetNativeCompilation(project = project, archiveName = archiveName)
             }
         configure.execute(multiTargetNativeCompilation)
         return multiTargetNativeCompilation

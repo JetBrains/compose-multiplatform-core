@@ -66,8 +66,11 @@ import com.squareup.kotlinpoet.jvm.jvmName
 import java.util.Locale
 
 /** Creates the implementation for a class annotated with Dao. */
-class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: WriterContext) :
-    TypeWriter(writerContext) {
+class DaoWriter(
+    val dao: Dao,
+    private val dbElement: XElement,
+    writerContext: WriterContext,
+) : TypeWriter(writerContext) {
     private val declaredDao = dao.element.type
     private val className = dao.implTypeName
     override val packageName = className.packageName
@@ -205,12 +208,12 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                         addStatement(
                             "return %T.asList($placeholders)",
                             CommonTypeNames.ARRAYS,
-                            *requiredTypeConvertersLiterals,
+                            *requiredTypeConvertersLiterals
                         )
                     CodeLanguage.KOTLIN ->
                         addStatement(
                             "return listOf($placeholders)",
-                            *requiredTypeConvertersLiterals,
+                            *requiredTypeConvertersLiterals
                         )
                 }
             }
@@ -244,7 +247,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             daoName = dao.typeName,
             daoImplName = dao.implTypeName,
             dbProperty = dbProperty,
-            scope = scope,
+            scope = scope
         )
         return overrideWithoutAnnotations(function.element, declaredDao)
             .addCode(scope.generate())
@@ -253,7 +256,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
 
     private fun createConstructor(
         shortcutFunctions: List<PreparedStmtQuery>,
-        callSuper: Boolean,
+        callSuper: Boolean
     ): XFunSpec {
         val body = buildCodeBlock {
             addStatement("this.%N = %L", dbProperty, dbProperty.name)
@@ -335,8 +338,8 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                         XCodeBlock.of(
                             format = "%T.copyFrom(%L).toRoomRawQuery()",
                             ROOM_SQL_QUERY,
-                            function.runtimeQueryParam.paramName,
-                        ),
+                            function.runtimeQueryParam.paramName
+                        )
                 )
                 rawQueryVar
             } else {
@@ -348,7 +351,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             CommonTypeNames.STRING,
             "%L.%L",
             rawQueryParamName,
-            XCodeBlock.ofString(java = "getSql()", kotlin = "sql"),
+            XCodeBlock.ofString(java = "getSql()", kotlin = "sql")
         )
 
         if (function.returnsValue) {
@@ -359,12 +362,12 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                     this.builder.addStatement(
                         "%L.getBindingFunction().invoke(%L)",
                         rawQueryParamName,
-                        stmtVar,
+                        stmtVar
                     )
                 },
                 returnTypeName = function.returnType.asTypeName(),
                 inTransaction = function.inTransaction,
-                scope = scope,
+                scope = scope
             )
         }
         return scope.generate()
@@ -388,7 +391,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                             XCodeBlock.of(
                                 "%M(%L, 0)",
                                 RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
-                                queryParam.paramName,
+                                queryParam.paramName
                             ),
                     )
                 } else {
@@ -401,7 +404,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                             XCodeBlock.of(
                                 "%M(%S, 0)",
                                 RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
-                                "missing query parameter",
+                                "missing query parameter"
                             ),
                     )
                 }
@@ -415,12 +418,12 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                                 this.builder.addStatement(
                                     "%L.getBindingFunction().invoke(%L)",
                                     rawQueryParamName,
-                                    stmtVar,
+                                    stmtVar
                                 )
                             },
                             returnTypeName = function.returnType.asTypeName(),
                             inTransaction = function.inTransaction,
-                            scope = scope,
+                            scope = scope
                         )
                     }
                 }
@@ -461,7 +464,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
 
     private fun createInsertFunctionBody(
         function: InsertFunction,
-        insertAdapters: Map<String, Pair<XPropertySpec, XTypeSpec>>,
+        insertAdapters: Map<String, Pair<XPropertySpec, XTypeSpec>>
     ): XCodeBlock {
         if (insertAdapters.isEmpty() || function.functionBinder == null) {
             return XCodeBlock.builder().build()
@@ -472,7 +475,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             parameters = function.parameters,
             adapters = insertAdapters,
             dbProperty = dbProperty,
-            scope = scope,
+            scope = scope
         )
         return scope.generate()
     }
@@ -495,7 +498,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
     private fun <T : DeleteOrUpdateShortcutFunction> createShortcutFunctions(
         functions: List<T>,
         functionPrefix: String,
-        implCallback: (T, ShortcutEntity) -> XTypeSpec,
+        implCallback: (T, ShortcutEntity) -> XTypeSpec
     ): List<PreparedStmtQuery> {
         return functions.mapNotNull { function ->
             val entities = function.entities
@@ -528,7 +531,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
 
     private fun createDeleteOrUpdateFunctionBody(
         function: DeleteOrUpdateShortcutFunction,
-        adapters: Map<String, Pair<XPropertySpec, XTypeSpec>>,
+        adapters: Map<String, Pair<XPropertySpec, XTypeSpec>>
     ): XCodeBlock {
         if (adapters.isEmpty() || function.functionBinder == null) {
             return XCodeBlock.builder().build()
@@ -539,7 +542,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             parameters = function.parameters,
             adapters = adapters,
             dbProperty = dbProperty,
-            scope = scope,
+            scope = scope
         )
         return scope.generate()
     }
@@ -569,7 +572,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
 
     private fun createUpsertFunctionBody(
         function: UpsertFunction,
-        upsertAdapters: Map<String, Pair<XPropertySpec, XCodeBlock>>,
+        upsertAdapters: Map<String, Pair<XPropertySpec, XCodeBlock>>
     ): XCodeBlock {
         if (upsertAdapters.isEmpty() || function.functionBinder == null) {
             return XCodeBlock.builder().build()
@@ -580,7 +583,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             parameters = function.parameters,
             adapters = upsertAdapters,
             dbProperty = dbProperty,
-            scope = scope,
+            scope = scope
         )
         return scope.generate()
     }
@@ -595,7 +598,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             dbProperty = dbProperty,
             bindStatement = { stmtVar -> queryWriter.bindArgs(stmtVar, listSizeArgs, this) },
             returnTypeName = function.returnType.asTypeName(),
-            scope = scope,
+            scope = scope
         )
         return scope.generate()
     }
@@ -627,7 +630,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
             bindStatement = bindStatement,
             returnTypeName = function.returnType.asTypeName(),
             inTransaction = function.inTransaction,
-            scope = scope,
+            scope = scope
         )
 
         return scope.generate()
@@ -646,7 +649,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                     functionName = function.element.jvmName,
                     returnType = function.element.returnType,
                     parameterNames = function.element.parameters.map { it.name },
-                    scope = scope,
+                    scope = scope
                 )
                 addCode(scope.generate())
             }
@@ -666,7 +669,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
                         function.concreteFunction.parameters.map {
                             it.type.asTypeName() to it.name
                         },
-                    scope = scope,
+                    scope = scope
                 )
                 addCode(scope.generate())
             }
@@ -687,7 +690,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
      */
     data class PreparedStmtQuery(
         val fields: Map<String, Pair<XPropertySpec, Any>>,
-        val functionImpl: XFunSpec,
+        val functionImpl: XFunSpec
     ) {
         companion object {
             // The key to be used in `fields` where the function requires a field that is not
@@ -702,7 +705,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
     ) :
         SharedPropertySpec(
             baseName = "insertAdapterOf${shortcutEntityFieldNamePart(shortcutEntity)}",
-            type = INSERT_ADAPTER.parametrizedBy(shortcutEntity.dataClass.typeName),
+            type = INSERT_ADAPTER.parametrizedBy(shortcutEntity.dataClass.typeName)
         ) {
         override fun getUniqueKey(): String {
             return "${shortcutEntity.dataClass.typeName}-${shortcutEntity.entityTypeName}" +
@@ -719,7 +722,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
     ) :
         SharedPropertySpec(
             baseName = "${functionPrefix}AdapterOf${shortcutEntityFieldNamePart(shortcutEntity)}",
-            type = DELETE_OR_UPDATE_ADAPTER.parametrizedBy(shortcutEntity.dataClass.typeName),
+            type = DELETE_OR_UPDATE_ADAPTER.parametrizedBy(shortcutEntity.dataClass.typeName)
         ) {
         override fun prepare(writer: TypeWriter, builder: XPropertySpec.Builder) {}
 
@@ -732,7 +735,7 @@ class DaoWriter(val dao: Dao, private val dbElement: XElement, writerContext: Wr
     class UpsertAdapterProperty(val shortcutEntity: ShortcutEntity) :
         SharedPropertySpec(
             baseName = "upsertAdapterOf${shortcutEntityFieldNamePart(shortcutEntity)}",
-            type = UPSERT_ADAPTER.parametrizedBy(shortcutEntity.dataClass.typeName),
+            type = UPSERT_ADAPTER.parametrizedBy(shortcutEntity.dataClass.typeName)
         ) {
         override fun getUniqueKey(): String {
             return "${shortcutEntity.dataClass.typeName}-${shortcutEntity.entityTypeName}"

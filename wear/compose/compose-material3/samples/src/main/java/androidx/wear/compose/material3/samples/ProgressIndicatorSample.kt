@@ -71,7 +71,11 @@ fun FullScreenProgressIndicatorSample() {
                 .padding(CircularProgressIndicatorDefaults.FullScreenPadding)
                 .fillMaxSize()
     ) {
-        CircularProgressIndicator(progress = { 0.25f }, startAngle = 120f, endAngle = 60f)
+        CircularProgressIndicator(
+            progress = { 0.25f },
+            startAngle = 120f,
+            endAngle = 60f,
+        )
     }
 }
 
@@ -96,7 +100,7 @@ fun MediaButtonProgressIndicatorSample() {
                             buttonPadding * 2
                     ),
             progress = { progress },
-            strokeWidth = progressStrokeWidth,
+            strokeWidth = progressStrokeWidth
         )
 
         IconButton(
@@ -107,12 +111,12 @@ fun MediaButtonProgressIndicatorSample() {
                         contentDescription =
                             String.format(
                                 "Play/pause button, track progress: %.0f%%",
-                                progress * 100,
+                                progress * 100
                             )
                     }
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow),
-            onClick = { isPlaying = !isPlaying },
+            onClick = { isPlaying = !isPlaying }
         ) {
             Icon(
                 imageVector = if (isPlaying) Icons.Filled.Close else Icons.Filled.PlayArrow,
@@ -156,7 +160,7 @@ fun SmallValuesProgressIndicatorSample() {
             colors =
                 ProgressIndicatorDefaults.colors(
                     indicatorColor = Color.Green,
-                    trackColor = Color.White,
+                    trackColor = Color.White
                 ),
         )
     }
@@ -197,7 +201,7 @@ fun CircularProgressIndicatorCustomAnimationSample() {
                     strokeWidth = 10.dp,
                     colors = colors,
                     startAngle = 120f,
-                    endAngle = 60f,
+                    endAngle = 60f
                 )
             }
         )
@@ -219,7 +223,7 @@ fun IndeterminateProgressArcSample() {
         ArcProgressIndicator(
             modifier =
                 Modifier.align(Alignment.Center)
-                    .size(ArcProgressIndicatorDefaults.recommendedIndeterminateDiameter)
+                    .size(ArcProgressIndicatorDefaults.recommendedIndeterminateDiameter),
         )
     }
 }
@@ -233,7 +237,10 @@ fun SegmentedProgressIndicatorSample() {
                 .padding(CircularProgressIndicatorDefaults.FullScreenPadding)
                 .fillMaxSize()
     ) {
-        SegmentedCircularProgressIndicator(segmentCount = 5, progress = { 0.5f })
+        SegmentedCircularProgressIndicator(
+            segmentCount = 5,
+            progress = { 0.5f },
+        )
     }
 }
 
@@ -246,7 +253,10 @@ fun SegmentedProgressIndicatorBinarySample() {
                 .padding(CircularProgressIndicatorDefaults.FullScreenPadding)
                 .fillMaxSize()
     ) {
-        SegmentedCircularProgressIndicator(segmentCount = 5, segmentValue = { it % 2 != 0 })
+        SegmentedCircularProgressIndicator(
+            segmentCount = 5,
+            segmentValue = { it % 2 != 0 },
+        )
     }
 }
 
@@ -269,7 +279,7 @@ fun SmallSegmentedProgressIndicatorBinarySample() {
         SegmentedCircularProgressIndicator(
             segmentCount = 8,
             segmentValue = { it % 2 != 0 },
-            modifier = Modifier.align(Alignment.Center).size(80.dp),
+            modifier = Modifier.align(Alignment.Center).size(80.dp)
         )
     }
 }

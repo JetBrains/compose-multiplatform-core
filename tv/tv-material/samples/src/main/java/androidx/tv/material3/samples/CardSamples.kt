@@ -53,11 +53,14 @@ fun HorizontalImageAspectRatioCardSample() {
                     Border(
                         border = BorderStroke(width = 3.dp, color = Color.Green),
                         shape = RoundedCornerShape(5),
-                    )
+                    ),
             ),
         colors =
             CardDefaults.colors(containerColor = Color.Red, focusedContainerColor = Color.Yellow),
-        scale = CardDefaults.scale(focusedScale = 1.05f),
+        scale =
+            CardDefaults.scale(
+                focusedScale = 1.05f,
+            )
     ) {}
 }
 
@@ -73,11 +76,14 @@ fun VerticalImageAspectRatioCardSample() {
                     Border(
                         border = BorderStroke(width = 3.dp, color = Color.Green),
                         shape = RoundedCornerShape(5),
-                    )
+                    ),
             ),
         colors =
             CardDefaults.colors(containerColor = Color.Red, focusedContainerColor = Color.Yellow),
-        scale = CardDefaults.scale(focusedScale = 1.05f),
+        scale =
+            CardDefaults.scale(
+                focusedScale = 1.05f,
+            )
     ) {}
 }
 
@@ -89,12 +95,18 @@ fun SquareImageAspectRatioCardSample() {
         modifier = Modifier.width(150.dp).aspectRatio(CardDefaults.SquareImageAspectRatio),
         border =
             CardDefaults.border(
-                focusedBorder = Border(border = BorderStroke(width = 3.dp, color = Color.Green))
+                focusedBorder = Border(border = BorderStroke(width = 3.dp, color = Color.Green)),
             ),
-        shape = CardDefaults.shape(shape = CircleShape),
+        shape =
+            CardDefaults.shape(
+                shape = CircleShape,
+            ),
         colors =
             CardDefaults.colors(containerColor = Color.Red, focusedContainerColor = Color.Yellow),
-        scale = CardDefaults.scale(focusedScale = 1.05f),
+        scale =
+            CardDefaults.scale(
+                focusedScale = 1.05f,
+            )
     ) {}
 }
 
@@ -106,7 +118,7 @@ fun ClassicCardSample() {
         image = { Box(modifier = Modifier.fillMaxWidth().height(80.dp).background(Color.Blue)) },
         title = { Text("Classic Card") },
         contentPadding = PaddingValues(8.dp),
-        onClick = {},
+        onClick = {}
     )
 }
 
@@ -117,7 +129,7 @@ fun CompactCardSample() {
         modifier = Modifier.size(150.dp, 120.dp),
         image = { Box(modifier = Modifier.fillMaxWidth().height(80.dp).background(Color.Blue)) },
         title = { Text(text = "Compact Card", modifier = Modifier.padding(8.dp)) },
-        onClick = {},
+        onClick = {}
     )
 }
 
@@ -129,6 +141,6 @@ fun WideClassicCardSample() {
         image = { Box(modifier = Modifier.fillMaxWidth().height(80.dp).background(Color.Blue)) },
         title = { Text(text = "Wide Classic Card", modifier = Modifier.padding(start = 8.dp)) },
         contentPadding = PaddingValues(8.dp),
-        onClick = {},
+        onClick = {}
     )
 }

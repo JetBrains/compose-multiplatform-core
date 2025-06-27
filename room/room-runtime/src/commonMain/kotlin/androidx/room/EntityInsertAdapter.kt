@@ -30,7 +30,7 @@ import androidx.sqlite.SQLiteStatement
  *   database.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public abstract class EntityInsertAdapter<T> {
+abstract class EntityInsertAdapter<T> {
     /**
      * Create the query.
      *
@@ -52,7 +52,7 @@ public abstract class EntityInsertAdapter<T> {
      *
      * @param entity The entity to insert
      */
-    public fun insert(connection: SQLiteConnection, entity: T?) {
+    fun insert(connection: SQLiteConnection, entity: T?) {
         if (entity == null) return
         connection.prepare(createQuery()).use { stmt ->
             bind(stmt, entity)
@@ -65,7 +65,7 @@ public abstract class EntityInsertAdapter<T> {
      *
      * @param entities Entities to insert
      */
-    public fun insert(connection: SQLiteConnection, entities: Array<out T?>?) {
+    fun insert(connection: SQLiteConnection, entities: Array<out T?>?) {
         if (entities == null) return
         connection.prepare(createQuery()).use { stmt ->
             for (entity in entities) {
@@ -82,7 +82,7 @@ public abstract class EntityInsertAdapter<T> {
      *
      * @param entities Entities to insert
      */
-    public fun insert(connection: SQLiteConnection, entities: Iterable<T?>?) {
+    fun insert(connection: SQLiteConnection, entities: Iterable<T?>?) {
         if (entities == null) return
         connection.prepare(createQuery()).use { stmt ->
             for (entity in entities) {
@@ -100,7 +100,7 @@ public abstract class EntityInsertAdapter<T> {
      * @param entity The entity to insert
      * @return The SQLite row id or -1 if no row is inserted
      */
-    public fun insertAndReturnId(connection: SQLiteConnection, entity: T?): Long {
+    fun insertAndReturnId(connection: SQLiteConnection, entity: T?): Long {
         if (entity == null) return -1
         connection.prepare(createQuery()).use { stmt ->
             bind(stmt, entity)
@@ -115,9 +115,9 @@ public abstract class EntityInsertAdapter<T> {
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArray(
+    fun insertAndReturnIdsArray(
         connection: SQLiteConnection,
-        entities: Collection<T?>?,
+        entities: Collection<T?>?
     ): LongArray {
         if (entities == null) return longArrayOf()
         return connection.prepare(createQuery()).use { stmt ->
@@ -141,10 +141,7 @@ public abstract class EntityInsertAdapter<T> {
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArray(
-        connection: SQLiteConnection,
-        entities: Array<out T?>?,
-    ): LongArray {
+    fun insertAndReturnIdsArray(connection: SQLiteConnection, entities: Array<out T?>?): LongArray {
         if (entities == null) return longArrayOf()
         return connection.prepare(createQuery()).use { stmt ->
             LongArray(entities.size) { index ->
@@ -167,9 +164,9 @@ public abstract class EntityInsertAdapter<T> {
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArrayBox(
+    fun insertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Collection<T?>?,
+        entities: Collection<T?>?
     ): Array<out Long> {
         if (entities == null) return arrayOf()
         return connection.prepare(createQuery()).use { stmt ->
@@ -193,9 +190,9 @@ public abstract class EntityInsertAdapter<T> {
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsArrayBox(
+    fun insertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Array<out T?>?,
+        entities: Array<out T?>?
     ): Array<out Long> {
         if (entities == null) return arrayOf()
         return connection.prepare(createQuery()).use { stmt ->
@@ -219,10 +216,7 @@ public abstract class EntityInsertAdapter<T> {
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsList(
-        connection: SQLiteConnection,
-        entities: Array<out T?>?,
-    ): List<Long> {
+    fun insertAndReturnIdsList(connection: SQLiteConnection, entities: Array<out T?>?): List<Long> {
         if (entities == null) return emptyList()
         return buildList {
             connection.prepare(createQuery()).use { stmt ->
@@ -246,9 +240,9 @@ public abstract class EntityInsertAdapter<T> {
      * @param entities Entities to insert
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be -1
      */
-    public fun insertAndReturnIdsList(
+    fun insertAndReturnIdsList(
         connection: SQLiteConnection,
-        entities: Collection<T?>?,
+        entities: Collection<T?>?
     ): List<Long> {
         if (entities == null) return emptyList()
         return buildList {

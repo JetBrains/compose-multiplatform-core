@@ -54,10 +54,6 @@
                 <id>unused</id>
                 <isNullable>true</isNullable>
                 <objectQualifiedName>java.time.LocalDateTime</objectQualifiedName>
-                <description>
- A proxy class for [LocalDateTime] that can be used to serialize and deserialize [LocalDateTime]
- objects across the App Functions boundary.
-</description>
                 <properties>
                     <dataTypeMetadata>
                         <id>unused</id>
@@ -195,6 +191,16 @@
                 </properties>
                 <properties>
                     <dataTypeMetadata>
+                        <dataTypeReference>android.net.Uri</dataTypeReference>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>11</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>androidUri</name>
+                </properties>
+                <properties>
+                    <dataTypeMetadata>
                         <id>unused</id>
                         <isNullable>false</isNullable>
                         <itemType>
@@ -226,6 +232,7 @@
                 <required>localDateTime</required>
                 <required>localDateTimeList</required>
                 <required>localDateTimeNullable</required>
+                <required>androidUri</required>
                 <required>androidUriList</required>
                 <required>androidUriNullable</required>
                 <type>3</type>

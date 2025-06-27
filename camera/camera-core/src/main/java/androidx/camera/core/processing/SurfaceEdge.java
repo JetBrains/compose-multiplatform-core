@@ -390,8 +390,6 @@ public class SurfaceEdge {
         checkMainThread();
         mSettableSurface.close();
         mIsClosed = true;
-        mTransformationUpdatesListeners.clear();
-        mOnInvalidatedListeners.clear();
     }
 
     /**
@@ -705,7 +703,6 @@ public class SurfaceEdge {
                     // avoid the "garbage collected" logging.
                     mCompleter.setCancelled();
                 }
-                mProvider = null;
             });
         }
     }

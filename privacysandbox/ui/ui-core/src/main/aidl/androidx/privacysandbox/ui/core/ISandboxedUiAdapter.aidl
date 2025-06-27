@@ -23,6 +23,7 @@ import android.os.Bundle;
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 oneway interface ISandboxedUiAdapter {
     @JavaPassthrough(annotation="@androidx.annotation.RequiresApi(34)")
-    void openRemoteSession(int clientVersion, in Bundle sessionData, int displayId, int initialWidth, int initialHeight, boolean isZOrderOnTop,
-    IRemoteSessionClient remoteSessionClient);
+    void openRemoteSession(
+        in Bundle sessionData, int displayId, int initialWidth, int initialHeight, boolean isZOrderOnTop,
+        IRemoteSessionClient remoteSessionClient);
 }

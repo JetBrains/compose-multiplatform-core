@@ -18,7 +18,6 @@ package androidx.camera.compose
 
 import android.view.Surface
 import androidx.camera.core.SurfaceRequest
-import androidx.camera.core.SurfaceRequest.Result.RESULT_SURFACE_ALREADY_PROVIDED
 import androidx.camera.core.SurfaceRequest.TransformationInfo as CXTransformationInfo
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.camera.viewfinder.compose.Viewfinder
@@ -29,31 +28,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Runnable
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
@@ -150,163 +146,83 @@ public fun CameraXViewfinder(
                                 cropRectLeft = transformInfo.cropRect.left.toFloat(),
                                 cropRectTop = transformInfo.cropRect.top.toFloat(),
                                 cropRectRight = transformInfo.cropRect.right.toFloat(),
-                                cropRectBottom = transformInfo.cropRect.bottom.toFloat(),
-                            ),
+                                cropRectBottom = transformInfo.cropRect.bottom.toFloat()
+                            )
                         )
                 }
         }
 
     viewfinderArgs?.let { args ->
-        val currentArgs by rememberUpdatedState(args)
-        val surfaceRequestScope by
-            produceState<SurfaceRequestScope?>(null) {
-                snapshotFlow { Pair(currentArgs.surfaceRequest, currentArgs.implementationMode) }
-                    .collectLatest { (surfaceRequest, implementationMode) ->
-                        if (!value.canSupport(surfaceRequest, implementationMode)) {
-                            // Create a new session if the new surface request and implementation
-                            // mode
-                            // do not match the current session.
-                            value =
-                                SurfaceRequestScope.createFrom(surfaceRequest, implementationMode)
-                        }
-
-                        // Send along the surface requests until one completes or a request is
-                        // cancelled.
-                        // We want to continue to use the same Surface until it is sent to a
-                        // SurfaceRequest so we don't unnecessarily recreate the underlying
-                        // SurfaceView or TextureView.
-                        try {
-                            val channel =
-                                checkNotNull(value?.requestChannel) {
-                                    "Surface request channel should not be null"
-                                }
-                            channel.send(surfaceRequest)
-                        } catch (_: ClosedSendChannelException) {
-                            // Channel was closed. The SurfaceRequest will have
-                            // willNotProvideSurface()
-                            // called on it by the channel's onUndeliveredElement callback.
-                        }
-                    }
+        // Convert the CameraX SurfaceRequest to ViewfinderSurfaceRequest. There should
+        // always be a 1:1 mapping of CameraX SurfaceRequest to ViewfinderSurfaceRequest.
+        val viewFinderSurfaceRequest =
+            remember(args.surfaceRequest, args.implementationMode) {
+                ViewfinderSurfaceRequest(
+                    width = args.surfaceRequest.resolution.width,
+                    height = args.surfaceRequest.resolution.height,
+                    implementationMode = args.implementationMode,
+                    requestId = "CXSurfaceRequest-${"%x".format(surfaceRequest.hashCode())}"
+                )
             }
 
-        surfaceRequestScope?.let { scope ->
-            DisposableEffect(scope) { onDispose { scope.complete() } }
-            Viewfinder(
-                surfaceRequest = scope.viewfinderSurfaceRequest,
-                transformationInfo = args.transformationInfo,
-                modifier = modifier.fillMaxSize(),
-                coordinateTransformer = coordinateTransformer,
-                alignment = alignment,
-                contentScale = contentScale,
-            ) {
-                onSurfaceSession {
-                    with(scope) {
-                        for (surfaceRequest in requestChannel) {
-                            // Since we provide the surface in a NonCancellable context, we want
-                            // to add a job outside that context to check if the surface is being
-                            // replaced.
-                            val cancellationWatcherJob = launch {
-                                try {
-                                    awaitCancellation()
-                                } catch (e: CancellationException) {
-                                    if (e.message?.contains("Surface replaced") == true) {
-                                        surfaceRequest.invalidate()
-                                    }
-                                }
-                            }
-
-                            // If we're providing a surface, we must wait for the source to be
-                            // finished with the surface before we allow the surface session to
-                            // complete, so always run inside a non-cancellable context
-                            withContext(NonCancellable) {
-                                val result =
-                                    surfaceRequest.provideSurfaceAndWaitForCompletion(surface)
-
-                                // Now that we're done with the Surface, we need to cancel the
-                                // cancellation watcher job so the coroutine can complete.
-                                cancellationWatcherJob.cancel()
-
-                                when (result.resultCode) {
-                                    // If the surface request is already fulfilled, we need to
-                                    // invalidate it so that a new surface request will be produced
-                                    RESULT_SURFACE_ALREADY_PROVIDED -> surfaceRequest.invalidate()
-                                    else -> {
-                                        // The surface is no longer in use. It can be reused for
-                                        // any future requests.
-                                    }
-                                }
-                            }
-
-                            if (!isActive) {
-                                // If the coroutine is no longer active, break out of the loop
-                                // before we try to dequeue another SurfaceRequest. If
-                                // onSurfaceSession is simply called again with a new
-                                // ViewfinderSurfaceSessionScope, we could potentially use the
-                                // SurfaceRequest currently enqueued in the Channel.
-                                break
-                            }
-                        }
-                    }
+        val surfaceRequestScope =
+            remember(args.surfaceRequest) { SurfaceRequestScope(args.surfaceRequest) }
+        DisposableEffect(surfaceRequestScope) { onDispose { surfaceRequestScope.complete() } }
+        Viewfinder(
+            surfaceRequest = viewFinderSurfaceRequest,
+            transformationInfo = args.transformationInfo,
+            modifier = modifier.fillMaxSize(),
+            coordinateTransformer = coordinateTransformer,
+            alignment = alignment,
+            contentScale = contentScale
+        ) {
+            onSurfaceSession {
+                // If we're providing a surface, we must wait for the source to be
+                // finished with the surface before we allow the surface session to
+                // complete, so always run inside a non-cancellable context
+                withContext(NonCancellable) {
+                    with(surfaceRequestScope) { provideSurfaceAndWaitForCompletion(surface) }
                 }
             }
         }
     }
 }
 
-@Stable
-private class SurfaceRequestScope(val viewfinderSurfaceRequest: ViewfinderSurfaceRequest) {
-    val requestChannel =
-        Channel<SurfaceRequest>(Channel.RENDEZVOUS) {
-            // If a surface hasn't yet been provided, this call will succeed. Otherwise
-            // it will be a no-op.
-            it.willNotProvideSurface()
+private class SurfaceRequestScope(val surfaceRequest: SurfaceRequest) : CoroutineScope {
+    val surfaceRequestJob = Job()
+    override val coroutineContext: CoroutineContext = surfaceRequestJob + Dispatchers.Unconfined
+
+    init {
+        surfaceRequest.addRequestCancellationListener(Runnable::run) {
+            this.cancel("SurfaceRequest has been cancelled.")
         }
+    }
 
-    suspend fun SurfaceRequest.provideSurfaceAndWaitForCompletion(
-        surface: Surface
-    ): SurfaceRequest.Result = suspendCancellableCoroutine { continuation ->
-        provideSurface(surface, Runnable::run) { continuation.resume(it) }
+    suspend fun provideSurfaceAndWaitForCompletion(surface: Surface) =
+        suspendCancellableCoroutine<Unit> { continuation ->
+            surfaceRequest.provideSurface(surface, Runnable::run) { continuation.resume(Unit) }
 
-        continuation.invokeOnCancellation {
-            assert(false) {
-                "provideSurfaceAndWaitForCompletion should always be called in a " +
-                    "NonCancellable context to ensure the Surface is not closed before the " +
-                    "frame source has finished using it."
+            continuation.invokeOnCancellation {
+                assert(false) {
+                    "provideSurfaceAndWaitForCompletion should always be called in a " +
+                        "NonCancellable context to ensure the Surface is not closed before the " +
+                        "frame source has finished using it."
+                }
             }
         }
-    }
 
     fun complete() {
-        // Ensure the surface session can exit the for-loop and finish
-        requestChannel.close()
-    }
-
-    fun canSupport(surfaceRequest: SurfaceRequest, implementationMode: ImplementationMode) =
-        viewfinderSurfaceRequest.width == surfaceRequest.resolution.width &&
-            viewfinderSurfaceRequest.height == surfaceRequest.resolution.height &&
-            viewfinderSurfaceRequest.implementationMode == implementationMode
-
-    companion object {
-        fun createFrom(surfaceRequest: SurfaceRequest, implementationMode: ImplementationMode) =
-            SurfaceRequestScope(
-                ViewfinderSurfaceRequest(
-                    width = surfaceRequest.resolution.width,
-                    height = surfaceRequest.resolution.height,
-                    implementationMode = implementationMode,
-                    requestId = "CXSurfaceRequest-${"%x".format(surfaceRequest.hashCode())}",
-                )
-            )
+        // If a surface hasn't yet been provided the surface, this call will succeed. Otherwise
+        // it will be a no-op.
+        surfaceRequest.willNotProvideSurface()
+        // Ensure the job of this coroutine completes.
+        surfaceRequestJob.complete()
     }
 }
-
-private fun SurfaceRequestScope?.canSupport(
-    surfaceRequest: SurfaceRequest,
-    implementationMode: ImplementationMode,
-) = this != null && canSupport(surfaceRequest, implementationMode)
 
 @Immutable
 private data class ViewfinderArgs(
     val surfaceRequest: SurfaceRequest,
     val implementationMode: ImplementationMode,
-    val transformationInfo: TransformationInfo,
+    val transformationInfo: TransformationInfo
 )

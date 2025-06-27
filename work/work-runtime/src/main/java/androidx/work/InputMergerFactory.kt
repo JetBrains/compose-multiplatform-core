@@ -23,7 +23,7 @@ import androidx.annotation.RestrictTo
  * [WorkManager] (see [WorkManager.initialize] and specifying a new [InputMergerFactory] in
  * [Configuration.Builder.setInputMergerFactory].
  */
-public abstract class InputMergerFactory {
+abstract class InputMergerFactory {
     /**
      * Override this method to create an instance of a [InputMerger] given its fully qualified class
      * name.
@@ -35,7 +35,7 @@ public abstract class InputMergerFactory {
      * @param className The fully qualified class name for the [InputMerger]
      * @return an instance of [InputMerger]
      */
-    public abstract fun createInputMerger(className: String): InputMerger?
+    abstract fun createInputMerger(className: String): InputMerger?
 
     /**
      * Creates an instance of a [InputMerger] given its fully qualified class name with the correct
@@ -45,7 +45,7 @@ public abstract class InputMergerFactory {
      * @return an instance of [InputMerger]
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun createInputMergerWithDefaultFallback(className: String): InputMerger? {
+    fun createInputMergerWithDefaultFallback(className: String): InputMerger? {
         var inputMerger = createInputMerger(className)
         if (inputMerger == null) {
             inputMerger = fromClassName(className)

@@ -40,7 +40,11 @@ import kotlinx.serialization.Serializable
 
 @Serializable internal data class NullData(val value: String?)
 
-@Serializable internal data class EnumData(val base1: Enum, val base2: Enum)
+@Serializable
+internal data class EnumData(
+    val base1: Enum,
+    val base2: Enum,
+)
 
 @Serializable
 internal enum class Enum {
@@ -56,7 +60,11 @@ internal enum class Enum {
 
 @Serializable internal data class SealedImpl2(val value: String) : Sealed()
 
-@Serializable internal data class SealedData(val base1: Sealed, val base2: Sealed)
+@Serializable
+internal data class SealedData(
+    val base1: Sealed,
+    val base2: Sealed,
+)
 
 @Serializable
 internal object ObjectData {

@@ -150,7 +150,7 @@ class SdkSandboxManagerCompatTest {
             Runnable::run,
             object : SdkSandboxProcessDeathCallbackCompat {
                 override fun onSdkSandboxDied() {}
-            },
+            }
         )
     }
 
@@ -230,7 +230,10 @@ class SdkSandboxManagerCompatTest {
 
         val interfaces = managerCompat.getSandboxedSdks().map { it.getInterface() }
         assertThat(interfaces)
-            .containsExactly(localSdk.getInterface(), anotherLocalSdk.getInterface())
+            .containsExactly(
+                localSdk.getInterface(),
+                anotherLocalSdk.getInterface(),
+            )
     }
 
     @Test
@@ -258,7 +261,10 @@ class SdkSandboxManagerCompatTest {
         assertThat(result.extraInformation).isEqualTo(params)
 
         val interfaces = managerCompat.getSandboxedSdks().map { it.getInterface() }
-        assertThat(interfaces).containsExactly(localSdk.getInterface())
+        assertThat(interfaces)
+            .containsExactly(
+                localSdk.getInterface(),
+            )
     }
 
     @Test
@@ -279,7 +285,10 @@ class SdkSandboxManagerCompatTest {
         val interfaces = testSdk.getSandboxedSdks().map { it.getInterface() }
 
         assertThat(interfaces)
-            .containsExactly(localSdk.getInterface(), anotherLocalSdk.getInterface())
+            .containsExactly(
+                localSdk.getInterface(),
+                anotherLocalSdk.getInterface(),
+            )
     }
 
     @Test
@@ -329,7 +338,7 @@ class SdkSandboxManagerCompatTest {
             loadLocalSdkWithVersionOverride(
                 TestSdkConfigs.CURRENT.packageName,
                 Bundle(),
-                ClientApiVersion.FUTURE_VERSION.apiLevel,
+                ClientApiVersion.FUTURE_VERSION.apiLevel
             )
         }
     }

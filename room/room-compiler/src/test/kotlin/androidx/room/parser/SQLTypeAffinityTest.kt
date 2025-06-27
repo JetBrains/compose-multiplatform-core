@@ -76,10 +76,15 @@ class SQLTypeAffinityTest {
                         "long!!",
                         "java.lang.Long?",
                         "short!!",
-                        "java.lang.Short?",
+                        "java.lang.Short?"
                     ),
                 SQLTypeAffinity.REAL to
-                    listOf("double!!", "java.lang.Double?", "float!!", "java.lang.Float?"),
+                    listOf(
+                        "double!!",
+                        "java.lang.Double?",
+                        "float!!",
+                        "java.lang.Float?",
+                    )
             )
         private val JAVAC_MAPPING =
             mapOf(
@@ -97,10 +102,15 @@ class SQLTypeAffinityTest {
                         "long",
                         "java.lang.Long",
                         "short",
-                        "java.lang.Short",
+                        "java.lang.Short"
                     ),
                 SQLTypeAffinity.REAL to
-                    listOf("double", "java.lang.Double", "float", "java.lang.Float"),
+                    listOf(
+                        "double",
+                        "java.lang.Double",
+                        "float",
+                        "java.lang.Float",
+                    )
             )
     }
 }

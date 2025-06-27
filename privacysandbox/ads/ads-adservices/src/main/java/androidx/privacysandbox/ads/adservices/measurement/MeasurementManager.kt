@@ -29,7 +29,7 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
 import androidx.privacysandbox.ads.adservices.internal.BackCompatManager
 
 /** This class provides APIs to manage ads attribution using Privacy Sandbox. */
-public abstract class MeasurementManager {
+abstract class MeasurementManager {
     /**
      * Delete previous registrations.
      *
@@ -39,7 +39,7 @@ public abstract class MeasurementManager {
      *   consent hasn't been granted yet.
      * @throws LimitExceededException if the API invocation rate limit is exceeded.
      */
-    public abstract suspend fun deleteRegistrations(deletionRequest: DeletionRequest)
+    abstract suspend fun deleteRegistrations(deletionRequest: DeletionRequest)
 
     /**
      * Register an attribution source (click or view).
@@ -54,7 +54,7 @@ public abstract class MeasurementManager {
      * @throws IllegalArgumentException if the API is invoked with invalid arguments.
      */
     @RequiresPermission(ACCESS_ADSERVICES_ATTRIBUTION)
-    public abstract suspend fun registerSource(attributionSource: Uri, inputEvent: InputEvent?)
+    abstract suspend fun registerSource(attributionSource: Uri, inputEvent: InputEvent?)
 
     /**
      * Register a trigger (conversion).
@@ -69,7 +69,7 @@ public abstract class MeasurementManager {
      */
     // TODO(b/258551492): Improve docs.
     @RequiresPermission(ACCESS_ADSERVICES_ATTRIBUTION)
-    public abstract suspend fun registerTrigger(trigger: Uri)
+    abstract suspend fun registerTrigger(trigger: Uri)
 
     /**
      * Register an attribution source(click or view) from web context. This API will not process any
@@ -83,7 +83,7 @@ public abstract class MeasurementManager {
      * @throws LimitExceededException if the API invocation rate limit is exceeded.
      */
     @RequiresPermission(ACCESS_ADSERVICES_ATTRIBUTION)
-    public abstract suspend fun registerWebSource(request: WebSourceRegistrationRequest)
+    abstract suspend fun registerWebSource(request: WebSourceRegistrationRequest)
 
     /**
      * Register an attribution trigger(click or view) from web context. This API will not process
@@ -96,7 +96,7 @@ public abstract class MeasurementManager {
      * @throws LimitExceededException if the API invocation rate limit is exceeded.
      */
     @RequiresPermission(ACCESS_ADSERVICES_ATTRIBUTION)
-    public abstract suspend fun registerWebTrigger(request: WebTriggerRegistrationRequest)
+    abstract suspend fun registerWebTrigger(request: WebTriggerRegistrationRequest)
 
     /**
      * Register an attribution source(click or view) context. This API will not process any
@@ -110,7 +110,7 @@ public abstract class MeasurementManager {
      */
     @RequiresPermission(ACCESS_ADSERVICES_ATTRIBUTION)
     @ExperimentalFeatures.RegisterSourceOptIn
-    public abstract suspend fun registerSource(request: SourceRegistrationRequest)
+    abstract suspend fun registerSource(request: SourceRegistrationRequest)
 
     /**
      * Get Measurement API status.
@@ -119,16 +119,16 @@ public abstract class MeasurementManager {
      *   [MEASUREMENT_API_STATE_ENABLED] for possible values).
      */
     @RequiresPermission(ACCESS_ADSERVICES_ATTRIBUTION)
-    public abstract suspend fun getMeasurementApiStatus(): Int
+    abstract suspend fun getMeasurementApiStatus(): Int
 
-    public companion object {
+    companion object {
         /**
          * This state indicates that Measurement APIs are unavailable. Invoking them will result in
          * an [UnsupportedOperationException].
          */
-        public const val MEASUREMENT_API_STATE_DISABLED: Int = 0
+        public const val MEASUREMENT_API_STATE_DISABLED = 0
         /** This state indicates that Measurement APIs are enabled. */
-        public const val MEASUREMENT_API_STATE_ENABLED: Int = 1
+        public const val MEASUREMENT_API_STATE_ENABLED = 1
 
         /**
          * Creates [MeasurementManager].
@@ -138,10 +138,10 @@ public abstract class MeasurementManager {
          */
         @JvmStatic
         @SuppressLint("NewApi")
-        public fun obtain(context: Context): MeasurementManager? {
+        fun obtain(context: Context): MeasurementManager? {
             Log.d(
                 "MeasurementManager",
-                "AdServicesInfo.version=${AdServicesInfo.adServicesVersion()}",
+                "AdServicesInfo.version=${AdServicesInfo.adServicesVersion()}"
             )
             return if (AdServicesInfo.adServicesVersion() >= 5) {
                 MeasurementManagerApi33Ext5Impl(context)

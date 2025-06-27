@@ -96,12 +96,20 @@ class PullToRefreshBoxTest {
     @Test
     fun boxVisible_VisibleToSemantics() {
         val state = PullToRefreshState()
-        rule.setContent { PullToRefreshBox(isRefreshing = true, state = state, onRefresh = {}) {} }
+        rule.setContent {
+            PullToRefreshBox(
+                modifier = Modifier.testTag("PullToRefresh"),
+                isRefreshing = true,
+                state = state,
+                onRefresh = {},
+            ) {}
+        }
 
         assertThat(state.distanceFraction).isEqualTo(1f)
         rule
-            .onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
-            .assertExists()
+            .onNodeWithTag("PullToRefresh")
+            .onChild()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
     }
 
     @Test
@@ -126,7 +134,7 @@ class PullToRefreshBoxTest {
             PullToRefreshBox(
                 isRefreshing = isRefreshing.value,
                 state = state,
-                onRefresh = { isRefreshing.value = true },
+                onRefresh = { isRefreshing.value = true }
             ) {
                 LazyColumn(Modifier.testTag("lazy")) { items(50) { Text("Item") } }
             }
@@ -149,7 +157,7 @@ class PullToRefreshBoxTest {
             PullToRefreshBox(
                 isRefreshing = isRefreshing.value,
                 state = state,
-                onRefresh = { isRefreshing.value = true },
+                onRefresh = { isRefreshing.value = true }
             ) {
                 Column(
                     Modifier.fillMaxWidth()
@@ -164,7 +172,7 @@ class PullToRefreshBoxTest {
                                         remainingVelocity = initialVelocity
                                         return initialVelocity
                                     }
-                                },
+                                }
                         )
                 ) {
                     repeat(50) { Text("Lorem ipsum") }

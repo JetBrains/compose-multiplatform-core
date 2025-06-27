@@ -36,7 +36,7 @@ import android.view.SurfaceControlViewHost
  * Analytics for cross-device statistical analysis or by Federated Learning for model training. The
  * displayed content and the persistent output are both not directly accessible by the calling app.
  */
-public abstract class OnDevicePersonalizationManager internal constructor() {
+abstract class OnDevicePersonalizationManager internal constructor() {
     /**
      * Executes an [IsolatedService][android.adservices.ondevicepersonalization.IsolatedService] in
      * the OnDevicePersonalization sandbox bound to an isolated process. Upon execution completion,
@@ -55,7 +55,7 @@ public abstract class OnDevicePersonalizationManager internal constructor() {
      *   handler package is not installed or does not have a valid ODP manifest
      * @throws ClassNotFoundException On older versions if the handler class is not found.
      */
-    public abstract suspend fun executeInIsolatedService(
+    abstract suspend fun executeInIsolatedService(
         executeInIsolatedServiceRequest: ExecuteInIsolatedServiceRequest
     ): ExecuteInIsolatedServiceResponse
 
@@ -78,15 +78,15 @@ public abstract class OnDevicePersonalizationManager internal constructor() {
      * @throws android.adservices.ondevicepersonalization.OnDevicePersonalizationException if
      *   execution of the handler fails with an error code.
      */
-    public abstract suspend fun requestSurfacePackage(
+    abstract suspend fun requestSurfacePackage(
         surfacePackageToken: SurfacePackageToken,
         surfaceViewHostToken: IBinder,
         displayId: Int,
         width: Int,
-        height: Int,
+        height: Int
     ): SurfaceControlViewHost.SurfacePackage
 
-    public companion object {
+    companion object {
         /**
          * Creates [OnDevicePersonalizationManager].
          *
@@ -95,7 +95,7 @@ public abstract class OnDevicePersonalizationManager internal constructor() {
          */
         @SuppressLint("NewApi")
         @JvmStatic
-        public fun obtain(context: Context): OnDevicePersonalizationManager? {
+        fun obtain(context: Context): OnDevicePersonalizationManager? {
             return if (adServicesVersion() >= 12) {
                 OnDevicePersonalizationManagerAPI33Ext12Impl(context)
             } else {

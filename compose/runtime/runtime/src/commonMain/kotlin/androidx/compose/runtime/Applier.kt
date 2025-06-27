@@ -32,38 +32,38 @@ import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
  * @see ComposeNode
  */
 @JvmDefaultWithCompatibility
-public interface Applier<N> {
+interface Applier<N> {
     /**
      * The node that operations will be applied on at any given time. It is expected that the value
      * of this property will change as [down] and [up] are called.
      */
-    public val current: N
+    val current: N
 
     /**
      * Called when the [Composer] is about to begin applying changes using this applier.
      * [onEndChanges] will be called when changes are complete.
      */
-    public fun onBeginChanges() {}
+    fun onBeginChanges() {}
 
     /**
      * Called when the [Composer] is finished applying changes using this applier. A call to
      * [onBeginChanges] will always precede a call to [onEndChanges].
      */
-    public fun onEndChanges() {}
+    fun onEndChanges() {}
 
     /**
      * Indicates that the applier is getting traversed "down" the tree. When this gets called,
      * [node] is expected to be a child of [current], and after this operation, [node] is expected
      * to be the new [current].
      */
-    public fun down(node: N)
+    fun down(node: N)
 
     /**
      * Indicates that the applier is getting traversed "up" the tree. After this operation
      * completes, the [current] should return the "parent" of the [current] node at the beginning of
      * this operation.
      */
-    public fun up()
+    fun up()
 
     /**
      * Indicates that [instance] should be inserted as a child to [current] at [index]. An applier
@@ -144,7 +144,7 @@ public interface Applier<N> {
      *
      *    which exponential to the number of nodes inserted.
      */
-    public fun insertTopDown(index: Int, instance: N)
+    fun insertTopDown(index: Int, instance: N)
 
     /**
      * Indicates that [instance] should be inserted as a child of [current] at [index]. An applier
@@ -152,12 +152,12 @@ public interface Applier<N> {
      * See the description of [insertTopDown] to which describes when to implement [insertTopDown]
      * and when to use [insertBottomUp].
      */
-    public fun insertBottomUp(index: Int, instance: N)
+    fun insertBottomUp(index: Int, instance: N)
 
     /**
      * Indicates that the children of [current] from [index] to [index] + [count] should be removed.
      */
-    public fun remove(index: Int, count: Int)
+    fun remove(index: Int, count: Int)
 
     /**
      * Indicates that [count] children of [current] should be moved from index [from] to index [to].
@@ -167,21 +167,21 @@ public interface Applier<N> {
      * should be `3`. If the elements were A B C D E, calling `move(1, 3, 1)` would result in the
      * elements being reordered to A C B D E.
      */
-    public fun move(from: Int, to: Int, count: Int)
+    fun move(from: Int, to: Int, count: Int)
 
     /**
      * Move to the root and remove all nodes from the root, preparing both this [Applier] and its
      * root to be used as the target of a new composition in the future.
      */
-    public fun clear()
+    fun clear()
 
     /** Apply a change to the current node. */
-    public fun apply(block: N.(Any?) -> Unit, value: Any?) {
+    fun apply(block: N.(Any?) -> Unit, value: Any?) {
         current.block(value)
     }
 
     /** Notify [current] is is being reused in reusable content. */
-    public fun reuse() {
+    fun reuse() {
         (current as? ComposeNodeLifecycleCallback)?.onReuse()
     }
 }
@@ -195,7 +195,7 @@ public interface Applier<N> {
  * @see Composer
  * @see ComposeNode
  */
-public abstract class AbstractApplier<T>(public val root: T) : Applier<T> {
+abstract class AbstractApplier<T>(val root: T) : Applier<T> {
     private val stack = Stack<T>()
 
     override var current: T = root
@@ -284,13 +284,5 @@ internal class OffsetApplier<N>(private val applier: Applier<N>, private val off
 
     override fun clear() {
         composeImmediateRuntimeError("Clear is not valid on OffsetApplier")
-    }
-
-    override fun apply(block: N.(Any?) -> Unit, value: Any?) {
-        applier.apply(block, value)
-    }
-
-    override fun reuse() {
-        applier.reuse()
     }
 }

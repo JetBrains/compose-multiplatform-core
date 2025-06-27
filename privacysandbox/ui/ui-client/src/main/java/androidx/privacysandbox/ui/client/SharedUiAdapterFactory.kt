@@ -24,10 +24,9 @@ import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionClient
 import androidx.privacysandbox.ui.core.IRemoteSharedUiSessionController
 import androidx.privacysandbox.ui.core.ISharedUiAdapter
-import androidx.privacysandbox.ui.core.ProtocolConstants
 import androidx.privacysandbox.ui.core.RemoteCallManager.addBinderDeathListener
+import androidx.privacysandbox.ui.core.RemoteCallManager.closeRemoteSession
 import androidx.privacysandbox.ui.core.RemoteCallManager.tryToCallRemoteObject
-import androidx.privacysandbox.ui.core.SdkRuntimeUiLibVersions
 import androidx.privacysandbox.ui.core.SharedUiAdapter
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -40,11 +39,14 @@ import java.util.concurrent.Executor
  */
 @SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
-public object SharedUiAdapterFactory {
+object SharedUiAdapterFactory {
+
+    // Bundle key is a binary compatibility requirement
+    private const val SHARED_UI_ADAPTER_BINDER = "sharedUiAdapterBinder"
 
     private val uiAdapterFactoryDelegate =
         object : UiAdapterFactoryDelegate() {
-            override val uiAdapterBinderKey: String = ProtocolConstants.sharedUiAdapterBinderKey
+            override val uiAdapterBinderKey: String = SHARED_UI_ADAPTER_BINDER
             override val adapterDescriptor: String = ISharedUiAdapter.DESCRIPTOR
         }
 
@@ -57,35 +59,33 @@ public object SharedUiAdapterFactory {
      */
     @SuppressLint("NullAnnotationGroup")
     @ExperimentalFeatures.SharedUiPresentationApi
-    public fun createFromCoreLibInfo(coreLibInfo: Bundle): SharedUiAdapter {
+    fun createFromCoreLibInfo(coreLibInfo: Bundle): SharedUiAdapter {
+        val uiAdapterBinder = uiAdapterFactoryDelegate.requireNotNullAdapterBinder(coreLibInfo)
+        val adapterInterface = ISharedUiAdapter.Stub.asInterface(uiAdapterBinder)
+
         return if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
                 !uiAdapterFactoryDelegate.shouldUseLocalAdapter(coreLibInfo)
         ) {
-            RemoteAdapter(coreLibInfo)
+            RemoteAdapter(adapterInterface)
         } else {
-            LocalAdapter(coreLibInfo)
+            LocalAdapter(adapterInterface)
         }
     }
 
     /**
      * [LocalAdapter] communicates with a provider living on same process as the client but on a
-     * different class loader. We should also perform ui-provider version check before calling any
-     * newly introduced api / modified api.
+     * different class loader.
      */
     @SuppressLint("BanUncheckedReflection") // using reflection on library classes
-    private class LocalAdapter(adapterBundle: Bundle) :
-        SharedUiAdapter, ClientAdapter(adapterBundle) {
-        private val uiProviderBinder =
-            uiAdapterFactoryDelegate.requireNotNullAdapterBinder(adapterBundle)
-        private val uiProviderVersion =
-            uiAdapterFactoryDelegate.requireNotNullUiProviderVersion(adapterBundle)
+    private class LocalAdapter(adapterInterface: ISharedUiAdapter) : SharedUiAdapter {
+        private val uiProviderBinder = adapterInterface.asBinder()
 
         private val targetSharedSessionClientClass =
             Class.forName(
                 "androidx.privacysandbox.ui.core.SharedUiAdapter\$SessionClient",
                 /* initialize = */ false,
-                uiProviderBinder.javaClass.classLoader,
+                uiProviderBinder.javaClass.classLoader
             )
 
         // The adapterInterface provided must have a openSession method on its class.
@@ -93,16 +93,11 @@ public object SharedUiAdapterFactory {
         // need reflection to get hold of it.
         private val openSessionMethod: Method =
             Class.forName(
-                    "androidx.privacysandbox.ui.core.LocalSharedUiAdapter",
+                    "androidx.privacysandbox.ui.core.SharedUiAdapter",
                     /* initialize = */ false,
-                    uiProviderBinder.javaClass.classLoader,
+                    uiProviderBinder.javaClass.classLoader
                 )
-                .getMethod(
-                    "openLocalSession",
-                    Int::class.java,
-                    Executor::class.java,
-                    targetSharedSessionClientClass,
-                )
+                .getMethod("openSession", Executor::class.java, targetSharedSessionClientClass)
 
         override fun openSession(clientExecutor: Executor, client: SharedUiAdapter.SessionClient) {
             try {
@@ -110,22 +105,16 @@ public object SharedUiAdapterFactory {
                     Proxy.newProxyInstance(
                         uiProviderBinder.javaClass.classLoader,
                         arrayOf(targetSharedSessionClientClass),
-                        SessionClientProxyHandler(uiProviderVersion, client),
+                        SessionClientProxyHandler(client)
                     )
-                openSessionMethod.invoke(
-                    uiProviderBinder,
-                    SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
-                    clientExecutor,
-                    sessionClientProxy,
-                )
+                openSessionMethod.invoke(uiProviderBinder, clientExecutor, sessionClientProxy)
             } catch (exception: Throwable) {
                 client.onSessionError(exception)
             }
         }
 
         private class SessionClientProxyHandler(
-            private val uiProviderVersion: Int,
-            private val origClient: SharedUiAdapter.SessionClient,
+            private val origClient: SharedUiAdapter.SessionClient
         ) : InvocationHandler {
             override fun invoke(proxy: Any, method: Method, args: Array<Any>?): Any {
                 return when (method.name) {
@@ -134,7 +123,7 @@ public object SharedUiAdapterFactory {
                         // recognize Session class on targetClassLoader. We need proxy for it
                         // on local ClassLoader.
                         args!! // This method will always have an argument, so safe to !!
-                        origClient.onSessionOpened(SharedUiSessionProxy(uiProviderVersion, args[0]))
+                        origClient.onSessionOpened(SessionProxy(args[0]))
                     }
                     "onSessionError" -> {
                         args!! // This method will always have an argument, so safe to !!
@@ -152,42 +141,45 @@ public object SharedUiAdapterFactory {
                 }
             }
         }
+
+        /** Create [SharedUiAdapter.Session] that proxies to [origSession] */
+        private class SessionProxy(private val origSession: Any) : SharedUiAdapter.Session {
+            private val targetClass =
+                Class.forName(
+                        "androidx.privacysandbox.ui.core.SharedUiAdapter\$Session",
+                        /* initialize = */ false,
+                        origSession.javaClass.classLoader
+                    )
+                    .also { it.cast(origSession) }
+
+            private val closeMethod = targetClass.getMethod("close")
+
+            override fun close() {
+                closeMethod.invoke(origSession)
+            }
+        }
     }
 
     /**
      * [RemoteAdapter] maintains a shared session with a UI provider living in a different process.
-     * We should also perform ui-provider version check before calling any newly introduced api /
-     * modified api.
      */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private class RemoteAdapter(adapterBundle: Bundle) :
-        SharedUiAdapter, ClientAdapter(adapterBundle) {
-        val uiAdapterBinder = uiAdapterFactoryDelegate.requireNotNullAdapterBinder(adapterBundle)
-        val adapterInterface: ISharedUiAdapter = ISharedUiAdapter.Stub.asInterface(uiAdapterBinder)
-        val uiProviderVersion =
-            uiAdapterFactoryDelegate.requireNotNullUiProviderVersion(adapterBundle)
-
+    private class RemoteAdapter(private val adapterInterface: ISharedUiAdapter) : SharedUiAdapter {
         override fun openSession(clientExecutor: Executor, client: SharedUiAdapter.SessionClient) {
             tryToCallRemoteObject(adapterInterface) {
-                this.openRemoteSession(
-                    SdkRuntimeUiLibVersions.CURRENT_VERSION.apiLevel,
-                    RemoteSharedUiSessionClient(uiProviderVersion, client, clientExecutor),
-                )
+                this.openRemoteSession(RemoteSharedUiSessionClient(client, clientExecutor))
             }
         }
 
         class RemoteSharedUiSessionClient(
-            private val uiProviderVersion: Int,
-            private val client: SharedUiAdapter.SessionClient,
-            private val clientExecutor: Executor,
+            val client: SharedUiAdapter.SessionClient,
+            val clientExecutor: Executor
         ) : IRemoteSharedUiSessionClient.Stub() {
             override fun onRemoteSessionOpened(
                 remoteSessionController: IRemoteSharedUiSessionController
             ) {
-                val remoteSessionControllerWithVersionCheck =
-                    RemoteSharedUiSessionController(uiProviderVersion, remoteSessionController)
                 clientExecutor.execute {
-                    client.onSessionOpened(SessionImpl(remoteSessionControllerWithVersionCheck))
+                    client.onSessionOpened(SessionImpl(remoteSessionController))
                 }
                 addBinderDeathListener(remoteSessionController) {
                     onRemoteSessionError("Remote process died")
@@ -199,11 +191,10 @@ public object SharedUiAdapterFactory {
             }
 
             private class SessionImpl(
-                val remoteSessionController:
-                    androidx.privacysandbox.ui.client.IRemoteSharedUiSessionController
+                val remoteSessionController: IRemoteSharedUiSessionController
             ) : SharedUiAdapter.Session {
                 override fun close() {
-                    remoteSessionController.close()
+                    closeRemoteSession(remoteSessionController)
                 }
             }
         }

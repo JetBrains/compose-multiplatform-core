@@ -70,7 +70,11 @@ class AudioGenerator(private val isEnabled: Boolean = true) {
         audioTrack!!.reloadStaticData()
     }
 
-    suspend fun initial(context: Context, frequency: Int, beepLengthInSec: Double): Boolean {
+    suspend fun initial(
+        context: Context,
+        frequency: Int,
+        beepLengthInSec: Double,
+    ): Boolean {
         checkArgumentNonnegative(frequency, "The input frequency should not be negative.")
         checkArgument(beepLengthInSec >= 0, "The beep length should not be negative.")
 
@@ -113,7 +117,7 @@ class AudioGenerator(private val isEnabled: Boolean = true) {
                 audioFormat,
                 bufferSize,
                 AudioTrack.MODE_STATIC,
-                AudioManager.AUDIO_SESSION_ID_GENERATE,
+                AudioManager.AUDIO_SESSION_ID_GENERATE
             )
 
         audioTrack!!.write(samples, 0, samples.size)
@@ -133,7 +137,7 @@ class AudioGenerator(private val isEnabled: Boolean = true) {
         frequency: Int,
         beepLengthInSec: Double,
         sampleWidth: Int,
-        sampleRate: Int,
+        sampleRate: Int
     ): ByteArray {
         val waveData = generateSineData(frequency, beepLengthInSec, sampleRate)
         val samples = toSamples(waveData, sampleWidth)
@@ -147,7 +151,7 @@ class AudioGenerator(private val isEnabled: Boolean = true) {
         frequency: Int,
         lengthInSec: Double,
         sampleRate: Int,
-        magnitude: Double = MAGNITUDE,
+        magnitude: Double = MAGNITUDE
     ): List<Double> =
         withContext(Dispatchers.Default) {
             val n = (lengthInSec * sampleRate).toInt()

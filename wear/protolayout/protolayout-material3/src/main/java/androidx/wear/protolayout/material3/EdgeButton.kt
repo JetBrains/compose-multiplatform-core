@@ -22,7 +22,6 @@ import androidx.wear.protolayout.DimensionBuilders.dp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
-import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.LayoutElementBuilders.VERTICAL_ALIGN_CENTER
 import androidx.wear.protolayout.LayoutElementBuilders.VerticalAlignment
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
@@ -97,7 +96,7 @@ public fun MaterialScope.iconEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    iconContent: (MaterialScope.() -> LayoutElement),
+    iconContent: (MaterialScope.() -> LayoutElement)
 ): LayoutElement {
     val style =
         if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
@@ -108,15 +107,14 @@ public fun MaterialScope.iconEdgeButton(
 
     return edgeButton(onClick = onClick, modifier = modifier, colors = colors, style = style) {
         withStyle(
-            defaultIconStyle =
-                IconStyle(
-                    width = style.iconSizeDp.dp,
-                    height = style.iconSizeDp.dp,
-                    tintColor = colors.iconColor,
-                )
-        ) {
-            iconContent()
-        }
+                defaultIconStyle =
+                    IconStyle(
+                        width = style.iconSizeDp.dp,
+                        height = style.iconSizeDp.dp,
+                        tintColor = colors.iconColor
+                    )
+            )
+            .iconContent()
     }
 }
 
@@ -154,42 +152,29 @@ public fun MaterialScope.textEdgeButton(
     onClick: Clickable,
     modifier: LayoutModifier = LayoutModifier,
     colors: ButtonColors = filledButtonColors(),
-    labelContent: (MaterialScope.() -> LayoutElement),
-): LayoutElement {
-    val content =
-        withStyle(
-            defaultTextElementStyle =
-                TextElementStyle(
-                    typography = Typography.LABEL_MEDIUM,
-                    color = colors.labelColor,
-                    scalable = false,
-                )
-        ) {
-            labelContent()
-        }
-
-    val modifierWithContentDescription =
-        (content as? Text)?.text?.let {
-            LayoutModifier.contentDescription(
-                staticValue = it.value,
-                dynamicValue = it.dynamicValue,
-            ) then modifier
-        } ?: modifier
-
-    return edgeButton(
+    labelContent: (MaterialScope.() -> LayoutElement)
+): LayoutElement =
+    edgeButton(
         onClick = onClick,
-        modifier = modifierWithContentDescription,
+        modifier = modifier,
         colors = colors,
         style =
             if (deviceConfiguration.rendererSchemaVersion.hasAsymmetricalCornersSupport()) {
                 TEXT
             } else {
                 TEXT_FALLBACK
-            },
+            }
     ) {
-        content
+        withStyle(
+                defaultTextElementStyle =
+                    TextElementStyle(
+                        typography = Typography.LABEL_MEDIUM,
+                        color = colors.labelColor,
+                        scalable = false
+                    )
+            )
+            .labelContent()
     }
-}
 
 /**
  * ProtoLayout Material3 component edge button that offers a single slot to take any content.
@@ -223,7 +208,7 @@ private fun MaterialScope.edgeButton(
     colors: ButtonColors,
     modifier: LayoutModifier = LayoutModifier,
     style: EdgeButtonStyle = ICON,
-    content: MaterialScope.() -> LayoutElement,
+    content: MaterialScope.() -> LayoutElement
 ): LayoutElement {
     val containerWidth = deviceConfiguration.screenWidthDp.toDp()
     val horizontalMarginPercent: Float =
@@ -301,7 +286,7 @@ internal constructor(
     @Dimension(DP) internal val buttonHeightDp: Float = EDGE_BUTTON_HEIGHT_DP,
     @Dimension(DP) internal val bottomMarginDp: Float = BOTTOM_MARGIN_DP,
     @Dimension(DP) internal val iconSizeDp: Float = ICON_SIZE_DP,
-    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS,
+    @Dimension(DP) internal val topCornerRadiusDp: Float = TOP_CORNER_RADIUS
 ) {
     internal companion object {
         /**
@@ -317,8 +302,8 @@ internal constructor(
                     padding(
                         start = TEXT_SIDE_PADDING_DP,
                         top = TEXT_TOP_PADDING_DP,
-                        end = TEXT_SIDE_PADDING_DP,
-                    ),
+                        end = TEXT_SIDE_PADDING_DP
+                    )
             )
 
         /**
@@ -350,7 +335,7 @@ internal constructor(
                     ),
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
-                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
+                bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP
             )
 
         /**
@@ -377,7 +362,7 @@ internal constructor(
                 buttonHeightDp = EDGE_BUTTON_HEIGHT_FALLBACK_DP,
                 topCornerRadiusDp = CORNER_RADIUS_FALLBACK_DP,
                 bottomMarginDp = BOTTOM_MARGIN_FALLBACK_DP,
-                iconSizeDp = ICON_SIZE_FALLBACK_DP,
+                iconSizeDp = ICON_SIZE_FALLBACK_DP
             )
     }
 }

@@ -35,7 +35,6 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,7 +66,7 @@ private val items =
         "Marshmallow",
         "Nougat",
         "Oreo",
-        "Pie",
+        "Pie"
     )
 
 @Composable
@@ -85,6 +84,10 @@ fun SwipeToDismissDemo() {
 
             val dismissState =
                 rememberSwipeToDismissBoxState(
+                    confirmValueChange = {
+                        if (it == SwipeToDismissBoxValue.StartToEnd) unread = !unread
+                        it != SwipeToDismissBoxValue.StartToEnd
+                    },
                     positionalThreshold = { distance -> distance * .25f }
                 )
             SwipeToDismissBox(
@@ -119,21 +122,15 @@ fun SwipeToDismissDemo() {
                         )
                     Box(
                         Modifier.fillMaxSize().background(color).padding(horizontal = 20.dp),
-                        contentAlignment = alignment,
+                        contentAlignment = alignment
                     ) {
                         Icon(
                             icon,
                             contentDescription = "Localized description",
-                            modifier = Modifier.scale(scale),
+                            modifier = Modifier.scale(scale)
                         )
                     }
-                },
-                onDismiss = { dismissDirection ->
-                    if (dismissDirection == SwipeToDismissBoxValue.StartToEnd) {
-                        unread = !unread
-                        dismissState.reset()
-                    }
-                },
+                }
             ) {
                 Card {
                     ListItem(
@@ -157,14 +154,13 @@ fun SwipeToDismissDemo() {
                                                 )
                                             }
                                             true
-                                        },
+                                        }
                                     )
                             },
                         supportingContent = { Text("Swipe me left or right!") },
                     )
                 }
             }
-            LaunchedEffect(dismissState.settledValue) {}
         }
     }
 }

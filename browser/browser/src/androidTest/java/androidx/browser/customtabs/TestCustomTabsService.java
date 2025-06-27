@@ -149,6 +149,11 @@ public class TestCustomTabsService extends CustomTabsService {
         }
 
         @Override
+        public boolean isEphemeralBrowsingSupported(Bundle extras) throws RemoteException {
+            return mMock.isEphemeralBrowsingSupported(extras);
+        }
+
+        @Override
         public boolean newAuthTabSession(IAuthTabCallback callback, Bundle extras)
                 throws RemoteException {
             return false;

@@ -107,7 +107,7 @@ private val API_METHOD_LIST =
                     StepsRecord::class,
                     TimeRangeFilter.between(
                         Instant.ofEpochMilli(1234L),
-                        Instant.ofEpochMilli(1235L),
+                        Instant.ofEpochMilli(1235L)
                     ),
                 )
             )
@@ -118,7 +118,7 @@ private val API_METHOD_LIST =
                 AggregateGroupByDurationRequest(
                     setOf(),
                     TimeRangeFilter.after(Instant.EPOCH),
-                    Duration.ZERO,
+                    Duration.ZERO
                 )
             )
         },
@@ -127,7 +127,7 @@ private val API_METHOD_LIST =
                 AggregateGroupByPeriodRequest(
                     setOf(),
                     TimeRangeFilter.after(LocalDateTime.ofInstant(Instant.EPOCH, ZoneOffset.UTC)),
-                    Period.ZERO,
+                    Period.ZERO
                 )
             )
         },
@@ -137,7 +137,9 @@ private val API_METHOD_LIST =
 
 @Suppress("GoodTime") // Safe to use in test setup
 @RunWith(AndroidJUnit4::class)
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@OptIn(
+    kotlinx.coroutines.ExperimentalCoroutinesApi::class,
+)
 class HealthConnectClientImplTest {
 
     private lateinit var healthConnectClient: HealthConnectClientImpl
@@ -155,7 +157,7 @@ class HealthConnectClientImplTest {
                     .setPackage(clientConfig.servicePackageName)
                     .setAction(clientConfig.bindAction),
                 ComponentName(clientConfig.servicePackageName, clientConfig.bindAction),
-                fakeAhpServiceStub,
+                fakeAhpServiceStub
             )
         installPackage(ApplicationProvider.getApplicationContext(), PROVIDER_PACKAGE_NAME, true)
         Intents.init()
@@ -168,14 +170,14 @@ class HealthConnectClientImplTest {
                         clientConfig,
                         ConnectionManager(
                             ApplicationProvider.getApplicationContext(),
-                            Looper.getMainLooper(),
-                        ),
+                            Looper.getMainLooper()
+                        )
                     ),
                 features =
                     HealthConnectFeaturesApkImpl(
                         ApplicationProvider.getApplicationContext(),
-                        PROVIDER_PACKAGE_NAME,
-                    ),
+                        PROVIDER_PACKAGE_NAME
+                    )
             )
     }
 
@@ -191,7 +193,7 @@ class HealthConnectClientImplTest {
                 HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_IN_BACKGROUND,
                 HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_HISTORY,
                 HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE,
-                HealthConnectFeatures.FEATURE_PLANNED_EXERCISE,
+                HealthConnectFeatures.FEATURE_PLANNED_EXERCISE
             )
 
         for (feature in features) {
@@ -267,7 +269,7 @@ class HealthConnectClientImplTest {
         assertThat(response)
             .containsExactly(
                 getReadPermission(StepsRecord::class),
-                getWritePermission(HeartRateRecord::class),
+                getWritePermission(HeartRateRecord::class)
             )
     }
 
@@ -393,7 +395,7 @@ class HealthConnectClientImplTest {
                     .putValues("vitaminE", DataProto.Value.newBuilder().setDoubleVal(10.0).build())
                     .putValues(
                         "mealType",
-                        DataProto.Value.newBuilder().setEnumVal(MealType.UNKNOWN).build(),
+                        DataProto.Value.newBuilder().setEnumVal(MealType.UNKNOWN).build()
                     )
                     .setDataType(DataProto.DataType.newBuilder().setName("Nutrition"))
                     .setRecordingMethod(RECORDING_METHOD_MANUAL_ENTRY)
@@ -413,7 +415,7 @@ class HealthConnectClientImplTest {
                             .setEndTimeMillis(5678L)
                             .putValues(
                                 "count",
-                                DataProto.Value.newBuilder().setLongVal(100).build(),
+                                DataProto.Value.newBuilder().setLongVal(100).build()
                             )
                             .setDataType(DataProto.DataType.newBuilder().setName("Steps"))
                     )
@@ -421,7 +423,10 @@ class HealthConnectClientImplTest {
             )
 
         val response = testBlocking {
-            healthConnectClient.readRecord(StepsRecord::class, recordId = "testUid")
+            healthConnectClient.readRecord(
+                StepsRecord::class,
+                recordId = "testUid",
+            )
         }
 
         assertThat(fakeAhpServiceStub.lastReadDataRequest?.proto)
@@ -442,7 +447,7 @@ class HealthConnectClientImplTest {
                     startZoneOffset = null,
                     endTime = Instant.ofEpochMilli(5678L),
                     endZoneOffset = null,
-                    metadata = Metadata.unknownRecordingMethodWithId(id = "testUid"),
+                    metadata = Metadata.unknownRecordingMethodWithId(id = "testUid")
                 )
             )
     }
@@ -463,7 +468,7 @@ class HealthConnectClientImplTest {
                             )
                             .putValues(
                                 "count",
-                                DataProto.Value.newBuilder().setLongVal(100).build(),
+                                DataProto.Value.newBuilder().setLongVal(100).build()
                             )
                             .setDataType(DataProto.DataType.newBuilder().setName("Steps"))
                     )
@@ -476,7 +481,7 @@ class HealthConnectClientImplTest {
                 ReadRecordsRequest(
                     StepsRecord::class,
                     timeRangeFilter = TimeRangeFilter.before(endTime = Instant.ofEpochMilli(7890L)),
-                    pageSize = 10,
+                    pageSize = 10
                 )
             )
         }
@@ -514,7 +519,7 @@ class HealthConnectClientImplTest {
             healthConnectClient.deleteRecords(
                 StepsRecord::class,
                 listOf("myUid"),
-                listOf("myClientId"),
+                listOf("myClientId")
             )
         }
 
@@ -603,7 +608,7 @@ class HealthConnectClientImplTest {
             healthConnectClient.aggregate(
                 AggregateRequest(
                     setOf(StepsRecord.COUNT_TOTAL),
-                    TimeRangeFilter.between(startTime, endTime),
+                    TimeRangeFilter.between(startTime, endTime)
                 )
             )
         }
@@ -665,7 +670,7 @@ class HealthConnectClientImplTest {
                 AggregateGroupByDurationRequest(
                     setOf(COUNT_TOTAL),
                     TimeRangeFilter.between(startTime, endTime),
-                    Duration.ofMillis(1000),
+                    Duration.ofMillis(1000)
                 )
             )
         }
@@ -735,7 +740,7 @@ class HealthConnectClientImplTest {
                 AggregateGroupByPeriodRequest(
                     setOf(COUNT_TOTAL),
                     TimeRangeFilter.between(startTime, endTime),
-                    Period.ofDays(1),
+                    Period.ofDays(1)
                 )
             )
         }
@@ -808,7 +813,7 @@ class HealthConnectClientImplTest {
                                     .setEndTimeMillis(5678L)
                                     .putValues(
                                         "count",
-                                        DataProto.Value.newBuilder().setLongVal(100).build(),
+                                        DataProto.Value.newBuilder().setLongVal(100).build()
                                     )
                                     .setDataType(DataProto.DataType.newBuilder().setName("Steps"))
                                     .build()
@@ -838,7 +843,7 @@ class HealthConnectClientImplTest {
         asyncAndWaitForIdle(block).await()
 
     private fun <T> TestScope.asyncAndWaitForIdle(
-        block: suspend CoroutineScope.() -> T
+        block: suspend CoroutineScope.() -> T,
     ): Deferred<T> =
         async(block = block).also {
             advanceUntilIdle()

@@ -26,4 +26,7 @@ import androidx.annotation.RestrictTo
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 class ChangesEvent
-internal constructor(public val nextChangesToken: String, public val changes: List<Change>)
+internal constructor(
+    public val nextChangesToken: String,
+    public val changes: List<Change>,
+)

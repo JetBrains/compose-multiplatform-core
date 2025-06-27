@@ -20,14 +20,12 @@ import android.content.Context
 import android.os.Build
 import android.os.CancellationSignal
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.ClearCredentialStateRequest.Companion.TYPE_CLEAR_RESTORE_CREDENTIAL
 import androidx.credentials.CreateCredentialRequest
 import androidx.credentials.CreateCredentialResponse
-import androidx.credentials.CreateDigitalCredentialRequest
 import androidx.credentials.CreatePasswordRequest
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreateRestoreCredentialRequest
@@ -38,8 +36,6 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.GetDigitalCredentialOption
 import androidx.credentials.GetRestoreCredentialOption
-import androidx.credentials.SignalCredentialStateRequest
-import androidx.credentials.SignalCredentialStateResponse
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.ClearCredentialProviderConfigurationException
 import androidx.credentials.exceptions.ClearCredentialUnknownException
@@ -47,27 +43,20 @@ import androidx.credentials.exceptions.CreateCredentialException
 import androidx.credentials.exceptions.CreateCredentialProviderConfigurationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
-import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import androidx.credentials.playservices.controllers.blockstore.createrestorecredential.CredentialProviderCreateRestoreCredentialController
 import androidx.credentials.playservices.controllers.blockstore.getrestorecredential.CredentialProviderGetRestoreCredentialController
 import androidx.credentials.playservices.controllers.identityauth.beginsignin.CredentialProviderBeginSignInController
 import androidx.credentials.playservices.controllers.identityauth.createpassword.CredentialProviderCreatePasswordController
 import androidx.credentials.playservices.controllers.identityauth.createpublickeycredential.CredentialProviderCreatePublicKeyCredentialController
 import androidx.credentials.playservices.controllers.identityauth.getsigninintent.CredentialProviderGetSignInIntentController
-import androidx.credentials.playservices.controllers.identitycredentials.createdigitalcredential.CreateDigitalCredentialController
-import androidx.credentials.playservices.controllers.identitycredentials.createpasswordcredential.CreatePasswordCredentialController
 import androidx.credentials.playservices.controllers.identitycredentials.createpublickeycredential.CreatePublicKeyCredentialController
-import androidx.credentials.playservices.controllers.identitycredentials.getcredential.GetCredentialController
 import androidx.credentials.playservices.controllers.identitycredentials.getdigitalcredential.CredentialProviderGetDigitalCredentialController
-import androidx.credentials.playservices.controllers.identitycredentials.signalcredentialstate.SignalCredentialStateController
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.blockstore.restorecredential.RestoreCredential
 import com.google.android.gms.auth.blockstore.restorecredential.RestoreCredentialStatusCodes
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.identitycredentials.ClearCredentialStateRequest as GmsClearCredentialStateRequest
-import com.google.android.gms.identitycredentials.IdentityCredentialManager
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import java.util.concurrent.Executor
 
@@ -79,13 +68,12 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
 
     @VisibleForTesting var googleApiAvailability = GoogleApiAvailability.getInstance()
 
-    @RequiresApi(Build.VERSION_CODES.M)
     override fun onGetCredential(
         context: Context,
         request: GetCredentialRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
-        callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>,
+        callback: CredentialManagerCallback<GetCredentialResponse, GetCredentialException>
     ) {
         if (cancellationReviewer(cancellationSignal)) {
             return
@@ -104,8 +92,21 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                 }
                 return
             }
-            CredentialProviderGetDigitalCredentialController(context)
-                .invokePlayServices(request, callback, executor, cancellationSignal)
+            if (Build.VERSION.SDK_INT >= 23) {
+                CredentialProviderGetDigitalCredentialController(context)
+                    .invokePlayServices(request, callback, executor, cancellationSignal)
+            } else {
+                cancellationReviewerWithCallback(cancellationSignal) {
+                    executor.execute {
+                        callback.onError(
+                            GetCredentialProviderConfigurationException(
+                                "this feature requires the minimum API level to be 23"
+                            )
+                        )
+                    }
+                }
+                return
+            }
         } else if (isGetRestoreCredentialRequest(request)) {
             if (!isAvailableOnDevice(MIN_GMS_APK_VERSION_RESTORE_CRED)) {
                 cancellationReviewerWithCallback(cancellationSignal) {
@@ -122,9 +123,6 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
             }
             CredentialProviderGetRestoreCredentialController(context)
                 .invokePlayServices(request, callback, executor, cancellationSignal)
-        } else if (isAvailableOnDevice(PRE_U_MIN_GMS_APK_VERSION)) {
-            GetCredentialController(context)
-                .invokePlayServices(request, callback, executor, cancellationSignal)
         } else if (isGetSignInIntentRequest(request)) {
             CredentialProviderGetSignInIntentController(context)
                 .invokePlayServices(request, callback, executor, cancellationSignal)
@@ -134,30 +132,24 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
     @SuppressWarnings("deprecated")
     override fun onCreateCredential(
         context: Context,
         request: CreateCredentialRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
-        callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>,
+        callback: CredentialManagerCallback<CreateCredentialResponse, CreateCredentialException>
     ) {
         if (cancellationReviewer(cancellationSignal)) {
             return
         }
         when (request) {
             is CreatePasswordRequest -> {
-                if (isAvailableOnDevice(PRE_U_MIN_GMS_APK_VERSION)) {
-                    CreatePasswordCredentialController.getInstance(context)
-                        .invokePlayServices(request, callback, executor, cancellationSignal)
-                } else {
-                    CredentialProviderCreatePasswordController.getInstance(context)
-                        .invokePlayServices(request, callback, executor, cancellationSignal)
-                }
+                CredentialProviderCreatePasswordController.getInstance(context)
+                    .invokePlayServices(request, callback, executor, cancellationSignal)
             }
             is CreatePublicKeyCredentialRequest -> {
-                if (isAvailableOnDevice(PRE_U_MIN_GMS_APK_VERSION) || request.isConditional) {
+                if (request.isConditional) {
                     CreatePublicKeyCredentialController.getInstance(context)
                         .invokePlayServices(request, callback, executor, cancellationSignal)
                 } else {
@@ -165,7 +157,6 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                         .invokePlayServices(request, callback, executor, cancellationSignal)
                 }
             }
-
             is CreateRestoreCredentialRequest -> {
                 if (!isAvailableOnDevice(MIN_GMS_APK_VERSION_RESTORE_CRED)) {
                     cancellationReviewerWithCallback(cancellationSignal) {
@@ -181,10 +172,6 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                     return
                 }
                 CredentialProviderCreateRestoreCredentialController(context)
-                    .invokePlayServices(request, callback, executor, cancellationSignal)
-            }
-            is CreateDigitalCredentialRequest -> {
-                CreateDigitalCredentialController(context)
                     .invokePlayServices(request, callback, executor, cancellationSignal)
             }
             else -> {
@@ -209,7 +196,7 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                 TAG,
                 "Connection with Google Play Services was not " +
                     "successful. Connection result is: " +
-                    connectionResult.toString(),
+                    connectionResult.toString()
             )
         }
         return isSuccessful
@@ -222,7 +209,7 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
     private fun isGooglePlayServicesAvailable(context: Context, minApkVersion: Int): Int {
         return googleApiAvailability.isGooglePlayServicesAvailable(
             context,
-            /*minApkVersion=*/ minApkVersion,
+            /*minApkVersion=*/ minApkVersion
         )
     }
 
@@ -230,7 +217,7 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
         request: ClearCredentialStateRequest,
         cancellationSignal: CancellationSignal?,
         executor: Executor,
-        callback: CredentialManagerCallback<Void?, ClearCredentialException>,
+        callback: CredentialManagerCallback<Void?, ClearCredentialException>
     ) {
         if (cancellationReviewer(cancellationSignal)) {
             return
@@ -280,67 +267,32 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                         executor.execute { callback.onError(clearException) }
                     }
                 }
-        } else if (isAvailableOnDevice(PRE_U_MIN_GMS_APK_VERSION)) {
-            IdentityCredentialManager.getClient(context)
-                .clearCredentialState(GmsClearCredentialStateRequest())
+        } else {
+            Identity.getSignInClient(context)
+                .signOut()
                 .addOnSuccessListener {
                     cancellationReviewerWithCallback(
                         cancellationSignal,
                         {
                             Log.i(TAG, "During clear credential, signed out successfully!")
                             executor.execute { callback.onResult(null) }
-                        },
+                        }
                     )
                 }
-                .addOnFailureListener {
-                    Log.e(TAG, "GMS Clear credential flow failed, calling fallback")
-                    runFallbackClearCredFlow(request, cancellationSignal, executor, callback)
-                }
-        } else {
-            runFallbackClearCredFlow(request, cancellationSignal, executor, callback)
-        }
-    }
-
-    override fun onSignalCredentialState(
-        request: SignalCredentialStateRequest,
-        executor: Executor,
-        callback:
-            CredentialManagerCallback<SignalCredentialStateResponse, SignalCredentialStateException>,
-    ) {
-        SignalCredentialStateController.getInstance(context)
-            .invokePlayServices(request, callback, executor)
-    }
-
-    private fun runFallbackClearCredFlow(
-        request: ClearCredentialStateRequest,
-        cancellationSignal: CancellationSignal?,
-        executor: Executor,
-        callback: CredentialManagerCallback<Void?, ClearCredentialException>,
-    ) {
-        Identity.getSignInClient(context)
-            .signOut()
-            .addOnSuccessListener {
-                cancellationReviewerWithCallback(
-                    cancellationSignal,
-                    {
-                        Log.i(TAG, "During clear credential, signed out successfully!")
-                        executor.execute { callback.onResult(null) }
-                    },
-                )
-            }
-            .addOnFailureListener { e ->
-                run {
-                    cancellationReviewerWithCallback(
-                        cancellationSignal,
-                        {
-                            Log.w(TAG, "During clear credential sign out failed with $e")
-                            executor.execute {
-                                callback.onError(ClearCredentialUnknownException(e.message))
+                .addOnFailureListener { e ->
+                    run {
+                        cancellationReviewerWithCallback(
+                            cancellationSignal,
+                            {
+                                Log.w(TAG, "During clear credential sign out failed with $e")
+                                executor.execute {
+                                    callback.onError(ClearCredentialUnknownException(e.message))
+                                }
                             }
-                        },
-                    )
+                        )
+                    }
                 }
-            }
+        }
     }
 
     companion object {
@@ -349,7 +301,6 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
         // This points to the min APK version of GMS that contains required changes
         // to make passkeys work well
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) const val MIN_GMS_APK_VERSION = 230815045
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) const val PRE_U_MIN_GMS_APK_VERSION = 252400000
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         const val MIN_GMS_APK_VERSION_RESTORE_CRED = 242200000
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

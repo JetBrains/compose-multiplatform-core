@@ -22,6 +22,7 @@ import androidx.credentials.registry.provider.digitalcredentials.FieldDisplayPro
 /**
  * A property of a [MdocEntry].
  *
+ * @constructor
  * @property fieldName the field name, used for matching purpose; for example, the field name of an
  *   ISO mDL age-over-twenty-one property is "org.iso.18013.5.1.age_over_21"
  * @property fieldValue the field value, used for matching purpose; for example, the field value of
@@ -30,13 +31,15 @@ import androidx.credentials.registry.provider.digitalcredentials.FieldDisplayPro
  *   value matching on this field will automatically fail
  * @property fieldDisplayPropertySet a set of field display metadata, each serving a different UI
  *   style variant
- * @constructor
  */
 public class MdocField(
     public val fieldName: String,
     public val fieldValue: Any?,
     fieldDisplayPropertySet: Set<FieldDisplayProperties>,
-) : DigitalCredentialField(fieldDisplayPropertySet = fieldDisplayPropertySet) {
+) :
+    DigitalCredentialField(
+        fieldDisplayPropertySet = fieldDisplayPropertySet,
+    ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is MdocField) return false

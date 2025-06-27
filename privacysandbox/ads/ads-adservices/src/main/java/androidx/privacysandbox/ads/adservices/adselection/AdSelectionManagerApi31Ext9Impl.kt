@@ -25,5 +25,5 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
-public class AdSelectionManagerApi31Ext9Impl(context: Context) :
+class AdSelectionManagerApi31Ext9Impl(context: Context) :
     AdSelectionManagerImplCommon(android.adservices.adselection.AdSelectionManager.get(context))

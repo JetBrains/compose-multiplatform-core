@@ -129,7 +129,10 @@ class MixedAutofillTest {
             autofillTree = @Suppress("DEPRECATION") LocalAutofillTree.current
             autofillNode = remember {
                 @Suppress("DEPRECATION")
-                AutofillNode(onFill = {}, autofillTypes = listOf(AutofillType.Password))
+                AutofillNode(
+                    onFill = {},
+                    autofillTypes = listOf(AutofillType.Password),
+                )
             }
             Box(
                 Modifier.semantics {
@@ -206,7 +209,10 @@ class MixedAutofillTest {
             autofillTree = @Suppress("DEPRECATION") LocalAutofillTree.current
             autofillNode = remember {
                 @Suppress("DEPRECATION")
-                AutofillNode(onFill = {}, autofillTypes = listOf(AutofillType.Password))
+                AutofillNode(
+                    onFill = {},
+                    autofillTypes = listOf(AutofillType.Password),
+                )
             }
             Column {
                 Box(

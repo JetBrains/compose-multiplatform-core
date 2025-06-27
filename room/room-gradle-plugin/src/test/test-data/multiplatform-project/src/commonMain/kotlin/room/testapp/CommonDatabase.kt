@@ -24,9 +24,7 @@ abstract class CommonDatabase : RoomDatabase() {
     abstract fun getCommonDao(): CommonDao
 }
 
-expect object CommonDatabaseCtor : RoomDatabaseConstructor<CommonDatabase> {
-    override fun initialize(): CommonDatabase
-}
+expect object CommonDatabaseCtor : RoomDatabaseConstructor<CommonDatabase>
 
 @Entity
 data class CommonEntity(

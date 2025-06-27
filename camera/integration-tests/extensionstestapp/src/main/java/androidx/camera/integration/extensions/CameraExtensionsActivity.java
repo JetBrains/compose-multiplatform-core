@@ -85,7 +85,6 @@ import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageCapture;
@@ -93,8 +92,7 @@ import androidx.camera.core.ImageCaptureCapabilities;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.Preview;
-import androidx.camera.core.SessionConfig;
-import androidx.camera.core.UseCase;
+import androidx.camera.core.UseCaseGroup;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.extensions.ExtensionMode;
 import androidx.camera.extensions.ExtensionsManager;
@@ -236,6 +234,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
     }
 
     void switchCameras() {
+        mCameraProvider.unbindAll();
         if (mCurrentCameraId != null) {
             String nextCameraId = CameraSelectorUtil.findNextSupportedCameraId(
                     this, mExtensionsManager, mCurrentCameraId, mCurrentExtensionMode);
@@ -275,12 +274,14 @@ public class CameraExtensionsActivity extends AppCompatActivity
         } while (!bindUseCasesWithCurrentExtensionMode());
     }
 
-    @OptIn(markerClass = {ExperimentalCamera2Interop.class, ExperimentalSessionConfig.class})
+    @OptIn(markerClass = ExperimentalCamera2Interop.class)
     boolean bindUseCasesWithCurrentExtensionMode() {
         if (!mExtensionsManager.isExtensionAvailable(mCurrentCameraSelector,
                 mCurrentExtensionMode)) {
             return false;
         }
+
+        mCameraProvider.unbindAll();
 
         CameraSelector cameraSelector = mExtensionsManager.getExtensionEnabledCameraSelector(
                 mCurrentCameraSelector, mCurrentExtensionMode);
@@ -354,20 +355,22 @@ public class CameraExtensionsActivity extends AppCompatActivity
             updateInfoBlock();
         });
 
-        ArrayList<UseCase> useCaseList = new ArrayList<>();
-        useCaseList.add(mPreview);
-        useCaseList.add(mImageCapture);
+        UseCaseGroup.Builder useCaseGroupBuilder =
+                new UseCaseGroup.Builder()
+                        .addUseCase(mPreview)
+                        .addUseCase(mImageCapture);
+
         // Setup VideoCapture.
         stopRecording();
         mVideoCapture = null;
         if (mToggleVideoCapture.isChecked()) {
             Recorder recorder = new Recorder.Builder().build();
             mVideoCapture = VideoCapture.withOutput(recorder);
-            useCaseList.add(checkNotNull(mVideoCapture));
+            useCaseGroupBuilder.addUseCase(checkNotNull(mVideoCapture));
         }
 
         mCamera = mCameraProvider.bindToLifecycle(this, cameraSelector,
-                new SessionConfig.Builder(useCaseList).build());
+                useCaseGroupBuilder.build());
 
         // Update the UI and save location for ImageCapture
         Button toggleButton = findViewById(R.id.PhotoToggle);

@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.IndicationNodeFactory
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.layout.Box
@@ -30,7 +31,6 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -103,6 +103,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -149,6 +150,59 @@ class DrawModifierTest {
         rule.waitForIdle()
 
         assertTrue(graphicsLayer!!.isReleased)
+    }
+
+    @Ignore
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun testGraphicsLayerRecordAfterPersisted() {
+        var graphicsLayer: GraphicsLayer? = null
+        var recordCalls = 0
+        var doRecord by mutableStateOf(false)
+        var shouldDraw by mutableStateOf(false)
+        val tag = "testTag"
+        rule.setContent {
+            graphicsLayer = rememberGraphicsLayer()
+            Box(
+                modifier =
+                    Modifier.testTag(tag).size(100.dp).background(Color.Red).drawWithCache {
+                        if (doRecord) {
+                            graphicsLayer!!.record {
+                                recordCalls++
+                                drawRect(Color.Blue)
+                            }
+                        }
+                        onDrawWithContent {
+                            if (shouldDraw) {
+                                drawLayer(graphicsLayer!!)
+                            }
+                        }
+                    }
+            )
+        }
+
+        rule.runOnIdle {
+            assertNotNull(graphicsLayer)
+            doRecord = true
+            shouldDraw = true
+        }
+
+        rule.runOnIdle {
+            assertThat(recordCalls).isEqualTo(1)
+            // we stop drawing to verify that the persistence logic will keep the content.
+            shouldDraw = false
+        }
+
+        rule.onNodeWithTag(tag).captureToImage().assertPixels { Color.Red }
+
+        rule.runOnIdle { shouldDraw = true }
+
+        rule.onNodeWithTag(tag).captureToImage().assertPixels { Color.Blue }
+
+        rule.runOnIdle {
+            // we also make sure we didn't have to re-record to display the content
+            assertThat(recordCalls).isEqualTo(1)
+        }
     }
 
     @Test
@@ -205,7 +259,7 @@ class DrawModifierTest {
                                 } else {
                                     LayoutDirection.Ltr
                                 }
-                        },
+                        }
                     ) {
                         Text(
                             modifier =
@@ -214,7 +268,7 @@ class DrawModifierTest {
                                     drawLatch.countDown()
                                     onDrawBehind { drawLayoutDirection = layoutDirection }
                                 },
-                            text = "Change Layout Direction",
+                            text = "Change Layout Direction"
                         )
                     }
                 }
@@ -253,7 +307,7 @@ class DrawModifierTest {
                                 } else {
                                     Density(2f, 2f)
                                 }
-                        },
+                        }
                     ) {
                         Text(
                             modifier =
@@ -264,7 +318,7 @@ class DrawModifierTest {
                                         drawLatch.countDown()
                                     }
                                 },
-                            text = "Change Layout Direction",
+                            text = "Change Layout Direction"
                         )
                     }
                 }
@@ -369,7 +423,7 @@ class DrawModifierTest {
                                             density = expectedDensity,
                                             layoutDirection = expectedLayoutDirection,
                                             size = expectedDrawSizePx!!,
-                                            block = block,
+                                            block = block
                                         )
                                         layer.colorFilter = ColorFilter.tint(tintColor)
                                         onDrawWithContent { drawLayer(layer) }
@@ -627,7 +681,7 @@ class DrawModifierTest {
                             } else {
                                 rectColor = Color.Blue
                             }
-                        },
+                        }
             ) {}
         }
 
@@ -724,7 +778,7 @@ class DrawModifierTest {
                                 drawPath(path, Color.Blue)
                             }
                         }
-                        .clickable { pathFillBounds = !pathFillBounds },
+                        .clickable { pathFillBounds = !pathFillBounds }
             ) {}
         }
 
@@ -779,7 +833,7 @@ class DrawModifierTest {
 
                 override fun MeasureScope.measure(
                     measurable: Measurable,
-                    constraints: Constraints,
+                    constraints: Constraints
                 ): MeasureResult {
                     val placeable = measurable.measure(Constraints.fixed(10, 10))
                     return layout(20, 20) { placeable.place(0, 0) }
@@ -826,7 +880,7 @@ class DrawModifierTest {
                             } else {
                                 size = startSize
                             }
-                        },
+                        }
             ) {}
         }
 
@@ -870,7 +924,7 @@ class DrawModifierTest {
                             realLayoutDirection = layoutDirection
                             drawLatch.countDown()
                             onDrawBehind {}
-                        },
+                        }
                 ) {}
             }
         }
@@ -906,7 +960,7 @@ class DrawModifierTest {
                         } else {
                             color.value = Color.Red
                         }
-                    },
+                    }
             ) {}
         }
 
@@ -932,32 +986,6 @@ class DrawModifierTest {
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
-    fun testCacheInvalidatedAfterItemReused() {
-        val testTag = "testTag"
-        var key by mutableStateOf(true)
-        rule.setContent {
-            ReusableContent(key) {
-                Box(
-                    modifier =
-                        Modifier.testTag(testTag)
-                            .size(10.dp)
-                            .drawWithCache {
-                                val graphicsLayer =
-                                    obtainGraphicsLayer().apply { record { drawContent() } }
-                                onDrawWithContent { drawLayer(graphicsLayer) }
-                            }
-                            .background(if (key) Color.Red else Color.Green)
-                )
-            }
-        }
-
-        rule.onNodeWithTag(testTag).captureToImage().assertPixels { Color.Red }
-        rule.runOnIdle { key = false }
-        rule.onNodeWithTag(testTag).captureToImage().assertPixels { Color.Green }
-    }
-
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    @Test
     fun testGraphicsLayerCacheInvalidatedAfterStateChange() {
         // Verify that a state change within the cache block does
         // require the cache block to be invalidated if a graphicsLayer is also
@@ -979,7 +1007,7 @@ class DrawModifierTest {
                             cacheBuildCount++
 
                             onDrawBehind { drawRect(color) }
-                        },
+                        }
                 )
 
                 Box(Modifier.testTag(clickTag).size(20.dp).clickable { flag.value = !flag.value })
@@ -1039,7 +1067,7 @@ class DrawModifierTest {
                                 drawRect(Color.Red, size = Size(size.width / 2, size.height))
                             }
                         }
-                        .background(Color.Blue),
+                        .background(Color.Blue)
             )
         }
 
@@ -1072,7 +1100,7 @@ class DrawModifierTest {
                                 drawRect(Color.Red, size = Size(size.width / 2, size.height))
                             }
                         }
-                        .background(Color.Blue),
+                        .background(Color.Blue)
             )
         }
 
@@ -1109,7 +1137,7 @@ class DrawModifierTest {
                                 drawRect(Color.Green, blendMode = BlendMode.Plus)
                             }
                         }
-                        .background(Color.Blue),
+                        .background(Color.Blue)
             )
         }
 

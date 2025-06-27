@@ -69,7 +69,7 @@ public fun ThreePaneScaffold(
     paneOrder: ThreePaneScaffoldHorizontalOrder,
     secondaryPane: @Composable () -> Unit,
     tertiaryPane: (@Composable () -> Unit)? = null,
-    primaryPane: @Composable () -> Unit,
+    primaryPane: @Composable () -> Unit
 ) {
     Subspace {
         SpatialRow(
@@ -86,7 +86,7 @@ public fun ThreePaneScaffold(
                             scaffoldDirective,
                             XrThreePaneScaffoldTokens.PrimaryPanePanelWidth,
                             drawSpacer,
-                            primaryPane,
+                            primaryPane
                         )
                         drawSpacer = true
                     }
@@ -95,7 +95,7 @@ public fun ThreePaneScaffold(
                             scaffoldDirective,
                             XrThreePaneScaffoldTokens.SecondaryPanePanelWidth,
                             drawSpacer,
-                            secondaryPane,
+                            secondaryPane
                         )
                         drawSpacer = true
                     }
@@ -105,7 +105,7 @@ public fun ThreePaneScaffold(
                                 scaffoldDirective,
                                 XrThreePaneScaffoldTokens.TertiaryPanePanelWidth,
                                 drawSpacer,
-                                tertiaryPane,
+                                tertiaryPane
                             )
                             drawSpacer = true
                         }
@@ -121,7 +121,7 @@ private fun Panel(
     scaffoldDirective: PaneScaffoldDirective,
     defaultPreferredWidth: Dp,
     drawSpacer: Boolean,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     if (drawSpacer) {
         SpatialLayoutSpacer(SubspaceModifier.width(scaffoldDirective.horizontalPartitionSpacerSize))
@@ -129,13 +129,7 @@ private fun Panel(
 
     SpatialPanel(SubspaceModifier.width(defaultPreferredWidth).fillMaxHeight()) {
         Layout(content) { measurables, constraints ->
-            val measurable = measurables.getOrNull(0)
-            if (measurable == null) {
-                return@Layout layout(
-                    defaultPreferredWidth.toPx().roundToInt(),
-                    constraints.maxHeight,
-                ) {}
-            }
+            val measurable = measurables[0]
             val parentData = measurable.parentData as? PaneScaffoldParentData
             val widthFloat = parentData?.preferredWidth ?: defaultPreferredWidth
             val width = widthFloat.toPx().roundToInt()
@@ -155,7 +149,7 @@ private fun Panel(
 @ExperimentalMaterial3XrApi
 @OptIn(
     ExperimentalMaterial3AdaptiveApi::class,
-    ExperimentalMaterial3AdaptiveComponentOverrideApi::class,
+    ExperimentalMaterial3AdaptiveComponentOverrideApi::class
 )
 internal object XrThreePaneScaffoldOverride : ThreePaneScaffoldOverride {
     @Composable

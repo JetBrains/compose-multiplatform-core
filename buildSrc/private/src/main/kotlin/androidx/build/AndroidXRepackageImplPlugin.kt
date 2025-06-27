@@ -76,16 +76,15 @@ class AndroidXRepackageImplPlugin : Plugin<Project> {
 
     private fun Project.createConfigurations() {
         val repackage =
-            configurations.register("repackage") { config ->
+            configurations.create("repackage") { config ->
                 config.isCanBeConsumed = false
                 config.isCanBeResolved = false
             }
 
-        configurations.register("repackageClasspath") { config ->
+        configurations.create("repackageClasspath") { config ->
             config.isCanBeConsumed = false
             config.isCanBeResolved = true
-            // remove .get() when https://github.com/gradle/gradle/issues/33396 is fixed
-            config.extendsFrom(repackage.get())
+            config.extendsFrom(repackage)
         }
 
         tasks.named("jar", Jar::class.java) {
@@ -150,5 +149,5 @@ abstract class RelocationExtension(val project: Project) {
     }
 
     /* Optional artifact id if the user wants to publish the dependency in the shadowed config. */
-    abstract val artifactId: Property<String>
+    abstract val artifactId: Property<String?>
 }

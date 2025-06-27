@@ -58,6 +58,7 @@ import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraControl
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.integration.testing.FakeCamera2CameraControlCompat
+import androidx.camera.camera2.pipe.integration.testing.FakeSessionProcessor
 import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraComponentBuilder
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
@@ -70,6 +71,7 @@ import androidx.camera.core.UseCase
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.testing.fakes.FakeCamera
@@ -80,11 +82,16 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.test.core.app.ApplicationProvider
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.assertNull
+import junit.framework.TestCase.assertTrue
+import kotlin.test.assertFalse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
@@ -147,6 +154,72 @@ class UseCaseManagerTest {
     }
 
     @Test
+    fun attachingUseCasesWithSessionProcessor_ShouldSucceed() = runTest {
+        // Arrange
+        initializeUseCaseThreads(this)
+        val useCaseManager = createUseCaseManager()
+        val previewUseCase = createFakePreview()
+        val imageCaptureUseCase = createFakeImageCapture()
+
+        val fakeSessionProcessor: SessionProcessor = FakeSessionProcessor()
+
+        // Act
+        useCaseManager.sessionProcessor = fakeSessionProcessor
+        useCaseManager.activate(previewUseCase)
+        useCaseManager.activate(imageCaptureUseCase)
+        useCaseManager.attach(listOf(previewUseCase, imageCaptureUseCase))
+        advanceUntilIdle()
+
+        // Assert
+        assertNotNull(useCaseManager.camera)
+        assertThat(useCaseManager.getRunningUseCasesForTest())
+            .containsExactly(previewUseCase, imageCaptureUseCase)
+    }
+
+    @Test
+    fun attachingUseCases_ShouldSupersedeUseCasesPendingInitialization() = runTest {
+        // Arrange
+        initializeUseCaseThreads(this)
+        val useCaseManager = createUseCaseManager()
+        val previewDeferrableSurface = createBlockingTestDeferrableSurface(Preview::class.java)
+        val imageCaptureDeferrableSurface =
+            createBlockingTestDeferrableSurface(ImageCapture::class.java)
+        val imageAnalysisDeferrableSurface =
+            createBlockingTestDeferrableSurface(ImageAnalysis::class.java)
+        val previewUseCase = createFakePreview(previewDeferrableSurface)
+        val imageCaptureUseCase = createFakeImageCapture(imageCaptureDeferrableSurface)
+        val imageAnalysisUseCase = createFakeImageAnalysis(imageAnalysisDeferrableSurface)
+        val fakeSessionProcessor = FakeSessionProcessor()
+
+        // Act
+        useCaseManager.sessionProcessor = fakeSessionProcessor
+        useCaseManager.activate(previewUseCase)
+        useCaseManager.activate(imageCaptureUseCase)
+        useCaseManager.attach(listOf(previewUseCase, imageCaptureUseCase))
+        advanceUntilIdle()
+        // Here SessionProcessorProcessor.initialize would stall due to not getting its Surfaces.
+        // When initialization is still pending, the current UseCaseCamera should be null (i.e.,
+        // no attached or running use cases).
+        assertNull(useCaseManager.camera)
+
+        // Attaching an ImageAnalysis use case, which should refresh the attached use cases, and
+        // supersede the current set of use cases.
+        useCaseManager.activate(imageAnalysisUseCase)
+        useCaseManager.attach(listOf(imageAnalysisUseCase))
+        // Resume the DeferrableSurfaces to allow them to be retrieved.
+        previewDeferrableSurface.resume()
+        imageCaptureDeferrableSurface.resume()
+        imageAnalysisDeferrableSurface.resume()
+        advanceUntilIdle()
+
+        // Assert
+        assertNotNull(useCaseManager.camera)
+        // Check that the new set of running use cases is Preview, ImageCapture and ImageAnalysis.
+        assertThat(useCaseManager.getRunningUseCasesForTest())
+            .containsExactly(previewUseCase, imageCaptureUseCase, imageAnalysisUseCase)
+    }
+
+    @Test
     fun meteringRepeatingNotEnabled_whenPreviewEnabled() = runTest {
         // Arrange
         initializeUseCaseThreads(this)
@@ -184,7 +257,7 @@ class UseCaseManagerTest {
             .containsExactly(
                 Preview::class.java,
                 ImageCapture::class.java,
-                MeteringRepeating::class.java,
+                MeteringRepeating::class.java
             )
     }
 
@@ -410,6 +483,81 @@ class UseCaseManagerTest {
     }
 
     @Test
+    fun useCasesNotifiedOnCameraControlReady_whenAttachingWithSessionProcessor() = runTest {
+        // Arrange
+        initializeUseCaseThreads(this)
+        val useCaseManager = createUseCaseManager()
+        val previewUseCase = createFakePreview()
+        val imageCaptureUseCase = createFakeImageCapture()
+
+        val fakeSessionProcessor: SessionProcessor = FakeSessionProcessor()
+
+        useCaseManager.sessionProcessor = fakeSessionProcessor
+        useCaseManager.activate(previewUseCase)
+        useCaseManager.activate(imageCaptureUseCase)
+        useCaseManager.attach(listOf(previewUseCase, imageCaptureUseCase))
+        advanceUntilIdle()
+
+        assertNotNull(useCaseManager.camera)
+        assertThat(useCaseManager.getRunningUseCasesForTest())
+            .containsExactly(previewUseCase, imageCaptureUseCase)
+        assertTrue(previewUseCase.cameraControlReady)
+        assertTrue(imageCaptureUseCase.cameraControlReady)
+    }
+
+    @Test
+    fun allUseCasesNotifiedOnCameraControlReady_whenSessionProcessorPending() = runTest {
+        // Arrange
+        initializeUseCaseThreads(this)
+        val useCaseManager = createUseCaseManager()
+        val previewDeferrableSurface = createBlockingTestDeferrableSurface(Preview::class.java)
+        val imageCaptureDeferrableSurface =
+            createBlockingTestDeferrableSurface(ImageCapture::class.java)
+        val imageAnalysisDeferrableSurface =
+            createBlockingTestDeferrableSurface(ImageAnalysis::class.java)
+        val previewUseCase = createFakePreview(previewDeferrableSurface)
+        val imageCaptureUseCase = createFakeImageCapture(imageCaptureDeferrableSurface)
+        val imageAnalysisUseCase = createFakeImageAnalysis(imageAnalysisDeferrableSurface)
+        val fakeSessionProcessor = FakeSessionProcessor()
+
+        // Act
+        useCaseManager.sessionProcessor = fakeSessionProcessor
+        useCaseManager.activate(previewUseCase)
+        useCaseManager.activate(imageCaptureUseCase)
+        useCaseManager.attach(listOf(previewUseCase, imageCaptureUseCase))
+        advanceUntilIdle()
+        // Here SessionProcessorProcessor.initialize due to not getting its Surfaces. While we're
+        // still initializing, the current UseCaseCamera should be null (i.e., no attached or
+        // running use cases).
+        // Assert
+        assertNull(useCaseManager.camera)
+        // We haven't finished initialization, and therefore the controls aren't ready.
+        assertFalse(previewUseCase.cameraControlReady)
+        assertFalse(imageCaptureUseCase.cameraControlReady)
+
+        // Attaching an ImageAnalysis use case, which should refresh the attached use cases, and
+        // supersede the current set of use cases.
+        useCaseManager.activate(imageAnalysisUseCase)
+        useCaseManager.attach(listOf(imageAnalysisUseCase))
+        // Resume the DeferrableSurfaces to allow them to be retrieved.
+        previewDeferrableSurface.resume()
+        imageCaptureDeferrableSurface.resume()
+        imageAnalysisDeferrableSurface.resume()
+        advanceUntilIdle()
+
+        // Assert
+        assertNotNull(useCaseManager.camera)
+        // Check that the new set of running use cases is Preview, ImageCapture and ImageAnalysis.
+        assertThat(useCaseManager.getRunningUseCasesForTest())
+            .containsExactly(previewUseCase, imageCaptureUseCase, imageAnalysisUseCase)
+        // Despite only attaching the ImageAnalysis use case in the prior step. All not-yet-notified
+        // use cases should be notified that their camera controls are ready.
+        assertTrue(previewUseCase.cameraControlReady)
+        assertTrue(imageCaptureUseCase.cameraControlReady)
+        assertTrue(imageAnalysisUseCase.cameraControlReady)
+    }
+
+    @Test
     fun createCameraGraphConfig_propagateUseCaseConfigToGraphConfig() = runTest {
         // Arrange
         initializeUseCaseThreads(this)
@@ -424,7 +572,7 @@ class UseCaseManagerTest {
                             Camera2ImplConfig.Builder()
                                 .setCaptureRequestOption(
                                     CONTROL_CAPTURE_INTENT,
-                                    CONTROL_CAPTURE_INTENT_PREVIEW,
+                                    CONTROL_CAPTURE_INTENT_PREVIEW
                                 )
                                 .build()
                         )
@@ -436,7 +584,10 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager.createCameraGraphConfig(
+                sessionConfigAdapter,
+                streamConfigMap,
+            )
 
         // Assert
         assertThat(graphConfig.sessionMode).isEqualTo(HIGH_SPEED)
@@ -470,7 +621,10 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager.createCameraGraphConfig(
+                sessionConfigAdapter,
+                streamConfigMap,
+            )
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -505,7 +659,10 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager.createCameraGraphConfig(
+                sessionConfigAdapter,
+                streamConfigMap,
+            )
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -533,9 +690,9 @@ class UseCaseManagerTest {
                                 longArrayOf(
                                     DynamicRangeProfiles.HLG10,
                                     DynamicRangeProfiles.HLG10,
-                                    0L,
+                                    0L
                                 )
-                            ),
+                            )
                     )
             )
         val previewDeferrableSurface = createTestDeferrableSurface(Preview::class.java)
@@ -557,7 +714,10 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager.createCameraGraphConfig(
+                sessionConfigAdapter,
+                streamConfigMap,
+            )
 
         // Assert
         assertThat(graphConfig.streams.size).isEqualTo(1)
@@ -586,7 +746,10 @@ class UseCaseManagerTest {
 
         // Act
         val graphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager.createCameraGraphConfig(
+                sessionConfigAdapter,
+                streamConfigMap,
+            )
 
         // Assert
         assertThat(graphConfig.sessionTemplate).isEqualTo(RequestTemplate(TEMPLATE_PREVIEW))
@@ -620,7 +783,10 @@ class UseCaseManagerTest {
 
         // Act.
         val cameraGraphConfig =
-            useCaseManager.createCameraGraphConfig(sessionConfigAdapter, streamConfigMap)
+            useCaseManager.createCameraGraphConfig(
+                sessionConfigAdapter,
+                streamConfigMap,
+            )
 
         // Assert
         assertThat(cameraGraphConfig.sessionParameters[CONTROL_CAPTURE_INTENT])
@@ -639,7 +805,7 @@ class UseCaseManagerTest {
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to
                             streamConfigurationMap,
                         CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
-                            intArrayOf(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY),
+                            intArrayOf(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
                     )
             )
         val fakeUseCase =
@@ -678,9 +844,9 @@ class UseCaseManagerTest {
                                 longArrayOf(
                                     DynamicRangeProfiles.HLG10,
                                     DynamicRangeProfiles.HLG10,
-                                    0L,
+                                    0L
                                 )
-                            ),
+                            )
                     )
             )
 
@@ -706,7 +872,9 @@ class UseCaseManagerTest {
             FakeUseCaseCameraComponentBuilder(),
         templateParamsOverride: TemplateParamsOverride = NoOpTemplateParamsOverride,
         characteristicsMap: Map<CameraCharacteristics.Key<*>, Any?> =
-            mapOf(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to streamConfigurationMap),
+            mapOf(
+                CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to streamConfigurationMap,
+            ),
     ): UseCaseManager {
         val cameraId = CameraId("0")
 
@@ -729,7 +897,7 @@ class UseCaseManagerTest {
                 fakeCameraMetadata,
                 State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler),
                 useCaseThreads,
-                ComboRequestListener(),
+                ComboRequestListener()
             )
         return UseCaseManager(
                 cameraPipe = cameraPipe,
@@ -737,7 +905,7 @@ class UseCaseManagerTest {
                     FakeCameraDevices(
                         fakeCameraBackend.id,
                         emptySet(),
-                        mapOf(fakeCameraBackend.id to listOf(fakeCameraMetadata)),
+                        mapOf(fakeCameraBackend.id to listOf(fakeCameraMetadata))
                     ),
                 cameraMetadata = fakeCameraMetadata,
                 cameraCoordinator = CameraCoordinatorAdapter(cameraPipe, cameraPipe.cameras()),
@@ -752,7 +920,7 @@ class UseCaseManagerTest {
                     Camera2CameraControl.create(
                         FakeCamera2CameraControlCompat(),
                         checkNotNull(useCaseThreads),
-                        ComboRequestListener(),
+                        ComboRequestListener()
                     ),
                 cameraStateAdapter = CameraStateAdapter(),
                 cameraQuirks =
@@ -760,8 +928,8 @@ class UseCaseManagerTest {
                         fakeCameraMetadata,
                         StreamConfigurationMapCompat(
                             null,
-                            OutputSizesCorrector(fakeCameraMetadata, null),
-                        ),
+                            OutputSizesCorrector(fakeCameraMetadata, null)
+                        )
                     ),
                 cameraInternal = { fakeCamera },
                 useCaseThreads = { useCaseThreads },
@@ -770,14 +938,20 @@ class UseCaseManagerTest {
                 encoderProfilesProvider = FakeEncoderProfilesProvider.Builder().build(),
                 context = ApplicationProvider.getApplicationContext(),
                 cameraProperties = cameraProperties,
-                displayInfoManager = DisplayInfoManager(ApplicationProvider.getApplicationContext()),
+                displayInfoManager =
+                    DisplayInfoManager(ApplicationProvider.getApplicationContext()),
             )
             .also { useCaseManagerList.add(it) }
     }
 
     private fun initializeUseCaseThreads(testScope: TestScope) {
         val dispatcher = StandardTestDispatcher(testScope.testScheduler)
-        useCaseThreads = UseCaseThreads(testScope, dispatcher.asExecutor(), dispatcher)
+        useCaseThreads =
+            UseCaseThreads(
+                testScope,
+                dispatcher.asExecutor(),
+                dispatcher,
+            )
     }
 
     private fun createFakePreview(customDeferrableSurface: DeferrableSurface? = null) =
@@ -858,7 +1032,7 @@ class UseCaseManagerTest {
                 if (withSurfaceProvider) {
                     setSurfaceProvider(
                         CameraXExecutors.mainThreadExecutor(),
-                        SurfaceTextureProvider.createSurfaceTextureProvider(),
+                        SurfaceTextureProvider.createSurfaceTextureProvider()
                     )
                 }
             }
@@ -874,14 +1048,14 @@ class UseCaseManagerTest {
             null,
             getDefaultConfig(
                 true,
-                CameraUseCaseAdapter(ApplicationProvider.getApplicationContext()),
-            ),
+                CameraUseCaseAdapter(ApplicationProvider.getApplicationContext())
+            )
         )
         updateSuggestedStreamSpec(
             StreamSpec.builder(supportedSizes[0])
                 .also { builder -> dynamicRange?.let { builder.setDynamicRange(it) } }
                 .build(),
-            null,
+            null
         )
     }
 }

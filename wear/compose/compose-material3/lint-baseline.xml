@@ -1,28 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha02)" variant="all" version="8.12.0-alpha02">
-
-    <issue
-        id="ComposableLambdaParameterNaming"
-        message="Composable lambda parameter should be named `content`"
-        errorLine1="        icon: @Composable () -> Unit,"
-        errorLine2="        ~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/SwipeToReveal.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableLambdaParameterPosition"
-        message="Composable lambda parameter should be the last parameter so it can be used as a trailing lambda"
-        errorLine1="        icon: @Composable () -> Unit,"
-        errorLine2="        ~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/SwipeToReveal.kt"/>
-    </issue>
+<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
 
     <issue
         id="ComposableNaming"
         message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun FilledButton(status: Status): Color {"
+        errorLine1="private fun FilledButton("
         errorLine2="            ~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
@@ -31,7 +13,7 @@
     <issue
         id="ComposableNaming"
         message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun FilledTonalButton(status: Status): Color {"
+        errorLine1="private fun FilledTonalButton("
         errorLine2="            ~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
@@ -40,7 +22,7 @@
     <issue
         id="ComposableNaming"
         message="Composable functions with a return type should start with a lowercase letter"
-        errorLine1="private fun FilledVariantButton(status: Status): Color {"
+        errorLine1="private fun FilledVariantButton("
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/ButtonTest.kt"/>
@@ -166,7 +148,7 @@
     <issue
         id="ComposableNaming"
         message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun sampleRadioButton(enabled: Boolean = true, selected: Boolean = true) {"
+        errorLine1="    private fun sampleRadioButton("
         errorLine2="                ~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/RadioButtonScreenshotTest.kt"/>
@@ -238,7 +220,7 @@
     <issue
         id="ComposableNaming"
         message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun sampleCheckboxButton(enabled: Boolean = true, checked: Boolean = true) {"
+        errorLine1="    private fun sampleCheckboxButton("
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/ToggleButtonScreenshotTest.kt"/>
@@ -256,7 +238,7 @@
     <issue
         id="ComposableNaming"
         message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun sampleSwitchButton(enabled: Boolean = true, checked: Boolean = true) {"
+        errorLine1="    private fun sampleSwitchButton("
         errorLine2="                ~~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/ToggleButtonScreenshotTest.kt"/>
@@ -337,7 +319,7 @@
     <issue
         id="UnrememberedMutableState"
         message="Creating a state object during composition without using `remember`"
-        errorLine1="                mutableStateOf(progress),"
+        errorLine1="                mutableStateOf(progress)"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/IconButtonScreenshotTest.kt"/>
@@ -346,46 +328,10 @@
     <issue
         id="UnrememberedMutableState"
         message="Creating a state object during composition without using `remember`"
-        errorLine1="                mutableStateOf(progress),"
+        errorLine1="                mutableStateOf(progress)"
         errorLine2="                ~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/IconButtonScreenshotTest.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                                &quot;0123456789\n&quot; + shortMonthNames.joinToString(&quot;\n&quot;),"
-        errorLine2="                                                                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/DatePicker.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="            .map { it as ResponsiveTransformationSpecImpl }"
-        errorLine2="             ~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/lazy/ResponsiveTransformationSpec.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="    val sortedSpecs = specs.sortedBy { it.screenSize }"
-        errorLine2="                            ~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/lazy/ResponsiveTransformationSpec.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="            .find { it.key == key }"
-        errorLine2="             ~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/Scaffold.kt"/>
     </issue>
 
     <issue
@@ -440,6 +386,33 @@
         errorLine2="                                  ~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material3/LinearProgressIndicatorScreenshotTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `longValue` to avoid unnecessary allocations."
+        errorLine1="        frameMillis.value += timeToAdd"
+        errorLine2="                    ~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material3/PlaceholderTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `longValue` to avoid unnecessary allocations."
+        errorLine1="        frameMillis.value += PLACEHOLDER_SHIMMER_DURATION_MS"
+        errorLine2="                    ~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material3/PlaceholderTest.kt"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateValueProperty"
+        message="Assigning `value` will cause an autoboxing operation. Use `longValue` to avoid unnecessary allocations."
+        errorLine1="        frameMillis.value = currentTime"
+        errorLine2="                    ~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material3/PlaceholderTest.kt"/>
     </issue>
 
     <issue

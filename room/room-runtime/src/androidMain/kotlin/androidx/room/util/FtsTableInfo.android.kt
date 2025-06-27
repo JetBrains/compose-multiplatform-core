@@ -16,38 +16,38 @@
 package androidx.room.util
 
 import androidx.annotation.RestrictTo
+import androidx.room.driver.SupportSQLiteConnection
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /** A data class that holds the information about an FTS table. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public actual class FtsTableInfo(
+actual class FtsTableInfo(
     /** The table name */
-    @JvmField public actual val name: String,
+    @JvmField actual val name: String,
 
     /** The column names */
-    @JvmField public actual val columns: Set<String>,
+    @JvmField actual val columns: Set<String>,
 
     /**
      * The set of options. Each value in the set contains the option in the following format: <key,
      * value>.
      */
-    @JvmField public actual val options: Set<String>,
+    @JvmField actual val options: Set<String>
 ) {
-    public actual constructor(
+    actual constructor(
         name: String,
         columns: Set<String>,
-        createSql: String,
+        createSql: String
     ) : this(name, columns, parseFtsOptions(createSql))
 
-    override fun equals(other: Any?): Boolean = equalsCommon(other)
+    override fun equals(other: Any?) = equalsCommon(other)
 
-    override fun hashCode(): Int = hashCodeCommon()
+    override fun hashCode() = hashCodeCommon()
 
-    override fun toString(): String = toStringCommon()
+    override fun toString() = toStringCommon()
 
-    public actual companion object {
+    actual companion object {
 
         /**
          * Reads the table information from the given database.
@@ -57,7 +57,7 @@ public actual class FtsTableInfo(
          * @return A FtsTableInfo containing the columns and options for the provided table name.
          */
         @JvmStatic
-        public fun read(database: SupportSQLiteDatabase, tableName: String): FtsTableInfo {
+        fun read(database: SupportSQLiteDatabase, tableName: String): FtsTableInfo {
             return read(SupportSQLiteConnection(database), tableName)
         }
 
@@ -69,7 +69,7 @@ public actual class FtsTableInfo(
          * @return A FtsTableInfo containing the columns and options for the provided table name.
          */
         @JvmStatic
-        public actual fun read(connection: SQLiteConnection, tableName: String): FtsTableInfo {
+        actual fun read(connection: SQLiteConnection, tableName: String): FtsTableInfo {
             val columns = readFtsColumns(connection, tableName)
             val options = readFtsOptions(connection, tableName)
             return FtsTableInfo(tableName, columns, options)

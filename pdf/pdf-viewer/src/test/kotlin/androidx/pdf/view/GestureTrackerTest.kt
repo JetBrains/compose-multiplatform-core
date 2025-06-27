@@ -19,7 +19,6 @@ package androidx.pdf.view
 import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
-import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.ViewParent
@@ -40,8 +39,8 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 class GestureTrackerTest {
@@ -73,10 +72,8 @@ class GestureTrackerTest {
         assertThat(gestureTracker.matches(GestureTracker.Gesture.FIRST_TAP)).isTrue()
 
         // Advance time by the double tap timeout
-        ShadowLooper.idleMainLooper(
-            ViewConfiguration.getDoubleTapTimeout().toLong(),
-            TimeUnit.MILLISECONDS,
-        )
+        Robolectric.getForegroundThreadScheduler()
+            .advanceBy(ViewConfiguration.getDoubleTapTimeout().toLong(), TimeUnit.MILLISECONDS)
 
         // We expect to issue onSingleTapConfirmed and onGestureEnd callbacks, and we expect the
         // current detect gesture to be a SINGLE_TAP (i.e. confirmed *not* to be a double tap)
@@ -89,7 +86,7 @@ class GestureTrackerTest {
 
     @Test
     fun testDoubleTap() {
-        val downTime = SystemClock.elapsedRealtime()
+        val downTime = Robolectric.getForegroundThreadScheduler().currentTime
         gestureTracker.feed(down(PointF(50f, 50f), time = downTime))
         gestureTracker.feed(up(PointF(50f, 50f), downTime = downTime))
         // We expected to issue onGestureStart and onSingleTapUp callbacks, and we expect the
@@ -101,10 +98,8 @@ class GestureTrackerTest {
         // Advance time by less than the double tap timeout, and issue another up / down sequence.
         // The minimum time between down events to detect a double tap is a hidden API in
         // ViewConfiguration, so use half the maximum time.
-        ShadowLooper.idleMainLooper(
-            ViewConfiguration.getDoubleTapTimeout().toLong() / 2,
-            TimeUnit.MILLISECONDS,
-        )
+        Robolectric.getForegroundThreadScheduler()
+            .advanceBy(ViewConfiguration.getDoubleTapTimeout().toLong() / 2, TimeUnit.MILLISECONDS)
         gestureTracker.feed(down(PointF(50f, 50f)))
         gestureTracker.feed(up(PointF(50f, 50f), downTime = downTime))
 
@@ -122,7 +117,7 @@ class GestureTrackerTest {
 
     @Test
     fun testLongPress() {
-        val downTime = SystemClock.elapsedRealtime()
+        val downTime = Robolectric.getForegroundThreadScheduler().currentTime
         gestureTracker.feed(down(PointF(50f, 50f), time = downTime))
         // We expected to issue an onGestureStart and onSingleTapUp callback, and we expect the
         // current detected gesture to be TOUCH (Down with no Up yet)
@@ -130,10 +125,8 @@ class GestureTrackerTest {
         assertThat(gestureTracker.matches(GestureTracker.Gesture.TOUCH)).isTrue()
 
         // Advance time by the long press timeout
-        ShadowLooper.idleMainLooper(
-            ViewConfiguration.getLongPressTimeout().toLong() + 1,
-            TimeUnit.MILLISECONDS,
-        )
+        Robolectric.getForegroundThreadScheduler()
+            .advanceBy(ViewConfiguration.getLongPressTimeout().toLong() + 1, TimeUnit.MILLISECONDS)
         gestureTracker.feed(up(PointF(50f, 50f), downTime = downTime))
 
         // We shouldn't have issued these callbacks
@@ -154,7 +147,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = PointF(50f, 50f),
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
             )) {
             gestureTracker.feed(event)
         }
@@ -163,6 +156,7 @@ class GestureTrackerTest {
         verify(gestureHandlerSpy, atLeastOnce()).onScroll(any(), any(), any(), any())
         verify(gestureHandlerSpy).onGestureEnd(eq(GestureTracker.Gesture.DRAG_X))
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG_X)).isTrue()
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -181,6 +175,7 @@ class GestureTrackerTest {
         verify(gestureHandlerSpy, atLeastOnce()).onScroll(any(), any(), any(), any())
         verify(gestureHandlerSpy).onGestureEnd(eq(GestureTracker.Gesture.DRAG_Y))
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG_Y)).isTrue()
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -189,7 +184,10 @@ class GestureTrackerTest {
     fun testDrag() {
         val velocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity / 4
         for (event in
-            oneFingerDrag(start = PointF(50f, 50f), velocity = Point(velocity, velocity))) {
+            oneFingerDrag(
+                start = PointF(50f, 50f),
+                velocity = Point(velocity, velocity),
+            )) {
             gestureTracker.feed(event)
         }
 
@@ -197,6 +195,7 @@ class GestureTrackerTest {
         verify(gestureHandlerSpy, atLeastOnce()).onScroll(any(), any(), any(), any())
         verify(gestureHandlerSpy).onGestureEnd(eq(GestureTracker.Gesture.DRAG))
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG)).isTrue()
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -205,7 +204,10 @@ class GestureTrackerTest {
     fun testFling() {
         val velocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity * 2
         for (event in
-            oneFingerDrag(start = PointF(50f, 50f), velocity = Point(velocity, velocity))) {
+            oneFingerDrag(
+                start = PointF(50f, 50f),
+                velocity = Point(velocity, velocity),
+            )) {
             gestureTracker.feed(event)
         }
 
@@ -214,6 +216,7 @@ class GestureTrackerTest {
         verify(gestureHandlerSpy, atLeastOnce()).onScroll(any(), any(), any(), any())
         verify(gestureHandlerSpy).onGestureEnd(eq(GestureTracker.Gesture.FLING))
         assertThat(gestureTracker.matches(GestureTracker.Gesture.FLING)).isTrue()
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -267,17 +270,15 @@ class GestureTrackerTest {
     fun testZoom_quickScale() {
         // First, send a single tap
         val startPoint = PointF(50f, 50f)
-        val downTime = SystemClock.elapsedRealtime()
+        val downTime = Robolectric.getForegroundThreadScheduler().currentTime
         gestureTracker.feed(down(startPoint, time = downTime))
         gestureTracker.feed(up(startPoint, downTime = downTime))
         // Then, advance time by less than the double tap timeout, and tap again, but don't release
         // the pointer
         // The minimum time between down events to detect a double tap is a hidden API in
         // ViewConfiguration, so use a fraction of the maximum time.
-        ShadowLooper.idleMainLooper(
-            ViewConfiguration.getDoubleTapTimeout().toLong() / 5,
-            TimeUnit.MILLISECONDS,
-        )
+        Robolectric.getForegroundThreadScheduler()
+            .advanceBy(ViewConfiguration.getDoubleTapTimeout().toLong() / 5, TimeUnit.MILLISECONDS)
         gestureTracker.feed(down(startPoint))
         // Finally, tap and drag in the +y direction from same point
         val velocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2
@@ -317,7 +318,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
             )) {
             gestureTracker.feed(event)
         }
@@ -332,6 +333,7 @@ class GestureTrackerTest {
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG_X)).isTrue()
         // And we should never have detected a double tap
         verify(gestureHandlerSpy, never()).onDoubleTap(any())
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -343,7 +345,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
             )) {
             gestureTracker.feed(event)
         }
@@ -357,10 +359,8 @@ class GestureTrackerTest {
         gestureTracker.feed(down(point))
         gestureTracker.feed(up(point))
         // Advance time by the double tap timeout
-        ShadowLooper.idleMainLooper(
-            ViewConfiguration.getDoubleTapTimeout().toLong(),
-            TimeUnit.MILLISECONDS,
-        )
+        Robolectric.getForegroundThreadScheduler()
+            .advanceBy(ViewConfiguration.getDoubleTapTimeout().toLong(), TimeUnit.MILLISECONDS)
 
         // These are the callbacks we expect to receive as part of the single tap
         verify(gestureHandlerSpy, times(2)).onGestureStart()
@@ -370,6 +370,7 @@ class GestureTrackerTest {
         assertThat(gestureTracker.matches(GestureTracker.Gesture.SINGLE_TAP)).isTrue()
         // And we should never have detected a double tap
         verify(gestureHandlerSpy, never()).onDoubleTap(any())
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -381,7 +382,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
             )) {
             gestureTracker.feed(event)
         }
@@ -392,15 +393,13 @@ class GestureTrackerTest {
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG_X)).isTrue()
 
         // Then, advance time by less than the double tap timeout
-        ShadowLooper.idleMainLooper(
-            ViewConfiguration.getDoubleTapTimeout().toLong() / 2,
-            TimeUnit.MILLISECONDS,
-        )
+        Robolectric.getForegroundThreadScheduler()
+            .advanceBy(ViewConfiguration.getDoubleTapTimeout().toLong() / 2, TimeUnit.MILLISECONDS)
         // Finally, drag again, from the same point
         for (event in
             oneFingerDrag(
                 start = point,
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
             )) {
             gestureTracker.feed(event)
         }
@@ -412,6 +411,7 @@ class GestureTrackerTest {
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG_X)).isTrue()
         // And that we never detected a zoom / quick scale
         verify(gestureHandlerSpy, never()).onScale(any())
+        verify(gestureHandlerSpy, times(2)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -424,7 +424,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = PointF(50f, 50f),
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
             )) {
             gestureTracker.feed(event, viewParentSpy, contentAtEdge = true)
         }
@@ -438,6 +438,7 @@ class GestureTrackerTest {
         verify(gestureHandlerSpy).onGestureEnd(eq(GestureTracker.Gesture.DRAG_X))
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG_X)).isTrue()
         assertThat(disallowInterceptCaptor.value).isFalse()
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -450,7 +451,7 @@ class GestureTrackerTest {
         for (event in
             oneFingerDrag(
                 start = PointF(50f, 50f),
-                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0),
+                velocity = Point(ViewConfiguration.get(context).scaledMinimumFlingVelocity / 2, 0)
             )) {
             gestureTracker.feed(event, viewParentSpy, contentAtEdge = false)
         }
@@ -463,6 +464,7 @@ class GestureTrackerTest {
 
         verify(gestureHandlerSpy).onGestureEnd(eq(GestureTracker.Gesture.DRAG_X))
         assertThat(gestureTracker.matches(GestureTracker.Gesture.DRAG_X)).isTrue()
+        verify(gestureHandlerSpy, times(1)).onScrollTouchUp()
 
         verifyNoMoreInteractions(gestureHandlerSpy)
     }
@@ -475,13 +477,15 @@ class GestureTrackerTest {
 private fun motionEvent(
     action: Int,
     location: PointF,
-    downTime: Long = SystemClock.elapsedRealtime(),
-    eventTime: Long = SystemClock.elapsedRealtime(),
+    downTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
+    eventTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
 ) = MotionEvent.obtain(downTime, eventTime, action, location.x, location.y, 0)
 
 /** Returns a [MotionEvent] with [MotionEvent.ACTION_DOWN] at [time] and [location] */
-private fun down(location: PointF, time: Long = SystemClock.elapsedRealtime()) =
-    motionEvent(MotionEvent.ACTION_DOWN, location, downTime = time, eventTime = time)
+private fun down(
+    location: PointF,
+    time: Long = Robolectric.getForegroundThreadScheduler().currentTime,
+) = motionEvent(MotionEvent.ACTION_DOWN, location, downTime = time, eventTime = time)
 
 /**
  * Returns a [MotionEvent] with [MotionEvent.ACTION_MOVE] at [eventTime] and [location] and with
@@ -489,8 +493,8 @@ private fun down(location: PointF, time: Long = SystemClock.elapsedRealtime()) =
  */
 private fun move(
     location: PointF,
-    downTime: Long = SystemClock.elapsedRealtime(),
-    eventTime: Long = SystemClock.elapsedRealtime(),
+    downTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
+    eventTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
 ) = motionEvent(MotionEvent.ACTION_MOVE, location, downTime, eventTime)
 
 /**
@@ -499,8 +503,8 @@ private fun move(
  */
 private fun up(
     location: PointF,
-    downTime: Long = SystemClock.elapsedRealtime(),
-    eventTime: Long = SystemClock.elapsedRealtime(),
+    downTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
+    eventTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
 ) = motionEvent(MotionEvent.ACTION_UP, location, downTime, eventTime)
 
 /**
@@ -510,8 +514,8 @@ private fun up(
 private fun oneFingerDrag(
     start: PointF,
     velocity: Point,
-    downTime: Long = SystemClock.elapsedRealtime(),
-    skipDown: Boolean = false,
+    downTime: Long = Robolectric.getForegroundThreadScheduler().currentTime,
+    skipDown: Boolean = false
 ): List<MotionEvent> {
     val sequence = mutableListOf<MotionEvent>()
     if (!skipDown) sequence.add(down(start, time = downTime))
@@ -522,7 +526,7 @@ private fun oneFingerDrag(
         // Pixels per second, 10ms step
         x += 0.01f * velocity.x
         y += 0.01f * velocity.y
-        ShadowLooper.idleMainLooper(10, TimeUnit.MILLISECONDS)
+        Robolectric.getForegroundThreadScheduler().advanceBy(10, TimeUnit.MILLISECONDS)
         sequence.add(move(PointF(x, y), downTime = downTime))
     }
     sequence.add(up(PointF(x, y), downTime = downTime))
@@ -537,7 +541,7 @@ private fun twoFingerDrag(
     start1: PointF,
     start2: PointF,
     velocity1: Point,
-    velocity2: Point,
+    velocity2: Point
 ): List<MotionEvent> {
     // Specify the touch properties for the finger events.
     val pp1 = MotionEvent.PointerProperties()
@@ -562,11 +566,11 @@ private fun twoFingerDrag(
     val pointerCoords = arrayOf(pc1, pc2)
 
     // Two down events, 1 for each pointer
-    val downTime = SystemClock.elapsedRealtime()
+    val downTime = Robolectric.getForegroundThreadScheduler().currentTime
     val firstFingerEvent =
         MotionEvent.obtain(
             downTime,
-            SystemClock.elapsedRealtime(),
+            Robolectric.getForegroundThreadScheduler().currentTime,
             MotionEvent.ACTION_DOWN,
             1,
             pointerProperties,
@@ -578,12 +582,12 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0,
+            0
         )
     val secondFingerEvent =
         MotionEvent.obtain(
             downTime,
-            SystemClock.elapsedRealtime(),
+            Robolectric.getForegroundThreadScheduler().currentTime,
             MotionEvent.ACTION_POINTER_DOWN + (pp2.id shl MotionEvent.ACTION_POINTER_INDEX_SHIFT),
             2,
             pointerProperties,
@@ -595,7 +599,7 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0,
+            0
         )
     val sequence = mutableListOf(firstFingerEvent, secondFingerEvent)
     // Compute a series of ACTION_MOVE events with interpolated coordinates for each pointer
@@ -605,11 +609,11 @@ private fun twoFingerDrag(
         pc2.x += 0.01f * velocity2.x
         pc2.y += 0.01f * velocity2.y
 
-        ShadowLooper.idleMainLooper(10, TimeUnit.MILLISECONDS)
+        Robolectric.getForegroundThreadScheduler().advanceBy(10, TimeUnit.MILLISECONDS)
         val twoPointerMove =
             MotionEvent.obtain(
                 downTime,
-                SystemClock.elapsedRealtime(),
+                Robolectric.getForegroundThreadScheduler().currentTime,
                 MotionEvent.ACTION_MOVE,
                 2,
                 pointerProperties,
@@ -621,7 +625,7 @@ private fun twoFingerDrag(
                 0,
                 0,
                 0,
-                0,
+                0
             )
         sequence.add(twoPointerMove)
     }
@@ -629,7 +633,7 @@ private fun twoFingerDrag(
     val secondFingerUpEvent =
         MotionEvent.obtain(
             downTime,
-            SystemClock.elapsedRealtime(),
+            Robolectric.getForegroundThreadScheduler().currentTime,
             MotionEvent.ACTION_POINTER_UP,
             2,
             pointerProperties,
@@ -641,12 +645,12 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0,
+            0
         )
     val firstFingerUpEvent =
         MotionEvent.obtain(
             downTime,
-            SystemClock.elapsedRealtime(),
+            Robolectric.getForegroundThreadScheduler().currentTime,
             MotionEvent.ACTION_POINTER_UP,
             1,
             pointerProperties,
@@ -658,7 +662,7 @@ private fun twoFingerDrag(
             0,
             0,
             0,
-            0,
+            0
         )
     sequence.add(secondFingerUpEvent)
     sequence.add(firstFingerUpEvent)

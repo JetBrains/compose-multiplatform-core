@@ -56,10 +56,16 @@ fun AnimatedTextSample() {
         rememberAnimatedTextFontRegistry(
             // Variation axes at the start of the animation, width 10, weight 200
             startFontVariationSettings =
-                FontVariation.Settings(FontVariation.width(10f), FontVariation.weight(200)),
+                FontVariation.Settings(
+                    FontVariation.width(10f),
+                    FontVariation.weight(200),
+                ),
             // Variation axes at the end of the animation, width 100, weight 500
             endFontVariationSettings =
-                FontVariation.Settings(FontVariation.width(100f), FontVariation.weight(500)),
+                FontVariation.Settings(
+                    FontVariation.width(100f),
+                    FontVariation.weight(500),
+                ),
             startFontSize = 30.sp,
             endFontSize = 40.sp,
         )
@@ -69,7 +75,7 @@ fun AnimatedTextSample() {
         // Content alignment anchors the animation at the vertical center, expanding horizontally
         contentAlignment = Alignment.CenterStart,
         progressFraction = { animatable.value },
-        modifier = Modifier.clickable(onClick = { animate() }),
+        modifier = Modifier.clickable(onClick = { animate() })
     )
     LaunchedEffect(Unit) { animate() }
 }
@@ -82,10 +88,16 @@ fun AnimatedTextSampleButtonResponse() {
         rememberAnimatedTextFontRegistry(
             // Variation axes at the start of the animation, width 10, weight 200
             startFontVariationSettings =
-                FontVariation.Settings(FontVariation.width(10f), FontVariation.weight(200)),
+                FontVariation.Settings(
+                    FontVariation.width(10f),
+                    FontVariation.weight(200),
+                ),
             // Variation axes at the end of the animation, width 100, weight 500
             endFontVariationSettings =
-                FontVariation.Settings(FontVariation.width(100f), FontVariation.weight(500)),
+                FontVariation.Settings(
+                    FontVariation.width(100f),
+                    FontVariation.weight(500),
+                ),
             startFontSize = 30.sp,
             endFontSize = 30.sp,
         )
@@ -103,7 +115,7 @@ fun AnimatedTextSampleButtonResponse() {
             },
             label = {
                 Text(modifier = Modifier.semantics { contentDescription = "Decrease" }, text = "-")
-            },
+            }
         )
         AnimatedText(
             text = "${number.value}",
@@ -121,7 +133,7 @@ fun AnimatedTextSampleButtonResponse() {
             },
             label = {
                 Text(modifier = Modifier.semantics { contentDescription = "Increase" }, text = "+")
-            },
+            }
         )
     }
 }
@@ -133,10 +145,16 @@ fun AnimatedTextSampleSharedFontRegistry() {
         rememberAnimatedTextFontRegistry(
             // Variation axes at the start of the animation, width 50, weight 300
             startFontVariationSettings =
-                FontVariation.Settings(FontVariation.width(50f), FontVariation.weight(300)),
+                FontVariation.Settings(
+                    FontVariation.width(50f),
+                    FontVariation.weight(300),
+                ),
             // Variation axes at the end of the animation are the same as the start axes
             endFontVariationSettings =
-                FontVariation.Settings(FontVariation.width(50f), FontVariation.weight(300)),
+                FontVariation.Settings(
+                    FontVariation.width(50f),
+                    FontVariation.weight(300),
+                ),
             startFontSize = 15.sp,
             endFontSize = 25.sp,
         )

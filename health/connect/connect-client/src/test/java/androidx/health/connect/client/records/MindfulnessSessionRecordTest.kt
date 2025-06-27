@@ -16,6 +16,7 @@
 
 package androidx.health.connect.client.records
 
+import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_INT_TO_STRING_MAP
 import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_STRING_TO_INT_MAP
 import androidx.health.connect.client.records.metadata.Metadata
@@ -29,6 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalMindfulnessSessionApi::class)
 class MindfulnessSessionRecordTest {
 
     @Test
@@ -44,7 +46,7 @@ class MindfulnessSessionRecordTest {
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
                 ),
                 MindfulnessSessionRecord(
                     startTime = Instant.ofEpochMilli(1234L),
@@ -55,8 +57,8 @@ class MindfulnessSessionRecordTest {
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
-                ),
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                )
             )
             .addEqualityGroup(
                 MindfulnessSessionRecord(
@@ -68,7 +70,7 @@ class MindfulnessSessionRecordTest {
                     title = "different title",
                     notes = "different note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
                 )
             )
             .testEquals()
@@ -86,7 +88,7 @@ class MindfulnessSessionRecordTest {
                 title = "title",
                 notes = "note",
                 mindfulnessSessionType =
-                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION,
+                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION
             )
         }
     }
@@ -103,7 +105,7 @@ class MindfulnessSessionRecordTest {
                         title = "title",
                         notes = "note",
                         mindfulnessSessionType =
-                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT,
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT
                     )
                     .toString()
             )

@@ -373,13 +373,10 @@ public class DynamicTypeEvaluator {
     public @NonNull BoundDynamicType bind(@NonNull DynamicTypeBindingRequest request)
             throws EvaluationException {
         BoundDynamicTypeImpl boundDynamicType = request.callBindOn(this);
-        int dynamicNodeCost = boundDynamicType.getDynamicNodeCost();
-        if (!mDynamicTypesQuotaManager.tryAcquireQuota(dynamicNodeCost)) {
+        if (!mDynamicTypesQuotaManager.tryAcquireQuota(boundDynamicType.getDynamicNodeCost())) {
             throw new EvaluationException(
-                    "Dynamic type expression limit reached, failed to acquire quota of "
-                            + dynamicNodeCost
-                            + ". Try making the dynamic type expression shorter or reduce the"
-                            + " number of dynamic type expressions.");
+                    "Dynamic type expression limit reached. Try making the dynamic type expression"
+                            + " shorter or reduce the number of dynamic type expressions.");
         }
         return boundDynamicType;
     }

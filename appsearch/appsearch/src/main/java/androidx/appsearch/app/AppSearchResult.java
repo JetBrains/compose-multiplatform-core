@@ -32,8 +32,6 @@ import androidx.core.util.Preconditions;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Information about the success or failure of an AppSearch call.
@@ -61,9 +59,7 @@ public final class AppSearchResult<ValueType> {
             RESULT_SECURITY_ERROR,
             RESULT_DENIED,
             RESULT_RATE_LIMITED,
-            RESULT_ALREADY_EXISTS,
-            RESULT_ABORTED,
-            RESULT_UNAVAILABLE
+            RESULT_ALREADY_EXISTS
     })
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
@@ -125,34 +121,10 @@ public final class AppSearchResult<ValueType> {
     @ExperimentalAppSearchApi
     public static final int RESULT_RATE_LIMITED = 10;
 
-    /** The operation is invalid because the resource already exists and can't be replaced. */
+    /** The operation is invalid because the resource already exists and can't be replaced.   */
     @FlaggedApi(Flags.FLAG_ENABLE_RESULT_ALREADY_EXISTS)
     @ExperimentalAppSearchApi
     public static final int RESULT_ALREADY_EXISTS = 12;
-
-    /**
-     * The operation is aborted because an internal state change invalidated the results of the
-     * request. New requests should be able to process correctly and callers may, therefore, wish to
-     * retry.
-     *
-     * <p>Note: if retrying, the caller should restart the request at the topmost API level. For
-     * example, if {@link SearchResults#getNextPageAsync} throws an exception with code
-     * {@link #RESULT_ABORTED}, then the caller should restart the search via
-     * {@link AppSearchSession#search} API with a new {@link SearchResults} object, instead of
-     * calling {@link SearchResults#getNextPageAsync} again with the original {@link SearchResults}
-     * object.
-     */
-    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_ABORTED)
-    @ExperimentalAppSearchApi
-    public static final int RESULT_ABORTED = 13;
-
-    /**
-     * An error occurred due to AppSearch not having the necessary resources to execute the API
-     * call.
-     */
-    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_UNAVAILABLE)
-    @ExperimentalAppSearchApi
-    public static final int RESULT_UNAVAILABLE = 14;
 
     @ResultCode private final int mResultCode;
     private final @Nullable ValueType mResultValue;
@@ -270,7 +242,6 @@ public final class AppSearchResult<ValueType> {
 
     /** @exportToFramework:hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public static @NonNull <ValueType> AppSearchResult<ValueType> throwableToFailedResult(
             @NonNull Throwable t) {
         // Log for traceability. NOT_FOUND is logged at VERBOSE because this error can occur during
@@ -291,11 +262,7 @@ public final class AppSearchResult<ValueType> {
 
         String exceptionClass = t.getClass().getSimpleName();
         @AppSearchResult.ResultCode int resultCode;
-        if (t instanceof CancellationException || t instanceof InterruptedException) {
-            resultCode = AppSearchResult.RESULT_ABORTED;
-        } else if (t instanceof IllegalStateException
-                || t instanceof NullPointerException
-                || t instanceof ExecutionException) {
+        if (t instanceof IllegalStateException || t instanceof NullPointerException) {
             resultCode = AppSearchResult.RESULT_INTERNAL_ERROR;
         } else if (t instanceof IllegalArgumentException) {
             resultCode = AppSearchResult.RESULT_INVALID_ARGUMENT;

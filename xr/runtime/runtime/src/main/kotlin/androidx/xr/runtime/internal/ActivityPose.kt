@@ -23,7 +23,6 @@ import androidx.xr.runtime.math.Vector3
 import com.google.common.util.concurrent.ListenableFuture
 
 /** Interface for an XR Runtime ActivityPose. */
-// TODO: b/420684433 This interface name no longer matches the public SceneCore interface name.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface ActivityPose {
     /** Returns the pose for this entity, relative to the activity space root. */
@@ -63,7 +62,7 @@ public interface ActivityPose {
         public const val SELF_SCENE: Int = 1 shl 0
         /**
          * Register hit tests only for other scenes. An Application will only have access to other
-         * scenes if it has the com.android.extensions.xr.ACCESS_XR_OVERLAY_SPACE permission.
+         * scenes if it has the android.permission.ACCESS_OVERLAY_SPACE permission.
          */
         public const val OTHER_SCENES: Int = 1 shl 1
     }
@@ -84,7 +83,6 @@ public interface ActivityPose {
      *   and where relative to this [ActivityPose]. Listeners will be called on the main thread if
      *   Runnable::run is supplied.
      */
-    @Suppress("AsyncSuffixFuture")
     public fun hitTest(
         origin: Vector3,
         direction: Vector3,

@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.content.Context
-import android.graphics.ColorSpace
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -25,7 +24,6 @@ import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraExtensionCharacteristics
 import android.hardware.camera2.CameraExtensionSession
 import android.hardware.camera2.CameraManager
-import android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
@@ -42,7 +40,6 @@ import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresPermission
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.CameraMetadata.Companion.availableVideoStabilizationModes
 import java.util.concurrent.Executor
 
 @RequiresApi(23)
@@ -55,7 +52,7 @@ internal object Api23Compat {
         inputConfig: InputConfiguration,
         outputs: List<Surface>,
         callback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
+        handler: Handler?
     ) {
         cameraDevice.createReprocessableCaptureSession(inputConfig, outputs, callback, handler)
     }
@@ -67,7 +64,7 @@ internal object Api23Compat {
         cameraDevice: CameraDevice,
         outputs: List<Surface>,
         stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
+        handler: Handler?
     ) {
         cameraDevice.createConstrainedHighSpeedCaptureSession(outputs, stateCallback, handler)
     }
@@ -111,12 +108,12 @@ internal object Api24Compat {
         cameraDevice: CameraDevice,
         outputConfig: List<OutputConfiguration?>,
         stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
+        handler: Handler?
     ) {
         cameraDevice.createCaptureSessionByOutputConfigurations(
             outputConfig,
             stateCallback,
-            handler,
+            handler
         )
     }
 
@@ -128,13 +125,13 @@ internal object Api24Compat {
         inputConfig: InputConfiguration,
         outputs: List<OutputConfiguration?>,
         stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
+        handler: Handler?
     ) {
         cameraDevice.createReprocessableCaptureSessionByConfigurations(
             inputConfig,
             outputs,
             stateCallback,
-            handler,
+            handler
         )
     }
 
@@ -150,7 +147,7 @@ internal object Api26Compat {
     @Throws(CameraAccessException::class)
     fun finalizeOutputConfigurations(
         cameraCaptureSession: CameraCaptureSession,
-        outputConfiguration: List<OutputConfiguration?>,
+        outputConfiguration: List<OutputConfiguration?>
     ) {
         return cameraCaptureSession.finalizeOutputConfigurations(outputConfiguration)
     }
@@ -189,7 +186,10 @@ internal object Api26Compat {
 internal object Api28Compat {
     @JvmStatic
     @Throws(CameraAccessException::class)
-    fun createCaptureSession(cameraDevice: CameraDevice, sessionConfig: SessionConfiguration) {
+    fun createCaptureSession(
+        cameraDevice: CameraDevice,
+        sessionConfig: SessionConfiguration,
+    ) {
         cameraDevice.createCaptureSession(sessionConfig)
     }
 
@@ -224,7 +224,7 @@ internal object Api28Compat {
         sessionType: Int,
         outputs: List<OutputConfiguration?>,
         executor: Executor,
-        stateCallback: CameraCaptureSession.StateCallback,
+        stateCallback: CameraCaptureSession.StateCallback
     ): SessionConfiguration {
         return SessionConfiguration(sessionType, outputs, executor, stateCallback)
     }
@@ -232,7 +232,7 @@ internal object Api28Compat {
     @JvmStatic
     fun setInputConfiguration(
         sessionConfig: SessionConfiguration,
-        inputConfig: InputConfiguration,
+        inputConfig: InputConfiguration
     ) {
         sessionConfig.inputConfiguration = inputConfig
     }
@@ -264,7 +264,7 @@ internal object Api28Compat {
         cameraManager: CameraManager,
         cameraId: String,
         executor: Executor,
-        callback: CameraDevice.StateCallback,
+        callback: CameraDevice.StateCallback
     ) {
         cameraManager.openCamera(cameraId, executor, callback)
     }
@@ -273,7 +273,7 @@ internal object Api28Compat {
     fun registerAvailabilityCallback(
         cameraManager: CameraManager,
         executor: Executor,
-        callback: CameraManager.AvailabilityCallback,
+        callback: CameraManager.AvailabilityCallback
     ) {
         cameraManager.registerAvailabilityCallback(executor, callback)
     }
@@ -292,7 +292,7 @@ internal object Api29Compat {
         height: Int,
         format: Int,
         capacity: Int,
-        usage: Long,
+        usage: Long
     ): ImageReader {
         return ImageReader.newInstance(width, height, format, capacity, usage)
     }
@@ -326,7 +326,7 @@ internal object Api31Compat {
     @JvmStatic
     fun newInputConfiguration(
         inputConfigData: List<InputConfigData>,
-        cameraId: String,
+        cameraId: String
     ): InputConfiguration {
         check(inputConfigData.isNotEmpty()) {
             "Call to create InputConfiguration but list of InputConfigData is empty."
@@ -347,7 +347,7 @@ internal object Api31Compat {
     fun newMultiResolutionStreamInfo(
         streamWidth: Int,
         streamHeight: Int,
-        physicalCameraId: String,
+        physicalCameraId: String
     ): MultiResolutionStreamInfo {
         return MultiResolutionStreamInfo(streamWidth, streamHeight, physicalCameraId)
     }
@@ -360,14 +360,17 @@ internal object Api31Compat {
     }
 
     @JvmStatic
-    fun addSensorPixelModeUsed(outputConfiguration: OutputConfiguration, sensorPixelMode: Int) {
+    fun addSensorPixelModeUsed(
+        outputConfiguration: OutputConfiguration,
+        sensorPixelMode: Int,
+    ) {
         outputConfiguration.addSensorPixelModeUsed(sensorPixelMode)
     }
 
     @JvmStatic
     fun createExtensionCaptureSession(
         cameraDevice: CameraDevice,
-        extensionConfiguration: ExtensionSessionConfiguration,
+        extensionConfiguration: ExtensionSessionConfiguration
     ) {
         cameraDevice.createExtensionSession(extensionConfiguration)
     }
@@ -375,7 +378,7 @@ internal object Api31Compat {
     @JvmStatic
     fun getCameraExtensionCharacteristics(
         cameraManager: CameraManager,
-        cameraId: String,
+        cameraId: String
     ): CameraExtensionCharacteristics = cameraManager.getCameraExtensionCharacteristics(cameraId)
 
     @JvmStatic
@@ -383,7 +386,7 @@ internal object Api31Compat {
         extensionMode: Int,
         outputs: List<OutputConfiguration?>,
         executor: Executor,
-        stateCallback: CameraExtensionSession.StateCallback,
+        stateCallback: CameraExtensionSession.StateCallback
     ): ExtensionSessionConfiguration {
         return ExtensionSessionConfiguration(extensionMode, outputs, executor, stateCallback)
     }
@@ -397,14 +400,14 @@ internal object Api31Compat {
     fun getExtensionSupportedSizes(
         extensionCharacteristics: CameraExtensionCharacteristics,
         extension: Int,
-        imageFormat: Int,
+        imageFormat: Int
     ): List<Size> = extensionCharacteristics.getExtensionSupportedSizes(extension, imageFormat)
 
     @JvmStatic
     fun getExtensionSupportedSizes(
         extensionCharacteristics: CameraExtensionCharacteristics,
         extension: Int,
-        klass: Class<*>,
+        klass: Class<*>
     ): List<Size> = extensionCharacteristics.getExtensionSupportedSizes(extension, klass)
 }
 
@@ -458,22 +461,16 @@ internal object Api33Compat {
     @JvmStatic
     fun getAvailableCaptureRequestKeys(
         extensionCharacteristics: CameraExtensionCharacteristics,
-        extension: Int,
+        extension: Int
     ): Set<CaptureRequest.Key<Any>> =
         extensionCharacteristics.getAvailableCaptureRequestKeys(extension)
 
     @JvmStatic
     fun getAvailableCaptureResultKeys(
         extensionCharacteristics: CameraExtensionCharacteristics,
-        extension: Int,
+        extension: Int
     ): Set<CaptureResult.Key<Any>> =
         extensionCharacteristics.getAvailableCaptureResultKeys(extension)
-
-    fun supportsPreviewStabilization(cameraMetadata: CameraMetadata): Boolean {
-        return cameraMetadata.availableVideoStabilizationModes.contains(
-            CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
-        )
-    }
 
     @JvmStatic
     fun newImageReaderFromImageReaderBuilder(
@@ -483,7 +480,7 @@ internal object Api33Compat {
         maxImages: Int? = null,
         usage: Long? = null,
         defaultDataSpace: Int? = null,
-        defaultHardwareBufferFormat: Int? = null,
+        defaultHardwareBufferFormat: Int? = null
     ): ImageReader {
         return ImageReader.Builder(width, height)
             .apply {
@@ -503,13 +500,13 @@ internal object Api34Compat {
     @JvmStatic
     fun isPostviewAvailable(
         extensionCharacteristics: CameraExtensionCharacteristics,
-        extension: Int,
+        extension: Int
     ): Boolean = extensionCharacteristics.isPostviewAvailable(extension)
 
     @JvmStatic
     fun isCaptureProcessProgressAvailable(
         extensionCharacteristics: CameraExtensionCharacteristics,
-        extension: Int,
+        extension: Int
     ): Boolean = extensionCharacteristics.isCaptureProcessProgressAvailable(extension)
 
     @JvmStatic
@@ -517,14 +514,14 @@ internal object Api34Compat {
         extensionCharacteristics: CameraExtensionCharacteristics,
         extension: Int,
         captureSize: Size,
-        format: Int,
+        format: Int
     ): List<Size> =
         extensionCharacteristics.getPostviewSupportedSizes(extension, captureSize, format)
 
     @JvmStatic
     fun setPostviewOutputConfiguration(
         extensionSessionConfiguration: ExtensionSessionConfiguration,
-        postviewOutputConfiguration: OutputConfiguration,
+        postviewOutputConfiguration: OutputConfiguration
     ) {
         extensionSessionConfiguration.postviewOutputConfiguration = postviewOutputConfiguration
     }
@@ -534,11 +531,6 @@ internal object Api34Compat {
         cameraMetadata[CameraCharacteristics.CONTROL_AVAILABLE_SETTINGS_OVERRIDES]?.contains(
             android.hardware.camera2.CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM
         ) == true
-
-    @JvmStatic
-    fun setColorSpace(sessionConfiguration: SessionConfiguration, colorSpace: ColorSpace.Named) {
-        sessionConfiguration.setColorSpace(colorSpace)
-    }
 }
 
 @RequiresApi(35)

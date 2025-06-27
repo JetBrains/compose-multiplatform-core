@@ -16,21 +16,13 @@
 
 package androidx.xr.compose.spatial
 
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -43,6 +35,9 @@ import androidx.xr.compose.subspace.layout.fillMaxHeight
 import androidx.xr.compose.subspace.layout.fillMaxWidth
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
+import androidx.xr.compose.testing.TestActivitySpace
+import androidx.xr.compose.testing.TestCameraViewActivityPose
+import androidx.xr.compose.testing.TestHeadActivityPose
 import androidx.xr.compose.testing.TestJxrPlatformAdapter
 import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.assertHeightIsEqualTo
@@ -54,18 +49,20 @@ import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.toDp
 import androidx.xr.compose.unit.VolumeConstraints
-import androidx.xr.scenecore.Entity
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.HeadTrackingMode
+import androidx.xr.runtime.internal.CameraViewActivityPose
+import androidx.xr.runtime.internal.CameraViewActivityPose.Fov
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SubspaceTest {
 
@@ -73,8 +70,45 @@ class SubspaceTest {
 
     @Test
     fun subspace_alreadyInSubspace_justRendersContentDirectly() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
         composeTestRule.setContent {
-            TestSetup {
+            TestSetup(runtime = testJxrPlatformAdapter) {
                 Subspace {
                     Subspace {
                         SpatialPanel(
@@ -84,21 +118,61 @@ class SubspaceTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
-        // Width dp = 1151.856 dp / meter * 1.73 meter
-        // Width px = 1992.7108799999999 * 1 (density)
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
         composeTestRule
             .onSubspaceNodeWithTag("innerPanel")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
     }
 
     @Test
     fun applicationSubspace_alreadyInApplicationSubspace_justRendersContentDirectly() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
         composeTestRule.setContent {
-            TestSetup {
+            TestSetup(runtime = testJxrPlatformAdapter) {
                 ApplicationSubspace {
                     ApplicationSubspace {
                         SpatialPanel(
@@ -108,15 +182,18 @@ class SubspaceTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
-        // Width dp = 1151.856 dp / meter * 1.73 meter
-        // Width px = 1992.7108799999999 * 1 (density)
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
         composeTestRule
             .onSubspaceNodeWithTag("innerPanel")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
     }
 
     @Test
@@ -131,7 +208,49 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_xrEnabled_contentIsCreated() {
+    fun applicationSubspace_unbounded_xrEnabled_contentIsCreated() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints.Unbounded,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_xrEnabled_contentIsCreated() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_xrEnabled_contentIsCreated() {
         composeTestRule.setContent {
             TestSetup { ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
         }
@@ -153,7 +272,45 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_nonXr_contentIsNotCreated() {
+    fun applicationSubspace_unbounded_nonXr_contentIsNotCreated() {
+        composeTestRule.setContent {
+            TestSetup(isXrEnabled = false) {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints.Unbounded,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_nonXr_contentIsNotCreated() {
+        composeTestRule.setContent {
+            TestSetup(isXrEnabled = false) {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nonXr_contentIsNotCreated() {
         composeTestRule.setContent {
             TestSetup(isXrEnabled = false) {
                 ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
@@ -171,26 +328,73 @@ class SubspaceTest {
 
         val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val panel = node.semanticsEntity
-        val subspaceBox = panel?.parent
-        val session = assertNotNull(composeTestRule.activity.session)
-        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
-        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
-        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
+        val subspaceBox = panel?.getParent()
+
+        assertThat(subspaceBox?.getParent())
+            .isEqualTo(composeTestRule.activity.session.scene.activitySpace)
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_contentIsParentedToActivitySpace() {
+    fun applicationSubspace_unbounded_contentIsParentedToActivitySpace() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints.Unbounded,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panel = node.semanticsEntity
+        val subspaceBox = panel?.getParent()
+
+        assertThat(subspaceBox?.getParent())
+            .isEqualTo(composeTestRule.activity.session.scene.activitySpace)
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_contentIsParentedToActivitySpace() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panel = node.semanticsEntity
+        val subspaceBox = panel?.getParent()
+        assertThat(subspaceBox?.getParent())
+            .isEqualTo(composeTestRule.activity.session.scene.activitySpace)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_contentIsParentedToActivitySpace() {
         composeTestRule.setContent {
             TestSetup { ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} } }
         }
 
         val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panel = node.semanticsEntity
-        val subspaceBox = panel?.parent
-        val session = assertNotNull(composeTestRule.activity.session)
-        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
-        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
-        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
+        assertThat(node).isNotNull()
+        val panelEntity = node.semanticsEntity
+        assertThat(panelEntity).isNotNull()
+        val subspaceBoxEntity = panelEntity?.getParent()
+        assertThat(subspaceBoxEntity).isNotNull()
+        assertThat(subspaceBoxEntity?.getParent())
+            .isEqualTo(composeTestRule.activity.session.scene.activitySpace)
     }
 
     @Test
@@ -210,17 +414,81 @@ class SubspaceTest {
         val innerPanelNode =
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.parent
-        val subspaceLayoutEntity = subspaceBoxEntity?.parent
-        val subspaceRootEntity = subspaceLayoutEntity?.parent
-        val subspaceRootContainerEntity = subspaceRootEntity?.parent
-        val parentPanel = subspaceRootContainerEntity?.parent
-        assertNotNull(parentPanel)
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertThat(parentPanel).isNotNull()
         assertThat(parentPanel).isEqualTo(outerPanelEntity)
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_nestedSubspace_contentIsParentedToContainingPanel() {
+    fun applicationSubspace_unbounded_nestedSubspace_contentIsParentedToContainingPanel() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints.Unbounded,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
+                    }
+                }
+            }
+        }
+
+        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val outerPanelEntity = outerPanelNode.semanticsEntity
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertThat(parentPanel).isNotNull()
+        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_nestedSubspace_contentIsParentedToContainingPanel() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {
+                        Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
+                    }
+                }
+            }
+        }
+
+        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val outerPanelEntity = outerPanelNode.semanticsEntity
+        val innerPanelNode =
+            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
+        val innerPanelEntity = innerPanelNode.semanticsEntity
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertThat(parentPanel).isNotNull()
+        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nestedSubspace_contentIsParentedToContainingPanel() {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
@@ -230,19 +498,18 @@ class SubspaceTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
 
         val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
         val outerPanelEntity = outerPanelNode.semanticsEntity
         val innerPanelNode =
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.parent
-        val subspaceLayoutEntity = subspaceBoxEntity?.parent
-        val subspaceRootEntity = subspaceLayoutEntity?.parent
-        val subspaceRootContainerEntity = subspaceRootEntity?.parent
-        val parentPanel = subspaceRootContainerEntity?.parent
-        assertNotNull(parentPanel)
+        val subspaceBoxEntity = innerPanelEntity?.getParent()
+        val subspaceLayoutEntity = subspaceBoxEntity?.getParent()
+        val subspaceRootEntity = subspaceLayoutEntity?.getParent()
+        val subspaceRootContainerEntity = subspaceRootEntity?.getParent()
+        val parentPanel = subspaceRootContainerEntity?.getParent()
+        assertThat(parentPanel).isNotNull()
         assertThat(parentPanel).isEqualTo(outerPanelEntity)
     }
 
@@ -260,17 +527,68 @@ class SubspaceTest {
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
         showSubspace = false
-
         composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
         assertThat(SceneManager.getSceneCount()).isEqualTo(0)
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_isDisposed() {
+    fun applicationSubspace_unbounded_isDisposed() {
         var showSubspace by mutableStateOf(true)
 
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
+                    ApplicationSubspace(
+                        constraints = VolumeConstraints.Unbounded,
+                        constraintsBehavior = ConstraintsBehavior.Specified,
+                    ) {
+                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+        showSubspace = false
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_isDisposed() {
+        var showSubspace by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            TestSetup {
+                if (showSubspace) {
+                    ApplicationSubspace(
+                        constraints =
+                            VolumeConstraints(
+                                minWidth = 0,
+                                maxWidth = 100,
+                                minHeight = 0,
+                                maxHeight = 100
+                            ),
+                        constraintsBehavior = ConstraintsBehavior.Specified,
+                    ) {
+                        SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+        showSubspace = false
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_isDisposed() {
+        var showSubspace by mutableStateOf(true)
         composeTestRule.setContent {
             TestSetup {
                 if (showSubspace) {
@@ -281,9 +599,7 @@ class SubspaceTest {
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
         showSubspace = false
-
         composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
         assertThat(SceneManager.getSceneCount()).isEqualTo(0)
     }
@@ -301,51 +617,88 @@ class SubspaceTest {
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
         testJxrPlatformAdapter.requestHomeSpaceMode()
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
         testJxrPlatformAdapter.requestFullSpaceMode()
-
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_onlyOneSceneExists_afterSpaceModeChanges() {
+    fun applicationSubspace_unbounded_onlyOneSceneExists_afterSpaceModeChanges() {
         val fakeRuntime = createFakeRuntime(composeTestRule.activity)
 
         composeTestRule.setContent {
             TestSetup(runtime = fakeRuntime) {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints.Unbounded,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+        fakeRuntime.requestHomeSpaceMode()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+        fakeRuntime.requestFullSpaceMode()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+    }
+
+    @Test
+    fun applicationSubspace_customBounded_onlyOneSceneExists_afterSpaceModeChanges() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+
+        composeTestRule.setContent {
+            TestSetup(runtime = fakeRuntime) {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        ),
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("panel")) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+        fakeRuntime.requestHomeSpaceMode()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+        fakeRuntime.requestFullSpaceMode()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_onlyOneSceneExists_afterSpaceModeChanges() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter = TestJxrPlatformAdapter.create(fakeRuntime)
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
                 ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
             }
         }
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-        fakeRuntime.requestHomeSpaceMode()
-
+        testJxrPlatformAdapter.requestHomeSpaceMode()
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+        testJxrPlatformAdapter.requestFullSpaceMode()
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-
-        fakeRuntime.requestFullSpaceMode()
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
-    }
-
-    @Test
-    fun applicationSubspace_recommendedBoxed_asNestedInSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "ApplicationSubspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContent {
-                TestSetup { Subspace { SpatialPanel { ApplicationSubspace {} } } }
-            }
-        }
     }
 
     @Test
@@ -356,7 +709,12 @@ class SubspaceTest {
             composeTestRule.setContent {
                 TestSetup {
                     Subspace {
-                        SpatialPanel { ApplicationSubspace(constraints = VolumeConstraints()) {} }
+                        SpatialPanel {
+                            ApplicationSubspace(
+                                constraints = VolumeConstraints.Unbounded,
+                                constraintsBehavior = ConstraintsBehavior.Specified,
+                            ) {}
+                        }
                     }
                 }
             }
@@ -378,8 +736,9 @@ class SubspaceTest {
                                         minWidth = 0,
                                         maxWidth = 100,
                                         minHeight = 0,
-                                        maxHeight = 100,
-                                    )
+                                        maxHeight = 100
+                                    ),
+                                constraintsBehavior = ConstraintsBehavior.Specified,
                             ) {}
                         }
                     }
@@ -389,16 +748,12 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_asNestedInUnboundedApplicationSubspace_throwsError() {
+    fun applicationSubspace_fovBounded_asNestedInSubspace_throwsError() {
         assertFailsWith<IllegalStateException>(
             message = "ApplicationSubspace cannot be nested within another Subspace."
         ) {
             composeTestRule.setContent {
-                TestSetup {
-                    ApplicationSubspace(constraints = VolumeConstraints()) {
-                        SpatialPanel() { ApplicationSubspace {} }
-                    }
-                }
+                TestSetup { Subspace { SpatialPanel { ApplicationSubspace {} } } }
             }
         }
     }
@@ -410,8 +765,30 @@ class SubspaceTest {
         ) {
             composeTestRule.setContent {
                 TestSetup {
-                    ApplicationSubspace(constraints = VolumeConstraints()) {
-                        SpatialPanel() { ApplicationSubspace(constraints = VolumeConstraints()) {} }
+                    ApplicationSubspace(
+                        constraints = VolumeConstraints.Unbounded,
+                        constraintsBehavior = ConstraintsBehavior.Specified,
+                    ) {
+                        SpatialPanel() {
+                            ApplicationSubspace(constraints = VolumeConstraints.Unbounded) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun applicationSubspace_Unbounded_asNestedInFovBoundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    ApplicationSubspace {
+                        SpatialPanel() {
+                            ApplicationSubspace(constraints = VolumeConstraints.Unbounded) {}
+                        }
                     }
                 }
             }
@@ -431,18 +808,20 @@ class SubspaceTest {
                                 minWidth = 0,
                                 maxWidth = 50,
                                 minHeight = 0,
-                                maxHeight = 50,
-                            )
+                                maxHeight = 50
+                            ),
+                        constraintsBehavior = ConstraintsBehavior.Specified,
                     ) {
-                        SpatialPanel {
+                        SpatialPanel() {
                             ApplicationSubspace(
                                 constraints =
                                     VolumeConstraints(
                                         minWidth = 0,
                                         maxWidth = 100,
                                         minHeight = 0,
-                                        maxHeight = 100,
-                                    )
+                                        maxHeight = 100
+                                    ),
+                                constraintsBehavior = ConstraintsBehavior.Specified,
                             ) {}
                         }
                     }
@@ -452,9 +831,72 @@ class SubspaceTest {
     }
 
     @Test
+    fun applicationSubspace_fovBounded_asNestedInFovBoundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup { ApplicationSubspace { SpatialPanel() { ApplicationSubspace {} } } }
+            }
+        }
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_asNestedInUnboundedApplicationSubspace_throwsError() {
+        assertFailsWith<IllegalStateException>(
+            message = "ApplicationSubspace cannot be nested within another Subspace."
+        ) {
+            composeTestRule.setContent {
+                TestSetup {
+                    ApplicationSubspace(constraints = VolumeConstraints.Unbounded) {
+                        SpatialPanel() { ApplicationSubspace {} }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun subspace_fillMaxSize_returnsCorrectWidthAndHeight() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
         composeTestRule.setContent {
-            TestSetup {
+            TestSetup(runtime = testJxrPlatformAdapter) {
                 Subspace {
                     SpatialBox(
                         SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -463,20 +905,61 @@ class SubspaceTest {
             }
         }
 
-        // Width  = 1151.856 dp / meter * 1.73 meter
-        // Width  = 1992.7108799999999 * 1 (density)
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
         composeTestRule
             .onSubspaceNodeWithTag("box")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
     }
 
     @Test
     fun subspace_fillMaxSize_higherDensity_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                TestSetup {
+                TestSetup(runtime = testJxrPlatformAdapter) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -486,19 +969,60 @@ class SubspaceTest {
             }
         }
 
-        // Width dp = 1151.856 dp / meter ∗ 1.73=1992.7108799999999 meter
-        // Width px = 1992.7108799999999 dp ∗ 2 (density) = 3985.4217599999997
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (2)).roundToInt() = ~5023
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (2)).roundToInt() = ~5023
+        // px
         composeTestRule
             .onSubspaceNodeWithTag("box")
-            .assertWidthIsEqualTo(3985.toDp())
-            .assertHeightIsEqualTo(3709.toDp())
+            .assertWidthIsEqualTo(5023.toDp())
+            .assertHeightIsEqualTo(5023.toDp())
     }
 
     @Test
     fun subspace_fillMaxSize_higherScale_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(2f, 2f, 2f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(2f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
-                TestSetup {
+                TestSetup(runtime = testJxrPlatformAdapter) {
                     Subspace {
                         SpatialBox(
                             SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
@@ -508,21 +1032,57 @@ class SubspaceTest {
             }
         }
 
-        // Width dp = 1151.856 dp / meter * 1.73 meter
-        // Width px = 1992.7108799999999 * 1 (density)
+        // Distance in Meters = ActivitySpace unit (2) / ActivitySpaceScale (2) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
         composeTestRule
             .onSubspaceNodeWithTag("box")
-            .assertWidthIsEqualTo(1993.toDp())
-            .assertHeightIsEqualTo(1854.toDp())
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
     }
 
-    @Test fun applicationSubspace_recommendedBoxed_fillMaxSize_returnsCorrectWidthAndHeight() {}
-
     @Test
-    fun applicationSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
+    fun subspace_zeroDistance_returnsDefaultConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose = TestHeadActivityPose(activitySpacePose = Pose.Identity)
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
         composeTestRule.setContent {
-            TestSetup {
-                ApplicationSubspace(constraints = VolumeConstraints()) {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                Subspace {
                     SpatialBox(
                         SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
                     ) {}
@@ -533,8 +1093,349 @@ class SubspaceTest {
         composeTestRule
             .onSubspaceNodeWithTag("box")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsNotEqualTo(VolumeConstraints().maxWidth.toDp())
-            .assertHeightIsNotEqualTo(VolumeConstraints().maxHeight.toDp())
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun subspace_zeroFov_returnsZeroConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov = CameraViewActivityPose.Fov(0.0f, 0.0f, 0.0f, 0.0f),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov = CameraViewActivityPose.Fov(0.0f, 0.0f, 0.0f, 0.0f),
+                    )
+            }
+
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                Subspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(0.dp)
+            .assertHeightIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun subspace_nullHead_returnsDefaultConstraintsAfterTimeout() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { headActivityPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                Subspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun subspace_headAvailableAfter50ms_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                headActivityPose = null
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                LaunchedEffect(Unit) {
+                    delay(50)
+                    testJxrPlatformAdapter.headActivityPose =
+                        TestHeadActivityPose(
+                            activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                        )
+                }
+                Subspace {
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(20)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun subspace_nullLeftCamera_returnsDefaultConstraintsAfterTimeout() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { leftCameraViewPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                Subspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun subspace_leftCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose = null
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                LaunchedEffect(Unit) {
+                    delay(50)
+                    testJxrPlatformAdapter.leftCameraViewPose =
+                        TestCameraViewActivityPose(
+                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                            fov =
+                                CameraViewActivityPose.Fov(
+                                    angleLeft = -1.57f,
+                                    angleRight = 1.00f,
+                                    angleUp = 1.57f,
+                                    angleDown = -1.57f,
+                                ),
+                        )
+                }
+                Subspace {
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(20)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun subspace_nullRightCamera_returnsDefaultConstraintsAfterTimeout() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { rightCameraViewPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                Subspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun subspace_rightCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose = null
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                LaunchedEffect(Unit) {
+                    delay(50)
+                    testJxrPlatformAdapter.rightCameraViewPose =
+                        TestCameraViewActivityPose(
+                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                            fov =
+                                CameraViewActivityPose.Fov(
+                                    angleLeft = -1.00f,
+                                    angleRight = 1.57f,
+                                    angleUp = 1.57f,
+                                    angleDown = -1.57f,
+                                ),
+                        )
+                }
+                Subspace {
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(20)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
+        composeTestRule.setContent {
+            TestSetup {
+                ApplicationSubspace(
+                    constraints = VolumeConstraints.Unbounded,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsNotEqualTo(VolumeConstraints.Unbounded.maxWidth.toDp())
+            .assertHeightIsNotEqualTo(VolumeConstraints.Unbounded.maxHeight.toDp())
     }
 
     @Test
@@ -543,7 +1444,10 @@ class SubspaceTest {
 
         composeTestRule.setContent {
             TestSetup {
-                ApplicationSubspace(constraints = customConstraints) {
+                ApplicationSubspace(
+                    constraints = customConstraints,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
                     SpatialBox(
                         SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
                     ) {}
@@ -556,6 +1460,674 @@ class SubspaceTest {
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
             .assertWidthIsEqualTo(customConstraints.maxWidth.toDp())
             .assertHeightIsEqualTo(customConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_fillMaxSize_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_fillMaxSize_higherDensity_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(2f)) {
+                TestSetup(runtime = testJxrPlatformAdapter) {
+                    ApplicationSubspace {
+                        SpatialBox(
+                            SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                        ) {}
+                    }
+                }
+            }
+        }
+
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (2)).roundToInt() = ~5023
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (2)).roundToInt() = ~5023
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(5023.toDp())
+            .assertHeightIsEqualTo(5023.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_fillMaxSize_higherScale_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(2f, 2f, 2f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(2f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestSetup(runtime = testJxrPlatformAdapter) {
+                    ApplicationSubspace {
+                        SpatialBox(
+                            SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                        ) {}
+                    }
+                }
+            }
+        }
+
+        // Distance in Meters = ActivitySpace unit (2) / ActivitySpaceScale (2) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_zeroDistance_returnsDefaultConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose = TestHeadActivityPose(activitySpacePose = Pose.Identity)
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_zeroFov_returnsZeroConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov = CameraViewActivityPose.Fov(0.0f, 0.0f, 0.0f, 0.0f),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov = CameraViewActivityPose.Fov(0.0f, 0.0f, 0.0f, 0.0f),
+                    )
+            }
+
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(0.dp)
+            .assertHeightIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nullHead_returnsSubspaceDefaultsAfterTimeout() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { headActivityPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nullHead_returnsCustomConstraintsAfterTimeoutIfProvided() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { headActivityPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        )
+                ) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_headAvailableAfter50ms_returnsCorectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                headActivityPose = null
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                LaunchedEffect(Unit) {
+                    delay(50)
+                    testJxrPlatformAdapter.headActivityPose =
+                        TestHeadActivityPose(
+                            activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                        )
+                }
+                ApplicationSubspace {
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(20)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nullLeftCamera_returnsDefaultConstraintsAfterTimeout() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { leftCameraViewPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nullLeftCam_returnsCustomConstraintsAfterTimeoutIfProvided() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { leftCameraViewPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        )
+                ) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_leftCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose = null
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                LaunchedEffect(Unit) {
+                    delay(50)
+                    testJxrPlatformAdapter.leftCameraViewPose =
+                        TestCameraViewActivityPose(
+                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                            fov =
+                                CameraViewActivityPose.Fov(
+                                    angleLeft = -1.57f,
+                                    angleRight = 1.00f,
+                                    angleUp = 1.57f,
+                                    angleDown = -1.57f,
+                                ),
+                        )
+                }
+                ApplicationSubspace {
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(20)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nullRightCamera_returnsDefaultConstraintsAfterTimeout() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { rightCameraViewPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_nullRightCam_returnsCustomConstraintsAfterTimeoutIfProvided() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply { rightCameraViewPose = null }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace(
+                    constraints =
+                        VolumeConstraints(
+                            minWidth = 0,
+                            maxWidth = 100,
+                            minHeight = 0,
+                            maxHeight = 100
+                        )
+                ) {
+                    SpatialBox(
+                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_rightCameraAvailableAfter50ms_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose = null
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                LaunchedEffect(Unit) {
+                    delay(50)
+                    testJxrPlatformAdapter.rightCameraViewPose =
+                        TestCameraViewActivityPose(
+                            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                            fov =
+                                CameraViewActivityPose.Fov(
+                                    angleLeft = -1.00f,
+                                    angleRight = 1.57f,
+                                    angleUp = 1.57f,
+                                    angleDown = -1.57f,
+                                ),
+                        )
+                }
+                ApplicationSubspace {
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(20)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
     }
 
     @Test
@@ -578,11 +2150,15 @@ class SubspaceTest {
                 minDepth = 0,
                 maxDepth = VolumeConstraints.INFINITY,
             )
+
         val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
 
         composeTestRule.setContent {
             TestSetup {
-                ApplicationSubspace(constraints = constraintsState.value) {
+                ApplicationSubspace(
+                    constraints = constraintsState.value,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
                     SpatialBox(
                         modifier =
                             SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
@@ -597,6 +2173,7 @@ class SubspaceTest {
             .assertHeightIsEqualTo(100.toDp())
 
         constraintsState.value = updatedConstraints
+        composeTestRule.waitForIdle()
 
         composeTestRule
             .onSubspaceNodeWithTag("testBox")
@@ -605,7 +2182,387 @@ class SubspaceTest {
     }
 
     @Test
-    fun privateApplicationSubspace_mainPanelEntityDisabled_whenSubspaceLeavesComposition() {
+    fun applicationSubspace_behaviorChangeFromFovToSpecified_shouldRecomposeAndChangeConstraints() {
+        val initialConstraintsBehavior = ConstraintsBehavior.FieldOfView
+        val updatedConstraintsBehavior = ConstraintsBehavior.Specified
+        val constraints =
+            VolumeConstraints(
+                minWidth = 0,
+                maxWidth = 100,
+                minHeight = 0,
+                maxHeight = 100,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+
+        val constraintsBehaviorState =
+            mutableStateOf<ConstraintsBehavior>(initialConstraintsBehavior)
+
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace(
+                    constraints = constraints,
+                    constraintsBehavior = constraintsBehaviorState.value,
+                ) {
+                    SpatialBox(
+                        modifier =
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
+                    ) {}
+                }
+            }
+        }
+
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+
+        constraintsBehaviorState.value = updatedConstraintsBehavior
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(constraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(constraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_constraintsChangeWithSpecified_shouldRecomposeAndChangeConstraints() {
+        val initialConstraints =
+            VolumeConstraints(
+                minWidth = 0,
+                maxWidth = 100,
+                minHeight = 0,
+                maxHeight = 100,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+        val updatedConstraints =
+            VolumeConstraints(
+                minWidth = 0,
+                maxWidth = 200,
+                minHeight = 0,
+                maxHeight = 200,
+                minDepth = 0,
+                maxDepth = VolumeConstraints.INFINITY,
+            )
+
+        val constraintsState = mutableStateOf<VolumeConstraints>(initialConstraints)
+
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+        composeTestRule.setContent {
+            TestSetup(runtime = testJxrPlatformAdapter) {
+                ApplicationSubspace(
+                    constraints = constraintsState.value,
+                    constraintsBehavior = ConstraintsBehavior.Specified,
+                ) {
+                    SpatialBox(
+                        modifier =
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(initialConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(initialConstraints.maxHeight.toDp())
+
+        constraintsState.value = updatedConstraints
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onSubspaceNodeWithTag("testBox")
+            .assertWidthIsEqualTo(updatedConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(updatedConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_zeroScaleInitially_becomesNonZero_returnsCorrectConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testActivitySpace =
+            TestActivitySpace(
+                fakeRuntime.activitySpace,
+                activitySpacePose = Pose.Identity,
+                activitySpaceScale = Vector3(0f, 0f, 0f),
+            )
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace = testActivitySpace
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestSetup(runtime = testJxrPlatformAdapter) {
+                    ApplicationSubspace {
+                        SpatialBox(
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
+                        ) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        testActivitySpace.activitySpaceScale = Vector3(1f, 1f, 1f)
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        // Distance in Meters = ActivitySpace unit (1) / ActivitySpaceScale (1) = 1
+        // DP_PER_METER = 1
+        // width: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        // height: (1 meter * (abs(tan(1.57)) + abs(tan(-1.57)) * Density (1)).roundToInt() = ~2512
+        // px
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(2512.toDp())
+            .assertHeightIsEqualTo(2512.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_zeroScalePersists_fallsBackToDefaultConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(0f, 0f, 0f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestSetup(runtime = testJxrPlatformAdapter) {
+                    ApplicationSubspace {
+                        SpatialBox(
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
+                        ) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
+    }
+
+    @Test
+    fun applicationSubspace_fovBounded_zeroScalePersists_fallsBackToCustomConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(0f, 0f, 0f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                TestSetup(runtime = testJxrPlatformAdapter) {
+                    ApplicationSubspace(
+                        constraints =
+                            VolumeConstraints(
+                                minWidth = 0,
+                                maxWidth = 100,
+                                minHeight = 0,
+                                maxHeight = 100
+                            )
+                    ) {
+                        SpatialBox(
+                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")
+                        ) {}
+                    }
+                }
+            }
+        }
+
+        composeTestRule.mainClock.advanceTimeBy(40)
+        composeTestRule.onSubspaceNodeWithTag("box").assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1000)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(100.toDp())
+            .assertHeightIsEqualTo(100.toDp())
+    }
+
+    @Test
+    fun privateApplicationSubspace_mainPanelEntityHidden_whenSubspaceLeavesComposition() {
         var showSubspace by mutableStateOf(true)
 
         composeTestRule.setContent {
@@ -615,139 +2572,69 @@ class SubspaceTest {
                 }
             }
         }
+        composeTestRule.waitForIdle()
 
-        val session = composeTestRule.activity.session
-        assertNotNull(session)
-        val mainPanelEntity = session.scene.mainPanelEntity
-        assertThat(mainPanelEntity.isEnabled()).isEqualTo(false)
+        val mainPanelEntity = composeTestRule.activity.session.scene.mainPanelEntity
+        assertThat(mainPanelEntity.isHidden()).isEqualTo(true)
 
         showSubspace = false
         composeTestRule.waitForIdle()
-
-        assertThat(mainPanelEntity.isEnabled()).isEqualTo(true)
+        assertThat(mainPanelEntity.isHidden()).isEqualTo(false)
     }
 
     @Test
-    fun applicationSubspace_retainsState_whenSwitchingModes() {
-        val testJxrPlatformAdapter = createFakeRuntime(composeTestRule.activity)
+    fun applicationSubspace_headTrackingDisabled_returnsCustomConstraints() {
+        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
+        val testJxrPlatformAdapter =
+            TestJxrPlatformAdapter.create(fakeRuntime).apply {
+                activitySpace =
+                    TestActivitySpace(
+                        fakeRuntime.activitySpace,
+                        activitySpacePose = Pose.Identity,
+                        activitySpaceScale = Vector3(1f, 1f, 1f),
+                    )
+                headActivityPose =
+                    TestHeadActivityPose(
+                        activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))
+                    )
+                leftCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.57f,
+                                angleRight = 1.00f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+                rightCameraViewPose =
+                    TestCameraViewActivityPose(
+                        cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+                        fov =
+                            CameraViewActivityPose.Fov(
+                                angleLeft = -1.00f,
+                                angleRight = 1.57f,
+                                angleUp = 1.57f,
+                                angleDown = -1.57f,
+                            ),
+                    )
+            }
 
         composeTestRule.setContent {
             TestSetup(runtime = testJxrPlatformAdapter) {
+                val session = LocalSession.current
+                session!!.configure(Config(headTracking = HeadTrackingMode.Disabled))
                 ApplicationSubspace {
-                    SpatialPanel {
-                        var state by remember { mutableStateOf(0) }
-                        Button(onClick = { state++ }) { Text("Increment") }
-                        Text("$state", modifier = Modifier.testTag("state"))
-                    }
+                    SpatialBox(SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("box")) {}
                 }
             }
         }
 
-        composeTestRule.onNodeWithTag("state").assertTextContains("0")
-
-        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        testJxrPlatformAdapter.requestHomeSpaceMode()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        testJxrPlatformAdapter.requestFullSpaceMode()
-        composeTestRule.onNodeWithText("Increment").performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("5")
-    }
-
-    @Test
-    fun applicationSubspace_retainsState_whenSwitchingModesStartingFromHomeSpace() {
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
-
-        composeTestRule.setContent {
-            CompositionLocalProvider {
-                TestSetup(runtime = runtime) {
-                    ApplicationSubspace {
-                        SpatialPanel {
-                            var state by remember { mutableStateOf(0) }
-                            Button(onClick = { state++ }) { Text("Increment") }
-                            Text("$state", modifier = Modifier.testTag("state"))
-                        }
-                    }
-                }
-            }
-        }
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("0")
-
-        runtime.requestFullSpaceMode()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("0")
-
-        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        runtime.requestHomeSpaceMode()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        runtime.requestFullSpaceMode()
-        composeTestRule.onNodeWithText("Increment").performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("5")
-
-        runtime.requestHomeSpaceMode()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("5")
-    }
-
-    @Test
-    fun applicationSubspace_usesProvidedRootContainer() {
-        var testNode: Entity? = null
-
-        composeTestRule.setContent {
-            TestSetup {
-                testNode = GroupEntity.create(LocalSession.current!!, "TestRoot")
-                CompositionLocalProvider(LocalSubspaceRootNode provides testNode) {
-                    assertThat(LocalSession.current!!.scene.keyEntity).isNull()
-                    ApplicationSubspace {
-                        SpatialBox(modifier = SubspaceModifier.testTag("Box")) {}
-                    }
-                }
-            }
-        }
-
-        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
-        val boxEntity = assertNotNull(boxNode.semanticsEntity)
-        val layoutRootEntity = assertNotNull(boxEntity.parent)
-        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
-        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
-
-        assertThat(testNode).isEqualTo(subspaceRootContainer)
-    }
-
-    @Test
-    fun applicationSubspace_multipleApplicationSubspaces_haveTheSameRootContainer() {
-        composeTestRule.setContent {
-            TestSetup {
-                assertThat(LocalSession.current!!.scene.keyEntity).isNull()
-                ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
-                ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box2")) {} }
-            }
-        }
-
-        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
-        val boxEntity = assertNotNull(boxNode.semanticsEntity)
-        val layoutRootEntity = assertNotNull(boxEntity.parent)
-        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
-        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
-        val boxNode2 = composeTestRule.onSubspaceNodeWithTag("Box2").fetchSemanticsNode()
-        val boxEntity2 = assertNotNull(boxNode2.semanticsEntity)
-        val layoutRootEntity2 = assertNotNull(boxEntity2.parent)
-        val subspaceRootEntity2 = assertNotNull(layoutRootEntity2.parent)
-        val subspaceRootContainer2 = assertNotNull(subspaceRootEntity2.parent)
-
-        assertThat(subspaceRootContainer).isEqualTo(subspaceRootContainer2)
+        composeTestRule.onSubspaceNodeWithTag("box").assertExists()
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxWidth.toDp())
+            .assertHeightIsEqualTo(SubspaceDefaults.fallbackFieldOfViewConstraints.maxHeight.toDp())
     }
 }

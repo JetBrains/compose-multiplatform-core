@@ -24,12 +24,8 @@ import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
-import android.util.SparseArray
-import androidx.pdf.PdfPoint
-import androidx.pdf.PdfRect
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import kotlin.collections.List
 import kotlin.math.roundToInt
 import org.junit.Before
 import org.junit.Test
@@ -67,21 +63,14 @@ class SelectionRendererTest {
                 listOf(
                     PdfRect(pageNum = 0, RectF(150F, 150F, 190F, 160F)),
                     PdfRect(pageNum = 0, RectF(10F, 170F, 50F, 180F)),
-                ),
+                )
             )
         val startBoundary =
             UiSelectionBoundary(PdfPoint(pageNum = 0, PointF(150F, 160F)), isRtl = true)
         val endBoundary =
             UiSelectionBoundary(PdfPoint(pageNum = 0, PointF(50F, 180F)), isRtl = true)
-        val selection =
-            SelectionModel(
-                DocumentSelection(
-                    SparseArray<List<Selection>>().apply { set(0, listOf(textSelection)) }
-                ),
-                startBoundary,
-                endBoundary,
-            )
-        val locationInView = RectF(30f, 50f, 230f, 250f)
+        val selection = SelectionModel(textSelection, startBoundary, endBoundary)
+        val locationInView = Rect(30, 50, 230, 250)
         val currentZoom = 2F
 
         renderer.drawSelectionOnPage(selection, pageNum = 0, canvasSpy, locationInView, currentZoom)
@@ -89,40 +78,48 @@ class SelectionRendererTest {
         // Handle's location in page, adjusted for page's location in View, adjusted in the way we
         // expect to position the "sharp point" of the handle, adjusted for the current zoom
         val startLeftAdjusted =
-            startBoundary.location.x +
+            startBoundary.location.pagePoint.x +
                 locationInView.left +
                 -0.25F * HANDLE_SIZE.x * 1 / currentZoom
         val startTopAdjusted =
-            startBoundary.location.y + locationInView.top + -0.10F * HANDLE_SIZE.y * 1 / currentZoom
+            startBoundary.location.pagePoint.y +
+                locationInView.top +
+                -0.10F * HANDLE_SIZE.y * 1 / currentZoom
         assertThat(leftHandle.drawingBounds)
             .isEqualTo(
                 Rect(
                     startLeftAdjusted.roundToInt(),
                     startTopAdjusted.roundToInt(),
                     (startLeftAdjusted + HANDLE_SIZE.x * 1 / currentZoom).roundToInt(),
-                    (startTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt(),
+                    (startTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt()
                 )
             )
 
         // Handle's location in page, adjusted for page's location in View, adjusted in the way we
         // expect to position the "sharp point" of the handle, adjusted for the current zoom
         val endLeftAdjusted =
-            endBoundary.location.x + locationInView.left + -0.75F * HANDLE_SIZE.x * 1 / currentZoom
+            endBoundary.location.pagePoint.x +
+                locationInView.left +
+                -0.75F * HANDLE_SIZE.x * 1 / currentZoom
         val endTopAdjusted =
-            endBoundary.location.y + locationInView.top + -0.10F * HANDLE_SIZE.y * 1 / currentZoom
+            endBoundary.location.pagePoint.y +
+                locationInView.top +
+                -0.10F * HANDLE_SIZE.y * 1 / currentZoom
         assertThat(rightHandle.drawingBounds)
             .isEqualTo(
                 Rect(
                     endLeftAdjusted.roundToInt(),
                     endTopAdjusted.roundToInt(),
                     (endLeftAdjusted + HANDLE_SIZE.x * 1 / currentZoom).roundToInt(),
-                    (endTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt(),
+                    (endTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt()
                 )
             )
 
-        for (bound in textSelection.bounds.map { RectF(it.left, it.top, it.right, it.bottom) }) {
+        for (bound in textSelection.bounds.map { it.pageRect }) {
             val expectedBounds =
-                RectF(bound).apply { offset(locationInView.left, locationInView.top) }
+                RectF(bound).apply {
+                    offset(locationInView.left.toFloat(), locationInView.top.toFloat())
+                }
             verify(canvasSpy).drawRect(eq(expectedBounds), eq(BOUNDS_PAINT))
         }
     }
@@ -135,21 +132,14 @@ class SelectionRendererTest {
                 listOf(
                     PdfRect(pageNum = 0, RectF(150F, 150F, 190F, 160F)),
                     PdfRect(pageNum = 0, RectF(10F, 170F, 50F, 180F)),
-                ),
+                )
             )
         val startBoundary =
             UiSelectionBoundary(PdfPoint(pageNum = 0, PointF(150F, 160F)), isRtl = false)
         val endBoundary =
             UiSelectionBoundary(PdfPoint(pageNum = 0, PointF(50F, 180F)), isRtl = false)
-        val selection =
-            SelectionModel(
-                DocumentSelection(
-                    SparseArray<List<Selection>>().apply { set(0, listOf(textSelection)) }
-                ),
-                startBoundary,
-                endBoundary,
-            )
-        val locationInView = RectF(30f, 50f, 230f, 250f)
+        val selection = SelectionModel(textSelection, startBoundary, endBoundary)
+        val locationInView = Rect(30, 50, 230, 250)
         val currentZoom = 2F
 
         renderer.drawSelectionOnPage(selection, pageNum = 0, canvasSpy, locationInView, currentZoom)
@@ -157,40 +147,48 @@ class SelectionRendererTest {
         // Handle's location in page, adjusted for page's location in View, adjusted in the way we
         // expect to position the "sharp point" of the handle, adjusted for the current zoom
         val startLeftAdjusted =
-            startBoundary.location.x +
+            startBoundary.location.pagePoint.x +
                 locationInView.left +
                 -0.75F * HANDLE_SIZE.x * 1 / currentZoom
         val startTopAdjusted =
-            startBoundary.location.y + locationInView.top + -0.10F * HANDLE_SIZE.y * 1 / currentZoom
+            startBoundary.location.pagePoint.y +
+                locationInView.top +
+                -0.10F * HANDLE_SIZE.y * 1 / currentZoom
         assertThat(rightHandle.drawingBounds)
             .isEqualTo(
                 Rect(
                     startLeftAdjusted.roundToInt(),
                     startTopAdjusted.roundToInt(),
                     (startLeftAdjusted + HANDLE_SIZE.x * 1 / currentZoom).roundToInt(),
-                    (startTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt(),
+                    (startTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt()
                 )
             )
 
         // Handle's location in page, adjusted for page's location in View, adjusted in the way we
         // expect to position the "sharp point" of the handle, adjusted for the current zoom
         val endLeftAdjusted =
-            endBoundary.location.x + locationInView.left + -0.25F * HANDLE_SIZE.x * 1 / currentZoom
+            endBoundary.location.pagePoint.x +
+                locationInView.left +
+                -0.25F * HANDLE_SIZE.x * 1 / currentZoom
         val endTopAdjusted =
-            endBoundary.location.y + locationInView.top + -0.10F * HANDLE_SIZE.y * 1 / currentZoom
+            endBoundary.location.pagePoint.y +
+                locationInView.top +
+                -0.10F * HANDLE_SIZE.y * 1 / currentZoom
         assertThat(leftHandle.drawingBounds)
             .isEqualTo(
                 Rect(
                     endLeftAdjusted.roundToInt(),
                     endTopAdjusted.roundToInt(),
                     (endLeftAdjusted + HANDLE_SIZE.x * 1 / currentZoom).roundToInt(),
-                    (endTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt(),
+                    (endTopAdjusted + HANDLE_SIZE.y * 1 / currentZoom).roundToInt()
                 )
             )
 
-        for (bound in textSelection.bounds.map { RectF(it.left, it.top, it.right, it.bottom) }) {
+        for (bound in textSelection.bounds.map { it.pageRect }) {
             val expectedBounds =
-                RectF(bound).apply { offset(locationInView.left, locationInView.top) }
+                RectF(bound).apply {
+                    offset(locationInView.left.toFloat(), locationInView.top.toFloat())
+                }
             verify(canvasSpy).drawRect(eq(expectedBounds), eq(BOUNDS_PAINT))
         }
     }

@@ -29,17 +29,17 @@ import androidx.room.ForeignKey
                 parentColumns = ["id"],
                 childColumns = ["work_spec_id"],
                 onDelete = ForeignKey.CASCADE,
-                onUpdate = ForeignKey.CASCADE,
+                onUpdate = ForeignKey.CASCADE
             )
         ],
-    primaryKeys = ["work_spec_id", "generation"],
+    primaryKeys = ["work_spec_id", "generation"]
 )
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public data class SystemIdInfo(
+data class SystemIdInfo(
     @JvmField @ColumnInfo(name = "work_spec_id") val workSpecId: String,
     @ColumnInfo(defaultValue = "0") val generation: Int,
-    @JvmField @ColumnInfo(name = "system_id") val systemId: Int,
+    @JvmField @ColumnInfo(name = "system_id") val systemId: Int
 )
 
-public fun systemIdInfo(generationalId: WorkGenerationalId, systemId: Int): SystemIdInfo =
+fun systemIdInfo(generationalId: WorkGenerationalId, systemId: Int) =
     SystemIdInfo(generationalId.workSpecId, generationalId.generation, systemId)

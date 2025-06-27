@@ -87,7 +87,9 @@ class CameraMetadataIntegrationTest {
         initCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
-                    intArrayOf(CameraMetadata.CONTROL_AE_MODE_OFF)
+                    intArrayOf(
+                        CameraMetadata.CONTROL_AE_MODE_OFF,
+                    )
             )
         )
 
@@ -115,7 +117,9 @@ class CameraMetadataIntegrationTest {
         initCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
-                    intArrayOf(CameraMetadata.CONTROL_AE_MODE_ON_EXTERNAL_FLASH)
+                    intArrayOf(
+                        CameraMetadata.CONTROL_AE_MODE_ON_EXTERNAL_FLASH,
+                    )
             )
         )
 
@@ -127,7 +131,9 @@ class CameraMetadataIntegrationTest {
         initCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
-                    intArrayOf(CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO)
+                    intArrayOf(
+                        CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_VIDEO,
+                    )
             )
         )
 
@@ -145,7 +151,7 @@ class CameraMetadataIntegrationTest {
                     intArrayOf(
                         CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
                         CameraMetadata.CONTROL_AF_MODE_AUTO,
-                        CameraMetadata.CONTROL_AF_MODE_OFF,
+                        CameraMetadata.CONTROL_AF_MODE_OFF
                     )
             )
         )
@@ -163,7 +169,7 @@ class CameraMetadataIntegrationTest {
                 CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
                     intArrayOf(
                         CameraMetadata.CONTROL_AF_MODE_AUTO,
-                        CameraMetadata.CONTROL_AF_MODE_OFF,
+                        CameraMetadata.CONTROL_AF_MODE_OFF
                     )
             )
         )
@@ -197,7 +203,7 @@ class CameraMetadataIntegrationTest {
                     intArrayOf(
                         CameraMetadata.CONTROL_AWB_MODE_DAYLIGHT,
                         CameraMetadata.CONTROL_AWB_MODE_AUTO,
-                        CameraMetadata.CONTROL_AWB_MODE_OFF,
+                        CameraMetadata.CONTROL_AWB_MODE_OFF
                     )
             )
         )
@@ -213,7 +219,7 @@ class CameraMetadataIntegrationTest {
                 CameraCharacteristics.CONTROL_AWB_AVAILABLE_MODES to
                     intArrayOf(
                         CameraMetadata.CONTROL_AWB_MODE_AUTO,
-                        CameraMetadata.CONTROL_AWB_MODE_OFF,
+                        CameraMetadata.CONTROL_AWB_MODE_OFF
                     )
             )
         )

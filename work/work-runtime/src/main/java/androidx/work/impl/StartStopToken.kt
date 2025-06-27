@@ -29,25 +29,25 @@ import androidx.work.impl.model.generationalId
 // be cancelled because the second scheduler tries to cancel already cancelled work.
 // So Processor class relies on StartStopToken-s being different and stores StartStopToken
 // with the same workSpecId in the set to differentiate between past and future run requests.
-public class StartStopToken(public val id: WorkGenerationalId)
+class StartStopToken(val id: WorkGenerationalId)
 
-public interface StartStopTokens {
-    public fun tokenFor(id: WorkGenerationalId): StartStopToken
+interface StartStopTokens {
+    fun tokenFor(id: WorkGenerationalId): StartStopToken
 
-    public fun remove(id: WorkGenerationalId): StartStopToken?
+    fun remove(id: WorkGenerationalId): StartStopToken?
 
-    public fun remove(workSpecId: String): List<StartStopToken>
+    fun remove(workSpecId: String): List<StartStopToken>
 
-    public fun contains(id: WorkGenerationalId): Boolean
+    fun contains(id: WorkGenerationalId): Boolean
 
-    public fun tokenFor(spec: WorkSpec): StartStopToken = tokenFor(spec.generationalId())
+    fun tokenFor(spec: WorkSpec) = tokenFor(spec.generationalId())
 
-    public fun remove(spec: WorkSpec): StartStopToken? = remove(spec.generationalId())
+    fun remove(spec: WorkSpec) = remove(spec.generationalId())
 
-    public companion object {
+    companion object {
         @JvmStatic
         @JvmOverloads
-        public fun create(synchronized: Boolean = true): StartStopTokens {
+        fun create(synchronized: Boolean = true): StartStopTokens {
             val tokens = StartStopTokensImpl()
             return if (synchronized) {
                 SynchronizedStartStopTokensImpl(tokens)

@@ -18,6 +18,7 @@ package androidx.camera.camera2.internal;
 
 import static android.hardware.camera2.CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES;
 import static android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON;
+import static android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION;
 import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO;
 import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA;
 import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_PRIVATE_REPROCESSING;
@@ -25,11 +26,8 @@ import static android.hardware.camera2.CameraMetadata.SENSOR_INFO_TIMESTAMP_SOUR
 import static android.hardware.camera2.CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN;
 
 import static androidx.camera.camera2.internal.ZslUtil.isCapabilitySupported;
-import static androidx.camera.core.internal.StreamSpecsCalculator.NO_OP_STREAM_SPECS_CALCULATOR;
-import static androidx.core.util.Preconditions.checkArgument;
 
 import android.annotation.SuppressLint;
-import android.graphics.Rect;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.os.Build;
@@ -60,10 +58,8 @@ import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.Logger;
-import androidx.camera.core.UseCase;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.impl.CameraCaptureCallback;
-import androidx.camera.core.impl.CameraConfig;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.DynamicRanges;
 import androidx.camera.core.impl.EncoderProfilesProvider;
@@ -72,7 +68,6 @@ import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.Timebase;
 import androidx.camera.core.impl.utils.CameraOrientationUtil;
 import androidx.camera.core.impl.utils.RedirectableLiveData;
-import androidx.camera.core.internal.StreamSpecsCalculator;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.LiveData;
 
@@ -131,25 +126,12 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     private @Nullable Set<CameraInfo> mPhysicalCameraInfos;
 
-    private final StreamSpecsCalculator mStreamSpecsCalculator;
-
     /**
      * Constructs an instance. Before {@link #linkWithCameraControl(Camera2CameraControlImpl)} is
      * called, camera control related API (torch/exposure/zoom) will return default values.
      */
     public Camera2CameraInfoImpl(@NonNull String cameraId,
             @NonNull CameraManagerCompat cameraManager) throws CameraAccessExceptionCompat {
-        this(cameraId, cameraManager, NO_OP_STREAM_SPECS_CALCULATOR);
-    }
-
-    /**
-     * Constructs an instance. Before {@link #linkWithCameraControl(Camera2CameraControlImpl)} is
-     * called, camera control related API (torch/exposure/zoom) will return default values.
-     */
-    public Camera2CameraInfoImpl(@NonNull String cameraId,
-            @NonNull CameraManagerCompat cameraManager,
-            @NonNull StreamSpecsCalculator streamSpecsCalculator)
-            throws CameraAccessExceptionCompat {
         mCameraId = Preconditions.checkNotNull(cameraId);
         mCameraManager = cameraManager;
 
@@ -160,7 +142,6 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
                 mCameraQuirks);
         mCameraStateLiveData = new RedirectableLiveData<>(
                 CameraState.create(CameraState.Type.CLOSED));
-        mStreamSpecsCalculator = streamSpecsCalculator;
     }
 
     /**
@@ -226,7 +207,8 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
     @Override
     public int getLensFacing() {
         Integer lensFacing = mCameraCharacteristicsCompat.get(CameraCharacteristics.LENS_FACING);
-        checkArgument(lensFacing != null, "Unable to get the lens facing of the camera.");
+        Preconditions.checkArgument(lensFacing != null, "Unable to get the lens facing of the "
+                + "camera.");
         return LensFacingUtil.getCameraSelectorLensFacing(lensFacing);
     }
 
@@ -566,16 +548,6 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
     }
 
     @Override
-    public @NonNull Rect getSensorRect() {
-        Rect sensorRect = mCameraCharacteristicsCompat.get(
-                CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-        if ("robolectric".equals(Build.FINGERPRINT) && sensorRect == null) {
-            return new Rect(0, 0, 4000, 3000);
-        }
-        return Preconditions.checkNotNull(sensorRect);
-    }
-
-    @Override
     public @NonNull Set<DynamicRange> querySupportedDynamicRanges(
             @NonNull Set<DynamicRange> candidateDynamicRanges) {
         return DynamicRanges.findAllPossibleMatches(candidateDynamicRanges,
@@ -654,7 +626,17 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     @Override
     public boolean isPreviewStabilizationSupported() {
-        return VideoStabilizationUtil.isPreviewStabilizationSupported(mCameraCharacteristicsCompat);
+        int[] availableVideoStabilizationModes =
+                mCameraCharacteristicsCompat.get(
+                        CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+        if (availableVideoStabilizationModes != null) {
+            for (int mode : availableVideoStabilizationModes) {
+                if (mode == CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -767,26 +749,5 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
     @Override
     public boolean isTorchStrengthSupported() {
         return mCameraCharacteristicsCompat.isTorchStrengthLevelSupported();
-    }
-
-    @Override
-    public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean isFeatureComboInvocation,
-            @NonNull CameraConfig cameraConfig) {
-        try {
-            StreamSpecsCalculator.Companion.calculateSuggestedStreamSpecsCompat(
-                    mStreamSpecsCalculator,
-                    cameraMode,
-                    this,
-                    useCases,
-                    cameraConfig,
-                    isFeatureComboInvocation
-            );
-        } catch (IllegalArgumentException e) {
-            Logger.d(TAG, "isUseCaseCombinationSupported: calculateSuggestedStreamSpecs failed", e);
-            return false;
-        }
-
-        return true;
     }
 }

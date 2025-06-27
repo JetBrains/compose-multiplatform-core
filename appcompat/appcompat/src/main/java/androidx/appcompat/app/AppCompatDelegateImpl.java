@@ -207,6 +207,12 @@ class AppCompatDelegateImpl extends AppCompatDelegate
     ActionMode mActionMode;
     ActionBarContextView mActionModeView;
 
+    // Paddings loaded from R.attr.actionModeStyle.
+    private int mActionModeViewInternalPaddingLeft;
+    private int mActionModeViewInternalPaddingTop;
+    private int mActionModeViewInternalPaddingRight;
+    private int mActionModeViewInternalPaddingBottom;
+
     PopupWindow mActionModePopup;
     Runnable mShowActionModePopup;
     ViewPropertyAnimatorCompat mFadeAnim = null;
@@ -1371,6 +1377,12 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                         mActionModeView = (ActionBarContextView) stub.inflate();
                     }
                 }
+                if (mActionModeView != null) {
+                    mActionModeViewInternalPaddingLeft = mActionModeView.getPaddingLeft();
+                    mActionModeViewInternalPaddingTop = mActionModeView.getPaddingTop();
+                    mActionModeViewInternalPaddingRight = mActionModeView.getPaddingRight();
+                    mActionModeViewInternalPaddingBottom = mActionModeView.getPaddingBottom();
+                }
             }
 
             if (mActionModeView != null) {
@@ -2339,11 +2351,13 @@ class AppCompatDelegateImpl extends AppCompatDelegate
                         mlp.rightMargin = newMargin.right;
                     }
 
-                    mActionModeView.setPaddingForInsets(
-                            systemWindowInsets.left - newMargin.left,
-                            systemWindowInsets.top,
-                            systemWindowInsets.right - newMargin.right,
-                            0);
+                    mActionModeView.setPadding(
+                            mActionModeViewInternalPaddingLeft + systemWindowInsets.left
+                                    - newMargin.left,
+                            mActionModeViewInternalPaddingTop + systemWindowInsets.top,
+                            mActionModeViewInternalPaddingRight + systemWindowInsets.right
+                                    - newMargin.right,
+                            mActionModeViewInternalPaddingBottom);
 
                     // We only need to consume the insets if the action
                     // mode is overlaid on the app content (e.g. it's

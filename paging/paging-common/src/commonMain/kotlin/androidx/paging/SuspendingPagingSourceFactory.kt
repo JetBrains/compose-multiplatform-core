@@ -17,6 +17,7 @@
 package androidx.paging
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 
 /**
  * Utility class to convert the paging source factory to a suspend one.
@@ -25,11 +26,15 @@ import kotlinx.coroutines.CoroutineDispatcher
  * the data source must be created on the given thread pool for API guarantees. see: b/173029013
  * see: b/168061354
  */
-internal expect class SuspendingPagingSourceFactory<Key : Any, Value : Any>(
-    dispatcher: CoroutineDispatcher,
-    delegate: () -> PagingSource<Key, Value>,
-) {
-    suspend fun create(): PagingSource<Key, Value>
+internal class SuspendingPagingSourceFactory<Key : Any, Value : Any>(
+    private val dispatcher: CoroutineDispatcher,
+    private val delegate: () -> PagingSource<Key, Value>
+) : () -> PagingSource<Key, Value> {
+    suspend fun create(): PagingSource<Key, Value> {
+        return withContext(dispatcher) { delegate() }
+    }
 
-    fun invoke(): PagingSource<Key, Value>
+    override fun invoke(): PagingSource<Key, Value> {
+        return delegate()
+    }
 }

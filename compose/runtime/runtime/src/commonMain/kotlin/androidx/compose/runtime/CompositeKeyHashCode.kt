@@ -32,13 +32,13 @@ package androidx.compose.runtime
  *
  * @see currentCompositeKeyHashCode
  */
-public expect class CompositeKeyHashCode
+expect class CompositeKeyHashCode
 
 /**
  * Converts a [CompositeKeyHashCode] to a 64-bit Long. This may be higher precision than the
  * underlying type.
  */
-public expect fun CompositeKeyHashCode.toLong(): Long
+expect fun CompositeKeyHashCode.toLong(): Long
 
 /**
  * Returns a String representation of a [CompositeKeyHashCode] with the specified [radix].
@@ -46,7 +46,7 @@ public expect fun CompositeKeyHashCode.toLong(): Long
  * @throws IllegalArgumentException when [radix] is not a valid radix for number to string
  *   conversion.
  */
-public expect fun CompositeKeyHashCode.toString(radix: Int): String
+expect fun CompositeKeyHashCode.toString(radix: Int): String
 
 internal expect fun CompositeKeyHashCode(initial: Int): CompositeKeyHashCode
 
@@ -62,7 +62,7 @@ internal expect fun CompositeKeyHashCode(initial: Int): CompositeKeyHashCode
  */
 internal expect fun CompositeKeyHashCode.compoundWith(
     segment: Int,
-    shift: Int,
+    shift: Int
 ): CompositeKeyHashCode
 
 /**
@@ -79,7 +79,7 @@ internal expect fun CompositeKeyHashCode.compoundWith(
  */
 internal expect fun CompositeKeyHashCode.unCompoundWith(
     segment: Int,
-    shift: Int,
+    shift: Int
 ): CompositeKeyHashCode
 
 /**
@@ -100,7 +100,7 @@ internal expect fun CompositeKeyHashCode.unCompoundWith(
  */
 internal expect fun CompositeKeyHashCode.bottomUpCompoundWith(
     segment: CompositeKeyHashCode,
-    shift: Int,
+    shift: Int
 ): CompositeKeyHashCode
 
 /**
@@ -121,7 +121,7 @@ internal expect fun CompositeKeyHashCode.bottomUpCompoundWith(
  */
 internal expect fun CompositeKeyHashCode.bottomUpCompoundWith(
     segment: Int,
-    shift: Int,
+    shift: Int
 ): CompositeKeyHashCode
 
 /**
@@ -135,4 +135,4 @@ internal expect val CompositeKeyHashSizeBits: Int
  * same as the hash at the root of a composition. This is an effective default value in the absence
  * of a hash from [currentCompositeKeyHashCode].
  */
-public expect val EmptyCompositeKeyHashCode: CompositeKeyHashCode
+expect val EmptyCompositeKeyHashCode: CompositeKeyHashCode

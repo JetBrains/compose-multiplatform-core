@@ -29,15 +29,13 @@ import androidx.fragment.app.Fragment
  * [AndroidFragment].
  */
 @Composable
-public fun rememberFragmentState(): FragmentState {
+fun rememberFragmentState(): FragmentState {
     return rememberSaveable(saver = fragmentStateSaver()) { FragmentState() }
 }
 
 /** Holder for the fragment state. */
 @Stable
-public class FragmentState(
-    internal var state: MutableState<Fragment.SavedState?> = mutableStateOf(null)
-)
+class FragmentState(internal var state: MutableState<Fragment.SavedState?> = mutableStateOf(null))
 
 /** Saver to save and restore the [FragmentState] across config change and process death. */
 private fun fragmentStateSaver(): Saver<FragmentState, *> =

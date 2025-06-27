@@ -56,12 +56,12 @@ package androidx.compose.runtime
  * @sample androidx.compose.runtime.samples.consumeCompositionLocal
  */
 @Stable
-public sealed class CompositionLocal<T>(defaultFactory: () -> T) {
+sealed class CompositionLocal<T>(defaultFactory: () -> T) {
     internal open val defaultValueHolder: ValueHolder<T> = LazyValueHolder(defaultFactory)
 
     internal abstract fun updatedStateOf(
         value: ProvidedValue<T>,
-        previous: ValueHolder<T>?,
+        previous: ValueHolder<T>?
     ): ValueHolder<T>
 
     /**
@@ -71,7 +71,7 @@ public sealed class CompositionLocal<T>(defaultFactory: () -> T) {
      * @sample androidx.compose.runtime.samples.consumeCompositionLocal
      */
     @OptIn(InternalComposeApi::class)
-    public inline val current: T
+    inline val current: T
         @ReadOnlyComposable @Composable get() = currentComposer.consume(this)
 }
 
@@ -84,7 +84,7 @@ public sealed class CompositionLocal<T>(defaultFactory: () -> T) {
  * @see CompositionLocalProvider
  */
 @Stable
-public abstract class ProvidableCompositionLocal<T> internal constructor(defaultFactory: () -> T) :
+abstract class ProvidableCompositionLocal<T> internal constructor(defaultFactory: () -> T) :
     CompositionLocal<T>(defaultFactory) {
     internal abstract fun defaultProvidedValue(value: T): ProvidedValue<T>
 
@@ -94,7 +94,7 @@ public abstract class ProvidableCompositionLocal<T> internal constructor(default
      * @see CompositionLocal
      * @see ProvidableCompositionLocal
      */
-    public infix fun provides(value: T): ProvidedValue<T> = defaultProvidedValue(value)
+    infix fun provides(value: T) = defaultProvidedValue(value)
 
     /**
      * Associates a [CompositionLocal] key to a value in a call to [CompositionLocalProvider] if the
@@ -103,8 +103,7 @@ public abstract class ProvidableCompositionLocal<T> internal constructor(default
      * @see CompositionLocal
      * @see ProvidableCompositionLocal
      */
-    public infix fun providesDefault(value: T): ProvidedValue<T> =
-        defaultProvidedValue(value).ifNotAlreadyProvided()
+    infix fun providesDefault(value: T) = defaultProvidedValue(value).ifNotAlreadyProvided()
 
     /**
      * Associates a [CompositionLocal] key to a lambda, [compute], in a call to [CompositionLocal].
@@ -127,9 +126,7 @@ public abstract class ProvidableCompositionLocal<T> internal constructor(default
      * @see CompositionLocalContext
      * @see ProvidableCompositionLocal
      */
-    public infix fun providesComputed(
-        compute: CompositionLocalAccessorScope.() -> T
-    ): ProvidedValue<T> =
+    infix fun providesComputed(compute: CompositionLocalAccessorScope.() -> T) =
         ProvidedValue(
             compositionLocal = this,
             value = null,
@@ -137,12 +134,12 @@ public abstract class ProvidableCompositionLocal<T> internal constructor(default
             mutationPolicy = null,
             state = null,
             compute = compute,
-            isDynamic = false,
+            isDynamic = false
         )
 
     override fun updatedStateOf(
         value: ProvidedValue<T>,
-        previous: ValueHolder<T>?,
+        previous: ValueHolder<T>?
     ): ValueHolder<T> {
         return when (previous) {
             is DynamicValueHolder ->
@@ -164,7 +161,7 @@ public abstract class ProvidableCompositionLocal<T> internal constructor(default
                     value.state
                         ?: mutableStateOf(
                             value.value,
-                            value.mutationPolicy ?: structuralEqualityPolicy(),
+                            value.mutationPolicy ?: structuralEqualityPolicy()
                         )
                 )
             value.compute != null -> ComputedValueHolder(value.compute)
@@ -184,7 +181,7 @@ public abstract class ProvidableCompositionLocal<T> internal constructor(default
  */
 internal class DynamicProvidableCompositionLocal<T>(
     private val policy: SnapshotMutationPolicy<T>,
-    defaultFactory: () -> T,
+    defaultFactory: () -> T
 ) : ProvidableCompositionLocal<T>(defaultFactory) {
 
     override fun defaultProvidedValue(value: T) =
@@ -195,7 +192,7 @@ internal class DynamicProvidableCompositionLocal<T>(
             mutationPolicy = policy,
             state = null,
             compute = null,
-            isDynamic = true,
+            isDynamic = true
         )
 }
 
@@ -215,7 +212,7 @@ internal class StaticProvidableCompositionLocal<T>(defaultFactory: () -> T) :
             mutationPolicy = null,
             state = null,
             compute = null,
-            isDynamic = false,
+            isDynamic = false
         )
 }
 
@@ -239,9 +236,9 @@ internal class StaticProvidableCompositionLocal<T>(defaultFactory: () -> T) :
  * @see staticCompositionLocalOf
  * @see mutableStateOf
  */
-public fun <T> compositionLocalOf(
+fun <T> compositionLocalOf(
     policy: SnapshotMutationPolicy<T> = structuralEqualityPolicy(),
-    defaultFactory: () -> T,
+    defaultFactory: () -> T
 ): ProvidableCompositionLocal<T> = DynamicProvidableCompositionLocal(policy, defaultFactory)
 
 /**
@@ -269,7 +266,7 @@ public fun <T> compositionLocalOf(
  * @see CompositionLocal
  * @see compositionLocalOf
  */
-public fun <T> staticCompositionLocalOf(defaultFactory: () -> T): ProvidableCompositionLocal<T> =
+fun <T> staticCompositionLocalOf(defaultFactory: () -> T): ProvidableCompositionLocal<T> =
     StaticProvidableCompositionLocal(defaultFactory)
 
 /**
@@ -298,7 +295,7 @@ public fun <T> staticCompositionLocalOf(defaultFactory: () -> T): ProvidableComp
  * @see CompositionLocal
  * @see ProvidableCompositionLocal
  */
-public fun <T> compositionLocalWithComputedDefaultOf(
+fun <T> compositionLocalWithComputedDefaultOf(
     defaultComputation: CompositionLocalAccessorScope.() -> T
 ): ProvidableCompositionLocal<T> = ComputedProvidableCompositionLocal(defaultComputation)
 
@@ -315,11 +312,11 @@ internal class ComputedProvidableCompositionLocal<T>(
             mutationPolicy = null,
             state = null,
             compute = null,
-            isDynamic = true,
+            isDynamic = true
         )
 }
 
-public interface CompositionLocalAccessorScope {
+interface CompositionLocalAccessorScope {
     /**
      * An extension property that allows accessing the current value of a composition local in the
      * context of this scope. This scope is the type of the `this` parameter when in a computed
@@ -333,7 +330,7 @@ public interface CompositionLocalAccessorScope {
      * @see ProvidableCompositionLocal.provides
      * @see CompositionLocalProvider
      */
-    public val <T> CompositionLocal<T>.currentValue: T
+    val <T> CompositionLocal<T>.currentValue: T
 }
 
 /**
@@ -345,7 +342,7 @@ public interface CompositionLocalAccessorScope {
  * [CompositionLocalContext] is immutable and won't be changed after its obtaining.
  */
 @Stable
-public class CompositionLocalContext
+class CompositionLocalContext
 internal constructor(internal val compositionLocals: PersistentCompositionLocalMap)
 
 /**
@@ -362,10 +359,7 @@ internal constructor(internal val compositionLocals: PersistentCompositionLocalM
 @Composable
 @OptIn(InternalComposeApi::class)
 @NonSkippableComposable
-public fun CompositionLocalProvider(
-    vararg values: ProvidedValue<*>,
-    content: @Composable () -> Unit,
-) {
+fun CompositionLocalProvider(vararg values: ProvidedValue<*>, content: @Composable () -> Unit) {
     currentComposer.startProviders(values)
     content()
     currentComposer.endProviders()
@@ -385,7 +379,7 @@ public fun CompositionLocalProvider(
 @Composable
 @OptIn(InternalComposeApi::class)
 @NonSkippableComposable
-public fun CompositionLocalProvider(value: ProvidedValue<*>, content: @Composable () -> Unit) {
+fun CompositionLocalProvider(value: ProvidedValue<*>, content: @Composable () -> Unit) {
     currentComposer.startProvider(value)
     content()
     currentComposer.endProvider()
@@ -403,12 +397,9 @@ public fun CompositionLocalProvider(value: ProvidedValue<*>, content: @Composabl
  * @see staticCompositionLocalOf
  */
 @Composable
-public fun CompositionLocalProvider(
-    context: CompositionLocalContext,
-    content: @Composable () -> Unit,
-) {
+fun CompositionLocalProvider(context: CompositionLocalContext, content: @Composable () -> Unit) {
     CompositionLocalProvider(
         *context.compositionLocals.map { it.value.toProvided(it.key) }.toTypedArray(),
-        content = content,
+        content = content
     )
 }

@@ -22,6 +22,8 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.ActivityPanelEntity;
 import androidx.xr.runtime.internal.PixelDimensions;
 
@@ -29,9 +31,6 @@ import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.space.ActivityPanel;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;

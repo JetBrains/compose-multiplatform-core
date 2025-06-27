@@ -23,11 +23,8 @@ import android.view.View
 import android.widget.CheckBox
 import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
-import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -36,8 +33,9 @@ import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.MoveListener
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PlaneOrientation
-import androidx.xr.scenecore.PlaneSemanticType
+import androidx.xr.scenecore.PixelDimensions
+import androidx.xr.scenecore.PlaneSemantic
+import androidx.xr.scenecore.PlaneType
 import androidx.xr.scenecore.scene
 import java.util.concurrent.Executors
 
@@ -72,15 +70,13 @@ class MovableActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.movable_activity)
 
-        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
-
         @SuppressLint("InflateParams")
         val stationaryPanelContentView = layoutInflater.inflate(R.layout.stationary_panel, null)
         val stationaryPanelEntity =
             PanelEntity.create(
                 session,
                 stationaryPanelContentView,
-                IntSize2d(640, 480),
+                PixelDimensions(640, 480),
                 "stationaryPanel",
                 Pose(Vector3(1f, 0f, 0f)),
             )
@@ -92,7 +88,7 @@ class MovableActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 movablePanelContentView,
-                IntSize2d(640, 880),
+                PixelDimensions(640, 880),
                 "panel",
                 Pose(Vector3(0f, 0f, 0.1f)),
             )
@@ -114,8 +110,8 @@ class MovableActivity : AppCompatActivity() {
         val parentSwitch = movablePanelContentView.findViewById<Switch>(R.id.parent_switch)
         parentSwitch.setOnCheckedChangeListener { _, isChecked: Boolean ->
             when (isChecked) {
-                true -> movablePanelEntity.parent = stationaryPanelEntity
-                false -> movablePanelEntity.parent = session.scene.activitySpace
+                true -> movablePanelEntity.setParent(stationaryPanelEntity)
+                false -> movablePanelEntity.setParent(session.scene.activitySpace)
             }
             movablePanelEntity.setPose(Pose(Vector3(0f, 0f, 0.1f)))
         }
@@ -128,24 +124,21 @@ class MovableActivity : AppCompatActivity() {
     private fun setupAnchorPlacementCheckboxes(view: View, movablePanelEntity: Entity) {
         val planeTypeCheckboxMap =
             mapOf(
-                view.findViewById<CheckBox>(R.id.planetype_any_checkbox) to PlaneOrientation.ANY,
+                view.findViewById<CheckBox>(R.id.planetype_any_checkbox) to PlaneType.ANY,
                 view.findViewById<CheckBox>(R.id.planetype_horizontal_checkbox) to
-                    PlaneOrientation.HORIZONTAL,
-                view.findViewById<CheckBox>(R.id.planetype_vertical_checkbox) to
-                    PlaneOrientation.VERTICAL,
+                    PlaneType.HORIZONTAL,
+                view.findViewById<CheckBox>(R.id.planetype_vertical_checkbox) to PlaneType.VERTICAL,
             )
         val planeSemanticCheckboxMap =
             mapOf(
-                view.findViewById<CheckBox>(R.id.planesemantic_any_checkbox) to
-                    PlaneSemanticType.ANY,
-                view.findViewById<CheckBox>(R.id.planesemantic_wall_checkbox) to
-                    PlaneSemanticType.WALL,
+                view.findViewById<CheckBox>(R.id.planesemantic_any_checkbox) to PlaneSemantic.ANY,
+                view.findViewById<CheckBox>(R.id.planesemantic_wall_checkbox) to PlaneSemantic.WALL,
                 view.findViewById<CheckBox>(R.id.planesemantic_ceiling_checkbox) to
-                    PlaneSemanticType.CEILING,
+                    PlaneSemantic.CEILING,
                 view.findViewById<CheckBox>(R.id.planesemantic_table_checkbox) to
-                    PlaneSemanticType.TABLE,
+                    PlaneSemantic.TABLE,
                 view.findViewById<CheckBox>(R.id.planesemantic_floor_checkbox) to
-                    PlaneSemanticType.FLOOR,
+                    PlaneSemantic.FLOOR,
             )
 
         for ((planeView, planeType) in planeTypeCheckboxMap) {

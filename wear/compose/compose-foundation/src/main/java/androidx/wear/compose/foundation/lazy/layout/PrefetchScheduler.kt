@@ -196,7 +196,9 @@ internal class AndroidPrefetchScheduler(private val view: View) :
 
     override fun onAbandoned() {}
 
-    class PrefetchRequestScopeImpl(private val nextFrameTimeNs: Long) : PrefetchRequestScope {
+    class PrefetchRequestScopeImpl(
+        private val nextFrameTimeNs: Long,
+    ) : PrefetchRequestScope {
 
         override fun availableTimeNanos() = max(0, nextFrameTimeNs - System.nanoTime())
     }

@@ -148,6 +148,7 @@ internal class GestureTracker(context: Context) {
     private val touchDown = PointF()
     private var lastEvent: EventId? = null
     private var detectedGesture: Gesture? = null
+    private var scrollInProgress = false
 
     /**
      * Feed an event into this tracker. To be plugged in a [android.view.View.onTouchEvent]
@@ -160,7 +161,7 @@ internal class GestureTracker(context: Context) {
     fun feed(
         event: MotionEvent,
         viewParent: ViewParent? = null,
-        contentAtEdge: Boolean = false,
+        contentAtEdge: Boolean = false
     ): Boolean {
         parent = if (contentAtEdge) viewParent else null
         if (lastEvent?.matches(event) == true) {
@@ -187,6 +188,10 @@ internal class GestureTracker(context: Context) {
             if (detectedGesture != Gesture.FIRST_TAP) {
                 // All gestures but FIRST_TAP are final, should end gesture here.
                 endGesture()
+            }
+            if (scrollInProgress) {
+                scrollInProgress = false
+                delegate?.onScrollTouchUp()
             }
         }
 
@@ -239,6 +244,7 @@ internal class GestureTracker(context: Context) {
         tracking = true
         touchDown.set(x, y)
         detectedGesture = Gesture.TOUCH
+        scrollInProgress = false
     }
 
     /**
@@ -287,6 +293,8 @@ internal class GestureTracker(context: Context) {
          * @param gesture The detected gesture that just ended
          */
         open fun onGestureEnd(gesture: Gesture?) {}
+
+        open fun onScrollTouchUp() {}
     }
 
     /** The listener used for detecting various gestures. */
@@ -331,6 +339,8 @@ internal class GestureTracker(context: Context) {
             distanceX: Float,
             distanceY: Float,
         ): Boolean {
+            scrollInProgress = true
+
             val dx = getDistance(e2, MotionEvent.AXIS_X)
             val dy = getDistance(e2, MotionEvent.AXIS_Y)
 

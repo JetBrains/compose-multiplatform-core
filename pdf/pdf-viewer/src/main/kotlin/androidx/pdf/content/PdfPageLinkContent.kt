@@ -18,6 +18,7 @@ package androidx.pdf.content
 
 import android.graphics.RectF
 import android.net.Uri
+import androidx.annotation.RestrictTo
 
 /**
  * Represents the bounds and link on a page of the PDF document. Weblinks are those links implicitly
@@ -27,4 +28,5 @@ import android.net.Uri
  * @param bounds: Bounds which envelop the URI.
  * @param uri: Uri embedded in the PDF document.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PdfPageLinkContent(public val bounds: List<RectF>, public val uri: Uri)

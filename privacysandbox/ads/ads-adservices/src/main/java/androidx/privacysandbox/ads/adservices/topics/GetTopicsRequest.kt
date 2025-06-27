@@ -26,10 +26,10 @@ package androidx.privacysandbox.ads.adservices.topics
  *   host app or not. This will be used to determine if the caller can receive the topic in the next
  *   epoch.
  */
-public class GetTopicsRequest
+class GetTopicsRequest
 public constructor(
-    public val adsSdkName: String = "",
-    @get:JvmName("shouldRecordObservation") public val shouldRecordObservation: Boolean = false,
+    val adsSdkName: String = "",
+    @get:JvmName("shouldRecordObservation") val shouldRecordObservation: Boolean = false
 ) {
     override fun toString(): String {
         return "GetTopicsRequest: " +
@@ -62,7 +62,7 @@ public constructor(
          *
          * @param adsSdkName the Ads Sdk Name.
          */
-        public fun setAdsSdkName(adsSdkName: String): Builder = apply {
+        fun setAdsSdkName(adsSdkName: String): Builder = apply {
             check(adsSdkName.isNotEmpty()) { "adsSdkName must be set" }
             this.adsSdkName = adsSdkName
         }
@@ -75,12 +75,12 @@ public constructor(
          *   topic in the next epoch.
          */
         @Suppress("MissingGetterMatchingBuilder")
-        public fun setShouldRecordObservation(shouldRecordObservation: Boolean): Builder = apply {
+        fun setShouldRecordObservation(shouldRecordObservation: Boolean): Builder = apply {
             this.shouldRecordObservation = shouldRecordObservation
         }
 
         /** Builds a [GetTopicsRequest] instance. */
-        public fun build(): GetTopicsRequest {
+        fun build(): GetTopicsRequest {
             return GetTopicsRequest(adsSdkName, shouldRecordObservation)
         }
     }

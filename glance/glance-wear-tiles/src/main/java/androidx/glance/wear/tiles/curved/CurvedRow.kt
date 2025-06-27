@@ -53,7 +53,7 @@ public fun CurvedRow(
     anchorDegrees: Float = 270f,
     anchorType: AnchorType = AnchorType.Center,
     radialAlignment: RadialAlignment = RadialAlignment.Center,
-    content: CurvedScope.() -> Unit,
+    content: CurvedScope.() -> Unit
 ) {
     GlanceNode(
         factory = ::EmittableCurvedRow,
@@ -63,7 +63,7 @@ public fun CurvedRow(
             this.set(anchorType) { this.anchorType = it }
             this.set(radialAlignment) { this.radialAlignment = it }
         },
-        content = applyCurvedScope(content),
+        content = applyCurvedScope(content)
     )
 }
 
@@ -78,7 +78,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
             override fun curvedText(
                 text: String,
                 curvedModifier: GlanceCurvedModifier,
-                style: CurvedTextStyle?,
+                style: CurvedTextStyle?
             ) {
                 curvedChildList.add {
                     GlanceNode(
@@ -87,7 +87,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
                             this.set(text) { this.text = it }
                             this.set(curvedModifier) { this.curvedModifier = it }
                             this.set(style) { this.style = it }
-                        },
+                        }
                     )
                 }
             }
@@ -99,7 +99,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
                         update = {
                             this.set(color) { this.color = it }
                             this.set(curvedModifier) { this.curvedModifier = it }
-                        },
+                        }
                     )
                 }
             }
@@ -108,7 +108,7 @@ private fun applyCurvedScope(content: CurvedScope.() -> Unit): @Composable () ->
                 curvedChildList.add {
                     GlanceNode(
                         factory = ::EmittableCurvedSpacer,
-                        update = { this.set(curvedModifier) { this.curvedModifier = it } },
+                        update = { this.set(curvedModifier) { this.curvedModifier = it } }
                     )
                 }
             }
@@ -124,7 +124,7 @@ private fun CurvedChild(rotateContent: Boolean, content: @Composable () -> Unit)
     GlanceNode(
         factory = ::EmittableCurvedChild,
         update = { this.set(rotateContent) { this.rotateContent = it } },
-        content = content,
+        content = content
     )
 }
 
@@ -229,14 +229,14 @@ internal class EmittableCurvedSpacer : Emittable {
         "EmittableCurvedSpacer(" + "modifier=$modifier, " + "curvedModifier=$curvedModifier" + ")"
 }
 
-@DslMarker public annotation class CurvedScopeMarker
+@DslMarker annotation class CurvedScopeMarker
 
-@CurvedScopeMarker public interface CurvedChildScope
+@CurvedScopeMarker interface CurvedChildScope
 
 @JvmDefaultWithCompatibility
 /** A scope for elements which can only be contained within a [CurvedRow]. */
 @CurvedScopeMarker
-public interface CurvedScope {
+interface CurvedScope {
 
     /**
      * Component that allows normal composable to be part of a [CurvedRow]
@@ -244,7 +244,7 @@ public interface CurvedScope {
      * @param rotateContent whether to rotate the composable at a tangent to the circle
      * @param content The content of this [curvedComposable].
      */
-    public fun curvedComposable(rotateContent: Boolean = true, content: @Composable () -> Unit)
+    fun curvedComposable(rotateContent: Boolean = true, content: @Composable () -> Unit)
 
     /**
      * A text element which will draw curved text. This is only valid as a direct descendant of a
@@ -258,10 +258,10 @@ public interface CurvedScope {
      * @param style The style to use for the Text.
      */
     // TODO(b/227327952) Make CurvedText accepts sweepAngle/thickness in CurveModifier
-    public fun curvedText(
+    fun curvedText(
         text: String,
         curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier,
-        style: CurvedTextStyle? = null,
+        style: CurvedTextStyle? = null
     )
 
     /**
@@ -270,9 +270,9 @@ public interface CurvedScope {
      * @param color The color of this line.
      * @param curvedModifier [GlanceCurvedModifier] to apply to this layout element.
      */
-    public fun curvedLine(
+    fun curvedLine(
         color: ColorProvider,
-        curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier,
+        curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier
     )
 
     /**
@@ -280,5 +280,5 @@ public interface CurvedScope {
      *
      * @param curvedModifier [GlanceCurvedModifier] to apply to this layout element.
      */
-    public fun curvedSpacer(curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier)
+    fun curvedSpacer(curvedModifier: GlanceCurvedModifier = GlanceCurvedModifier)
 }

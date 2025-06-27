@@ -74,7 +74,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun rememberLazyListState(
     initialFirstVisibleItemIndex: Int = 0,
-    initialFirstVisibleItemScrollOffset: Int = 0,
+    initialFirstVisibleItemScrollOffset: Int = 0
 ): LazyListState {
     return rememberSaveable(saver = LazyListState.Saver) {
         LazyListState(initialFirstVisibleItemIndex, initialFirstVisibleItemScrollOffset)
@@ -104,7 +104,7 @@ fun rememberLazyListState(
         LazyListState(
             initialFirstVisibleItemIndex,
             initialFirstVisibleItemScrollOffset,
-            prefetchStrategy,
+            prefetchStrategy
         )
     }
 }
@@ -126,13 +126,13 @@ fun rememberLazyListState(
 fun rememberLazyListState(
     cacheWindow: LazyLayoutCacheWindow,
     initialFirstVisibleItemIndex: Int = 0,
-    initialFirstVisibleItemScrollOffset: Int = 0,
+    initialFirstVisibleItemScrollOffset: Int = 0
 ): LazyListState {
     return rememberSaveable(cacheWindow, saver = LazyListState.saver(cacheWindow)) {
         LazyListState(
             cacheWindow,
             initialFirstVisibleItemIndex,
-            initialFirstVisibleItemScrollOffset,
+            initialFirstVisibleItemScrollOffset
         )
     }
 }
@@ -173,7 +173,7 @@ constructor(
     ) : this(
         firstVisibleItemIndex,
         firstVisibleItemScrollOffset,
-        LazyListCacheWindowStrategy(cacheWindow),
+        LazyListCacheWindowStrategy(cacheWindow)
     )
 
     /**
@@ -183,7 +183,7 @@ constructor(
      */
     constructor(
         firstVisibleItemIndex: Int = 0,
-        firstVisibleItemScrollOffset: Int = 0,
+        firstVisibleItemScrollOffset: Int = 0
     ) : this(firstVisibleItemIndex, firstVisibleItemScrollOffset, LazyListPrefetchStrategy())
 
     internal var hasLookaheadOccurred: Boolean = false
@@ -312,7 +312,6 @@ constructor(
 
     internal val beyondBoundsInfo = LazyLayoutBeyondBoundsInfo()
 
-    @Suppress("DEPRECATION") // b/420551535
     internal val prefetchState =
         LazyLayoutPrefetchState(prefetchStrategy.prefetchScheduler) {
             with(prefetchStrategy) {
@@ -324,7 +323,7 @@ constructor(
         object : LazyListPrefetchScope {
             override fun schedulePrefetch(
                 index: Int,
-                onPrefetchFinished: (LazyListPrefetchResultScope.() -> Unit)?,
+                onPrefetchFinished: (LazyListPrefetchResultScope.() -> Unit)?
             ): LazyLayoutPrefetchState.PrefetchHandle {
                 // Without read observation since this can be triggered from scroll - this will then
                 // cause us to recompose when the measure result changes. We don't care since the
@@ -333,7 +332,7 @@ constructor(
                 return prefetchState.schedulePrecompositionAndPremeasure(
                     index,
                     lastMeasureResult.childConstraints,
-                    executeRequestsInHighPriorityMode,
+                    executeRequestsInHighPriorityMode
                 ) {
                     if (onPrefetchFinished != null) {
                         var mainAxisItemSize = 0
@@ -438,7 +437,7 @@ constructor(
      */
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit,
+        block: suspend ScrollScope.() -> Unit
     ) {
         awaitLayoutModifier.waitForFirstLayout()
         scrollableState.scroll(scrollPriority, block)
@@ -488,7 +487,7 @@ constructor(
             var scrolledLayoutInfo =
                 layoutInfoState.value.copyWithScrollDeltaWithoutRemeasure(
                     delta = intDelta,
-                    updateAnimations = !hasLookaheadOccurred,
+                    updateAnimations = !hasLookaheadOccurred
                 )
             if (scrolledLayoutInfo != null && this.approachLayoutInfo != null) {
                 // if we were able to scroll the lookahead layout info without remeasure, lets
@@ -496,7 +495,7 @@ constructor(
                 val scrolledApproachLayoutInfo =
                     approachLayoutInfo?.copyWithScrollDeltaWithoutRemeasure(
                         delta = intDelta,
-                        updateAnimations = true,
+                        updateAnimations = true
                     )
                 if (scrolledApproachLayoutInfo != null) {
                     // we can apply scroll delta for both phases without remeasure
@@ -511,14 +510,14 @@ constructor(
                 applyMeasureResult(
                     result = scrolledLayoutInfo,
                     isLookingAhead = hasLookaheadOccurred,
-                    visibleItemsStayedTheSame = true,
+                    visibleItemsStayedTheSame = true
                 )
                 // we don't need to remeasure, so we only trigger re-placement:
                 placementScopeInvalidator.invalidateScope()
 
                 notifyPrefetchOnScroll(
                     preScrollToBeConsumed - scrollToBeConsumed,
-                    scrolledLayoutInfo,
+                    scrolledLayoutInfo
                 )
             } else {
                 remeasurement?.forceRemeasure()
@@ -565,7 +564,7 @@ constructor(
     internal fun applyMeasureResult(
         result: LazyListMeasureResult,
         isLookingAhead: Boolean,
-        visibleItemsStayedTheSame: Boolean = false,
+        visibleItemsStayedTheSame: Boolean = false
     ) {
         // update the prefetch state with the number of nested prefetch items this layout
         // should use.
@@ -607,7 +606,7 @@ constructor(
                 _lazyLayoutScrollDeltaBetweenPasses.updateScrollDeltaForApproach(
                     result.scrollBackAmount,
                     result.density,
-                    result.coroutineScope,
+                    result.coroutineScope
                 )
             }
             numMeasurePasses++
@@ -634,7 +633,7 @@ constructor(
      */
     internal fun updateScrollPositionIfTheFirstItemWasMoved(
         itemProvider: LazyListItemProvider,
-        firstItemIndex: Int,
+        firstItemIndex: Int
     ): Int = scrollPosition.updateScrollPositionIfTheFirstItemWasMoved(itemProvider, firstItemIndex)
 
     companion object {
@@ -645,9 +644,9 @@ constructor(
                 restore = {
                     LazyListState(
                         firstVisibleItemIndex = it[0],
-                        firstVisibleItemScrollOffset = it[1],
+                        firstVisibleItemScrollOffset = it[1]
                     )
-                },
+                }
             )
 
         /**
@@ -661,9 +660,9 @@ constructor(
                     LazyListState(
                         firstVisibleItemIndex = it[0],
                         firstVisibleItemScrollOffset = it[1],
-                        prefetchStrategy,
+                        prefetchStrategy
                     )
-                },
+                }
             )
 
         /**
@@ -677,9 +676,9 @@ constructor(
                     LazyListState(
                         firstVisibleItemIndex = it[0],
                         firstVisibleItemScrollOffset = it[1],
-                        cacheWindow = cacheWindow,
+                        cacheWindow = cacheWindow
                     )
-                },
+                }
             )
     }
 }
@@ -712,7 +711,7 @@ private val EmptyLazyListMeasureResult =
         remeasureNeeded = false,
         coroutineScope = CoroutineScope(EmptyCoroutineContext),
         density = Density(1f),
-        childConstraints = Constraints(),
+        childConstraints = Constraints()
     )
 
 private const val NumberOfItemsToTeleport = 100

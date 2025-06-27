@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.node
 
+import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 
 /**
@@ -30,6 +31,7 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
  *
  * @param N The type of node that this element creates and updates.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public abstract class SubspaceModifierNodeElement<N : SubspaceModifier.Node> : SubspaceModifier {
     /**
      * This will be called the first time the modifier is applied to the layout and it should

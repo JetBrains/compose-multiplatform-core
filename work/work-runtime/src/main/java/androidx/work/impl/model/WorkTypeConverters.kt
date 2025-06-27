@@ -35,16 +35,16 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 
 /** TypeConverters for WorkManager enums and classes. */
-public object WorkTypeConverters {
+object WorkTypeConverters {
     /** Integer identifiers that map to [WorkInfo.State]. */
-    public object StateIds {
-        public const val ENQUEUED: Int = 0
-        public const val RUNNING: Int = 1
-        public const val SUCCEEDED: Int = 2
-        public const val FAILED: Int = 3
-        public const val BLOCKED: Int = 4
-        public const val CANCELLED: Int = 5
-        public const val COMPLETED_STATES: String = "($SUCCEEDED, $FAILED, $CANCELLED)"
+    object StateIds {
+        const val ENQUEUED = 0
+        const val RUNNING = 1
+        const val SUCCEEDED = 2
+        const val FAILED = 3
+        const val BLOCKED = 4
+        const val CANCELLED = 5
+        const val COMPLETED_STATES = "($SUCCEEDED, $FAILED, $CANCELLED)"
     }
 
     /** Integer identifiers that map to [BackoffPolicy]. */
@@ -77,7 +77,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun stateToInt(state: WorkInfo.State): Int {
+    fun stateToInt(state: WorkInfo.State): Int {
         return when (state) {
             WorkInfo.State.ENQUEUED -> StateIds.ENQUEUED
             WorkInfo.State.RUNNING -> StateIds.RUNNING
@@ -96,7 +96,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun intToState(value: Int): WorkInfo.State {
+    fun intToState(value: Int): WorkInfo.State {
         return when (value) {
             StateIds.ENQUEUED -> WorkInfo.State.ENQUEUED
             StateIds.RUNNING -> WorkInfo.State.RUNNING
@@ -116,7 +116,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun backoffPolicyToInt(backoffPolicy: BackoffPolicy): Int {
+    fun backoffPolicyToInt(backoffPolicy: BackoffPolicy): Int {
         return when (backoffPolicy) {
             BackoffPolicy.EXPONENTIAL -> BackoffPolicyIds.EXPONENTIAL
             BackoffPolicy.LINEAR -> BackoffPolicyIds.LINEAR
@@ -131,7 +131,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun intToBackoffPolicy(value: Int): BackoffPolicy {
+    fun intToBackoffPolicy(value: Int): BackoffPolicy {
         return when (value) {
             BackoffPolicyIds.EXPONENTIAL -> BackoffPolicy.EXPONENTIAL
             BackoffPolicyIds.LINEAR -> BackoffPolicy.LINEAR
@@ -147,7 +147,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun networkTypeToInt(networkType: NetworkType): Int {
+    fun networkTypeToInt(networkType: NetworkType): Int {
         return when (networkType) {
             NetworkType.NOT_REQUIRED -> NetworkTypeIds.NOT_REQUIRED
             NetworkType.CONNECTED -> NetworkTypeIds.CONNECTED
@@ -170,7 +170,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun intToNetworkType(value: Int): NetworkType {
+    fun intToNetworkType(value: Int): NetworkType {
         return when (value) {
             NetworkTypeIds.NOT_REQUIRED -> NetworkType.NOT_REQUIRED
             NetworkTypeIds.CONNECTED -> NetworkType.CONNECTED
@@ -193,7 +193,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun outOfQuotaPolicyToInt(policy: OutOfQuotaPolicy): Int {
+    fun outOfQuotaPolicyToInt(policy: OutOfQuotaPolicy): Int {
         return when (policy) {
             OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST ->
                 OutOfPolicyIds.RUN_AS_NON_EXPEDITED_WORK_REQUEST
@@ -209,7 +209,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun intToOutOfQuotaPolicy(value: Int): OutOfQuotaPolicy {
+    fun intToOutOfQuotaPolicy(value: Int): OutOfQuotaPolicy {
         return when (value) {
             OutOfPolicyIds.RUN_AS_NON_EXPEDITED_WORK_REQUEST ->
                 OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST
@@ -226,7 +226,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun setOfTriggersToByteArray(triggers: Set<ContentUriTrigger>): ByteArray {
+    fun setOfTriggersToByteArray(triggers: Set<ContentUriTrigger>): ByteArray {
         if (triggers.isEmpty()) {
             return ByteArray(0)
         }
@@ -251,7 +251,7 @@ public object WorkTypeConverters {
      */
     @JvmStatic
     @TypeConverter
-    public fun byteArrayToSetOfTriggers(bytes: ByteArray): Set<ContentUriTrigger> {
+    fun byteArrayToSetOfTriggers(bytes: ByteArray): Set<ContentUriTrigger> {
         val triggers = mutableSetOf<ContentUriTrigger>()
         if (bytes.isEmpty()) {
             // bytes will be null if there are no Content Uri Triggers

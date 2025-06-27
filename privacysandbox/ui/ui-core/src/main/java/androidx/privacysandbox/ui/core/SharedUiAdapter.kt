@@ -26,17 +26,17 @@ import java.util.concurrent.Executor
  */
 @SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
-public interface SharedUiAdapter {
+interface SharedUiAdapter {
 
     /**
      * Opens a new session to maintain connection with a UI provider. [client] will receive all
      * incoming communication from the provider. All incoming calls to [client] will be made through
      * the provided [clientExecutor].
      */
-    public fun openSession(clientExecutor: Executor, client: SessionClient)
+    fun openSession(clientExecutor: Executor, client: SessionClient)
 
     /** A single session with the UI provider. */
-    public interface Session : AutoCloseable {
+    interface Session : AutoCloseable {
         /**
          * Closes this session, indicating that the remote provider should dispose of associated
          * resources and that the [SessionClient] should not receive further callback events.
@@ -45,18 +45,18 @@ public interface SharedUiAdapter {
     }
 
     /** The client of a single session that will receive callback events from an active session. */
-    public interface SessionClient {
+    interface SessionClient {
         /**
          * Called to report that the session was opened successfully, delivering the [Session]
          * handle that should be used to communicate with the provider.
          */
-        public fun onSessionOpened(session: Session)
+        fun onSessionOpened(session: Session)
 
         /**
          * Called to report a terminal error in the session. No further events will be reported to
          * this [SessionClient] and any further or currently pending calls to the [Session] that may
          * have been in flight may be ignored.
          */
-        public fun onSessionError(throwable: Throwable)
+        fun onSessionError(throwable: Throwable)
     }
 }

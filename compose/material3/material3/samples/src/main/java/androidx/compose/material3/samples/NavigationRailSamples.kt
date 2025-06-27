@@ -16,6 +16,8 @@
 
 package androidx.compose.material3.samples
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -46,6 +48,7 @@ import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.WideNavigationRailValue
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +57,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -96,7 +100,7 @@ fun WideNavigationRailResponsiveSample() {
                                 state.collapse()
                             else state.expand()
                         }
-                    },
+                    }
                 ) {
                     if (state.targetValue == WideNavigationRailValue.Expanded) {
                         Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
@@ -104,7 +108,7 @@ fun WideNavigationRailResponsiveSample() {
                         Icon(Icons.Filled.Menu, "Expand rail")
                     }
                 }
-            },
+            }
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
@@ -120,7 +124,7 @@ fun WideNavigationRailResponsiveSample() {
                     },
                     label = { Text(item) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index },
+                    onClick = { selectedItem = index }
                 )
             }
         }
@@ -137,10 +141,21 @@ fun WideNavigationRailResponsiveSample() {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
-                    "Note: This demo is best shown in portrait mode, as landscape mode" +
-                        " may result in a compact height in certain devices. For any" +
-                        " compact screen dimensions, use a Navigation Bar instead.",
+                    "Note: The orientation of this demo has been locked to portrait mode, because" +
+                        " landscape mode may result in a compact height in certain devices. For" +
+                        " any compact screen dimensions, use a Navigation Bar instead."
             )
+        }
+    }
+
+    // Lock the orientation for this demo as the navigation rail may look cut off in landscape in
+    // smaller screens.
+    val context = LocalContext.current
+    DisposableEffect(context) {
+        (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        onDispose {
+            (context as? Activity)?.requestedOrientation =
+                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 }
@@ -183,7 +198,7 @@ fun ModalWideNavigationRailSample() {
                                 state.collapse()
                             else state.expand()
                         }
-                    },
+                    }
                 ) {
                     if (state.targetValue == WideNavigationRailValue.Expanded) {
                         Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
@@ -191,7 +206,7 @@ fun ModalWideNavigationRailSample() {
                         Icon(Icons.Filled.Menu, "Expand rail")
                     }
                 }
-            },
+            }
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
@@ -200,12 +215,12 @@ fun ModalWideNavigationRailSample() {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
                             else unselectedIcons[index],
-                            contentDescription = item,
+                            contentDescription = item
                         )
                     },
                     label = { Text(item) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index },
+                    onClick = { selectedItem = index }
                 )
             }
         }
@@ -221,10 +236,21 @@ fun ModalWideNavigationRailSample() {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
-                    "Note: This demo is best shown in portrait mode, as landscape mode" +
-                        " may result in a compact height in certain devices. For any" +
-                        " compact screen dimensions, use a Navigation Bar instead.",
+                    "Note: The orientation of this demo has been locked to portrait mode, because" +
+                        " landscape mode may result in a compact height in certain devices. For" +
+                        " any compact screen dimensions, use a Navigation Bar instead."
             )
+        }
+
+        // Lock the orientation for this demo as the navigation rail may look cut off in landscape
+        // in smaller screens.
+        val context = LocalContext.current
+        DisposableEffect(context) {
+            (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            onDispose {
+                (context as? Activity)?.requestedOrientation =
+                    ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
         }
     }
 }
@@ -251,7 +277,7 @@ fun DismissibleModalWideNavigationRailSample() {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
                             else unselectedIcons[index],
-                            contentDescription = null,
+                            contentDescription = null
                         )
                     },
                     label = { Text(item) },
@@ -259,7 +285,7 @@ fun DismissibleModalWideNavigationRailSample() {
                     onClick = {
                         selectedItem = index
                         scope.launch { state.collapse() }
-                    },
+                    }
                 )
             }
         }
@@ -289,12 +315,12 @@ fun WideNavigationRailCollapsedSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = null,
+                        contentDescription = null
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
-                onClick = { selectedItem = index },
+                onClick = { selectedItem = index }
             )
         }
     }
@@ -319,12 +345,12 @@ fun WideNavigationRailExpandedSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = null,
+                        contentDescription = null
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
-                onClick = { selectedItem = index },
+                onClick = { selectedItem = index }
             )
         }
     }
@@ -368,7 +394,7 @@ fun WideNavigationRailArrangementsSample() {
                                 state.expand()
                             }
                         }
-                    },
+                    }
                 ) {
                     if (state.targetValue == WideNavigationRailValue.Expanded) {
                         Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
@@ -376,7 +402,7 @@ fun WideNavigationRailArrangementsSample() {
                         Icon(Icons.Filled.Menu, "Expand rail")
                     }
                 }
-            },
+            }
         ) {
             items.forEachIndexed { index, item ->
                 WideNavigationRailItem(
@@ -385,12 +411,12 @@ fun WideNavigationRailArrangementsSample() {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
                             else unselectedIcons[index],
-                            contentDescription = null,
+                            contentDescription = null
                         )
                     },
                     label = { Text(item) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index },
+                    onClick = { selectedItem = index }
                 )
             }
         }
@@ -407,17 +433,29 @@ fun WideNavigationRailArrangementsSample() {
                     } else {
                         arrangement = Arrangement.Center
                     }
-                },
+                }
             ) {
                 Text(changeToString)
             }
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
-                    "Note: This demo is best shown in portrait mode, as landscape mode" +
-                        " may result in a compact height in certain devices. For any" +
-                        " compact screen dimensions, use a Navigation Bar instead.",
+                    "Note: The orientation of this Navigation Rail demo has been locked to" +
+                        " portrait mode, because landscape mode may result in a compact height in" +
+                        " certain devices. For any compact screen dimensions, use a Navigation" +
+                        "Bar instead."
             )
+        }
+    }
+
+    // Lock the orientation for this demo as the navigation rail may look cut off in landscape in
+    // smaller screens.
+    val context = LocalContext.current
+    DisposableEffect(context) {
+        (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        onDispose {
+            (context as? Activity)?.requestedOrientation =
+                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 }
@@ -437,12 +475,12 @@ fun NavigationRailSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item,
+                        contentDescription = item
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
-                onClick = { selectedItem = index },
+                onClick = { selectedItem = index }
             )
         }
     }
@@ -461,13 +499,13 @@ fun NavigationRailWithOnlySelectedLabelsSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item,
+                        contentDescription = item
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
                 onClick = { selectedItem = index },
-                alwaysShowLabel = false,
+                alwaysShowLabel = false
             )
         }
     }
@@ -489,13 +527,13 @@ fun NavigationRailBottomAlignSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item,
+                        contentDescription = item
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
                 onClick = { selectedItem = index },
-                alwaysShowLabel = false,
+                alwaysShowLabel = false
             )
         }
     }

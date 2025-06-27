@@ -44,6 +44,7 @@ internal class SpatialComposeScene(
     @InternalSubspaceApi public val jxrSession: Session,
     parentCompositionContext: CompositionContext? = null,
     rootEntity: CoreEntity? = null,
+    rootVolumeConstraints: VolumeConstraints = VolumeConstraints.Unbounded,
 ) : DefaultLifecycleObserver, LifecycleOwner {
     init {
         SceneManager.onSceneCreated(this)
@@ -51,13 +52,7 @@ internal class SpatialComposeScene(
 
     /** Root of the spatial scene graph of this [SpatialComposeScene]. */
     internal val rootElement: SpatialComposeElement =
-        SpatialComposeElement(this, parentCompositionContext, rootEntity)
-
-    public var rootVolumeConstraints: VolumeConstraints
-        get() = rootElement.rootVolumeConstraints
-        set(value) {
-            rootElement.rootVolumeConstraints = value
-        }
+        SpatialComposeElement(this, parentCompositionContext, rootEntity, rootVolumeConstraints)
 
     public fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
         rootElement.setContent(content)

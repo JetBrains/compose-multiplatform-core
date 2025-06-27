@@ -88,7 +88,13 @@ public class SexualActivityRecord(
 
     /** Whether protection was used during sexual activity. */
     @Retention(AnnotationRetention.SOURCE)
-    @IntDef(value = [PROTECTION_USED_PROTECTED, PROTECTION_USED_UNPROTECTED])
+    @IntDef(
+        value =
+            [
+                PROTECTION_USED_PROTECTED,
+                PROTECTION_USED_UNPROTECTED,
+            ]
+    )
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     annotation class Protections
 }

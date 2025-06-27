@@ -68,7 +68,9 @@ val SnapPositionDemos =
         ComposableDemo("Snap Position - Start") { HorizontalCarrouselDemo(SnapPosition.Start) },
         ComposableDemo("Snap Position - Center") { HorizontalCarrouselDemo(SnapPosition.Center) },
         ComposableDemo("Snap Position - End") { HorizontalCarrouselDemo(SnapPosition.End) },
-        ComposableDemo("Snap Position - Custom") { HorizontalCarrouselDemoWithCustomSnapPosition() },
+        ComposableDemo("Snap Position - Custom") {
+            HorizontalCarrouselDemoWithCustomSnapPosition()
+        },
     )
 
 @Composable
@@ -83,7 +85,7 @@ private fun HorizontalCarrouselDemoWithCustomSnapPosition() {
                 beforeContentPadding: Int,
                 afterContentPadding: Int,
                 itemIndex: Int,
-                itemCount: Int,
+                itemCount: Int
             ): Int {
                 val availableLayoutSpace = layoutSize - beforeContentPadding - afterContentPadding
                 return when (itemIndex) {
@@ -99,7 +101,7 @@ private fun HorizontalCarrouselDemoWithCustomSnapPosition() {
         object : PageSize {
             override fun Density.calculateMainAxisPageSize(
                 availableSpace: Int,
-                pageSpacing: Int,
+                pageSpacing: Int
             ): Int {
                 return (availableSpace + pageSpacing) / 2
             }
@@ -111,7 +113,7 @@ private fun HorizontalCarrouselDemoWithCustomSnapPosition() {
             modifier = Modifier,
             state = pagerState,
             pageSize = pageSize,
-            snapPosition = snapPosition,
+            snapPosition = snapPosition
         ) {
             CarrouselItem(it, Orientation.Vertical)
         }
@@ -130,7 +132,7 @@ private fun HorizontalCarrouselDemoAlwaysCentered() {
             pageSize = PageSize.Fixed(100.dp),
             snapPosition = SnapPosition.Center, // center snapping
             contentPadding =
-                PaddingValues(start = 200.dp, end = 200.dp), // padding to adjust snap position
+                PaddingValues(start = 200.dp, end = 200.dp) // padding to adjust snap position
         ) {
             val scope = rememberCoroutineScope()
 
@@ -157,7 +159,7 @@ private fun HorizontalCarrouselDemo(snapPosition: SnapPosition = SnapPosition.St
             modifier = Modifier.semantics { role = Carousel },
             state = pagerState,
             pageSize = PageSize.Fixed(100.dp),
-            snapPosition = snapPosition,
+            snapPosition = snapPosition
         ) {
             CarrouselItem(it, Orientation.Vertical)
         }
@@ -173,7 +175,7 @@ private fun VerticalCarrouselDemo() {
         VerticalPager(
             modifier = Modifier.weight(0.9f),
             state = pagerState,
-            pageSize = PageSize.Fixed(200.dp),
+            pageSize = PageSize.Fixed(200.dp)
         ) {
             CarrouselItem(it, Orientation.Horizontal)
         }
@@ -190,7 +192,7 @@ private fun HorizontalCustomPageSizeDemo() {
             modifier = Modifier,
             state = pagerState,
             pageSize = ThreePagesPerViewport,
-            pageSpacing = 8.dp,
+            pageSpacing = 8.dp
         ) {
             CarrouselItem(index = it, fillOrientation = Orientation.Vertical)
         }
@@ -211,8 +213,8 @@ private fun HorizontalCustomPageSizeWithCustomMaxScrollDemo() {
             flingBehavior =
                 PagerDefaults.flingBehavior(
                     state = pagerState,
-                    pagerSnapDistance = PagerSnapDistance.atMost(3),
-                ),
+                    pagerSnapDistance = PagerSnapDistance.atMost(3)
+                )
         ) {
             CarrouselItem(index = it, fillOrientation = Orientation.Vertical)
         }
@@ -231,7 +233,7 @@ private fun CarrouselItem(index: Int, fillOrientation: Orientation, onClick: (In
             Modifier.then(fillAxisModifier).padding(10.dp).background(Color.Magenta).clickable {
                 onClick.invoke(index)
             },
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.Center
     ) {
         Text(text = index.toString(), fontSize = 32.sp)
     }

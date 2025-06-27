@@ -51,7 +51,10 @@ class UpdatableAnimationStateTest {
 
         runBlocking {
             launch(frameClock) {
-                state.animateToZero(beforeFrame = { deltas += it }, afterFrame = {})
+                state.animateToZero(
+                    beforeFrame = { deltas += it },
+                    afterFrame = {},
+                )
             }
         }
 
@@ -65,7 +68,10 @@ class UpdatableAnimationStateTest {
         state.value = -10f
 
         runBlocking(frameClock) {
-            state.animateToZero(beforeFrame = { deltas += it }, afterFrame = {})
+            state.animateToZero(
+                beforeFrame = { deltas += it },
+                afterFrame = {},
+            )
         }
 
         assertThat(state.value).isEqualTo(0f)

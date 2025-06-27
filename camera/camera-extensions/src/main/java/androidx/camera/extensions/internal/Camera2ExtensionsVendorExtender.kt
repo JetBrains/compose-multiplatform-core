@@ -18,8 +18,11 @@ package androidx.camera.extensions.internal
 
 import android.content.Context
 import android.graphics.ImageFormat
+import android.graphics.SurfaceTexture
+import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraExtensionCharacteristics
+import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.os.Build
@@ -27,6 +30,7 @@ import android.util.Log
 import android.util.Pair
 import android.util.Range
 import android.util.Size
+import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.impl.CameraInfoInternal
@@ -34,7 +38,6 @@ import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.internal.utils.SizeUtil
 import androidx.camera.extensions.internal.Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode
-import androidx.camera.extensions.internal.compat.workaround.ExtensionCharacteristicsAccessGuard
 import androidx.camera.extensions.internal.sessionprocessor.Camera2ExtensionsSessionProcessor
 import androidx.core.util.Preconditions
 
@@ -43,12 +46,15 @@ private const val TAG = "Camera2ExtExtender"
 @RequiresApi(31)
 public class Camera2ExtensionsVendorExtender(
     private val mode: Int,
-    private val camera2ExtensionsInfo: Camera2ExtensionsInfo,
+    private val cameraManager: CameraManager
 ) : VendorExtender {
 
-    private val extensionCharacteristicsAccessGuard = ExtensionCharacteristicsAccessGuard()
     private val camera2ExtensionMode: Int = convertCameraXModeToCamera2Mode(mode)
     private val lock = Any()
+    @GuardedBy("lock")
+    private val cachedExtensionsCharacteristicsMap:
+        MutableMap<String, CameraExtensionCharacteristics> =
+        mutableMapOf()
     private lateinit var cameraId: String
     private lateinit var cameraExtensionCharacteristics: CameraExtensionCharacteristics
     private var isExtensionStrengthSupported: Boolean = false
@@ -56,13 +62,46 @@ public class Camera2ExtensionsVendorExtender(
 
     override fun isExtensionAvailable(
         cameraId: String,
-        characteristicsMap: Map<String, CameraCharacteristics>,
-    ): Boolean = camera2ExtensionsInfo.isExtensionAvailable(cameraId, camera2ExtensionMode)
+        characteristicsMap: Map<String, CameraCharacteristics>
+    ): Boolean {
+        val extensionCharacteristics: CameraExtensionCharacteristics? =
+            getCamera2ExtensionsCharacteristics(cameraId)
+
+        if (extensionCharacteristics == null) {
+            return false
+        }
+
+        return extensionCharacteristics.getSupportedExtensions().contains(camera2ExtensionMode)
+    }
+
+    private fun getCamera2ExtensionsCharacteristics(
+        cameraId: String
+    ): CameraExtensionCharacteristics? {
+        synchronized(lock) {
+            if (cachedExtensionsCharacteristicsMap.contains(cameraId)) {
+                return cachedExtensionsCharacteristicsMap[cameraId]
+            }
+
+            try {
+                cameraManager.getCameraExtensionCharacteristics(cameraId).let {
+                    cachedExtensionsCharacteristicsMap[cameraId] = it
+                    return it
+                }
+            } catch (e: CameraAccessException) {
+                Log.e(
+                    TAG,
+                    "Failed to retrieve CameraExtensionCharacteristics for camera id $cameraId."
+                )
+            }
+
+            return null
+        }
+    }
 
     override fun init(cameraInfo: CameraInfo) {
         cameraId = (cameraInfo as CameraInfoInternal).getCameraId()
         cameraExtensionCharacteristics =
-            Preconditions.checkNotNull(camera2ExtensionsInfo.getExtensionCharacteristics(cameraId))
+            Preconditions.checkNotNull(getCamera2ExtensionsCharacteristics(cameraId))
 
         isExtensionStrengthSupported =
             if (
@@ -96,7 +135,7 @@ public class Camera2ExtensionsVendorExtender(
             cameraExtensionCharacteristics.getEstimatedCaptureLatencyRangeMillis(
                 camera2ExtensionMode,
                 size ?: getCamera2ExtensionsMaximumSupportedSize(),
-                ImageFormat.JPEG,
+                ImageFormat.JPEG
             )
         } else {
             null
@@ -127,17 +166,30 @@ public class Camera2ExtensionsVendorExtender(
         val camera2SupportedOutputSizesList = mutableListOf<Pair<Int, Array<Size>>>()
 
         for (format in formats) {
-            try {
-                camera2ExtensionsInfo
-                    .getSupportedOutputSizes(cameraId, camera2ExtensionMode, format)
+            if (format == ImageFormat.PRIVATE) {
+                cameraExtensionCharacteristics
+                    .getExtensionSupportedSizes(camera2ExtensionMode, SurfaceTexture::class.java)
                     .toTypedArray<Size>()
                     .let {
                         if (it.isNotEmpty()) {
-                            camera2SupportedOutputSizesList.add(Pair.create(format, it))
+                            camera2SupportedOutputSizesList.add(
+                                Pair.create(ImageFormat.PRIVATE, it)
+                            )
                         }
                     }
-            } catch (e: IllegalArgumentException) {
-                Log.e(TAG, "Failed to retrieve supported output sizes of format $format", e)
+            } else {
+                try {
+                    cameraExtensionCharacteristics
+                        .getExtensionSupportedSizes(camera2ExtensionMode, format)
+                        .toTypedArray<Size>()
+                        .let {
+                            if (it.isNotEmpty()) {
+                                camera2SupportedOutputSizesList.add(Pair.create(format, it))
+                            }
+                        }
+                } catch (_: IllegalArgumentException) {
+                    Log.e(TAG, "Failed to retrieve supported output sizes of format $format")
+                }
             }
         }
 
@@ -171,12 +223,8 @@ public class Camera2ExtensionsVendorExtender(
                             camera2SupportedPostviewResolutions.put(format, it)
                         }
                     }
-            } catch (e: IllegalArgumentException) {
-                Log.e(
-                    TAG,
-                    "Failed to retrieve postview supported output sizes of format $format",
-                    e,
-                )
+            } catch (_: IllegalArgumentException) {
+                Log.e(TAG, "Failed to retrieve postview supported output sizes of format $format")
             }
         }
 
@@ -187,15 +235,9 @@ public class Camera2ExtensionsVendorExtender(
         checkInitialized()
         return if (
             isCamera2ExtensionAvailable() &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                extensionCharacteristicsAccessGuard.allowPostviewAvailabilityCheck()
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
         ) {
-            try {
-                cameraExtensionCharacteristics.isPostviewAvailable(camera2ExtensionMode)
-            } catch (e: NoSuchMethodError) {
-                Log.e(TAG, "Failed to retrieve postview availability", e)
-                false
-            }
+            cameraExtensionCharacteristics.isPostviewAvailable(camera2ExtensionMode)
         } else {
             false
         }
@@ -205,17 +247,9 @@ public class Camera2ExtensionsVendorExtender(
         checkInitialized()
         return if (
             isCamera2ExtensionAvailable() &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                extensionCharacteristicsAccessGuard.allowCaptureProcessProgressAvailabilityCheck()
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
         ) {
-            try {
-                cameraExtensionCharacteristics.isCaptureProcessProgressAvailable(
-                    camera2ExtensionMode
-                )
-            } catch (e: IllegalArgumentException) {
-                Log.e(TAG, "Failed to retrieve capture process progress availability", e)
-                false
-            }
+            cameraExtensionCharacteristics.isCaptureProcessProgressAvailable(camera2ExtensionMode)
         } else {
             false
         }
@@ -244,14 +278,9 @@ public class Camera2ExtensionsVendorExtender(
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            try {
-                cameraExtensionCharacteristics
-                    .getAvailableCaptureRequestKeys(camera2ExtensionMode)
-                    .forEach { availableCaptureRequestKeys.add(it) }
-            } catch (e: IllegalArgumentException) {
-                Log.e(TAG, "Failed to retrieve available capture request keys", e)
-                return emptyList()
-            }
+            cameraExtensionCharacteristics
+                .getAvailableCaptureRequestKeys(camera2ExtensionMode)
+                .forEach { availableCaptureRequestKeys.add(it) }
         }
 
         return availableCaptureRequestKeys
@@ -289,10 +318,9 @@ public class Camera2ExtensionsVendorExtender(
 
     private fun getCamera2ExtensionsMaximumSupportedSize(): Size {
         val supportedSizes =
-            camera2ExtensionsInfo.getSupportedOutputSizes(
-                cameraId,
+            cameraExtensionCharacteristics.getExtensionSupportedSizes(
                 camera2ExtensionMode,
-                ImageFormat.JPEG,
+                ImageFormat.JPEG
             )
         return if (supportedSizes.isEmpty()) {
             SizeUtil.RESOLUTION_ZERO
@@ -304,9 +332,9 @@ public class Camera2ExtensionsVendorExtender(
     private fun checkInitialized() =
         Preconditions.checkState(
             ::cameraId.isInitialized,
-            "VendorExtender#init() must be called first",
+            "VendorExtender#init() must be called first"
         )
 
     private fun isCamera2ExtensionAvailable(): Boolean =
-        camera2ExtensionsInfo.isExtensionAvailable(cameraId, camera2ExtensionMode)
+        cameraExtensionCharacteristics.supportedExtensions.contains(camera2ExtensionMode)
 }

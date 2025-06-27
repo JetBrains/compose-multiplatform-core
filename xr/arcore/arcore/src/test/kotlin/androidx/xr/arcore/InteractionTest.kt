@@ -16,13 +16,13 @@
 
 package androidx.xr.arcore
 
-import androidx.activity.ComponentActivity
+import android.app.Activity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.CoreState
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.internal.HitResult as RuntimeHitResult
@@ -46,6 +46,7 @@ import org.junit.runner.RunWith
 class InteractionTest {
 
     private lateinit var session: Session
+    private lateinit var activity: Activity
     private lateinit var timeSource: TestTimeSource
     private lateinit var perceptionStateExtender: PerceptionStateExtender
     private lateinit var perceptionManager: FakePerceptionManager
@@ -92,14 +93,14 @@ class InteractionTest {
     @Test
     fun hitTest_planeTrackingDisabled_throwsIllegalStateException() = createTestSessionAndRunTest {
         runTest {
-            session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
+            session.configure(Config(planeTracking = PlaneTrackingMode.Disabled))
 
             assertFailsWith<IllegalStateException> { hitTest(session, Ray()) }
         }
     }
 
     private fun createTestSessionAndRunTest(testBody: () -> Unit) {
-        ActivityScenario.launch(ComponentActivity::class.java).use {
+        ActivityScenario.launch(Activity::class.java).use {
             it.onActivity { activity ->
                 session =
                     (Session.create(activity, StandardTestDispatcher()) as SessionCreateSuccess)

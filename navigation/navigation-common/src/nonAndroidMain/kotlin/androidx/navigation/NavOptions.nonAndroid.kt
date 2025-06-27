@@ -56,7 +56,7 @@ public actual class NavOptions {
         implementedInJetBrainsFork()
     }
 
-    public actual class Builder actual constructor() {
+    public actual class Builder {
 
         public actual fun setLaunchSingleTop(singleTop: Boolean): Builder {
             implementedInJetBrainsFork()
@@ -70,7 +70,7 @@ public actual class NavOptions {
         public actual fun setPopUpTo(
             route: String?,
             inclusive: Boolean,
-            saveState: Boolean,
+            saveState: Boolean
         ): Builder {
             implementedInJetBrainsFork()
         }
@@ -79,7 +79,7 @@ public actual class NavOptions {
         @JvmOverloads
         public actual inline fun <reified T : Any> setPopUpTo(
             inclusive: Boolean,
-            saveState: Boolean,
+            saveState: Boolean
         ): Builder {
             implementedInJetBrainsFork()
         }
@@ -88,7 +88,7 @@ public actual class NavOptions {
         public actual fun <T : Any> setPopUpTo(
             route: KClass<T>,
             inclusive: Boolean,
-            saveState: Boolean,
+            saveState: Boolean
         ): Builder {
             implementedInJetBrainsFork()
         }
@@ -98,7 +98,7 @@ public actual class NavOptions {
         public actual fun <T : Any> setPopUpTo(
             route: T,
             inclusive: Boolean,
-            saveState: Boolean,
+            saveState: Boolean
         ): Builder {
             implementedInJetBrainsFork()
         }

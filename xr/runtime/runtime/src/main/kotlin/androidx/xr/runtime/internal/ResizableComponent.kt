@@ -28,6 +28,8 @@ public interface ResizableComponent : Component {
      * <p>The size of the entity is the size of the bounding box that contains the content of the
      * entity. The size of the content inside that bounding box is fully controlled by the
      * application.
+     *
+     * @param dimensions Dimensions for the Entity in meters.
      */
     public var size: Dimensions
 
@@ -37,6 +39,8 @@ public interface ResizableComponent : Component {
      * <p>The minimum size constraint is used to set constraints on how small the user can resize
      * the bounding box of the entity up to. The size of the content inside that bounding box is
      * fully controlled by the application.
+     *
+     * @param minSize Minimum size constraint for the Entity in meters.
      */
     public var minimumSize: Dimensions
 
@@ -46,6 +50,8 @@ public interface ResizableComponent : Component {
      * <p>The maximum size constraint is used to set constraints on how large the user can resize
      * the bounding box of the entity up to. The size of the content inside that bounding box is
      * fully controlled by the application.
+     *
+     * @param maxSize Maximum size constraint for the Entity in meters.
      */
     public var maximumSize: Dimensions
 
@@ -62,24 +68,33 @@ public interface ResizableComponent : Component {
      * <p>If a different resizing behavior is desired, such as fixing the width and adjusting the
      * height, the client can manually resize the entity to the preferred dimensions before calling
      * this method. No automatic resizing will occur when using the reform UI then.
+     *
+     * @param fixedAspectRatio Aspect ratio during resizing.
      */
     public var fixedAspectRatio: Float
 
     /**
      * Sets whether or not content (including content of all child nodes) is auto-hidden during
      * resizing. Defaults to true.
+     *
+     * @param autoHideContent Whether or not content is auto-hidden during resizing.
      */
     @get:Suppress("GetterSetterNames") public var autoHideContent: Boolean
 
     /**
      * Sets whether the size of the ResizableComponent is automatically updated to match during an
      * ongoing resize (to match the proposed size as resize events are received). Defaults to true.
+     *
+     * @param autoUpdateSize Whether or not the size of the ResizableComponent is automatically
+     *   updated during resizing.
      */
     @get:Suppress("GetterSetterNames") public var autoUpdateSize: Boolean
 
     /**
      * Sets whether to force showing the resize overlay even when this entity is not being resized.
      * Defaults to false.
+     *
+     * @param show Whether or not to force show the resize overlay.
      */
     @get:Suppress("GetterSetterNames") public var forceShowResizeOverlay: Boolean
 

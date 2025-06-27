@@ -22,10 +22,9 @@ import android.app.Activity;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,8 +63,9 @@ public class Session {
     }
 
     /** Creates an anchor for the specified plane type. */
-    public @Nullable Anchor createAnchor(
-            float minWidth, float minHeight, Plane.@NonNull Type type, Plane.@NonNull Label label) {
+    @Nullable
+    public Anchor createAnchor(
+            float minWidth, float minHeight, @NonNull Plane.Type type, @NonNull Plane.Label label) {
         Anchor.AnchorData anchorData =
                 getAnchor(minWidth, minHeight, type.intValue, label.intValue);
         if (anchorData == null) {
@@ -81,7 +81,8 @@ public class Session {
      *
      * @return the anchor if the operation succeeds.
      */
-    public @Nullable Anchor createAnchorFromUuid(@Nullable UUID uuid) {
+    @Nullable
+    public Anchor createAnchorFromUuid(@Nullable UUID uuid) {
         if (uuid == null) {
             Log.i(TAG, "UUID is null and cannot create a persisted anchor.");
             return null;
@@ -101,7 +102,8 @@ public class Session {
      * Returns all planes that can be found in the scene. The order is not guaranteed to be
      * consistent. An anchor can be created from a plane object and it will be tied to that plane.
      */
-    public @NonNull List<Plane> getAllPlanes() {
+    @NonNull
+    public List<Plane> getAllPlanes() {
         return getPlanes().stream()
                 .map(
                         nativeId ->
@@ -112,7 +114,8 @@ public class Session {
     }
 
     /** Returns the current head pose using the current timestamp in OpenXR. */
-    public @Nullable Pose getHeadPose() {
+    @Nullable
+    public Pose getHeadPose() {
         Pose pose = getCurrentHeadPose();
         if (pose == null) {
             Log.w(TAG, "Failed to get the head pose.");
@@ -125,7 +128,8 @@ public class Session {
      * Returns the left and right views mapping to the left and right eyes using the current
      * timestamp from OpenXR.
      */
-    public @Nullable ViewProjections getStereoViews() {
+    @Nullable
+    public ViewProjections getStereoViews() {
         Pair<ViewProjection, ViewProjection> stereoViews = getCurrentStereoViews();
         if (stereoViews == null) {
             Log.w(TAG, "Failed to get stereo views.");

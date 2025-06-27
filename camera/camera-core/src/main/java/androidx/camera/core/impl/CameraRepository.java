@@ -62,10 +62,7 @@ public final class CameraRepository {
                 Set<String> camerasList = cameraFactory.getAvailableCameraIds();
                 for (String id : camerasList) {
                     Logger.d(TAG, "Added camera: " + id);
-                    CameraInternal cameraToRemove = mCameras.put(id, cameraFactory.getCamera(id));
-                    if (cameraToRemove != null) {
-                        cameraToRemove.release();
-                    }
+                    mCameras.put(id, cameraFactory.getCamera(id));
                 }
             } catch (CameraUnavailableException e) {
                 throw new InitializationException(e);

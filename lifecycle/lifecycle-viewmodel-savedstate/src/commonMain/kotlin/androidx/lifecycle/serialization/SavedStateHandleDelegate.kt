@@ -17,7 +17,6 @@
 package androidx.lifecycle.serialization
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.internal.canonicalName
 import androidx.savedstate.SavedState
 import androidx.savedstate.serialization.SavedStateConfiguration
 import androidx.savedstate.serialization.decodeFromSavedState
@@ -79,7 +78,7 @@ private class SavedStateHandleDelegate<T : Any>(
             decodeFromSavedState(
                 deserializer = serializer,
                 savedState = it,
-                configuration = configuration,
+                configuration = configuration
             )
         }
     }
@@ -91,7 +90,7 @@ private class SavedStateHandleDelegate<T : Any>(
     }
 
     private fun createDefaultKey(thisRef: Any?, property: KProperty<*>): String {
-        val classNamePrefix = if (thisRef != null) thisRef::class.canonicalName + "." else ""
+        val classNamePrefix = if (thisRef != null) thisRef::class.qualifiedName + "." else ""
         return classNamePrefix + property.name
     }
 

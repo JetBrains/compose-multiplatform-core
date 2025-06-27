@@ -26,6 +26,7 @@ import androidx.compose.ui.autofill.Autofill
 import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.draganddrop.DragAndDropManager
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.platform.AccessibilityManager
@@ -152,7 +154,7 @@ internal class NodeChainTester : NodeChain.Logger {
         index: Int,
         prev: Modifier.Element,
         next: Modifier.Element,
-        node: Modifier.Node,
+        node: Modifier.Node
     ) {
         // TODO
     }
@@ -172,7 +174,7 @@ internal class NodeChainTester : NodeChain.Logger {
         newIndex: Int,
         prev: Modifier.Element,
         next: Modifier.Element,
-        node: Modifier.Node,
+        node: Modifier.Node
     ) {
         log.op(DiffOp.Same(oldIndex, newIndex, prev, next, node, false))
     }
@@ -182,7 +184,7 @@ internal class NodeChainTester : NodeChain.Logger {
         newIndex: Int,
         element: Modifier.Element,
         child: Modifier.Node,
-        inserted: Modifier.Node,
+        inserted: Modifier.Node
     ) {
         log.op(DiffOp.Insert(atIndex, newIndex, element, child, inserted))
     }
@@ -329,7 +331,7 @@ fun managedModifier(name: String, params: Any? = null): ModifierNodeElement<*> =
 private abstract class TestElement<T : Modifier.Node>(
     val modifierName: String,
     val param: Any? = null,
-    val node: T,
+    val node: T
 ) : ModifierNodeElement<T>() {
     override fun create(): T = node
 
@@ -370,7 +372,7 @@ private class MockOwner(
     private val position: IntOffset = IntOffset.Zero,
     override val root: LayoutNode = LayoutNode(),
     override val coroutineContext: CoroutineContext =
-        Executors.newFixedThreadPool(3).asCoroutineDispatcher(),
+        Executors.newFixedThreadPool(3).asCoroutineDispatcher()
 ) : Owner {
     val onRequestMeasureParams = mutableListOf<LayoutNode>()
     val onAttachParams = mutableListOf<LayoutNode>()
@@ -471,7 +473,7 @@ private class MockOwner(
 
     @Deprecated(
         "fontLoader is deprecated, use fontFamilyResolver",
-        replaceWith = ReplaceWith("fontFamilyResolver"),
+        replaceWith = ReplaceWith("fontFamilyResolver")
     )
     @Suppress("DEPRECATION")
     override val fontLoader: Font.ResourceLoader
@@ -481,7 +483,7 @@ private class MockOwner(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean,
         forceRequest: Boolean,
-        scheduleMeasureAndLayout: Boolean,
+        scheduleMeasureAndLayout: Boolean
     ) {
         onRequestMeasureParams += layoutNode
         if (affectsLookahead) {
@@ -493,7 +495,7 @@ private class MockOwner(
     override fun onRequestRelayout(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean,
-        forceRequest: Boolean,
+        forceRequest: Boolean
     ) {
         if (affectsLookahead) layoutNode.markLookaheadLayoutPending()
         layoutNode.markLayoutPending()
@@ -516,6 +518,8 @@ private class MockOwner(
 
     override fun calculateLocalPosition(positionInWindow: Offset): Offset =
         positionInWindow - position.toOffset()
+
+    override fun requestFocus(): Boolean = false
 
     override fun requestAutofill(node: LayoutNode) {
         TODO("Not yet implemented")
@@ -545,6 +549,10 @@ private class MockOwner(
 
     @InternalComposeUiApi override fun onInteropViewLayoutChange(view: InteropView) {}
 
+    override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
+        TODO("Not yet implemented")
+    }
+
     override fun registerOnLayoutCompletedListener(listener: Owner.OnLayoutCompletedListener) {
         TODO("Not yet implemented")
     }
@@ -553,6 +561,7 @@ private class MockOwner(
         drawBlock: (Canvas, GraphicsLayer?) -> Unit,
         invalidateParentLayer: () -> Unit,
         explicitLayer: GraphicsLayer?,
+        forceUseOldLayers: Boolean
     ): OwnedLayer {
         val transform = Matrix()
         val inverseTransform = Matrix()
@@ -596,7 +605,7 @@ private class MockOwner(
 
             override fun reuseLayer(
                 drawBlock: (Canvas, GraphicsLayer?) -> Unit,
-                invalidateParentLayer: () -> Unit,
+                invalidateParentLayer: () -> Unit
             ) {}
 
             override fun updateLayerProperties(scope: ReusableGraphicsLayerScope) {

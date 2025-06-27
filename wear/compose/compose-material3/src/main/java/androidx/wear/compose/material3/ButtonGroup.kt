@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.takeOrElse
 import androidx.compose.ui.util.fastForEachIndexed
@@ -81,7 +80,7 @@ public fun ButtonGroup(
     expansionWidth: Dp = ButtonGroupDefaults.ExpansionWidth,
     contentPadding: PaddingValues = ButtonGroupDefaults.fullWidthPaddings(),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    content: @Composable ButtonGroupScope.() -> Unit,
+    content: @Composable ButtonGroupScope.() -> Unit
 ) {
     val expandAmountPx = with(LocalDensity.current) { expansionWidth.toPx() }
 
@@ -107,7 +106,7 @@ public fun ButtonGroup(
                     EnlargeOnPressElement(
                         interactionSource = interactionSource,
                         downAnimSpec,
-                        upAnimSpec,
+                        upAnimSpec
                     )
                 )
         }
@@ -170,17 +169,13 @@ public fun ButtonGroup(
         val height =
             (placeables.fastMap { it.height }.max()).coerceIn(
                 constraints.minHeight,
-                constraints.maxHeight,
+                constraints.maxHeight
             )
 
         layout(width, height) {
-            val actualWidth = widths.sum() + spacingPx * (measurables.size - 1)
             var x = 0
             placeables.fastForEachIndexed { index, placeable ->
-                val actualX =
-                    if (layoutDirection == LayoutDirection.Ltr) x
-                    else actualWidth - x - widths[index]
-                placeable.place(actualX, verticalAlignment.align(placeable.height, height))
+                placeable.place(x, verticalAlignment.align(placeable.height, height))
                 x += widths[index] + spacingPx
                 // TODO: rounding finalSizes & spacing means we may have a few extra pixels wasted
                 //  or take more room than available.
@@ -231,7 +226,7 @@ public object ButtonGroupDefaults {
         val screenHeight = screenHeightDp().dp
         return PaddingValues(
             horizontal = screenHeight * FullWidthHorizontalPaddingPercentage / 100,
-            vertical = 0.dp,
+            vertical = 0.dp
         )
     }
 
@@ -305,7 +300,7 @@ internal class ButtonGroupNode(var weight: Float, var minWidth: Dp) :
             ButtonGroupParentData(
                 if (weight.fastIsFinite()) weight else prev.weight,
                 minWidth.takeOrElse { prev.minWidth },
-                prev.pressedState,
+                prev.pressedState
             )
         }
 }
@@ -411,7 +406,7 @@ private data class ComputeHelper(
     var minWidth: Float,
     val weight: Float,
     val originalIndex: Int,
-    var width: Float,
+    var width: Float
 )
 
 /**
@@ -425,7 +420,7 @@ private data class ComputeHelper(
 internal fun computeWidths(
     items: List<Pair<Float, Float>>,
     spacingPx: Int,
-    availableWidth: Int,
+    availableWidth: Int
 ): IntArray {
     val helper =
         Array(items.size) { index ->

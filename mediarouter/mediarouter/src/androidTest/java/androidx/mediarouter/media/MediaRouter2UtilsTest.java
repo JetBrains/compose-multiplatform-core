@@ -22,6 +22,7 @@ import static androidx.mediarouter.media.MediaRouter2Utils.KEY_EXTRAS;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import android.media.MediaRoute2Info;
 import android.os.Build;
@@ -93,9 +94,10 @@ public class MediaRouter2UtilsTest {
                                 FAKE_MEDIA_ROUTE_DESCRIPTOR_ID, FAKE_MEDIA_ROUTE_DESCRIPTOR_NAME)
                         .setDeduplicationIds(dedupIds)
                         .build();
-        assertEquals(
-                dedupIds,
-                MediaRouter2Utils.toFwkMediaRoute2Info(descriptor).getDeduplicationIds());
+        assertTrue(
+                MediaRouter2Utils.toFwkMediaRoute2Info(descriptor)
+                        .getDeduplicationIds()
+                        .equals(dedupIds));
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, codeName = "UpsideDownCake")
@@ -112,9 +114,10 @@ public class MediaRouter2UtilsTest {
                         .setDeduplicationIds(dedupIds)
                         .setExtras(PLACEHOLDER_EXTRAS_BUNDLE)
                         .build();
-        assertEquals(
-                dedupIds,
-                MediaRouter2Utils.toMediaRouteDescriptor(routeInfo).getDeduplicationIds());
+        assertTrue(
+                MediaRouter2Utils.toMediaRouteDescriptor(routeInfo)
+                        .getDeduplicationIds()
+                        .equals(dedupIds));
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, codeName = "UpsideDownCake")

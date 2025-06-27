@@ -19,9 +19,11 @@
 package androidx.hilt.navigation
 
 import android.content.Context
-import androidx.hilt.lifecycle.viewmodel.HiltViewModelFactory as createHiltViewModelFactory
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavBackStackEntry
+import dagger.hilt.android.internal.lifecycle.HiltViewModelFactory
 
 /**
  * Creates a [ViewModelProvider.Factory] to get
@@ -36,9 +38,10 @@ import androidx.navigation.NavBackStackEntry
 @JvmName("create")
 public fun HiltViewModelFactory(
     context: Context,
-    navBackStackEntry: NavBackStackEntry,
-): ViewModelProvider.Factory =
-    createHiltViewModelFactory(context, navBackStackEntry.defaultViewModelProviderFactory)
+    navBackStackEntry: NavBackStackEntry
+): ViewModelProvider.Factory {
+    return HiltViewModelFactory(context, navBackStackEntry.defaultViewModelProviderFactory)
+}
 
 /**
  * Creates a [ViewModelProvider.Factory] to get
@@ -50,16 +53,28 @@ public fun HiltViewModelFactory(
  * @return the factory.
  * @throws IllegalStateException if the context given is not an activity.
  */
-@Deprecated(
-    "Moved to package: androidx.hilt.lifecycle.viewmodel",
-    replaceWith =
-        ReplaceWith(
-            expression = "HiltViewModelFactory(context, delegateFactory)",
-            imports = ["androidx.hilt.lifecycle.viewmodel.HiltViewModelFactory"],
-        ),
-)
 @JvmName("create")
 public fun HiltViewModelFactory(
     context: Context,
-    delegateFactory: ViewModelProvider.Factory,
-): ViewModelProvider.Factory = createHiltViewModelFactory(context, delegateFactory)
+    delegateFactory: ViewModelProvider.Factory
+): ViewModelProvider.Factory {
+    val activity =
+        context.let {
+            var ctx = it
+            while (ctx is ContextWrapper) {
+                // Hilt can only be used with ComponentActivity
+                if (ctx is ComponentActivity) {
+                    return@let ctx
+                }
+                ctx = ctx.baseContext
+            }
+            throw IllegalStateException(
+                "Expected an activity context for creating a HiltViewModelFactory " +
+                    "but instead found: $ctx"
+            )
+        }
+    return HiltViewModelFactory.createInternal(
+        /* activity = */ activity,
+        /* delegateFactory = */ delegateFactory
+    )
+}

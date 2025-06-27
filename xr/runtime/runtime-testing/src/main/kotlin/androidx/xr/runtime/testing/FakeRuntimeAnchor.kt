@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
 import androidx.xr.runtime.internal.AnchorNotTrackingException
@@ -24,10 +25,10 @@ import androidx.xr.runtime.math.Pose
 import java.util.UUID
 
 /** Test-only implementation of [RuntimeAnchor] */
-public class FakeRuntimeAnchor
-internal constructor(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class FakeRuntimeAnchor(
     override var pose: Pose,
-    internal val anchorHolder: AnchorHolder? = null,
+    public val anchorHolder: AnchorHolder? = null,
     /** Flag to represent available tracking state of the camera when creating the anchor. */
     public val isTrackingAvailable: Boolean = true,
 ) : RuntimeAnchor {
@@ -35,16 +36,16 @@ internal constructor(
         if (!isTrackingAvailable) {
             throw AnchorNotTrackingException()
         }
-        ++anchorsCreatedCount
-        if (anchorsCreatedCount > ANCHOR_RESOURCE_LIMIT) {
+        ++anchorsCreated
+        if (anchorsCreated > ANCHOR_RESOURCE_LIMIT) {
             throw AnchorResourcesExhaustedException()
         }
     }
 
-    override var trackingState: TrackingState = TrackingState.TRACKING
+    override var trackingState: TrackingState = TrackingState.Tracking
 
     override var persistenceState: RuntimeAnchor.PersistenceState =
-        RuntimeAnchor.PersistenceState.NOT_PERSISTED
+        RuntimeAnchor.PersistenceState.NotPersisted
 
     override var uuid: UUID? = null
 
@@ -54,7 +55,7 @@ internal constructor(
 
     override fun persist() {
         uuid = UUID.randomUUID()
-        persistenceState = RuntimeAnchor.PersistenceState.PERSISTED
+        persistenceState = RuntimeAnchor.PersistenceState.Persisted
         anchorHolder?.persistAnchor(this)
     }
 
@@ -66,9 +67,7 @@ internal constructor(
     }
 
     public companion object {
-        /** Limit for the number of anchors that can be created. */
         public const val ANCHOR_RESOURCE_LIMIT: Int = 5
-        /** The current number of anchors created. */
-        @JvmStatic public var anchorsCreatedCount: Int = 0
+        public var anchorsCreated: Int = 0
     }
 }

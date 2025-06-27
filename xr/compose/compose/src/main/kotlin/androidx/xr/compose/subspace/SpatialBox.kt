@@ -16,19 +16,20 @@
 
 package androidx.xr.compose.subspace
 
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.xr.compose.subspace.layout.Measurable
+import androidx.xr.compose.subspace.layout.MeasurePolicy
+import androidx.xr.compose.subspace.layout.MeasureResult
+import androidx.xr.compose.subspace.layout.MeasureScope
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsModifier
+import androidx.xr.compose.subspace.layout.Placeable
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
-import androidx.xr.compose.subspace.layout.SubspaceMeasurable
-import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
-import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
-import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
@@ -55,6 +56,7 @@ import kotlin.math.max
  */
 @Composable
 @SubspaceComposable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialBox(
     modifier: SubspaceModifier = SubspaceModifier,
     alignment: SpatialAlignment = SpatialAlignment.Center,
@@ -68,15 +70,15 @@ public fun SpatialBox(
     )
 }
 
-/** [SubspaceMeasurePolicy] for [SpatialBox]. */
+/** [MeasurePolicy] for [SpatialBox]. */
 internal class SpatialBoxMeasurePolicy(
     private val alignment: SpatialAlignment,
     private val propagateMinConstraints: Boolean,
-) : SubspaceMeasurePolicy {
-    override fun SubspaceMeasureScope.measure(
-        measurables: List<SubspaceMeasurable>,
+) : MeasurePolicy {
+    override fun MeasureScope.measure(
+        measurables: List<Measurable>,
         constraints: VolumeConstraints,
-    ): SubspaceMeasureResult {
+    ): MeasureResult {
         if (measurables.isEmpty()) {
             return layout(constraints.minWidth, constraints.minHeight, constraints.minDepth) {}
         }
@@ -88,7 +90,7 @@ internal class SpatialBoxMeasurePolicy(
                 constraints.copy(minWidth = 0, minHeight = 0, minDepth = 0)
             }
 
-        val placeables = arrayOfNulls<SubspacePlaceable>(measurables.size)
+        val placeables = arrayOfNulls<Placeable>(measurables.size)
         var boxWidth = constraints.minWidth
         var boxHeight = constraints.minHeight
         var boxDepth = constraints.minDepth
@@ -103,7 +105,7 @@ internal class SpatialBoxMeasurePolicy(
         return layout(boxWidth, boxHeight, boxDepth) {
             val space = IntVolumeSize(boxWidth, boxHeight, boxDepth)
             placeables.forEachIndexed { index, placeable ->
-                placeable as SubspacePlaceable
+                placeable as Placeable
                 val measurable = measurables[index]
                 val childSpatialAlignment =
                     SpatialBoxParentData(alignment).also { measurable.adjustParams(it) }.alignment
@@ -112,12 +114,12 @@ internal class SpatialBoxMeasurePolicy(
         }
     }
 
-    private fun SubspacePlaceable.size() =
-        IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
+    private fun Placeable.size() = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
 }
 
 /** Scope for the children of [SpatialBox]. */
 @LayoutScopeMarker
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SpatialBoxScope {
     /**
      * Positions the content element at a specific [SpatialAlignment] within the [SpatialBox]. This

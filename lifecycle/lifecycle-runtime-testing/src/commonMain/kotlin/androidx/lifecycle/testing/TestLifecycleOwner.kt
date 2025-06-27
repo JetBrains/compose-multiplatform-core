@@ -22,6 +22,7 @@ import androidx.lifecycle.LifecycleRegistry
 import kotlin.jvm.JvmOverloads
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 /**
@@ -40,7 +41,7 @@ public class TestLifecycleOwner
 @JvmOverloads
 constructor(
     initialState: Lifecycle.State = Lifecycle.State.STARTED,
-    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
+    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
 ) : LifecycleOwner {
     // it is in test artifact
     private val lifecycleRegistry =
@@ -54,7 +55,7 @@ constructor(
      * safe to mutate on any thread, but will block that thread during execution.
      */
     public fun handleLifecycleEvent(event: Lifecycle.Event) {
-        runBlockingIfPossible(coroutineDispatcher) { lifecycleRegistry.handleLifecycleEvent(event) }
+        runBlocking(coroutineDispatcher) { lifecycleRegistry.handleLifecycleEvent(event) }
     }
 
     /**
@@ -63,9 +64,9 @@ constructor(
      * instead).
      */
     public var currentState: Lifecycle.State
-        get() = runBlockingIfPossible(coroutineDispatcher) { lifecycleRegistry.currentState }
+        get() = runBlocking(coroutineDispatcher) { lifecycleRegistry.currentState }
         set(value) {
-            runBlockingIfPossible(coroutineDispatcher) { lifecycleRegistry.currentState = value }
+            runBlocking(coroutineDispatcher) { lifecycleRegistry.currentState = value }
         }
 
     /**
@@ -81,6 +82,3 @@ constructor(
     public val observerCount: Int
         get() = lifecycleRegistry.observerCount
 }
-
-// TODO: K/JS and K/WASM don't support `runBlocking` yet.
-internal expect fun <T> runBlockingIfPossible(dispatcher: CoroutineDispatcher, block: () -> T): T

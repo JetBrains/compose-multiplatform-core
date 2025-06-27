@@ -19,8 +19,8 @@ package androidx.testutils.lifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 public class FakeLifecycleOwner(initialState: Lifecycle.State? = null) : LifecycleOwner {
 
@@ -40,25 +40,22 @@ public class FakeLifecycleOwner(initialState: Lifecycle.State? = null) : Lifecyc
     }
 
     public fun pause() {
-        runBlockingIfPossible(Dispatchers.Main) { setState(Lifecycle.State.STARTED) }
+        runBlocking(Dispatchers.Main) { setState(Lifecycle.State.STARTED) }
     }
 
     public fun destroy() {
-        runBlockingIfPossible(Dispatchers.Main) { setState(Lifecycle.State.DESTROYED) }
+        runBlocking(Dispatchers.Main) { setState(Lifecycle.State.DESTROYED) }
     }
 
     public fun create() {
-        runBlockingIfPossible(Dispatchers.Main) { setState(Lifecycle.State.CREATED) }
+        runBlocking(Dispatchers.Main) { setState(Lifecycle.State.CREATED) }
     }
 
     public fun start() {
-        runBlockingIfPossible(Dispatchers.Main) { setState(Lifecycle.State.STARTED) }
+        runBlocking(Dispatchers.Main) { setState(Lifecycle.State.STARTED) }
     }
 
     public fun resume() {
-        runBlockingIfPossible(Dispatchers.Main) { setState(Lifecycle.State.RESUMED) }
+        runBlocking(Dispatchers.Main) { setState(Lifecycle.State.RESUMED) }
     }
 }
-
-// TODO: K/JS and K/WASM don't support `runBlocking` yet.
-internal expect fun <T> runBlockingIfPossible(dispatcher: CoroutineDispatcher, block: () -> T): T

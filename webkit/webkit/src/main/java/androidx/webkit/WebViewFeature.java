@@ -56,7 +56,6 @@ public class WebViewFeature {
     /**
      *
      */
-    @SuppressLint("UnsafeOptInUsageError") // Don't mark WebViewSupportFeature as experimental.
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @StringDef(value = {
             VISUAL_STATE_CALLBACK,
@@ -124,8 +123,6 @@ public class WebViewFeature {
             NAVIGATION_CALLBACK_BASIC,
             CACHE_PROVIDER,
             PAYMENT_REQUEST,
-            WEBVIEW_BUILDER,
-            WARM_UP_RENDERER_PROCESS,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -382,7 +379,7 @@ public class WebViewFeature {
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
      * {@link WebMessagePortCompat#setWebMessageCallback(
-     * WebMessagePortCompat.WebMessageCallbackCompat)}, and
+     *WebMessagePortCompat.WebMessageCallbackCompat)}, and
      * {@link WebMessagePortCompat#setWebMessageCallback(Handler,
      * WebMessagePortCompat.WebMessageCallbackCompat)}.
      */
@@ -639,7 +636,7 @@ public class WebViewFeature {
      * {@link Profile#clearPrefetchAsync(String, Executor, OutcomeReceiverCompat)}
      */
     @Profile.ExperimentalUrlPrefetch
-    public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V5";
+    public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V4";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -716,40 +713,6 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#getHasEnrolledInstrumentEnabled(WebSettings)},
      */
     public static final String PAYMENT_REQUEST = "PAYMENT_REQUEST";
-
-    /**
-     * Feature for {@link #isFeatureSupported(String)}.
-     * This feature covers:
-     * {@link WebViewBuilder#build(Context)},
-     * {@link WebViewBuilder#build(Context, AttributeSet)},
-     * {@link WebViewBuilder#build(Context, AttributeSet, int)} and
-     * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public static final String WEBVIEW_BUILDER = "WEBVIEW_BUILDER";
-
-    /**
-     * Feature for {@link #isFeatureSupported(String)}.
-     * This feature covers
-     * {@link WebResourceResponseCompat#setCookies(List)}, as well as
-     * {@link WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings, boolean)} and
-     * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(boolean)}.
-     */
-    public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
-
-    /**
-     * Feature for {@link #isFeatureSupported(String)}.
-     * This feature covers {@link Profile#warmUpRendererProcess}.
-     */
-    @Profile.ExperimentalWarmUpRendererProcess
-    public static final String WARM_UP_RENDERER_PROCESS = "WARM_UP_RENDERER_PROCESS";
-
-    /**
-     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
-     * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
-     * {@link Profile#clearOriginMatchedHeader(String)}, and {@link Profile#clearAllOriginMatchedHeaders()}.
-     */
-    public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

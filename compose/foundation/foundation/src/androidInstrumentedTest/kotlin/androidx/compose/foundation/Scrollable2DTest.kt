@@ -20,7 +20,6 @@ import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.ComposeFoundationFlags.isFlingContinuationAtBoundsEnabled
 import androidx.compose.foundation.gestures.DefaultFlingBehavior
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Scroll2DScope
@@ -96,7 +95,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -145,7 +143,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x + 100f, this.center.y),
-                durationMillis = 100,
+                durationMillis = 100
             )
         }
 
@@ -153,7 +151,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x - 100f, this.center.y),
-                durationMillis = 100,
+                durationMillis = 100
             )
         }
         rule.runOnIdle { assertThat(total.x).isLessThan(0.01f) }
@@ -174,7 +172,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x, this.center.y + 100f),
-                durationMillis = 100,
+                durationMillis = 100
             )
         }
 
@@ -182,7 +180,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x, this.center.y - 100f),
-                durationMillis = 100,
+                durationMillis = 100
             )
         }
         rule.runOnIdle { assertThat(total.y).isLessThan(0.01f) }
@@ -203,7 +201,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x + 100f, this.center.y + 100f),
-                durationMillis = 100,
+                durationMillis = 100
             )
         }
 
@@ -211,7 +209,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x - 100f, this.center.y - 100f),
-                durationMillis = 100,
+                durationMillis = 100
             )
         }
         rule.runOnIdle { assertThat(total.x).isLessThan(0.01f) }
@@ -235,8 +233,12 @@ class Scrollable2DTest {
         rule.onNodeWithTag(scrollable2DBoxTag).performTouchInput {
             this.swipe(
                 start = this.center,
-                end = Offset(this.center.x + 100f, this.center.y + 100f),
-                durationMillis = 100,
+                end =
+                    Offset(
+                        this.center.x + 100f,
+                        this.center.y + 100f,
+                    ),
+                durationMillis = 100
             )
         }
         val prevTotal =
@@ -250,7 +252,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x + 100f, this.center.y + 100f),
-                durationMillis = 100,
+                durationMillis = 100
             )
         }
         rule.runOnIdle { assertThat(total).isEqualTo(prevTotal) }
@@ -273,7 +275,7 @@ class Scrollable2DTest {
                 start = this.center,
                 end = Offset(this.center.x + 200f, this.center.y + 200f),
                 durationMillis = 100,
-                endVelocity = 4000f,
+                endVelocity = 4000f
             )
         }
         assertThat(total.x).isGreaterThan(0f)
@@ -310,7 +312,7 @@ class Scrollable2DTest {
             Box {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(300.dp).scrollable2D(state = controller),
+                    modifier = Modifier.size(300.dp).scrollable2D(state = controller)
                 ) {
                     Box(
                         modifier =
@@ -327,7 +329,7 @@ class Scrollable2DTest {
                 start = this.center,
                 end = Offset(this.center.x + 200f, this.center.y + 200f),
                 durationMillis = 100,
-                endVelocity = 4000f,
+                endVelocity = 4000f
             )
         }
         assertThat(total.x).isGreaterThan(0f)
@@ -400,7 +402,7 @@ class Scrollable2DTest {
                 start = this.center,
                 end = Offset(this.center.x + 200f, this.center.y + 200f),
                 durationMillis = 100,
-                endVelocity = 4000f,
+                endVelocity = 4000f
             )
         }
         assertThat(total.x).isGreaterThan(0f)
@@ -448,7 +450,7 @@ class Scrollable2DTest {
             Box {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(300.dp).scrollable2D(state = outerState),
+                    modifier = Modifier.size(300.dp).scrollable2D(state = outerState)
                 ) {
                     Box(
                         modifier =
@@ -464,7 +466,7 @@ class Scrollable2DTest {
                 start = this.center,
                 end = Offset(this.center.x + 200f, this.center.y + 200f),
                 durationMillis = 300,
-                endVelocity = 0f,
+                endVelocity = 0f
             )
         }
         val lastEqualDrag =
@@ -509,7 +511,7 @@ class Scrollable2DTest {
             Box {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(300.dp).scrollable2D(state = outerState),
+                    modifier = Modifier.size(300.dp).scrollable2D(state = outerState)
                 ) {
                     Box(
                         modifier =
@@ -557,7 +559,7 @@ class Scrollable2DTest {
             Box {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(300.dp).scrollable2D(state = outerState),
+                    modifier = Modifier.size(300.dp).scrollable2D(state = outerState)
                 ) {
                     Box(
                         modifier =
@@ -574,7 +576,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x + 200f, this.center.y + 200f),
-                durationMillis = 300,
+                durationMillis = 300
             )
         }
         assertThat(innerDrag.x).isGreaterThan(0f)
@@ -624,7 +626,7 @@ class Scrollable2DTest {
             Box {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(300.dp).nestedScroll(preConsumingParent),
+                    modifier = Modifier.size(300.dp).nestedScroll(preConsumingParent)
                 ) {
                     Box(
                         modifier =
@@ -640,7 +642,7 @@ class Scrollable2DTest {
             this.swipe(
                 start = this.center,
                 end = Offset(this.center.x + 200f, this.center.y + 200f),
-                durationMillis = 300,
+                durationMillis = 300
             )
         }
 
@@ -671,7 +673,7 @@ class Scrollable2DTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource,
+                    source: NestedScrollSource
                 ): Offset {
                     // we should get in post scroll as much as left in controller callback
                     assertThat(available.x).isEqualTo(expectedLeft.x)
@@ -681,7 +683,7 @@ class Scrollable2DTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity,
+                    available: Velocity
                 ): Velocity {
                     // part of the velocity was consumed. Since we flung at a 45 angle our
                     // it means our cos(velocity angle) and sin (velocity angle) will be around 0.7f
@@ -695,7 +697,7 @@ class Scrollable2DTest {
             Box {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(300.dp).nestedScroll(parent),
+                    modifier = Modifier.size(300.dp).nestedScroll(parent)
                 ) {
                     Box(
                         modifier =
@@ -712,7 +714,7 @@ class Scrollable2DTest {
                 start = this.center,
                 end = Offset(this.center.x + 500f, this.center.y + 500f),
                 durationMillis = 300,
-                endVelocity = velocityFlung,
+                endVelocity = velocityFlung
             )
         }
 
@@ -758,7 +760,7 @@ class Scrollable2DTest {
                     dispatcher.dispatchPostScroll(
                         Offset(20f, 20f),
                         Offset(50f, 50f),
-                        NestedScrollSource.UserInput,
+                        NestedScrollSource.UserInput
                     )
                 assertThat((consumed - expectedConsumed).x).isWithin(0.001f)
                 assertThat((consumed - expectedConsumed).y).isWithin(0.001f)
@@ -907,7 +909,7 @@ class Scrollable2DTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource,
+                    source: NestedScrollSource
                 ): Offset {
                     if (source == NestedScrollSource.SideEffect && available != Offset.Zero) {
                         throw CancellationException()
@@ -949,17 +951,15 @@ class Scrollable2DTest {
         assertThat(childDeltas).isEqualTo(dragged)
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun scrollable_nestedFling_shouldCancelWhenHitTheBounds() {
-        Assume.assumeFalse(isFlingContinuationAtBoundsEnabled)
         var latestAvailableVelocity = Velocity.Zero
         var onPostFlingCalled = false
         val connection =
             object : NestedScrollConnection {
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity,
+                    available: Velocity
                 ): Velocity {
                     latestAvailableVelocity = available
                     onPostFlingCalled = true
@@ -994,84 +994,6 @@ class Scrollable2DTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
-    @Test
-    fun scrollable_nestedFling_shouldCancelWhenHitTheBounds_ifRemoved() {
-        Assume.assumeTrue(isFlingContinuationAtBoundsEnabled)
-        var shouldEmmit by mutableStateOf(true)
-        var latestScroll = Offset.Zero
-        val connection =
-            object : NestedScrollConnection {
-                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    latestScroll += available
-                    return super.onPreScroll(available, source)
-                }
-            }
-
-        rule.mainClock.autoAdvance = false
-        rule.setContent {
-            Box(Modifier.nestedScroll(connection)) {
-                if (shouldEmmit) {
-                    Box(
-                        Modifier.size(400.dp)
-                            .testTag("scrollable")
-                            .scrollable2D(rememberScrollable2DState { Offset.Zero })
-                    )
-                }
-            }
-        }
-        var swipeSize = 0f
-        rule.onNodeWithTag("scrollable").performTouchInput {
-            swipeSize = bottom - top
-            swipeDown()
-        }
-
-        rule.mainClock.advanceTimeUntil { latestScroll.y.absoluteValue > swipeSize }
-        rule.runOnIdle { shouldEmmit = false }
-        rule.mainClock.advanceTimeByFrame()
-        latestScroll = Offset.Zero
-
-        rule.mainClock.autoAdvance = true
-        rule.runOnIdle { assertThat(latestScroll).isEqualTo(Offset.Zero) }
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Test
-    fun scrollable_nestedFling_shouldContinueSendingDeltasWhenHitBounds() {
-        Assume.assumeTrue(isFlingContinuationAtBoundsEnabled)
-        var flingDeltas = Offset.Zero
-        val connection =
-            object : NestedScrollConnection {
-                override fun onPostScroll(
-                    consumed: Offset,
-                    available: Offset,
-                    source: NestedScrollSource,
-                ): Offset {
-                    if (source == NestedScrollSource.SideEffect) flingDeltas += available
-                    return available
-                }
-            }
-
-        var simulateHitBounds = false
-        val scrollState = Scrollable2DState { if (simulateHitBounds) Offset.Zero else it }
-        rule.setContent {
-            Box(Modifier.nestedScroll(connection)) {
-                Box(Modifier.size(200.dp).testTag("column").scrollable2D(scrollState))
-            }
-        }
-
-        rule.mainClock.autoAdvance = false
-        rule.onNodeWithTag("column").performTouchInput { swipeDown(center.y, bottomCenter.y) }
-
-        rule.mainClock.advanceTimeBy(200)
-        simulateHitBounds = true
-
-        flingDeltas = Offset.Zero
-        rule.mainClock.autoAdvance = true
-        rule.waitForIdle()
-        assertThat(flingDeltas.y).isNonZero()
-    }
-
     @Test
     fun scrollable_nestedFling_parentShouldFlingWithVelocityLeft() {
         var postFlingCalled = false
@@ -1100,7 +1022,7 @@ class Scrollable2DTest {
             object : NestedScrollConnection {
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity,
+                    available: Velocity
                 ): Velocity {
                     postFlingCalled = true
                     lastPostFlingVelocity = available
@@ -1112,10 +1034,7 @@ class Scrollable2DTest {
         rule.setContent {
             Box(
                 Modifier.nestedScroll(topConnection)
-                    .scrollable2D(
-                        flingBehavior = fling,
-                        state = rememberScrollable2DState { Offset.Zero },
-                    )
+                    .scrollable2D(flingBehavior = fling, state = rememberScrollable2DState { it })
             ) {
                 Column(
                     Modifier.nestedScroll(middleConnection)
@@ -1164,7 +1083,7 @@ class Scrollable2DTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity,
+                    available: Velocity
                 ): Velocity {
                     postFlingCalled = true
                     postFlingAvailableVelocity = available
@@ -1263,7 +1182,7 @@ class Scrollable2DTest {
                                 .size(100.dp)
                                 .scrollable2D(
                                     interactionSource = interactionSource,
-                                    state = controller,
+                                    state = controller
                                 )
                     )
                 }
@@ -1529,7 +1448,7 @@ class Scrollable2DTest {
                         Offset(0f, 0f) at 1500
                         Offset(0f, 0f) at 2000
                         Offset(100f, 100f) at 2500
-                    },
+                    }
                 )
             }
         }
@@ -1688,7 +1607,7 @@ class Scrollable2DTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource,
+                    source: NestedScrollSource
                 ): Offset {
                     consumedPostScroll += consumed
                     postScrollAvailable += available
@@ -2042,7 +1961,7 @@ class Scrollable2DTest {
                                 rememberScrollable2DState {
                                     flingDelta += it
                                     it
-                                }
+                                },
                         )
                 )
             }
@@ -2086,14 +2005,14 @@ class Scrollable2DTest {
                         flingBehavior = ScrollableDefaults.flingBehavior(),
                         state = outerState,
                     ),
-                contentAlignment = Alignment.Center,
+                contentAlignment = Alignment.Center
             ) {
                 Box(
                     Modifier.size(200.dp)
                         .background(Color.Black)
                         .nestedScroll(
                             connection = object : NestedScrollConnection {},
-                            dispatcher = dispatcher,
+                            dispatcher = dispatcher
                         )
                         .scrollable2D(state = innerState)
                 )

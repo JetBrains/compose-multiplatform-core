@@ -34,8 +34,6 @@ dependencies {
     implementation(libs.kotlinStdlib)
     implementation(project(":camera:camera-core"))
     implementation(project(":camera:viewfinder:viewfinder-core"))
-    implementation("androidx.lifecycle:lifecycle-livedata-core:2.3.1")
-    implementation(libs.guavaListenableFuture)
     compileOnly(project(":annotation:annotation-sampled"))
 }
 

@@ -56,24 +56,33 @@ internal val instrumentationPackageMediaDir =
 internal fun joinLines(vararg lines: String) =
     lines.joinToString(separator = System.lineSeparator())
 
-internal fun takeScreenshotBitmap(nodeBounds: Rect): Bitmap {
-    val screenBitmap = uiAutomation.takeScreenshot()
-    val screenBounds =
+internal fun takeScreenshotBitmap(bounds: Rect): Bitmap {
+    val bitmap = uiAutomation.takeScreenshot()
+    val actualBounds =
         Rect().apply {
             left = 0
             top = 0
-            right = screenBitmap.width
-            bottom = screenBitmap.height
+            right = bitmap.width
+            bottom = bitmap.height
         }
-    nodeBounds.intersect(screenBounds)
-
-    val x = nodeBounds.left.coerceIn(0, screenBounds.right)
-    val y = nodeBounds.top.coerceIn(0, screenBounds.top)
-    val w = nodeBounds.width().coerceIn(0, screenBounds.width() - x)
-    val h = nodeBounds.height().coerceIn(0, screenBounds.height() - y)
-    val cropped = Bitmap.createBitmap(screenBitmap, x, y, w, h)
+    bounds.intersect(actualBounds)
+    val cropped =
+        Bitmap.createBitmap(
+            bitmap,
+            bounds.left,
+            bounds.top,
+            bounds.width(),
+            bounds.height(),
+        )
     return cropped
 }
 
-internal fun takeViewNodeTree(root: AccessibilityNodeInfo, displayRect: Rect) =
-    ElementNode.fromAccessibilityNodeInfo(depth = 0, node = root, displayRect = displayRect)
+internal fun takeViewNodeTree(
+    root: AccessibilityNodeInfo,
+    displayRect: Rect,
+) =
+    ViewNode.fromAccessibilityNodeInfo(
+        depth = 0,
+        node = root,
+        displayRect = displayRect,
+    )

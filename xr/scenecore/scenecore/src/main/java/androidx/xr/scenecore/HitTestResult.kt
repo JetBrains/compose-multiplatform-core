@@ -17,21 +17,23 @@
 package androidx.xr.scenecore
 
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Vector3
 
 /**
- * Specifies an intersection between a ray and the Scene.
+ * Defines an intersection between a ray and the scene.
  *
- * This can be obtained by running [ScenePose.hitTest] or [ScenePose.hitTestAsync].
+ * This can be obtained by running [hitTest] or [hitTestAsync] on an [ActivityPose].
  *
- * @property hitPosition the [Vector3] position of the intersection between a ray and the Scene, or
- *   null if nothing was hit.
- * @property surfaceNormal The normal of the surface of the Entity or surface that was hit, or null
- *   if nothing was hit.
- * @property surfaceType the [HitTestResult.SurfaceType] that was hit.
- * @property distance the distance from the origin to the hit location, or POSITIVE_INFINITY if
- *   nothing was hit.
+ * @property hitPosition the [Vector3] position of the intersection between a ray and the Scene.
+ *   This will be null if nothing was hit
+ * @property surfaceNormal The normal of the surface of the entity that was hit. This will be null
+ *   if nothing was hit
+ * @property surfaceType the [HitTestSurfaceType] that was hit.
+ * @property distance the distance from the origin to the hit location. If nothing was hit the
+ *   distance will be POSITIVE_INFINITY.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class HitTestResult(
     public val hitPosition: Vector3?,
     public val surfaceNormal: Vector3?,

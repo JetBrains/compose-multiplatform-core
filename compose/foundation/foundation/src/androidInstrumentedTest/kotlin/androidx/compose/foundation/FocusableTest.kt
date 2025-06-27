@@ -119,7 +119,7 @@ class FocusableTest {
             Box {
                 BasicText(
                     "focusableText",
-                    modifier = Modifier.testTag(focusTag).focusable(enabled = false),
+                    modifier = Modifier.testTag(focusTag).focusable(enabled = false)
                 )
             }
         }
@@ -205,11 +205,11 @@ class FocusableTest {
             Box {
                 BasicText(
                     "focusableText",
-                    modifier = Modifier.testTag(focusTag).focusRequester(focusRequester).focusable(),
+                    modifier = Modifier.testTag(focusTag).focusRequester(focusRequester).focusable()
                 )
                 BasicText(
                     "otherFocusableText",
-                    modifier = Modifier.focusRequester(otherFocusRequester).focusable(),
+                    modifier = Modifier.focusRequester(otherFocusRequester).focusable()
                 )
             }
         }
@@ -240,11 +240,11 @@ class FocusableTest {
                     modifier =
                         Modifier.testTag(focusTag)
                             .focusRequester(focusRequester)
-                            .focusable(interactionSource = interactionSource),
+                            .focusable(interactionSource = interactionSource)
                 )
                 BasicText(
                     "otherFocusableText",
-                    modifier = Modifier.focusRequester(otherFocusRequester).focusable(),
+                    modifier = Modifier.focusRequester(otherFocusRequester).focusable()
                 )
             }
         }
@@ -289,7 +289,7 @@ class FocusableTest {
                     modifier =
                         Modifier.testTag(focusTag)
                             .focusRequester(focusRequester)
-                            .focusable(enabled = enabled, interactionSource),
+                            .focusable(enabled = enabled, interactionSource)
                 )
             }
         }
@@ -341,7 +341,7 @@ class FocusableTest {
                                 } else {
                                     Modifier
                                 }
-                            ),
+                            )
                 )
             }
         }
@@ -388,7 +388,7 @@ class FocusableTest {
                         modifier =
                             Modifier.testTag(focusTag)
                                 .focusRequester(focusRequester)
-                                .focusable(interactionSource = interactionSource),
+                                .focusable(interactionSource = interactionSource)
                     )
                 }
             }
@@ -487,7 +487,10 @@ class FocusableTest {
     fun focusable_equality() {
         val interactionSource = MutableInteractionSource()
         assertModifierIsPure { toggleInput ->
-            Modifier.focusable(enabled = toggleInput, interactionSource = interactionSource)
+            Modifier.focusable(
+                enabled = toggleInput,
+                interactionSource = interactionSource,
+            )
         }
     }
 
@@ -544,7 +547,7 @@ class FocusableTest {
             LazyRow(
                 modifier =
                     Modifier.requiredSize(100.dp).onFocusChanged { lazyRowHasFocus = it.hasFocus },
-                state = state,
+                state = state
             ) {
                 items(items.size) { Box(Modifier.requiredSize(10.dp).testTag("$it").focusable()) }
             }
@@ -566,7 +569,7 @@ class FocusableTest {
         var itemVisible by mutableStateOf(true)
         rule.setFocusableContent {
             SubcomposeLayout(
-                modifier = Modifier.requiredSize(100.dp).onFocusChanged { hasFocus = it.hasFocus }
+                modifier = Modifier.requiredSize(100.dp).onFocusChanged { hasFocus = it.hasFocus },
             ) { constraints ->
                 val measurable =
                     if (itemVisible) {
@@ -646,7 +649,7 @@ class FocusableTest {
                         Modifier.testTag(focusTag)
                             .focusRequester(focusRequester)
                             .onFocusEvent { state = it }
-                            .focusable(),
+                            .focusable()
                 )
             }
         }

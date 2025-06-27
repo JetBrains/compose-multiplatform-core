@@ -21,30 +21,28 @@ import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.Config.PlaneTrackingMode
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.runtime.math.FloatSize3d
-import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
+import androidx.xr.scenecore.BasePanelEntity
+import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.PlaneOrientation
-import androidx.xr.scenecore.PlaneSemanticType
+import androidx.xr.scenecore.PixelDimensions
+import androidx.xr.scenecore.PlaneSemantic
+import androidx.xr.scenecore.PlaneType
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.samples.commontestview.DebugTextLinearView
 import androidx.xr.scenecore.samples.commontestview.DebugTextPanel
 import androidx.xr.scenecore.scene
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import java.lang.UnsupportedOperationException
-import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -67,20 +65,31 @@ class TransformationTestsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.transformationtests_activity)
-        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        session.resume()
+        session.configure(Config(planeTracking = PlaneTrackingMode.HorizontalAndVertical))
         setupMovableMainPanel()
 
         // Create a transform widget model and assign it to an Anchor
-        lifecycleScope.launch {
-            val axesModel = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
-            setupAnchorAndDebugPanelUi(axesModel)
-        }
+        val axesModelFuture = GltfModel.create(session, "models/xyzArrows.glb")
+        axesModelFuture.addListener(
+            {
+                val transformWidgetModel = axesModelFuture.get()
+                setupAnchorAndDebugPanelUi(transformWidgetModel)
+            },
+            // This will cause the listener to be run on the UI thread
+            Runnable::run,
+        )
 
-        // Create multiple orbiting dragon models
-        lifecycleScope.launch {
-            val dragonModel = GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
-            createModelSolarSystem(session, dragonModel)
-        }
+        // Create multiple orbiting shark models
+        val sharkModelFuture = GltfModel.create(session, "models/GreatWhiteShark.glb")
+        sharkModelFuture.addListener(
+            {
+                val sharkModel = sharkModelFuture.get()
+                createModelSolarSystem(session, sharkModel)
+            },
+            // This will cause the listener to be run on the UI thread
+            Runnable::run,
+        )
     }
 
     // Called once the transformWidgetModel is ready
@@ -89,12 +98,7 @@ class TransformationTestsActivity : AppCompatActivity() {
             GltfModelEntity.create(session, anchorModel, Pose.Identity)
 
         anchor =
-            AnchorEntity.create(
-                session,
-                FloatSize2d(0.1f, 0.1f),
-                PlaneOrientation.ANY,
-                PlaneSemanticType.ANY,
-            )
+            AnchorEntity.create(session, Dimensions(0.1f, 0.1f), PlaneType.ANY, PlaneSemantic.ANY)
         anchor!!.addChild(anchoredTransformWidgetEntity)
         anchoredTransformWidgetEntity.setPose(Pose.Identity)
 
@@ -134,13 +138,13 @@ class TransformationTestsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             while (true) {
                 delay(16L)
-                val anchorState = anchor!!.state
+                val anchorState = anchor!!.getState()
                 for (panel in debugTextPanelsToUpdate) {
                     // If the anchor is not anchored, then skip updating its panel
                     if (panel == anchorDebugPanel) {
                         anchorDebugPanel.view.setLine(
                             "Anchor State",
-                            anchorStateToString(anchorState),
+                            anchorStateToString(anchorState)
                         )
                         if (anchorState != AnchorEntity.State.ANCHORED) {
                             continue
@@ -152,7 +156,7 @@ class TransformationTestsActivity : AppCompatActivity() {
                 updateDebugTextPanel(
                     mainActivityDebugView,
                     session.scene.mainPanelEntity,
-                    anchorState,
+                    anchorState
                 )
             }
         }
@@ -189,7 +193,7 @@ class TransformationTestsActivity : AppCompatActivity() {
     private fun createDebugPanelAndLabel(
         name: String,
         trackedEntity: Entity,
-        labelDimensions: FloatSize3d = FloatSize3d(140f, 50f),
+        labelDimensions: Dimensions = Dimensions(140f, 50f),
     ): DebugTextPanel {
         // Set position of the panel to be next to other panels created previously
         val panelPose = Pose(Vector3(-1.0f + debugTextPanelsToUpdate.size * 0.6f, -0.4f, 0.1f))
@@ -201,7 +205,7 @@ class TransformationTestsActivity : AppCompatActivity() {
                 session,
                 session.scene.activitySpace,
                 name = name,
-                pose = panelPose,
+                pose = panelPose
             )
         debugPanel.trackedEntity = trackedEntity
         debugTextPanelsToUpdate.add(debugPanel)
@@ -214,7 +218,7 @@ class TransformationTestsActivity : AppCompatActivity() {
                 trackedEntity,
                 name = name,
                 pixelDimensions =
-                    IntSize2d(
+                    PixelDimensions(
                         (labelDimensions.width * trackedEntity.getScale(Space.REAL_WORLD)).toInt(),
                         (labelDimensions.height * trackedEntity.getScale(Space.REAL_WORLD)).toInt(),
                     ),
@@ -238,7 +242,7 @@ class TransformationTestsActivity : AppCompatActivity() {
             }
         view.setLine("localPose", localPose)
 
-        view.setLine("worldSpacePose", trackedEntity.activitySpacePose.toFormattedString())
+        view.setLine("worldSpacePose", trackedEntity.getActivitySpacePose().toFormattedString())
         view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).toString())
 
         val activitySpacePose =
@@ -262,34 +266,34 @@ class TransformationTestsActivity : AppCompatActivity() {
         view.setLine("Distance to ActivitySpace", length(activitySpacePose.translation).toString())
         view.setLine("Distance to Main Panel", length(mainPanelSpacePose.translation).toString())
         when (trackedEntity) {
-            is PanelEntity -> {
-                view.setLine("Panel size", trackedEntity.size.toString())
+            is BasePanelEntity<*> -> {
+                view.setLine("Panel size", trackedEntity.getSize().toString())
                 view.setLine("Panel scale", trackedEntity.getScale().toString())
             }
         }
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
-        val sunDragon = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 3f, -9f)))
-        sunDragon.setScale(3f)
-        sunDragon.parent = session.scene.activitySpace
+        val sunShark = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 3f, -9f)))
+        sunShark.setScale(3f)
+        sunShark.setParent(session.scene.activitySpace)
 
-        val planetDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 3f, -9f)))
-        planetDragon.setScale(0.5f)
-        planetDragon.parent = sunDragon
+        val planetShark = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 3f, -9f)))
+        planetShark.setScale(0.5f)
+        planetShark.setParent(sunShark)
 
-        val moonDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 3f, -9f)))
-        moonDragon.setScale(0.5f)
-        moonDragon.parent = planetDragon
+        val moonShark = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 3f, -9f)))
+        moonShark.setScale(0.5f)
+        moonShark.setParent(planetShark)
 
         // Create debug panels for the sun, planet, and moon
-        val largeLabelDimensions = FloatSize3d(700f, 200f)
-        createDebugPanelAndLabel("sunDragon", sunDragon, largeLabelDimensions)
-        createDebugPanelAndLabel("planetDragon", planetDragon, largeLabelDimensions)
-        createDebugPanelAndLabel("moonDragon", moonDragon, largeLabelDimensions)
+        val largeLabelDimensions = Dimensions(700f, 200f)
+        createDebugPanelAndLabel("sunShark", sunShark, largeLabelDimensions)
+        createDebugPanelAndLabel("planetShark", planetShark, largeLabelDimensions)
+        createDebugPanelAndLabel("moonShark", moonShark, largeLabelDimensions)
 
-        orbitModelAroundParent(planetDragon, 4f, 0f, 20000f)
-        orbitModelAroundParent(moonDragon, 2f, 1.67f, 5000f)
+        orbitModelAroundParent(planetShark, 4f, 0f, 20000f)
+        orbitModelAroundParent(moonShark, 2f, 1.67f, 5000f)
     }
 
     // TODO: b/339450306 - Simply update parent's rotation once math library is added to jxrCore

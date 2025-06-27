@@ -31,7 +31,7 @@ import kotlinx.coroutines.async
  * AppSetIdManager provides APIs for app and ad-SDKs to access appSetId for non-monetizing purpose.
  * This class can be used by Java clients.
  */
-public abstract class AppSetIdManagerFutures internal constructor() {
+abstract class AppSetIdManagerFutures internal constructor() {
     /**
      * Return the AppSetId.
      *
@@ -39,7 +39,7 @@ public abstract class AppSetIdManagerFutures internal constructor() {
      * @throws IllegalStateException if this API is not available.
      * @throws LimitExceededException if rate limit was reached.
      */
-    public abstract fun getAppSetIdAsync(): ListenableFuture<AppSetId>
+    abstract fun getAppSetIdAsync(): ListenableFuture<AppSetId>
 
     private class Api33Ext4JavaImpl(private val mAppSetIdManager: AppSetIdManager) :
         AppSetIdManagerFutures() {
@@ -51,7 +51,7 @@ public abstract class AppSetIdManagerFutures internal constructor() {
         }
     }
 
-    public companion object {
+    companion object {
         /**
          * Creates [AppSetIdManagerFutures].
          *
@@ -59,7 +59,7 @@ public abstract class AppSetIdManagerFutures internal constructor() {
          *   the value returned is null.
          */
         @JvmStatic
-        public fun from(context: Context): AppSetIdManagerFutures? {
+        fun from(context: Context): AppSetIdManagerFutures? {
             return AppSetIdManager.obtain(context)?.let { Api33Ext4JavaImpl(it) }
         }
     }

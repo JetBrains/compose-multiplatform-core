@@ -36,8 +36,7 @@ internal actual fun OnPlatformWindowBoundsChange(block: () -> Unit) {
 
 @Composable
 internal actual fun popupPropertiesForAnchorType(
-    anchorType: ExposedDropdownMenuAnchorType,
-    alwaysFocusable: Boolean,
+    anchorType: ExposedDropdownMenuAnchorType
 ): PopupProperties {
     implementedInJetBrainsFork()
 }

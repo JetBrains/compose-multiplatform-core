@@ -125,9 +125,9 @@ import kotlinx.coroutines.flow.Flow
 // Suppressing Metalava checks for added abstract methods in WorkManager.
 // WorkManager cannot be extended, because the constructor is marked @Restricted
 @SuppressLint("AddedAbstractMethod")
-public abstract class WorkManager internal constructor() {
+abstract class WorkManager internal constructor() {
 
-    public companion object {
+    companion object {
         /**
          * Retrieves the `default` singleton instance of [WorkManager].
          *
@@ -145,7 +145,7 @@ public abstract class WorkManager internal constructor() {
             replaceWith = ReplaceWith("WorkManager.getContext(context)"),
         )
         @JvmStatic
-        public open fun getInstance(): WorkManager {
+        open fun getInstance(): WorkManager {
             @Suppress("DEPRECATION") val workManager: WorkManager? = WorkManagerImpl.getInstance()
             checkNotNull(workManager) {
                 "WorkManager is not initialized properly.  The most " +
@@ -169,7 +169,7 @@ public abstract class WorkManager internal constructor() {
         // "WorkManagerImpl cannot override <X> in WorkManager", even though methods are static
         @Suppress("NON_FINAL_MEMBER_IN_OBJECT")
         @JvmStatic
-        public open fun getInstance(context: Context): WorkManager {
+        open fun getInstance(context: Context): WorkManager {
             return WorkManagerImpl.getInstance(context)
         }
 
@@ -197,7 +197,7 @@ public abstract class WorkManager internal constructor() {
         // "WorkManagerImpl cannot override <X> in WorkManager", even though methods are static
         @Suppress("NON_FINAL_MEMBER_IN_OBJECT")
         @JvmStatic
-        public open fun initialize(context: Context, configuration: Configuration) {
+        open fun initialize(context: Context, configuration: Configuration) {
             WorkManagerImpl.initialize(context, configuration)
         }
 
@@ -208,11 +208,11 @@ public abstract class WorkManager internal constructor() {
          */
         @Suppress("NON_FINAL_MEMBER_IN_OBJECT")
         @JvmStatic
-        public open fun isInitialized(): Boolean = WorkManagerImpl.isInitialized()
+        open fun isInitialized(): Boolean = WorkManagerImpl.isInitialized()
     }
 
     /** The [Configuration] instance that [WorkManager] was initialized with. */
-    public abstract val configuration: Configuration
+    abstract val configuration: Configuration
 
     /**
      * Enqueues one item for background processing.
@@ -220,7 +220,7 @@ public abstract class WorkManager internal constructor() {
      * @param request The [WorkRequest] to enqueue
      * @return An [Operation] that can be used to determine when the enqueue has completed
      */
-    public fun enqueue(request: WorkRequest): Operation {
+    fun enqueue(request: WorkRequest): Operation {
         return enqueue(listOf(request))
     }
 
@@ -230,7 +230,7 @@ public abstract class WorkManager internal constructor() {
      * @param requests One or more [WorkRequest] to enqueue
      * @return An [Operation] that can be used to determine when the enqueue has completed
      */
-    public abstract fun enqueue(requests: List<WorkRequest>): Operation
+    abstract fun enqueue(requests: List<WorkRequest>): Operation
 
     /**
      * Begins a chain with one or more [OneTimeWorkRequest]s, which can be enqueued together in the
@@ -243,7 +243,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [WorkContinuation] that allows for further chaining of dependent
      *   [OneTimeWorkRequest]
      */
-    public fun beginWith(request: OneTimeWorkRequest): WorkContinuation {
+    fun beginWith(request: OneTimeWorkRequest): WorkContinuation {
         return beginWith(listOf(request))
     }
 
@@ -258,7 +258,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [WorkContinuation] that allows for further chaining of dependent
      *   [OneTimeWorkRequest]
      */
-    public abstract fun beginWith(requests: List<OneTimeWorkRequest>): WorkContinuation
+    abstract fun beginWith(requests: List<OneTimeWorkRequest>): WorkContinuation
 
     /**
      * This method allows you to begin unique chains of work for situations where you only want one
@@ -286,10 +286,10 @@ public abstract class WorkManager internal constructor() {
      *   labelled with `uniqueWorkName`.
      * @return A [WorkContinuation] that allows further chaining
      */
-    public fun beginUniqueWork(
+    fun beginUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        request: OneTimeWorkRequest,
+        request: OneTimeWorkRequest
     ): WorkContinuation {
         return beginUniqueWork(uniqueWorkName, existingWorkPolicy, listOf(request))
     }
@@ -320,10 +320,10 @@ public abstract class WorkManager internal constructor() {
      *   labelled with `uniqueWorkName`.
      * @return A [WorkContinuation] that allows further chaining
      */
-    public abstract fun beginUniqueWork(
+    abstract fun beginUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        requests: List<OneTimeWorkRequest>,
+        requests: List<OneTimeWorkRequest>
     ): WorkContinuation
 
     /**
@@ -343,10 +343,10 @@ public abstract class WorkManager internal constructor() {
      *   with `uniqueWorkName`.
      * @return An [Operation] that can be used to determine when the enqueue has completed
      */
-    public open fun enqueueUniqueWork(
+    open fun enqueueUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        request: OneTimeWorkRequest,
+        request: OneTimeWorkRequest
     ): Operation {
         return enqueueUniqueWork(uniqueWorkName, existingWorkPolicy, listOf(request))
     }
@@ -368,10 +368,10 @@ public abstract class WorkManager internal constructor() {
      *   `uniqueWorkName`.
      * @return An [Operation] that can be used to determine when the enqueue has completed
      */
-    public abstract fun enqueueUniqueWork(
+    abstract fun enqueueUniqueWork(
         uniqueWorkName: String,
         existingWorkPolicy: ExistingWorkPolicy,
-        requests: List<OneTimeWorkRequest>,
+        requests: List<OneTimeWorkRequest>
     ): Operation
 
     /**
@@ -390,10 +390,10 @@ public abstract class WorkManager internal constructor() {
      *   `uniqueWorkName`.
      * @return An [Operation] that can be used to determine when the enqueue has completed
      */
-    public abstract fun enqueueUniquePeriodicWork(
+    abstract fun enqueueUniquePeriodicWork(
         uniqueWorkName: String,
         existingPeriodicWorkPolicy: ExistingPeriodicWorkPolicy,
-        request: PeriodicWorkRequest,
+        request: PeriodicWorkRequest
     ): Operation
 
     /**
@@ -405,7 +405,7 @@ public abstract class WorkManager internal constructor() {
      * @param id The id of the work
      * @return An [Operation] that can be used to determine when the cancelWorkById has completed
      */
-    public abstract fun cancelWorkById(id: UUID): Operation
+    abstract fun cancelWorkById(id: UUID): Operation
 
     /**
      * Cancels all unfinished work with the given tag. Note that cancellation is a best-effort
@@ -417,7 +417,7 @@ public abstract class WorkManager internal constructor() {
      * @return An [Operation] that can be used to determine when the cancelAllWorkByTag has
      *   completed
      */
-    public abstract fun cancelAllWorkByTag(tag: String): Operation
+    abstract fun cancelAllWorkByTag(tag: String): Operation
 
     /**
      * Cancels all unfinished work in the work chain with the given name. Note that cancellation is
@@ -428,7 +428,7 @@ public abstract class WorkManager internal constructor() {
      * @param uniqueWorkName The unique name used to identify the chain of work
      * @return An [Operation] that can be used to determine when the cancelUniqueWork has completed
      */
-    public abstract fun cancelUniqueWork(uniqueWorkName: String): Operation
+    abstract fun cancelUniqueWork(uniqueWorkName: String): Operation
 
     /**
      * Cancels all unfinished work. **Use this method with extreme caution!** By invoking it, you
@@ -440,7 +440,7 @@ public abstract class WorkManager internal constructor() {
      *
      * @return An [Operation] that can be used to determine when the cancelAllWork has completed
      */
-    public abstract fun cancelAllWork(): Operation
+    abstract fun cancelAllWork(): Operation
 
     /**
      * Creates a [PendingIntent] which can be used to cancel a [WorkRequest] with the given `id`.
@@ -448,7 +448,7 @@ public abstract class WorkManager internal constructor() {
      * @param id The [WorkRequest] id.
      * @return The [PendingIntent] that can be used to cancel the [WorkRequest].
      */
-    public abstract fun createCancelPendingIntent(id: UUID): PendingIntent
+    abstract fun createCancelPendingIntent(id: UUID): PendingIntent
 
     /**
      * Prunes all eligible finished work from the internal database. Eligible work must be finished
@@ -463,7 +463,7 @@ public abstract class WorkManager internal constructor() {
      *
      * @return An [Operation] that can be used to determine when the pruneWork has completed
      */
-    public abstract fun pruneWork(): Operation
+    abstract fun pruneWork(): Operation
 
     /**
      * Gets a [LiveData] of the last time all work was cancelled. This method is intended for use by
@@ -473,7 +473,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [LiveData] of the timestamp (`System#getCurrentTimeMillis()`) when [cancelAllWork]
      *   was last invoked; this timestamp may be `0L` if this never occurred
      */
-    public abstract fun getLastCancelAllTimeMillisLiveData(): LiveData<Long>
+    abstract fun getLastCancelAllTimeMillisLiveData(): LiveData<Long>
 
     /**
      * Gets a [ListenableFuture] of the last time all work was cancelled. This method is intended
@@ -483,7 +483,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [ListenableFuture] of the timestamp (`System#getCurrentTimeMillis()`) when
      *   [cancelAllWork] was last invoked; this timestamp may be `0L` if this never occurred
      */
-    public abstract fun getLastCancelAllTimeMillis(): ListenableFuture<Long>
+    abstract fun getLastCancelAllTimeMillis(): ListenableFuture<Long>
 
     /**
      * Gets a [LiveData] of the [WorkInfo] for a given work id.
@@ -492,7 +492,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [LiveData] of the [WorkInfo] associated with `id`; note that this [WorkInfo] may be
      *   `null` if `id` is not known to WorkManager.
      */
-    public abstract fun getWorkInfoByIdLiveData(id: UUID): LiveData<WorkInfo?>
+    abstract fun getWorkInfoByIdLiveData(id: UUID): LiveData<WorkInfo?>
 
     /**
      * Gets a [Flow] of the [WorkInfo] for a given work id.
@@ -501,7 +501,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [Flow] of the [WorkInfo] associated with `id`; note that this [WorkInfo] may be
      *   `null` if `id` is not known to WorkManager.
      */
-    public abstract fun getWorkInfoByIdFlow(id: UUID): Flow<WorkInfo?>
+    abstract fun getWorkInfoByIdFlow(id: UUID): Flow<WorkInfo?>
 
     /**
      * Gets a [ListenableFuture] of the [WorkInfo] for a given work id.
@@ -510,7 +510,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [ListenableFuture] of the [WorkInfo] associated with `id`; note that this
      *   [WorkInfo] may be `null` if `id` is not known to WorkManager
      */
-    public abstract fun getWorkInfoById(id: UUID): ListenableFuture<WorkInfo?>
+    abstract fun getWorkInfoById(id: UUID): ListenableFuture<WorkInfo?>
 
     /**
      * Gets a [LiveData] of the [WorkInfo] for all work for a given tag.
@@ -518,7 +518,7 @@ public abstract class WorkManager internal constructor() {
      * @param tag The tag of the work
      * @return A [LiveData] list of [WorkInfo] for work tagged with `tag`
      */
-    public abstract fun getWorkInfosByTagLiveData(tag: String): LiveData<List<WorkInfo>>
+    abstract fun getWorkInfosByTagLiveData(tag: String): LiveData<List<WorkInfo>>
 
     /**
      * Gets a [Flow] of the [WorkInfo] for all work for a given tag.
@@ -526,7 +526,7 @@ public abstract class WorkManager internal constructor() {
      * @param tag The tag of the work
      * @return A [Flow] list of [WorkInfo] for work tagged with `tag`
      */
-    public abstract fun getWorkInfosByTagFlow(tag: String): Flow<List<WorkInfo>>
+    abstract fun getWorkInfosByTagFlow(tag: String): Flow<List<WorkInfo>>
 
     /**
      * Gets a [ListenableFuture] of the [WorkInfo] for all work for a given tag.
@@ -534,7 +534,7 @@ public abstract class WorkManager internal constructor() {
      * @param tag The tag of the work
      * @return A [ListenableFuture] list of [WorkInfo] for work tagged with `tag`
      */
-    public abstract fun getWorkInfosByTag(tag: String): ListenableFuture<List<WorkInfo>>
+    abstract fun getWorkInfosByTag(tag: String): ListenableFuture<List<WorkInfo>>
 
     /**
      * Gets a [LiveData] of the [WorkInfo] for all work in a work chain with a given unique name.
@@ -542,9 +542,7 @@ public abstract class WorkManager internal constructor() {
      * @param uniqueWorkName The unique name used to identify the chain of work
      * @return A [LiveData] of the [WorkInfo] for work in the chain named `uniqueWorkName`
      */
-    public abstract fun getWorkInfosForUniqueWorkLiveData(
-        uniqueWorkName: String
-    ): LiveData<List<WorkInfo>>
+    abstract fun getWorkInfosForUniqueWorkLiveData(uniqueWorkName: String): LiveData<List<WorkInfo>>
 
     /**
      * Gets a [Flow] of the [WorkInfo] for all work in a work chain with a given unique name.
@@ -552,7 +550,7 @@ public abstract class WorkManager internal constructor() {
      * @param uniqueWorkName The unique name used to identify the chain of work
      * @return A [Flow] of the [WorkInfo] for work in the chain named `uniqueWorkName`
      */
-    public abstract fun getWorkInfosForUniqueWorkFlow(uniqueWorkName: String): Flow<List<WorkInfo>>
+    abstract fun getWorkInfosForUniqueWorkFlow(uniqueWorkName: String): Flow<List<WorkInfo>>
 
     /**
      * Gets a [ListenableFuture] of the [WorkInfo] for all work in a work chain with a given unique
@@ -561,9 +559,7 @@ public abstract class WorkManager internal constructor() {
      * @param uniqueWorkName The unique name used to identify the chain of work
      * @return A [ListenableFuture] of the [WorkInfo] for work in the chain named `uniqueWorkName`
      */
-    public abstract fun getWorkInfosForUniqueWork(
-        uniqueWorkName: String
-    ): ListenableFuture<List<WorkInfo>>
+    abstract fun getWorkInfosForUniqueWork(uniqueWorkName: String): ListenableFuture<List<WorkInfo>>
 
     /**
      * Gets the [LiveData] of the [List] of [WorkInfo] for all work referenced by the [WorkQuery]
@@ -572,7 +568,7 @@ public abstract class WorkManager internal constructor() {
      * @param workQuery The work query specification
      * @return A [LiveData] of the [List] of [WorkInfo] for work referenced by this [WorkQuery].
      */
-    public abstract fun getWorkInfosLiveData(workQuery: WorkQuery): LiveData<List<WorkInfo>>
+    abstract fun getWorkInfosLiveData(workQuery: WorkQuery): LiveData<List<WorkInfo>>
 
     /**
      * Gets the [Flow] of the [List] of [WorkInfo] for all work referenced by the [WorkQuery]
@@ -581,7 +577,7 @@ public abstract class WorkManager internal constructor() {
      * @param workQuery The work query specification
      * @return A [Flow] of the [List] of [WorkInfo] for work referenced by this [WorkQuery].
      */
-    public abstract fun getWorkInfosFlow(workQuery: WorkQuery): Flow<List<WorkInfo>>
+    abstract fun getWorkInfosFlow(workQuery: WorkQuery): Flow<List<WorkInfo>>
 
     /**
      * Gets the [ListenableFuture] of the [List] of [WorkInfo] for all work referenced by the
@@ -591,7 +587,7 @@ public abstract class WorkManager internal constructor() {
      * @return A [ListenableFuture] of the [List] of [WorkInfo] for work referenced by this
      *   [WorkQuery].
      */
-    public abstract fun getWorkInfos(workQuery: WorkQuery): ListenableFuture<List<WorkInfo>>
+    abstract fun getWorkInfos(workQuery: WorkQuery): ListenableFuture<List<WorkInfo>>
 
     /**
      * Updates the work with the new specification. A [WorkRequest] passed as parameter must have an
@@ -627,10 +623,10 @@ public abstract class WorkManager internal constructor() {
      */
     // consistent with already existent method like getWorkInfos() in WorkManager
     @Suppress("AsyncSuffixFuture")
-    public abstract fun updateWork(request: WorkRequest): ListenableFuture<UpdateResult>
+    abstract fun updateWork(request: WorkRequest): ListenableFuture<UpdateResult>
 
     /** An enumeration of results for [WorkManager.updateWork] method. */
-    public enum class UpdateResult {
+    enum class UpdateResult {
         /** An update wasn't applied, because `Worker` has already finished. */
         NOT_APPLIED,
 

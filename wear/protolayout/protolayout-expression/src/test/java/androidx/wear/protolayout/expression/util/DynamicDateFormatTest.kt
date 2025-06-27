@@ -49,12 +49,32 @@ class DynamicDateFormatTest {
     // the multiplication in all available locales), too expensive with test infra boilerplate.
     @get:Rule val expect = Expect.create()
 
-    enum class Case(val pattern: String, val instant: Instant, val expectedEnglish: String) {
-        EMPTY(pattern = "", instant = MIDNIGHT, expectedEnglish = ""),
+    enum class Case(
+        val pattern: String,
+        val instant: Instant,
+        val expectedEnglish: String,
+    ) {
+        EMPTY(
+            pattern = "",
+            instant = MIDNIGHT,
+            expectedEnglish = "",
+        ),
         // Constant patterns.
-        CONSTANT_AT_START(pattern = ":::h", instant = MIDNIGHT, expectedEnglish = ":::12"),
-        CONSTANT_AT_MIDDLE(pattern = "h:::h", instant = MIDNIGHT, expectedEnglish = "12:::12"),
-        CONSTANT_AT_END(pattern = "h:::", instant = MIDNIGHT, expectedEnglish = "12:::"),
+        CONSTANT_AT_START(
+            pattern = ":::h",
+            instant = MIDNIGHT,
+            expectedEnglish = ":::12",
+        ),
+        CONSTANT_AT_MIDDLE(
+            pattern = "h:::h",
+            instant = MIDNIGHT,
+            expectedEnglish = "12:::12",
+        ),
+        CONSTANT_AT_END(
+            pattern = "h:::",
+            instant = MIDNIGHT,
+            expectedEnglish = "12:::",
+        ),
         // Escape patterns.
         ESCAPED_AT_START(
             pattern = "'Time is' h",
@@ -133,7 +153,11 @@ class DynamicDateFormatTest {
             expectedEnglish = "18:6:6:18:PM",
         ),
         // Minute patterns.
-        MINUTES_PADDED_ZERO(pattern = "mmmm", instant = MIDNIGHT, expectedEnglish = "0000"),
+        MINUTES_PADDED_ZERO(
+            pattern = "mmmm",
+            instant = MIDNIGHT,
+            expectedEnglish = "0000",
+        ),
         MINUTES_PADDED_SINGLE_DIGIT(
             pattern = "mmmm",
             instant = MIDNIGHT.plus(Duration.ofMinutes(5)),
@@ -144,7 +168,11 @@ class DynamicDateFormatTest {
             instant = MIDNIGHT.plus(Duration.ofMinutes(15)),
             expectedEnglish = "0015",
         ),
-        MINUTES_NOT_PADDED_ZERO(pattern = "m", instant = MIDNIGHT, expectedEnglish = "0"),
+        MINUTES_NOT_PADDED_ZERO(
+            pattern = "m",
+            instant = MIDNIGHT,
+            expectedEnglish = "0",
+        ),
         MINUTES_NOT_PADDED_SINGLE_DIGIT(
             pattern = "m",
             instant = MIDNIGHT.plus(Duration.ofMinutes(5)),
@@ -239,7 +267,7 @@ class DynamicDateFormatTest {
             expected =
                 SimpleDateFormat(pattern, locale)
                     .also { it.timeZone = TimeZone.getTimeZone(TIME_ZONE.id) }
-                    .format(Date.from(instant)),
+                    .format(Date.from(instant))
         )
     }
 
@@ -261,7 +289,7 @@ class DynamicDateFormatTest {
                         override fun onInvalidated() {
                             throw AssertionError("DynamicString invalidated: ${this@evaluate}")
                         }
-                    },
+                    }
                 )
             )
             .startEvaluation()
@@ -280,7 +308,7 @@ class DynamicDateFormatFailingTest(private val case: Case) {
     enum class Case(val expected: Exception, val pattern: String) {
         UNSUPPORTED_LETTER(
             IllegalArgumentException("Illegal pattern character 'y'"),
-            "hh:mm yyyy-MM-dd",
+            "hh:mm yyyy-MM-dd"
         ),
         ODD_QUOTES(IllegalArgumentException("Unterminated quote"), "'''"),
     }

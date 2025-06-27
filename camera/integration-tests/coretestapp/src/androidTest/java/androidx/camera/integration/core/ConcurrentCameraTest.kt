@@ -65,7 +65,9 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
     val cameraRule =
@@ -79,7 +81,7 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
             )
     }
 
@@ -141,27 +143,27 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
         instrumentation.runOnMainSync {
             previewFront.setSurfaceProvider(
                 CameraXExecutors.mainThreadExecutor(),
-                getSurfaceProvider(surfaceFutureSemaphoreFront, safeToReleaseSemaphoreFront),
+                getSurfaceProvider(surfaceFutureSemaphoreFront, safeToReleaseSemaphoreFront)
             )
         }
         val primary =
             SingleCameraConfig(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 UseCaseGroup.Builder().addUseCase(previewFront).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
         val previewBack = Preview.Builder().build()
         instrumentation.runOnMainSync {
             previewBack.setSurfaceProvider(
                 CameraXExecutors.mainThreadExecutor(),
-                getSurfaceProvider(surfaceFutureSemaphoreBack, safeToReleaseSemaphoreBack),
+                getSurfaceProvider(surfaceFutureSemaphoreBack, safeToReleaseSemaphoreBack)
             )
         }
         val secondary =
             SingleCameraConfig(
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 UseCaseGroup.Builder().addUseCase(previewBack).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
 
         // Act.
@@ -187,7 +189,7 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
             SingleCameraConfig(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 UseCaseGroup.Builder().addUseCase(previewFront).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
 
         // Act & Assert.
@@ -205,21 +207,21 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
             SingleCameraConfig(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 UseCaseGroup.Builder().addUseCase(previewFront).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
         val previewBack = Preview.Builder().build()
         val secondary =
             SingleCameraConfig(
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 UseCaseGroup.Builder().addUseCase(previewBack).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
 
         val tertiary =
             SingleCameraConfig(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 UseCaseGroup.Builder().addUseCase(previewBack).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
 
         // Act & Assert.
@@ -238,7 +240,7 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
         instrumentation.runOnMainSync {
             preview.setSurfaceProvider(
                 CameraXExecutors.mainThreadExecutor(),
-                getSurfaceProvider(surfaceFutureSemaphoreFront, safeToReleaseSemaphoreFront),
+                getSurfaceProvider(surfaceFutureSemaphoreFront, safeToReleaseSemaphoreFront)
             )
         }
         val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
@@ -250,14 +252,14 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 useCaseGroup,
                 CompositionSettings.Builder().setOffset(0.0f, 0.0f).setScale(1.0f, 1.0f).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
         val secondary =
             SingleCameraConfig(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 useCaseGroup,
                 CompositionSettings.Builder().setOffset(-0.3f, -0.4f).setScale(0.3f, 0.3f).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
 
         // Act.
@@ -288,21 +290,21 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 useCaseGroup,
                 CompositionSettings.Builder().setOffset(0.0f, 0.0f).setScale(1.0f, 1.0f).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
         val secondary =
             SingleCameraConfig(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 useCaseGroup,
                 CompositionSettings.Builder().setOffset(-0.3f, -0.4f).setScale(0.3f, 0.3f).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
         val tertiary =
             SingleCameraConfig(
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 useCaseGroup,
                 CompositionSettings.Builder().setOffset(-0.3f, -0.4f).setScale(0.3f, 0.3f).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
 
         // Act & Assert.
@@ -326,7 +328,7 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
                 CameraSelector.DEFAULT_FRONT_CAMERA,
                 useCaseGroup,
                 CompositionSettings.Builder().setOffset(0.0f, 0.0f).setScale(1.0f, 1.0f).build(),
-                fakeLifecycleOwner,
+                fakeLifecycleOwner
             )
 
         // Act & Assert.
@@ -335,13 +337,13 @@ class ConcurrentCameraTest(private val implName: String, private val cameraConfi
 
     private fun getSurfaceProvider(
         surfaceFutureSemaphore: Semaphore?,
-        safeToReleaseSemaphore: Semaphore?,
+        safeToReleaseSemaphore: Semaphore?
     ): Preview.SurfaceProvider {
         return SurfaceTextureProvider.createSurfaceTextureProvider(
             object : SurfaceTextureCallback {
                 override fun onSurfaceTextureReady(
                     surfaceTexture: SurfaceTexture,
-                    resolution: Size,
+                    resolution: Size
                 ) {
                     surfaceTexture.setOnFrameAvailableListener {
                         surfaceFutureSemaphore!!.release()

@@ -19,9 +19,9 @@ package androidx.privacysandbox.ui.provider
 import androidx.privacysandbox.ui.core.SessionObserver
 import androidx.privacysandbox.ui.core.SessionObserverFactory
 
-public interface SessionObserverFactoryRegistry {
+interface SessionObserverFactoryRegistry {
 
-    public val sessionObserverFactories: List<SessionObserverFactory>
+    val sessionObserverFactories: List<SessionObserverFactory>
 
     /**
      * Adds a [SessionObserverFactory] for tracking UI presentation state across UI sessions. This
@@ -33,7 +33,7 @@ public interface SessionObserverFactoryRegistry {
      * lifetime of the session. A separate [SessionObserverFactory.create] call will be made for
      * each UI session.
      */
-    public fun addObserverFactory(sessionObserverFactory: SessionObserverFactory)
+    fun addObserverFactory(sessionObserverFactory: SessionObserverFactory)
 
     /**
      * Removes a [SessionObserverFactory], if it has been previously added with
@@ -44,5 +44,5 @@ public interface SessionObserverFactoryRegistry {
      * will continue to receive updates until their corresponding UI session has been closed. For
      * any subsequent sessions created], no call to [SessionObserverFactory.create] will be made.
      */
-    public fun removeObserverFactory(sessionObserverFactory: SessionObserverFactory)
+    fun removeObserverFactory(sessionObserverFactory: SessionObserverFactory)
 }

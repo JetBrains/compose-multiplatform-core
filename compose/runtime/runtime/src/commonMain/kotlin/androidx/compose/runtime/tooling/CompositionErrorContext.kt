@@ -31,7 +31,7 @@ import kotlin.coroutines.CoroutineContext
  * Compose runtime automatically appends information about exceptions that happen in composition and
  * effects.
  */
-public val LocalCompositionErrorContext: CompositionLocal<CompositionErrorContext?> =
+val LocalCompositionErrorContext: CompositionLocal<CompositionErrorContext?> =
     staticCompositionLocalOf {
         null
     }
@@ -45,7 +45,7 @@ public val LocalCompositionErrorContext: CompositionLocal<CompositionErrorContex
  * Compose runtime automatically appends information about exceptions that happen in composition and
  * effects.
  */
-public sealed interface CompositionErrorContext {
+sealed interface CompositionErrorContext {
     /**
      * Attaches a Compose stack trace to a throwable as a suppressed [DiagnosticComposeException].
      * Has no effect if:
@@ -57,7 +57,7 @@ public sealed interface CompositionErrorContext {
      * @return true if the exception was attached, false otherwise
      * @receiver throwable to attach a compose stack trace to
      */
-    public fun Throwable.attachComposeStackTrace(composeNode: Any): Boolean
+    fun Throwable.attachComposeStackTrace(composeNode: Any): Boolean
 }
 
 internal class CompositionErrorContextImpl(private val composer: ComposerImpl) :

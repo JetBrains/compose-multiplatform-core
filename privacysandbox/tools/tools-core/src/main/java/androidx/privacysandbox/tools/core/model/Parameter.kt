@@ -16,4 +16,7 @@
 
 package androidx.privacysandbox.tools.core.model
 
-data class Parameter(val name: String, val type: Type)
+data class Parameter(
+    val name: String,
+    val type: Type,
+)

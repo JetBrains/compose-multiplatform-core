@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+@RequiresApi(34)
 package androidx.xr.compose.platform;
+
+import androidx.annotation.RequiresApi;

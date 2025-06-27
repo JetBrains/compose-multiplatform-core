@@ -32,7 +32,9 @@ import kotlin.jvm.JvmName
 @JvmInline
 public expect value class SavedStateReader
 @PublishedApi
-internal constructor(private val source: SavedState) {
+internal constructor(
+    private val source: SavedState,
+) {
 
     /**
      * Retrieves a [Boolean] value associated with the specified [key], or throws an

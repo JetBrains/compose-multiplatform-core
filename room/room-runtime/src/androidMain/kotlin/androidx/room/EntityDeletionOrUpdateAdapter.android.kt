@@ -29,7 +29,7 @@ import androidx.sqlite.db.SupportSQLiteStatement
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 @Deprecated("No longer used by generated code.", ReplaceWith("EntityDeleteOrUpdateAdapter"))
-public abstract class EntityDeletionOrUpdateAdapter<T>(database: RoomDatabase) :
+abstract class EntityDeletionOrUpdateAdapter<T>(database: RoomDatabase) :
     SharedSQLiteStatement(database) {
     /**
      * Create the deletion or update query
@@ -52,7 +52,7 @@ public abstract class EntityDeletionOrUpdateAdapter<T>(database: RoomDatabase) :
      * @param entity The entity to delete or update
      * @return The number of affected rows
      */
-    public fun handle(entity: T): Int {
+    fun handle(entity: T): Int {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             bind(stmt, entity)
@@ -68,7 +68,7 @@ public abstract class EntityDeletionOrUpdateAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to delete or update
      * @return The number of affected rows
      */
-    public fun handleMultiple(entities: Iterable<T>): Int {
+    fun handleMultiple(entities: Iterable<T>): Int {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             var total = 0
@@ -88,7 +88,7 @@ public abstract class EntityDeletionOrUpdateAdapter<T>(database: RoomDatabase) :
      * @param entities Entities to delete or update
      * @return The number of affected rows
      */
-    public fun handleMultiple(entities: Array<out T>): Int {
+    fun handleMultiple(entities: Array<out T>): Int {
         val stmt: SupportSQLiteStatement = acquire()
         return try {
             var total = 0

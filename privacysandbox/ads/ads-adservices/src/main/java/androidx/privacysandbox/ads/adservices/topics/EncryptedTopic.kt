@@ -35,11 +35,11 @@ import java.util.Objects
  * Guide</a>.
  */
 @ExperimentalFeatures.Ext11OptIn
-public class EncryptedTopic
+class EncryptedTopic
 public constructor(
-    public val encryptedTopic: ByteArray,
-    public val keyIdentifier: String,
-    public val encapsulatedKey: ByteArray,
+    val encryptedTopic: ByteArray,
+    val keyIdentifier: String,
+    val encapsulatedKey: ByteArray
 ) {
     override fun toString(): String {
         val encryptedTopicString =
@@ -61,7 +61,7 @@ public constructor(
         return Objects.hash(
             encryptedTopic.contentHashCode(),
             keyIdentifier,
-            encapsulatedKey.contentHashCode(),
+            encapsulatedKey.contentHashCode()
         )
     }
 }

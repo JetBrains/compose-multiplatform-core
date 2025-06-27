@@ -145,7 +145,10 @@ internal constructor(
      *
      * This must be set at least once along with [setLightSourceGeometry] before shadows will work.
      */
-    fun setLightSourceAlpha(ambientShadowAlpha: Float, spotShadowAlpha: Float) {
+    fun setLightSourceAlpha(
+        ambientShadowAlpha: Float,
+        spotShadowAlpha: Float,
+    ) {
         mImpl.setLightSourceAlpha(ambientShadowAlpha, spotShadowAlpha)
     }
 
@@ -261,7 +264,7 @@ internal constructor(
                 mBufferFormat,
                 mUsageFlags,
                 mMaxBuffers,
-                mImpl,
+                mImpl
             )
         }
     }
@@ -443,7 +446,7 @@ internal constructor(
     class RenderResult(
         private val buffer: HardwareBuffer,
         private val mFence: SyncFenceCompat?,
-        private val mStatus: Int,
+        private val mStatus: Int
     ) {
 
         /**
@@ -498,7 +501,10 @@ internal constructor(
 
         fun setContentRoot(renderNode: RenderNode)
 
-        fun setLightSourceAlpha(ambientShadowAlpha: Float, spotShadowAlpha: Float)
+        fun setLightSourceAlpha(
+            ambientShadowAlpha: Float,
+            spotShadowAlpha: Float,
+        )
 
         fun setLightSourceGeometry(lightX: Float, lightY: Float, lightZ: Float, lightRadius: Float)
     }

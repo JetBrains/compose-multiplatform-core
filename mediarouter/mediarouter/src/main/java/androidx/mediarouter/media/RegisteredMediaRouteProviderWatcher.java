@@ -214,7 +214,12 @@ final class RegisteredMediaRouteProviderWatcher {
         }
     };
 
-    private final Runnable mScanPackagesRunnable = this::scanPackages;
+    private final Runnable mScanPackagesRunnable = new Runnable() {
+        @Override
+        public void run() {
+            scanPackages();
+        }
+    };
 
     public interface Callback {
         void addProvider(@NonNull MediaRouteProvider provider);

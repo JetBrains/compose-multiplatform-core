@@ -56,7 +56,10 @@ class ProgressIndicatorTest {
         val progress = mutableStateOf(0f)
 
         rule.setContent {
-            LinearProgressIndicator(modifier = Modifier.testTag(tag), progress = { progress.value })
+            LinearProgressIndicator(
+                modifier = Modifier.testTag(tag),
+                progress = { progress.value },
+            )
         }
 
         rule.onNodeWithTag(tag).assertIsDisplayed()
@@ -208,7 +211,10 @@ class ProgressIndicatorTest {
     fun determinateCircularProgressIndicator_NaNProgress() {
         val tag = "circular"
         rule.setMaterialContent(lightColorScheme()) {
-            CircularProgressIndicator(modifier = Modifier.testTag(tag), progress = { Float.NaN })
+            CircularProgressIndicator(
+                modifier = Modifier.testTag(tag),
+                progress = { Float.NaN },
+            )
         }
         // The ProgressBarRangeInfo should indicate a current value of zero.
         rule
@@ -282,7 +288,9 @@ class ProgressIndicatorTest {
         val tag = "progress_indicator"
         rule.setContent {
             Box(Modifier.testTag(tag)) {
-                LinearProgressIndicator(modifier = Modifier.size(expectedWidth, expectedHeight))
+                LinearProgressIndicator(
+                    modifier = Modifier.size(expectedWidth, expectedHeight),
+                )
             }
         }
 

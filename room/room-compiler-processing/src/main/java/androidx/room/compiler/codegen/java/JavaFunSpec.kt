@@ -36,20 +36,14 @@ import com.squareup.kotlinpoet.javapoet.JTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeVariableName
 import javax.lang.model.element.Modifier
 
-internal class JavaFunSpec(
-    private val addJavaNullabilityAnnotation: Boolean,
-    override val actual: JFunSpec,
-) : JavaSpec<JFunSpec>(), XFunSpec {
-
+internal class JavaFunSpec(internal val actual: JFunSpec) : XSpec(), XFunSpec {
     override val name = XName.of(actual.name)
-
-    override fun toBuilder() = Builder(addJavaNullabilityAnnotation, actual.toBuilder())
 
     override fun toString() = actual.toString()
 
     internal class Builder(
         private val addJavaNullabilityAnnotation: Boolean,
-        internal val actual: JFunSpecBuilder,
+        internal val actual: JFunSpecBuilder
     ) : XSpec.Builder(), XFunSpec.Builder {
 
         override fun addAnnotation(annotation: XAnnotationSpec) = apply {
@@ -87,8 +81,8 @@ internal class JavaFunSpec(
                         require(it is XCodeBlockImpl)
                         it.java.actual
                     },
-                    ", ",
-                ),
+                    ", "
+                )
             )
         }
 
@@ -109,7 +103,7 @@ internal class JavaFunSpec(
             actual.returns(typeName.java)
         }
 
-        override fun build() = JavaFunSpec(addJavaNullabilityAnnotation, actual.build())
+        override fun build() = JavaFunSpec(actual.build())
     }
 }
 

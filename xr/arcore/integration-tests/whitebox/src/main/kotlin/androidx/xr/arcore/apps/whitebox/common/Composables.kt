@@ -32,7 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.xr.arcore.AugmentedObject
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.Trackable
 
@@ -60,18 +59,9 @@ fun TrackableCard(trackable: Trackable<Trackable.State>) {
             if (trackable is Plane) {
                 Text("Plane Type: ${trackable.type}")
                 PlaneStateInfo(state.value as Plane.State)
-            } else if (trackable is AugmentedObject) {
-                AugmentedObjectStateInfo(state.value as AugmentedObject.State)
             }
         }
     }
-}
-
-@Composable
-fun AugmentedObjectStateInfo(state: AugmentedObject.State) {
-    Text(text = "Augmented Object Category: ${state.category}")
-    Text(text = "Augmented Object Center Pose: ${state.centerPose}")
-    Text(text = "Augmented Object Extents: ${state.extents}")
 }
 
 @Composable
@@ -85,9 +75,9 @@ fun PlaneStateInfo(state: Plane.State) {
 
 private fun convertPlaneLabelToColor(label: Plane.Label): Color =
     when (label) {
-        Plane.Label.WALL -> Color.Green
-        Plane.Label.FLOOR -> Color.Blue
-        Plane.Label.CEILING -> Color.Yellow
-        Plane.Label.TABLE -> Color.Magenta
+        Plane.Label.Wall -> Color.Green
+        Plane.Label.Floor -> Color.Blue
+        Plane.Label.Ceiling -> Color.Yellow
+        Plane.Label.Table -> Color.Magenta
         else -> Color.Red
     }

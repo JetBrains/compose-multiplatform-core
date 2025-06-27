@@ -50,7 +50,10 @@ internal fun List<Diagnostic<out JavaFileObject>>.toDiagnosticMessages(
             if (source == null) {
                 null
             } else {
-                DiagnosticLocation(source = source, line = diagnostic.lineNumber.toInt())
+                DiagnosticLocation(
+                    source = source,
+                    line = diagnostic.lineNumber.toInt(),
+                )
             }
         DiagnosticMessage(
             kind = diagnostic.kind,

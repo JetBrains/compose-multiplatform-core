@@ -48,7 +48,7 @@ public interface ActionCallback {
      * @param context the calling context
      * @param glanceId the [GlanceId] that triggered this action
      */
-    public suspend fun onAction(context: Context, glanceId: GlanceId)
+    suspend fun onAction(context: Context, glanceId: GlanceId)
 }
 
 /**

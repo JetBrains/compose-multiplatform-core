@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+@file:JvmName("ActualJvm_jvmKt")
+@file:JvmMultifileClass
+
 package androidx.compose.runtime.mock
 
 internal actual typealias SynchronizedObject = Any
 
-internal actual inline fun <T> synchronizedImpl(
-    lock: SynchronizedObject,
-    crossinline action: () -> T,
-): T = kotlin.synchronized(lock, action)
+@PublishedApi
+internal actual inline fun <R> synchronized(lock: SynchronizedObject, block: () -> R): R =
+    kotlin.synchronized(lock, block)

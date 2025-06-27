@@ -181,7 +181,7 @@ fun TimePickerSwitchableSample() {
             },
             dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("Cancel") } },
             modeToggleButton = {
-                if (configuration.screenHeightDp.dp > MinHeightForTimePicker) {
+                if (configuration.screenHeightDp > 400) {
                     TimePickerDialogDefaults.DisplayModeToggle(
                         onDisplayModeChange = {
                             displayMode =
@@ -191,10 +191,10 @@ fun TimePickerSwitchableSample() {
                                     TimePickerDisplayMode.Picker
                                 }
                         },
-                        displayMode = displayMode,
+                        displayMode = displayMode
                     )
                 }
-            },
+            }
         ) {
             if (
                 displayMode == TimePickerDisplayMode.Picker &&

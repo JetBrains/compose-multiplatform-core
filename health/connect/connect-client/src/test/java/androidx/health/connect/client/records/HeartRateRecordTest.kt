@@ -36,7 +36,7 @@ class HeartRateRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(),
+                    samples = listOf()
                 )
             )
             .isEqualTo(
@@ -46,7 +46,7 @@ class HeartRateRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(),
+                    samples = listOf()
                 )
             )
     }
@@ -60,7 +60,7 @@ class HeartRateRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(),
+                    samples = listOf()
                 )
             )
             .isEqualTo(
@@ -70,7 +70,7 @@ class HeartRateRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf(),
+                    samples = listOf()
                 )
             )
     }
@@ -84,7 +84,7 @@ class HeartRateRecordTest {
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                samples = listOf(),
+                samples = listOf()
             )
         }
     }
@@ -92,14 +92,20 @@ class HeartRateRecordTest {
     @Test
     fun invalidBeatsPerMinute_lessThan1_throws() {
         assertFailsWith<IllegalArgumentException> {
-            HeartRateRecord.Sample(time = Instant.ofEpochMilli(1235L), beatsPerMinute = 0L)
+            HeartRateRecord.Sample(
+                time = Instant.ofEpochMilli(1235L),
+                beatsPerMinute = 0L,
+            )
         }
     }
 
     @Test
     fun invalidBeatsPerMinute_moreThan300_throws() {
         assertFailsWith<IllegalArgumentException> {
-            HeartRateRecord.Sample(time = Instant.ofEpochMilli(1235L), beatsPerMinute = 301L)
+            HeartRateRecord.Sample(
+                time = Instant.ofEpochMilli(1235L),
+                beatsPerMinute = 301L,
+            )
         }
     }
 
@@ -116,9 +122,9 @@ class HeartRateRecordTest {
                             listOf(
                                 HeartRateRecord.Sample(
                                     time = Instant.ofEpochMilli(1234L),
-                                    beatsPerMinute = 64,
+                                    beatsPerMinute = 64
                                 )
-                            ),
+                            )
                     )
                     .toString()
             )

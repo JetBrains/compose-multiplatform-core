@@ -16,4 +16,8 @@
 
 package androidx.privacysandbox.tools.core.model
 
-data class Constant(val name: String, val type: Type, val value: Any)
+data class Constant(
+    val name: String,
+    val type: Type,
+    val value: Any,
+)

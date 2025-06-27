@@ -18,11 +18,9 @@ package androidx.savedstate.serialization
 
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
-import androidx.savedstate.IgnoreWebTarget
 import androidx.savedstate.serialization.utils.SavedStateSerializationBaseTest
 import kotlin.test.Test
 
-@IgnoreWebTarget
 internal class SavedStateCodecClassDiscriminatorAllObjectsTest :
     SavedStateSerializationBaseTest(
         configuration =

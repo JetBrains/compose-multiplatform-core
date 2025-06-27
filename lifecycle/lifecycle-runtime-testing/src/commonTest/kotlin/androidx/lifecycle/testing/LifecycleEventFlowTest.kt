@@ -30,7 +30,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@IgnoreWebTarget
 class LifecycleEventFlowTest {
 
     private val dispatcher = UnconfinedTestDispatcher()
@@ -53,7 +52,7 @@ class LifecycleEventFlowTest {
                 .containsExactly(
                     Lifecycle.Event.ON_CREATE,
                     Lifecycle.Event.ON_START,
-                    Lifecycle.Event.ON_STOP,
+                    Lifecycle.Event.ON_STOP
                 )
                 .inOrder()
         }
@@ -75,7 +74,7 @@ class LifecycleEventFlowTest {
                     Lifecycle.Event.ON_CREATE,
                     Lifecycle.Event.ON_START,
                     Lifecycle.Event.ON_STOP,
-                    Lifecycle.Event.ON_DESTROY,
+                    Lifecycle.Event.ON_DESTROY
                 )
                 .inOrder()
         }

@@ -76,7 +76,9 @@ fun AlertDialogBuilder() {
 
     var showDialog by remember { mutableStateOf(false) }
 
-    ScreenScaffold(scrollState = scrollState) {
+    ScreenScaffold(
+        scrollState = scrollState,
+    ) {
         ScalingLazyColumn(modifier = Modifier.fillMaxSize(), state = scrollState) {
             item { ListHeader { Text("AlertDialog") } }
             item {
@@ -157,7 +159,7 @@ fun AlertDialogBuilder() {
         showMessage = showMessage,
         buttonsType = buttonsType,
         onConfirmButton = { showDialog = false },
-        onDismissRequest = { showDialog = false },
+        onDismissRequest = { showDialog = false }
     )
 }
 
@@ -169,7 +171,7 @@ fun AlertDialogWithButtonStack() {
         FilledTonalButton(
             modifier = Modifier.align(Alignment.Center),
             onClick = { showDialog = true },
-            label = { Text("Show Dialog") },
+            label = { Text("Show Dialog") }
         )
     }
 
@@ -181,11 +183,11 @@ fun AlertDialogWithButtonStack() {
                 Icons.Rounded.AccountCircle,
                 modifier = Modifier.size(32.dp),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.primary
             )
         },
         title = { Text("Allow access to your photos?") },
-        text = { Text("Lerp ipsum dolor sit amet.") },
+        text = { Text("Lerp ipsum dolor sit amet.") }
     ) {
         item {
             Button(
@@ -266,7 +268,7 @@ private fun CustomAlertDialog(
                         }
                     }
                 }
-            } else null,
+            } else null
     )
 }
 
@@ -281,7 +283,7 @@ internal fun ExclamationMark() {
             "!",
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier.align(Alignment.Center)
         )
     }
 }
@@ -309,7 +311,7 @@ private fun Caption(horizontalPadding: Dp) =
         modifier = Modifier.padding(horizontal = horizontalPadding),
         text = "Caption enim ad minim, quis eu veniam vel aru fermentum eu tristique",
         style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.outline,
+        color = MaterialTheme.colorScheme.outline
     )
 
 @Composable
@@ -324,7 +326,7 @@ private fun AlertDialogHelper(
     onDismissButton: (() -> Unit)?,
     onConfirmButton: (() -> Unit)?,
     onEdgeButton: (() -> Unit)?,
-    content: (ScalingLazyListScope.() -> Unit)?,
+    content: (ScalingLazyListScope.() -> Unit)?
 ) {
     if (onConfirmButton != null && onDismissButton != null) {
         AlertDialog(
@@ -337,7 +339,7 @@ private fun AlertDialogHelper(
             text = message,
             confirmButton = { AlertDialogDefaults.ConfirmButton(onConfirmButton) },
             dismissButton = { AlertDialogDefaults.DismissButton(onDismissButton) },
-            content = content,
+            content = content
         )
     } else if (onEdgeButton != null) {
         AlertDialog(
@@ -349,7 +351,7 @@ private fun AlertDialogHelper(
             icon = icon,
             text = message,
             edgeButton = { AlertDialogDefaults.EdgeButton(onEdgeButton) },
-            content = content,
+            content = content
         )
     } else {
         AlertDialog(
@@ -360,7 +362,7 @@ private fun AlertDialogHelper(
             title = title,
             icon = icon,
             text = message,
-            content = content,
+            content = content
         )
     }
 }
@@ -368,5 +370,5 @@ private fun AlertDialogHelper(
 private enum class AlertButtonsType {
     NO_BUTTONS,
     EDGE_BUTTON,
-    CONFIRM_DISMISS,
+    CONFIRM_DISMISS
 }

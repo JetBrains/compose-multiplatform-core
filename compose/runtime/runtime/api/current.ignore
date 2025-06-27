@@ -1,25 +1,11 @@
 // Baseline format: 1.0
-AddedMethod: androidx.compose.runtime.ComposableOpenTarget#ComposableOpenTarget(int):
-    Added constructor androidx.compose.runtime.ComposableOpenTarget(int)
-AddedMethod: androidx.compose.runtime.ComposableTarget#ComposableTarget(String):
-    Added constructor androidx.compose.runtime.ComposableTarget(String)
-AddedMethod: androidx.compose.runtime.ComposableTargetMarker#ComposableTargetMarker(String):
-    Added constructor androidx.compose.runtime.ComposableTargetMarker(String)
-AddedMethod: androidx.compose.runtime.internal.FunctionKeyMeta#FunctionKeyMeta(int, int, int):
-    Added constructor androidx.compose.runtime.internal.FunctionKeyMeta(int,int,int)
-AddedMethod: androidx.compose.runtime.internal.FunctionKeyMetaClass#FunctionKeyMetaClass(String):
-    Added constructor androidx.compose.runtime.internal.FunctionKeyMetaClass(String)
-AddedMethod: androidx.compose.runtime.internal.LiveLiteralFileInfo#LiveLiteralFileInfo(String):
-    Added constructor androidx.compose.runtime.internal.LiveLiteralFileInfo(String)
-AddedMethod: androidx.compose.runtime.internal.LiveLiteralInfo#LiveLiteralInfo(String, int):
-    Added constructor androidx.compose.runtime.internal.LiveLiteralInfo(String,int)
-AddedMethod: androidx.compose.runtime.internal.StabilityInferred#StabilityInferred(int):
-    Added constructor androidx.compose.runtime.internal.StabilityInferred(int)
-AddedMethod: androidx.compose.runtime.snapshots.AutoboxingStateValueProperty#AutoboxingStateValueProperty(String):
-    Added constructor androidx.compose.runtime.snapshots.AutoboxingStateValueProperty(String)
+AddedAbstractMethod: androidx.compose.runtime.Composer#getCompositeKeyHashCode():
+    Added method androidx.compose.runtime.Composer.getCompositeKeyHashCode()
 
 
-RemovedFromBytecode: androidx.compose.runtime.SkippableUpdater#SkippableUpdater(androidx.compose.runtime.Composer):
-    Binary breaking change: constructor androidx.compose.runtime.SkippableUpdater(androidx.compose.runtime.Composer) has been removed from bytecode
-RemovedFromBytecode: androidx.compose.runtime.Updater#Updater(androidx.compose.runtime.Composer):
-    Binary breaking change: constructor androidx.compose.runtime.Updater(androidx.compose.runtime.Composer) has been removed from bytecode
+RemovedClass: androidx.compose.runtime.Immutable:
+    Removed class androidx.compose.runtime.Immutable
+RemovedClass: androidx.compose.runtime.Stable:
+    Removed class androidx.compose.runtime.Stable
+RemovedClass: androidx.compose.runtime.StableMarker:
+    Removed class androidx.compose.runtime.StableMarker

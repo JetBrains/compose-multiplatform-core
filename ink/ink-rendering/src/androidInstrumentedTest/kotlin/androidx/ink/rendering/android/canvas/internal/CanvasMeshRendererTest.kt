@@ -17,7 +17,6 @@
 package androidx.ink.rendering.android.canvas.internal
 
 import android.graphics.Matrix
-import android.graphics.Picture
 import android.graphics.RenderNode
 import android.os.Build
 import androidx.ink.brush.Brush
@@ -36,7 +35,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -65,46 +63,13 @@ class CanvasMeshRendererTest {
             brush = brush,
             inputs =
                 MutableStrokeInputBatch()
-                    .add(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
+                    .addOrThrow(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
                     .asImmutable(),
         )
 
     private val clock = FakeClock()
 
     private val meshRenderer = CanvasMeshRenderer(getDurationTimeMillis = clock::currentTimeMillis)
-
-    private val falseNegativeAffineMatrix =
-        Matrix().apply {
-            setValues(
-                floatArrayOf(
-                    1.2887144F,
-                    0.33863622F,
-                    -776.0461F, // first row looks affine
-                    -0.33863622F,
-                    1.2887144F,
-                    -297.80093F, // second row looks affine
-                    0F,
-                    0F,
-                    0.99999994F, // third row is nearly affine, except for floating point precision
-                )
-            )
-            // Inverting this matrix yields a transform that is actually affine, but Matrix.isAffine
-            // incorrectly does not consider it to be.
-            invert(this)
-            check(!isAffine) {
-                "Trying to test the case where Matrix.isAffine is false but the bottom row is " +
-                    "[0, 0, 1], but Matrix.isAffine is actually true."
-            }
-            val values = FloatArray(9).also { getValues(it) }
-            check(
-                values[Matrix.MPERSP_0] == 0F &&
-                    values[Matrix.MPERSP_1] == 0F &&
-                    values[Matrix.MPERSP_2] == 1F
-            ) {
-                "Trying to test the case where Matrix.isAffine is false but the bottom row is " +
-                    "[0, 0, 1], but the Matrix is actually $this."
-            }
-        }
 
     @Test
     fun obtainShaderMetadata_whenCalledTwiceWithSamePackedInstance_returnsCachedValue() {
@@ -122,7 +87,12 @@ class CanvasMeshRendererTest {
                 brush = brush,
                 inputs =
                     MutableStrokeInputBatch()
-                        .add(InputToolType.UNKNOWN, x = 99F, y = 99F, elapsedTimeMillis = 100)
+                        .addOrThrow(
+                            InputToolType.UNKNOWN,
+                            x = 99F,
+                            y = 99F,
+                            elapsedTimeMillis = 100
+                        )
                         .asImmutable(),
             )
 
@@ -142,14 +112,18 @@ class CanvasMeshRendererTest {
                 start(
                     Brush.createWithColorIntArgb(StockBrushes.markerLatest, 0x44112233, 10f, 0.25f)
                 )
-                enqueueInputs(
-                    buildStrokeInputBatchFromPoints(
-                        floatArrayOf(10f, 20f, 100f, 120f),
-                        startTime = 0L,
-                    ),
-                    MutableStrokeInputBatch(),
-                )
-                updateShape(3L)
+                assertThat(
+                        enqueueInputs(
+                                buildStrokeInputBatchFromPoints(
+                                    floatArrayOf(10f, 20f, 100f, 120f),
+                                    startTime = 0L
+                                ),
+                                MutableStrokeInputBatch(),
+                            )
+                            .isSuccess
+                    )
+                    .isTrue()
+                assertThat(updateShape(3L).isSuccess).isTrue()
             }
         assertThat(meshRenderer.createAndroidMesh(inProgressStroke, coatIndex = 0, meshIndex = 0))
             .isNotNull()
@@ -182,7 +156,7 @@ class CanvasMeshRendererTest {
         assertThat(
                 meshRenderer.obtainShaderMetadata(
                     inProgressStroke.getMeshFormat(0, 0),
-                    isPacked = false,
+                    isPacked = false
                 )
             )
             .isSameInstanceAs(
@@ -191,176 +165,6 @@ class CanvasMeshRendererTest {
                     isPacked = false,
                 )
             )
-    }
-
-    @Test
-    fun drawStroke_withNonAffineTransform_shouldThrow() {
-        val canvas = Picture().beginRecording(100, 100)
-
-        assertFailsWith<IllegalArgumentException> {
-            meshRenderer.draw(
-                canvas,
-                stroke,
-                Matrix().apply {
-                    setValues(
-                        floatArrayOf(
-                            1F,
-                            0F,
-                            0F, // first row looks affine
-                            0F,
-                            1F,
-                            0F, // second row looks affine
-                            4F,
-                            0F,
-                            1F, // third row should be [0, 0, 1] to be affine
-                        )
-                    )
-                },
-            )
-        }
-
-        assertFailsWith<IllegalArgumentException> {
-            meshRenderer.draw(
-                canvas,
-                stroke,
-                Matrix().apply {
-                    setValues(
-                        floatArrayOf(
-                            1F,
-                            0F,
-                            0F, // first row looks affine
-                            0F,
-                            1F,
-                            0F, // second row looks affine
-                            0F,
-                            3F,
-                            1F, // third row should be [0, 0, 1] to be affine
-                        )
-                    )
-                },
-            )
-        }
-
-        assertFailsWith<IllegalArgumentException> {
-            meshRenderer.draw(
-                canvas,
-                stroke,
-                Matrix().apply {
-                    setValues(
-                        floatArrayOf(
-                            1F,
-                            0F,
-                            0F, // first row looks affine
-                            0F,
-                            1F,
-                            0F, // second row looks affine
-                            0F,
-                            0F,
-                            2F, // third row should be [0, 0, 1] to be affine
-                        )
-                    )
-                },
-            )
-        }
-    }
-
-    @Test
-    fun drawInProgressStroke_withNonAffineTransform_shouldThrow() {
-        val canvas = Picture().beginRecording(100, 100)
-        val ips = InProgressStroke().also { it.start(brush) }
-
-        assertFailsWith<IllegalArgumentException> {
-            meshRenderer.draw(
-                canvas,
-                ips,
-                Matrix().apply {
-                    setValues(
-                        floatArrayOf(
-                            1F,
-                            0F,
-                            0F, // first row looks affine
-                            0F,
-                            1F,
-                            0F, // second row looks affine
-                            4F,
-                            0F,
-                            1F, // third row should be [0, 0, 1] to be affine
-                        )
-                    )
-                },
-            )
-        }
-
-        assertFailsWith<IllegalArgumentException> {
-            meshRenderer.draw(
-                canvas,
-                ips,
-                Matrix().apply {
-                    setValues(
-                        floatArrayOf(
-                            1F,
-                            0F,
-                            0F, // first row looks affine
-                            0F,
-                            1F,
-                            0F, // second row looks affine
-                            0F,
-                            3F,
-                            1F, // third row should be [0, 0, 1] to be affine
-                        )
-                    )
-                },
-            )
-        }
-
-        assertFailsWith<IllegalArgumentException> {
-            meshRenderer.draw(
-                canvas,
-                ips,
-                Matrix().apply {
-                    setValues(
-                        floatArrayOf(
-                            1F,
-                            0F,
-                            0F, // first row looks affine
-                            0F,
-                            1F,
-                            0F, // second row looks affine
-                            0F,
-                            0F,
-                            2F, // third row should be [0, 0, 1] to be affine
-                        )
-                    )
-                },
-            )
-        }
-    }
-
-    @Test
-    fun drawStroke_withAffineTransform_shouldNotThrow() {
-        val canvas = Picture().beginRecording(100, 100)
-
-        // The simplest affine transform - the identity matrix.
-        meshRenderer.draw(canvas, stroke, Matrix())
-
-        // Test for an edge case where the input Matrix is actually affine if inspected directly,
-        // but
-        // where Android Matrix.isAffine returns false. See b/418261442 for more details.
-        meshRenderer.draw(canvas, stroke, falseNegativeAffineMatrix)
-    }
-
-    @Test
-    fun drawInProgressStroke_withAffineTransform_shouldNotThrow() {
-        val canvas = Picture().beginRecording(100, 100)
-        val ips = InProgressStroke().also { it.start(brush) }
-
-        // The simplest affine transform - the identity matrix.
-        meshRenderer.draw(canvas, ips, Matrix())
-
-        // Test for an edge case where the input Matrix is actually affine if inspected directly,
-        // but
-        // where Android Matrix.isAffine returns false. See b/418261442 for more details.
-        meshRenderer.draw(canvas, ips, falseNegativeAffineMatrix)
     }
 
     @Test
@@ -466,8 +270,6 @@ class CanvasMeshRendererTest {
                 sizeX = 10f,
                 sizeY = 10f,
                 animationFrames = 8,
-                animationRows = 3,
-                animationColumns = 3,
             )
         val family = BrushFamily(paint = BrushPaint(listOf(texture)))
         val brush = Brush(family = family, size = 10f, epsilon = 0.1f)
@@ -476,7 +278,12 @@ class CanvasMeshRendererTest {
                 brush = brush,
                 inputs =
                     MutableStrokeInputBatch()
-                        .add(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
+                        .addOrThrow(
+                            InputToolType.UNKNOWN,
+                            x = 10F,
+                            y = 10F,
+                            elapsedTimeMillis = 100
+                        )
                         .asImmutable(),
             )
 
@@ -527,7 +334,12 @@ class CanvasMeshRendererTest {
                 brush = brush,
                 inputs =
                     MutableStrokeInputBatch()
-                        .add(InputToolType.UNKNOWN, x = 10F, y = 10F, elapsedTimeMillis = 100)
+                        .addOrThrow(
+                            InputToolType.UNKNOWN,
+                            x = 10F,
+                            y = 10F,
+                            elapsedTimeMillis = 100
+                        )
                         .asImmutable(),
             )
 

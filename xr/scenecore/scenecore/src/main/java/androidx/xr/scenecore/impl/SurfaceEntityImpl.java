@@ -16,18 +16,14 @@
 
 package androidx.xr.scenecore.impl;
 
-import android.util.Log;
 import android.view.Surface;
 
-import androidx.xr.runtime.internal.CameraViewActivityPose;
+import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
-import androidx.xr.runtime.internal.PerceivedResolutionResult;
-import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.SurfaceEntity.CanvasShape;
 import androidx.xr.runtime.internal.TextureResource;
-import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.NodeTransaction;
@@ -35,9 +31,6 @@ import com.android.extensions.xr.node.NodeTransaction;
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.androidxr.splitengine.SubspaceNode;
 import com.google.ar.imp.apibindings.ImpressApi;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -55,55 +48,9 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     private final int mEntityImpressNode;
     private final int mSubspaceImpressNode;
     @StereoMode private int mStereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE;
-
-    @ContentSecurityLevel
-    private int mContentSecurityLevel = SurfaceEntity.ContentSecurityLevel.NONE;
-
-    @SuperSampling private int mSuperSampling = SurfaceEntity.SuperSampling.DEFAULT;
-
     private CanvasShape mCanvasShape;
     private float mFeatherRadiusX = 0.0f;
     private float mFeatherRadiusY = 0.0f;
-    private boolean mContentColorMetadataSet = false;
-    @ColorSpace private int mColorSpace = SurfaceEntity.ColorSpace.BT709;
-    @ColorTransfer private int mColorTransfer = SurfaceEntity.ColorTransfer.SRGB;
-    @ColorRange private int mColorRange = SurfaceEntity.ColorRange.FULL;
-    private int mMaxContentLightLevel = 0;
-
-    // Converts SurfaceEntity's ContentSecurityLevel to an Impress ContentSecurityLevel.
-    private static int toImpressContentSecurityLevel(
-            @ContentSecurityLevel int contentSecurityLevel) {
-        switch (contentSecurityLevel) {
-            case ContentSecurityLevel.NONE:
-                return ImpressApi.ContentSecurityLevel.NONE;
-            case ContentSecurityLevel.PROTECTED:
-                return ImpressApi.ContentSecurityLevel.PROTECTED;
-            default:
-                Log.e(
-                        "SurfaceEntityImpl",
-                        "Unsupported content security level: "
-                                + contentSecurityLevel
-                                + ". Defaulting to NONE.");
-                return ImpressApi.ContentSecurityLevel.NONE;
-        }
-    }
-
-    // Converts SurfaceEntity's SuperSampling to a boolean for Impress.
-    private static boolean toImpressSuperSampling(@SuperSampling int superSampling) {
-        switch (superSampling) {
-            case SuperSampling.NONE:
-                return false;
-            case SuperSampling.DEFAULT:
-                return true;
-            default:
-                Log.e(
-                        "SurfaceEntityImpl",
-                        "Unsupported super sampling value: "
-                                + superSampling
-                                + ". Defaulting to true (DEFAULT).");
-                return true;
-        }
-    }
 
     SurfaceEntityImpl(
             Entity parentEntity,
@@ -113,17 +60,16 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
             EntityManager entityManager,
             ScheduledExecutorService executor,
             @StereoMode int stereoMode,
-            CanvasShape canvasShape,
-            @ContentSecurityLevel int contentSecurityLevel,
-            @SuperSampling int superSampling) {
+            CanvasShape canvasShape) {
         super(extensions.createNode(), extensions, entityManager, executor);
         mImpressApi = impressApi;
         mSplitEngineSubspaceManager = splitEngineSubspaceManager;
         mStereoMode = stereoMode;
-        mContentSecurityLevel = contentSecurityLevel;
-        mSuperSampling = superSampling;
         mCanvasShape = canvasShape;
         setParent(parentEntity);
+
+        // TODO(b/377906324): - Punt this logic to the UI thread, so that applications can create
+        // StereoSurface entities from any thread.
 
         // System will only render Impress nodes that are parented by this subspace node.
         mSubspaceImpressNode = impressApi.createImpressNode();
@@ -133,15 +79,11 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
         try (NodeTransaction transaction = extensions.createNodeTransaction()) {
             // Make the Entity node a parent of the subspace node.
-            transaction.setParent(mSubspace.getSubspaceNode(), mNode).apply();
+            transaction.setParent(mSubspace.getSubspaceNodeActual(), mNode).apply();
         }
 
         // This is broken up into two steps to limit the size of the Impress Surface
-        mEntityImpressNode =
-                mImpressApi.createStereoSurface(
-                        stereoMode,
-                        toImpressContentSecurityLevel(mContentSecurityLevel),
-                        toImpressSuperSampling(mSuperSampling));
+        mEntityImpressNode = mImpressApi.createStereoSurface(stereoMode);
         setCanvasShape(mCanvasShape);
 
         // The CPM node hierarchy is: Entity CPM node --- parent of ---> Subspace CPM node.
@@ -157,6 +99,8 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
     @Override
     public void setCanvasShape(CanvasShape canvasShape) {
+        // TODO(b/377906324): - Punt this logic to the UI thread, so that applications can call this
+        // method from any thread.
         mCanvasShape = canvasShape;
 
         if (mCanvasShape instanceof CanvasShape.Quad) {
@@ -178,6 +122,8 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     @SuppressWarnings("ObjectToString")
     @Override
     public void dispose() {
+        // TODO(b/377906324): - Punt this logic to the UI thread, so that applications can destroy
+        // StereoSurface entities from any thread.
         // The subspace impress node will be destroyed when the subspace is deleted.
         mSplitEngineSubspaceManager.deleteSubspace(mSubspace.subspaceId);
         super.dispose();
@@ -185,12 +131,8 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
 
     @Override
     public void setStereoMode(@StereoMode int mode) {
-        try {
-            mImpressApi.setStereoModeForStereoSurface(mEntityImpressNode, mode);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException(e);
-        }
         mStereoMode = mode;
+        mImpressApi.setStereoModeForStereoSurface(mEntityImpressNode, mode);
     }
 
     @Override
@@ -213,11 +155,7 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
             }
             alphaMaskToken = ((TextureResourceImpl) alphaMask).getTextureToken();
         }
-        try {
-            mImpressApi.setPrimaryAlphaMaskForStereoSurface(mEntityImpressNode, alphaMaskToken);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException(e);
-        }
+        mImpressApi.setPrimaryAlphaMaskForStereoSurface(mEntityImpressNode, alphaMaskToken);
     }
 
     @Override
@@ -229,34 +167,23 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
             }
             alphaMaskToken = ((TextureResourceImpl) alphaMask).getTextureToken();
         }
-        try {
-            mImpressApi.setAuxiliaryAlphaMaskForStereoSurface(mEntityImpressNode, alphaMaskToken);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException(e);
-        }
+        mImpressApi.setAuxiliaryAlphaMaskForStereoSurface(mEntityImpressNode, alphaMaskToken);
     }
 
     @Override
     public Surface getSurface() {
-        // TODO Either cache the surface in the constructor, or change this interface to
+        // TODO(b/377906324) - Either cache the surface in the constructor, or change this interface
+        // to
         // return a Future.
-        try {
-          return mImpressApi.getSurfaceFromStereoSurface(mEntityImpressNode);
-        } catch (IllegalArgumentException e) {
-          throw new IllegalStateException(e);
-        }
+        return mImpressApi.getSurfaceFromStereoSurface(mEntityImpressNode);
     }
 
     @Override
     public void setFeatherRadiusX(float radius) {
         mFeatherRadiusX = radius;
-        try {
-            // For now, we set both the left/right and top/bottom feather radius at the same time.
-            mImpressApi.setFeatherRadiusForStereoSurface(
+        // For now, we set both the left/right and top/bottom feather radius at the same time.
+        mImpressApi.setFeatherRadiusForStereoSurface(
                 mEntityImpressNode, mFeatherRadiusX, mFeatherRadiusY);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     @Override
@@ -267,13 +194,9 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
     @Override
     public void setFeatherRadiusY(float radius) {
         mFeatherRadiusY = radius;
-      try {
-          // For now, we set both the left/right and top/bottom feather radius at the same time.
-          mImpressApi.setFeatherRadiusForStereoSurface(
-                  mEntityImpressNode, mFeatherRadiusX, mFeatherRadiusY);
-      } catch (IllegalArgumentException e) {
-          throw new IllegalStateException(e);
-      }
+        // For now, we set both the left/right and top/bottom feather radius at the same time.
+        mImpressApi.setFeatherRadiusForStereoSurface(
+                mEntityImpressNode, mFeatherRadiusX, mFeatherRadiusY);
     }
 
     @Override
@@ -281,91 +204,10 @@ final class SurfaceEntityImpl extends AndroidXrEntity implements SurfaceEntity {
         return mFeatherRadiusY;
     }
 
-    @Override
-    @ColorSpace
-    public int getColorSpace() {
-        return mColorSpace;
-    }
-
-    @Override
-    @ColorTransfer
-    public int getColorTransfer() {
-        return mColorTransfer;
-    }
-
-    @Override
-    @ColorRange
-    public int getColorRange() {
-        return mColorRange;
-    }
-
-    @Override
-    public int getMaxCLL() {
-        return mMaxContentLightLevel;
-    }
-
-    @Override
-    public boolean getContentColorMetadataSet() {
-        return mContentColorMetadataSet;
-    }
-
-    @Override
-    public void setContentColorMetadata(
-            @ColorSpace int colorSpace,
-            @ColorTransfer int colorTransfer,
-            @ColorRange int colorRange,
-            int maxCLL) {
-        mColorSpace = colorSpace;
-        mColorTransfer = colorTransfer;
-        mColorRange = colorRange;
-        mMaxContentLightLevel = maxCLL;
-        mContentColorMetadataSet = true;
-        try {
-            mImpressApi.setContentColorMetadataForStereoSurface(
-                    mEntityImpressNode, colorSpace, colorTransfer, colorRange, maxCLL);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    @Override
-    public void resetContentColorMetadata() {
-        mColorSpace = SurfaceEntity.ColorSpace.BT709;
-        mColorTransfer = SurfaceEntity.ColorTransfer.SRGB;
-        mColorRange = SurfaceEntity.ColorRange.FULL;
-        mMaxContentLightLevel = 0;
-        mContentColorMetadataSet = false;
-        mImpressApi.resetContentColorMetadataForStereoSurface(mEntityImpressNode);
-    }
-
     // Note this returns the Impress node for the entity, not the subspace. The subspace Impress
     // node
     // is the parent of the entity Impress node.
     int getEntityImpressNode() {
         return mEntityImpressNode;
-    }
-
-    @Override
-    public @NonNull PerceivedResolutionResult getPerceivedResolution() {
-        // Get the Camera View with which to compute Perceived Resolution
-        CameraViewActivityPose cameraView =
-                PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);
-        if (cameraView == null) {
-            return new PerceivedResolutionResult.InvalidCameraView();
-        }
-
-        // Compute the width, height, and depth in activity space units
-        Dimensions dimensionsInLocalUnits = getDimensions();
-        Vector3 activitySpaceScale = getScale(Space.ACTIVITY);
-        Dimensions dimensionsInActivitySpace =
-                new Dimensions(
-                        dimensionsInLocalUnits.width * activitySpaceScale.getX(),
-                        dimensionsInLocalUnits.height * activitySpaceScale.getY(),
-                        dimensionsInLocalUnits.depth * activitySpaceScale.getZ());
-
-        return PerceivedResolutionUtils.getPerceivedResolutionOf3DBox(
-                cameraView,
-                /* boxDimensionsInActivitySpace= */ dimensionsInActivitySpace,
-                /* boxPositionInActivitySpace= */ getPose(Space.ACTIVITY).getTranslation());
     }
 }

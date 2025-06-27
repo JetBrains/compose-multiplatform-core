@@ -18,7 +18,6 @@ package androidx.health.connect.client.records
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.aggregate.AggregateMetric
-import androidx.health.connect.client.records.ExerciseSegment.Companion.isSegmentTypeCompatibleWithSessionType
 import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Duration
 import java.time.Instant
@@ -66,7 +65,7 @@ internal constructor(
      * session.
      */
     val exerciseRouteResult: ExerciseRouteResult = ExerciseRouteResult.NoData(),
-    val plannedExerciseSessionId: String? = null,
+    val plannedExerciseSessionId: String? = null
 ) : IntervalRecord {
 
     @JvmOverloads
@@ -122,7 +121,7 @@ internal constructor(
                 "segments can not be out of parent time range."
             }
             for (segment in sortedSegments) {
-                require(isSegmentTypeCompatibleWithSessionType(segment.segmentType, exerciseType)) {
+                require(segment.isCompatibleWith(exerciseType)) {
                     "segmentType and sessionType is not compatible."
                 }
             }

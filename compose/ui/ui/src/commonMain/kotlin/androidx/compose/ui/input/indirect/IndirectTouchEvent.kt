@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.input.indirect
 
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 
@@ -26,28 +26,23 @@ import androidx.compose.ui.input.pointer.PointerEvent
  * This event differs from a [PointerEvent] as it does not necessitate an existence of a pointer. If
  * an event were to have an associated pointer, they will be routed to through [PointerEvent].
  */
-@ExperimentalIndirectTouchTypeApi
-sealed interface IndirectTouchEvent {
+@ExperimentalComposeUiApi
+class IndirectTouchEvent(
 
     /** The position relative to the input device. */
-    val position: Offset
+    val position: Offset,
 
     /** The time at which this event occurred. */
-    val uptimeMillis: Long
+    val eventTimeMillis: Long,
 
     /** The reason the [IndirectTouchEvent] was sent. */
     val type: IndirectTouchEventType
-}
-
-// Work around for Kotlin cross module sealed interfaces.
-@OptIn(ExperimentalIndirectTouchTypeApi::class)
-internal interface PlatformIndirectTouchEvent : IndirectTouchEvent
+)
 
 /** Indicates the reason that the [IndirectTouchEvent] was sent. */
 @kotlin.jvm.JvmInline
-@ExperimentalIndirectTouchTypeApi
+@ExperimentalComposeUiApi
 value class IndirectTouchEventType private constructor(internal val value: Int) {
-    @ExperimentalIndirectTouchTypeApi
     companion object {
 
         /** An unknown reason for the event. */

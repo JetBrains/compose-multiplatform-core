@@ -23,20 +23,20 @@ import androidx.room.Query
 @JvmDefaultWithCompatibility
 /** The Data Access Object for [WorkTag]s. */
 @Dao
-public interface WorkTagDao {
+interface WorkTagDao {
     /**
      * Inserts a [WorkTag] into the table.
      *
      * @param workTag The [WorkTag] to insert
      */
-    @Insert(onConflict = OnConflictStrategy.IGNORE) public fun insert(workTag: WorkTag)
+    @Insert(onConflict = OnConflictStrategy.IGNORE) fun insert(workTag: WorkTag)
 
     /**
      * Deletes [WorkSpec]s from the database.
      *
      * @param id The WorkSpec id to delete.
      */
-    @Query("DELETE FROM worktag WHERE work_spec_id=:id") public fun deleteByWorkSpecId(id: String)
+    @Query("DELETE FROM worktag WHERE work_spec_id=:id") fun deleteByWorkSpecId(id: String)
 
     /**
      * Retrieves all [WorkSpec] ids with the given tag.
@@ -45,7 +45,7 @@ public interface WorkTagDao {
      * @return All [WorkSpec] ids with the given tag
      */
     @Query("SELECT work_spec_id FROM worktag WHERE tag=:tag")
-    public fun getWorkSpecIdsWithTag(tag: String): List<String>
+    fun getWorkSpecIdsWithTag(tag: String): List<String>
 
     /**
      * Retrieves all tags for a given [WorkSpec] id.
@@ -54,9 +54,9 @@ public interface WorkTagDao {
      * @return A list of tags for that [WorkSpec]
      */
     @Query("SELECT DISTINCT tag FROM worktag WHERE work_spec_id=:id")
-    public fun getTagsForWorkSpecId(id: String): List<String>
+    fun getTagsForWorkSpecId(id: String): List<String>
 
-    public fun insertTags(id: String, tags: Set<String>) {
+    fun insertTags(id: String, tags: Set<String>) {
         tags.forEach { tag -> insert(WorkTag(tag, id)) }
     }
 }

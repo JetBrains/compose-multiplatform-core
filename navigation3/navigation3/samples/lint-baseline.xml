@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.11.0-alpha03" type="baseline" client="gradle" dependencies="true" name="AGP (8.11.0-alpha03)" variant="all" version="8.11.0-alpha03">
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 35 (current min is 21): `java.util.List#removeLast` (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `removeAt(backStack.lastIndex)` instead.)"
+        errorLine1="        onBack = { backStack.removeLast() },"
+        errorLine2="                             ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/navigation3/samples/NavDisplaySamples.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 35 (current min is 21): `java.util.List#removeLast` (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `removeAt(backStack.lastIndex)` instead.)"
+        errorLine1="                    Profile(viewModel, { backStack.add(it) }) { backStack.removeLast() }"
+        errorLine2="                                                                          ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/navigation3/samples/NavDisplaySamples.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 35 (current min is 21): `java.util.List#removeLast` (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `removeAt(backStack.lastIndex)` instead.)"
+        errorLine1="                    Scrollable({ backStack.add(it) }) { backStack.removeLast() }"
+        errorLine2="                                                                  ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/navigation3/samples/NavDisplaySamples.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 35 (current min is 21): `java.util.List#removeLast` (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `removeAt(backStack.lastIndex)` instead.)"
+        errorLine1="                    DialogBase(onClick = { showDialog.value = true }) { backStack.removeLast() }"
+        errorLine2="                                                                                  ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/navigation3/samples/NavDisplaySamples.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 35 (current min is 21): `java.util.List#removeLast` (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `removeAt(backStack.lastIndex)` instead.)"
+        errorLine1="                    Dashboard(userId, onBack = { backStack.removeLast() })"
+        errorLine2="                                                           ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/navigation3/samples/NavDisplaySamples.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 35 (current min is 21): `java.util.List#removeLast` (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `removeAt(backStack.lastIndex)` instead.)"
+        errorLine1="            onBack = { backStack.removeLast() },"
+        errorLine2="                                 ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/navigation3/samples/NavDisplaySamples.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 35 (current min is 21): `java.util.List#removeLast` (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `removeAt(backStack.lastIndex)` instead.)"
+        errorLine1="                        CatDetail(args.cat, this@SharedTransitionLayout) { backStack.removeLast() }"
+        errorLine2="                                                                                     ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/androidx/navigation3/samples/NavDisplaySamples.kt"/>
+    </issue>
+
+</issues>

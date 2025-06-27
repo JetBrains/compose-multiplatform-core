@@ -50,13 +50,7 @@ class PlayServicesRegistryManagerTest {
                 val result =
                     registryManager.registerCredentials(
                         object :
-                            RegisterCredentialsRequest(
-                                "type",
-                                "id",
-                                ByteArray(4),
-                                ByteArray(8),
-                                intentAction = "com.example.ACTION_GET_CRED",
-                            ) {}
+                            RegisterCredentialsRequest("type", "id", ByteArray(4), ByteArray(8)) {}
                     )
 
                 assertThat(result.type).isEqualTo("type")

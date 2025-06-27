@@ -31,7 +31,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class PokedexStartupBenchmark(
     private val startupMode: StartupMode,
-    private val compilationMode: CompilationMode,
+    private val compilationMode: CompilationMode
 ) {
     @get:Rule val benchmarkRule = MacrobenchmarkRule()
 
@@ -39,16 +39,13 @@ class PokedexStartupBenchmark(
         benchmarkRule.measureStartup(
             compilationMode = compilationMode,
             startupMode = startupMode,
-            packageName = POKEDEX_TARGET_PACKAGE_NAME,
+            packageName = POKEDEX_TARGET_PACKAGE_NAME
         ) {
             this.action = action
         }
 
     @Test
     fun startupCompose() = measureStartup("$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_COMPOSE_ACTIVITY")
-
-    @Test
-    fun startupViews() = measureStartup("$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_VIEWS_HOME_ACTIVITY")
 
     companion object {
         @Parameterized.Parameters(name = "startup={0},compilationMode={1}")

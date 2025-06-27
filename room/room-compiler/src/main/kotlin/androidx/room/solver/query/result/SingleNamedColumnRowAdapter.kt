@@ -28,8 +28,10 @@ import androidx.room.vo.ColumnIndexVar
 import java.util.Locale
 
 /** Wraps a row adapter for a single item from a known column result. */
-class SingleNamedColumnRowAdapter(val reader: StatementValueReader, val columnName: String) :
-    QueryMappedRowAdapter(reader.typeMirror()) {
+class SingleNamedColumnRowAdapter(
+    val reader: StatementValueReader,
+    val columnName: String,
+) : QueryMappedRowAdapter(reader.typeMirror()) {
     override val mapping = SingleNamedColumnRowMapping(columnName)
 
     private val indexAdapter =
@@ -50,8 +52,8 @@ class SingleNamedColumnRowAdapter(val reader: StatementValueReader, val columnNa
                             "%M(%L, %S)",
                             RoomTypeNames.STATEMENT_UTIL.packageMember("getColumnIndexOrThrow"),
                             stmtVarName,
-                            columnName,
-                        ),
+                            columnName
+                        )
                 )
             }
 
@@ -63,7 +65,7 @@ class SingleNamedColumnRowAdapter(val reader: StatementValueReader, val columnNa
     override fun onStatementReady(
         stmtVarName: String,
         scope: CodeGenScope,
-        indices: List<ColumnIndexVar>,
+        indices: List<ColumnIndexVar>
     ) {
         columnIndexVar =
             indices.singleOrNull()

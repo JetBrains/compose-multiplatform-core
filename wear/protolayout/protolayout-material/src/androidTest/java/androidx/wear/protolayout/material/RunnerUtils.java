@@ -16,24 +16,18 @@
 
 package androidx.wear.protolayout.material;
 
-import static androidx.wear.protolayout.material.test.GoldenTestActivity.VIEW_TAG;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.graphics.Rect;
+import android.util.DisplayMetrics;
 import android.util.Log;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.test.screenshot.matchers.MSSIMMatcher;
-import androidx.test.uiautomator.By;
-import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.UiObject2;
-import androidx.test.uiautomator.Until;
 import androidx.wear.protolayout.LayoutElementBuilders.Layout;
 import androidx.wear.protolayout.material.test.GoldenTestActivity;
 
@@ -48,9 +42,6 @@ public class RunnerUtils {
     // watch dimensions here.
     public static final int SCREEN_WIDTH = 390;
     public static final int SCREEN_HEIGHT = 390;
-    private static final int FIND_OBJECT_TIMEOUT_MILLIS = 1000;
-    private static final UiDevice uiDevice =
-            UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
 
     private RunnerUtils() {}
 
@@ -82,26 +73,37 @@ public class RunnerUtils {
         startIntent.putExtra(GoldenTestActivity.USE_RTL_DIRECTION, isRtlDirection);
 
         try (ActivityScenario<GoldenTestActivity> scenario = ActivityScenario.launch(startIntent)) {
-            List<UiObject2> objects =
-                    uiDevice.wait(Until.findObjects(By.desc(VIEW_TAG)), FIND_OBJECT_TIMEOUT_MILLIS);
-            if (objects == null) {
-                throw new IllegalStateException("Timed out waiting for the PL host view.");
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+            try {
+                // Wait 1s after launching the activity. This allows for the old white layout in the
+                // bootstrap activity to fully go away before proceeding.
+                Thread.sleep(100);
+            } catch (Exception ex) {
+                if (ex instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                Log.e("MaterialGoldenTest", "Error sleeping", ex);
             }
-            if (objects.size() != 1) {
-                throw new IllegalStateException(
-                        "Expected 1 PL host view, but found " + objects.size());
-            }
-            Rect plViewRect = objects.get(0).getVisibleBounds();
+
+            DisplayMetrics displayMetrics =
+                    InstrumentationRegistry.getInstrumentation()
+                            .getTargetContext()
+                            .getResources()
+                            .getDisplayMetrics();
+
+            // RTL will put the View on the right side.
+            int screenWidthStart = isRtlDirection ? displayMetrics.widthPixels - SCREEN_WIDTH : 0;
 
             Bitmap bitmap =
                     Bitmap.createBitmap(
                             InstrumentationRegistry.getInstrumentation()
                                     .getUiAutomation()
                                     .takeScreenshot(),
-                            plViewRect.left,
-                            plViewRect.top,
-                            plViewRect.width(),
-                            plViewRect.height());
+                            screenWidthStart,
+                            0,
+                            SCREEN_WIDTH,
+                            SCREEN_HEIGHT);
             rule.assertBitmapAgainstGolden(bitmap, expected, new MSSIMMatcher());
         }
     }

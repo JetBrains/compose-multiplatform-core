@@ -50,7 +50,8 @@
 
         <service
             android:name="androidx.work.multiprocess.RemoteWorkerService"
-            android:exported="false" />
+            android:exported="false"
+            tools:ignore="MissingServiceExportedEqualsTrue" />
 
         <receiver
             android:name=".CustomProcessWidgetReceiver"
@@ -97,11 +98,13 @@
             android:name=".CustomGlanceRemoteViewsService"
             android:permission="android.permission.BIND_REMOTEVIEWS"
             android:exported="true"
-            android:process=":custom" />
+            android:process=":custom"
+            tools:ignore="MissingServiceExportedEqualsTrue" />
         <service
             android:name=".CustomWorkerService"
             android:exported="false"
-            android:process=":custom" />
+            android:process=":custom"
+            tools:ignore="MissingServiceExportedEqualsTrue" />
         <receiver
             android:name=".CustomMyPackageReplacedReceiver"
             android:exported="false"

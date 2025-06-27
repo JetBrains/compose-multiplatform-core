@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
-import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.unit.DpVolumeSize
 import com.google.common.truth.Truth.assertThat
 import java.lang.UnsupportedOperationException
@@ -76,9 +75,9 @@ class SpatialConfigurationTest {
         var configuration: SpatialConfiguration? = null
 
         composeTestRule.setContent {
-            TestSetup {
+            TestSetup(isFullSpace = true) {
                 configuration = LocalSpatialConfiguration.current
-                if (configuration.bounds == DpVolumeSize(Dp.Infinity, Dp.Infinity, Dp.Infinity)) {
+                if (configuration?.bounds == DpVolumeSize(Dp.Infinity, Dp.Infinity, Dp.Infinity)) {
                     Text("Full")
                 } else {
                     Text("Home")
@@ -104,11 +103,8 @@ class SpatialConfigurationTest {
 
     @Test
     fun hasXrSpatialFeature_homeSpaceMode_returnsTrue() {
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
-
         composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
+            TestSetup(isFullSpace = false) {
                 Text(text = "${LocalSpatialConfiguration.current.hasXrSpatialFeature}")
             }
         }
@@ -118,11 +114,8 @@ class SpatialConfigurationTest {
 
     @Test
     fun bounds_homeSpaceMode_isPositiveAndNotMax() {
-        val runtime = createFakeRuntime(composeTestRule.activity)
-        runtime.requestHomeSpaceMode()
-
         composeTestRule.setContent {
-            TestSetup(runtime = runtime) {
+            TestSetup(isFullSpace = false) {
                 assertThat(LocalSpatialConfiguration.current.bounds.width).isNotEqualTo(Dp.Infinity)
                 assertThat(LocalSpatialConfiguration.current.bounds.width).isGreaterThan(0.dp)
                 assertThat(LocalSpatialConfiguration.current.bounds.height)
@@ -137,7 +130,7 @@ class SpatialConfigurationTest {
     @Test
     fun bounds_fullSpaceMode_isMax() {
         composeTestRule.setContent {
-            TestSetup {
+            TestSetup(isFullSpace = true) {
                 assertThat(LocalSpatialConfiguration.current.bounds.width).isEqualTo(Dp.Infinity)
                 assertThat(LocalSpatialConfiguration.current.bounds.height).isEqualTo(Dp.Infinity)
                 assertThat(LocalSpatialConfiguration.current.bounds.depth).isEqualTo(Dp.Infinity)

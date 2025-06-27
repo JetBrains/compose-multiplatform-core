@@ -23,13 +23,13 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.Direction
-import androidx.test.uiautomator.ElementNotFoundException
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.ViewNotFoundException
+import androidx.test.uiautomator.id
 import androidx.test.uiautomator.isClass
-import androidx.test.uiautomator.onElement
-import androidx.test.uiautomator.onElementOrNull
-import androidx.test.uiautomator.scrollToElement
-import androidx.test.uiautomator.simpleViewResourceName
+import androidx.test.uiautomator.onView
+import androidx.test.uiautomator.onViewOrNull
+import androidx.test.uiautomator.scrollUntilView
 import androidx.test.uiautomator.textAsString
 import androidx.test.uiautomator.uiAutomator
 import androidx.test.uiautomator.waitForStable
@@ -47,10 +47,10 @@ class UiAutomatorTestScopeTest {
 
     @Before
     fun setup() = uiAutomator {
-        device.wakeUp()
-        device.pressMenu()
-        device.pressHome()
-        device.setOrientationNatural()
+        uiDevice.wakeUp()
+        uiDevice.pressMenu()
+        uiDevice.pressHome()
+        uiDevice.setOrientationNatural()
     }
 
     @Test
@@ -58,13 +58,13 @@ class UiAutomatorTestScopeTest {
     fun mainActivity() = uiAutomator {
         startActivity(MainActivity::class.java)
 
-        onElement { simpleViewResourceName() == "button" }.click()
-        onElement { textAsString() == "Accessible button" }.click()
+        onView { id == "button" }.click()
+        onView { textAsString == "Accessible button" }.click()
 
-        with(onElement { simpleViewResourceName() == "nested_elements" }) {
-            onElement { textAsString() == "First Level" }
-            onElement { textAsString() == "Second Level" }
-            onElement { textAsString() == "Third Level" }
+        with(onView { id == "nested_elements" }) {
+            onView { textAsString == "First Level" }
+            onView { textAsString == "Second Level" }
+            onView { textAsString == "Third Level" }
         }
     }
 
@@ -72,23 +72,8 @@ class UiAutomatorTestScopeTest {
     @LargeTest
     fun waitForStable() = uiAutomator {
         startActivity(MainActivity::class.java)
-        waitForStableInActiveWindow(stableTimeoutMs = 10000, stableIntervalMs = 5000)
-
-        // The timeout of onElement is set to `0`: this should fail if the previous transition
-        // hasn't completed.
-        onElement(0) { simpleViewResourceName() == "button" }.click()
-    }
-
-    @Test
-    @LargeTest
-    fun nodeWaitForStable() = uiAutomator {
-        startActivity(MainActivity::class.java)
-
-        onElement { packageName == APP_PACKAGE_NAME }.waitForStable()
-
-        // The timeout of onElement is set to `0`: this should fail if the previous transition
-        // hasn't completed.
-        onElement(0) { simpleViewResourceName() == "button" }.click()
+        waitForAppToBeVisible()
+        activeWindow().waitForStable(stableTimeoutMs = 2000, stableIntervalMs = 1000)
     }
 
     @SdkSuppress(minSdkVersion = 26)
@@ -97,17 +82,13 @@ class UiAutomatorTestScopeTest {
     fun bySelectorTestActivity() = uiAutomator {
         startActivity(BySelectorTestActivity::class.java)
 
-        with(onElement { simpleViewResourceName() == "selected" }) {
+        with(onView { id == "selected" }) {
             assertThat(isSelected)
             click()
             assertThat(!isSelected)
         }
 
-        onElement {
-            packageName == APP_PACKAGE_NAME &&
-                simpleViewResourceName() == "clazz" &&
-                isClass(Button::class.java)
-        }
+        onView { packageName == APP_PACKAGE_NAME && id == "clazz" && isClass(Button::class.java) }
     }
 
     @SdkSuppress(minSdkVersion = 26)
@@ -115,48 +96,47 @@ class UiAutomatorTestScopeTest {
     @LargeTest
     fun hintTestActivity() = uiAutomator {
         startActivity(HintTestActivity::class.java)
-        onElement { hintText == "sample_hint" }
+        onView { hintText == "sample_hint" }
     }
 
-    @Test(expected = ElementNotFoundException::class)
+    @Test(expected = ViewNotFoundException::class)
     @LargeTest
     fun bySelectorTestActivityFail() = uiAutomator {
         startActivity(BySelectorTestActivity::class.java)
 
-        onElement { simpleViewResourceName() == "clazz" && className == "android.widget.TextView" }
+        onView { id == "clazz" && className == "android.widget.TextView" }
     }
 
-    @SdkSuppress(minSdkVersion = 22)
     @Test
     @LargeTest
     fun composeTest() = uiAutomator {
         startActivity(ComposeTestActivity::class.java)
 
-        onElement { simpleViewResourceName() == "top-text" }
+        onView { id == "top-text" }
         val button =
-            onElement { isScrollable }
-                .scrollToElement(Direction.DOWN) { className == Button::class.java.name }
-        val textView = onElement { textAsString() == "Initial" }
+            onView { isScrollable }
+                .scrollUntilView(Direction.DOWN) { className == Button::class.java.name }
+        val textView = onView { textAsString == "Initial" }
         button.click()
         assertThat(textView.text).isEqualTo("Updated")
     }
 
     @Test
     @LargeTest
-    fun pressYesOnDialogActivityTest() = uiAutomator {
+    fun pressYesOndialogActivityTest() = uiAutomator {
         startActivity(DialogActivity::class.java)
         watchFor(MyDialog()) { clickYes() }
-        onElement { textAsString() == "Show Dialog" }.click()
-        onElement { textAsString() == "Dialog Result: Pressed Yes" }
+        onView { textAsString == "Show Dialog" }.click()
+        onView { textAsString == "Dialog Result: Pressed Yes" }
     }
 
     @Test
     @LargeTest
-    fun pressNoOnDialogActivityTest() = uiAutomator {
+    fun pressNoOndialogActivityTest() = uiAutomator {
         startActivity(DialogActivity::class.java)
         watchFor(MyDialog()) { clickNo() }
-        onElement { textAsString() == "Show Dialog" }.click()
-        onElement { textAsString() == "Dialog Result: Pressed No" }
+        onView { textAsString == "Show Dialog" }.click()
+        onView { textAsString == "Dialog Result: Pressed No" }
     }
 }
 
@@ -166,13 +146,13 @@ class MyDialog : ScopedUiWatcher<MyDialog.Scope> {
     private val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     override fun isVisible(): Boolean =
-        uiDevice.onElementOrNull(0) { textAsString() == "Confirmation" } != null
+        uiDevice.onViewOrNull(0) { textAsString == "Confirmation" } != null
 
     override fun scope() = Scope()
 
     inner class Scope {
-        fun clickYes() = uiDevice.onElement { textAsString() == "Yes" }.click()
+        fun clickYes() = uiDevice.onView { textAsString == "Yes" }.click()
 
-        fun clickNo() = uiDevice.onElement { textAsString() == "No" }.click()
+        fun clickNo() = uiDevice.onView { textAsString == "No" }.click()
     }
 }
