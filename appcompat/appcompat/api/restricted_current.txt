@@ -1200,6 +1200,7 @@ package androidx.appcompat.widget {
     method public void postShowOverflowMenu();
     method public void setContentHeight(int);
     method public void setCustomView(android.view.View!);
+    method public void setPaddingForInsets(int, int, int, int);
     method public void setSubtitle(CharSequence!);
     method public void setTitle(CharSequence!);
     method public void setTitleOptional(boolean);

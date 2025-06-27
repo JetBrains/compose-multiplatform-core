@@ -1,3 +1,13 @@
 // Baseline format: 1.0
-RemovedPackage: androidx.glance.session:
-    Removed package androidx.glance.session
+AddedAbstractMethod: androidx.glance.unit.ColorProvider#getColor-vNxB06k(android.content.Context):
+    Binary breaking change: Added method androidx.glance.unit.ColorProvider.getColor-vNxB06k(android.content.Context)
+
+
+RemovedFromBytecode: androidx.glance.layout.ContentScale#ContentScale(int):
+    Binary breaking change: constructor androidx.glance.layout.ContentScale(int) has been removed from bytecode
+RemovedFromBytecode: androidx.glance.text.TextStyle#TextStyle(androidx.glance.unit.ColorProvider, androidx.compose.ui.unit.TextUnit, androidx.glance.text.FontWeight, androidx.glance.text.FontStyle, androidx.glance.text.TextAlign, androidx.glance.text.TextDecoration, androidx.glance.text.FontFamily):
+    Binary breaking change: constructor androidx.glance.text.TextStyle(androidx.glance.unit.ColorProvider,androidx.compose.ui.unit.TextUnit,androidx.glance.text.FontWeight,androidx.glance.text.FontStyle,androidx.glance.text.TextAlign,androidx.glance.text.TextDecoration,androidx.glance.text.FontFamily) has been removed from bytecode
+
+
+RemovedMethod: androidx.glance.layout.Alignment#Alignment(int, int):
+    Binary breaking change: Removed constructor androidx.glance.layout.Alignment(int,int)

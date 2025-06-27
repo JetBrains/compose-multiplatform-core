@@ -44,7 +44,6 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
-    testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
@@ -64,4 +63,5 @@ androidx {
     mavenVersion = LibraryVersions.SECURITY_STATE
     inceptionYear = "2024"
     description = "obtain security state of updateable components."
+    enableRobolectric()
 }

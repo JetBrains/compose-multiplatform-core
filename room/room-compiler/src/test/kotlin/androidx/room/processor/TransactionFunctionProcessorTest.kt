@@ -322,7 +322,7 @@ class TransactionFunctionProcessorTest {
 
     private fun singleTransactionMethod(
         vararg input: String,
-        handler: (TransactionFunction, XTestInvocation) -> Unit
+        handler: (TransactionFunction, XTestInvocation) -> Unit,
     ) {
         val inputSource =
             listOf(
@@ -340,11 +340,11 @@ class TransactionFunctionProcessorTest {
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_SINGLE,
                 COMMON.LISTENABLE_FUTURE,
-                COMMON.FLOW
+                COMMON.FLOW,
             )
         runProcessorTest(
             sources = inputSource + otherSources,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false")
+            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
         ) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
@@ -355,7 +355,7 @@ class TransactionFunctionProcessorTest {
                             it,
                             it.getAllMethods()
                                 .filter { it.hasAnnotation(Transaction::class) }
-                                .toList()
+                                .toList(),
                         )
                     }
                     .first { it.second.isNotEmpty() }
@@ -364,7 +364,7 @@ class TransactionFunctionProcessorTest {
                     baseContext = invocation.context,
                     containingElement = owner,
                     containingType = owner.type,
-                    executableElement = methods.first()
+                    executableElement = methods.first(),
                 )
             val processed = processor.process()
             handler(processed, invocation)

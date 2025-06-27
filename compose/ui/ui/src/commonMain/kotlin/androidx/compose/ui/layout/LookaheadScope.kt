@@ -57,7 +57,7 @@ fun LookaheadScope(content: @Composable @UiComposable LookaheadScope.() -> Unit)
                 scope.scopeCoordinates = { parent!!.innerCoordinator.coordinates }
             }
         },
-        content = { scope.content() }
+        content = { scope.content() },
     )
 }
 
@@ -104,16 +104,13 @@ fun Modifier.approachLayout(
         Placeable.PlacementScope.(lookaheadCoordinates: LayoutCoordinates) -> Boolean =
         defaultPlacementApproachInProgress,
     approachMeasure:
-        ApproachMeasureScope.(
-            measurable: Measurable,
-            constraints: Constraints,
-        ) -> MeasureResult,
+        ApproachMeasureScope.(measurable: Measurable, constraints: Constraints) -> MeasureResult,
 ): Modifier =
     this then
         ApproachLayoutElement(
             isMeasurementApproachInProgress = isMeasurementApproachInProgress,
             isPlacementApproachInProgress = isPlacementApproachInProgress,
-            approachMeasure = approachMeasure
+            approachMeasure = approachMeasure,
         )
 
 private val defaultPlacementApproachInProgress:
@@ -124,10 +121,7 @@ private val defaultPlacementApproachInProgress:
 
 private class ApproachLayoutElement(
     val approachMeasure:
-        ApproachMeasureScope.(
-            measurable: Measurable,
-            constraints: Constraints,
-        ) -> MeasureResult,
+        ApproachMeasureScope.(measurable: Measurable, constraints: Constraints) -> MeasureResult,
     val isMeasurementApproachInProgress: (IntSize) -> Boolean,
     val isPlacementApproachInProgress:
         Placeable.PlacementScope.(lookaheadCoordinates: LayoutCoordinates) -> Boolean =
@@ -137,7 +131,7 @@ private class ApproachLayoutElement(
         ApproachLayoutModifierNodeImpl(
             approachMeasure,
             isMeasurementApproachInProgress,
-            isPlacementApproachInProgress
+            isPlacementApproachInProgress,
         )
 
     override fun update(node: ApproachLayoutModifierNodeImpl) {
@@ -174,10 +168,7 @@ private class ApproachLayoutElement(
 
 private class ApproachLayoutModifierNodeImpl(
     var measureBlock:
-        ApproachMeasureScope.(
-            measurable: Measurable,
-            constraints: Constraints,
-        ) -> MeasureResult,
+        ApproachMeasureScope.(measurable: Measurable, constraints: Constraints) -> MeasureResult,
     var isMeasurementApproachInProgress: (IntSize) -> Boolean,
     var isPlacementApproachInProgress: Placeable.PlacementScope.(LayoutCoordinates) -> Boolean,
 ) : ApproachLayoutModifierNode, Modifier.Node() {
@@ -193,7 +184,7 @@ private class ApproachLayoutModifierNodeImpl(
 
     override fun ApproachMeasureScope.approachMeasure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return measureBlock(measurable, constraints)
     }
@@ -245,7 +236,7 @@ interface LookaheadScope {
             coordinates = this,
             sourceCoordinates = sourceCoordinates,
             relativeToSource = relativeToSource,
-            includeMotionFrameOfReference = includeMotionFrameOfReference
+            includeMotionFrameOfReference = includeMotionFrameOfReference,
         )
 }
 
@@ -254,7 +245,7 @@ internal fun LookaheadScope.localLookaheadPositionOf(
     coordinates: LayoutCoordinates,
     sourceCoordinates: LayoutCoordinates,
     relativeToSource: Offset,
-    includeMotionFrameOfReference: Boolean
+    includeMotionFrameOfReference: Boolean,
 ): Offset {
     val lookaheadCoords = coordinates.toLookaheadCoordinates()
     val source = sourceCoordinates.toLookaheadCoordinates()
@@ -263,20 +254,20 @@ internal fun LookaheadScope.localLookaheadPositionOf(
         lookaheadCoords.localPositionOf(
             sourceCoordinates = source,
             relativeToSource = relativeToSource,
-            includeMotionFrameOfReference = includeMotionFrameOfReference
+            includeMotionFrameOfReference = includeMotionFrameOfReference,
         )
     } else if (source is LookaheadLayoutCoordinates) {
         // Relative from source, so we take its negative position
         -source.localPositionOf(
             sourceCoordinates = lookaheadCoords,
             relativeToSource = relativeToSource,
-            includeMotionFrameOfReference = includeMotionFrameOfReference
+            includeMotionFrameOfReference = includeMotionFrameOfReference,
         )
     } else {
         lookaheadCoords.localPositionOf(
             sourceCoordinates = lookaheadCoords,
             relativeToSource = relativeToSource,
-            includeMotionFrameOfReference = includeMotionFrameOfReference
+            includeMotionFrameOfReference = includeMotionFrameOfReference,
         )
     }
 }

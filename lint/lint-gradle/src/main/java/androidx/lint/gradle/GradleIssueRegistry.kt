@@ -32,6 +32,7 @@ class GradleIssueRegistry : IssueRegistry() {
             FilePropertyDetector.FILE_PROPERTY_ISSUE,
             InternalApiUsageDetector.INTERNAL_GRADLE_ISSUE,
             InternalApiUsageDetector.INTERNAL_AGP_ISSUE,
+            InternalApiUsageDetector.INTERNAL_KGP_ISSUE,
             WithPluginClasspathUsageDetector.ISSUE,
             WithTypeWithoutConfigureEachUsageDetector.ISSUE,
         )

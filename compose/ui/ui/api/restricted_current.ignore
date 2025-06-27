@@ -1,23 +1,15 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#getFocusability():
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.getFocusability()
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#requestFocus():
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus()
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#requestFocus(int):
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.requestFocus(int)
-AddedAbstractMethod: androidx.compose.ui.focus.FocusTargetModifierNode#setFocusability(int):
-    Added method androidx.compose.ui.focus.FocusTargetModifierNode.setFocusability(int)
-
-
-BecameUnchecked: androidx.compose.ui.platform.AbstractComposeView#showLayoutBounds:
-    Removed property AbstractComposeView.showLayoutBounds from compatibility checked API surface
-
-
-RemovedMethod: androidx.compose.ui.graphics.TransformOrigin#getPivotFractionX():
-    Removed method androidx.compose.ui.graphics.TransformOrigin.getPivotFractionX()
-RemovedMethod: androidx.compose.ui.graphics.TransformOrigin#getPivotFractionY():
-    Removed method androidx.compose.ui.graphics.TransformOrigin.getPivotFractionY()
-RemovedMethod: androidx.compose.ui.layout.ScaleFactor#getScaleX():
-    Removed method androidx.compose.ui.layout.ScaleFactor.getScaleX()
-RemovedMethod: androidx.compose.ui.layout.ScaleFactor#getScaleY():
-    Removed method androidx.compose.ui.layout.ScaleFactor.getScaleY()
+AddedMethod: androidx.compose.ui.graphics.vector.ImageVector.Builder#Builder(String, float, float, float, float, long, int, boolean, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.vector.ImageVector.Builder(String,float,float,float,float,long,int,boolean,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.vector.ImageVector.Builder#Builder(String, float, float, float, float, long, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.vector.ImageVector.Builder(String,float,float,float,float,long,int,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.input.pointer.HistoricalChange#HistoricalChange(long, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.input.pointer.HistoricalChange(long,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.input.pointer.PointerInputChange#PointerInputChange(long, long, long, boolean, float, long, long, boolean, boolean, int, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.input.pointer.PointerInputChange(long,long,long,boolean,float,long,long,boolean,boolean,int,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.input.pointer.PointerInputChange#PointerInputChange(long, long, long, boolean, long, long, boolean, androidx.compose.ui.input.pointer.ConsumedData, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.input.pointer.PointerInputChange(long,long,long,boolean,long,long,boolean,androidx.compose.ui.input.pointer.ConsumedData,int,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.input.pointer.PointerInputChange#PointerInputChange(long, long, long, boolean, long, long, boolean, boolean, int, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.input.pointer.PointerInputChange(long,long,long,boolean,long,long,boolean,boolean,int,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.node.DpTouchBoundsExpansion#DpTouchBoundsExpansion(float, float, float, float, boolean, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.node.DpTouchBoundsExpansion(float,float,float,float,boolean,kotlin.jvm.internal.DefaultConstructorMarker)

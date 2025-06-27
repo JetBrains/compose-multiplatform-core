@@ -164,13 +164,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
                 // there must have been a structural change
                 // we only need to diff what is left of the list, so we use `i` to determine how
                 // much of the list is left.
-                structuralUpdate(
-                    i,
-                    before,
-                    after,
-                    node,
-                    !layoutNode.applyingModifierOnAttach,
-                )
+                structuralUpdate(i, before, after, node, !layoutNode.applyingModifierOnAttach)
             }
         } else if (layoutNode.applyingModifierOnAttach && beforeSize == 0) {
             // common case where we are initializing the chain and the previous size is zero. In
@@ -202,13 +196,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
         } else {
             coordinatorSyncNeeded = true
             before = before ?: MutableVector()
-            structuralUpdate(
-                0,
-                before,
-                after,
-                paddedHead,
-                !layoutNode.applyingModifierOnAttach,
-            )
+            structuralUpdate(0, before, after, paddedHead, !layoutNode.applyingModifierOnAttach)
         }
         current = after
         // clear the before vector to allow old modifiers to be Garbage Collected
@@ -291,15 +279,6 @@ internal class NodeChain(val layoutNode: LayoutNode) {
      * invalidations as a result of the attach, if needed.
      */
     fun runAttachLifecycle() {
-        // Assign layers that have been recycled in onDetach() in case the node has been reused
-        var coordinator: NodeCoordinator = outerCoordinator
-        val innerCoordinator = innerCoordinator
-        while (coordinator !== innerCoordinator) {
-            coordinator.onAttach()
-            coordinator = coordinator.wrapped!!
-        }
-        innerCoordinator.onAttach()
-
         headToTail {
             it.runAttachLifecycle()
             if (it.insertedNodeAwaitingAttachForInvalidation) {
@@ -369,15 +348,6 @@ internal class NodeChain(val layoutNode: LayoutNode) {
 
     internal fun runDetachLifecycle() {
         tailToHead { if (it.isAttached) it.runDetachLifecycle() }
-
-        // Recycle layers
-        var coordinator: NodeCoordinator = innerCoordinator
-        val outerCoordinator = outerCoordinator
-        while (coordinator !== outerCoordinator) {
-            coordinator.onDetach()
-            coordinator = coordinator.wrappedBy!!
-        }
-        outerCoordinator.onDetach()
     }
 
     private fun getDiffer(
@@ -497,7 +467,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             index: Int,
             prev: Modifier.Element,
             next: Modifier.Element,
-            node: Modifier.Node
+            node: Modifier.Node,
         )
 
         fun nodeUpdated(
@@ -513,7 +483,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             newIndex: Int,
             prev: Modifier.Element,
             next: Modifier.Element,
-            node: Modifier.Node
+            node: Modifier.Node,
         )
 
         fun nodeInserted(
@@ -521,7 +491,7 @@ internal class NodeChain(val layoutNode: LayoutNode) {
             newIndex: Int,
             element: Modifier.Element,
             child: Modifier.Node,
-            inserted: Modifier.Node
+            inserted: Modifier.Node,
         )
 
         fun nodeRemoved(oldIndex: Int, element: Modifier.Element, node: Modifier.Node)

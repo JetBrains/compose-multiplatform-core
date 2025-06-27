@@ -1,13 +1,29 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.compose.ui.graphics.Color#getAlpha():
-    Removed method androidx.compose.ui.graphics.Color.getAlpha()
-RemovedMethod: androidx.compose.ui.graphics.Color#getBlue():
-    Removed method androidx.compose.ui.graphics.Color.getBlue()
-RemovedMethod: androidx.compose.ui.graphics.Color#getColorSpace():
-    Removed method androidx.compose.ui.graphics.Color.getColorSpace()
-RemovedMethod: androidx.compose.ui.graphics.Color#getGreen():
-    Removed method androidx.compose.ui.graphics.Color.getGreen()
-RemovedMethod: androidx.compose.ui.graphics.Color#getRed():
-    Removed method androidx.compose.ui.graphics.Color.getRed()
-RemovedMethod: androidx.compose.ui.graphics.colorspace.ColorModel#getComponentCount():
-    Removed method androidx.compose.ui.graphics.colorspace.ColorModel.getComponentCount()
+AddedMethod: androidx.compose.ui.graphics.BlendModeColorFilter#BlendModeColorFilter(long, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.BlendModeColorFilter(long,int,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.BlurEffect#BlurEffect(androidx.compose.ui.graphics.RenderEffect, float, float, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.BlurEffect(androidx.compose.ui.graphics.RenderEffect,float,float,int,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.ColorMatrixColorFilter#ColorMatrixColorFilter(float[], kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.ColorMatrixColorFilter(float[],kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.LightingColorFilter#LightingColorFilter(long, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.LightingColorFilter(long,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.OffsetEffect#OffsetEffect(androidx.compose.ui.graphics.RenderEffect, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.OffsetEffect(androidx.compose.ui.graphics.RenderEffect,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.Shadow#Shadow(long, long, float, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.Shadow(long,long,float,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.SolidColor#SolidColor(long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.SolidColor(long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.Vertices#Vertices(int, java.util.List, java.util.List, java.util.List, java.util.List, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.Vertices(int,java.util.List,java.util.List,java.util.List,java.util.List,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.colorspace.ColorSpace#ColorSpace(String, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.colorspace.ColorSpace(String,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.drawscope.Stroke#Stroke(float, float, int, int, androidx.compose.ui.graphics.PathEffect, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.drawscope.Stroke(float,float,int,int,androidx.compose.ui.graphics.PathEffect,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.painter.BitmapPainter#BitmapPainter(androidx.compose.ui.graphics.ImageBitmap, long, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.painter.BitmapPainter(androidx.compose.ui.graphics.ImageBitmap,long,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.painter.ColorPainter#ColorPainter(long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.painter.ColorPainter(long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.shadow.Shadow#Shadow(float, androidx.compose.ui.graphics.Brush, float, long, float, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.shadow.Shadow(float,androidx.compose.ui.graphics.Brush,float,long,float,int,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.ui.graphics.shadow.Shadow#Shadow(float, long, float, long, float, int, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.ui.graphics.shadow.Shadow(float,long,float,long,float,int,kotlin.jvm.internal.DefaultConstructorMarker)

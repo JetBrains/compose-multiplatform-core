@@ -318,7 +318,7 @@ class Camera2DeviceCacheTest {
                 .containsExactly(
                     listOf<CameraId>(),
                     listOf(CameraId("0")),
-                    listOf(CameraId("0"), CameraId("1"))
+                    listOf(CameraId("0"), CameraId("1")),
                 )
 
             // The list should be cached from now on.
@@ -330,7 +330,7 @@ class Camera2DeviceCacheTest {
                 .containsExactly(
                     listOf<CameraId>(),
                     listOf(CameraId("0")),
-                    listOf(CameraId("0"), CameraId("1"))
+                    listOf(CameraId("0"), CameraId("1")),
                 )
 
             job.cancel()
@@ -362,7 +362,7 @@ class Camera2DeviceCacheTest {
             assertThat(collectedCameraIds)
                 .containsExactly(
                     listOf(CameraId("0"), CameraId("1")),
-                    listOf(CameraId("0"), CameraId("1"), CameraId("2"))
+                    listOf(CameraId("0"), CameraId("1"), CameraId("2")),
                 )
 
             // Camera 2 is removed (unplugged).
@@ -374,7 +374,7 @@ class Camera2DeviceCacheTest {
                 .containsExactly(
                     listOf(CameraId("0"), CameraId("1")),
                     listOf(CameraId("0"), CameraId("1"), CameraId("2")),
-                    listOf(CameraId("0"), CameraId("1"))
+                    listOf(CameraId("0"), CameraId("1")),
                 )
 
             job.cancel()

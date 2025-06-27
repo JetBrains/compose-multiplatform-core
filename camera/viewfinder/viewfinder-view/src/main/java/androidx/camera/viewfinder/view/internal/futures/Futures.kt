@@ -54,7 +54,7 @@ object Futures {
     internal fun <I, O> transformAsync(
         input: ListenableFuture<I>,
         function: AsyncFunction<in I, out O>,
-        executor: Executor
+        executor: Executor,
     ): ListenableFuture<O> {
         val output: ChainingListenableFuture<I, O> = ChainingListenableFuture(function, input)
         input.addListener(output, executor)
@@ -76,7 +76,7 @@ object Futures {
     fun <I, O> transform(
         input: ListenableFuture<I>,
         function: (I?) -> O,
-        executor: Executor
+        executor: Executor,
     ): ListenableFuture<O> {
         Preconditions.checkNotNull(function)
         return transformAsync(input, { immediateFuture(function.invoke(it)) }, executor)
@@ -94,7 +94,7 @@ object Futures {
     fun <V> addCallback(
         future: ListenableFuture<V>,
         callback: FutureCallback<in V>,
-        executor: Executor
+        executor: Executor,
     ) {
         Preconditions.checkNotNull(callback)
         future.addListener(CallbackListener(future, callback), executor)

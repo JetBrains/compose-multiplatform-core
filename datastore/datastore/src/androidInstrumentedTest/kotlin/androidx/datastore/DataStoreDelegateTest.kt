@@ -61,7 +61,7 @@ val Context.dsWithMigrationTo123 by
                     override suspend fun cleanUp() {}
                 }
             )
-        }
+        },
     )
 
 const val USER_ENCRYPTED_FILE_NAME = "userStorage"

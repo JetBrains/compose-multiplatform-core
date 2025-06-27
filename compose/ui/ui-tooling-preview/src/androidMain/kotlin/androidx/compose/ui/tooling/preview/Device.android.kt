@@ -148,6 +148,6 @@ object Devices {
             Devices.DESKTOP,
             Devices.TV_720p,
             Devices.TV_1080p,
-        ]
+        ],
 )
 internal annotation class Device

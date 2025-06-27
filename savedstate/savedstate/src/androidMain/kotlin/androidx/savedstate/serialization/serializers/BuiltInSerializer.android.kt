@@ -399,7 +399,7 @@ public class SparseArraySerializer<T>(elementSerializer: KSerializer<T>) :
         val surrogate =
             SparseArraySurrogate(
                 keys = List(value.size()) { index -> value.keyAt(index) },
-                values = List(value.size()) { index -> value.valueAt(index) }
+                values = List(value.size()) { index -> value.valueAt(index) },
             )
         encoder.encodeSerializableValue(surrogateSerializer, surrogate)
     }

@@ -58,14 +58,12 @@ import org.junit.runners.Parameterized
 abstract class PersistentRecordingTestBase(
     private val implName: String,
     private var cameraSelector: CameraSelector,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
+        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -106,6 +104,13 @@ abstract class PersistentRecordingTestBase(
                     Camera2Config.defaultConfig(),
                 ),
                 arrayOf(
+                    "external+" + Camera2Config::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
+                    Camera2Config.defaultConfig(),
+                ),
+                arrayOf(
                     "back+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     CameraPipeConfig.defaultConfig(),
@@ -113,6 +118,13 @@ abstract class PersistentRecordingTestBase(
                 arrayOf(
                     "front+" + CameraPipeConfig::class.simpleName,
                     CameraSelector.DEFAULT_FRONT_CAMERA,
+                    CameraPipeConfig.defaultConfig(),
+                ),
+                arrayOf(
+                    "external+" + CameraPipeConfig::class.simpleName,
+                    CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_EXTERNAL)
+                        .build(),
                     CameraPipeConfig.defaultConfig(),
                 ),
             )
@@ -165,7 +177,7 @@ abstract class PersistentRecordingTestBase(
         cameraProvider =
             ProcessCameraProviderWrapper(
                 ProcessCameraProvider.getInstance(context).get(),
-                enableStreamSharing
+                enableStreamSharing,
             )
         lifecycleOwner = FakeLifecycleOwner()
         lifecycleOwner.startAndResume()
@@ -273,7 +285,7 @@ abstract class PersistentRecordingTestBase(
 
         camera.cameraControl.verifyIfInVideoUsage(
             false,
-            "VideoCapture unbound but camera still in video usage"
+            "VideoCapture unbound but camera still in video usage",
         )
 
         // Act 2 - rebind VideoCapture, isRecording should be true.
@@ -281,7 +293,7 @@ abstract class PersistentRecordingTestBase(
 
         camera.cameraControl.verifyIfInVideoUsage(
             true,
-            "VideoCapture re-bound but camera still not in video usage"
+            "VideoCapture re-bound but camera still not in video usage",
         )
 
         // TODO(b/382158668): Remove the check for the status events.
@@ -295,6 +307,10 @@ abstract class PersistentRecordingTestBase(
     @Test
     fun updateVideoUsage_whenUseCaseBoundToNewCameraForPersistentRecording(): Unit = runBlocking {
         assumeStopCodecAfterSurfaceRemovalCrashMediaServerQuirk()
+        assumeTrue(
+            "No OppositeCamera for test.",
+            CameraUtil.hasCameraWithLensFacing(oppositeCameraSelector.lensFacing!!),
+        )
 
         checkAndBindUseCases(preview, videoCapture)
         val recording =
@@ -305,7 +321,7 @@ abstract class PersistentRecordingTestBase(
 
         camera.cameraControl.verifyIfInVideoUsage(
             false,
-            "VideoCapture unbound but camera still in video usage"
+            "VideoCapture unbound but camera still in video usage",
         )
 
         // Act 2 - rebind VideoCapture to opposite camera, isRecording should be true.
@@ -313,7 +329,7 @@ abstract class PersistentRecordingTestBase(
 
         oppositeCamera.cameraControl.verifyIfInVideoUsage(
             true,
-            "VideoCapture re-bound but camera still not in video usage"
+            "VideoCapture re-bound but camera still not in video usage",
         )
 
         // TODO(b/382158668): Remove the check for the status events.
@@ -344,7 +360,7 @@ abstract class PersistentRecordingTestBase(
             isUseCasesCombinationSupported(
                 *useCases,
                 withStreamSharing = withStreamSharing,
-                useOppositeCamera = useOppositeCamera
+                useOppositeCamera = useOppositeCamera,
             )
         )
 
@@ -352,14 +368,14 @@ abstract class PersistentRecordingTestBase(
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
                 getCameraSelector(useOppositeCamera),
-                *useCases
+                *useCases,
             )
         }
     }
 
     private suspend fun CameraControl.verifyIfInVideoUsage(
         expected: Boolean,
-        message: String = ""
+        message: String = "",
     ) {
         instrumentation.waitForIdleSync() // VideoCapture observes Recorder in main thread
         // VideoUsage is updated in camera thread. So, we should ensure all tasks already submitted

@@ -151,7 +151,7 @@ class ExtensionsWindowLayoutInfoAdapterTest {
             assertTrue(source.isNotEmpty())
             assertTrue(
                 "Expected invalid FoldingFeatures to be filtered but had $invalidFeatures",
-                invalidFeatures.isEmpty()
+                invalidFeatures.isEmpty(),
             )
         }
     }

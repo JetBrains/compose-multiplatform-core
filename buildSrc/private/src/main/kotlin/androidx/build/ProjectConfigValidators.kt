@@ -46,14 +46,7 @@ private val mavenNameMap =
     )
 
 // Allow a small set of common Maven name components that don't need to appear in the project name.
-private val mavenNameAllowlist =
-    setOf(
-        "extension",
-        "extensions",
-        "for",
-        "integration",
-        "with",
-    )
+private val mavenNameAllowlist = setOf("extension", "extensions", "for", "integration", "with")
 
 /** Validates the project's Maven name against Jetpack guidelines. */
 fun Project.validateProjectMavenName(mavenName: String, groupId: String) {

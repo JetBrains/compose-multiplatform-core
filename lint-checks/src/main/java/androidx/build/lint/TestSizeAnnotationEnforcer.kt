@@ -104,14 +104,14 @@ class TestSizeAnnotationEnforcer : Detector(), SourceCodeScanner {
                 "androidInstrumentedTest",
                 "androidDeviceTest",
                 "androidDeviceTestDebug",
-                "androidDeviceTestRelease"
+                "androidDeviceTestRelease",
             )
         private const val TEST_ANNOTATION = "org.junit.Test"
         private val TEST_SIZE_ANNOTATIONS =
             listOf(
                 "androidx.test.filters.SmallTest",
                 "androidx.test.filters.MediumTest",
-                "androidx.test.filters.LargeTest"
+                "androidx.test.filters.LargeTest",
             )
 
         val UNEXPECTED_TEST_SIZE_ANNOTATION =
@@ -128,8 +128,8 @@ class TestSizeAnnotationEnforcer : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     TestSizeAnnotationEnforcer::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

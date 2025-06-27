@@ -28,7 +28,6 @@ android {
 
     defaultConfig {
         applicationId = "androidx.privacysandbox.ui.integration.testapp"
-        targetSdk = 35
     }
 
     buildTypes {
@@ -79,4 +78,8 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.espressoIntents)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(project(":tracing:tracing"))
+    androidTestImplementation(libs.testUiautomator)
 }

@@ -74,7 +74,7 @@ internal val SwipeToDismissDemos =
                     ComposableDemo("Edge swipe") { params ->
                         EdgeSwipeForSwipeToDismiss(params.navigateBack)
                     },
-                )
+                ),
             ),
             DemoCategory(
                 "Demos",
@@ -89,10 +89,10 @@ internal val SwipeToDismissDemos =
                     ComposableDemo("EdgeSwipeToDismiss modifier") { params ->
                         EdgeSwipeDemo(params.swipeToDismissBoxState)
                     },
-                    ComposableDemo("Nested SwipeToDismissBox") { NestedSwipeToDismissDemo() }
-                )
-            )
-        )
+                    ComposableDemo("Nested SwipeToDismissBox") { NestedSwipeToDismissDemo() },
+                ),
+            ),
+        ),
     )
 
 val WearFoundationDemos =
@@ -107,7 +107,7 @@ val WearFoundationDemos =
                     ComposableDemo("Expandable Text") { ExpandableText() },
                     ComposableDemo("Items Sample") { ExpandableWithItemsSample() },
                     ComposableDemo("Text Sample") { ExpandableTextSample() },
-                )
+                ),
             ),
             DemoCategory(
                 "CurvedLayout",
@@ -136,14 +136,14 @@ val WearFoundationDemos =
                     ComposableDemo("Line Height") { CurvedLineHeight() },
                     ComposableDemo("Semantics") { CurvedSemanticsSample() },
                     ComposableDemo("Clear Semantics") { CurvedClearSemanticsSample() },
-                )
+                ),
             ),
             DemoCategory(
                 "Pagers",
                 listOf(
                     ComposableDemo("Horizontal Pager") { SimpleHorizontalPagerSample() },
                     ComposableDemo("Vertical Pager") { SimpleVerticalPagerSample() },
-                )
+                ),
             ),
             ComposableDemo("Scrollable Column") { ScrollableColumnDemo() },
             ComposableDemo("Scrollable Row") { ScrollableRowDemo() },
@@ -159,8 +159,8 @@ val WearFoundationDemos =
                                 RotaryScrollWithOverscrollSample()
                             },
                             ComposableDemo("RotaryEvent") { ScrollUsingRotatingCrownDemo() },
-                            ComposableDemo("PreRotaryEvent") { InterceptScrollDemo() }
-                        )
+                            ComposableDemo("PreRotaryEvent") { InterceptScrollDemo() },
+                        ),
                     ),
                     DemoCategory(
                         "Demos",
@@ -174,9 +174,9 @@ val WearFoundationDemos =
                             },
                             ComposableDemo("Nested scroll with TLC") { NestedScrollTLCDemo() },
                             ComposableDemo("Nested scroll with SLC") { NestedScrollSLCDemo() },
-                        )
-                    )
-                )
+                        ),
+                    ),
+                ),
             ),
             ComposableDemo("Focus Sample") { HierarchicalFocusSample() },
             ComposableDemo("Nested Focus Sample") { HierarchicalFocus2Levels() },
@@ -190,13 +190,13 @@ val WearFoundationDemos =
                     ComposableDemo(
                         "With Content Padding",
                         "Basic ScalingLazyColumn with autoCentering disabled and explicit " +
-                            "content padding of top = 20.dp, bottom = 20.dp"
+                            "content padding of top = 20.dp, bottom = 20.dp",
                     ) {
                         SimpleScalingLazyColumnWithContentPadding()
                     },
                     ComposableDemo(
                         "With Snap",
-                        "Basic ScalingLazyColumn, center aligned with snap enabled"
+                        "Basic ScalingLazyColumn, center aligned with snap enabled",
                     ) {
                         SimpleScalingLazyColumnWithSnap()
                     },
@@ -204,7 +204,7 @@ val WearFoundationDemos =
                         "Edge Anchor",
                         "A ScalingLazyColumn with Edge (rather than center) item anchoring. " +
                             "If you click on an item there will be an animated scroll of the " +
-                            "items edge to the center"
+                            "items edge to the center",
                     ) {
                         ScalingLazyColumnEdgeAnchoredAndAnimatedScrollTo()
                     },
@@ -225,16 +225,14 @@ val WearFoundationDemos =
                     ComposableDemo("Bi-directional") {
                         Centralize { SwipeToRevealDemoBothDirections() }
                     },
-                )
+                ),
             ),
             DemoCategory(
                 "TransformingLazyColumn",
                 listOf(
                     ComposableDemo("Letter Sample") { TransformingLazyColumnLettersSample() },
-                    ComposableDemo("Animation Sample") {
-                        TransformingLazyColumnAnimateItemSample()
-                    },
-                )
-            )
+                    ComposableDemo("Animation Sample") { TransformingLazyColumnAnimateItemSample() },
+                ),
+            ),
         ),
     )

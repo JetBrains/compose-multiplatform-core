@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.input.indirect
 
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.DelegatableNode
 
@@ -29,7 +29,7 @@ import androidx.compose.ui.node.DelegatableNode
  * the event, [onPreIndirectTouchEvent] is called for the focused item. If the event is still not
  * consumed, [onIndirectTouchEvent] is called on the focused item's parents.
  */
-@ExperimentalComposeUiApi
+@ExperimentalIndirectTouchTypeApi
 interface IndirectTouchInputModifierNode : DelegatableNode {
 
     /**

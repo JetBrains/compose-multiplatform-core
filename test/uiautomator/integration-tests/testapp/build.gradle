@@ -38,6 +38,7 @@ dependencies {
     implementation(project(":compose:ui:ui-unit"))
 
     androidTestImplementation(project(":test:uiautomator:uiautomator"))
+    androidTestImplementation(project(":test:uiautomator:uiautomator-shell"))
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
@@ -53,4 +54,7 @@ dependencies {
 android {
     compileSdk = 35
     namespace = "androidx.test.uiautomator.testapp"
+    defaultConfig {
+        minSdk 23
+    }
 }

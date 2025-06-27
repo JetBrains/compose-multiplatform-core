@@ -48,13 +48,13 @@ import org.xmlpull.v1.XmlPullParserException
 public class UserStyleFlavor(
     public val id: String,
     public val style: UserStyleData,
-    public val complications: Map<Int, DefaultComplicationDataSourcePolicy>
+    public val complications: Map<Int, DefaultComplicationDataSourcePolicy>,
 ) {
     /** Constructs UserStyleFlavor based on [UserStyle] specified. */
     constructor(
         id: String,
         style: UserStyle,
-        complications: Map<Int, DefaultComplicationDataSourcePolicy>
+        complications: Map<Int, DefaultComplicationDataSourcePolicy>,
     ) : this(id, style.toUserStyleData(), complications) {}
 
     @Suppress("ShowingMemberInHiddenClass")
@@ -64,7 +64,7 @@ public class UserStyleFlavor(
     ) : this(
         wireFormat.mId,
         UserStyleData(wireFormat.mStyle),
-        wireFormat.mComplications.mapValues { DefaultComplicationDataSourcePolicy(it.value) }
+        wireFormat.mComplications.mapValues { DefaultComplicationDataSourcePolicy(it.value) },
     ) {}
 
     @Suppress("ShowingMemberInHiddenClass")
@@ -73,7 +73,7 @@ public class UserStyleFlavor(
         UserStyleFlavorWireFormat(
             id,
             style.toWireFormat(),
-            complications.mapValues { it.value.toWireFormat() }
+            complications.mapValues { it.value.toWireFormat() },
         )
 
     override fun toString(): String = "UserStyleFlavor[$id: $style, $complications]"
@@ -104,7 +104,7 @@ public class UserStyleFlavor(
         fun inflate(
             resources: Resources,
             parser: XmlResourceParser,
-            schema: UserStyleSchema
+            schema: UserStyleSchema,
         ): UserStyleFlavor {
             require(parser.name == "UserStyleFlavor") { "Expected a UserStyleFlavor node" }
 
@@ -157,7 +157,7 @@ public class UserStyleFlavor(
                             DefaultComplicationDataSourcePolicy.inflate(
                                 resources,
                                 parser,
-                                "ComplicationPolicy"
+                                "ComplicationPolicy",
                             )
 
                         complications[id] = policy
@@ -169,7 +169,7 @@ public class UserStyleFlavor(
             return UserStyleFlavor(
                 flavorId,
                 userStyle.toUserStyle().toUserStyleData(),
-                complications.toMap()
+                complications.toMap(),
             )
         }
     }
@@ -222,7 +222,7 @@ public class UserStyleFlavors(public val flavors: List<UserStyleFlavor>) {
         fun inflate(
             resources: Resources,
             parser: XmlResourceParser,
-            schema: UserStyleSchema
+            schema: UserStyleSchema,
         ): UserStyleFlavors {
             require(parser.name == "UserStyleFlavors") { "Expected a UserStyleFlavors node" }
 

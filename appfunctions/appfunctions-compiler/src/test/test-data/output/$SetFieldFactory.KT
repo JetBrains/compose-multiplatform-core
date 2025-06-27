@@ -10,14 +10,7 @@ public class `$SetFieldFactory`<T>(
 ) : AppFunctionSerializableFactory<SetField<T>> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): SetField<T> {
 
-    val value = when (tTypeParameter) {
-      is AppFunctionSerializableFactory.TypeParameter.ListTypeParameter<*, *> -> {
-        appFunctionData.getGenericListField("value", tTypeParameter.itemClazz)
-      }
-      is AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter -> {
-        appFunctionData.getGenericField("value", tTypeParameter.clazz)
-      }
-    }
+    val value = tTypeParameter.getFromAppFunctionData(appFunctionData,"value")
 
     val resultSetField = SetField(value)
     return resultSetField
@@ -28,14 +21,7 @@ public class `$SetFieldFactory`<T>(
 
     val builder = AppFunctionData.Builder("com.testdata.SetField")
     val value = setField_appFunctionSerializable.value
-    when (tTypeParameter) {
-      is AppFunctionSerializableFactory.TypeParameter.ListTypeParameter<*, *> -> {
-        builder.setGenericListField("value", value as List<*>?, tTypeParameter.itemClazz)
-      }
-      is AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter -> {
-        builder.setGenericField("value", value, tTypeParameter.clazz)
-      }
-    }
+    tTypeParameter.setValueInAppFunctionData(builder, "value", value)
 
     return builder.build()
   }

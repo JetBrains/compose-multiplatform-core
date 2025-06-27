@@ -100,7 +100,7 @@ class NavigationSuiteScaffoldTest {
                     navigationSuite = {
                         NavigationSuite(
                             modifier = Modifier.testTag(NavigationSuiteTag),
-                            layoutType = NavigationSuiteType.ShortNavigationBarCompact
+                            layoutType = NavigationSuiteType.ShortNavigationBarCompact,
                         ) {}
                     }
                 )
@@ -130,7 +130,7 @@ class NavigationSuiteScaffoldTest {
                     navigationSuite = {
                         NavigationSuite(
                             modifier = Modifier.testTag(NavigationSuiteTag),
-                            layoutType = NavigationSuiteType.WideNavigationRailCollapsed
+                            layoutType = NavigationSuiteType.WideNavigationRailCollapsed,
                         ) {}
                     }
                 )
@@ -225,16 +225,16 @@ class NavigationSuiteScaffoldTest {
 @Composable
 private fun SampleNavigationSuiteScaffoldLayout(
     layoutType: NavigationSuiteType,
-    state: NavigationSuiteScaffoldState = rememberNavigationSuiteScaffoldState()
+    state: NavigationSuiteScaffoldState = rememberNavigationSuiteScaffoldState(),
 ) {
     NavigationSuiteScaffoldLayout(
         state = state,
         navigationSuite = {
             NavigationSuite(
                 modifier = Modifier.testTag(NavigationSuiteTag),
-                layoutType = layoutType
+                layoutType = layoutType,
             ) {}
-        }
+        },
     )
 }
 

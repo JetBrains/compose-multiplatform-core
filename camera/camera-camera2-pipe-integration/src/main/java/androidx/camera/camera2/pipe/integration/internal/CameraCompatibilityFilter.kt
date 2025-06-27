@@ -33,7 +33,7 @@ public object CameraCompatibilityFilter {
     @JvmStatic
     public fun getBackwardCompatibleCameraIds(
         cameraDevices: CameraDevices,
-        availableCameraIds: List<String>
+        availableCameraIds: List<String>,
     ): List<String> {
         val backwardCompatibleCameraIds = mutableListOf<String>()
         for (cameraId in availableCameraIds) {

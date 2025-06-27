@@ -55,8 +55,6 @@ androidx {
     type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2024"
     description = "Test app that exercises the SceneCore API without XR Compose."
-    // TODO: b/326456246
-    optOutJSpecify = true
 }
 
 dependencies {

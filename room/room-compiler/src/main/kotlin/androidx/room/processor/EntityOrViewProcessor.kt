@@ -34,7 +34,7 @@ interface EntityOrViewProcessor {
 private class NonEntityOrViewProcessor(
     val context: Context,
     val element: XTypeElement,
-    private val referenceStack: LinkedHashSet<String>
+    private val referenceStack: LinkedHashSet<String>,
 ) : EntityOrViewProcessor {
 
     override fun process(): EntityOrView {
@@ -45,7 +45,7 @@ private class NonEntityOrViewProcessor(
                 element = element,
                 bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
                 parent = null,
-                referenceStack = referenceStack
+                referenceStack = referenceStack,
             )
             .process()
         return object : EntityOrView {
@@ -63,7 +63,7 @@ private class NonEntityOrViewProcessor(
 fun EntityOrViewProcessor(
     context: Context,
     element: XTypeElement,
-    referenceStack: LinkedHashSet<String> = LinkedHashSet()
+    referenceStack: LinkedHashSet<String> = LinkedHashSet(),
 ): EntityOrViewProcessor {
     return when {
         element.hasAnnotation(Entity::class) -> EntityProcessor(context, element, referenceStack)

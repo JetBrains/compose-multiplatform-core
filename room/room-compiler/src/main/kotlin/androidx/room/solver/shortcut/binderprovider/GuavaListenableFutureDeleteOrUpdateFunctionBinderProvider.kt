@@ -52,7 +52,7 @@ class GuavaListenableFutureDeleteOrUpdateFunctionBinderProvider(val context: Con
         return LambdaDeleteOrUpdateFunctionBinder(
             typeArg = typeArg,
             functionName = GUAVA_ROOM_CREATE_LISTENABLE_FUTURE,
-            adapter = context.typeAdapterStore.findDeleteOrUpdateAdapter(typeArg)
+            adapter = context.typeAdapterStore.findDeleteOrUpdateAdapter(typeArg),
         )
     }
 }

@@ -34,8 +34,8 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  */
 @OptIn(ExperimentalFeatures.Ext14OptIn::class)
 @ExperimentalFeatures.Ext14OptIn
-class PerBuyerConfiguration
-public constructor(val targetInputSizeBytes: Int, val buyer: AdTechIdentifier) {
+public class PerBuyerConfiguration
+public constructor(public val targetInputSizeBytes: Int, public val buyer: AdTechIdentifier) {
     /** Overrides the toString method. */
     override fun toString(): String {
         return "PerBuyerConfiguration: targetInputSizeBytes=$targetInputSizeBytes, " +

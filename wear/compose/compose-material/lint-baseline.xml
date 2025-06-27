@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
+<issues format="6" by="lint 8.12.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha02)" variant="all" version="8.12.0-alpha02">
 
     <issue
         id="ComposableLambdaParameterNaming"
@@ -103,15 +103,6 @@
     <issue
         id="ComposableNaming"
         message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun dualPicker(readOnlyLabel: String? = null) {"
-        errorLine2="                ~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material/PickerScreenshotTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions that return Unit should start with an uppercase letter"
         errorLine1="    private fun BoxScope.boxContent(isBackground: Boolean) {"
         errorLine2="                         ~~~~~~~~~~">
         <location
@@ -175,6 +166,42 @@
     <issue
         id="ComposableNaming"
         message="Composable functions that return Unit should start with an uppercase letter"
+        errorLine1="    private fun swipeToRevealWithDefaults("
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableNaming"
+        message="Composable functions that return Unit should start with an uppercase letter"
+        errorLine1="    private fun getBoxContent(onClick: () -> Unit = {}, modifier: Modifier = Modifier) {"
+        errorLine2="                ~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableNaming"
+        message="Composable functions that return Unit should start with an uppercase letter"
+        errorLine1="    private fun actionContent(modifier: Modifier = Modifier) {"
+        errorLine2="                ~~~~~~~~~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableNaming"
+        message="Composable functions that return Unit should start with an uppercase letter"
+        errorLine1="    private fun getAction("
+        errorLine2="                ~~~~~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableNaming"
+        message="Composable functions that return Unit should start with an uppercase letter"
         errorLine1="    private fun swipeToRevealChipDefault("
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -193,42 +220,6 @@
     <issue
         id="ComposableNaming"
         message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun createPrimaryAction("
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun createSecondaryAction("
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun createUndoAction("
-        errorLine2="                ~~~~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun createContent(modifier: Modifier = Modifier) ="
-        errorLine2="                ~~~~~~~~~~~~~">
-        <location
-            file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
-    </issue>
-
-    <issue
-        id="ComposableNaming"
-        message="Composable functions that return Unit should start with an uppercase letter"
         errorLine1="    private fun sampleToggleChip("
         errorLine2="                ~~~~~~~~~~~~~~~~">
         <location
@@ -238,7 +229,7 @@
     <issue
         id="ComposableNaming"
         message="Composable functions that return Unit should start with an uppercase letter"
-        errorLine1="    private fun sampleSplitToggleChip("
+        errorLine1="    private fun sampleSplitToggleChip(enabled: Boolean = true) {"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material/ToggleChipScreenshotTest.kt"/>
@@ -292,8 +283,8 @@
     <issue
         id="ModifierParameter"
         message="Modifier parameter should be the first optional parameter"
-        errorLine1="        modifier: Modifier = Modifier,"
-        errorLine2="        ~~~~~~~~">
+        errorLine1="    private fun getBoxContent(onClick: () -> Unit = {}, modifier: Modifier = Modifier) {"
+        errorLine2="                                                        ~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
     </issue>
@@ -305,6 +296,15 @@
         errorLine2="        ~~~~~~~~">
         <location
             file="src/androidTest/kotlin/androidx/wear/compose/material/SwipeToRevealTest.kt"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Optional Modifier parameter should have a default value of `Modifier`"
+        errorLine1="        modifier: Modifier = Modifier.size(screenSize),"
+        errorLine2="        ~~~~~~~~">
+        <location
+            file="src/androidTest/kotlin/androidx/wear/compose/material/VignetteScreenshotTest.kt"/>
     </issue>
 
     <issue

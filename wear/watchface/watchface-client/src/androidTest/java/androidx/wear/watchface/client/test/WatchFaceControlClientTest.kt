@@ -137,7 +137,7 @@ abstract class WatchFaceControlClientTestBase {
             Intent(context, WatchFaceControlTestService::class.java).apply {
                 action = WatchFaceControlService.ACTION_WATCHFACE_CONTROL_SERVICE
             },
-            resourceOnlyWatchFacePackageName = null
+            resourceOnlyWatchFacePackageName = null,
         )
     }
 
@@ -160,7 +160,7 @@ abstract class WatchFaceControlClientTestBase {
             hasLowBitAmbient = false,
             hasBurnInProtection = false,
             analogPreviewReferenceTimeMillis = 0,
-            digitalPreviewReferenceTimeMillis = 0
+            digitalPreviewReferenceTimeMillis = 0,
         )
 
     protected val systemState = WatchUiState(false, 0)
@@ -198,7 +198,7 @@ abstract class WatchFaceControlClientTestBase {
         userStyle: UserStyleData? = null,
         complications: Map<Int, ComplicationData>? = this.complications,
         previewExecutor: Executor? = null,
-        previewListener: Consumer<String>? = null
+        previewListener: Consumer<String>? = null,
     ): InteractiveWatchFaceClient {
         val deferredInteractiveInstance =
             handlerCoroutineScope.async {
@@ -210,7 +210,7 @@ abstract class WatchFaceControlClientTestBase {
                         userStyle,
                         complications,
                         previewExecutor,
-                        previewListener
+                        previewListener,
                     )
                 } else {
                     @Suppress("deprecation")
@@ -219,7 +219,7 @@ abstract class WatchFaceControlClientTestBase {
                         deviceConfig,
                         systemState,
                         userStyle,
-                        complications
+                        complications,
                     )
                 }
             }
@@ -235,7 +235,7 @@ abstract class WatchFaceControlClientTestBase {
 
     protected fun <X> awaitWithTimeout(
         thing: Deferred<X>,
-        timeoutMillis: Long = CONNECT_TIMEOUT_MILLIS
+        timeoutMillis: Long = CONNECT_TIMEOUT_MILLIS,
     ): X {
         var value: X? = null
         val latch = CountDownLatch(1)
@@ -261,7 +261,7 @@ abstract class WatchFaceControlClientTestBase {
         val wfReady = CompletableDeferred<Unit>()
         interactiveInstance.addOnWatchFaceReadyListener(
             { runnable -> runnable.run() },
-            { wfReady.complete(Unit) }
+            { wfReady.complete(Unit) },
         )
         awaitWithTimeout(wfReady)
     }
@@ -272,7 +272,7 @@ fun rangedValueComplicationBuilder() =
             value = 50.0f,
             min = 10.0f,
             max = 100.0f,
-            ComplicationText.EMPTY
+            ComplicationText.EMPTY,
         )
         .setText(PlainComplicationText.Builder("Battery").build())
 
@@ -354,7 +354,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             "testId",
             UserStyle(
                 selectedOptions = mapOf(leftComplicationUserStyleSetting to optionWithNameOverride)
-            )
+            ),
         )
 
         try {
@@ -394,7 +394,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 ComplicationType.LONG_TEXT,
                 ComplicationType.SHORT_TEXT,
                 ComplicationType.MONOCHROMATIC_IMAGE,
-                ComplicationType.SMALL_IMAGE
+                ComplicationType.SMALL_IMAGE,
             )
         assertTrue(leftComplicationDetails.isEnabled)
         assertThat(leftComplicationDetails.currentType).isEqualTo(ComplicationType.SHORT_TEXT)
@@ -421,7 +421,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 ComplicationType.LONG_TEXT,
                 ComplicationType.SHORT_TEXT,
                 ComplicationType.MONOCHROMATIC_IMAGE,
-                ComplicationType.SMALL_IMAGE
+                ComplicationType.SMALL_IMAGE,
             )
         assertTrue(rightComplicationDetails.isEnabled)
         assertThat(rightComplicationDetails.currentType).isEqualTo(ComplicationType.SHORT_TEXT)
@@ -444,9 +444,9 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID to
                     LongTextComplicationData.Builder(
                             PlainComplicationText.Builder("Test").build(),
-                            ComplicationText.EMPTY
+                            ComplicationText.EMPTY,
                         )
-                        .build()
+                        .build(),
             )
         )
 
@@ -477,7 +477,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     deviceConfig,
                     systemState,
                     null,
-                    complications
+                    complications,
                 )
             }
 
@@ -504,7 +504,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     deviceConfig,
                     systemState,
                     null,
-                    complications
+                    complications,
                 )
             }
 
@@ -526,7 +526,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 Intent(context, WatchFaceControlTestService::class.java).apply {
                     action = WatchFaceControlService.ACTION_WATCHFACE_CONTROL_SERVICE
                 },
-                resourceOnlyWatchFacePackageName = "com.example.watchface"
+                resourceOnlyWatchFacePackageName = "com.example.watchface",
             )
         }
 
@@ -537,7 +537,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     deviceConfig,
                     systemState,
                     userStyle = null,
-                    complications
+                    complications,
                 )
             }
 
@@ -553,7 +553,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
         assertTrue(
             watchFaceService.lastResourceOnlyWatchFacePackageNameLatch.await(
                 UPDATE_TIMEOUT_MILLIS,
-                TimeUnit.MILLISECONDS
+                TimeUnit.MILLISECONDS,
             )
         )
 
@@ -573,7 +573,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 Intent(context, WatchFaceControlTestService::class.java).apply {
                     action = WatchFaceControlService.ACTION_WATCHFACE_CONTROL_SERVICE
                 },
-                resourceOnlyWatchFacePackageName = "com.example.watchface"
+                resourceOnlyWatchFacePackageName = "com.example.watchface",
             )
         }
 
@@ -584,7 +584,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     deviceConfig,
                     systemState,
                     userStyle = null,
-                    complications
+                    complications,
                 )
             }
 
@@ -600,7 +600,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
         assertTrue(
             watchFaceService.lastResourceOnlyWatchFacePackageNameLatch.await(
                 UPDATE_TIMEOUT_MILLIS,
-                TimeUnit.MILLISECONDS
+                TimeUnit.MILLISECONDS,
             )
         )
 
@@ -667,17 +667,17 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     ContentDescriptionLabel(
                         PlainComplicationText.Builder("Before").build(),
                         Rect(10, 10, 20, 20),
-                        pendingIntent1
-                    )
+                        pendingIntent1,
+                    ),
                 ),
                 Pair(
                     20000,
                     ContentDescriptionLabel(
                         PlainComplicationText.Builder("After").build(),
                         Rect(30, 30, 40, 40),
-                        pendingIntent2
-                    )
-                )
+                        pendingIntent2,
+                    ),
+                ),
             )
 
         val sysUiInterface = service.getInteractiveWatchFaceClientInstance("testId")!!
@@ -765,22 +765,22 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                             DefaultComplicationDataSourcePolicy(
                                 ComponentName(
                                     CONFIGURABLE_DATA_SOURCE_PKG,
-                                    CONFIGURABLE_DATA_SOURCE
+                                    CONFIGURABLE_DATA_SOURCE,
                                 ),
                                 ComplicationType.SHORT_TEXT,
                                 SystemDataSources.DATA_SOURCE_DAY_OF_WEEK,
-                                ComplicationType.SHORT_TEXT
+                                ComplicationType.SHORT_TEXT,
                             ),
-                            ComplicationType.SHORT_TEXT
+                            ComplicationType.SHORT_TEXT,
                         ),
                     EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID to
                         androidx.wear.watchface.client.DefaultComplicationDataSourcePolicyAndType(
                             DefaultComplicationDataSourcePolicy(
                                 SystemDataSources.DATA_SOURCE_STEP_COUNT,
-                                ComplicationType.SHORT_TEXT
+                                ComplicationType.SHORT_TEXT,
                             ),
-                            ComplicationType.SHORT_TEXT
-                        )
+                            ComplicationType.SHORT_TEXT,
+                        ),
                 )
             )
     }
@@ -801,22 +801,22 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                             DefaultComplicationDataSourcePolicy(
                                 ComponentName(
                                     CONFIGURABLE_DATA_SOURCE_PKG,
-                                    CONFIGURABLE_DATA_SOURCE
+                                    CONFIGURABLE_DATA_SOURCE,
                                 ),
                                 ComplicationType.SHORT_TEXT,
                                 SystemDataSources.DATA_SOURCE_DAY_OF_WEEK,
-                                ComplicationType.SHORT_TEXT
+                                ComplicationType.SHORT_TEXT,
                             ),
-                            ComplicationType.SHORT_TEXT
+                            ComplicationType.SHORT_TEXT,
                         ),
                     EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID to
                         androidx.wear.watchface.client.DefaultComplicationDataSourcePolicyAndType(
                             DefaultComplicationDataSourcePolicy(
                                 SystemDataSources.DATA_SOURCE_STEP_COUNT,
-                                ComplicationType.SHORT_TEXT
+                                ComplicationType.SHORT_TEXT,
                             ),
-                            ComplicationType.SHORT_TEXT
-                        )
+                            ComplicationType.SHORT_TEXT,
+                        ),
                 )
             )
     }
@@ -830,7 +830,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 service.getDefaultComplicationDataSourcePoliciesAndType(
                     ComponentName(
                         "androidx.wear.watchface.client.test",
-                        "androidx.wear.watchface.client.test.TestCrashingWatchFaceService"
+                        "androidx.wear.watchface.client.test.TestCrashingWatchFaceService",
                     )
                 )
             )
@@ -840,9 +840,9 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                         androidx.wear.watchface.client.DefaultComplicationDataSourcePolicyAndType(
                             DefaultComplicationDataSourcePolicy(
                                 SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET,
-                                ComplicationType.LONG_TEXT
+                                ComplicationType.LONG_TEXT,
                             ),
-                            ComplicationType.LONG_TEXT
+                            ComplicationType.LONG_TEXT,
                         )
                 )
             )
@@ -855,7 +855,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             TestAsyncCanvasRenderInitWatchFaceService(
                 context,
                 surfaceHolder,
-                initCompletableDeferred
+                initCompletableDeferred,
             )
         val deferredInteractiveInstance =
             handlerCoroutineScope.async {
@@ -865,7 +865,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     deviceConfig,
                     systemState,
                     null,
-                    complications
+                    complications,
                 )
             }
 
@@ -885,7 +885,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             val wfReady = CompletableDeferred<Unit>()
             interactiveInstance.addOnWatchFaceReadyListener(
                 { runnable -> runnable.run() },
-                { wfReady.complete(Unit) }
+                { wfReady.complete(Unit) },
             )
             assertThat(wfReady.isCompleted).isFalse()
 
@@ -905,7 +905,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             TestAsyncCanvasRenderInitWatchFaceService(
                 context,
                 surfaceHolder,
-                initCompletableDeferred
+                initCompletableDeferred,
             )
         val deferredInteractiveInstance =
             handlerCoroutineScope.async {
@@ -915,7 +915,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     deviceConfig,
                     systemState,
                     null,
-                    complications
+                    complications,
                 )
             }
 
@@ -940,7 +940,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 InteractiveWatchFaceClient.OnWatchFaceReadyListener { listenerCalled = true }
             interactiveInstance.addOnWatchFaceReadyListener(
                 { runnable -> runnable.run() },
-                listener
+                listener,
             )
             interactiveInstance.removeOnWatchFaceReadyListener(listener)
             assertThat(listenerCalled).isFalse()
@@ -969,7 +969,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 context,
                 surfaceHolder2,
                 onUiThreadGlSurfaceCreatedCompletableDeferred,
-                onBackgroundThreadGlContextCreatedCompletableDeferred
+                onBackgroundThreadGlContextCreatedCompletableDeferred,
             )
 
         val interactiveInstance = getOrCreateTestSubject(wallpaperService)
@@ -978,7 +978,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             val wfReady = CompletableDeferred<Unit>()
             interactiveInstance.addOnWatchFaceReadyListener(
                 { runnable -> runnable.run() },
-                { wfReady.complete(Unit) }
+                { wfReady.complete(Unit) },
             )
             assertThat(wfReady.isCompleted).isFalse()
 
@@ -1004,7 +1004,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             val wfReady = CompletableDeferred<Unit>()
             interactiveInstance.addOnWatchFaceReadyListener(
                 { runnable -> runnable.run() },
-                { wfReady.complete(Unit) }
+                { wfReady.complete(Unit) },
             )
 
             // This should happen quickly, but it can sometimes be slow.
@@ -1030,7 +1030,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             val wfReady = CompletableDeferred<Unit>()
             sysUiInterface.addOnWatchFaceReadyListener(
                 { runnable -> runnable.run() },
-                { wfReady.complete(Unit) }
+                { wfReady.complete(Unit) },
             )
 
             // This should happen quickly, but it can sometimes be slow.
@@ -1069,7 +1069,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             TestWatchfaceOverlayStyleWatchFaceService(
                 context,
                 surfaceHolder,
-                WatchFace.OverlayStyle(Color.valueOf(Color.RED), Color.valueOf(Color.BLACK))
+                WatchFace.OverlayStyle(Color.valueOf(Color.RED), Color.valueOf(Color.BLACK)),
             )
         val interactiveInstance = getOrCreateTestSubject(wallpaperService)
 
@@ -1089,7 +1089,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             InteractiveWatchFaceClientImpl(
                 mockIInteractiveWatchFace,
                 previewImageUpdateRequestedExecutor = null,
-                previewImageUpdateRequestedListener = null
+                previewImageUpdateRequestedListener = null,
             )
 
         assertThat(interactiveInstance.isComplicationDisplayPolicySupported()).isFalse()
@@ -1102,7 +1102,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             TestWatchfaceOverlayStyleWatchFaceService(
                 context,
                 surfaceHolder,
-                WatchFace.OverlayStyle(Color.valueOf(Color.RED), Color.valueOf(Color.BLACK))
+                WatchFace.OverlayStyle(Color.valueOf(Color.RED), Color.valueOf(Color.BLACK)),
             )
 
         val interactiveInstance = getOrCreateTestSubject(wallpaperService)
@@ -1122,7 +1122,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             TestWatchfaceOverlayStyleWatchFaceService(
                 context,
                 surfaceHolder,
-                WatchFace.OverlayStyle(Color.valueOf(Color.RED), Color.valueOf(Color.BLACK))
+                WatchFace.OverlayStyle(Color.valueOf(Color.RED), Color.valueOf(Color.BLACK)),
             )
 
         val interactiveInstance = getOrCreateTestSubject(wallpaperService)
@@ -1175,7 +1175,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     WatchFaceColors(
                         Color.valueOf(1.0f, 1.0f, 1.0f, 1.0f),
                         Color.valueOf(0.93333334f, 0.6313726f, 0.6039216f, 1.0f),
-                        Color.valueOf(0.26666668f, 0.26666668f, 0.26666668f, 1.0f)
+                        Color.valueOf(0.26666668f, 0.26666668f, 0.26666668f, 1.0f),
                     )
                 )
 
@@ -1189,7 +1189,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                         COLOR_STYLE_SETTING to BLUE_STYLE.encodeToByteArray(),
                         WATCH_HAND_LENGTH_STYLE_SETTING to DoubleRangeOption(0.9).id.value,
                     )
-                )
+                ),
             )
 
             interactiveInstance.addOnWatchFaceColorsListener({ runnable -> runnable.run() }) {
@@ -1206,7 +1206,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     WatchFaceColors(
                         Color.valueOf(0.30980393f, 0.7647059f, 0.96862745f, 1.0f),
                         Color.valueOf(0.08235294f, 0.39607844f, 0.7529412f, 1.0f),
-                        Color.valueOf(0.26666668f, 0.26666668f, 0.26666668f, 1.0f)
+                        Color.valueOf(0.26666668f, 0.26666668f, 0.26666668f, 1.0f),
                     )
                 )
         } finally {
@@ -1225,13 +1225,13 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 watchFaceService = wallpaperService,
                 instanceId = "wfId-1",
                 previewExecutor = { runnable -> runnable.run() },
-                previewListener = { lastPreviewImageUpdateRequestedId = it }
+                previewListener = { lastPreviewImageUpdateRequestedId = it },
             )
 
         assertTrue(
             wallpaperService.rendererInitializedLatch.await(
                 UPDATE_TIMEOUT_MILLIS,
-                TimeUnit.MILLISECONDS
+                TimeUnit.MILLISECONDS,
             )
         )
 
@@ -1302,7 +1302,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             listOf(
                 ShortTextComplicationData.Builder(
                         PlainComplicationText.Builder("B").build(),
-                        ComplicationText.EMPTY
+                        ComplicationText.EMPTY,
                     )
                     .setTapAction(ObservableServiceB.createPendingIntent(context))
                     .build()
@@ -1315,7 +1315,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                     },
                 ShortTextComplicationData.Builder(
                         PlainComplicationText.Builder("C").build(),
-                        ComplicationText.EMPTY
+                        ComplicationText.EMPTY,
                     )
                     .setTapAction(ObservableServiceC.createPendingIntent(context))
                     .build()
@@ -1325,7 +1325,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                             20 + TestExampleCanvasAnalogWatchFaceService.systemTimeMillis / 1000
                         timelineEndEpochSecond =
                             90 + TestExampleCanvasAnalogWatchFaceService.systemTimeMillis / 1000
-                    }
+                    },
             )
         )
 
@@ -1378,7 +1378,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 123 to
                     ShortTextComplicationData.Builder(
                             PlainComplicationText.Builder("TEST").build(),
-                            ComplicationText.EMPTY
+                            ComplicationText.EMPTY,
                         )
                         .build()
             )
@@ -1388,7 +1388,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
             Instant.ofEpochMilli(1234567),
             null,
-            null
+            null,
         )
         assertThat(wallpaperService.lastComplicationType).isEqualTo(ComplicationType.SHORT_TEXT)
     }
@@ -1410,9 +1410,9 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
                 123 to
                     ShortTextComplicationData.Builder(
                             PlainComplicationText.Builder("TEST").build(),
-                            ComplicationText.EMPTY
+                            ComplicationText.EMPTY,
                         )
-                        .build(),
+                        .build()
             )
         )
 
@@ -1422,7 +1422,7 @@ class WatchFaceControlClientTest : WatchFaceControlClientTestBase() {
             RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
             Instant.ofEpochMilli(1234567),
             null,
-            null
+            null,
         )
         assertThat(wallpaperService.lastComplicationType).isEqualTo(ComplicationType.RANGED_VALUE)
     }
@@ -1499,7 +1499,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                 RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
                 Instant.ofEpochMilli(1234567),
                 null,
-                complications
+                complications,
             )
 
         try {
@@ -1520,7 +1520,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                         mapOf(
                             "color_style_setting" to "green_style".encodeToByteArray(),
                             "draw_hour_pips_style_setting" to BooleanOption.FALSE.id.value,
-                            "watch_hand_length_style_setting" to DoubleRangeOption(0.8).id.value
+                            "watch_hand_length_style_setting" to DoubleRangeOption(0.8).id.value,
                         )
                     )
             )
@@ -1530,7 +1530,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                 RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
                 Instant.ofEpochMilli(1234567),
                 null,
-                complications
+                complications,
             )
 
         try {
@@ -1560,10 +1560,10 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                         mapOf(
                             "color_style_setting" to "blue_style".encodeToByteArray(),
                             "draw_hour_pips_style_setting" to BooleanOption.FALSE.id.value,
-                            "watch_hand_length_style_setting" to DoubleRangeOption(0.25).id.value
+                            "watch_hand_length_style_setting" to DoubleRangeOption(0.25).id.value,
                         )
                     ),
-                    complications
+                    complications,
                 )
             }
 
@@ -1575,7 +1575,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                 RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
                 Instant.ofEpochMilli(1234567),
                 null,
-                complications
+                complications,
             )
 
         try {
@@ -1597,7 +1597,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                             COLOR_STYLE_SETTING to GREEN_STYLE.encodeToByteArray(),
                             WATCH_HAND_LENGTH_STYLE_SETTING to DoubleRangeOption(0.25).id.value,
                             DRAW_HOUR_PIPS_STYLE_SETTING to BooleanOption.FALSE.id.value,
-                            COMPLICATIONS_STYLE_SETTING to NO_COMPLICATIONS.encodeToByteArray()
+                            COMPLICATIONS_STYLE_SETTING to NO_COMPLICATIONS.encodeToByteArray(),
                         )
                     )
             )
@@ -1613,7 +1613,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                     COLOR_STYLE_SETTING to BLUE_STYLE.encodeToByteArray(),
                     WATCH_HAND_LENGTH_STYLE_SETTING to DoubleRangeOption(0.9).id.value,
                 )
-            )
+            ),
         )
 
         assertThat(interactiveInstance.instanceId).isEqualTo("testId2")
@@ -1630,7 +1630,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                 RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
                 Instant.ofEpochMilli(1234567),
                 null,
-                complications
+                complications,
             )
 
         try {
@@ -1663,7 +1663,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                         exampleOpenGLWatchFaceComponentName,
                         deviceConfig,
                         200,
-                        200
+                        200,
                     )!!
                     .toBundle()
             )
@@ -1675,7 +1675,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                 RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
                 Instant.ofEpochMilli(1234567),
                 null,
-                null
+                null,
             )
 
         interactiveBitmap.assertAgainstGolden(screenshotRule, "opengl_interactive")
@@ -1685,7 +1685,7 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                 RenderParameters(DrawMode.INTERACTIVE, WatchFaceLayer.ALL_WATCH_FACE_LAYERS, null),
                 Instant.ofEpochMilli(1234567),
                 null,
-                null
+                null,
             )
 
         headlessBitmap.assertAgainstGolden(screenshotRule, "opengl_headless")
@@ -1706,27 +1706,27 @@ class WatchFaceControlClientScreenshotTest : WatchFaceControlClientTestBase() {
                     UserStyleData(
                         mapOf(
                             "color_style_setting" to UserStyleSetting.Option.Id("blue_style").value,
-                            "watch_hand_length_style_setting" to DoubleRangeOption(1.0).id.value
+                            "watch_hand_length_style_setting" to DoubleRangeOption(1.0).id.value,
                         )
                     ),
                     mapOf(
                         EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID to
                             DefaultComplicationDataSourcePolicy(
                                 SystemDataSources.DATA_SOURCE_DAY_OF_WEEK,
-                                ComplicationType.SHORT_TEXT
+                                ComplicationType.SHORT_TEXT,
                             ),
                         EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID to
                             DefaultComplicationDataSourcePolicy(
                                 ComponentName(
                                     "androidx.wear.watchface.complications.datasource.samples",
                                     "androidx.wear.watchface.complications.datasource.samples" +
-                                        ".ConfigurableDataSourceService"
+                                        ".ConfigurableDataSourceService",
                                 ),
                                 ComplicationType.SHORT_TEXT,
                                 SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET,
-                                ComplicationType.SHORT_TEXT
-                            )
-                    )
+                                ComplicationType.SHORT_TEXT,
+                            ),
+                    ),
                 )
             )
         interactiveInstance.close()

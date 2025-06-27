@@ -73,7 +73,7 @@ class EntityNameMatchingVariationsTest(triple: Triple<String, String, String>) :
                         name = fieldName,
                         type = intType,
                         columnName = fieldName,
-                        affinity = SQLTypeAffinity.INTEGER
+                        affinity = SQLTypeAffinity.INTEGER,
                     )
                 )
             assertThat(field.setter)

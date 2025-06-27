@@ -64,7 +64,7 @@ constructor(
         sessionConfigOptions: Config,
         @ImageCapture.CaptureMode captureMode: Int,
         @ImageCapture.FlashType flashType: Int,
-        @ImageCapture.FlashMode flashMode: Int
+        @ImageCapture.FlashMode flashMode: Int,
     ): List<Deferred<Void?>> {
         val needCorrectTorchState = isCorrectionRequired(configs, requestTemplate)
 
@@ -76,7 +76,7 @@ constructor(
                 sessionConfigOptions,
                 captureMode,
                 flashType,
-                flashMode
+                flashMode,
             )
 
         if (needCorrectTorchState) {
@@ -95,7 +95,7 @@ constructor(
     override suspend fun getCameraCapturePipeline(
         captureMode: Int,
         flashMode: Int,
-        flashType: Int
+        flashType: Int,
     ): CameraCapturePipeline =
         capturePipelineImpl.getCameraCapturePipeline(captureMode, flashMode, flashType)
 
@@ -114,11 +114,8 @@ constructor(
         requestTemplate: RequestTemplate,
     ): Boolean {
         return captureConfigs.any {
-            it.getStillCaptureTemplate(
-                    requestTemplate,
-                    isLegacyDevice,
-                )
-                .value == CameraDevice.TEMPLATE_STILL_CAPTURE
+            it.getStillCaptureTemplate(requestTemplate, isLegacyDevice).value ==
+                CameraDevice.TEMPLATE_STILL_CAPTURE
         } && isTorchOn()
     }
 

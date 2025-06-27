@@ -133,8 +133,8 @@ class SelectableTest {
                 modifier =
                     Modifier.selectable(
                         selected = state.value,
-                        onClick = { state.value = !state.value }
-                    )
+                        onClick = { state.value = !state.value },
+                    ),
             )
         }
 
@@ -153,7 +153,7 @@ class SelectableTest {
             val (selected, _) = remember { mutableStateOf(false) }
             BasicText(
                 "Text in item",
-                modifier = Modifier.selectable(selected = selected, onClick = {})
+                modifier = Modifier.selectable(selected = selected, onClick = {}),
             )
         }
 
@@ -170,7 +170,7 @@ class SelectableTest {
                 Modifier.testTag("outerBox")
                     .selectable(
                         selected = outerState.value,
-                        onClick = { outerState.value = !outerState.value }
+                        onClick = { outerState.value = !outerState.value },
                     )
             ) {
                 BasicText(
@@ -179,8 +179,8 @@ class SelectableTest {
                         Modifier.selectable(
                             selected = state.value,
                             onClick = { state.value = !state.value },
-                            enabled = enabled.value
-                        )
+                            enabled = enabled.value,
+                        ),
                 )
             }
         }
@@ -215,7 +215,7 @@ class SelectableTest {
                         selected = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                 ) {
                     BasicText("SelectableText")
@@ -265,7 +265,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                     ) {
                         BasicText("SelectableText")
@@ -317,7 +317,7 @@ class SelectableTest {
                         selected = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                 ) {
                     BasicText("SelectableText")
@@ -370,7 +370,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                     ) {
                         BasicText("SelectableText")
@@ -423,7 +423,7 @@ class SelectableTest {
                         selected = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                 ) {
                     BasicText("SelectableText")
@@ -471,7 +471,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                 ) {
                     BasicText("SelectableText")
@@ -513,7 +513,7 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onClick = {}
+                            onClick = {},
                         )
                 ) {
                     BasicText("SelectableText")
@@ -565,7 +565,7 @@ class SelectableTest {
                     "indicationNodeFactory",
                     "enabled",
                     "role",
-                    "onClick"
+                    "onClick",
                 )
         }
     }
@@ -577,7 +577,7 @@ class SelectableTest {
                 Modifier.selectable(
                         false,
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     ) {}
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("selectable")
@@ -589,7 +589,7 @@ class SelectableTest {
                     "indicationNodeFactory",
                     "enabled",
                     "role",
-                    "onClick"
+                    "onClick",
                 )
         }
     }
@@ -610,7 +610,7 @@ class SelectableTest {
                         selected = false
                     ) {
                         counter++
-                    }
+                    },
             )
         }
 
@@ -644,7 +644,7 @@ class SelectableTest {
                         selected = false
                     ) {
                         counter++
-                    }
+                    },
             )
         }
 
@@ -678,7 +678,7 @@ class SelectableTest {
                         selected = false
                     ) {
                         counter++
-                    }
+                    },
             )
         }
 
@@ -714,8 +714,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -762,8 +762,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -810,8 +810,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -859,8 +859,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -895,8 +895,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").focusRequester(focusRequester).selectable(
                             selected = true,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -965,7 +965,7 @@ class SelectableTest {
                                 selected = true,
                                 interactionSource = interactionSource,
                                 indication = null,
-                            ) {}
+                            ) {},
                 )
             }
         }
@@ -1021,8 +1021,8 @@ class SelectableTest {
                             selected = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            enabled = enabled.value
-                        ) {}
+                            enabled = enabled.value,
+                        ) {},
                 )
             }
         }
@@ -1081,8 +1081,8 @@ class SelectableTest {
                         modifier =
                             Modifier.testTag("selectable").selectable(
                                 selected = false,
-                                interactionSource = interactionSource
-                            ) {}
+                                interactionSource = interactionSource,
+                            ) {},
                     )
                 }
             }
@@ -1113,8 +1113,8 @@ class SelectableTest {
                         Modifier.testTag("selectable").selectable(
                             selected = false,
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -1147,7 +1147,7 @@ class SelectableTest {
             Modifier.selectable(
                 selected = toggleInput,
                 interactionSource = interactionSource,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1160,7 +1160,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = null,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1174,7 +1174,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1188,7 +1188,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1202,14 +1202,14 @@ class SelectableTest {
                 selected = true,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.selectable(
                 selected = true,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1226,7 +1226,7 @@ class SelectableTest {
                 selected = toggleInput,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1241,14 +1241,14 @@ class SelectableTest {
                 selected = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.selectable(
                 selected = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal

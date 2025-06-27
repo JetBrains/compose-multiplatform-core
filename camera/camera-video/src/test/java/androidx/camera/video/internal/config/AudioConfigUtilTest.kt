@@ -46,7 +46,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(24000)
@@ -65,7 +65,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(48000)
@@ -84,7 +84,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(24000)
@@ -103,7 +103,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(48000)
@@ -122,7 +122,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(22050)
@@ -141,7 +141,7 @@ class AudioConfigUtilTest {
                 initialTargetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio
+                captureToEncodeRatio,
             )
 
         assertThat(result.captureRate).isEqualTo(44100)

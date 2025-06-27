@@ -65,12 +65,12 @@ class MainActivity : ComponentActivity() {
                 SwipeDismissableNavHost(
                     navController = navController,
                     state = rememberSwipeDismissableNavHostState(swipeToDismissBoxState),
-                    startDestination = START
+                    startDestination = START,
                 ) {
                     composable(START) {
                         TransformingLazyColumn(
                             state = transformingLazyColumnState,
-                            modifier = Modifier.padding(horizontal = 10.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp),
                         ) {
                             item {
                                 ListHeader {
@@ -173,13 +173,13 @@ class MainActivity : ComponentActivity() {
                                     flingBehavior =
                                         PagerScaffoldDefaults.snapWithSpringFlingBehavior(
                                             state = pagerState
-                                        )
+                                        ),
                                 ) { page ->
                                     AnimatedPage(pageIndex = page, pagerState = pagerState) {
                                         ScreenScaffold {
                                             Box(
                                                 modifier = Modifier.fillMaxSize(),
-                                                contentAlignment = Alignment.Center
+                                                contentAlignment = Alignment.Center,
                                             ) {
                                                 Text("Page $page")
                                             }

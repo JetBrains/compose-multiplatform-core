@@ -59,7 +59,9 @@ import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.Quirks
+import androidx.camera.core.internal.StreamSpecsCalculator
 import dagger.Binds
+import dagger.BindsInstance
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
@@ -90,7 +92,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
             ZoomCompat.Bindings::class,
             ZoomControl.Bindings::class,
         ],
-    subcomponents = [UseCaseCameraComponent::class]
+    subcomponents = [UseCaseCameraComponent::class],
 )
 public abstract class CameraModule {
     public companion object {
@@ -99,7 +101,7 @@ public abstract class CameraModule {
         @Provides
         public fun provideUseCaseThreads(
             cameraConfig: CameraConfig,
-            cameraThreadConfig: CameraThreadConfig
+            cameraThreadConfig: CameraThreadConfig,
         ): UseCaseThreads {
 
             val executor = cameraThreadConfig.cameraExecutor
@@ -128,7 +130,7 @@ public abstract class CameraModule {
         @Provides
         public fun provideCameraMetadata(
             cameraPipe: CameraPipe,
-            config: CameraConfig
+            config: CameraConfig,
         ): CameraMetadata? {
             try {
                 return cameraPipe.cameras().awaitCameraMetadata(config.cameraId)
@@ -172,7 +174,7 @@ public abstract class CameraModule {
         @Provides
         public fun provideEncoderProfilesProvider(
             @Named("CameraId") cameraIdString: String,
-            cameraQuirks: CameraQuirks
+            cameraQuirks: CameraQuirks,
         ): EncoderProfilesProvider {
             return EncoderProfilesProviderAdapter(cameraIdString, cameraQuirks.quirks)
         }
@@ -200,18 +202,14 @@ public class CameraConfig(public val cameraId: CameraId) {
 
 /** Dagger subcomponent for a single [CameraInternal] instance. */
 @CameraScope
-@Subcomponent(
-    modules =
-        [
-            CameraModule::class,
-            CameraConfig::class,
-            CameraCompatModule::class,
-        ]
-)
+@Subcomponent(modules = [CameraModule::class, CameraConfig::class, CameraCompatModule::class])
 public interface CameraComponent {
     @Subcomponent.Builder
     public interface Builder {
         public fun config(config: CameraConfig): Builder
+
+        @BindsInstance
+        public fun streamSpecsCalculator(streamSpecsCalculator: StreamSpecsCalculator): Builder
 
         public fun build(): CameraComponent
     }

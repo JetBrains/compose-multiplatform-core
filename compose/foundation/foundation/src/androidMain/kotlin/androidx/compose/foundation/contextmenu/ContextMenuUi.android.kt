@@ -112,7 +112,7 @@ internal fun ContextMenuPopup(
         onDismiss = onDismiss,
         modifier = modifier,
         colors = computeContextMenuColors(),
-        contextMenuBuilderBlock = contextMenuBuilderBlock
+        contextMenuBuilderBlock = contextMenuBuilderBlock,
     )
 }
 
@@ -162,7 +162,7 @@ internal fun ContextMenuColumn(
             modifier
                 .shadow(
                     ContextMenuSpec.MenuContainerElevation,
-                    RoundedCornerShape(ContextMenuSpec.CornerRadius)
+                    RoundedCornerShape(ContextMenuSpec.CornerRadius),
                 )
                 .background(colors.backgroundColor)
                 .width(IntrinsicSize.Max)
@@ -200,10 +200,7 @@ internal fun ContextMenuItem(
         horizontalArrangement = Arrangement.spacedBy(ContextMenuSpec.HorizontalPadding),
         modifier =
             modifier
-                .clickable(
-                    enabled = enabled,
-                    onClickLabel = label,
-                ) {
+                .clickable(enabled = enabled, onClickLabel = label) {
                     // Semantics can call this even if it is disabled (at least in tests),
                     // so check enabled status again before invoking any callbacks.
                     if (enabled) onClick()
@@ -215,7 +212,7 @@ internal fun ContextMenuItem(
                     minHeight = ContextMenuSpec.ListItemHeight,
                     maxHeight = ContextMenuSpec.ListItemHeight,
                 )
-                .padding(horizontal = ContextMenuSpec.HorizontalPadding)
+                .padding(horizontal = ContextMenuSpec.HorizontalPadding),
     ) {
         leadingIcon?.let { icon ->
             Box(
@@ -233,10 +230,10 @@ internal fun ContextMenuItem(
             text = label,
             style =
                 ContextMenuSpec.textStyle(
-                    color = if (enabled) colors.textColor else colors.disabledTextColor,
+                    color = if (enabled) colors.textColor else colors.disabledTextColor
                 ),
             maxLines = 1,
-            modifier = Modifier.weight(1f, fill = true)
+            modifier = Modifier.weight(1f, fill = true),
         )
     }
 }
@@ -299,7 +296,7 @@ internal class ContextMenuScope internal constructor() {
                 enabled = enabled,
                 colors = colors,
                 leadingIcon = leadingIcon,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -395,10 +392,7 @@ internal fun computeContextMenuColors(
             )
 
         val textColorStateList =
-            context.resolveColorStateList(
-                foregroundStyleId,
-                R.attr.textColorPrimary,
-            )
+            context.resolveColorStateList(foregroundStyleId, R.attr.textColorPrimary)
         val enabledColor = textColorStateList.enabledColor(DefaultContextMenuColors.textColor)
         val disabledColor =
             textColorStateList.disabledColor(DefaultContextMenuColors.disabledTextColor)
@@ -416,7 +410,7 @@ internal fun computeContextMenuColors(
 private fun Context.resolveColor(
     @StyleRes resId: Int,
     @AttrRes attrId: Int,
-    defaultColor: Color
+    defaultColor: Color,
 ): Color {
     val typedArray = obtainStyledAttributes(resId, intArrayOf(attrId))
     val defaultColorAndroid = defaultColor.toArgb()

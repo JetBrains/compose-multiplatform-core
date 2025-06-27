@@ -77,12 +77,12 @@ fun ExtraSmallNarrowSquareIconButtonsSample() {
                         IconButtonDefaults.IconButtonWidthOption.Narrow
                     )
                 ),
-        shape = IconButtonDefaults.extraSmallSquareShape
+        shape = IconButtonDefaults.extraSmallSquareShape,
     ) {
         Icon(
             Icons.Filled.Lock,
             contentDescription = "Localized description",
-            modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize)
+            modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize),
         )
     }
 }
@@ -100,12 +100,12 @@ fun MediumRoundWideIconButtonSample() {
                     IconButtonDefaults.IconButtonWidthOption.Wide
                 )
             ),
-        shape = IconButtonDefaults.mediumRoundShape
+        shape = IconButtonDefaults.mediumRoundShape,
     ) {
         Icon(
             Icons.Filled.Lock,
             contentDescription = "Localized description",
-            modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+            modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
         )
     }
 }
@@ -118,12 +118,12 @@ fun LargeRoundUniformOutlinedIconButtonSample() {
     OutlinedIconButton(
         onClick = { /* doSomething() */ },
         modifier = Modifier.size(IconButtonDefaults.largeContainerSize()),
-        shape = IconButtonDefaults.largeRoundShape
+        shape = IconButtonDefaults.largeRoundShape,
     ) {
         Icon(
             Icons.Filled.Lock,
             contentDescription = "Localized description",
-            modifier = Modifier.size(IconButtonDefaults.largeIconSize)
+            modifier = Modifier.size(IconButtonDefaults.largeIconSize),
         )
     }
 }
@@ -136,7 +136,7 @@ fun TintedIconButtonSample() {
         Icon(
             rememberVectorPainter(image = Icons.Filled.Lock),
             contentDescription = "Localized description",
-            tint = Color.Red
+            tint = Color.Red,
         )
     }
 }
@@ -164,7 +164,7 @@ fun IconToggleButtonWithAnimatedShapeSample() {
     IconToggleButton(
         checked = checked,
         onCheckedChange = { checked = it },
-        shapes = IconButtonDefaults.toggleableShapes()
+        shapes = IconButtonDefaults.toggleableShapes(),
     ) {
         if (checked) {
             Icon(Icons.Filled.Lock, contentDescription = "Localized description")
@@ -216,7 +216,7 @@ fun FilledIconToggleButtonWithAnimatedShapeSample() {
     FilledIconToggleButton(
         checked = checked,
         onCheckedChange = { checked = it },
-        shapes = IconButtonDefaults.toggleableShapes()
+        shapes = IconButtonDefaults.toggleableShapes(),
     ) {
         if (checked) {
             Icon(Icons.Filled.Lock, contentDescription = "Localized description")
@@ -268,7 +268,7 @@ fun FilledTonalIconToggleButtonWithAnimatedShapeSample() {
     FilledTonalIconToggleButton(
         checked = checked,
         onCheckedChange = { checked = it },
-        shapes = IconButtonDefaults.toggleableShapes()
+        shapes = IconButtonDefaults.toggleableShapes(),
     ) {
         if (checked) {
             Icon(Icons.Filled.Lock, contentDescription = "Localized description")
@@ -320,7 +320,7 @@ fun OutlinedIconToggleButtonWithAnimatedShapeSample() {
     OutlinedIconToggleButton(
         checked = checked,
         onCheckedChange = { checked = it },
-        shapes = IconButtonDefaults.toggleableShapes()
+        shapes = IconButtonDefaults.toggleableShapes(),
     ) {
         if (checked) {
             Icon(Icons.Filled.Lock, contentDescription = "Localized description")

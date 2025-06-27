@@ -51,8 +51,8 @@ object CompilationTestHelper {
                 classpath = extraClasspath,
                 symbolProcessorProviders = symbolProcessorProviders,
                 processorOptions = processorOptions,
-                kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
-            )
+                kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS,
+            ),
         )
     }
 
@@ -65,7 +65,7 @@ val TestCompilationResult.resourceOutputDir: File
 fun hasAllExpectedGeneratedSourceFilesAndContent(
     actualKotlinSources: List<Source>,
     expectedKotlinSources: List<Source>,
-    expectedAidlFilepath: List<String>
+    expectedAidlFilepath: List<String>,
 ) {
     val expectedRelativePaths =
         expectedKotlinSources.map(Source::relativePath) + expectedAidlFilepath
@@ -110,12 +110,12 @@ class CompilationResultSubject(private val result: TestCompilationResult) {
 
     fun hasAllExpectedGeneratedSourceFilesAndContent(
         expectedKotlinSources: List<Source>,
-        expectedAidlFilepath: List<String>
+        expectedAidlFilepath: List<String>,
     ) {
         hasAllExpectedGeneratedSourceFilesAndContent(
             result.generatedSources,
             expectedKotlinSources,
-            expectedAidlFilepath
+            expectedAidlFilepath,
         )
     }
 

@@ -101,7 +101,7 @@ class CompositionReusingTests {
         assertNotEquals(
             nonRecycledText,
             findTextWith("Non-recyclable key"),
-            "Expected non-recyclable text to be replaced"
+            "Expected non-recyclable text to be replaced",
         )
     }
 
@@ -138,7 +138,7 @@ class CompositionReusingTests {
         assertNotEquals(
             nonRecycledText,
             findTextWith("Non-recyclable key"),
-            "Expected non-recyclable text to be replaced"
+            "Expected non-recyclable text to be replaced",
         )
     }
 

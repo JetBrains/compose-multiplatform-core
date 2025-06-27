@@ -20,24 +20,28 @@ import android.graphics.RectF
 import android.util.Size
 import android.util.SizeF
 import android.view.Surface
+import androidx.camera.viewfinder.compose.internal.ViewfinderEmbeddedExternalSurface
+import androidx.camera.viewfinder.compose.internal.ViewfinderExternalSurface
+import androidx.camera.viewfinder.compose.internal.ViewfinderExternalSurfaceScope
 import androidx.camera.viewfinder.core.ImplementationMode
 import androidx.camera.viewfinder.core.TransformationInfo
 import androidx.camera.viewfinder.core.TransformationInfo.Companion.DEFAULT
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest
 import androidx.camera.viewfinder.core.ViewfinderSurfaceSessionScope
+import androidx.camera.viewfinder.core.impl.ImplementationModeCompat
 import androidx.camera.viewfinder.core.impl.OffsetF
 import androidx.camera.viewfinder.core.impl.RefCounted
 import androidx.camera.viewfinder.core.impl.ScaleFactorF
 import androidx.camera.viewfinder.core.impl.Transformations
 import androidx.camera.viewfinder.core.impl.ViewfinderSurfaceSessionImpl
-import androidx.compose.foundation.AndroidEmbeddedExternalSurface
-import androidx.compose.foundation.AndroidExternalSurface
-import androidx.compose.foundation.AndroidExternalSurfaceScope
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -50,6 +54,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastRoundToInt
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 
@@ -61,14 +66,17 @@ import kotlinx.coroutines.coroutineScope
  * [ViewfinderSurfaceSessionScope] of the callback registered via
  * [ViewfinderInitScope.onSurfaceSession] in [onInit].
  *
- * This has two underlying implementations either using an [AndroidEmbeddedExternalSurface] for
- * [ImplementationMode.EMBEDDED] or an [AndroidExternalSurface] for [ImplementationMode.EXTERNAL].
- * These can be set by the [ImplementationMode] argument in the [surfaceRequest] constructor. If the
- * implementation mode is `null`, then [ImplementationMode.EXTERNAL] will be used.
+ * This has two underlying implementations based on
+ * [androidx.compose.foundation.AndroidEmbeddedExternalSurface] for [ImplementationMode.EMBEDDED] or
+ * on [androidx.compose.foundation.AndroidExternalSurface] for [ImplementationMode.EXTERNAL]. These
+ * can be set by the [ImplementationMode] argument in the [surfaceRequest] constructor. If
+ * `implementationMode` is `null`, [ImplementationMode.EXTERNAL] is chosen by default, switching to
+ * [ImplementationMode.EMBEDDED] on API levels 24 and below, or on devices with known compatibility
+ * issues with the `EXTERNAL` mode.
  *
  * The [onInit] lambda, and the callback registered with [ViewfinderInitScope.onSurfaceSession], are
  * always called from the main thread. [onInit] will be called every time a new [surfaceRequest] is
- * provided.
+ * provided, or if the [ImplementationMode] changes.
  *
  * @param surfaceRequest Details about the surface being requested
  * @param transformationInfo Specifies the required transformations for the media being displayed.
@@ -95,19 +103,83 @@ fun Viewfinder(
     coordinateTransformer: MutableCoordinateTransformer? = null,
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Crop,
-    onInit: ViewfinderInitScope.() -> Unit
+    onInit: ViewfinderInitScope.() -> Unit,
 ) {
     Box(modifier = modifier.clipToBounds().fillMaxSize()) {
         key(surfaceRequest) {
+            val layoutDirection = LocalConfiguration.current.layoutDirection
+            val surfaceWidth = surfaceRequest.width
+            val surfaceHeight = surfaceRequest.height
+            val implementationMode =
+                remember(surfaceRequest.implementationMode) {
+                    surfaceRequest.implementationMode
+                        ?: ImplementationModeCompat.chooseCompatibleMode()
+                }
+
+            // Due to https://issuetracker.google.com/183864890, we should only perform
+            // transformations (scale/translate) on SurfaceView when the Surface has been created.
+            // This does not affect TextureView, so default to true for that implementation mode.
+            var canTransformSurface by
+                remember(implementationMode) {
+                    mutableStateOf(implementationMode == ImplementationMode.EMBEDDED)
+                }
+
             TransformedSurface(
-                surfaceWidth = surfaceRequest.width,
-                surfaceHeight = surfaceRequest.height,
+                surfaceWidth = surfaceWidth,
+                surfaceHeight = surfaceHeight,
                 transformationInfo = transformationInfo,
-                implementationMode =
-                    surfaceRequest.implementationMode ?: ImplementationMode.EXTERNAL,
-                coordinateTransformer = coordinateTransformer,
-                alignment = alignment,
-                contentScale = contentScale
+                implementationMode = implementationMode,
+                modifier =
+                    Modifier.layout { measurable, constraints ->
+                        val placeable =
+                            measurable.measure(Constraints.fixed(surfaceWidth, surfaceHeight))
+
+                        // When the child placeable is larger than the parent's constraints, rather
+                        // than the child overflowing through the right or bottom of the parent, it
+                        // overflows evenly on all sides, as if it's placed exactly in the center of
+                        // the parent.
+                        // To compensate for this, we must offset the child by the amount it
+                        // overflows so it is consistently placed in the top left corner of the
+                        // parent before we apply scaling and translation in the graphics layer.
+                        val widthOffset =
+                            0.coerceAtLeast((placeable.width - constraints.maxWidth) / 2)
+                        val heightOffset =
+                            0.coerceAtLeast((placeable.height - constraints.maxHeight) / 2)
+                        layout(placeable.width, placeable.height) {
+                            placeable.placeWithLayer(widthOffset, heightOffset) {
+                                // Do not perform transformations on the surface until ready
+                                if (!canTransformSurface) return@placeWithLayer
+
+                                val surfaceToViewFinderMatrix =
+                                    Transformations.getSurfaceToViewfinderMatrix(
+                                        viewfinderSize =
+                                            Size(constraints.maxWidth, constraints.maxHeight),
+                                        surfaceResolution = Size(surfaceWidth, surfaceHeight),
+                                        transformationInfo = transformationInfo,
+                                        layoutDirection = layoutDirection,
+                                        contentScale = contentScale.toInternalContentScale(),
+                                        alignment = alignment.toInternalAlignment(),
+                                    )
+
+                                coordinateTransformer?.transformMatrix =
+                                    Matrix().apply {
+                                        setFrom(surfaceToViewFinderMatrix)
+                                        invert()
+                                    }
+
+                                val surfaceRectInViewfinder =
+                                    RectF(0f, 0f, surfaceWidth.toFloat(), surfaceHeight.toFloat())
+                                        .also(surfaceToViewFinderMatrix::mapRect)
+
+                                transformOrigin = TransformOrigin(0f, 0f)
+                                scaleX = surfaceRectInViewfinder.width() / surfaceWidth
+                                scaleY = surfaceRectInViewfinder.height() / surfaceHeight
+
+                                translationX = surfaceRectInViewfinder.left
+                                translationY = surfaceRectInViewfinder.top
+                            }
+                        }
+                    },
             ) {
                 val viewfinderInitScope =
                     ViewfinderInitScopeImpl(viewfinderSurfaceRequest = surfaceRequest)
@@ -115,18 +187,14 @@ fun Viewfinder(
                 // Register callback from onInit()
                 onInit.invoke(viewfinderInitScope)
 
-                onSurface { newSurface, _, _ ->
-                    val refCountedSurface = RefCounted<Surface> { it.release() }
-                    refCountedSurface.initialize(newSurface)
-
-                    // TODO(b/390508238): Stop underlying View from releasing the Surface
-                    // automatically. It should wait for the RefCount to get to 0.
-                    newSurface.onDestroyed { refCountedSurface.release() }
-
-                    // TODO(b/322420176): Properly handle onSurfaceChanged()
-
+                onSurface { viewfinderSurfaceHolder ->
+                    // At this point, the initial Surface has been created. We can now transform
+                    // the surface in layout
+                    canTransformSurface = true
                     // Dispatch surface to registered onSurfaceSession callback
-                    viewfinderInitScope.dispatchOnSurfaceSession(refCountedSurface)
+                    viewfinderInitScope.dispatchOnSurfaceSession(
+                        viewfinderSurfaceHolder.refCountedSurface
+                    )
                 }
             }
         }
@@ -139,59 +207,12 @@ private fun TransformedSurface(
     surfaceHeight: Int,
     transformationInfo: TransformationInfo,
     implementationMode: ImplementationMode,
-    coordinateTransformer: MutableCoordinateTransformer?,
-    alignment: Alignment,
-    contentScale: ContentScale,
-    onInit: AndroidExternalSurfaceScope.() -> Unit
+    modifier: Modifier = Modifier,
+    onInit: ViewfinderExternalSurfaceScope.() -> Unit,
 ) {
-    val layoutDirection = LocalConfiguration.current.layoutDirection
-    val surfaceModifier =
-        Modifier.layout { measurable, constraints ->
-            val placeable = measurable.measure(Constraints.fixed(surfaceWidth, surfaceHeight))
-
-            // When the child placeable is larger than the parent's constraints, rather
-            // than the child overflowing through the right or bottom of the parent, it overflows
-            // evenly on all sides, as if it's placed exactly in the center of the parent.
-            // To compensate for this, we must offset the child by the amount it overflows
-            // so it is consistently placed in the top left corner of the parent before
-            // we apply scaling and translation in the graphics layer.
-            val widthOffset = 0.coerceAtLeast((placeable.width - constraints.maxWidth) / 2)
-            val heightOffset = 0.coerceAtLeast((placeable.height - constraints.maxHeight) / 2)
-            layout(placeable.width, placeable.height) {
-                placeable.placeWithLayer(widthOffset, heightOffset) {
-                    val surfaceToViewFinderMatrix =
-                        Transformations.getSurfaceToViewfinderMatrix(
-                            viewfinderSize = Size(constraints.maxWidth, constraints.maxHeight),
-                            surfaceResolution = Size(surfaceWidth, surfaceHeight),
-                            transformationInfo = transformationInfo,
-                            layoutDirection = layoutDirection,
-                            contentScale = contentScale.toInternalContentScale(),
-                            alignment = alignment.toInternalAlignment()
-                        )
-
-                    coordinateTransformer?.transformMatrix =
-                        Matrix().apply {
-                            setFrom(surfaceToViewFinderMatrix)
-                            invert()
-                        }
-
-                    val surfaceRectInViewfinder =
-                        RectF(0f, 0f, surfaceWidth.toFloat(), surfaceHeight.toFloat())
-                            .also(surfaceToViewFinderMatrix::mapRect)
-
-                    transformOrigin = TransformOrigin(0f, 0f)
-                    scaleX = surfaceRectInViewfinder.width() / surfaceWidth
-                    scaleY = surfaceRectInViewfinder.height() / surfaceHeight
-
-                    translationX = surfaceRectInViewfinder.left
-                    translationY = surfaceRectInViewfinder.top
-                }
-            }
-        }
-
     when (implementationMode) {
         ImplementationMode.EXTERNAL -> {
-            AndroidExternalSurface(modifier = surfaceModifier, onInit = onInit)
+            ViewfinderExternalSurface(modifier = modifier, onInit = onInit)
         }
         ImplementationMode.EMBEDDED -> {
             val displayRotationDegrees =
@@ -209,15 +230,15 @@ private fun TransformedSurface(
                     Transformations.getTextureViewCorrectionMatrix(
                         displayRotationDegrees = displayRotationDegrees,
                         width = surfaceWidth,
-                        height = surfaceHeight
+                        height = surfaceHeight,
                     )
                 )
             }
 
-            AndroidEmbeddedExternalSurface(
-                modifier = surfaceModifier,
+            ViewfinderEmbeddedExternalSurface(
+                modifier = modifier,
                 transform = correctionMatrix,
-                onInit = onInit
+                onInit = onInit,
             )
         }
     }
@@ -229,12 +250,12 @@ private fun Alignment.toInternalAlignment(): androidx.camera.viewfinder.core.imp
             val composeSize =
                 androidx.compose.ui.unit.IntSize(
                     size.width.fastRoundToInt(),
-                    size.height.fastRoundToInt()
+                    size.height.fastRoundToInt(),
                 )
             val composeSpace =
                 androidx.compose.ui.unit.IntSize(
                     space.width.fastRoundToInt(),
-                    space.height.fastRoundToInt()
+                    space.height.fastRoundToInt(),
                 )
             val composeLayoutDirection =
                 when (layoutDirection) {
@@ -308,3 +329,24 @@ private class ViewfinderInitScopeImpl(val viewfinderSurfaceRequest: ViewfinderSu
         }
     }
 }
+
+/**
+ * Thrown within a [ViewfinderSurfaceSessionScope] of an [ViewfinderInitScope.onSurfaceSession]
+ * callback when the underlying [Surface] provided to the session has been replaced by the
+ * Viewfinder implementation.
+ *
+ * The Viewfinder attempts to keep a [ViewfinderSurfaceSessionScope] active for as long as possible.
+ * However, on certain older API levels or when specific Compose features like
+ * [androidx.compose.runtime.movableContentOf] are used with some Viewfinder implementations, the
+ * underlying `Surface` may need to be replaced even if the `Viewfinder` composable itself has not
+ * been disposed or recomposed with a new [ViewfinderSurfaceRequest].
+ *
+ * When a surface session is cancelled with this exception, it indicates that the current
+ * [ViewfinderSurfaceSessionScope] is no longer valid. Clients should expect that
+ * [ViewfinderInitScope.onSurfaceSession] will be invoked again shortly with a new, valid
+ * [ViewfinderSurfaceSessionScope] once the cancelled session fully completes.
+ *
+ * @see ViewfinderInitScope.onSurfaceSession
+ * @see ViewfinderSurfaceSessionScope
+ */
+internal class SurfaceReplacedCancellationException : CancellationException("Surface replaced")

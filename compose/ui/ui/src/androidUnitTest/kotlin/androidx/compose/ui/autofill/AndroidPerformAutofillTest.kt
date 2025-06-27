@@ -54,7 +54,7 @@ class AndroidPerformAutofillTest {
             AutofillNode(
                 onFill = { autoFilledValue = it },
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += autofillNode
 
@@ -80,7 +80,7 @@ class AndroidPerformAutofillTest {
             AutofillNode(
                 onFill = { autoFilledValue = it },
                 autofillTypes = listOf(AutofillType.EmailAddress),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += autofillNode
 

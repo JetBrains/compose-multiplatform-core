@@ -107,14 +107,14 @@ fun Snackbar(
     contentColor: Color = SnackbarDefaults.contentColor,
     actionContentColor: Color = SnackbarDefaults.actionContentColor,
     dismissActionContentColor: Color = SnackbarDefaults.dismissActionContentColor,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier,
         shape = shape,
         color = containerColor,
         contentColor = contentColor,
-        shadowElevation = SnackbarTokens.ContainerElevation
+        shadowElevation = SnackbarTokens.ContainerElevation,
     ) {
         val textStyle = SnackbarTokens.SupportingTextFont.value
         val actionTextStyle = SnackbarTokens.ActionLabelTextFont.value
@@ -212,7 +212,7 @@ fun Snackbar(
                 TextButton(
                     colors = ButtonDefaults.textButtonColors(contentColor = actionColor),
                     onClick = { snackbarData.performAction() },
-                    content = { Text(actionLabel) }
+                    content = { Text(actionLabel) },
                 )
             }
         } else {
@@ -228,7 +228,7 @@ fun Snackbar(
                             Icons.Filled.Close,
                             contentDescription = getString(Strings.SnackbarDismiss),
                         )
-                    }
+                    },
                 )
             }
         } else {
@@ -244,7 +244,7 @@ fun Snackbar(
         contentColor = contentColor,
         actionContentColor = actionContentColor,
         dismissActionContentColor = dismissActionContentColor,
-        content = { Text(snackbarData.visuals.message) }
+        content = { Text(snackbarData.visuals.message) },
     )
 }
 
@@ -255,7 +255,7 @@ private fun NewLineButtonSnackbar(
     dismissAction: @Composable (() -> Unit)?,
     actionTextStyle: TextStyle,
     actionContentColor: Color,
-    dismissActionContentColor: Color
+    dismissActionContentColor: Color,
 ) {
     Column(
         modifier =
@@ -280,12 +280,12 @@ private fun NewLineButtonSnackbar(
                 CompositionLocalProvider(
                     LocalContentColor provides actionContentColor,
                     LocalTextStyle provides actionTextStyle,
-                    content = action
+                    content = action,
                 )
                 if (dismissAction != null) {
                     CompositionLocalProvider(
                         LocalContentColor provides dismissActionContentColor,
-                        content = dismissAction
+                        content = dismissAction,
                     )
                 }
             }
@@ -300,7 +300,7 @@ private fun OneRowSnackbar(
     dismissAction: @Composable (() -> Unit)?,
     actionTextStyle: TextStyle,
     actionTextColor: Color,
-    dismissActionColor: Color
+    dismissActionColor: Color,
 ) {
     val textTag = "text"
     val actionTag = "action"
@@ -313,7 +313,7 @@ private fun OneRowSnackbar(
                     CompositionLocalProvider(
                         LocalContentColor provides actionTextColor,
                         LocalTextStyle provides actionTextStyle,
-                        content = action
+                        content = action,
                     )
                 }
             }
@@ -321,7 +321,7 @@ private fun OneRowSnackbar(
                 Box(Modifier.layoutId(dismissActionTag)) {
                     CompositionLocalProvider(
                         LocalContentColor provides dismissActionColor,
-                        content = dismissAction
+                        content = dismissAction,
                     )
                 }
             }
@@ -329,8 +329,8 @@ private fun OneRowSnackbar(
         modifier =
             Modifier.padding(
                 start = HorizontalSpacing,
-                end = if (dismissAction == null) HorizontalSpacingButtonSide else 0.dp
-            )
+                end = if (dismissAction == null) HorizontalSpacingButtonSide else 0.dp,
+            ),
     ) { measurables, constraints ->
         val containerWidth = min(constraints.maxWidth, ContainerMaxWidth.roundToPx())
         val actionButtonPlaceable =

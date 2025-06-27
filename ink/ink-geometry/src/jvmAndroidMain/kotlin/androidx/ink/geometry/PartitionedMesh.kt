@@ -109,7 +109,9 @@ private constructor(
         require(groupIndex >= 0 && groupIndex < getRenderGroupCount()) {
             "groupIndex=$groupIndex must be between 0 and getRenderGroupCount()=${getRenderGroupCount()}"
         }
-        return MeshFormat(PartitionedMeshNative.getRenderGroupFormat(nativePointer, groupIndex))
+        return MeshFormat.wrapNative(
+            PartitionedMeshNative.getRenderGroupFormat(nativePointer, groupIndex)
+        )
     }
 
     /**

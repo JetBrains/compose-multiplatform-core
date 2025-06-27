@@ -28,10 +28,12 @@ import androidx.compose.foundation.text.TextContextMenuItems.Paste
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
+import androidx.compose.foundation.text.selection.addPlatformTextContextMenuItems
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.Clipboard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
@@ -39,7 +41,7 @@ import kotlinx.coroutines.launch
 internal fun TextFieldSelectionState.contextMenuBuilder(
     state: ContextMenuState,
     itemsAvailability: State<MenuItemsAvailability>,
-    onMenuItemClicked: TextFieldSelectionState.(TextContextMenuItems) -> Unit
+    onMenuItemClicked: TextFieldSelectionState.(TextContextMenuItems) -> Unit,
 ): ContextMenuScope.() -> Unit = {
     fun textFieldItem(label: TextContextMenuItems, enabled: Boolean) {
         TextItem(state, label, enabled) { onMenuItemClicked(label) }
@@ -60,15 +62,15 @@ internal fun TextFieldSelectionState.contextMenuBuilder(
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     state: TextFieldSelectionState,
     coroutineScope: CoroutineScope,
-): Modifier = addTextContextMenuComponentsWithResources { resources ->
+): Modifier = addTextContextMenuComponentsWithContext { context ->
     fun TextContextMenuBuilderScope.textFieldItem(
         item: TextContextMenuItems,
         enabled: Boolean,
         desiredState: TextToolbarState = TextToolbarState.None,
         closePredicate: (() -> Boolean)? = null,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
-        textItem(resources, item, enabled) {
+        textItem(context.resources, item, enabled) {
             onClick()
             if (closePredicate?.invoke() ?: true) close()
             state.updateTextToolbarState(desiredState)
@@ -78,29 +80,59 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     fun TextContextMenuBuilderScope.textFieldSuspendItem(
         item: TextContextMenuItems,
         enabled: Boolean,
-        onClick: suspend () -> Unit
+        onClick: suspend () -> Unit,
     ) {
         textFieldItem(item, enabled) {
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
         }
     }
 
-    with(state) {
-        separator()
-        textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
-        textFieldSuspendItem(Copy, enabled = canCopy()) { copy(cancelSelection = textToolbarShown) }
-        textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
-        textFieldItem(
-            item = SelectAll,
-            enabled = canSelectAll(),
-            desiredState = TextToolbarState.Selection,
-            closePredicate = { !textToolbarShown },
-        ) {
-            selectAll()
+    addPlatformTextContextMenuItems(
+        context = context,
+        editable = state.editable,
+        text = state.textFieldState.visualText.text,
+        selection = state.textFieldState.visualText.selection,
+        platformSelectionBehaviors = state.platformSelectionBehaviors,
+    ) {
+        with(state) {
+            separator()
+            textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
+            textFieldSuspendItem(Copy, enabled = canCopy()) {
+                copy(cancelSelection = textToolbarShown)
+            }
+            textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
+            textFieldItem(
+                item = SelectAll,
+                enabled = canSelectAll(),
+                desiredState = TextToolbarState.Selection,
+                closePredicate = { !textToolbarShown },
+            ) {
+                selectAll()
+            }
+            if (Build.VERSION.SDK_INT >= 26) {
+                textFieldItem(Autofill, enabled = canAutofill()) { autofill() }
+            }
+            separator()
         }
-        if (Build.VERSION.SDK_INT >= 26) {
-            textFieldItem(Autofill, enabled = canAutofill()) { autofill() }
-        }
-        separator()
+    }
+}
+
+internal actual class ClipboardPasteState actual constructor(private val clipboard: Clipboard) {
+    private var _hasClip: Boolean = false
+    private var _hasText: Boolean = false
+
+    actual val hasText: Boolean
+        get() = _hasText
+
+    actual val hasClip: Boolean
+        get() = _hasClip
+
+    actual suspend fun update() {
+        // On Android, we don't need to read `clipEntry` to evaluate `canPaste`.
+        // Reading `clipEntry` directly can trigger a "App pasted from Clipboard" system warning.
+        _hasClip = clipboard.nativeClipboard.hasPrimaryClip()
+        _hasText =
+            _hasClip &&
+                clipboard.nativeClipboard.primaryClipDescription?.hasMimeType("text/*") == true
     }
 }

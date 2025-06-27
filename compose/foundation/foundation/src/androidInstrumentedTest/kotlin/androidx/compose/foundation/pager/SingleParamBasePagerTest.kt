@@ -103,7 +103,7 @@ open class SingleParamBasePagerTest {
         useLookahead: Boolean = false,
         pageContent: @Composable PagerScope.(page: Int) -> Unit = { page ->
             Page(index = page, orientation = orientation)
-        }
+        },
     ) {
         ConfigurableLookaheadScope(useLookahead) {
             val state =
@@ -115,14 +115,14 @@ open class SingleParamBasePagerTest {
 
             CompositionLocalProvider(
                 LocalLayoutDirection provides layoutDirection,
-                LocalOverscrollFactory provides null
+                LocalOverscrollFactory provides null,
             ) {
                 val resolvedFlingBehavior =
                     flingBehavior
                         ?: PagerDefaults.flingBehavior(
                             state = state,
                             pagerSnapDistance = snappingPage,
-                            snapPositionalThreshold = snapPositionalThreshold
+                            snapPositionalThreshold = snapPositionalThreshold,
                         )
 
                 scope = rememberCoroutineScope()
@@ -144,7 +144,7 @@ open class SingleParamBasePagerTest {
                         contentPadding = contentPadding,
                         pageContent = pageContent,
                         snapPosition = snapPosition,
-                        key = key
+                        key = key,
                     )
                 }
             }
@@ -180,7 +180,7 @@ open class SingleParamBasePagerTest {
                         }
                     }
                     .focusable(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             BasicText(text = index.toString())
         }
@@ -204,7 +204,7 @@ open class SingleParamBasePagerTest {
         orientation: Orientation = Orientation.Horizontal,
         key: ((index: Int) -> Any)? = null,
         snapPosition: SnapPosition = SnapPosition.Start,
-        pageContent: @Composable PagerScope.(pager: Int) -> Unit
+        pageContent: @Composable PagerScope.(pager: Int) -> Unit,
     ) {
         if (orientation == Orientation.Vertical) {
             VerticalPager(
@@ -219,7 +219,7 @@ open class SingleParamBasePagerTest {
                 pageSpacing = pageSpacing,
                 key = key,
                 snapPosition = snapPosition,
-                pageContent = pageContent
+                pageContent = pageContent,
             )
         } else {
             HorizontalPager(
@@ -234,7 +234,7 @@ open class SingleParamBasePagerTest {
                 pageSpacing = pageSpacing,
                 key = key,
                 snapPosition = snapPosition,
-                pageContent = pageContent
+                pageContent = pageContent,
             )
         }
     }
@@ -289,7 +289,7 @@ data class SingleParamConfig(
     val mainAxisContentPadding: PaddingValues = PaddingValues(0.dp),
     val beyondViewportPageCount: Int = 0,
     val snapPosition: Pair<SnapPosition, String> = SnapPosition.Start to "Start",
-    var useLookahead: Boolean = false
+    var useLookahead: Boolean = false,
 ) {
     fun TouchInjectionScope.swipeWithVelocityAcrossMainAxis(velocity: Float, delta: Float? = null) {
         val end =

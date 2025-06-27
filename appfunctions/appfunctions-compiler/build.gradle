@@ -31,7 +31,6 @@ plugins {
 }
 
 androidx.configureAarAsJarForConfiguration("testImplementation")
-androidx.configureAarAsJarForConfiguration("api")
 
 dependencies {
     api(libs.kotlinStdlib)
@@ -40,11 +39,8 @@ dependencies {
     implementation("androidx.annotation:annotation:1.7.0")
     implementation("com.squareup:kotlinpoet:2.0.0")
 
-    // Added for reusing AppFunctionMetadata classes.
-    apiAarAsJar(project(":appfunctions:appfunctions-common"))
-
-    testImplementationAarAsJar(project(":appfunctions:appfunctions-common"))
-    testImplementationAarAsJar(project(":appfunctions:appfunctions-runtime"))
+    testImplementationAarAsJar(project(":appfunctions:appfunctions"))
+    testImplementationAarAsJar(project(":appfunctions:appfunctions-service"))
     testImplementation(project(":room:room-compiler-processing-testing"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)

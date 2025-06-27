@@ -38,27 +38,27 @@ public class IgnoreVideoRecordingProblematicDeviceRule : TestRule {
             Assume.assumeFalse(
                 "Skip tests for Cuttlefish MediaCodec issues",
                 Build.MODEL.contains("Cuttlefish") &&
-                    (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33)
+                    (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33),
             )
             // Skip test for b/268102904
             Assume.assumeFalse(
                 "Emulator API 21 has empty supported qualities. Unable to test.",
-                AndroidUtil.isEmulatorAndAPI21()
+                AndroidUtil.isEmulatorAndAPI21(),
             )
             // Skip test for b/399669628, b/401097968
             Assume.assumeFalse(
                 "Emulator API 26 MediaCodec doesn't send encoded data.",
-                Build.VERSION.SDK_INT == 26 && AndroidUtil.isEmulator()
+                Build.VERSION.SDK_INT == 26 && AndroidUtil.isEmulator(),
             )
             // Skip test for b/331618729
             Assume.assumeFalse(
                 "Emulator API 28 crashes running this test.",
-                Build.VERSION.SDK_INT == 28 && AndroidUtil.isEmulator()
+                Build.VERSION.SDK_INT == 28 && AndroidUtil.isEmulator(),
             )
             // Skip test for b/264902324, b/331618729
             Assume.assumeFalse(
                 "Emulator API 30 crashes running this test.",
-                Build.VERSION.SDK_INT == 30 && AndroidUtil.isEmulator()
+                Build.VERSION.SDK_INT == 30 && AndroidUtil.isEmulator(),
             )
         }
     }

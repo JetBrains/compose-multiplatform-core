@@ -40,7 +40,7 @@ internal class AppManager(private val context: Context) {
                 intent.setComponent(
                     ComponentName(
                         resolveInfo.activityInfo.packageName,
-                        resolveInfo.activityInfo.name
+                        resolveInfo.activityInfo.name,
                     )
                 )
             }

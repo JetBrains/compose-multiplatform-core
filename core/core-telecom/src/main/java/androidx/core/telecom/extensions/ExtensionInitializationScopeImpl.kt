@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
 internal class ExtensionInitializationScopeImpl(
     private val context: Context,
     private val coroutineContext: CoroutineContext,
-    private val callStateFlow: MutableSharedFlow<CallStateEvent>
+    private val callStateFlow: MutableSharedFlow<CallStateEvent>,
 ) : ExtensionInitializationScope {
     private companion object {
         const val LOG_TAG = Extensions.LOG_TAG + "(EIS)"
@@ -68,7 +68,7 @@ internal class ExtensionInitializationScopeImpl(
 
     override fun addParticipantExtension(
         initialParticipants: List<Participant>,
-        initialActiveParticipant: Participant?
+        initialActiveParticipant: Participant?,
     ): ParticipantExtension {
         val participant = ParticipantExtensionImpl(initialParticipants, initialActiveParticipant)
         registerExtension(onExchangeStarted = participant::onParticipantExchangeStarted)
@@ -78,7 +78,7 @@ internal class ExtensionInitializationScopeImpl(
 
     override fun addLocalCallSilenceExtension(
         initialCallSilenceState: Boolean,
-        onLocalSilenceUpdate: (suspend (Boolean) -> Unit)
+        onLocalSilenceUpdate: (suspend (Boolean) -> Unit),
     ): LocalCallSilenceExtension {
         val localSilenceExtension =
             LocalCallSilenceExtensionImpl(
@@ -86,7 +86,7 @@ internal class ExtensionInitializationScopeImpl(
                 coroutineContext,
                 callStateFlow,
                 initialCallSilenceState,
-                onLocalSilenceUpdate
+                onLocalSilenceUpdate,
             )
         registerExtension(onExchangeStarted = localSilenceExtension::onExchangeStarted)
         return localSilenceExtension
@@ -121,7 +121,7 @@ internal class ExtensionInitializationScopeImpl(
      */
     internal fun collectEvents(
         scope: CoroutineScope,
-        eventFlow: SharedFlow<CallsManager.CallEvent>
+        eventFlow: SharedFlow<CallsManager.CallEvent>,
     ) {
         scope.launch {
             Log.i(LOG_TAG, "collectEvents: starting collection")
@@ -179,7 +179,7 @@ internal class ExtensionInitializationScopeImpl(
             Log.w(
                 LOG_TAG,
                 "handleCapabilityExchangeEvent: capExchange binder is null, can" +
-                    " not complete cap exchange"
+                    " not complete cap exchange",
             )
             return
         }
@@ -195,7 +195,7 @@ internal class ExtensionInitializationScopeImpl(
                     Log.i(LOG_TAG, "handleCapabilityExchangeEvent: remote died, cleaning scope")
                     connectionScope.cancel("remote process died")
                 },
-                0 /* flags */
+                0, /* flags */
             )
         // Create a new repository for each new connection
         val callbackRepository = CapabilityExchangeRepository(connectionScope)

@@ -160,37 +160,27 @@ class ContextMenuPopupPositionProviderTest {
         position: Int,
         popupLength: Int,
         closeAffinity: Boolean,
-        expected: Int
+        expected: Int,
     ) {
         val actual =
             alignPopupAxis(
                 position = position,
                 popupLength = popupLength,
                 windowLength = 100,
-                closeAffinity = closeAffinity
+                closeAffinity = closeAffinity,
             )
         assertThat(actual).isEqualTo(expected)
     }
 
     @Test
     fun alignPopupAxis_popupBarelyFitsInAfterSpace() {
-        val actual =
-            alignPopupAxis(
-                position = 74,
-                popupLength = 25,
-                windowLength = 100,
-            )
+        val actual = alignPopupAxis(position = 74, popupLength = 25, windowLength = 100)
         assertThat(actual).isEqualTo(74)
     }
 
     @Test
     fun alignPopupAxis_popupBarelyDoesNotFitInAfterSpace() {
-        val actual =
-            alignPopupAxis(
-                position = 75,
-                popupLength = 25,
-                windowLength = 100,
-            )
+        val actual = alignPopupAxis(position = 75, popupLength = 25, windowLength = 100)
         assertThat(actual).isEqualTo(50)
     }
 
@@ -201,7 +191,7 @@ class ContextMenuPopupPositionProviderTest {
                 position = 25,
                 popupLength = 25,
                 windowLength = 100,
-                closeAffinity = false
+                closeAffinity = false,
             )
         assertThat(actual).isEqualTo(0)
     }
@@ -213,7 +203,7 @@ class ContextMenuPopupPositionProviderTest {
                 position = 24,
                 popupLength = 25,
                 windowLength = 100,
-                closeAffinity = false
+                closeAffinity = false,
             )
         assertThat(actual).isEqualTo(24)
     }

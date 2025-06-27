@@ -104,7 +104,7 @@ class InvalidationTrackerBenchmark(private val sampleSize: Int, private val mode
                     // Removed due to due to slow run times, see b/267544445 for details.
                     // 10000
                 ),
-                listOf(Mode.MEASURE_INSERT, Mode.MEASURE_DELETE, Mode.MEASURE_INSERT_AND_DELETE)
+                listOf(Mode.MEASURE_INSERT, Mode.MEASURE_DELETE, Mode.MEASURE_INSERT_AND_DELETE),
             )
 
         private const val DB_NAME = "invalidation-benchmark-test"
@@ -113,6 +113,6 @@ class InvalidationTrackerBenchmark(private val sampleSize: Int, private val mode
     enum class Mode {
         MEASURE_INSERT,
         MEASURE_DELETE,
-        MEASURE_INSERT_AND_DELETE
+        MEASURE_INSERT_AND_DELETE,
     }
 }

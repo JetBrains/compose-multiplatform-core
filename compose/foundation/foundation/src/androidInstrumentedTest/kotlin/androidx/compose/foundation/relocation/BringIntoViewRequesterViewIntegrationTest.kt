@@ -159,7 +159,7 @@ class BringIntoViewRequesterViewIntegrationTest {
                         )
                     }
                     return@AndroidView parent
-                }
+                },
             )
         }
 
@@ -178,7 +178,7 @@ class BringIntoViewRequesterViewIntegrationTest {
         override fun requestChildRectangleOnScreen(
             child: View,
             rectangle: AndroidRect,
-            immediate: Boolean
+            immediate: Boolean,
         ): Boolean {
             requests += RectangleRequest(rectangle, immediate)
             return false

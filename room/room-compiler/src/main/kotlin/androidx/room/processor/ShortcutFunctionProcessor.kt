@@ -31,7 +31,7 @@ import kotlin.reflect.KClass
 class ShortcutFunctionProcessor(
     baseContext: Context,
     val containing: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
     val context = baseContext.fork(executableElement)
     private val delegate =
@@ -50,7 +50,7 @@ class ShortcutFunctionProcessor(
         context.checker.check(
             !isSuspendFunction || !returnsDeferredType,
             executableElement,
-            ProcessorErrors.suspendReturnsDeferredType(returnType.rawType.typeName.toString())
+            ProcessorErrors.suspendReturnsDeferredType(returnType.rawType.typeName.toString()),
         )
 
         if (!isSuspendFunction && !returnsDeferredType && !context.isAndroidOnlyTarget()) {
@@ -58,7 +58,7 @@ class ShortcutFunctionProcessor(
             // target platforms include non-Android targets.
             context.logger.e(
                 executableElement,
-                ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID
+                ProcessorErrors.INVALID_BLOCKING_DAO_FUNCTION_NON_ANDROID,
             )
             // TODO(b/332781418): Early return to avoid generating redundant code.
         }
@@ -69,14 +69,14 @@ class ShortcutFunctionProcessor(
     fun extractParams(
         targetEntityType: XType?,
         missingParamError: String,
-        onValidatePartialEntity: (Entity, DataClass) -> Unit
+        onValidatePartialEntity: (Entity, DataClass) -> Unit,
     ): Pair<Map<String, ShortcutEntity>, List<ShortcutQueryParameter>> {
         val params =
             delegate.extractParams().map {
                 ShortcutParameterProcessor(
                         baseContext = context,
                         containing = containing,
-                        element = it
+                        element = it,
                     )
                     .process()
             }
@@ -88,7 +88,7 @@ class ShortcutFunctionProcessor(
                 if (targetTypeElement == null) {
                     context.logger.e(
                         executableElement,
-                        ProcessorErrors.INVALID_TARGET_ENTITY_IN_SHORTCUT_FUNCTION
+                        ProcessorErrors.INVALID_TARGET_ENTITY_IN_SHORTCUT_FUNCTION,
                     )
                     null
                 } else {
@@ -97,10 +97,10 @@ class ShortcutFunctionProcessor(
                         onInvalid = {
                             context.logger.e(
                                 executableElement,
-                                ProcessorErrors.INVALID_TARGET_ENTITY_IN_SHORTCUT_FUNCTION
+                                ProcessorErrors.INVALID_TARGET_ENTITY_IN_SHORTCUT_FUNCTION,
                             )
                             return emptyMap<String, ShortcutEntity>() to emptyList()
-                        }
+                        },
                     )
                 }
             } else {
@@ -124,7 +124,7 @@ class ShortcutFunctionProcessor(
     private fun extractPartialEntities(
         targetEntity: Entity,
         params: List<ShortcutQueryParameter>,
-        onValidatePartialEntity: (Entity, DataClass) -> Unit
+        onValidatePartialEntity: (Entity, DataClass) -> Unit,
     ) =
         params.associateBy(
             { it.name },
@@ -142,7 +142,7 @@ class ShortcutFunctionProcessor(
                                 ProcessorErrors.shortcutFunctionArgumentMustBeAClass(
                                     typeName =
                                         param.pojoType.asTypeName().toString(context.codeLanguage)
-                                )
+                                ),
                             )
                             null
                         } else {
@@ -150,7 +150,7 @@ class ShortcutFunctionProcessor(
                                     context = context,
                                     element = pojoTypeElement,
                                     bindingScope = PropertyProcessor.BindingScope.BIND_TO_STMT,
-                                    parent = null
+                                    parent = null,
                                 )
                                 .process()
                                 .also { pojo ->
@@ -166,7 +166,7 @@ class ShortcutFunctionProcessor(
                                                     targetEntity.typeName.toString(
                                                         context.codeLanguage
                                                     )
-                                                )
+                                                ),
                                             )
                                         }
 
@@ -174,7 +174,7 @@ class ShortcutFunctionProcessor(
                                         // TODO: Support Pojos with relations.
                                         context.logger.e(
                                             pojo.element,
-                                            ProcessorErrors.INVALID_RELATION_IN_PARTIAL_ENTITY
+                                            ProcessorErrors.INVALID_RELATION_IN_PARTIAL_ENTITY,
                                         )
                                     }
 
@@ -184,7 +184,7 @@ class ShortcutFunctionProcessor(
                                             ProcessorErrors.noColumnsInPartialEntity(
                                                 partialEntityName =
                                                     pojo.typeName.toString(context.codeLanguage)
-                                            )
+                                            ),
                                         )
                                     }
                                     onValidatePartialEntity(targetEntity, pojo)
@@ -192,7 +192,7 @@ class ShortcutFunctionProcessor(
                         }
                     ShortcutEntity(entity = targetEntity, partialEntity = pojo)
                 }
-            }
+            },
         )
 
     private fun extractEntities(params: List<ShortcutQueryParameter>) =
@@ -202,7 +202,7 @@ class ShortcutFunctionProcessor(
                 if (entityTypeElement == null) {
                     context.logger.e(
                         it.element,
-                        ProcessorErrors.CANNOT_FIND_ENTITY_FOR_SHORTCUT_QUERY_PARAMETER
+                        ProcessorErrors.CANNOT_FIND_ENTITY_FOR_SHORTCUT_QUERY_PARAMETER,
                     )
                     null
                 } else {
@@ -212,10 +212,10 @@ class ShortcutFunctionProcessor(
                             onInvalid = {
                                 context.logger.e(
                                     it.element,
-                                    ProcessorErrors.CANNOT_FIND_ENTITY_FOR_SHORTCUT_QUERY_PARAMETER
+                                    ProcessorErrors.CANNOT_FIND_ENTITY_FOR_SHORTCUT_QUERY_PARAMETER,
                                 )
                                 return@mapNotNull null
-                            }
+                            },
                         )
                     it.name to ShortcutEntity(entity = entity!!, partialEntity = null)
                 }

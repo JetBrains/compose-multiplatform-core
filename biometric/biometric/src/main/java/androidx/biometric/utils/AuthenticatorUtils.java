@@ -126,7 +126,6 @@ public class AuthenticatorUtils {
         //  it's not available: a. if there are other authenticators set by the app, identity
         //  check will be ignored and use the others only; b. if not, the default authenticator
         //  will be used from above.
-        // TODO(b/375693808): Add this information to setAllowedAuthenticators() doc.
         if ((authenticators & Authenticators.IDENTITY_CHECK) == Authenticators.IDENTITY_CHECK
                 && !isIdentityCheckAvailable) {
             authenticators &= ~Authenticators.IDENTITY_CHECK;
@@ -158,7 +157,6 @@ public class AuthenticatorUtils {
             @BiometricManager.AuthenticatorTypes int authenticators) {
         // Ignore identity check. We don't want identity check to block the authentication. See
         // getConsolidatedAuthenticators() for more information.
-        // TODO(b/375693808): Add this information to setAllowedAuthenticators() doc.
         authenticators &= ~Authenticators.IDENTITY_CHECK;
 
         switch (authenticators) {

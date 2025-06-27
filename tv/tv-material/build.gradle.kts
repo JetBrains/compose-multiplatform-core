@@ -37,12 +37,12 @@ dependencies {
 
     api("androidx.annotation:annotation:1.9.1")
 
-    val composeVersion = "1.7.6"
+    val composeVersion = "1.8.2"
     api("androidx.compose.animation:animation:$composeVersion")
     api("androidx.compose.foundation:foundation:$composeVersion")
     api("androidx.compose.foundation:foundation-layout:$composeVersion")
     api("androidx.compose.runtime:runtime:$composeVersion")
-    api("androidx.compose.material:material-icons-core:$composeVersion")
+    api("androidx.compose.material:material-icons-core:1.7.6")
     api("androidx.compose.ui:ui-util:$composeVersion")
     api("androidx.compose.ui:ui:$composeVersion")
     api("androidx.compose.ui:ui-graphics:$composeVersion")

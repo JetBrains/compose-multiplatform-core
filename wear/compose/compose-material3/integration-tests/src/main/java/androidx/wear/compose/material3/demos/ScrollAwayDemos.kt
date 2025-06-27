@@ -33,7 +33,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.ScrollInfoProvider
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.integration.demos.common.Centralize
@@ -51,7 +51,7 @@ val ScrollAwayDemos =
     listOf(
         ComposableDemo("Scaling Lazy Column") { ScrollAwaySample() },
         ComposableDemo("LazyColumn") { Centralize { ScrollAwayLazyColumn() } },
-        ComposableDemo("Column") { Centralize { ScrollAwayColumn() } }
+        ComposableDemo("Column") { Centralize { ScrollAwayColumn() } },
     )
 
 @Composable
@@ -64,21 +64,21 @@ fun ScrollAwayLazyColumn() {
             state = scrollState,
             modifier =
                 Modifier.fillMaxSize()
-                    .hierarchicalFocusRequester(focusRequester)
+                    .requestFocusOnHierarchyActive()
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,
-                            flingBehavior = ScrollableDefaults.flingBehavior()
+                            flingBehavior = ScrollableDefaults.flingBehavior(),
                         ),
-                        focusRequester = focusRequester
-                    )
+                        focusRequester = focusRequester,
+                    ),
         ) {
             item {
                 ListHeader {
                     Text(
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                         text = "Lazy Column",
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -102,9 +102,9 @@ fun ScrollAwayLazyColumn() {
                     screenStage = {
                         if (scrollState.isScrollInProgress) ScreenStage.Scrolling
                         else ScreenStage.Idle
-                    }
+                    },
                 ),
-            content = { curvedText("ScrollAway") }
+            content = { curvedText("ScrollAway") },
         )
     }
 }
@@ -118,20 +118,20 @@ fun ScrollAwayColumn() {
         Column(
             modifier =
                 Modifier.verticalScroll(scrollState)
-                    .hierarchicalFocusRequester(focusRequester)
+                    .requestFocusOnHierarchyActive()
                     .rotaryScrollable(
                         RotaryScrollableDefaults.behavior(
                             scrollableState = scrollState,
-                            flingBehavior = ScrollableDefaults.flingBehavior()
+                            flingBehavior = ScrollableDefaults.flingBehavior(),
                         ),
-                        focusRequester = focusRequester
+                        focusRequester = focusRequester,
                     )
         ) {
             ListHeader {
                 Text(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     text = "Column",
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
             }
             repeat(5) {
@@ -154,9 +154,9 @@ fun ScrollAwayColumn() {
                     screenStage = {
                         if (scrollState.isScrollInProgress) ScreenStage.Scrolling
                         else ScreenStage.Idle
-                    }
+                    },
                 ),
-            content = { curvedText("ScrollAway") }
+            content = { curvedText("ScrollAway") },
         )
     }
 }

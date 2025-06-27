@@ -403,7 +403,7 @@ class NavControllerTest {
                 navController.graph =
                     navController.createGraph(
                         route = "graph",
-                        startDestination = "dest1/{intArg}"
+                        startDestination = "dest1/{intArg}",
                     ) {
                         test("dest1/{intArg}") {
                             argument("intArg") {
@@ -1004,7 +1004,7 @@ class NavControllerTest {
                 Intent.ACTION_VIEW,
                 Uri.parse("android-app://androidx.navigation.test/test/argument1/argument2"),
                 ApplicationProvider.getApplicationContext(),
-                TestActivity::class.java
+                TestActivity::class.java,
             )
 
         Intents.init()
@@ -1043,11 +1043,11 @@ class NavControllerTest {
                             allOf(
                                 hasAction(intent.action),
                                 hasData(intent.data),
-                                hasComponent(intent.component)
-                            )
-                        )
-                    )
-                )
+                                hasComponent(intent.component),
+                            ),
+                        ),
+                    ),
+                ),
             )
         )
 
@@ -1061,7 +1061,7 @@ class NavControllerTest {
                 Intent.ACTION_VIEW,
                 Uri.parse("android-app://androidx.navigation.test/nullArgTest/"),
                 ApplicationProvider.getApplicationContext(),
-                TestActivity::class.java
+                TestActivity::class.java,
             )
 
         Intents.init()
@@ -1101,7 +1101,7 @@ class NavControllerTest {
                 .addDestination(R.id.start_test, bundleOf("arg" to "Start Argument"))
                 .addDestination(
                     R.id.start_test_with_default_arg,
-                    bundleOf("arg" to "Middle Argument")
+                    bundleOf("arg" to "Middle Argument"),
                 )
                 .addDestination(R.id.second_test, bundleOf("arg" to "Leaf Argument"))
                 .createTaskStackBuilder()
@@ -1760,7 +1760,7 @@ class NavControllerTest {
                 R.id.start_test,
                 R.id.second_test,
                 R.id.start_test,
-                R.id.start_test_with_default_arg
+                R.id.start_test_with_default_arg,
             )
             .inOrder()
     }
@@ -1840,7 +1840,7 @@ class NavControllerTest {
                 R.id.second_test,
                 R.id.start_test_with_default_arg,
                 R.id.second_test,
-                R.id.start_test
+                R.id.start_test,
             )
             .inOrder()
     }
@@ -1947,7 +1947,7 @@ class NavControllerTest {
         navController.navigate(
             nestedId2,
             Bundle(),
-            NavOptions.Builder().setPopUpTo("nested/{longArg}", inclusive = true).build()
+            NavOptions.Builder().setPopUpTo("nested/{longArg}", inclusive = true).build(),
         )
         // [graph, dest1, nested, dest3]
         assertThat(navController.currentBackStack.value.size).isEqualTo(4)
@@ -2096,7 +2096,7 @@ class NavControllerTest {
         navController.navigate(
             R.id.second_test,
             null,
-            navOptions { popUpTo(R.id.start_test) { inclusive = true } }
+            navOptions { popUpTo(R.id.start_test) { inclusive = true } },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -2116,7 +2116,7 @@ class NavControllerTest {
         navController.navigate(
             R.id.second_test,
             null,
-            navOptions { popUpTo(R.id.nav_root) { inclusive = true } }
+            navOptions { popUpTo(R.id.nav_root) { inclusive = true } },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -2313,7 +2313,7 @@ class NavControllerTest {
         navController.navigate(
             R.id.start_test_with_default_arg,
             args,
-            navOptions { launchSingleTop = true }
+            navOptions { launchSingleTop = true },
         )
 
         assertThat(navController.currentDestination?.id ?: 0)
@@ -2627,7 +2627,7 @@ class NavControllerTest {
                     inclusive = true
                     saveState = true
                 }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -2638,7 +2638,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.second_test) { inclusive = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.start_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -2660,7 +2660,7 @@ class NavControllerTest {
                 graph =
                     navController.navigatorProvider.navigation(
                         route = "graph",
-                        startDestination = "outerChild"
+                        startDestination = "outerChild",
                     ) {
                         test("outerChild")
                         navigation(route = "nestedParent", startDestination = "nestedChild") {
@@ -2688,7 +2688,7 @@ class NavControllerTest {
             navOptions {
                 popUpTo(navController.graph.findStartDestination().route!!) { saveState = true }
                 launchSingleTop = true
-            }
+            },
         )
         assertThat(navController.currentDestination?.route).isEqualTo("outerChild")
         // now we finish transition to mark both child and parent as complete
@@ -2701,7 +2701,7 @@ class NavControllerTest {
                 popUpTo(navController.graph.findStartDestination().route!!) { saveState = true }
                 restoreState = true
                 launchSingleTop = true
-            }
+            },
         )
 
         val newChildEntry = childNavigator.backStack.last()
@@ -2736,7 +2736,7 @@ class NavControllerTest {
                     inclusive = true
                     saveState = true
                 }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -2766,7 +2766,7 @@ class NavControllerTest {
                     inclusive = true
                     saveState = true
                 }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -2777,7 +2777,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.nav_root) { inclusive = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.start_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -2806,7 +2806,7 @@ class NavControllerTest {
                     inclusive = false
                     saveState = true
                 }
-            }
+            },
         )
 
         val firstSaveState = navController.saveState()
@@ -2823,7 +2823,7 @@ class NavControllerTest {
                     inclusive = false
                     saveState = false
                 }
-            }
+            },
         )
 
         // save startDestination again when it is popped
@@ -2835,7 +2835,7 @@ class NavControllerTest {
                     inclusive = false
                     saveState = true
                 }
-            }
+            },
         )
 
         val secondSaveState = navController.saveState()
@@ -2866,7 +2866,7 @@ class NavControllerTest {
                     inclusive = true
                     saveState = true
                 }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.deep_link_child_start_test)
@@ -2878,7 +2878,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.deep_link_child_start) { inclusive = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.simple_child_second_test)
@@ -2910,7 +2910,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.simple_child_start_test) { saveState = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.deep_link_child_start_test)
@@ -2930,7 +2930,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.simple_child_start_test) { saveState = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.simple_child_second_test)
@@ -2948,7 +2948,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.simple_child_start_test) { saveState = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.deep_link_child_second_test)
@@ -2980,7 +2980,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.simple_child_start_test) { saveState = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.deep_link_child_start_test)
@@ -3000,7 +3000,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.simple_child_start_test) { saveState = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.simple_child_start_test)
@@ -3018,7 +3018,7 @@ class NavControllerTest {
             navOptions {
                 restoreState = true
                 popUpTo(R.id.simple_child_start_test) { saveState = true }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0)
             .isEqualTo(R.id.deep_link_child_second_test)
@@ -3050,7 +3050,7 @@ class NavControllerTest {
                     inclusive = true
                     saveState = true
                 }
-            }
+            },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(1)
@@ -3079,7 +3079,7 @@ class NavControllerTest {
         navController.navigate(
             R.id.second_test,
             null,
-            navOptions { popUpTo(R.id.start_test) { saveState = true } }
+            navOptions { popUpTo(R.id.start_test) { saveState = true } },
         )
         assertThat(navController.currentDestination?.id ?: 0).isEqualTo(R.id.second_test)
         assertThat(navigator.backStack.size).isEqualTo(2)
@@ -3492,7 +3492,7 @@ class NavControllerTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/action/uri"),
                 "action.uri",
-                null
+                null,
             )
 
         navController.handleDeepLink(deepLink)
@@ -3510,7 +3510,7 @@ class NavControllerTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/mime/uri"),
                 null,
-                "mime/uri"
+                "mime/uri",
             )
 
         navController.handleDeepLink(deepLink)
@@ -3541,7 +3541,7 @@ class NavControllerTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/uri/action/mime"),
                 "uri.action.mime",
-                "uri/actionMime"
+                "uri/actionMime",
             )
 
         navController.handleDeepLink(deepLink)
@@ -3558,7 +3558,7 @@ class NavControllerTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/action/uri"),
                 null,
-                null
+                null,
             )
 
         val result = navController.handleDeepLink(deepLink)
@@ -3574,7 +3574,7 @@ class NavControllerTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/mime/uri"),
                 null,
-                null
+                null,
             )
 
         val result = navController.handleDeepLink(deepLink)
@@ -3618,7 +3618,7 @@ class NavControllerTest {
                 "test.action2",
                 "invalidDeepLink.com".toUri(),
                 ApplicationProvider.getApplicationContext() as Context,
-                TestActivity::class.java
+                TestActivity::class.java,
             )
         assertThat(intent).isNotNull()
         assertWithMessage("NavController should not match with any deeplink due to missing arg")
@@ -3644,7 +3644,7 @@ class NavControllerTest {
                 // deeplink with matching action has Int NavType
                 "test-app://test/abc".toUri(),
                 ApplicationProvider.getApplicationContext() as Context,
-                TestActivity::class.java
+                TestActivity::class.java,
             )
         assertThat(intent).isNotNull()
         assertWithMessage("NavController should not match with any deeplink due to wrong arg type")
@@ -3668,7 +3668,7 @@ class NavControllerTest {
                 // deeplink with this action type has a required Query arg
                 "test-app://test".toUri(),
                 ApplicationProvider.getApplicationContext() as Context,
-                TestActivity::class.java
+                TestActivity::class.java,
             )
         assertThat(intent).isNotNull()
         assertWithMessage("NavController should not match with any deeplink due to wrong arg type")
@@ -3733,7 +3733,7 @@ class NavControllerTest {
                 R.id.simple_child_second_test,
                 // Then to the second destination added via addDestination()
                 R.id.deep_link_child_start_test,
-                R.id.deep_link_child_second_test
+                R.id.deep_link_child_second_test,
             )
             .inOrder()
     }
@@ -3898,7 +3898,7 @@ class NavControllerTest {
                 override fun onDestinationChanged(
                     controller: NavController,
                     destination: NavDestination,
-                    arguments: Bundle?
+                    arguments: Bundle?,
                 ) {
                     navController.removeOnDestinationChangedListener(this)
                 }

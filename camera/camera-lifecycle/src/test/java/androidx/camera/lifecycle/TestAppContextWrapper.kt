@@ -26,7 +26,7 @@ internal class TestAppContextWrapper(
     base: Context,
     private val app: Application? = null,
     private val deviceId: Int = DEVICE_ID_DEFAULT,
-    private val attributionTag: String? = null
+    private val attributionTag: String? = null,
 ) : ContextWrapper(base) {
 
     override fun getApplicationContext(): Context {

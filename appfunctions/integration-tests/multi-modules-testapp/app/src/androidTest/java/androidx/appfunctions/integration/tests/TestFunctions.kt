@@ -19,12 +19,17 @@ package androidx.appfunctions.integration.tests
 import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
-import androidx.appfunctions.AppFunction
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionInvalidArgumentException
-import androidx.appfunctions.AppFunctionOpenable
+import androidx.appfunctions.AppFunctionSchemaCapability
 import androidx.appfunctions.AppFunctionSerializable
+import androidx.appfunctions.service.AppFunction
 import java.time.LocalDateTime
+
+@AppFunctionSchemaCapability
+interface AppFunctionOpenable {
+    val intentToOpen: PendingIntent
+}
 
 @AppFunctionSerializable data class SetField<T>(val value: T)
 
@@ -43,18 +48,13 @@ data class UpdateNoteParams(
     val nullableTitle: SetField<String?>? = null,
     val content: SetField<List<String>>? = null,
     val nullableContent: SetField<List<String>?>? = null,
+    val attachments: SetField<List<Attachment>>? = null,
+    val modifiedTime: SetField<LocalDateTime>? = null,
 )
 
-@AppFunctionSerializable
-data class Owner(
-    val name: String,
-)
+@AppFunctionSerializable data class Owner(val name: String)
 
-@AppFunctionSerializable
-data class Attachment(
-    val uri: String,
-    val nested: Attachment? = null,
-)
+@AppFunctionSerializable data class Attachment(val uri: String, val nested: Attachment? = null)
 
 @AppFunctionSerializable
 data class Note(
@@ -62,6 +62,7 @@ data class Note(
     val content: List<String>,
     val owner: Owner,
     val attachments: List<Attachment>,
+    val modifiedTime: LocalDateTime? = null,
 )
 
 @AppFunctionSerializable
@@ -70,7 +71,8 @@ data class OpenableNote(
     val content: List<String>,
     val owner: Owner,
     val attachments: List<Attachment>,
-    override val intentToOpen: PendingIntent
+    val modifiedTime: LocalDateTime? = null,
+    override val intentToOpen: PendingIntent,
 ) : AppFunctionOpenable
 
 @AppFunctionSerializable data class DateTime(val localDateTime: LocalDateTime)
@@ -100,13 +102,13 @@ class TestFunctions {
     @AppFunction
     fun createNote(
         appFunctionContext: AppFunctionContext,
-        createNoteParams: CreateNoteParams
+        createNoteParams: CreateNoteParams,
     ): Note {
         return Note(
             title = createNoteParams.title,
             content = createNoteParams.content,
             owner = createNoteParams.owner,
-            attachments = createNoteParams.attachments
+            attachments = createNoteParams.attachments,
         )
     }
 
@@ -124,14 +126,15 @@ class TestFunctions {
                 (updateNoteParams.content?.value ?: listOf("DefaultContent")) +
                     (updateNoteParams.nullableContent?.value ?: listOf("DefaultContent")),
             owner = Owner("test"),
-            attachments = listOf(),
+            attachments = updateNoteParams.attachments?.value ?: emptyList(),
+            modifiedTime = updateNoteParams.modifiedTime?.value,
         )
     }
 
     @AppFunction
     fun getOpenableNote(
         appFunctionContext: AppFunctionContext,
-        createNoteParams: CreateNoteParams
+        createNoteParams: CreateNoteParams,
     ): OpenableNote {
         return OpenableNote(
             title = createNoteParams.title,
@@ -143,8 +146,8 @@ class TestFunctions {
                     appFunctionContext.context,
                     0,
                     Intent(),
-                    PendingIntent.FLAG_IMMUTABLE
-                )
+                    PendingIntent.FLAG_IMMUTABLE,
+                ),
         )
     }
 }
@@ -161,4 +164,24 @@ class TestFactory {
 
     @AppFunction
     fun isCreatedByFactory(appFunctionContext: AppFunctionContext): Boolean = createdByFactory
+}
+
+class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFunctions.Response> {
+
+    @AppFunction
+    override suspend fun createNote(
+        appFunctionContext: AppFunctionContext,
+        parameters: Parameters,
+    ): Response {
+        return Response(MyNote(id = "testId", title = parameters.title))
+    }
+
+    @AppFunctionSerializable
+    class MyNote(override val id: String, override val title: String) : AppFunctionNote
+
+    @AppFunctionSerializable
+    class Parameters(override val title: String) : CreateNoteAppFunction.Parameters
+
+    @AppFunctionSerializable
+    class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
 }

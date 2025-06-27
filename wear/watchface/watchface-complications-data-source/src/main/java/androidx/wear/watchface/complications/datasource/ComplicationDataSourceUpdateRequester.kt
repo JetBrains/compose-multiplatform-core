@@ -93,7 +93,7 @@ public interface ComplicationDataSourceUpdateRequester {
         ): ComplicationDataSourceUpdateRequester =
             ComplicationDataSourceUpdateRequesterImpl(
                 context.applicationContext,
-                complicationDataSourceComponent
+                complicationDataSourceComponent,
             )
 
         /**

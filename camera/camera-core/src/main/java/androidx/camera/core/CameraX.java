@@ -39,8 +39,10 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
 import androidx.arch.core.util.Function;
+import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
+import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CameraProviderExecutionState;
 import androidx.camera.core.impl.CameraRepository;
 import androidx.camera.core.impl.CameraThreadConfig;
@@ -51,6 +53,8 @@ import androidx.camera.core.impl.QuirkSettingsLoader;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.ContextUtil;
 import androidx.camera.core.impl.utils.futures.Futures;
+import androidx.camera.core.internal.StreamSpecsCalculator;
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.os.HandlerCompat;
 import androidx.core.util.Preconditions;
@@ -88,6 +92,8 @@ public final class CameraX {
     private CameraFactory mCameraFactory;
     private CameraDeviceSurfaceManager mSurfaceManager;
     private UseCaseConfigFactory mDefaultConfigFactory;
+    private StreamSpecsCalculator mStreamSpecsCalculator;
+    private CameraUseCaseAdapterProvider mCameraUseCaseAdapterProvider;
     private final RetryPolicy mRetryPolicy;
     private final ListenableFuture<Void> mInitInternalFuture;
 
@@ -280,6 +286,20 @@ public final class CameraX {
     }
 
     /**
+     * Returns the {@link CameraUseCaseAdapterProvider} instance.
+     *
+     * @throws IllegalStateException if the {@link CameraUseCaseAdapterProvider} has not been
+     *                               set, due to being uninitialized.
+     */
+    public @NonNull CameraUseCaseAdapterProvider getCameraUseCaseAdapterProvider() {
+        if (mCameraUseCaseAdapterProvider == null) {
+            throw new IllegalStateException("CameraX not initialized yet.");
+        }
+
+        return mCameraUseCaseAdapterProvider;
+    }
+
+    /**
      * Returns the {@link CameraRepository} instance.
      *
      */
@@ -299,6 +319,19 @@ public final class CameraX {
         }
 
         return mDefaultConfigFactory;
+    }
+
+    /**
+     * Returns the {@link StreamSpecsCalculator} instance.
+     *
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @NonNull StreamSpecsCalculator getStreamSpecsCalculator() {
+        if (mStreamSpecsCalculator == null) {
+            throw new IllegalStateException("CameraX not initialized yet.");
+        }
+
+        return mStreamSpecsCalculator;
     }
 
     /**
@@ -361,10 +394,24 @@ public final class CameraX {
                         mCameraXConfig.getAvailableCamerasLimiter(null);
                 long cameraOpenRetryMaxTimeoutInMillis =
                         mCameraXConfig.getCameraOpenRetryMaxTimeoutInMillisWhileResuming();
+
+                UseCaseConfigFactory.Provider configFactoryProvider =
+                        mCameraXConfig.getUseCaseConfigFactoryProvider(null);
+                if (configFactoryProvider == null) {
+                    throw new InitializationException(new IllegalArgumentException(
+                            "Invalid app configuration provided. Missing "
+                                    + "UseCaseConfigFactory."));
+                }
+
+                mDefaultConfigFactory = configFactoryProvider.newInstance(appContext);
+
+                mStreamSpecsCalculator = new StreamSpecsCalculatorImpl(mDefaultConfigFactory, null);
+
                 mCameraFactory = cameraFactoryProvider.newInstance(appContext,
                         cameraThreadConfig,
                         availableCamerasLimiter,
-                        cameraOpenRetryMaxTimeoutInMillis);
+                        cameraOpenRetryMaxTimeoutInMillis,
+                        mStreamSpecsCalculator);
                 CameraDeviceSurfaceManager.Provider surfaceManagerProvider =
                         mCameraXConfig.getDeviceSurfaceManagerProvider(null);
                 if (surfaceManagerProvider == null) {
@@ -375,22 +422,30 @@ public final class CameraX {
                 mSurfaceManager = surfaceManagerProvider.newInstance(appContext,
                         mCameraFactory.getCameraManager(),
                         mCameraFactory.getAvailableCameraIds());
-
-                UseCaseConfigFactory.Provider configFactoryProvider =
-                        mCameraXConfig.getUseCaseConfigFactoryProvider(null);
-                if (configFactoryProvider == null) {
-                    throw new InitializationException(new IllegalArgumentException(
-                            "Invalid app configuration provided. Missing "
-                                    + "UseCaseConfigFactory."));
-                }
-                mDefaultConfigFactory = configFactoryProvider.newInstance(appContext);
+                mStreamSpecsCalculator.setCameraDeviceSurfaceManager(mSurfaceManager);
 
                 if (cameraExecutor instanceof CameraExecutor) {
                     CameraExecutor executor = (CameraExecutor) cameraExecutor;
                     executor.init(mCameraFactory);
                 }
 
+                // Initialize the Repository with the Factory
                 mCameraRepository.init(mCameraFactory);
+
+                // Initialize the Coordinator with the Repository
+                CameraCoordinator cameraCoordinator = mCameraFactory.getCameraCoordinator();
+                cameraCoordinator.init(mCameraRepository);
+
+                // Prepare CameraUseCaseAdapterProvider
+                mCameraUseCaseAdapterProvider = new CameraUseCaseAdapterProviderImpl(
+                        mCameraRepository,
+                        cameraCoordinator,
+                        mDefaultConfigFactory,
+                        mStreamSpecsCalculator);
+                for (CameraInternal camera : mCameraRepository.getCameras()) {
+                    camera.getCameraInfoInternal().setCameraUseCaseAdapterProvider(
+                            mCameraUseCaseAdapterProvider);
+                }
 
                 // Please ensure only validate the camera at the last of the initialization.
                 validateCameras(appContext, mCameraRepository, availableCamerasLimiter);
@@ -476,6 +531,8 @@ public final class CameraX {
 
                                 // Deinit camera executor at last to avoid RejectExecutionException.
                                 future.addListener(() -> {
+                                    mCameraFactory.shutdown();
+
                                     if (mSchedulerThread != null) {
                                         // Ensure we shutdown the camera executor before
                                         // exiting the scheduler thread

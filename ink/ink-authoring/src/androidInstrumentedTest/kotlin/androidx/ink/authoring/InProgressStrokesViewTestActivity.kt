@@ -22,8 +22,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
-// annotation)
-
 /** An [Activity] to support [InProgressStrokesViewTest] by rendering a simple stroke. */
 class InProgressStrokesViewTestActivity : Activity() {
 

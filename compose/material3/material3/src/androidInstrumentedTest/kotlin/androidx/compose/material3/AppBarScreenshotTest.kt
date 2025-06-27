@@ -71,7 +71,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -80,7 +80,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -97,7 +97,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -107,7 +107,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -124,7 +124,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -134,7 +134,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -152,7 +152,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -163,7 +163,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -188,7 +188,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -197,7 +197,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -214,7 +214,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -223,7 +223,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -240,7 +240,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -251,7 +251,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -268,7 +268,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -279,7 +279,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -298,7 +298,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -307,7 +307,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -324,7 +324,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -333,7 +333,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -350,7 +350,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -361,7 +361,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -380,7 +380,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -390,7 +390,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -409,7 +409,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -419,7 +419,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -438,7 +438,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -447,7 +447,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -464,7 +464,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -473,7 +473,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -490,7 +490,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -501,7 +501,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -520,7 +520,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -530,7 +530,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -549,7 +549,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -559,7 +559,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -578,7 +578,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -587,7 +587,7 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(imageVector = Icons.Filled.Favorite, contentDescription = "Like")
                         }
-                    }
+                    },
                 )
             }
         }
@@ -609,18 +609,18 @@ class AppBarScreenshotTest {
                         FloatingActionButton(
                             onClick = { /* do something */ },
                             containerColor = bottomAppBarFabColor,
-                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                         ) {
                             Icon(Icons.Filled.Add, "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
 
         assertAppBarAgainstGolden(
             goldenIdentifier = "bottomAppBarWithFAB_lightTheme",
-            testTag = BottomAppBarTestTag
+            testTag = BottomAppBarTestTag,
         )
     }
 
@@ -638,18 +638,18 @@ class AppBarScreenshotTest {
                         FloatingActionButton(
                             onClick = { /* do something */ },
                             containerColor = bottomAppBarFabColor,
-                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()
+                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
                         ) {
                             Icon(Icons.Filled.Add, "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
 
         assertAppBarAgainstGolden(
             goldenIdentifier = "bottomAppBarWithFAB_darkTheme",
-            testTag = BottomAppBarTestTag
+            testTag = BottomAppBarTestTag,
         )
     }
 
@@ -664,18 +664,18 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         FilledIconButton(
                             modifier = Modifier.width(56.dp),
-                            onClick = { /* doSomething() */ }
+                            onClick = { /* doSomething() */ },
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
@@ -685,14 +685,14 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
 
         assertAppBarAgainstGolden(
             goldenIdentifier = "bottomAppBarSpacedAround_lightTheme",
-            testTag = BottomAppBarTestTag
+            testTag = BottomAppBarTestTag,
         )
     }
 
@@ -707,18 +707,18 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         FilledIconButton(
                             modifier = Modifier.width(56.dp),
-                            onClick = { /* doSomething() */ }
+                            onClick = { /* doSomething() */ },
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
@@ -735,7 +735,7 @@ class AppBarScreenshotTest {
 
         assertAppBarAgainstGolden(
             goldenIdentifier = "bottomAppBarSpacedBetween_lightTheme",
-            testTag = BottomAppBarTestTag
+            testTag = BottomAppBarTestTag,
         )
     }
 
@@ -750,18 +750,18 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         FilledIconButton(
                             modifier = Modifier.width(56.dp),
-                            onClick = { /* doSomething() */ }
+                            onClick = { /* doSomething() */ },
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
@@ -771,14 +771,14 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
 
         assertAppBarAgainstGolden(
             goldenIdentifier = "bottomAppBarSpacedEvenly_lightTheme",
-            testTag = BottomAppBarTestTag
+            testTag = BottomAppBarTestTag,
         )
     }
 
@@ -792,18 +792,18 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         FilledIconButton(
                             modifier = Modifier.width(56.dp),
-                            onClick = { /* doSomething() */ }
+                            onClick = { /* doSomething() */ },
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
@@ -813,14 +813,14 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
 
         assertAppBarAgainstGolden(
             goldenIdentifier = "bottomAppBarFixed_lightTheme",
-            testTag = BottomAppBarTestTag
+            testTag = BottomAppBarTestTag,
         )
     }
 
@@ -834,18 +834,18 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                         FilledIconButton(
                             modifier = Modifier.width(56.dp),
-                            onClick = { /* doSomething() */ }
+                            onClick = { /* doSomething() */ },
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
@@ -855,20 +855,20 @@ class AppBarScreenshotTest {
                         IconButton(onClick = { /* doSomething() */ }) {
                             Icon(Icons.Filled.Edit, contentDescription = "Localized description")
                         }
-                    }
+                    },
                 )
             }
         }
 
         assertAppBarAgainstGolden(
             goldenIdentifier = "bottomAppBarFixed_darkTheme",
-            testTag = BottomAppBarTestTag
+            testTag = BottomAppBarTestTag,
         )
     }
 
     private fun assertAppBarAgainstGolden(
         goldenIdentifier: String,
-        testTag: String = TopAppBarTestTag
+        testTag: String = TopAppBarTestTag,
     ) {
         composeTestRule
             .onNodeWithTag(testTag)

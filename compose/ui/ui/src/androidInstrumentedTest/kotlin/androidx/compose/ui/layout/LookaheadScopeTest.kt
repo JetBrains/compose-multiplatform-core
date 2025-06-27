@@ -104,6 +104,7 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.requireOwner
 import androidx.compose.ui.platform.AndroidOwnerExtraAssertionsRule
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.platform.LocalDensity
@@ -228,7 +229,7 @@ class LookaheadScopeTest {
                 IntSize(400, 300),
                 IntSize(100, 500),
                 IntSize(20, 5),
-                IntSize(90, 120)
+                IntSize(90, 120),
             )
         val targetSize = IntSize(260, 350)
         var actualSize by mutableStateOf(IntSize.Zero)
@@ -249,12 +250,12 @@ class LookaheadScopeTest {
 
                                 override fun ApproachMeasureScope.approachMeasure(
                                     measurable: Measurable,
-                                    constraints: Constraints
+                                    constraints: Constraints,
                                 ): MeasureResult {
                                     val intermediateConstraints =
                                         Constraints.fixed(
                                             expectedSizes[iteration].width,
-                                            expectedSizes[iteration].height
+                                            expectedSizes[iteration].height,
                                         )
                                     return measurable.measure(intermediateConstraints).run {
                                         layout(width, height) { place(0, 0) }
@@ -436,7 +437,7 @@ class LookaheadScopeTest {
                         preMeasure = { rootPreMeasure = ++counter },
                         postMeasure = { rootPostMeasure = ++counter },
                         prePlacement = { rootPrePlace = ++counter },
-                        postPlacement = { rootPostPlace = ++counter }
+                        postPlacement = { rootPostPlace = ++counter },
                     )
                 )
             ) {
@@ -455,11 +456,11 @@ class LookaheadScopeTest {
 
                                     override fun ApproachMeasureScope.approachMeasure(
                                         measurable: Measurable,
-                                        constraints: Constraints
+                                        constraints: Constraints,
                                     ): MeasureResult {
                                         return measureWithLambdas(
                                                 preMeasure = { parentMeasure = ++counter },
-                                                prePlacement = { parentPlace = ++counter }
+                                                prePlacement = { parentPlace = ++counter },
                                             )
                                             .invoke(this, measurable, constraints)
                                     }
@@ -478,7 +479,7 @@ class LookaheadScopeTest {
                                             // Only the first invocation is for lookahead
                                             parentLookaheadPlace = ++counter
                                         }
-                                    }
+                                    },
                                 )
                             )
                     ) {
@@ -498,7 +499,7 @@ class LookaheadScopeTest {
 
                                                 override fun ApproachMeasureScope.approachMeasure(
                                                     measurable: Measurable,
-                                                    constraints: Constraints
+                                                    constraints: Constraints,
                                                 ): MeasureResult {
                                                     return measureWithLambdas(
                                                             preMeasure = {
@@ -506,7 +507,7 @@ class LookaheadScopeTest {
                                                             },
                                                             prePlacement = {
                                                                 childPlace = ++counter
-                                                            }
+                                                            },
                                                         )
                                                         .invoke(this, measurable, constraints)
                                                 }
@@ -524,7 +525,7 @@ class LookaheadScopeTest {
                                                         if (childLookaheadPlace == 0) {
                                                             childLookaheadPlace = ++counter
                                                         }
-                                                    }
+                                                    },
                                                 )
                                         )
                                 )
@@ -586,7 +587,7 @@ class LookaheadScopeTest {
                                                 val placeable = measurable.measure(constraints)
                                                 layout(
                                                     (scaleFactor * width).roundToInt(),
-                                                    (scaleFactor * height).roundToInt()
+                                                    (scaleFactor * height).roundToInt(),
                                                 ) {
                                                     placeable.place(0, 0)
                                                 }
@@ -641,7 +642,7 @@ class LookaheadScopeTest {
                     Modifier.layout(
                         measureWithLambdas(
                             postMeasure = { controlGroupParentMeasure++ },
-                            postPlacement = { controlGroupParentPlace++ }
+                            postPlacement = { controlGroupParentPlace++ },
                         )
                     )
                 ) {
@@ -657,7 +658,7 @@ class LookaheadScopeTest {
                                         )
                                     )
                             )
-                        }
+                        },
                     )
                 }
             } else {
@@ -665,7 +666,7 @@ class LookaheadScopeTest {
                     Modifier.layout(
                         measureWithLambdas(
                             postMeasure = { parentMeasure++ },
-                            postPlacement = { parentPlace++ }
+                            postPlacement = { parentPlace++ },
                         )
                     )
                 ) {
@@ -682,7 +683,7 @@ class LookaheadScopeTest {
                                 .intermediateLayout { measurable, constraints ->
                                     measureWithLambdas(
                                             postMeasure = { measure++ },
-                                            postPlacement = { place++ }
+                                            postPlacement = { place++ },
                                         )
                                         .invoke(this, measurable, constraints)
                                 }
@@ -768,6 +769,66 @@ class LookaheadScopeTest {
             }
         }
         rule.runOnIdle { assertEquals(IntSize(500, 300), defaultIntermediateMeasureSize) }
+    }
+
+    @Test
+    fun testLookaheadPlacementInvalidatedAfterRoot() {
+        var layingOutEntireTree by mutableStateOf(false)
+        val root = node()
+        val delegate = createDelegate(root)
+        val child0 = node {
+            measurePolicy = MeasurePolicy { m, c ->
+                m.single().measure(c).run {
+                    layout(width, height) {
+                        if (layingOutEntireTree) {
+                            // Verify that during measureAndLayout call, lookahead
+                            // invalidation happens strictly after root and other
+                            // nodes outside LookaheadScope are placed.
+                            assertFalse(root.layoutPending)
+                            assertFalse(root.children[0].layoutPending)
+                        }
+                        place(0, 0)
+                    }
+                }
+            }
+            add(node())
+        }
+        val nodeGroup = node {
+            add(child0)
+            add(node())
+        }
+        root.add(
+            node {
+                add(
+                    // This is the LookaheadScope equivalent
+                    LayoutNode(isVirtual = true).apply {
+                        isVirtualLookaheadRoot = true
+                        add(node())
+                        add(nodeGroup)
+                        add(node())
+                    }
+                )
+            }
+        )
+        rule.runOnIdle {
+            delegate.measureOnly()
+            assertTrue(root.layoutPending)
+            // Imitate shallow placement
+            with(nodeGroup.requireOwner().placementScope) {
+                nodeGroup.lookaheadPassDelegate?.place(0, 0)
+            }
+            assertFalse(nodeGroup.lookaheadLayoutPending)
+            // Mark one node as requiring lookahead relayout. This allows us to check whether
+            // this node gets invalidated before root.
+            child0.requestLookaheadRelayout()
+            assertTrue(child0.lookaheadLayoutPending)
+            assertTrue(root.layoutPending)
+
+            layingOutEntireTree = true
+            delegate.measureAndLayout()
+            assertFalse(root.layoutPending)
+            assertFalse(child0.lookaheadLayoutPending)
+        }
     }
 
     @Test
@@ -906,7 +967,7 @@ class LookaheadScopeTest {
         modifier: Modifier = Modifier,
         postMeasure: () -> Unit = {},
         postPlacement: () -> Unit = {},
-        content: @Composable LookaheadScope.() -> Unit
+        content: @Composable LookaheadScope.() -> Unit,
     ) {
         Box(
             modifier.layout { measurable, constraints ->
@@ -979,7 +1040,7 @@ class LookaheadScopeTest {
             Row(
                 Modifier.fillMaxSize(),
                 horizontalArrangement = SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 LookaheadScope {
                     Box(Modifier.size(200.dp).onPlaced { coords -> firstCoordinates = coords })
@@ -1012,7 +1073,7 @@ class LookaheadScopeTest {
                 Row(
                     Modifier.fillMaxSize().onPlaced { it -> firstCoordinates = it },
                     horizontalArrangement = SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.size(200.dp))
                     Box(Modifier.padding(top = 30.dp, start = 70.dp).offset(40.dp, 60.dp)) {
@@ -1049,14 +1110,14 @@ class LookaheadScopeTest {
                 Row(modifier.height(IntrinsicSize.Min)) {
                     Text(
                         text = "This is a really short text",
-                        modifier = modifier.weight(1f).fillMaxHeight()
+                        modifier = modifier.weight(1f).fillMaxHeight(),
                     )
                     Box(modifier.width(1.dp).fillMaxHeight().background(Color.Black))
                     Text(
                         text =
                             "This is a much much much much much much much much much much" +
                                 " much much much much much much longer text",
-                        modifier = modifier.weight(1f).fillMaxHeight()
+                        modifier = modifier.weight(1f).fillMaxHeight(),
                     )
                 }
             }
@@ -1108,7 +1169,7 @@ class LookaheadScopeTest {
                                     measurable.measure(constraints).run {
                                         layout(
                                             lookaheadSize.width,
-                                            (lookaheadSize.height * fraction).roundToInt()
+                                            (lookaheadSize.height * fraction).roundToInt(),
                                         ) {
                                             place(0, 0)
                                         }
@@ -1149,7 +1210,7 @@ class LookaheadScopeTest {
                                     measurable.measure(constraints).run {
                                         layout(
                                             lookaheadSize.width,
-                                            (lookaheadSize.height * fraction).roundToInt()
+                                            (lookaheadSize.height * fraction).roundToInt(),
                                         ) {
                                             place(0, 0)
                                         }
@@ -1190,7 +1251,7 @@ class LookaheadScopeTest {
                                     measurable.measure(constraints).run {
                                         layout(
                                             (lookaheadSize.width * fraction).roundToInt(),
-                                            lookaheadSize.height
+                                            lookaheadSize.height,
                                         ) {
                                             place(0, 0)
                                         }
@@ -1238,7 +1299,7 @@ class LookaheadScopeTest {
                                     measurable.measure(constraints).run {
                                         layout(
                                             (lookaheadSize.width * fraction).roundToInt(),
-                                            lookaheadSize.height
+                                            lookaheadSize.height,
                                         ) {
                                             place(0, 0)
                                         }
@@ -1280,7 +1341,7 @@ class LookaheadScopeTest {
                             " reprehenderit in voluptate velit esse cillum dolore eu fugiat" +
                             " nulla pariatur. Excepteur sint occaecat cupidatat non proident," +
                             " sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                        modifier.alignByBaseline()
+                        modifier.alignByBaseline(),
                     )
                 }
             }
@@ -1301,7 +1362,7 @@ class LookaheadScopeTest {
                     horizontalArrangement = Arrangement.Center,
                     verticalArrangement = Arrangement.Center,
                     maxItemsInEachRow = 3,
-                    overflow = FlowRowOverflow.Visible
+                    overflow = FlowRowOverflow.Visible,
                 ) {
                     Box(
                         modifier =
@@ -1371,7 +1432,7 @@ class LookaheadScopeTest {
                     Row(
                         modifier.fillMaxWidth().wrapContentHeight().background(Color(0xffb4c8ea)),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "First",
@@ -1380,7 +1441,7 @@ class LookaheadScopeTest {
                             modifier =
                                 modifier
                                     .alignByBaseline()
-                                    .background(color = Color(0xfff3722c), RoundedCornerShape(10))
+                                    .background(color = Color(0xfff3722c), RoundedCornerShape(10)),
                         )
                         Spacer(modifier.size(10.dp))
                         Text(
@@ -1390,7 +1451,7 @@ class LookaheadScopeTest {
                             modifier =
                                 modifier
                                     .alignByBaseline()
-                                    .background(color = Color(0xff90be6d), RoundedCornerShape(10))
+                                    .background(color = Color(0xff90be6d), RoundedCornerShape(10)),
                         )
                         Spacer(modifier.size(10.dp))
                         Text(
@@ -1400,11 +1461,11 @@ class LookaheadScopeTest {
                             modifier =
                                 modifier
                                     .alignByBaseline()
-                                    .background(color = Color(0xffffb900), RoundedCornerShape(10))
+                                    .background(color = Color(0xffffb900), RoundedCornerShape(10)),
                         )
                     }
                     Spacer(modifier.fillMaxWidth().requiredHeight(1.dp).background(Color.Black))
-                }
+                },
             ) { measurables, constraints ->
                 val placeables = measurables.map { it.measure(constraints) }
                 val row = placeables.first()
@@ -1438,14 +1499,14 @@ class LookaheadScopeTest {
                                             layout(width, height) {
                                                 coordinates!!.transformFrom(
                                                     lookaheadScopeCoordinates,
-                                                    matrix
+                                                    matrix,
                                                 )
                                             }
                                         }
                                     }
                                     .size(10.dp)
                             )
-                        }
+                        },
                     )
                 }
             }
@@ -1740,7 +1801,7 @@ class LookaheadScopeTest {
                                             with(this@LookaheadScope) { lookaheadScopeCoordinates }
                                         assertEquals(
                                             outerLookaheadScopeCoords,
-                                            lookaheadScopeCoordinates
+                                            lookaheadScopeCoordinates,
                                         )
                                     }
                                 )(measurable, constraints)
@@ -1759,7 +1820,7 @@ class LookaheadScopeTest {
                                                     }
                                                 assertEquals(
                                                     innerLookaheadCoords,
-                                                    lookaheadScopeCoordinates
+                                                    lookaheadScopeCoordinates,
                                                 )
                                             }
                                         )(measurable, constraints)
@@ -1774,7 +1835,7 @@ class LookaheadScopeTest {
                                                     }
                                                 assertEquals(
                                                     innerLookaheadCoords,
-                                                    lookaheadScopeCoordinates
+                                                    lookaheadScopeCoordinates,
                                                 )
                                             }
                                         )(measurable, constraints)
@@ -1940,7 +2001,7 @@ class LookaheadScopeTest {
             mutableStateListOf(
                 Constraints.fixed(100, 800),
                 Constraints.fixed(300, 400),
-                Constraints.fixed(1000, 200)
+                Constraints.fixed(1000, 200),
             )
         val expectedPlacements =
             mutableStateListOf(IntOffset(-50, 1200), IntOffset.Zero, IntOffset(800, -200))
@@ -2089,7 +2150,7 @@ class LookaheadScopeTest {
                                                 LookaheadScope {
                                                     AnimatedContent(
                                                         show,
-                                                        Modifier.requiredSize(200.dp)
+                                                        Modifier.requiredSize(200.dp),
                                                     ) {
                                                         if (it) {
                                                             Row(
@@ -2212,18 +2273,18 @@ class LookaheadScopeTest {
 
     class TestLayoutModifierNode(
         var lookaheadIntrinsicResult: MutableMap<String, Int>,
-        var intrinsicResult: MutableMap<String, Int>
+        var intrinsicResult: MutableMap<String, Int>,
     ) : LayoutModifierNode, Modifier.Node() {
         override fun MeasureScope.measure(
             measurable: Measurable,
-            constraints: Constraints
+            constraints: Constraints,
         ): MeasureResult {
             return measurable.measure(constraints).run { layout(width, height) { place(0, 0) } }
         }
 
         override fun IntrinsicMeasureScope.maxIntrinsicHeight(
             measurable: IntrinsicMeasurable,
-            width: Int
+            width: Int,
         ): Int =
             measurable.maxIntrinsicHeight(width).also {
                 if (isLookingAhead) {
@@ -2235,7 +2296,7 @@ class LookaheadScopeTest {
 
         override fun IntrinsicMeasureScope.minIntrinsicHeight(
             measurable: IntrinsicMeasurable,
-            width: Int
+            width: Int,
         ): Int =
             measurable.minIntrinsicHeight(width).also {
                 if (isLookingAhead) {
@@ -2247,7 +2308,7 @@ class LookaheadScopeTest {
 
         override fun IntrinsicMeasureScope.maxIntrinsicWidth(
             measurable: IntrinsicMeasurable,
-            height: Int
+            height: Int,
         ): Int =
             measurable.maxIntrinsicWidth(height).also {
                 if (isLookingAhead) {
@@ -2259,7 +2320,7 @@ class LookaheadScopeTest {
 
         override fun IntrinsicMeasureScope.minIntrinsicWidth(
             measurable: IntrinsicMeasurable,
-            height: Int
+            height: Int,
         ): Int =
             measurable.minIntrinsicWidth(height).also {
                 if (isLookingAhead) {
@@ -2272,7 +2333,7 @@ class LookaheadScopeTest {
 
     data class TestElement(
         val lookaheadIntrinsicResult: MutableMap<String, Int>,
-        val intrinsicResult: MutableMap<String, Int>
+        val intrinsicResult: MutableMap<String, Int>,
     ) : ModifierNodeElement<TestLayoutModifierNode>() {
         override fun create(): TestLayoutModifierNode =
             TestLayoutModifierNode(lookaheadIntrinsicResult, intrinsicResult)
@@ -2510,7 +2571,7 @@ class LookaheadScopeTest {
                             val maxHeight = placeables.maxOf { it.height }
                             // Position the children.
                             layout(maxWidth, maxHeight) { placeables.forEach { it.place(0, 0) } }
-                        }
+                        },
                 )
             }
         }
@@ -2553,7 +2614,7 @@ class LookaheadScopeTest {
 
                                                 val position =
                                                     parent.localLookaheadPositionOf(
-                                                        sourceCoordinates = coordinates!!,
+                                                        sourceCoordinates = coordinates!!
                                                     )
                                                 val excludedPosition =
                                                     parent.localLookaheadPositionOf(
@@ -2590,7 +2651,7 @@ class LookaheadScopeTest {
                 // For the default positions, we subtract the scroll amount
                 assertEquals(
                     ((index - (itemCount - 1)) * boxSizePx).fastRoundToInt(),
-                    position.y.fastRoundToInt()
+                    position.y.fastRoundToInt(),
                 )
 
                 // The excluded should be the same as if there was no scroll
@@ -2630,7 +2691,7 @@ class LookaheadScopeTest {
 
                                                 val position =
                                                     parent.localLookaheadPositionOf(
-                                                        sourceCoordinates = coordinates!!,
+                                                        sourceCoordinates = coordinates!!
                                                     )
 
                                                 val excludedPosition =
@@ -2667,7 +2728,7 @@ class LookaheadScopeTest {
                 // For the default positions, we subtract the scroll amount
                 assertEquals(
                     ((index - (itemCount - 1)) * boxSizePx).fastRoundToInt(),
-                    position.y.fastRoundToInt()
+                    position.y.fastRoundToInt(),
                 )
 
                 // The excluded should be the same as if there was no scroll
@@ -2683,7 +2744,7 @@ class LookaheadScopeTest {
                     object : LayoutModifier {
                         override fun MeasureScope.measure(
                             measurable: Measurable,
-                            constraints: Constraints
+                            constraints: Constraints,
                         ): MeasureResult {
                             val placeable = measurable.measure(constraints)
                             return layout(placeable.width, placeable.height) {
@@ -2712,7 +2773,7 @@ class LookaheadScopeTest {
                                 .height(100f.toDp())
                                 .verticalOffset(
                                     offset = 300f,
-                                    withDirectManipulation = useDirectManipulation
+                                    withDirectManipulation = useDirectManipulation,
                                 )
                                 .onPlaced {
                                     val parentLookaheadCoords =
@@ -2785,7 +2846,7 @@ class LookaheadScopeTest {
                             }
                         }
                     }
-                }
+                },
             )
         }
 
@@ -2887,7 +2948,7 @@ class LookaheadScopeTest {
                         TestItem(tall)
                         TestItem(tall)
                     },
-                    Modifier.requiredHeight(60.dp).fillMaxWidth()
+                    Modifier.requiredHeight(60.dp).fillMaxWidth(),
                 ) { measurables, constraints ->
                     val placeables = measurables.map { it.measure(constraints) }
                     layout(100, 100) {
@@ -2944,7 +3005,7 @@ class LookaheadScopeTest {
             LookaheadScope {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    topBar = { Box(modifier = Modifier.fillMaxWidth().height(100.dp)) }
+                    topBar = { Box(modifier = Modifier.fillMaxWidth().height(100.dp)) },
                 ) { innerPadding ->
                     LazyColumn(Modifier.padding(innerPadding)) {
                         items(items, key = { it.id }, contentType = { it.javaClass.simpleName }) {
@@ -2980,13 +3041,13 @@ class LookaheadScopeTest {
                                         ) {
                                             Text(
                                                 modifier = Modifier.align(Alignment.Center),
-                                                text = "A"
+                                                text = "A",
                                             )
                                             if (element.hasCheckmark) {
                                                 Box(
                                                     modifier =
                                                         Modifier.align(Alignment.BottomEnd)
-                                                            .clip(CircleShape),
+                                                            .clip(CircleShape)
                                                 ) {
                                                     Icon(
                                                         modifier = Modifier.size(16.dp),
@@ -3032,21 +3093,14 @@ class LookaheadScopeTest {
     private sealed interface Element {
         val id: String
 
-        data class Header(
-            val title: String,
-        ) : Element {
+        data class Header(val title: String) : Element {
             override val id = title
         }
 
-        data class Divider(
-            override val id: String,
-        ) : Element
+        data class Divider(override val id: String) : Element
 
-        data class Item(
-            private val headerId: String,
-            val text: String,
-            val hasCheckmark: Boolean,
-        ) : Element {
+        data class Item(private val headerId: String, val text: String, val hasCheckmark: Boolean) :
+            Element {
             override val id = "$headerId-$text"
         }
     }
@@ -3091,8 +3145,7 @@ class LookaheadScopeTest {
                                                 lookingAheadPosition =
                                                     lookaheadScopeCoordinates
                                                         .localLookaheadPositionOf(
-                                                            sourceCoordinates =
-                                                                lookaheadCoordinates,
+                                                            sourceCoordinates = lookaheadCoordinates
                                                         )
                                                 lookingAheadPositionExcludingDmp =
                                                     lookaheadScopeCoordinates
@@ -3134,7 +3187,7 @@ class LookaheadScopeTest {
                             Modifier.animateItem(
                                 fadeInSpec = null,
                                 placementSpec = tween(15),
-                                fadeOutSpec = tween(15)
+                                fadeOutSpec = tween(15),
                             )
                         ) {
                             Box { Text("Item $it") }
@@ -3280,7 +3333,7 @@ class LookaheadScopeTest {
                                     .roundToPx()
                                     .toFloat()
                             },
-                            snap()
+                            snap(),
                         )
                     }
                 }
@@ -3375,7 +3428,7 @@ class LookaheadScopeTest {
         rule.setContent {
             ConditionallyMeasureAndPlace(
                 lookaheadMeasured = { lookaheadMeasured = true },
-                lookaheadPlaced = { lookaheadPlaced = true }
+                lookaheadPlaced = { lookaheadPlaced = true },
             )
         }
         rule.runOnIdle {
@@ -3462,10 +3515,7 @@ class LookaheadScopeTest {
                         if (isLookingAhead) {
                             constraints
                         } else {
-                            Constraints.fixed(
-                                lookaheadSize.width,
-                                lookaheadSize.height,
-                            )
+                            Constraints.fixed(lookaheadSize.width, lookaheadSize.height)
                         }
 
                     measurable.measure(c).run { layout(width, this.height) { placeRelative(0, 0) } }
@@ -3512,8 +3562,8 @@ class LookaheadScopeTest {
         lookaheadScope: LookaheadScope,
         onLookaheadPassCoordinates:
             (
-                lookaheadScopeCoordinates: LayoutCoordinates, layoutCoordinates: LayoutCoordinates
-            ) -> Unit
+                lookaheadScopeCoordinates: LayoutCoordinates, layoutCoordinates: LayoutCoordinates,
+            ) -> Unit,
     ): Modifier =
         with(lookaheadScope) {
             this@onLookaheadPassCoordinates.layout { measurable, constraints ->
@@ -3534,8 +3584,8 @@ class LookaheadScopeTest {
         lookaheadScope: LookaheadScope,
         onApproachPassCoordinates:
             (
-                lookaheadScopeCoordinates: LayoutCoordinates, layoutCoordinates: LayoutCoordinates
-            ) -> Unit
+                lookaheadScopeCoordinates: LayoutCoordinates, layoutCoordinates: LayoutCoordinates,
+            ) -> Unit,
     ): Modifier =
         with(lookaheadScope) {
             this@onApproachPassCoordinates.approachLayout(
@@ -3547,7 +3597,7 @@ class LookaheadScopeTest {
                 approachMeasure = { measurable, constraints ->
                     val placeable = measurable.measure(constraints)
                     layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-                }
+                },
             )
         }
 
@@ -3565,12 +3615,9 @@ class LookaheadScopeTest {
                     measurePolicy = defaultMeasurePolicy,
                     content = {
                         content(
-                            Modifier.trackSizeAndPosition(
-                                controlGroupSizes,
-                                controlGroupPositions,
-                            )
+                            Modifier.trackSizeAndPosition(controlGroupSizes, controlGroupPositions)
                         )
-                    }
+                    },
                 )
             } else {
                 Layout(
@@ -3582,7 +3629,7 @@ class LookaheadScopeTest {
                                     .assertSameSizeAndPosition(this)
                             )
                         }
-                    }
+                    },
                 )
             }
         }
@@ -3618,7 +3665,7 @@ class LookaheadScopeTest {
 
                         override fun ApproachMeasureScope.approachMeasure(
                             measurable: Measurable,
-                            constraints: Constraints
+                            constraints: Constraints,
                         ): MeasureResult {
                             assertFalse(isLookingAhead)
                             lookaheadSize = this.lookaheadSize
@@ -3640,8 +3687,8 @@ class LookaheadScopeTest {
                         ),
                         lookaheadLayoutCoordinates!!.localPositionOf(
                             onPlacedCoordinates!!,
-                            Offset.Zero
-                        )
+                            Offset.Zero,
+                        ),
                     )
                     // Also check that localPositionOf with non-zero offset works
                     // correctly for lookahead coordinates and LayoutCoordinates.
@@ -3652,12 +3699,12 @@ class LookaheadScopeTest {
                             .toLookaheadCoordinates()
                             .localPositionOf(
                                 onPlacedCoordinates!!.toLookaheadCoordinates(),
-                                randomOffset
+                                randomOffset,
                             ),
                         lookaheadLayoutCoordinates!!.localPositionOf(
                             onPlacedCoordinates!!,
-                            randomOffset
-                        )
+                            randomOffset,
+                        ),
                     )
                 }
         }
@@ -3672,7 +3719,7 @@ class LookaheadScopeTest {
 
     private fun Modifier.trackSizeAndPosition(
         sizes: MutableVector<IntSize>,
-        positions: MutableVector<Offset>
+        positions: MutableVector<Offset>,
     ) =
         this.onGloballyPositioned {
             positions.add(it.positionInRoot())
@@ -3698,7 +3745,7 @@ class LookaheadScopeTest {
         preMeasure: () -> Unit = {},
         postMeasure: (IntSize) -> Unit = {},
         prePlacement: Placeable.PlacementScope.() -> Unit = {},
-        postPlacement: () -> Unit = {}
+        postPlacement: () -> Unit = {},
     ): MeasureScope.(Measurable, Constraints) -> MeasureResult = { measurable, constraints ->
         preMeasure()
         val placeable = measurable.measure(constraints)
@@ -3712,10 +3759,7 @@ class LookaheadScopeTest {
 
     internal fun Modifier.intermediateLayout(
         measure:
-            ApproachMeasureScope.(
-                measurable: Measurable,
-                constraints: Constraints,
-            ) -> MeasureResult,
+            ApproachMeasureScope.(measurable: Measurable, constraints: Constraints) -> MeasureResult
     ): Modifier = approachLayout({ !testFinished }, approachMeasure = measure)
 }
 

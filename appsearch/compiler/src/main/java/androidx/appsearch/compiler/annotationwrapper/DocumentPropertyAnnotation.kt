@@ -60,7 +60,7 @@ data class DocumentPropertyAnnotation(
          */
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String
+            defaultName: String,
         ): DocumentPropertyAnnotation {
             val name = annotationParams["name"] as? String
             val indexableNestedPropertiesList = mutableListOf<String>()
@@ -76,7 +76,7 @@ data class DocumentPropertyAnnotation(
                 shouldIndexNestedProperties = annotationParams["indexNestedProperties"] as Boolean,
                 indexableNestedPropertiesList = indexableNestedPropertiesList,
                 shouldInheritIndexableNestedPropertiesFromSuperClass =
-                    annotationParams["inheritIndexableNestedPropertiesFromSuperclass"] as Boolean
+                    annotationParams["inheritIndexableNestedPropertiesFromSuperclass"] as Boolean,
             )
         }
     }

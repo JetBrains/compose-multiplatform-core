@@ -71,7 +71,7 @@ internal class CanvasBufferedRendererV29(
             } else {
                 mMaxBuffers
             },
-            mUsage
+            mUsage,
         )
 
     private fun createHardwareRenderer(imageReader: ImageReader): HardwareRenderer =
@@ -153,7 +153,7 @@ internal class CanvasBufferedRendererV29(
     override fun draw(
         request: CanvasBufferedRenderer.RenderRequest,
         executor: Executor,
-        callback: Consumer<CanvasBufferedRenderer.RenderResult>
+        callback: Consumer<CanvasBufferedRenderer.RenderResult>,
     ) {
         val transform = request.transform
         val content = mContentRoot
@@ -204,7 +204,7 @@ internal class CanvasBufferedRendererV29(
         executor: Executor,
         renderer: HardwareRenderer,
         preservedRenderStrategy: PreservedRenderStrategy?,
-        callback: Consumer<CanvasBufferedRenderer.RenderResult>
+        callback: Consumer<CanvasBufferedRenderer.RenderResult>,
     ) {
         with(renderer) {
             var result = 0
@@ -216,7 +216,7 @@ internal class CanvasBufferedRendererV29(
                             CanvasBufferedRenderer.RenderResult(
                                 buffer,
                                 fence,
-                                if (isSuccess(result)) SUCCESS else ERROR_UNKNOWN
+                                if (isSuccess(result)) SUCCESS else ERROR_UNKNOWN,
                             )
                         )
                         if (mMaxBuffers == 1) {
@@ -241,14 +241,14 @@ internal class CanvasBufferedRendererV29(
             mTransform,
             mWidth.toFloat(),
             mHeight.toFloat(),
-            transform
+            transform,
         )
     }
 
     private fun recordContent(
         contentNode: RenderNode,
         transform: Matrix,
-        preserveContents: Boolean
+        preserveContents: Boolean,
     ) {
         val canvas = mRootRenderNode.beginRecording()
         if (preserveContents) {
@@ -335,7 +335,7 @@ internal class CanvasBufferedRendererV29(
         lightX: Float,
         lightY: Float,
         lightZ: Float,
-        lightRadius: Float
+        lightRadius: Float,
     ) {
         mLightX = lightX
         mLightY = lightY
@@ -435,7 +435,7 @@ internal class CanvasBufferedRendererV29(
                 CanvasBufferedRenderer.USE_V29_IMPL_WITH_REDRAW -> {
                     Log.v(
                         TAG,
-                        "Explicit usage of double buffered redraw strategy " + "with force clear"
+                        "Explicit usage of double buffered redraw strategy " + "with force clear",
                     )
                     RedrawBufferStrategy(true)
                 }
@@ -452,7 +452,7 @@ internal class CanvasBufferedRendererV29(
                     } else {
                         Log.w(
                             TAG,
-                            "Warning, device DOES NOT support persisted canvas optimizations."
+                            "Warning, device DOES NOT support persisted canvas optimizations.",
                         )
                         RedrawBufferStrategy(false)
                     }

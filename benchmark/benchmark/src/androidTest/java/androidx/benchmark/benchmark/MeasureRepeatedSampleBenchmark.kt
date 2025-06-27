@@ -38,7 +38,7 @@ class MeasureRepeatedSampleBenchmark {
             TestDefinition(
                 "androidx.benchmark.benchmark.MeasureRepeatedSampleBenchmark",
                 "MeasureRepeatedSampleBenchmark",
-                "increment"
+                "increment",
             )
         ) {
             i++

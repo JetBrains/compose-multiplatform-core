@@ -309,7 +309,7 @@ class AndroidComposeTestCaseRunnerTest {
 
     private inline fun <reified T : Throwable> assertFailsWith(
         expectedErrorMessage: String? = null,
-        block: () -> Any
+        block: () -> Any,
     ) {
         try {
             block()

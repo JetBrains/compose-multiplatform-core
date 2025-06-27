@@ -53,7 +53,7 @@ constructor(
     initialValue: T,
     public val typeConverter: TwoWayConverter<T, V>,
     private val visibilityThreshold: T? = null,
-    public val label: String = "Animatable"
+    public val label: String = "Animatable",
 ) {
 
     @Deprecated(
@@ -62,12 +62,12 @@ constructor(
             ReplaceWith(
                 "Animatable(initialValue, typeConverter, visibilityThreshold, \"Animatable\")"
             ),
-        DeprecationLevel.HIDDEN
+        DeprecationLevel.HIDDEN,
     )
     public constructor(
         initialValue: T,
         typeConverter: TwoWayConverter<T, V>,
-        visibilityThreshold: T? = null
+        visibilityThreshold: T? = null,
     ) : this(initialValue, typeConverter, visibilityThreshold, "Animatable")
 
     internal val internalState =
@@ -228,7 +228,7 @@ constructor(
         targetValue: T,
         animationSpec: AnimationSpec<T> = defaultSpringSpec,
         initialVelocity: T = velocity,
-        block: (Animatable<T, V>.() -> Unit)? = null
+        block: (Animatable<T, V>.() -> Unit)? = null,
     ): AnimationResult<T, V> {
         val anim =
             TargetBasedAnimation(
@@ -236,7 +236,7 @@ constructor(
                 initialValue = value,
                 targetValue = targetValue,
                 typeConverter = typeConverter,
-                initialVelocity = initialVelocity
+                initialVelocity = initialVelocity,
             )
         return runAnimation(anim, initialVelocity, block)
     }
@@ -275,14 +275,14 @@ constructor(
     public suspend fun animateDecay(
         initialVelocity: T,
         animationSpec: DecayAnimationSpec<T>,
-        block: (Animatable<T, V>.() -> Unit)? = null
+        block: (Animatable<T, V>.() -> Unit)? = null,
     ): AnimationResult<T, V> {
         val anim =
             DecayAnimation(
                 animationSpec = animationSpec,
                 initialValue = value,
                 initialVelocityVector = typeConverter.convertToVector(initialVelocity),
-                typeConverter = typeConverter
+                typeConverter = typeConverter,
             )
         return runAnimation(anim, initialVelocity, block)
     }
@@ -291,7 +291,7 @@ constructor(
     private suspend fun runAnimation(
         animation: Animation<T, V>,
         initialVelocity: T,
-        block: (Animatable<T, V>.() -> Unit)?
+        block: (Animatable<T, V>.() -> Unit)?,
     ): AnimationResult<T, V> {
 
         // Store the start time before it's reset during job cancellation.
@@ -432,7 +432,7 @@ constructor(
 @RememberInComposition
 public fun Animatable(
     initialValue: Float,
-    visibilityThreshold: Float = Spring.DefaultDisplacementThreshold
+    visibilityThreshold: Float = Spring.DefaultDisplacementThreshold,
 ): Animatable<Float, AnimationVector1D> =
     Animatable(initialValue, Float.VectorConverter, visibilityThreshold)
 
@@ -463,7 +463,7 @@ public class AnimationResult<T, V : AnimationVector>(
      *   [upperBound][Animatable.upperBound] in any dimension, the animation will end with
      *   [BoundReached] being the end reason.
      */
-    public val endReason: AnimationEndReason
+    public val endReason: AnimationEndReason,
 ) {
     override fun toString(): String = "AnimationResult(endReason=$endReason, endState=$endState)"
 }
@@ -478,7 +478,7 @@ private val positiveInfinityBounds4D =
         Float.POSITIVE_INFINITY,
         Float.POSITIVE_INFINITY,
         Float.POSITIVE_INFINITY,
-        Float.POSITIVE_INFINITY
+        Float.POSITIVE_INFINITY,
     )
 
 private val negativeInfinityBounds1D = AnimationVector(Float.NEGATIVE_INFINITY)
@@ -491,5 +491,5 @@ private val negativeInfinityBounds4D =
         Float.NEGATIVE_INFINITY,
         Float.NEGATIVE_INFINITY,
         Float.NEGATIVE_INFINITY,
-        Float.NEGATIVE_INFINITY
+        Float.NEGATIVE_INFINITY,
     )

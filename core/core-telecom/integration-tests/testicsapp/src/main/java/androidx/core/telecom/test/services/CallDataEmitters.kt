@@ -100,7 +100,7 @@ class RaiseHandDataEmitter {
 
     private fun createRaiseHandData(
         action: RaiseHandAction,
-        raisedHands: List<Participant>
+        raisedHands: List<Participant>,
     ): RaiseHandData {
         return RaiseHandData(raisedHands, action)
     }
@@ -222,7 +222,7 @@ class ParticipantExtensionDataEmitter {
         isSupported: Boolean,
         raiseHandDataEmitter: Flow<RaiseHandData> = RaiseHandDataEmitter.UNSUPPORTED,
         kickParticipantDataEmitter: Flow<KickParticipantData> =
-            KickParticipantDataEmitter.UNSUPPORTED
+            KickParticipantDataEmitter.UNSUPPORTED,
     ): Flow<ParticipantExtensionData> {
         return participants
             .combine(activeParticipant) { newParticipants, newActiveParticipant ->
@@ -235,7 +235,7 @@ class ParticipantExtensionDataEmitter {
                     selfParticipant = data.selfParticipant,
                     participants = data.participants,
                     raiseHandData = rhData,
-                    kickParticipantData = data.kickParticipantData
+                    kickParticipantData = data.kickParticipantData,
                 )
             }
             .combine(kickParticipantDataEmitter) { data, kpData ->
@@ -245,7 +245,7 @@ class ParticipantExtensionDataEmitter {
                     selfParticipant = data.selfParticipant,
                     participants = data.participants,
                     raiseHandData = data.raiseHandData,
-                    kickParticipantData = kpData
+                    kickParticipantData = kpData,
                 )
             }
     }
@@ -253,7 +253,7 @@ class ParticipantExtensionDataEmitter {
     private fun createExtensionData(
         isSupported: Boolean,
         activeParticipant: Participant? = null,
-        participants: Set<Participant> = emptySet()
+        participants: Set<Participant> = emptySet(),
     ): ParticipantExtensionData {
         // For now, the first element is considered ourself
         val self = participants.firstOrNull()
@@ -333,7 +333,7 @@ class CallDataEmitter(val trackedCall: IcsCall) {
                     false -> CallType.AUDIO
                 },
             capabilities = getCapabilities(icsCall.call.details.callCapabilities),
-            onStateChanged = ::onChangeCallState
+            onStateChanged = ::onChangeCallState,
         )
     }
 

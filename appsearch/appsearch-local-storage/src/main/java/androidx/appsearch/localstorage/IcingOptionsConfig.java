@@ -200,6 +200,17 @@ public interface IcingOptionsConfig {
     int getMaxPageBytesLimit();
 
     /**
+     * Flag for {@link com.google.android.icing.proto.ResultSpecProto}.
+     *
+     * <p>The maximum byte size to allow in a single page, when icing is running in a pVM. This
+     * limit is only loosely binding. AppSearch will add results to the page until either
+     * 1) AppSearch has retrieved {@link SearchSpec#getResultCountPerPage()} results or 2) total
+     * size of the page exceeds this value. Therefore, AppSearch will always retrieve at least a
+     * single result, even if that result exceeds this limit.
+     */
+    int getMaxPageBytesLimitForVm();
+
+    /**
      * Flag for {@link com.google.android.icing.proto.IcingSearchEngineOptions}.
      *
      * <p>Threshold for integer index bucket split. Integer index stores hits in several buckets,
@@ -332,6 +343,11 @@ public interface IcingOptionsConfig {
                 .setCompressionMemLevel(
                         (Flags.enableCompressionMemLevelOne() || isVMEnabled) ? 1
                                 : getCompressionMemLevel())
+                .setEnableSchemaDatabase(
+                        Flags.enableDatabaseScopedSchemaOperations() || isVMEnabled)
+                .setEnableSmallerDecompressionBufferSize(
+                        Flags.enableSmallerDecompressionBufferSize() || isVMEnabled)
+                .setEnableEigenEmbeddingScoring(Flags.enableEigenEmbeddingScoring() || isVMEnabled)
                 .build();
     }
 }

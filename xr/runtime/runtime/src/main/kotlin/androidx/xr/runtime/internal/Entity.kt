@@ -87,6 +87,7 @@ public interface Entity : ActivityPose {
      * the Entity.
      *
      * @param scale The [Vector3] scale factor relative to the given space.
+     * @param relativeTo The space in which to set the scale.
      */
     public fun setScale(scale: Vector3, @SpaceValue relativeTo: Int)
 
@@ -112,6 +113,7 @@ public interface Entity : ActivityPose {
      * Sets the alpha transparency for the given Entity, relative to the given space.
      *
      * @param alpha Alpha transparency level for the Entity.
+     * @param relativeTo The space in which to set the alpha.
      */
     public fun setAlpha(alpha: Float, @SpaceValue relativeTo: Int)
 

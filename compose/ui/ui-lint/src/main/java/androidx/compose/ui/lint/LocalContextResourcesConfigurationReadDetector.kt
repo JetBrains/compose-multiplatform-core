@@ -109,7 +109,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                             .with(LocalResourcesCurrent)
                             .imports(LocalResources.javaFqn)
                             .autoFix()
-                            .build()
+                            .build(),
                     )
                 }
             }
@@ -125,7 +125,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                         LocalContextResourcesRead,
                         resourcesCall,
                         context.getNameLocation(resourcesCall),
-                        "Reading Resources using $LocalContextCurrentResources"
+                        "Reading Resources using $LocalContextCurrentResources",
                     )
                 }
             }
@@ -145,7 +145,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                 if (
                     node.matchesQualifiedWithOrWithoutFqn(
                         LocalContextCurrentResourcesConfiguration,
-                        Names.Ui.Platform.PackageName
+                        Names.Ui.Platform.PackageName,
                     )
                 ) {
                     fullyQualifiedConfigurationCalls += node
@@ -161,7 +161,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                             .with(LocalConfigurationCurrent)
                             .imports(LocalConfiguration.javaFqn)
                             .autoFix()
-                            .build()
+                            .build(),
                     )
                     return
                 }
@@ -174,7 +174,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                 if (
                     node.matchesQualifiedWithOrWithoutFqn(
                         LocalContextCurrentResources,
-                        Names.Ui.Platform.PackageName
+                        Names.Ui.Platform.PackageName,
                     )
                 ) {
                     fullyQualifiedResourceCalls += node
@@ -229,7 +229,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                 if (
                     contextSource.matchesQualifiedWithOrWithoutFqn(
                         LocalContextCurrent,
-                        Names.Ui.Platform.PackageName
+                        Names.Ui.Platform.PackageName,
                     )
                 ) {
                     // We can be here from two cases, either we were analyzing a call to
@@ -247,7 +247,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                             LocalContextConfigurationRead,
                             node,
                             context.getNameLocation(node),
-                            "Reading Configuration using $LocalContextCurrentResourcesConfiguration"
+                            "Reading Configuration using $LocalContextCurrentResourcesConfiguration",
                         )
                     } else {
                         // context.resources call, so add to list of context.resources calls to
@@ -308,7 +308,7 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
      */
     private fun UExpression.matchesQualifiedWithOrWithoutFqn(
         fqName: String,
-        packageName: PackageName
+        packageName: PackageName,
     ): Boolean {
         return matchesQualified(fqName) ||
             matchesQualified(packageName.javaPackageName + "." + fqName)
@@ -338,8 +338,8 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                 Severity.ERROR,
                 Implementation(
                     LocalContextResourcesConfigurationReadDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
 
         val LocalContextResourcesRead =
@@ -357,8 +357,8 @@ class LocalContextResourcesConfigurationReadDetector : Detector(), SourceCodeSca
                 Severity.WARNING,
                 Implementation(
                     LocalContextResourcesConfigurationReadDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

@@ -99,7 +99,7 @@ internal fun newConnectionPool(
     driver: SQLiteDriver,
     fileName: String,
     maxNumOfReaders: Int,
-    maxNumOfWriters: Int
+    maxNumOfWriters: Int,
 ): ConnectionPool = ConnectionPoolImpl(driver, fileName, maxNumOfReaders, maxNumOfWriters)
 
 /** Defines an object that provides 'raw' access to a connection. */

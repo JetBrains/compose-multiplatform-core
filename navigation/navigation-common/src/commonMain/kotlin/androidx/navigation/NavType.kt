@@ -311,7 +311,7 @@ internal fun <T> NavType<T>.navTypeParseAndPut(
     bundle: SavedState,
     key: String,
     value: String?,
-    previousValue: T
+    previousValue: T,
 ): T {
     if (!bundle.read { contains(key) }) {
         throw IllegalArgumentException("There is no previous value in this savedState.")

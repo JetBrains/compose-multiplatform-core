@@ -180,7 +180,7 @@ interface WindowInfoTracker {
                 WindowInfoTrackerImpl(
                     WindowMetricsCalculatorCompat(),
                     backend,
-                    WindowSdkExtensions.getInstance()
+                    WindowSdkExtensions.getInstance(),
                 )
             return decorator.decorate(repo)
         }

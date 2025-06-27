@@ -38,11 +38,11 @@ data class AnnotatedAppFunctionSerializableProxy(
             )
                 ?: throw ProcessingException(
                     "Class Must have @AppFunctionSerializableProxy annotation",
-                    appFunctionSerializableProxyClass
+                    appFunctionSerializableProxyClass,
                 ))
             .requirePropertyValueOfType(
                 IntrospectionHelper.AppFunctionSerializableProxyAnnotation.PROPERTY_TARGET_CLASS,
-                KSType::class
+                KSType::class,
             )
             .declaration as KSClassDeclaration
     }
@@ -77,11 +77,21 @@ data class AnnotatedAppFunctionSerializableProxy(
      *
      * @return The validated class.
      */
-    override fun validate(): AnnotatedAppFunctionSerializableProxy {
-        super.validate()
+    override fun validate(
+        allowSerializableInterfaceTypes: Boolean
+    ): AnnotatedAppFunctionSerializableProxy {
+        super.validate(allowSerializableInterfaceTypes)
         validateProxyHasToTargetClassMethod()
         validateProxyHasFromTargetClassMethod()
         return this
+    }
+
+    /** The generated factory ClassName. */
+    override val factoryClassName: ClassName by lazy {
+        ClassName(
+            originalClassName.packageName,
+            "\$${targetClassDeclaration.getJvmClassName()}Factory",
+        )
     }
 
     /** Validates that the proxy class has a method that returns an instance of the target class. */
@@ -94,7 +104,7 @@ data class AnnotatedAppFunctionSerializableProxy(
         if (toTargetClassNameFunctionList.size != 1) {
             throw ProcessingException(
                 "Class must have exactly one member function: $toTargetClassMethodName",
-                appFunctionSerializableProxyClass
+                appFunctionSerializableProxyClass,
             )
         }
         val toTargetClassNameFunction = toTargetClassNameFunctionList.first()
@@ -109,7 +119,7 @@ data class AnnotatedAppFunctionSerializableProxy(
         ) {
             throw ProcessingException(
                 "Function $toTargetClassMethodName should return an instance of target class",
-                appFunctionSerializableProxyClass
+                appFunctionSerializableProxyClass,
             )
         }
     }
@@ -132,7 +142,7 @@ data class AnnotatedAppFunctionSerializableProxy(
             throw ProcessingException(
                 "Companion Class must have exactly one member function: " +
                     fromTargetClassMethodName,
-                appFunctionSerializableProxyClass
+                appFunctionSerializableProxyClass,
             )
         }
         val fromTargetClassNameFunction = fromTargetClassNameFunctionList.first()
@@ -144,7 +154,7 @@ data class AnnotatedAppFunctionSerializableProxy(
             throw ProcessingException(
                 "Function $fromTargetClassMethodName should have one parameter of type " +
                     targetClassName,
-                appFunctionSerializableProxyClass
+                appFunctionSerializableProxyClass,
             )
         }
         val returnTypeClassDeclaration =
@@ -159,7 +169,7 @@ data class AnnotatedAppFunctionSerializableProxy(
                     "this serializable class (${checkNotNull(appFunctionSerializableProxyClass
                         .qualifiedName).asString()}). Instead, it returns ${checkNotNull(
                             returnTypeClassDeclaration.qualifiedName).asString()}",
-                fromTargetClassNameFunction.returnType
+                fromTargetClassNameFunction.returnType,
             )
         }
     }
@@ -188,7 +198,7 @@ data class AnnotatedAppFunctionSerializableProxy(
          * @return The AnnotatedAppFunctionSerializableProxy for the given AppFunctionTypeReference.
          */
         fun getSerializableProxyForTypeReference(
-            appFunctionTypeReference: AppFunctionTypeReference,
+            appFunctionTypeReference: AppFunctionTypeReference
         ): AnnotatedAppFunctionSerializableProxy {
             val targetClassName =
                 (appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration

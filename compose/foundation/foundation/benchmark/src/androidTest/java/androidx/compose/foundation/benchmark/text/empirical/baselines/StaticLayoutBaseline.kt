@@ -119,7 +119,7 @@ fun makeStaticLayout(text: String, textPaint: TextPaint): StaticLayout {
             /* align = */ Layout.Alignment.ALIGN_NORMAL,
             /* spacingmult = */ 1.0f,
             /* spacingadd = */ 0.0f,
-            /* includepad = */ true
+            /* includepad = */ true,
         )
     }
 }
@@ -132,7 +132,7 @@ object StaticLayoutBuilderCompat_Api23 {
                 /* start = */ 0,
                 /* end = */ text.length,
                 /* paint = */ textPaint,
-                /* width = */ Int.MAX_VALUE
+                /* width = */ Int.MAX_VALUE,
             )
             .build()
     }

@@ -66,7 +66,7 @@ public class UserStyle
  */
 private constructor(
     selectedOptions: Map<UserStyleSetting, UserStyleSetting.Option>,
-    copySelectedOptions: Boolean
+    copySelectedOptions: Boolean,
 ) : Map<UserStyleSetting, UserStyleSetting.Option> {
     private val selectedOptions =
         if (copySelectedOptions) HashMap(selectedOptions) else selectedOptions
@@ -89,7 +89,7 @@ private constructor(
     /** Constructs this UserStyle from data serialized to a [ByteArray] by [toByteArray]. */
     internal constructor(
         byteArray: ByteArray,
-        styleSchema: UserStyleSchema
+        styleSchema: UserStyleSchema,
     ) : this(
         UserStyleData(
             HashMap<String, ByteArray>().apply {
@@ -107,7 +107,7 @@ private constructor(
                 bais.close()
             }
         ),
-        styleSchema
+        styleSchema,
     )
 
     /** The number of entries in the style. */
@@ -125,7 +125,7 @@ private constructor(
     @Suppress("Deprecation") // userStyleSettings
     public constructor(
         userStyle: UserStyleData,
-        styleSchema: UserStyleSchema
+        styleSchema: UserStyleSchema,
     ) : this(
         HashMap<UserStyleSetting, UserStyleSetting.Option>().apply {
             for (styleSetting in styleSchema.userStyleSettings) {
@@ -367,7 +367,7 @@ public class MutableUserStyle internal constructor(userStyle: UserStyle) :
 
     private fun getOptionForId(
         setting: UserStyleSetting,
-        optionId: UserStyleSetting.Option.Id
+        optionId: UserStyleSetting.Option.Id,
     ): UserStyleSetting.Option? {
         for (option in setting.options) {
             if (option.id == optionId) {
@@ -480,7 +480,7 @@ public class UserStyleSchema constructor(userStyleSettings: List<UserStyleSettin
             resources: Resources,
             parser: XmlResourceParser,
             complicationScaleX: Float,
-            complicationScaleY: Float
+            complicationScaleY: Float,
         ): UserStyleSchema {
             require(parser.name == "UserStyleSchema") { "Expected a UserStyleSchema node" }
 
@@ -499,7 +499,7 @@ public class UserStyleSchema constructor(userStyleSettings: List<UserStyleSettin
                             UserStyleSetting.ColorUserStyleSetting.inflate(
                                 resources,
                                 parser,
-                                idToSetting
+                                idToSetting,
                             )
                         )
                     "ComplicationSlotsUserStyleSetting" ->
@@ -508,7 +508,7 @@ public class UserStyleSchema constructor(userStyleSettings: List<UserStyleSettin
                                 resources,
                                 parser,
                                 complicationScaleX,
-                                complicationScaleY
+                                complicationScaleY,
                             )
                         )
                     "DoubleRangeUserStyleSetting" ->
@@ -520,7 +520,7 @@ public class UserStyleSchema constructor(userStyleSettings: List<UserStyleSettin
                             UserStyleSetting.ListUserStyleSetting.inflate(
                                 resources,
                                 parser,
-                                idToSetting
+                                idToSetting,
                             )
                         )
                     "LongRangeUserStyleSetting" ->
@@ -614,7 +614,7 @@ public class UserStyleSchema constructor(userStyleSettings: List<UserStyleSettin
 
     private fun validateComplicationSettings(
         settings: Collection<UserStyleSetting>,
-        initialPrevSetting: UserStyleSetting.ComplicationSlotsUserStyleSetting?
+        initialPrevSetting: UserStyleSetting.ComplicationSlotsUserStyleSetting?,
     ) {
         var prevSetting = initialPrevSetting
         for (setting in settings) {
@@ -709,7 +709,7 @@ public class UserStyleSchema constructor(userStyleSettings: List<UserStyleSettin
 
     private fun findActiveComplicationSetting(
         settings: Collection<UserStyleSetting>,
-        userStyle: UserStyle
+        userStyle: UserStyle,
     ): UserStyleSetting.ComplicationSlotsUserStyleSetting? {
         for (setting in settings) {
             if (setting is UserStyleSetting.ComplicationSlotsUserStyleSetting) {

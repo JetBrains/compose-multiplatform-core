@@ -130,7 +130,7 @@ public class ComplicationSlotState {
         fixedComplicationDataSource: Boolean,
         complicationConfigExtras: Bundle,
         @Suppress("AutoBoxing") nameResourceId: Int?,
-        @Suppress("AutoBoxing") screenReaderNameResourceId: Int?
+        @Suppress("AutoBoxing") screenReaderNameResourceId: Int?,
     ) {
         this.bounds = bounds
         this.boundsType = boundsType
@@ -184,7 +184,7 @@ public class ComplicationSlotState {
         complicationConfigExtras: Bundle,
         @Suppress("AutoBoxing") nameResourceId: Int?,
         @Suppress("AutoBoxing") screenReaderNameResourceId: Int?,
-        edgeComplicationBoundingArc: BoundingArc?
+        edgeComplicationBoundingArc: BoundingArc?,
     ) {
         this.bounds = bounds
         this.boundsType = boundsType
@@ -224,7 +224,7 @@ public class ComplicationSlotState {
             "ComplicationSlotState(Rect, Int, List<ComplicationType>, " +
                 "DefaultComplicationDataSourcePolicy, Boolean, Boolean, ComplicationType, Boolean" +
                 ", Bundle)"
-        )
+        ),
     )
     public constructor(
         bounds: Rect,
@@ -236,7 +236,7 @@ public class ComplicationSlotState {
         isInitiallyEnabled: Boolean,
         currentType: ComplicationType,
         fixedComplicationDataSource: Boolean,
-        complicationConfigExtras: Bundle
+        complicationConfigExtras: Bundle,
     ) {
         this.bounds = bounds
         this.boundsType = boundsType
@@ -252,7 +252,7 @@ public class ComplicationSlotState {
                         defaultDataSourcePolicy.secondaryDataSourceDefaultType
                             ?: defaultDataSourceType,
                         defaultDataSourcePolicy.systemDataSourceFallback,
-                        defaultDataSourceType
+                        defaultDataSourceType,
                     )
                 defaultDataSourcePolicy.primaryDataSource != null ->
                     DefaultComplicationDataSourcePolicy(
@@ -260,12 +260,12 @@ public class ComplicationSlotState {
                         defaultDataSourcePolicy.primaryDataSourceDefaultType
                             ?: defaultDataSourceType,
                         defaultDataSourcePolicy.systemDataSourceFallback,
-                        defaultDataSourceType
+                        defaultDataSourceType,
                     )
                 else ->
                     DefaultComplicationDataSourcePolicy(
                         defaultDataSourcePolicy.systemDataSourceFallback,
-                        defaultDataSourceType
+                        defaultDataSourceType,
                     )
             }
         this.isEnabled = isEnabled
@@ -294,7 +294,7 @@ public class ComplicationSlotState {
             ComplicationType.fromWireType(
                 complicationStateWireFormat.secondaryDataSourceDefaultType
             ),
-            ComplicationType.fromWireType(complicationStateWireFormat.defaultDataSourceType)
+            ComplicationType.fromWireType(complicationStateWireFormat.defaultDataSourceType),
         ),
         complicationStateWireFormat.isEnabled,
         complicationStateWireFormat.isInitiallyEnabled,
@@ -306,7 +306,7 @@ public class ComplicationSlotState {
         @OptIn(ComplicationExperimental::class)
         complicationStateWireFormat.boundingArc?.let {
             BoundingArc(it.arcStartAngle, it.totalArcAngle, it.arcThickness)
-        }
+        },
     )
 
     @Suppress("Deprecation")

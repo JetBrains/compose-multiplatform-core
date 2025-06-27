@@ -36,6 +36,7 @@ import androidx.test.uiautomator.Until;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.function.ThrowingRunnable;
@@ -73,6 +74,13 @@ public abstract class BaseTest {
         mDevice.pressMenu(); // Try to dismiss the lock screen if necessary.
         mDevice.pressHome();
         mDevice.setOrientationNatural();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        // b/417797317: Ensure rotation setting is deleted, rather than just reset to "0".
+        mDevice.executeShellCommand(
+                "settings delete system hide_rotation_lock_toggle_for_accessibility");
     }
 
     protected void launchTestActivity(@NonNull Class<? extends Activity> activity) {

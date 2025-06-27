@@ -23,5 +23,5 @@ import kotlin.reflect.KClass
 internal actual fun <VM : ViewModel> createViewModel(
     factory: ViewModelProvider.Factory,
     modelClass: KClass<VM>,
-    extras: CreationExtras
+    extras: CreationExtras,
 ): VM = factory.create(modelClass, extras)

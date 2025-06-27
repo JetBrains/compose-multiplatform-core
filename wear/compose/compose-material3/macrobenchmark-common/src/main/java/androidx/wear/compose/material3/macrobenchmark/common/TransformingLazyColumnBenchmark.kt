@@ -57,14 +57,14 @@ val TransformingLazyColumnBenchmark =
                             ) {
                                 Text("To top")
                             }
-                        }
+                        },
                     ) { contentPadding ->
                         TransformingLazyColumn(
                             state = state,
                             contentPadding = contentPadding,
                             modifier =
                                 Modifier.background(MaterialTheme.colorScheme.background)
-                                    .semantics { contentDescription = CONTENT_DESCRIPTION }
+                                    .semantics { contentDescription = CONTENT_DESCRIPTION },
                         ) {
                             items(5000) {
                                 Text(
@@ -79,7 +79,7 @@ val TransformingLazyColumnBenchmark =
                                                     applyContentTransformation(scrollProgress)
                                                 }
                                             }
-                                            .padding(10.dp)
+                                            .padding(10.dp),
                                 )
                             }
                         }

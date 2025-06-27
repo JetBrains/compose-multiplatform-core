@@ -50,7 +50,7 @@ class BackupHdrProfileEncoderProfilesProviderTest {
                 QUALITY_2160P to PROFILES_2160P,
                 QUALITY_1080P to PROFILES_1080P,
                 QUALITY_720P to PROFILES_720P,
-                QUALITY_480P to PROFILES_480P
+                QUALITY_480P to PROFILES_480P,
             )
         )
     private val videoEncoderFinder = VideoEncoderInfo.Finder { FakeVideoEncoderInfo() }

@@ -229,8 +229,8 @@ public class TileRendererGoldenTest {
         TextFormat.Parser parser = TextFormat.getParser();
         androidx.wear.tiles.testing.proto.LayoutElementProto.LayoutElement.Builder
                 layoutElementProto =
-                androidx.wear.tiles.testing.proto.LayoutElementProto.LayoutElement
-                        .newBuilder();
+                        androidx.wear.tiles.testing.proto.LayoutElementProto.LayoutElement
+                                .newBuilder();
 
         InputStream rawResStream =
                 getApplicationContext().getResources().openRawResource(protoResId);
@@ -240,7 +240,7 @@ public class TileRendererGoldenTest {
 
         byte[] contents = layoutElementProto.build().toByteArray();
 
-        return  LayoutElement.parseFrom(contents);
+        return LayoutElement.parseFrom(contents);
     }
 
     private void runSingleScreenshotTest(int protoResId, String expectedKey) throws Exception {
@@ -308,8 +308,7 @@ public class TileRendererGoldenTest {
 
         Intent startIntent =
                 new Intent(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
                         GoldenTestActivity.class);
         startIntent.putExtra(EXTRA_LAYOUT_KEY, layout.toByteArray());
 
@@ -320,10 +319,15 @@ public class TileRendererGoldenTest {
         // bootstrap activity to fully go away before proceeding.
         sleep(100);
 
-        Bitmap bitmap = Bitmap.createBitmap(
-                InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot(),
-                0, 0, SCREEN_WIDTH, SCREEN_HEIGHT
-        );
+        Bitmap bitmap =
+                Bitmap.createBitmap(
+                        InstrumentationRegistry.getInstrumentation()
+                                .getUiAutomation()
+                                .takeScreenshot(),
+                        0,
+                        0,
+                        SCREEN_WIDTH,
+                        SCREEN_HEIGHT);
 
         // Increase the threshold of Structural Similarity Index for image comparison to 0.995,
         // so that we do not miss the image differences.

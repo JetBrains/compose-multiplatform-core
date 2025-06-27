@@ -60,7 +60,7 @@ class CameraGraphParametersImplTest {
             CameraGraphId.nextId(),
             FakeGraphConfigs.graphConfig,
             Listener3A(),
-            arrayListOf(FakeRequestListener())
+            arrayListOf(FakeRequestListener()),
         )
     private val surfaceMap = mapOf(StreamId(0) to Surface(SurfaceTexture(1)))
     private val csp1 = FakeCaptureSequenceProcessor().also { it.surfaceMap = surfaceMap }

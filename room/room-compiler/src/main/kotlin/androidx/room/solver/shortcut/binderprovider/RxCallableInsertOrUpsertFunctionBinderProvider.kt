@@ -46,7 +46,7 @@ internal constructor(val context: Context, private val rxType: RxType) :
     override fun provide(
         declared: XType,
         params: List<ShortcutQueryParameter>,
-        forUpsert: Boolean
+        forUpsert: Boolean,
     ): InsertOrUpsertFunctionBinder {
         val typeArg = extractTypeArg(declared)
         val adapter =
@@ -58,7 +58,7 @@ internal constructor(val context: Context, private val rxType: RxType) :
         return LambdaInsertOrUpsertFunctionBinder(
             typeArg = typeArg,
             functionName = rxType.factoryMethodName,
-            adapter = adapter
+            adapter = adapter,
         )
     }
 
@@ -70,7 +70,7 @@ internal constructor(val context: Context, private val rxType: RxType) :
                 RxCompletableInsertOrUpsertFunctionBinderProvider(context, RxType.RX2_COMPLETABLE),
                 RxSingleOrMaybeInsertOrUpsertFunctionBinderProvider(context, RxType.RX3_SINGLE),
                 RxSingleOrMaybeInsertOrUpsertFunctionBinderProvider(context, RxType.RX3_MAYBE),
-                RxCompletableInsertOrUpsertFunctionBinderProvider(context, RxType.RX3_COMPLETABLE)
+                RxCompletableInsertOrUpsertFunctionBinderProvider(context, RxType.RX3_COMPLETABLE),
             )
     }
 }
@@ -99,7 +99,7 @@ private class RxCompletableInsertOrUpsertFunctionBinderProvider(context: Context
 
 private class RxSingleOrMaybeInsertOrUpsertFunctionBinderProvider(
     context: Context,
-    rxType: RxType
+    rxType: RxType,
 ) : RxCallableInsertOrUpsertFunctionBinderProvider(context, rxType) {
 
     /** Since Maybe can have null values, the lambda returned must allow for null values. */

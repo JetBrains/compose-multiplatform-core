@@ -131,7 +131,7 @@ class CheckboxTest {
                     checked,
                     {},
                     enabled = false,
-                    modifier = Modifier.testTag(defaultTag).semantics { focused = true }
+                    modifier = Modifier.testTag(defaultTag).semantics { focused = true },
                 )
             }
         }
@@ -182,7 +182,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = true,
-            minimumTouchTarget = true
+            minimumTouchTarget = true,
         )
     }
 
@@ -191,7 +191,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = true,
-            minimumTouchTarget = false
+            minimumTouchTarget = false,
         )
     }
 
@@ -220,7 +220,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = false,
-            minimumTouchTarget = true
+            minimumTouchTarget = true,
         )
     }
 
@@ -229,7 +229,7 @@ class CheckboxTest {
         materialSizeTestForValue(
             checkboxValue = Indeterminate,
             clickable = false,
-            minimumTouchTarget = false
+            minimumTouchTarget = false,
         )
     }
 
@@ -239,7 +239,7 @@ class CheckboxTest {
             checkboxValue = On,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3,
         )
     }
 
@@ -249,7 +249,7 @@ class CheckboxTest {
             checkboxValue = On,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3,
         )
     }
 
@@ -259,7 +259,7 @@ class CheckboxTest {
             checkboxValue = Off,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3,
         )
     }
 
@@ -269,7 +269,7 @@ class CheckboxTest {
             checkboxValue = Off,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3,
         )
     }
 
@@ -279,7 +279,7 @@ class CheckboxTest {
             checkboxValue = Indeterminate,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth * 3
+            strokeWidth = CheckboxDefaults.StrokeWidth * 3,
         )
     }
 
@@ -289,7 +289,7 @@ class CheckboxTest {
             checkboxValue = Indeterminate,
             clickable = false, // Ensure a minimum size with clickable false and no min touch target
             minimumTouchTarget = false,
-            strokeWidth = CheckboxDefaults.StrokeWidth / 3
+            strokeWidth = CheckboxDefaults.StrokeWidth / 3,
         )
     }
 
@@ -313,7 +313,7 @@ class CheckboxTest {
                                 if (clickable) {
                                     {}
                                 } else null,
-                            enabled = false
+                            enabled = false,
                         )
                     } else {
                         val strokeWidthPx =
@@ -326,7 +326,7 @@ class CheckboxTest {
                                 } else null,
                             enabled = false,
                             checkmarkStroke = strokeWidthPx,
-                            outlineStroke = strokeWidthPx
+                            outlineStroke = strokeWidthPx,
                         )
                     }
                 }
@@ -351,7 +351,7 @@ class CheckboxTest {
                     TriStateCheckbox(
                         state = state,
                         onClick = { state = On },
-                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag)
+                        modifier = Modifier.align(Alignment.Center).requiredSize(2.dp).testTag(tag),
                     )
                 }
             }

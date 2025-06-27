@@ -42,7 +42,7 @@ class InstantTransactionFunctionBinder(
         daoName: XClassName,
         daoImplName: XClassName,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         val returnPrefix =
             when (scope.language) {
@@ -66,7 +66,7 @@ class InstantTransactionFunctionBinder(
                                     CodeLanguage.KOTLIN -> "_"
                                 },
                             returnTypeName = returnType.asTypeName().box(),
-                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                             val adapterScope = scope.fork()
@@ -74,7 +74,7 @@ class InstantTransactionFunctionBinder(
                                 parameterNames = parameterNames,
                                 daoName = daoName,
                                 daoImplName = daoImplName,
-                                scope = adapterScope
+                                scope = adapterScope,
                             )
                             when (scope.language) {
                                 CodeLanguage.JAVA -> {
@@ -88,7 +88,7 @@ class InstantTransactionFunctionBinder(
                                 }
                             }
                         }
-                    }
+                    },
             )
         scope.builder.add("$returnPrefix%L", performBlock)
     }

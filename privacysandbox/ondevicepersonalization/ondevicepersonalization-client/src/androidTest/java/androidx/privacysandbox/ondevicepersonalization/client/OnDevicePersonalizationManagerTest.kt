@@ -111,9 +111,9 @@ class OnDevicePersonalizationManagerTest {
                 any<
                     OutcomeReceiver<
                         OnDevicePersonalizationManager.ExecuteResult,
-                        java.lang.Exception
+                        java.lang.Exception,
                     >
-                >()
+                >(),
             )
         // Actually invoke the compat code.
         runBlocking {
@@ -128,7 +128,7 @@ class OnDevicePersonalizationManagerTest {
                 captor1.capture(),
                 captor2.capture(),
                 any<Executor>(),
-                any<OutcomeReceiver<OnDevicePersonalizationManager.ExecuteResult, Exception>>()
+                any<OutcomeReceiver<OnDevicePersonalizationManager.ExecuteResult, Exception>>(),
             )
 
         // Verify that the request that the compat code makes to the platform is correct.
@@ -159,9 +159,9 @@ class OnDevicePersonalizationManagerTest {
                 any<
                     OutcomeReceiver<
                         OnDevicePersonalizationManager.ExecuteResult,
-                        java.lang.Exception
+                        java.lang.Exception,
                     >
-                >()
+                >(),
             )
         // Actually invoke the compat code.
         runBlocking {
@@ -199,7 +199,7 @@ class OnDevicePersonalizationManagerTest {
                 any<Int>(),
                 any<Int>(),
                 any<Executor>(),
-                any<OutcomeReceiver<SurfacePackage, Exception>>()
+                any<OutcomeReceiver<SurfacePackage, Exception>>(),
             )
         // Actually invoke the compat code.
         runBlocking {
@@ -209,7 +209,7 @@ class OnDevicePersonalizationManagerTest {
                     iBinder,
                     TEST_DISPLAY_ID,
                     TEST_HEIGHT,
-                    TEST_WIDTH
+                    TEST_WIDTH,
                 )
             assertThat(result == TEST_SURFACE_PACKAGE)
         }
@@ -227,7 +227,7 @@ class OnDevicePersonalizationManagerTest {
                 captor4.capture(),
                 captor5.capture(),
                 any<Executor>(),
-                any<OutcomeReceiver<SurfacePackage, Exception>>()
+                any<OutcomeReceiver<SurfacePackage, Exception>>(),
             )
 
         // Verify that the request that the compat code makes to the platform is correct.
@@ -263,7 +263,7 @@ class OnDevicePersonalizationManagerTest {
                 any<Int>(),
                 any<Int>(),
                 any<Executor>(),
-                any<OutcomeReceiver<SurfacePackage, Exception>>()
+                any<OutcomeReceiver<SurfacePackage, Exception>>(),
             )
         // Actually invoke the compat code.
         runBlocking {
@@ -273,7 +273,7 @@ class OnDevicePersonalizationManagerTest {
                     iBinder,
                     TEST_DISPLAY_ID,
                     TEST_HEIGHT,
-                    TEST_WIDTH
+                    TEST_WIDTH,
                 )
             } catch (e: Exception) {
                 assertThat(e.message).isEqualTo(errorMessage)

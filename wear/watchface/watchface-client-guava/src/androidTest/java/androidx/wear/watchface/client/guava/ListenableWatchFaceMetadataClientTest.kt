@@ -42,7 +42,7 @@ public class ListenableWatchFaceMetadataClientTest {
     private val exampleWatchFaceComponentName =
         ComponentName(
             "androidx.wear.watchface.samples.test",
-            "androidx.wear.watchface.samples.ExampleCanvasAnalogWatchFaceService"
+            "androidx.wear.watchface.samples.ExampleCanvasAnalogWatchFaceService",
         )
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -60,9 +60,9 @@ public class ListenableWatchFaceMetadataClientTest {
                 object : WatchFaceMetadataClient.Companion.ParserProvider() {
                     override fun getParser(
                         context: Context,
-                        watchFaceName: ComponentName
+                        watchFaceName: ComponentName,
                     ): XmlResourceParser? = null
-                }
+                },
             )
 
         val watchFaceMetadataClient = listenableFuture.get(TIMEOUT_MS, TimeUnit.MILLISECONDS)

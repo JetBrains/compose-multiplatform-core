@@ -113,7 +113,7 @@ class FloatingActionButtonMenuTest {
                 button = {
                     ToggleFloatingActionButton(
                         checked = fabMenuExpanded,
-                        onCheckedChange = { fabMenuExpanded = !fabMenuExpanded }
+                        onCheckedChange = { fabMenuExpanded = !fabMenuExpanded },
                     ) {
                         val imageVector by remember {
                             derivedStateOf {
@@ -123,10 +123,10 @@ class FloatingActionButtonMenuTest {
                         Icon(
                             painter = rememberVectorPainter(imageVector),
                             contentDescription = null,
-                            modifier = Modifier.animateIcon({ checkedProgress })
+                            modifier = Modifier.animateIcon({ checkedProgress }),
                         )
                     }
-                }
+                },
             ) {
                 items.forEachIndexed { index, item ->
                     FloatingActionButtonMenuItem(

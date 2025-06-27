@@ -34,6 +34,9 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
+    js()
+    wasmJs()
+    mingwX64()
 
     sourceSets {
         commonMain {
@@ -41,6 +44,20 @@ androidXMultiplatform {
                 api(libs.kotlinStdlib)
                 implementation(project(":paging:paging-common"))
                 implementation(libs.kotlinTest)
+            }
+        }
+
+        jsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
             }
         }
     }

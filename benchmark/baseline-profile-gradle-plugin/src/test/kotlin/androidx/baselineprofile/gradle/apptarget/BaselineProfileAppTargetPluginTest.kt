@@ -133,43 +133,38 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
 
     @Test
     fun additionalBuildTypesShouldNotBeCreatedForExistingNonMinifiedAndBenchmarkBuildTypes() =
-        arrayOf(
-                true,
-                false,
+        arrayOf(true, false).forEach { overrideExtendedBuildTypesForRelease ->
+            projectSetup.appTarget.setBuildGradle(
+                buildGradleContent =
+                    createBuildGradle(
+                        overrideExtendedBuildTypesForRelease = overrideExtendedBuildTypesForRelease
+                    )
             )
-            .forEach { overrideExtendedBuildTypesForRelease ->
-                projectSetup.appTarget.setBuildGradle(
-                    buildGradleContent =
-                        createBuildGradle(
-                            overrideExtendedBuildTypesForRelease =
-                                overrideExtendedBuildTypesForRelease,
-                        )
-                )
-                projectSetup.appTarget.gradleRunner.build("printVariants") {
-                    val variants =
-                        it.lines()
-                            .filter { l -> l.startsWith("print-variant:") }
-                            .map { l -> l.substringAfter("print-variant:").trim() }
-                            .toSet()
-                            .toList()
+            projectSetup.appTarget.gradleRunner.build("printVariants") {
+                val variants =
+                    it.lines()
+                        .filter { l -> l.startsWith("print-variant:") }
+                        .map { l -> l.substringAfter("print-variant:").trim() }
+                        .toSet()
+                        .toList()
 
-                    assertThat(
-                            variants.containsOnly(
-                                "debug",
-                                "release",
-                                "benchmarkRelease",
-                                "nonMinifiedRelease",
-                                "anotherRelease",
-                                "nonMinifiedAnotherRelease",
-                                "benchmarkAnotherRelease",
-                                "myCustomRelease",
-                                "nonMinifiedMyCustomRelease",
-                                "benchmarkMyCustomRelease",
-                            )
+                assertThat(
+                        variants.containsOnly(
+                            "debug",
+                            "release",
+                            "benchmarkRelease",
+                            "nonMinifiedRelease",
+                            "anotherRelease",
+                            "nonMinifiedAnotherRelease",
+                            "benchmarkAnotherRelease",
+                            "myCustomRelease",
+                            "nonMinifiedMyCustomRelease",
+                            "benchmarkMyCustomRelease",
                         )
-                        .isTrue()
-                }
+                    )
+                    .isTrue()
             }
+        }
 
     @Test
     fun verifyUnitTestDisabled() {
@@ -261,7 +256,7 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
             val benchmarkBuildType: String,
             val baselineProfileBuildType: String,
             val expectedProguardFile: String?,
-            val expectedPostProcessingProguardFile: String?
+            val expectedPostProcessingProguardFile: String?,
         )
 
         arrayOf(
@@ -293,7 +288,7 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                             "proguardFiles=[${
                                 File(
                                     projectSetup.appTarget.rootDir.canonicalFile,
-                                    it.expectedProguardFile
+                                    it.expectedProguardFile,
                                 )
                             }]"
                         )
@@ -303,7 +298,7 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                             "postProcessingProguardFiles=\\[[^,]+, ${
                                 File(
                                     projectSetup.appTarget.rootDir.canonicalFile,
-                                    it.expectedPostProcessingProguardFile
+                                    it.expectedPostProcessingProguardFile,
                                 )
                             }"
                         )
@@ -317,7 +312,7 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                             "proguardFiles=[${
                                 File(
                                     projectSetup.appTarget.rootDir.canonicalFile,
-                                    it.expectedProguardFile
+                                    it.expectedProguardFile,
                                 )
                             }]"
                         )
@@ -327,7 +322,7 @@ class BaselineProfileAppTargetPluginTestWithAgp81AndAbove(agpVersion: TestAgpVer
                             "postProcessingProguardFiles=\\[[^,]+, ${
                                 File(
                                     projectSetup.appTarget.rootDir.canonicalFile,
-                                    it.expectedPostProcessingProguardFile
+                                    it.expectedPostProcessingProguardFile,
                                 )
                             }"
                         )
@@ -365,16 +360,12 @@ class BaselineProfileAppTargetPluginTestWithAgp80AndAbove(agpVersion: TestAgpVer
                             "src/main/java",
                             "src/anotherRelease/java",
                             "src/nonMinifiedAnotherRelease/java",
-                        )
+                        ),
                 ),
                 TaskAndExpected(
                     taskName = "nonMinifiedReleaseJavaSources",
                     expectedDirs =
-                        listOf(
-                            "src/main/java",
-                            "src/release/java",
-                            "src/nonMinifiedRelease/java",
-                        )
+                        listOf("src/main/java", "src/release/java", "src/nonMinifiedRelease/java"),
                 ),
                 TaskAndExpected(
                     taskName = "nonMinifiedAnotherReleaseKotlinSources",
@@ -383,7 +374,7 @@ class BaselineProfileAppTargetPluginTestWithAgp80AndAbove(agpVersion: TestAgpVer
                             "src/main/kotlin",
                             "src/anotherRelease/kotlin",
                             "src/nonMinifiedAnotherRelease/kotlin",
-                        )
+                        ),
                 ),
                 TaskAndExpected(
                     taskName = "nonMinifiedReleaseKotlinSources",
@@ -392,8 +383,8 @@ class BaselineProfileAppTargetPluginTestWithAgp80AndAbove(agpVersion: TestAgpVer
                             "src/main/kotlin",
                             "src/release/kotlin",
                             "src/nonMinifiedRelease/kotlin",
-                        )
-                )
+                        ),
+                ),
             )
             .forEach { t ->
 
@@ -408,39 +399,34 @@ class BaselineProfileAppTargetPluginTestWithAgp80AndAbove(agpVersion: TestAgpVer
 
     @Test
     fun additionalBuildTypesShouldNotBeCreatedForExistingNonMinifiedAndBenchmarkBuildTypes() =
-        arrayOf(
-                true,
-                false,
+        arrayOf(true, false).forEach { overrideExtendedBuildTypesForRelease ->
+            projectSetup.appTarget.setBuildGradle(
+                buildGradleContent =
+                    createBuildGradle(
+                        overrideExtendedBuildTypesForRelease = overrideExtendedBuildTypesForRelease
+                    )
             )
-            .forEach { overrideExtendedBuildTypesForRelease ->
-                projectSetup.appTarget.setBuildGradle(
-                    buildGradleContent =
-                        createBuildGradle(
-                            overrideExtendedBuildTypesForRelease =
-                                overrideExtendedBuildTypesForRelease,
-                        )
-                )
 
-                projectSetup.appTarget.gradleRunner.build("printVariants") {
-                    val variants =
-                        it.lines()
-                            .filter { l -> l.startsWith("print-variant:") }
-                            .map { l -> l.substringAfter("print-variant:").trim() }
-                            .toSet()
-                            .toList()
+            projectSetup.appTarget.gradleRunner.build("printVariants") {
+                val variants =
+                    it.lines()
+                        .filter { l -> l.startsWith("print-variant:") }
+                        .map { l -> l.substringAfter("print-variant:").trim() }
+                        .toSet()
+                        .toList()
 
-                    assertThat(
-                            variants.containsOnly(
-                                "debug",
-                                "release",
-                                "nonMinifiedRelease",
-                                "anotherRelease",
-                                "nonMinifiedAnotherRelease",
-                                "myCustomRelease",
-                                "nonMinifiedMyCustomRelease",
-                            )
+                assertThat(
+                        variants.containsOnly(
+                            "debug",
+                            "release",
+                            "nonMinifiedRelease",
+                            "anotherRelease",
+                            "nonMinifiedAnotherRelease",
+                            "myCustomRelease",
+                            "nonMinifiedMyCustomRelease",
                         )
-                        .isTrue()
-                }
+                    )
+                    .isTrue()
             }
+        }
 }

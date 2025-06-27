@@ -60,7 +60,7 @@ internal class JavacAnnotation(val env: JavacProcessingEnv, val mirror: Annotati
             JavacAnnotationValue(
                 env,
                 env.wrapExecutableElement(executableElement) as JavacMethodElement,
-                annotationValue
+                annotationValue,
             )
         }
     }

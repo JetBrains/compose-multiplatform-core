@@ -35,7 +35,7 @@ public open class ThreadTrack(
                     parentUuid = INVALID_LONG,
                     pid = process.id,
                     tid = id,
-                    type = TRACK_DESCRIPTOR_TYPE_THREAD
+                    type = TRACK_DESCRIPTOR_TYPE_THREAD,
                 )
             )
         }

@@ -74,7 +74,7 @@ class NutritionAggregationExtensionsTest {
     val grantPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             HealthPermission.getWritePermission(NutritionRecord::class),
-            HealthPermission.getReadPermission(NutritionRecord::class)
+            HealthPermission.getReadPermission(NutritionRecord::class),
         )
 
     @Before
@@ -88,7 +88,7 @@ class NutritionAggregationExtensionsTest {
     fun tearDown() = runTest {
         healthConnectClient.deleteRecords(
             NutritionRecord::class,
-            TimeRangeFilter.after(Instant.EPOCH)
+            TimeRangeFilter.after(Instant.EPOCH),
         )
     }
 
@@ -146,7 +146,7 @@ class NutritionAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                )
+                ),
             )
         )
 
@@ -194,7 +194,7 @@ class NutritionAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                )
+                ),
             )
         )
 
@@ -206,7 +206,7 @@ class NutritionAggregationExtensionsTest {
                         TimeRangeFilter.after(
                             START_TIME.toLocalTimeWithDefaultZoneFallback(ZoneOffset.UTC)
                         ),
-                    timeRangeSlicer = Period.ofDays(1)
+                    timeRangeSlicer = Period.ofDays(1),
                 )
             )
 
@@ -247,7 +247,7 @@ class NutritionAggregationExtensionsTest {
                     metadata = Metadata.manualEntry(),
                     transFat = .3.grams,
                     startZoneOffset = ZoneOffset.UTC,
-                    endZoneOffset = ZoneOffset.UTC
+                    endZoneOffset = ZoneOffset.UTC,
                 ),
                 NutritionRecord(
                     startTime = START_TIME + 1.hours + 2.minutes,
@@ -255,7 +255,7 @@ class NutritionAggregationExtensionsTest {
                     metadata = Metadata.manualEntry(),
                     transFat = null,
                     startZoneOffset = ZoneOffset.UTC,
-                    endZoneOffset = ZoneOffset.UTC
+                    endZoneOffset = ZoneOffset.UTC,
                 ),
                 NutritionRecord(
                     startTime = START_TIME + 3.hours + 4.minutes,
@@ -263,7 +263,7 @@ class NutritionAggregationExtensionsTest {
                     metadata = Metadata.manualEntry(),
                     transFat = .4.grams,
                     startZoneOffset = ZoneOffset.UTC,
-                    endZoneOffset = ZoneOffset.UTC
+                    endZoneOffset = ZoneOffset.UTC,
                 ),
                 NutritionRecord(
                     startTime = START_TIME + 3.hours + 6.minutes,
@@ -271,8 +271,8 @@ class NutritionAggregationExtensionsTest {
                     metadata = Metadata.manualEntry(),
                     transFat = .5.grams,
                     startZoneOffset = ZoneOffset.UTC,
-                    endZoneOffset = ZoneOffset.UTC
-                )
+                    endZoneOffset = ZoneOffset.UTC,
+                ),
             )
         )
 
@@ -281,7 +281,7 @@ class NutritionAggregationExtensionsTest {
                 AggregateGroupByDurationRequest(
                     metrics = setOf(NutritionRecord.TRANS_FAT_TOTAL),
                     timeRangeFilter = TimeRangeFilter.after(START_TIME),
-                    timeRangeSlicer = 1.hours
+                    timeRangeSlicer = 1.hours,
                 )
             )
 
@@ -295,8 +295,8 @@ class NutritionAggregationExtensionsTest {
                         AggregationResult(
                             longValues = emptyMap(),
                             doubleValues = mapOf(NutritionRecord.TRANS_FAT_TOTAL.metricKey to .3),
-                            dataOrigins = setOf(DataOrigin(context.packageName))
-                        )
+                            dataOrigins = setOf(DataOrigin(context.packageName)),
+                        ),
                 ),
                 AggregationResultGroupedByDuration(
                     startTime = START_TIME + 3.hours,
@@ -306,9 +306,9 @@ class NutritionAggregationExtensionsTest {
                         AggregationResult(
                             longValues = emptyMap(),
                             doubleValues = mapOf(NutritionRecord.TRANS_FAT_TOTAL.metricKey to .9),
-                            dataOrigins = setOf(DataOrigin(context.packageName))
-                        )
-                )
+                            dataOrigins = setOf(DataOrigin(context.packageName)),
+                        ),
+                ),
             )
     }
 
@@ -355,7 +355,7 @@ class NutritionAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                )
+                ),
             )
         )
 
@@ -365,9 +365,9 @@ class NutritionAggregationExtensionsTest {
                     emptySet(),
                     TimeRangeFilter.between(
                         START_TIME + 30.seconds,
-                        START_TIME + 6.minutes + 45.seconds
+                        START_TIME + 6.minutes + 45.seconds,
                     ),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -396,7 +396,7 @@ class NutritionAggregationExtensionsTest {
                         startZoneOffset = ZoneOffset.UTC,
                         endZoneOffset = ZoneOffset.UTC,
                         metadata = Metadata.manualEntry(),
-                    )
+                    ),
                 )
             )
 
@@ -405,7 +405,7 @@ class NutritionAggregationExtensionsTest {
                     AggregateRequest(
                         emptySet(),
                         TimeRangeFilter.between(START_TIME + 1.minutes, START_TIME + 2.minutes),
-                        emptySet()
+                        emptySet(),
                     )
                 )
 
@@ -433,7 +433,7 @@ class NutritionAggregationExtensionsTest {
                         startZoneOffset = ZoneOffset.UTC,
                         endZoneOffset = ZoneOffset.UTC,
                         metadata = Metadata.manualEntry(),
-                    )
+                    ),
                 )
             )
 
@@ -442,7 +442,7 @@ class NutritionAggregationExtensionsTest {
                     AggregateRequest(
                         emptySet(),
                         TimeRangeFilter.between(START_TIME, START_TIME + 2.minutes),
-                        emptySet()
+                        emptySet(),
                     )
                 )
 
@@ -464,7 +464,7 @@ class NutritionAggregationExtensionsTest {
                         startZoneOffset = ZoneOffset.UTC,
                         endZoneOffset = ZoneOffset.UTC,
                         metadata = Metadata.manualEntry(),
-                    ),
+                    )
                 )
             )
 
@@ -473,7 +473,7 @@ class NutritionAggregationExtensionsTest {
                     AggregateRequest(
                         emptySet(),
                         TimeRangeFilter.between(START_TIME + 15.seconds, START_TIME + 45.seconds),
-                        emptySet()
+                        emptySet(),
                     )
                 )
 
@@ -526,7 +526,7 @@ class NutritionAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.ofHours(4),
                     endZoneOffset = ZoneOffset.ofHours(4),
                     metadata = Metadata.manualEntry(),
-                )
+                ),
             )
         )
 
@@ -536,9 +536,9 @@ class NutritionAggregationExtensionsTest {
                     emptySet(),
                     TimeRangeFilter.between(
                         LocalDateTime.ofInstant(START_TIME + 30.seconds, ZoneOffset.UTC),
-                        LocalDateTime.ofInstant(START_TIME + 6.minutes + 45.seconds, ZoneOffset.UTC)
+                        LocalDateTime.ofInstant(START_TIME + 6.minutes + 45.seconds, ZoneOffset.UTC),
                     ),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -559,7 +559,7 @@ class NutritionAggregationExtensionsTest {
                         startZoneOffset = ZoneOffset.UTC,
                         endZoneOffset = ZoneOffset.UTC,
                         metadata = Metadata.manualEntry(),
-                    ),
+                    )
                 )
             )
 
@@ -570,14 +570,14 @@ class NutritionAggregationExtensionsTest {
                         TimeRangeFilter.between(
                             LocalDateTime.ofInstant(
                                 START_TIME - 2.hours + 15.seconds,
-                                ZoneOffset.ofHours(2)
+                                ZoneOffset.ofHours(2),
                             ),
                             LocalDateTime.ofInstant(
                                 START_TIME - 2.hours + 45.seconds,
-                                ZoneOffset.ofHours(2)
-                            )
+                                ZoneOffset.ofHours(2),
+                            ),
                         ),
-                        emptySet()
+                        emptySet(),
                     )
                 )
 
@@ -599,7 +599,7 @@ class NutritionAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                ),
+                )
             )
         )
 
@@ -608,7 +608,7 @@ class NutritionAggregationExtensionsTest {
                 AggregateRequest(
                     emptySet(),
                     TimeRangeFilter.after(Instant.EPOCH),
-                    setOf(DataOrigin(context.packageName))
+                    setOf(DataOrigin(context.packageName)),
                 )
             )
 
@@ -627,7 +627,7 @@ class NutritionAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                ),
+                )
             )
         )
 
@@ -636,7 +636,7 @@ class NutritionAggregationExtensionsTest {
                 AggregateRequest(
                     emptySet(),
                     TimeRangeFilter.after(START_TIME + 2.minutes),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -665,9 +665,9 @@ class NutritionAggregationExtensionsTest {
                     emptySet(),
                     TimeRangeFilter.between(
                         LocalDateTime.ofInstant(START_TIME, ZoneOffset.UTC),
-                        LocalDateTime.ofInstant(START_TIME + 60.minutes, ZoneOffset.UTC)
+                        LocalDateTime.ofInstant(START_TIME + 60.minutes, ZoneOffset.UTC),
                     ),
-                    emptySet()
+                    emptySet(),
                 )
             )
 
@@ -686,7 +686,7 @@ class NutritionAggregationExtensionsTest {
                     startZoneOffset = ZoneOffset.UTC,
                     endZoneOffset = ZoneOffset.UTC,
                     metadata = Metadata.manualEntry(),
-                ),
+                )
             )
         )
 
@@ -695,7 +695,7 @@ class NutritionAggregationExtensionsTest {
                 AggregateRequest(
                     emptySet(),
                     TimeRangeFilter.after(Instant.EPOCH),
-                    setOf(DataOrigin("some random package name"))
+                    setOf(DataOrigin("some random package name")),
                 )
             )
 

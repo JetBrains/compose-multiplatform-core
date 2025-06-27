@@ -34,7 +34,7 @@ import androidx.wear.watchface.data.WatchFaceColorsWireFormat
 public class WatchFaceColors(
     val primaryColor: Color,
     val secondaryColor: Color,
-    val tertiaryColor: Color
+    val tertiaryColor: Color,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -65,7 +65,7 @@ public class WatchFaceColors(
         WatchFaceColorsWireFormat(
             primaryColor.toArgb(),
             secondaryColor.toArgb(),
-            tertiaryColor.toArgb()
+            tertiaryColor.toArgb(),
         )
 }
 
@@ -75,5 +75,5 @@ fun WatchFaceColorsWireFormat.toApiFormat() =
     WatchFaceColors(
         Color.valueOf(primaryColor),
         Color.valueOf(secondaryColor),
-        Color.valueOf(tertiaryColor)
+        Color.valueOf(tertiaryColor),
     )

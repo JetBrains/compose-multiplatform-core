@@ -18,12 +18,13 @@ package androidx.xr.scenecore.impl;
 
 import static java.util.stream.Collectors.toCollection;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.ActivityPose;
 import androidx.xr.runtime.internal.Entity;
 
 import com.android.extensions.xr.node.Node;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,8 +48,7 @@ final class EntityManager {
      * @return the {@link Entity} associated with the given {@link Node}, or null if no such {@link
      *     Entity} exists.
      */
-    @Nullable
-    Entity getEntityForNode(@NonNull Node node) {
+    @Nullable Entity getEntityForNode(@NonNull Node node) {
         return mNodeEntityMap.get(node);
     }
 

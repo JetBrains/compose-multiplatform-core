@@ -31,6 +31,7 @@ import androidx.wear.protolayout.LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE
 import androidx.wear.protolayout.LayoutElementBuilders.TextAlignment
 import androidx.wear.protolayout.LayoutElementBuilders.TextOverflow
 import androidx.wear.protolayout.ModifiersBuilders.Corner
+import androidx.wear.protolayout.ModifiersBuilders.Padding
 import androidx.wear.protolayout.material3.Typography.TypographyToken
 import androidx.wear.protolayout.material3.tokens.ColorTokens
 import androidx.wear.protolayout.material3.tokens.ShapeTokens
@@ -48,8 +49,6 @@ import androidx.wear.protolayout.types.argb
  */
 // TODO: b/352308384 - Add helper to read the exported Json or XML file from the Material Theme
 //    Builder tool.
-// TODO: b/350927030 - Customization setters of shape and typography, which are not fully
-//   customizable.
 @MaterialScopeMarker
 public open class MaterialScope
 /**
@@ -67,7 +66,7 @@ public open class MaterialScope
  * @property deviceConfiguration The device parameters for where the components will be rendered
  */
 internal constructor(
-    internal val context: Context,
+    public val context: Context,
     public val deviceConfiguration: DeviceParameters,
     internal val allowDynamicTheme: Boolean,
     internal val theme: MaterialTheme,
@@ -76,7 +75,7 @@ internal constructor(
     internal val defaultBackgroundImageStyle: BackgroundImageStyle,
     internal val defaultAvatarImageStyle: AvatarImageStyle,
     internal val layoutSlotsPresence: LayoutSlotsPresence,
-    internal val defaultProgressIndicatorStyle: ProgressIndicatorStyle
+    internal val defaultProgressIndicatorStyle: ProgressIndicatorStyle,
 ) {
     /** Color Scheme used within this scope and its components. */
     public val colorScheme: ColorScheme = theme.colorScheme
@@ -90,20 +89,45 @@ internal constructor(
         defaultBackgroundImageStyle: BackgroundImageStyle = this.defaultBackgroundImageStyle,
         defaultAvatarImageStyle: AvatarImageStyle = this.defaultAvatarImageStyle,
         layoutSlotsPresence: LayoutSlotsPresence = this.layoutSlotsPresence,
-        defaultProgressIndicatorStyle: ProgressIndicatorStyle = this.defaultProgressIndicatorStyle
-    ): MaterialScope =
+        defaultProgressIndicatorStyle: ProgressIndicatorStyle = this.defaultProgressIndicatorStyle,
+        layout: MaterialScope.() -> LayoutElement,
+    ): LayoutElement =
         MaterialScope(
-            context = context,
-            deviceConfiguration = deviceConfiguration,
-            theme = theme,
-            allowDynamicTheme = allowDynamicTheme,
-            defaultTextElementStyle = defaultTextElementStyle,
-            defaultIconStyle = defaultIconStyle,
-            defaultBackgroundImageStyle = defaultBackgroundImageStyle,
-            defaultAvatarImageStyle = defaultAvatarImageStyle,
-            layoutSlotsPresence = layoutSlotsPresence,
-            defaultProgressIndicatorStyle = defaultProgressIndicatorStyle
-        )
+                context = context,
+                deviceConfiguration = deviceConfiguration,
+                theme = theme,
+                allowDynamicTheme = allowDynamicTheme,
+                defaultTextElementStyle = defaultTextElementStyle,
+                defaultIconStyle = defaultIconStyle,
+                defaultBackgroundImageStyle = defaultBackgroundImageStyle,
+                defaultAvatarImageStyle = defaultAvatarImageStyle,
+                layoutSlotsPresence = layoutSlotsPresence,
+                defaultProgressIndicatorStyle = defaultProgressIndicatorStyle,
+            )
+            .layout()
+
+    internal fun withStyleOnPadding(
+        defaultTextElementStyle: TextElementStyle = this.defaultTextElementStyle,
+        defaultIconStyle: IconStyle = this.defaultIconStyle,
+        defaultBackgroundImageStyle: BackgroundImageStyle = this.defaultBackgroundImageStyle,
+        defaultAvatarImageStyle: AvatarImageStyle = this.defaultAvatarImageStyle,
+        layoutSlotsPresence: LayoutSlotsPresence = this.layoutSlotsPresence,
+        defaultProgressIndicatorStyle: ProgressIndicatorStyle = this.defaultProgressIndicatorStyle,
+        margins: MaterialScope.() -> Padding,
+    ): Padding =
+        MaterialScope(
+                context = context,
+                deviceConfiguration = deviceConfiguration,
+                theme = theme,
+                allowDynamicTheme = allowDynamicTheme,
+                defaultTextElementStyle = defaultTextElementStyle,
+                defaultIconStyle = defaultIconStyle,
+                defaultBackgroundImageStyle = defaultBackgroundImageStyle,
+                defaultAvatarImageStyle = defaultAvatarImageStyle,
+                layoutSlotsPresence = layoutSlotsPresence,
+                defaultProgressIndicatorStyle = defaultProgressIndicatorStyle,
+            )
+            .margins()
 }
 
 /**
@@ -132,7 +156,7 @@ public fun materialScope(
     deviceConfiguration: DeviceParameters,
     allowDynamicTheme: Boolean = true,
     defaultColorScheme: ColorScheme = ColorScheme(),
-    layout: MaterialScope.() -> LayoutElement
+    layout: MaterialScope.() -> LayoutElement,
 ): LayoutElement =
     MaterialScope(
             context = context,
@@ -144,7 +168,7 @@ public fun materialScope(
                         if (allowDynamicTheme) {
                             dynamicColorScheme(
                                 context = context,
-                                defaultColorScheme = defaultColorScheme
+                                defaultColorScheme = defaultColorScheme,
                             )
                         } else {
                             defaultColorScheme
@@ -155,7 +179,7 @@ public fun materialScope(
             defaultBackgroundImageStyle = BackgroundImageStyle(),
             defaultAvatarImageStyle = AvatarImageStyle(),
             layoutSlotsPresence = LayoutSlotsPresence(),
-            defaultProgressIndicatorStyle = ProgressIndicatorStyle()
+            defaultProgressIndicatorStyle = ProgressIndicatorStyle(),
         )
         .layout()
 
@@ -179,7 +203,7 @@ public fun materialScopeFromLayout(
                         if (allowDynamicTheme) {
                             dynamicColorScheme(
                                 context = context,
-                                defaultColorScheme = defaultColorScheme
+                                defaultColorScheme = defaultColorScheme,
                             )
                         } else {
                             defaultColorScheme
@@ -212,12 +236,15 @@ internal class TextElementStyle(
     // the text will have its string content added as default content description into the modifier,
     // which makes the text important for accessibility.
     val importantForAccessibility: Boolean = false,
+    // By default text is not marked as heading. By setting this to true, this text will be marked
+    // as heading for accessibility purpose.
+    val isAccessibilityHeading: Boolean = false,
 )
 
 internal class IconStyle(
     val width: ImageDimension = 24.toDp(),
     val height: ImageDimension = 24.toDp(),
-    val tintColor: LayoutColor = ColorTokens.PRIMARY.argb
+    val tintColor: LayoutColor = ColorTokens.PRIMARY.argb,
 )
 
 internal class BackgroundImageStyle(
@@ -226,7 +253,7 @@ internal class BackgroundImageStyle(
     val overlayColor: LayoutColor? = ColorTokens.BACKGROUND.argb.withOpacity(ratio = 0.6f),
     val shape: Corner = ShapeTokens.CORNER_LARGE,
     @ContentScaleMode
-    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
+    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS,
 )
 
 internal class AvatarImageStyle(
@@ -234,15 +261,13 @@ internal class AvatarImageStyle(
     val height: ImageDimension = 24.toDp(),
     val shape: Corner = ShapeTokens.CORNER_FULL,
     @ContentScaleMode
-    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS
+    val contentScaleMode: Int = LayoutElementBuilders.CONTENT_SCALE_MODE_FILL_BOUNDS,
 )
 
 internal class LayoutSlotsPresence(
     val isTitleSlotPresent: Boolean = false,
     val isBottomSlotEdgeButton: Boolean = false,
-    val isBottomSlotPresent: Boolean = isBottomSlotEdgeButton
+    val isBottomSlotPresent: Boolean = isBottomSlotEdgeButton,
 )
 
-internal class ProgressIndicatorStyle(
-    val color: ProgressIndicatorColors? = null,
-)
+internal class ProgressIndicatorStyle(val color: ProgressIndicatorColors? = null)

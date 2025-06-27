@@ -18,7 +18,7 @@ package androidx.camera.testing.fakes;
 
 import static android.graphics.ImageFormat.YUV_420_888;
 
-import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
+import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR;
 import static androidx.camera.core.impl.SurfaceConfig.ConfigSize.PREVIEW;
 import static androidx.camera.core.impl.SurfaceConfig.ConfigType.YUV;
 
@@ -99,7 +99,7 @@ public class FakeCameraDeviceSurfaceManagerTest {
                 emptyList(),
                 createConfigOutputSizesMap(preview, analysis),
                 false,
-                false);
+                false, false, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -113,14 +113,15 @@ public class FakeCameraDeviceSurfaceManagerTest {
                         DynamicRange.SDR,
                         singletonList(UseCaseConfigFactory.CaptureType.IMAGE_ANALYSIS),
                         preview,
+                        SESSION_TYPE_REGULAR,
                         new Range<>(30, 30),
-                        FRAME_RATE_RANGE_UNSPECIFIED);
+                        false);
         mFakeCameraDeviceSurfaceManager.getSuggestedStreamSpecs(
                 CameraMode.DEFAULT,
                 FAKE_CAMERA_ID0,
                 singletonList(analysis), createConfigOutputSizesMap(preview, video),
                 false,
-                false);
+                false, false, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -133,7 +134,7 @@ public class FakeCameraDeviceSurfaceManagerTest {
                 FAKE_CAMERA_ID0,
                 Collections.emptyList(), createConfigOutputSizesMap(preview, video, analysis),
                 false,
-                false);
+                false, false, false);
     }
 
     @Test
@@ -144,14 +145,14 @@ public class FakeCameraDeviceSurfaceManagerTest {
                         FAKE_CAMERA_ID0,
                         emptyList(), createConfigOutputSizesMap(mFakeUseCaseConfig),
                         false,
-                        false).first;
+                        false, false, false).getUseCaseStreamSpecs();
         Map<UseCaseConfig<?>, StreamSpec> suggestedStreamSpecCamera1 =
                 mFakeCameraDeviceSurfaceManager.getSuggestedStreamSpecs(
                         CameraMode.DEFAULT,
                         FAKE_CAMERA_ID1,
                         emptyList(), createConfigOutputSizesMap(mFakeUseCaseConfig),
                         false,
-                        false).first;
+                        false, false, false).getUseCaseStreamSpecs();
 
         assertThat(suggestedStreamSpecsCamera0.get(mFakeUseCaseConfig)).isEqualTo(
                 StreamSpec.builder(new Size(FAKE_WIDTH0, FAKE_HEIGHT0)).build());

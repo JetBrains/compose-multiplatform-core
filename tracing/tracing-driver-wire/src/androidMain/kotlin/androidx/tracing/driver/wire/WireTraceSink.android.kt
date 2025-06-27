@@ -37,10 +37,10 @@ private fun File.perfettoTraceFile(): File {
 public fun WireTraceSink(
     context: Context,
     sequenceId: Int,
-    coroutineContext: CoroutineContext = Dispatchers.IO
+    coroutineContext: CoroutineContext = Dispatchers.IO,
 ): WireTraceSink =
     WireTraceSink(
         sequenceId = sequenceId,
         bufferedSink = context.noBackupFilesDir.perfettoTraceFile().appendingSink().buffer(),
-        coroutineContext = coroutineContext
+        coroutineContext = coroutineContext,
     )

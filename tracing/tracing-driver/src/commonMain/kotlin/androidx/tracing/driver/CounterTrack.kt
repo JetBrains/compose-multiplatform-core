@@ -21,7 +21,7 @@ public open class CounterTrack(
     /** The name of the counter track */
     private val name: String,
     /** The parent track the counter belongs to. */
-    private val parent: Track
+    private val parent: Track,
 ) : Track(context = parent.context, uuid = monotonicId()) {
     internal val packetLock = Any()
 
@@ -35,7 +35,7 @@ public open class CounterTrack(
                         parentUuid = parent.uuid,
                         type = TRACK_DESCRIPTOR_TYPE_COUNTER,
                         pid = INVALID_INT,
-                        tid = INVALID_INT
+                        tid = INVALID_INT,
                     )
                 )
             }

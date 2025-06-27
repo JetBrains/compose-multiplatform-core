@@ -47,7 +47,7 @@ class GradleConfigurationDetector : Detector(), GradleScanner {
                     severity = Severity.ERROR,
                     implementation =
                         Implementation(GradleConfigurationDetector::class.java, Scope.GRADLE_SCOPE),
-                    androidSpecific = true
+                    androidSpecific = true,
                 )
                 .addMoreInfo("https://d.android.com/training/basics/fragments/testing#configure")
     }
@@ -60,7 +60,7 @@ class GradleConfigurationDetector : Detector(), GradleScanner {
         parent: String,
         parentParent: String?,
         valueCookie: Any,
-        statementCookie: Any
+        statementCookie: Any,
     ) {
         // Remove enclosing quotes and check starting string to ensure only instances that
         // result in the fragment-testing library being imported are checked.

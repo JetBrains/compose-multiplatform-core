@@ -110,7 +110,7 @@ class PdfViewZoomStateTest {
             pdfView.zoom = savedZoom
             pdfView.scrollTo(
                 (savedScrollPosition.x * savedZoom - pdfView.viewportWidth / 2f).toInt(),
-                (savedScrollPosition.y * savedZoom - pdfView.viewportHeight / 2f).toInt()
+                (savedScrollPosition.y * savedZoom - pdfView.viewportHeight / 2f).toInt(),
             )
         }
 

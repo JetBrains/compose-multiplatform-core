@@ -132,15 +132,13 @@ fun TitleCardDemo() {
 @Composable
 fun VerticallyCenteredBaseCard() {
     // Provide a demo of a base Card with vertically centered content
-    Card(
-        onClick = {},
-    ) {
+    Card(onClick = {}) {
         Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
             Text(
                 "ABCD",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -148,9 +146,7 @@ fun VerticallyCenteredBaseCard() {
 
 @Composable
 fun CardWithNestedImageDemo() {
-    Card(
-        onClick = { /* Do something */ },
-    ) {
+    Card(onClick = { /* Do something */ }) {
         Spacer(Modifier.height(4.dp))
         ImageContent()
     }
@@ -158,9 +154,7 @@ fun CardWithNestedImageDemo() {
 
 @Composable
 fun CardWithMultipleImagesDemo() {
-    Card(
-        onClick = { /* Do something */ },
-    ) {
+    Card(onClick = { /* Do something */ }) {
         Spacer(Modifier.height(4.dp))
         MultipleImagesContent()
     }
@@ -215,7 +209,7 @@ fun ImageCardBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 selected = alignment == alignmentValue,
                 onSelect = { alignment = alignmentValue },
-                label = { Text(label) }
+                label = { Text(label) },
             )
         }
 
@@ -237,7 +231,7 @@ fun ImageCardBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 selected = contentScale == contentScaleValue,
                 onSelect = { contentScale = contentScaleValue },
-                label = { Text(label) }
+                label = { Text(label) },
             )
         }
 
@@ -248,7 +242,7 @@ fun ImageCardBuilder() {
                 onValueChange = { alpha = it },
                 valueRange = 0f..1f,
                 steps = 99,
-                segmented = false
+                segmented = false,
             )
         }
 
@@ -258,7 +252,7 @@ fun ImageCardBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 checked = sizeToIntrinsics,
                 onCheckedChange = { sizeToIntrinsics = it },
-                label = { Text("Used") }
+                label = { Text("Used") },
             )
         }
 
@@ -283,7 +277,7 @@ fun ImageCardBuilder() {
                         sizeToIntrinsics = sizeToIntrinsics,
                         alignment = alignment,
                         contentScale = contentScale,
-                        alpha = alpha
+                        alpha = alpha,
                     ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = true,
@@ -311,7 +305,7 @@ fun TitleCardWithSubtitleDemo() {
     TitleCard(
         onClick = { /* Do something */ },
         title = { Text("Title card") },
-        subtitle = { Text("Subtitle") }
+        subtitle = { Text("Subtitle") },
     )
 }
 
@@ -321,7 +315,7 @@ fun TitleCardWithContentSubtitleAndTimeDemo() {
         onClick = { /* Do something */ },
         time = { Text("now") },
         title = { Text("Title card") },
-        subtitle = { Text("Subtitle") }
+        subtitle = { Text("Subtitle") },
     ) {
         Text("Card content")
     }
@@ -344,7 +338,7 @@ fun TitleCardWithImageDemo() {
         onClick = { /* Do something */ },
         title = { Text("Title card") },
         time = { Text("now") },
-        modifier = Modifier.semantics { contentDescription = "Background image" }
+        modifier = Modifier.semantics { contentDescription = "Background image" },
     ) {
         Spacer(Modifier.height(4.dp))
         ImageContent()
@@ -360,7 +354,7 @@ private fun ImageContent() {
             modifier = Modifier.weight(1f).aspectRatio(16f / 9f).clip(RoundedCornerShape(16.dp)),
             painter = painterResource(id = R.drawable.card_content_image),
             contentScale = ContentScale.Crop,
-            contentDescription = "Large blank image"
+            contentDescription = "Large blank image",
         )
         Spacer(modifier = Modifier.width(imageEndPaddingDp))
     }
@@ -377,7 +371,7 @@ private fun MultipleImagesContent() {
                     .clip(RoundedCornerShape(16.dp)),
             painter = painterResource(id = R.drawable.card_content_image),
             contentScale = ContentScale.Crop,
-            contentDescription = "Medium blank image"
+            contentDescription = "Medium blank image",
         )
         Spacer(Modifier.width(4.dp))
         Image(
@@ -388,7 +382,7 @@ private fun MultipleImagesContent() {
                     .clip(RoundedCornerShape(16.dp)),
             painter = painterResource(id = R.drawable.card_content_image),
             contentScale = ContentScale.Crop,
-            contentDescription = "Small blank image"
+            contentDescription = "Small blank image",
         )
     }
 }

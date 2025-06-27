@@ -80,7 +80,7 @@ import kotlinx.coroutines.launch
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -88,14 +88,14 @@ public fun NavHost(
     startDestination: String,
     modifier: Modifier = Modifier,
     route: String? = null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
         remember(route, startDestination, builder) {
             navController.createGraph(startDestination, route, builder)
         },
-        modifier
+        modifier,
     )
 }
 
@@ -121,7 +121,7 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -140,7 +140,7 @@ public fun NavHost(
         enterTransition,
     popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         exitTransition,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -152,7 +152,7 @@ public fun NavHost(
         enterTransition,
         exitTransition,
         popEnterTransition,
-        popExitTransition
+        popExitTransition,
     )
 }
 
@@ -208,7 +208,7 @@ public fun NavHost(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -221,7 +221,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -280,7 +280,7 @@ public fun NavHost(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -293,7 +293,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -352,7 +352,7 @@ public fun NavHost(
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
         null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -365,7 +365,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -384,13 +384,13 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
     navController: NavHostController,
     graph: NavGraph,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ): Unit = NavHost(navController, graph, modifier)
 
 /**
@@ -410,7 +410,7 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -437,7 +437,7 @@ public fun NavHost(
         enterTransition,
         exitTransition,
         popEnterTransition,
-        popExitTransition
+        popExitTransition,
     )
 }
 
@@ -486,7 +486,7 @@ public fun NavHost(
     sizeTransform:
         (@JvmSuppressWildcards
         AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
-        null
+        null,
 ) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -634,7 +634,7 @@ public fun NavHost(
                     animate(
                         transitionState.fraction,
                         0f,
-                        animationSpec = tween((transitionState.fraction * totalDuration).toInt())
+                        animationSpec = tween((transitionState.fraction * totalDuration).toInt()),
                     ) { value, _ ->
                         this@LaunchedEffect.launch {
                             if (value > 0) {
@@ -671,14 +671,14 @@ public fun NavHost(
                         finalEnter(this),
                         finalExit(this),
                         targetZIndex,
-                        finalSizeTransform(this)
+                        finalSizeTransform(this),
                     )
                 } else {
                     EnterTransition.None togetherWith ExitTransition.None
                 }
             },
             contentAlignment,
-            contentKey = { it.id }
+            contentKey = { it.id },
         ) {
             // In some specific cases, such as clearing your back stack by changing your
             // start destination, AnimatedContent can contain an entry that is no longer
@@ -702,7 +702,7 @@ public fun NavHost(
             currentEntry?.LocalOwnersProvider(saveableStateHolder) {
                 (currentEntry.destination as ComposeNavigator.Destination).content(
                     this,
-                    currentEntry
+                    currentEntry,
                 )
             }
         }

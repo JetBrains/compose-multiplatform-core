@@ -366,6 +366,9 @@ package androidx.wear.protolayout {
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int ARC_ANCHOR_END = 3; // 0x3
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int ARC_ANCHOR_START = 1; // 0x1
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int ARC_ANCHOR_UNDEFINED = 0; // 0x0
+    field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static final int ARC_DIRECTION_CLOCKWISE = 1; // 0x1
+    field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static final int ARC_DIRECTION_COUNTER_CLOCKWISE = 2; // 0x2
+    field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static final int ARC_DIRECTION_NORMAL = 0; // 0x0
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int CONTENT_SCALE_MODE_CROP = 2; // 0x2
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int CONTENT_SCALE_MODE_FILL_BOUNDS = 3; // 0x3
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int CONTENT_SCALE_MODE_FIT = 1; // 0x1
@@ -1179,6 +1182,7 @@ package androidx.wear.protolayout {
     method public androidx.wear.protolayout.TypeBuilders.StringProp? getContentDescription();
     method public int getRole();
     method public androidx.wear.protolayout.TypeBuilders.StringProp? getStateDescription();
+    method public boolean isHeading();
   }
 
   public static final class ModifiersBuilders.Semantics.Builder {
@@ -1186,6 +1190,7 @@ package androidx.wear.protolayout {
     method public androidx.wear.protolayout.ModifiersBuilders.Semantics build();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.ModifiersBuilders.Semantics.Builder setContentDescription(androidx.wear.protolayout.TypeBuilders.StringProp);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.protolayout.ModifiersBuilders.Semantics.Builder setContentDescription(String);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public androidx.wear.protolayout.ModifiersBuilders.Semantics.Builder setHeading(boolean);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.Semantics.Builder setRole(int);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public androidx.wear.protolayout.ModifiersBuilders.Semantics.Builder setStateDescription(androidx.wear.protolayout.TypeBuilders.StringProp);
   }
@@ -1603,6 +1608,7 @@ package androidx.wear.protolayout.modifiers {
   public final class SemanticsKt {
     method public static androidx.wear.protolayout.modifiers.LayoutModifier clearSemantics(androidx.wear.protolayout.modifiers.LayoutModifier);
     method public static androidx.wear.protolayout.modifiers.LayoutModifier contentDescription(androidx.wear.protolayout.modifiers.LayoutModifier, String staticValue, optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? dynamicValue);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.modifiers.LayoutModifier semanticsHeading(androidx.wear.protolayout.modifiers.LayoutModifier, boolean heading);
     method public static androidx.wear.protolayout.modifiers.LayoutModifier semanticsRole(androidx.wear.protolayout.modifiers.LayoutModifier, int semanticsRole);
   }
 
@@ -1640,6 +1646,7 @@ package androidx.wear.protolayout.types {
 
   public final class LayoutString {
     ctor public LayoutString(String staticValue);
+    ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public LayoutString(String staticValue, androidx.wear.protolayout.expression.DynamicBuilders.DynamicString dynamicValue);
     ctor @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public LayoutString(String staticValue, androidx.wear.protolayout.expression.DynamicBuilders.DynamicString dynamicValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
     method public androidx.wear.protolayout.expression.DynamicBuilders.DynamicString? getDynamicValue();
     method public androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint? getLayoutConstraint();
@@ -1651,6 +1658,7 @@ package androidx.wear.protolayout.types {
 
   public final class LayoutStringUtil {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint asLayoutConstraint(String, optional int alignment);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.types.LayoutString createLayoutString(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString, String staticValue);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.types.LayoutString createLayoutString(androidx.wear.protolayout.expression.DynamicBuilders.DynamicString, String staticValue, androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint layoutConstraint);
     method public static androidx.wear.protolayout.types.LayoutString createLayoutString(String);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) public static androidx.wear.protolayout.TypeBuilders.StringLayoutConstraint stringLayoutConstraint(String longestPattern);

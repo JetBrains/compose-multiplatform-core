@@ -269,6 +269,7 @@ public class WebViewProviderAdapter {
      * Adapter method for {@link WebViewCompat#saveState(WebView, Bundle, int, boolean)}.
      */
     @UiThread
+    @WebNavigationClient.ExperimentalNavigationCallback
     public void setWebNavigationClient(
             @NonNull WebNavigationClient client) {
         InvocationHandler clientBoundaryInterface =
@@ -281,6 +282,7 @@ public class WebViewProviderAdapter {
      * Adapter method for {@link WebViewCompat#getWebN(WebView, Bundle, int, boolean)}.
      */
     @UiThread
+    @WebNavigationClient.ExperimentalNavigationCallback
     public @NonNull WebNavigationClient getWebNavigationClient() {
         InvocationHandler client = mImpl.getWebViewNavigationClient();
         if (client == null) return null;

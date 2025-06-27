@@ -78,7 +78,7 @@ class PlaceholderTest {
         // ShowPlaceholder
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_SHIMMER_GAP_BETWEEN_ANIMATION_LOOPS_MS,
-            PlaceholderStage.ShowPlaceholder
+            PlaceholderStage.ShowPlaceholder,
         )
 
         // Change visible and confirm that state is now WipeOff
@@ -88,7 +88,7 @@ class PlaceholderTest {
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.HidePlaceholder
+            PlaceholderStage.HidePlaceholder,
         )
     }
 
@@ -103,7 +103,7 @@ class PlaceholderTest {
                 modifier = Modifier.fillMaxWidth().placeholderShimmer(placeholderState),
                 content = {},
                 onClick = {},
-                colors = ButtonDefaults.filledTonalButtonColors()
+                colors = ButtonDefaults.filledTonalButtonColors(),
             )
         }
 
@@ -121,7 +121,7 @@ class PlaceholderTest {
         // Check that the state is set to ResetContent
         placeholderState.advanceFrameMillisAndCheckState(
             (PLACEHOLDER_RESET_ANIMATION_DURATION_MS * 0.5f).toLong(),
-            PlaceholderStage.ResetContent
+            PlaceholderStage.ResetContent,
         )
     }
 
@@ -150,7 +150,7 @@ class PlaceholderTest {
                             if (placeholderColor != null)
                                 Modifier.placeholder(
                                     placeholderState = placeholderState,
-                                    color = placeholderColor
+                                    color = placeholderColor,
                                 )
                             else Modifier.placeholder(placeholderState = placeholderState)
                         ),
@@ -174,7 +174,7 @@ class PlaceholderTest {
         // Advance the clock by one cycle and check we have moved to HidePlaceholder
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.HidePlaceholder
+            PlaceholderStage.HidePlaceholder,
         )
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(expectedBackgroundColor)
@@ -211,7 +211,7 @@ class PlaceholderTest {
         // clock to show the shimmer.
         placeholderState.advanceFrameMillisAndCheckState(
             (PLACEHOLDER_SHIMMER_DURATION_MS * 0.5f).toLong(),
-            PlaceholderStage.ShowPlaceholder
+            PlaceholderStage.ShowPlaceholder,
         )
 
         // The placeholder shimmer effect is faint and largely transparent gradiant, but it should
@@ -231,7 +231,7 @@ class PlaceholderTest {
         // Advance the clock by one cycle and check we have moved to ShowContent
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.HidePlaceholder
+            PlaceholderStage.HidePlaceholder,
         )
 
         // Check that the shimmer is no longer visible
@@ -272,7 +272,7 @@ class PlaceholderTest {
 
         placeholderState.value?.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.HidePlaceholder
+            PlaceholderStage.HidePlaceholder,
         )
     }
 
@@ -332,7 +332,7 @@ class PlaceholderTest {
 
         placeholderState.advanceFrameMillisAndCheckState(
             PLACEHOLDER_WIPE_OFF_PROGRESSION_DURATION_MS,
-            PlaceholderStage.HidePlaceholder
+            PlaceholderStage.HidePlaceholder,
         )
 
         // Check the placeholder background has gone and that we can see the buttons background
@@ -341,7 +341,7 @@ class PlaceholderTest {
 
     private fun PlaceholderState.advanceFrameMillisAndCheckState(
         timeToAdd: Long,
-        expectedStage: PlaceholderStage
+        expectedStage: PlaceholderStage,
     ) {
         updateFrameMillis(AnimationCoordinator.frameMillis.longValue + timeToAdd)
         assertThat(placeholderStage).isEqualTo(expectedStage)

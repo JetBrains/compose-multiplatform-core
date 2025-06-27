@@ -77,7 +77,7 @@ internal class TextFieldSelectionHandlesGesturesTest : AbstractSelectionGestures
                 textToolbar = textToolbar,
                 spyTextActionModeCallback = spyTextActionModeCallback,
                 hapticFeedback = hapticFeedback,
-                getActual = { textFieldValue.value }
+                getActual = { textFieldValue.value },
             )
     }
 

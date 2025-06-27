@@ -133,12 +133,15 @@ public class ImageAnalysisTest {
 
         CameraInternal camera = new FakeCamera();
 
-        CameraFactory.Provider cameraFactoryProvider = (ignored1, ignored2, ignored3, ignored4) -> {
-            FakeCameraFactory cameraFactory = new FakeCameraFactory();
-            cameraFactory.insertDefaultBackCamera(camera.getCameraInfoInternal().getCameraId(),
-                    () -> camera);
-            return cameraFactory;
-        };
+        CameraFactory.Provider cameraFactoryProvider =
+                (ignored1, ignored2, ignored3, ignored4,
+                        streamSpecsCalculator) -> {
+                    FakeCameraFactory cameraFactory = new FakeCameraFactory();
+                    cameraFactory.insertDefaultBackCamera(
+                            camera.getCameraInfoInternal().getCameraId(),
+                            () -> camera);
+                    return cameraFactory;
+                };
         CameraXConfig cameraXConfig = CameraXConfig.Builder.fromConfig(
                 FakeAppConfig.create()).setCameraFactoryProvider(cameraFactoryProvider).build();
 

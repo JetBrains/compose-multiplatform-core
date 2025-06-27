@@ -35,7 +35,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 class YuvImageOnePixelShiftQuirkTest(
     private val brand: String,
     private val model: String,
-    private val quirkEnablingExpected: Boolean
+    private val quirkEnablingExpected: Boolean,
 ) {
     @Test
     fun canEnableOnePixelShiftQuirkCorrectly() {
@@ -49,9 +49,9 @@ class YuvImageOnePixelShiftQuirkTest(
                         StreamConfigurationMapBuilder.newBuilder().build(),
                         OutputSizesCorrector(
                             FakeCameraMetadata(),
-                            StreamConfigurationMapBuilder.newBuilder().build()
-                        )
-                    )
+                            StreamConfigurationMapBuilder.newBuilder().build(),
+                        ),
+                    ),
                 )
                 .quirks
 

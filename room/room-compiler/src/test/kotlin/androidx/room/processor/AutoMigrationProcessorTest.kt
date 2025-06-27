@@ -41,7 +41,7 @@ class AutoMigrationProcessorTest {
                 public MyAutoMigration (int x) {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(listOf(source)) { invocation ->
@@ -49,7 +49,7 @@ class AutoMigrationProcessorTest {
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),
                     fromSchemaBundle = fromSchemaBundle.database,
-                    toSchemaBundle = toSchemaBundle.database
+                    toSchemaBundle = toSchemaBundle.database,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -68,7 +68,7 @@ class AutoMigrationProcessorTest {
             import androidx.room.migration.AutoMigrationSpec;
             public interface MyAutoMigration extends AutoMigrationSpec {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(listOf(source)) { invocation ->
@@ -76,7 +76,7 @@ class AutoMigrationProcessorTest {
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),
                     fromSchemaBundle = fromSchemaBundle.database,
-                    toSchemaBundle = toSchemaBundle.database
+                    toSchemaBundle = toSchemaBundle.database,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -97,7 +97,7 @@ class AutoMigrationProcessorTest {
                 class MyAutoMigration implements AutoMigrationSpec {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(listOf(source)) { invocation ->
@@ -108,7 +108,7 @@ class AutoMigrationProcessorTest {
                             "foo.bar.MyAutoMigrationDb.MyAutoMigration"
                         ),
                     fromSchemaBundle = fromSchemaBundle.database,
-                    toSchemaBundle = toSchemaBundle.database
+                    toSchemaBundle = toSchemaBundle.database,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -129,7 +129,7 @@ class AutoMigrationProcessorTest {
             import androidx.sqlite.db.SupportSQLiteDatabase;
             public class MyAutoMigration {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(listOf(source)) { invocation ->
@@ -137,7 +137,7 @@ class AutoMigrationProcessorTest {
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),
                     fromSchemaBundle = fromSchemaBundle.database,
-                    toSchemaBundle = toSchemaBundle.database
+                    toSchemaBundle = toSchemaBundle.database,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -163,16 +163,16 @@ class AutoMigrationProcessorTest {
                         listOf(
                             FieldBundle("id", "id", "INTEGER", true, "1"),
                             FieldBundle("title", "title", "TEXT", true, ""),
-                            FieldBundle("length", "length", "INTEGER", true, "1")
+                            FieldBundle("length", "length", "INTEGER", true, "1"),
                         ),
                         PrimaryKeyBundle(false, mutableListOf("id")),
                         mutableListOf(),
-                        mutableListOf()
+                        mutableListOf(),
                     )
                 ),
                 mutableListOf(),
-                mutableListOf()
-            )
+                mutableListOf(),
+            ),
         )
 
     val toSchemaBundle =
@@ -189,15 +189,15 @@ class AutoMigrationProcessorTest {
                         listOf(
                             FieldBundle("id", "id", "INTEGER", true, "1"),
                             FieldBundle("title", "title", "TEXT", true, ""),
-                            FieldBundle("length", "length", "INTEGER", true, "1")
+                            FieldBundle("length", "length", "INTEGER", true, "1"),
                         ),
                         PrimaryKeyBundle(false, mutableListOf("id")),
                         mutableListOf(),
-                        mutableListOf()
+                        mutableListOf(),
                     )
                 ),
                 mutableListOf(),
-                mutableListOf()
-            )
+                mutableListOf(),
+            ),
         )
 }

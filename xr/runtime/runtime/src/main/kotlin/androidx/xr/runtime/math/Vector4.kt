@@ -63,7 +63,10 @@ constructor(
     /** Get a new vector multiplied by a scalar amount. */
     public operator fun times(c: Float): Vector4 = Vector4(x * c, y * c, z * c, w * c)
 
-    /** Returns a new vector with the product of this vector and the [other] vector. */
+    /**
+     * Returns a new vector with each component of this vector multiplied by each corresponding
+     * component of the [other] vector.
+     */
     public operator fun times(other: Vector4): Vector4 =
         Vector4(x * other.x, y * other.y, z * other.z, w * other.w)
 

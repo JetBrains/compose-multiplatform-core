@@ -28,11 +28,5 @@ public interface SystemSpaceEntity : Entity {
      * @param listener The listener to register if non-null, else stops listening if null.
      * @param executor The executor to run the listener on. Defaults to SceneCore executor if null.
      */
-    public fun setOnSpaceUpdatedListener(listener: OnSpaceUpdatedListener?, executor: Executor?)
-
-    /** Interface for a listener which receives changes to the underlying space. */
-    public fun interface OnSpaceUpdatedListener {
-        /** Called by the system when the underlying space has changed. */
-        public fun onSpaceUpdated()
-    }
+    public fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor?)
 }

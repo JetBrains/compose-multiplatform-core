@@ -23,22 +23,13 @@ import androidx.compose.runtime.snapshots.fastForEach
  * suppressed exceptions when [androidx.compose.runtime.Composer.setDiagnosticStackTraceEnabled]
  * flag is set to true.
  */
-internal expect class DiagnosticComposeException(
-    trace: List<ComposeStackTraceFrame>,
-) : RuntimeException
+internal expect class DiagnosticComposeException(trace: List<ComposeStackTraceFrame>) :
+    RuntimeException
 
+@OptIn(ComposeToolingApi::class)
 internal data class ComposeStackTraceFrame(
-    val sourceInfo: ParsedSourceInformation,
-    val groupOffset: Int?
-)
-
-internal class ParsedSourceInformation(
-    val isCall: Boolean,
-    val functionName: String?,
-    val fileName: String?,
-    val packageHash: String?,
-    val lineNumbers: IntArray,
-    val dataString: String
+    val sourceInfo: SourceInformation,
+    val groupOffset: Int?,
 )
 
 internal fun Throwable.tryAttachComposeStackTrace(
@@ -67,18 +58,24 @@ internal fun Throwable.attachComposeStackTrace(
     trace: () -> List<ComposeStackTraceFrame>
 ): Throwable = apply { tryAttachComposeStackTrace(trace) }
 
+@OptIn(ComposeToolingApi::class)
 internal fun StringBuilder.appendStackTrace(trace: List<ComposeStackTraceFrame>) {
     var currentFunction: String? = null
     var currentFile: String? = null
     val lines = buildList {
         trace.asReversed().fastForEach { frame ->
             val sourceInfo = frame.sourceInfo
-            val functionName = sourceInfo.functionName ?: currentFunction ?: "<unknown function>"
-            val fileName = sourceInfo.fileName ?: currentFile ?: "<unknown file>"
-            val lineNumbers = sourceInfo.lineNumbers
+            val functionName =
+                sourceInfo.functionName
+                    ?: "<lambda>".takeIf { sourceInfo.isCall }
+                    ?: currentFunction
+                    ?: "<unknown function>"
+
+            val fileName = sourceInfo.sourceFile ?: currentFile ?: "<unknown file>"
+            val lineNumbers = sourceInfo.locations
             val resolvedLine =
                 if (frame.groupOffset != null && frame.groupOffset < lineNumbers.size) {
-                    lineNumbers[frame.groupOffset].toString()
+                    lineNumbers[frame.groupOffset].lineNumber.toString()
                 } else {
                     if (IncludeDebugInfo) {
                         "<no offset ${frame.groupOffset} in $lineNumbers>"
@@ -97,7 +94,7 @@ internal fun StringBuilder.appendStackTrace(trace: List<ComposeStackTraceFrame>)
 
                 if (IncludeDebugInfo) {
                     append(", parsed from ")
-                    append(sourceInfo.dataString)
+                    append(sourceInfo.rawData)
                     append(", group offset: ")
                     append(frame.groupOffset)
                 }

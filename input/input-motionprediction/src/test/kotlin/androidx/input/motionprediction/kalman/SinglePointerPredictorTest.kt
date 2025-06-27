@@ -44,7 +44,7 @@ class SinglePointerPredictorTest {
                 { delta: Long -> delta.toFloat().pow(2) / 2 },
                 // Acceleration & velocity
                 { delta: Long -> delta.toFloat() + delta.toFloat().pow(2) / 4 },
-                { delta: Long -> -delta.toFloat() - delta.toFloat().pow(2) / 4 }
+                { delta: Long -> -delta.toFloat() - delta.toFloat().pow(2) / 4 },
             )
         for ((xIndex, xGenerator) in generators.withIndex()) {
             for ((yIndex, yGenerator) in generators.withIndex()) {

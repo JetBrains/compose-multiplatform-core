@@ -62,13 +62,13 @@ import androidx.compose.ui.state.ToggleableState
 @Deprecated(
     message =
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 fun Modifier.toggleable(
     value: Boolean,
     enabled: Boolean = true,
     role: Role? = null,
-    onValueChange: (Boolean) -> Unit
+    onValueChange: (Boolean) -> Unit,
 ) =
     composed(
         inspectorInfo =
@@ -97,7 +97,7 @@ fun Modifier.toggleable(
             indication = localIndication,
             enabled = enabled,
             role = role,
-            onValueChange = onValueChange
+            onValueChange = onValueChange,
         )
     }
 
@@ -136,7 +136,7 @@ fun Modifier.toggleable(
     enabled: Boolean = true,
     role: Role? = null,
     interactionSource: MutableInteractionSource? = null,
-    onValueChange: (Boolean) -> Unit
+    onValueChange: (Boolean) -> Unit,
 ): Modifier {
     @OptIn(ExperimentalFoundationApi::class)
     return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
@@ -148,7 +148,7 @@ fun Modifier.toggleable(
                 useLocalIndication = true,
                 enabled = enabled,
                 role = role,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         )
     } else
@@ -180,7 +180,7 @@ fun Modifier.toggleable(
                 indication = localIndication,
                 enabled = enabled,
                 role = role,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
 }
@@ -223,11 +223,11 @@ fun Modifier.toggleable(
     indication: Indication?,
     enabled: Boolean = true,
     role: Role? = null,
-    onValueChange: (Boolean) -> Unit
+    onValueChange: (Boolean) -> Unit,
 ) =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
-        indication = indication
+        indication = indication,
     ) { intSource, indicationNodeFactory ->
         ToggleableElement(
             value = value,
@@ -236,7 +236,7 @@ fun Modifier.toggleable(
             useLocalIndication = false,
             enabled = enabled,
             role = role,
-            onValueChange = onValueChange
+            onValueChange = onValueChange,
         )
     }
 
@@ -247,7 +247,7 @@ private class ToggleableElement(
     private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val role: Role?,
-    private val onValueChange: (Boolean) -> Unit
+    private val onValueChange: (Boolean) -> Unit,
 ) : ModifierNodeElement<ToggleableNode>() {
     override fun create() =
         ToggleableNode(
@@ -257,7 +257,7 @@ private class ToggleableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onValueChange = onValueChange
+            onValueChange = onValueChange,
         )
 
     override fun update(node: ToggleableNode) {
@@ -268,7 +268,7 @@ private class ToggleableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onValueChange = onValueChange
+            onValueChange = onValueChange,
         )
     }
 
@@ -319,7 +319,7 @@ private class ToggleableNode(
     useLocalIndication: Boolean,
     enabled: Boolean,
     role: Role?,
-    private var onValueChange: (Boolean) -> Unit
+    private var onValueChange: (Boolean) -> Unit,
 ) :
     ClickableNode(
         interactionSource = interactionSource,
@@ -328,7 +328,7 @@ private class ToggleableNode(
         enabled = enabled,
         onClickLabel = null,
         role = role,
-        onClick = { onValueChange(!value) }
+        onClick = { onValueChange(!value) },
     ) {
     // the onClick passed in the constructor captures onValueChanged and value as passed to the
     // constructor, so we need to define a new lambda that references the properties. When these
@@ -345,7 +345,7 @@ private class ToggleableNode(
         useLocalIndication: Boolean,
         enabled: Boolean,
         role: Role?,
-        onValueChange: (Boolean) -> Unit
+        onValueChange: (Boolean) -> Unit,
     ) {
         if (this.value != value) {
             this.value = value
@@ -359,7 +359,7 @@ private class ToggleableNode(
             enabled = enabled,
             onClickLabel = null,
             role = role,
-            onClick = _onClick
+            onClick = _onClick,
         )
     }
 
@@ -395,13 +395,13 @@ private class ToggleableNode(
 @Deprecated(
     message =
         "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 fun Modifier.triStateToggleable(
     state: ToggleableState,
     enabled: Boolean = true,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     composed(
         inspectorInfo =
@@ -430,7 +430,7 @@ fun Modifier.triStateToggleable(
             indication = localIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -472,7 +472,7 @@ fun Modifier.triStateToggleable(
     enabled: Boolean = true,
     role: Role? = null,
     interactionSource: MutableInteractionSource? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ): Modifier {
     @OptIn(ExperimentalFoundationApi::class)
     return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
@@ -484,7 +484,7 @@ fun Modifier.triStateToggleable(
                 useLocalIndication = true,
                 enabled = enabled,
                 role = role,
-                onClick = onClick
+                onClick = onClick,
             )
         )
     } else
@@ -516,7 +516,7 @@ fun Modifier.triStateToggleable(
                 indication = localIndication,
                 enabled = enabled,
                 role = role,
-                onClick = onClick
+                onClick = onClick,
             )
         }
 }
@@ -563,11 +563,11 @@ fun Modifier.triStateToggleable(
     indication: Indication?,
     enabled: Boolean = true,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
-        indication = indication
+        indication = indication,
     ) { intSource, indicationNodeFactory ->
         TriStateToggleableElement(
             state = state,
@@ -576,7 +576,7 @@ fun Modifier.triStateToggleable(
             useLocalIndication = false,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -587,7 +587,7 @@ private class TriStateToggleableElement(
     private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val role: Role?,
-    private val onClick: () -> Unit
+    private val onClick: () -> Unit,
 ) : ModifierNodeElement<TriStateToggleableNode>() {
     override fun create() =
         TriStateToggleableNode(
@@ -597,7 +597,7 @@ private class TriStateToggleableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
 
     override fun update(node: TriStateToggleableNode) {
@@ -608,7 +608,7 @@ private class TriStateToggleableElement(
             useLocalIndication = useLocalIndication,
             enabled = enabled,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -660,7 +660,7 @@ private class TriStateToggleableNode(
     useLocalIndication: Boolean,
     enabled: Boolean,
     role: Role?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) :
     ClickableNode(
         interactionSource = interactionSource,
@@ -669,7 +669,7 @@ private class TriStateToggleableNode(
         enabled = enabled,
         onClickLabel = null,
         role = role,
-        onClick = onClick
+        onClick = onClick,
     ) {
     fun update(
         state: ToggleableState,
@@ -678,7 +678,7 @@ private class TriStateToggleableNode(
         useLocalIndication: Boolean,
         enabled: Boolean,
         role: Role?,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         if (this.state != state) {
             this.state = state
@@ -691,7 +691,7 @@ private class TriStateToggleableNode(
             enabled = enabled,
             onClickLabel = null,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 

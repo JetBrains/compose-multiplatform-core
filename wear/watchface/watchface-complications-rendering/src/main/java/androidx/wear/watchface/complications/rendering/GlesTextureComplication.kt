@@ -45,7 +45,7 @@ public class GlesTextureComplication(
     public val complicationSlot: ComplicationSlot,
     @Px textureWidth: Int,
     @Px textureHeight: Int,
-    private val textureType: Int
+    private val textureType: Int,
 ) {
     private val texture = createTexture(textureType)
     private val bitmap = Bitmap.createBitmap(textureWidth, textureHeight, Bitmap.Config.ARGB_8888)
@@ -60,7 +60,7 @@ public class GlesTextureComplication(
             bounds,
             zonedDateTime,
             renderParameters,
-            complicationSlot.id
+            complicationSlot.id,
         )
         bind()
         GLUtils.texImage2D(textureType, 0, bitmap, 0)

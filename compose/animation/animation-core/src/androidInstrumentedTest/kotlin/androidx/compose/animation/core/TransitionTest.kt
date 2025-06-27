@@ -69,7 +69,7 @@ class TransitionTest {
 
     private enum class AnimStates {
         From,
-        To
+        To,
     }
 
     @OptIn(InternalAnimationApi::class)
@@ -81,17 +81,17 @@ class TransitionTest {
                 spring(dampingRatio = Spring.DampingRatioHighBouncy),
                 Float.VectorConverter,
                 0f,
-                1f
+                1f,
             )
         val floatAnim2 =
             TargetBasedAnimation(
                 spring(
                     dampingRatio = Spring.DampingRatioLowBouncy,
-                    stiffness = Spring.StiffnessLow
+                    stiffness = Spring.StiffnessLow,
                 ),
                 Float.VectorConverter,
                 1f,
-                0f
+                0f,
             )
 
         val colorAnim1 =
@@ -99,7 +99,7 @@ class TransitionTest {
                 tween(1000),
                 Color.VectorConverter(Color.Red.colorSpace),
                 Color.Red,
-                Color.Green
+                Color.Green,
             )
         val colorAnim2 =
             TargetBasedAnimation(
@@ -142,7 +142,7 @@ class TransitionTest {
                             } else {
                                 spring(
                                     dampingRatio = Spring.DampingRatioLowBouncy,
-                                    stiffness = Spring.StiffnessLow
+                                    stiffness = Spring.StiffnessLow,
                                 )
                             }
                         }
@@ -186,16 +186,16 @@ class TransitionTest {
                     assertEquals(
                         floatAnim1.getValueFromNanos(transition.playTimeNanos),
                         animFloat.value,
-                        0.00001f
+                        0.00001f,
                     )
                     assertEquals(
                         colorAnim1.getValueFromNanos(transition.playTimeNanos),
-                        animColor.value
+                        animColor.value,
                     )
                     assertEquals(
                         keyframesAnim1.getValueFromNanos(transition.playTimeNanos),
                         animFloatWithKeyframes.value,
-                        0.00001f
+                        0.00001f,
                     )
 
                     assertEquals(AnimStates.To, transition.segment.targetState)
@@ -204,16 +204,16 @@ class TransitionTest {
                     assertEquals(
                         floatAnim2.getValueFromNanos(transition.playTimeNanos),
                         animFloat.value,
-                        0.00001f
+                        0.00001f,
                     )
                     assertEquals(
                         colorAnim2.getValueFromNanos(transition.playTimeNanos),
-                        animColor.value
+                        animColor.value,
                     )
                     assertEquals(
                         keyframesAnim2.getValueFromNanos(transition.playTimeNanos),
                         animFloatWithKeyframes.value,
-                        0.00001f
+                        0.00001f,
                     )
                     assertEquals(AnimStates.From, transition.segment.targetState)
                     assertEquals(AnimStates.To, transition.segment.initialState)
@@ -594,7 +594,7 @@ class TransitionTest {
                 val animationSpec = tween<Float>(durationMillis = 2000)
                 return transition.animateFloat(
                     transitionSpec = { animationSpec },
-                    label = "background-scrim-alpha"
+                    label = "background-scrim-alpha",
                 ) { stage ->
                     if (stage) 1f else 0f
                 }
@@ -613,7 +613,7 @@ class TransitionTest {
                     modifier =
                         Modifier.fillMaxSize()
                             .graphicsLayer { alpha = contentAlpha }
-                            .background(Color.Red),
+                            .background(Color.Red)
                 ) {}
             }
         }
@@ -633,7 +633,7 @@ class TransitionTest {
         @Composable
         fun TestAnimatedContent(
             transitionState: MutableTransitionState<Boolean>,
-            onRecomposition: () -> Unit
+            onRecomposition: () -> Unit,
         ) {
             onRecomposition()
             val transition = rememberTransition(transitionState)
@@ -674,21 +674,21 @@ class TransitionTest {
                         // easy to distinguish from the interrupted AnimationSpec
                         keyframes { Color.Yellow atFraction 0f }
                     },
-                    targetValueByState = { if (it) Color.Red else Color.Blue }
+                    targetValueByState = { if (it) Color.Red else Color.Blue },
                 )
 
             Column {
                 Text(
                     // Presenting the Color as text to avoid capturing into images
                     text = color.toString(),
-                    modifier = Modifier.testTag("animatedColor")
+                    modifier = Modifier.testTag("animatedColor"),
                 )
                 // Presents the currentState of the TransitionState, used as an indicator of the
                 // Transition animation as it will be updated to the target state when the
                 // animation finishes, or immediately if there's no animation
                 Text(
                     text = transitionState.currentState.toString(),
-                    modifier = Modifier.testTag("currentStateText")
+                    modifier = Modifier.testTag("currentStateText"),
                 )
             }
         }
@@ -771,21 +771,21 @@ class TransitionTest {
                         // easy to distinguish from the interrupted AnimationSpec
                         keyframes { Color.Yellow atFraction 0f }
                     },
-                    targetValueByState = { if (it) Color.Red else Color.Blue }
+                    targetValueByState = { if (it) Color.Red else Color.Blue },
                 )
 
             Column {
                 Text(
                     // Presenting the Color as text to avoid capturing into images
                     text = color.toString(),
-                    modifier = Modifier.testTag("animatedColor")
+                    modifier = Modifier.testTag("animatedColor"),
                 )
                 // Presents the currentState of the TransitionState, used as an indicator of the
                 // Transition animation as it will be updated to the target state when the
                 // animation finishes, or immediately if there's no animation
                 Text(
                     text = transitionState.currentState.toString(),
-                    modifier = Modifier.testTag("currentStateText")
+                    modifier = Modifier.testTag("currentStateText"),
                 )
             }
         }

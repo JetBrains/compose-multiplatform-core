@@ -52,7 +52,7 @@ public open class NavGraphNavigator(private val navigatorProvider: NavigatorProv
     override fun navigate(
         entries: List<NavBackStackEntry>,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?
+        navigatorExtras: Extras?,
     ) {
         for (entry in entries) {
             navigate(entry, navOptions, navigatorExtras)
@@ -62,7 +62,7 @@ public open class NavGraphNavigator(private val navigatorProvider: NavigatorProv
     private fun navigate(
         entry: NavBackStackEntry,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?
+        navigatorExtras: Extras?,
     ) {
         val destination = entry.destination as NavGraph
         // contains restored args or args passed explicitly as startDestinationArgs
@@ -122,7 +122,7 @@ public open class NavGraphNavigator(private val navigatorProvider: NavigatorProv
                 startDestination,
                 // could contain default args, restored args, args passed during setGraph,
                 // and args from route
-                startDestination.addInDefaultArgs(args)
+                startDestination.addInDefaultArgs(args),
             )
         navigator.navigate(listOf(startDestinationEntry), navOptions, navigatorExtras)
     }

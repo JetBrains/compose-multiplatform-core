@@ -52,7 +52,7 @@ fun LayoutModifier.clip(@Dimension(DP) x: Float, @Dimension(DP) y: Float): Layou
             topLeftRadius = r,
             topRightRadius = r,
             bottomLeftRadius = r,
-            bottomRightRadius = r
+            bottomRightRadius = r,
         )
 }
 
@@ -64,7 +64,7 @@ fun LayoutModifier.clip(corner: Corner): LayoutModifier =
             topLeftRadius = corner.topLeftRadius,
             topRightRadius = corner.topRightRadius,
             bottomLeftRadius = corner.bottomLeftRadius,
-            bottomRightRadius = corner.bottomRightRadius
+            bottomRightRadius = corner.bottomRightRadius,
         )
 
 /**
@@ -74,7 +74,7 @@ fun LayoutModifier.clip(corner: Corner): LayoutModifier =
 @RequiresSchemaVersion(major = 1, minor = 400)
 fun LayoutModifier.clipTopLeft(
     @Dimension(DP) x: Float,
-    @Dimension(DP) y: Float = x
+    @Dimension(DP) y: Float = x,
 ): LayoutModifier = this then BaseCornerElement(topLeftRadius = cornerRadius(x, y))
 
 /**
@@ -84,7 +84,7 @@ fun LayoutModifier.clipTopLeft(
 @RequiresSchemaVersion(major = 1, minor = 400)
 fun LayoutModifier.clipTopRight(
     @Dimension(DP) x: Float,
-    @Dimension(DP) y: Float = x
+    @Dimension(DP) y: Float = x,
 ): LayoutModifier = this then BaseCornerElement(topRightRadius = cornerRadius(x, y))
 
 /**
@@ -94,7 +94,7 @@ fun LayoutModifier.clipTopRight(
 @RequiresSchemaVersion(major = 1, minor = 400)
 fun LayoutModifier.clipBottomLeft(
     @Dimension(DP) x: Float,
-    @Dimension(DP) y: Float = x
+    @Dimension(DP) y: Float = x,
 ): LayoutModifier = this then BaseCornerElement(bottomLeftRadius = cornerRadius(x, y))
 
 /**
@@ -104,13 +104,11 @@ fun LayoutModifier.clipBottomLeft(
 @RequiresSchemaVersion(major = 1, minor = 400)
 fun LayoutModifier.clipBottomRight(
     @Dimension(DP) x: Float,
-    @Dimension(DP) y: Float = x
+    @Dimension(DP) y: Float = x,
 ): LayoutModifier = this then BaseCornerElement(bottomRightRadius = cornerRadius(x, y))
 
-internal class BaseBackgroundElement(
-    val color: LayoutColor? = null,
-    val brush: Brush? = null,
-) : BaseProtoLayoutModifiersElement<Background.Builder> {
+internal class BaseBackgroundElement(val color: LayoutColor? = null, val brush: Brush? = null) :
+    BaseProtoLayoutModifiersElement<Background.Builder> {
     @SuppressLint("ProtoLayoutMinSchema") // Relevant callers have correct Requires annotation.
     override fun mergeTo(initialBuilder: Background.Builder?): Background.Builder =
         (initialBuilder ?: Background.Builder()).apply {
@@ -124,7 +122,7 @@ internal class BaseCornerElement(
     @RequiresSchemaVersion(major = 1, minor = 400) val topLeftRadius: CornerRadius? = null,
     @RequiresSchemaVersion(major = 1, minor = 400) val topRightRadius: CornerRadius? = null,
     @RequiresSchemaVersion(major = 1, minor = 400) val bottomLeftRadius: CornerRadius? = null,
-    @RequiresSchemaVersion(major = 1, minor = 400) val bottomRightRadius: CornerRadius? = null
+    @RequiresSchemaVersion(major = 1, minor = 400) val bottomRightRadius: CornerRadius? = null,
 ) : BaseProtoLayoutModifiersElement<Corner.Builder> {
     @SuppressLint("ProtoLayoutMinSchema")
     override fun mergeTo(initialBuilder: Corner.Builder?): Corner.Builder =

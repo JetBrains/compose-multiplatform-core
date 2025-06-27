@@ -61,7 +61,7 @@ class TextFieldValue
 constructor(
     val annotatedString: AnnotatedString,
     selection: TextRange = TextRange.Zero,
-    composition: TextRange? = null
+    composition: TextRange? = null,
 ) {
     /**
      * @param text the text to be rendered.
@@ -75,7 +75,7 @@ constructor(
     constructor(
         text: String = "",
         selection: TextRange = TextRange.Zero,
-        composition: TextRange? = null
+        composition: TextRange? = null,
     ) : this(AnnotatedString(text), selection, composition)
 
     val text: String
@@ -105,7 +105,7 @@ constructor(
     fun copy(
         annotatedString: AnnotatedString = this.annotatedString,
         selection: TextRange = this.selection,
-        composition: TextRange? = this.composition
+        composition: TextRange? = this.composition,
     ): TextFieldValue {
         return TextFieldValue(annotatedString, selection, composition)
     }
@@ -114,7 +114,7 @@ constructor(
     fun copy(
         text: String,
         selection: TextRange = this.selection,
-        composition: TextRange? = this.composition
+        composition: TextRange? = this.composition,
     ): TextFieldValue {
         return TextFieldValue(AnnotatedString(text), selection, composition)
     }
@@ -162,7 +162,7 @@ constructor(
                         annotatedString = restore(list[0], AnnotatedStringSaver)!!,
                         selection = restore(list[1], TextRange.Saver)!!,
                     )
-                }
+                },
             )
     }
 }

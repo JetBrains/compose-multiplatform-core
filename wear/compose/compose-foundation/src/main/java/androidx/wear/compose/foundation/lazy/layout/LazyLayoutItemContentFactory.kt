@@ -96,7 +96,7 @@ internal class LazyLayoutItemContentFactory(
                         itemProvider,
                         StableValue(saveableStateHolder),
                         index,
-                        StableValue(key)
+                        StableValue(key),
                     )
                 }
                 DisposableEffect(key) {
@@ -121,7 +121,7 @@ private fun SkippableItem(
     itemProvider: LazyLayoutItemProvider,
     saveableStateHolder: StableValue<SaveableStateHolder>,
     index: Int,
-    key: StableValue<Any>
+    key: StableValue<Any>,
 ) {
     saveableStateHolder.value.SaveableStateProvider(key.value) {
         itemProvider.Item(index, key.value)

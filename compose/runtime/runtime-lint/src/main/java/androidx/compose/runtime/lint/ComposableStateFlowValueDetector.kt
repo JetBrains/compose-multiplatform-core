@@ -85,7 +85,7 @@ class ComposableStateFlowValueDetector : Detector(), SourceCodeScanner {
                                 .text("value")
                                 .with("collectAsState().value")
                                 .imports("androidx.compose.runtime.collectAsState")
-                                .build()
+                                .build(),
                         )
                     }
                 }
@@ -106,8 +106,8 @@ class ComposableStateFlowValueDetector : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     ComposableStateFlowValueDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

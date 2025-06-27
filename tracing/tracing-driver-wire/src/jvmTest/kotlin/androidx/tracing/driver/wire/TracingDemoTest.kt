@@ -43,7 +43,7 @@ class TracingDemoTest {
     internal val driver =
         TraceDriver(
             sink = WireTraceSink(sequenceId = 1, directory = File("/tmp")),
-            isEnabled = true
+            isEnabled = true,
         )
 
     @Test

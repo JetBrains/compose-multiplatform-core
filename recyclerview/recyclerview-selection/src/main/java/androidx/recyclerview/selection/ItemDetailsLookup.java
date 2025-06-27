@@ -73,8 +73,20 @@ public abstract class ItemDetailsLookup<K> {
      * @return true if there is an item w/ a stable ID at the event coordinates.
      */
     @RestrictTo(LIBRARY)
+    @Deprecated
     protected boolean overItemWithSelectionKey(@NonNull MotionEvent e) {
         return overItem(e) && hasSelectionKey(getItemDetails(e));
+    }
+
+    /**
+     * @return the item (if it exists) with a stable ID at the event coordinates.
+     */
+    @RestrictTo(LIBRARY)
+    protected @Nullable ItemDetails<K> overItemWithSelectionKeyAsItem(@NonNull MotionEvent e) {
+        ItemDetails<K> item = getItemDetails(e);
+        return ((item != null)
+                && (item.getPosition() != RecyclerView.NO_POSITION)
+                && item.hasSelectionKey()) ? item : null;
     }
 
     /**

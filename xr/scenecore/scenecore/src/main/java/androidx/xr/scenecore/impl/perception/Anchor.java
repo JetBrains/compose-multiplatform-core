@@ -18,9 +18,10 @@ package androidx.xr.scenecore.impl.perception;
 
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -67,8 +68,7 @@ public class Anchor {
      * Returns an IBInder token to this anchor. This is used for sharing the anchor with other
      * OpenXR sessions in other processes (such as SpaceFlinger).
      */
-    @NonNull
-    public IBinder getAnchorToken() {
+    public @NonNull IBinder getAnchorToken() {
         return mAnchorToken;
     }
 
@@ -88,8 +88,7 @@ public class Anchor {
      *
      * @return the UUID of the anchor being persisted.
      */
-    @Nullable
-    public UUID persist() {
+    public @Nullable UUID persist() {
         byte[] uuidBytes = persistAnchor(mAnchorId);
         if (uuidBytes == null) {
             return null;
@@ -112,8 +111,7 @@ public class Anchor {
      *
      * @return the persist state of the anchor.
      */
-    @NonNull
-    public PersistState getPersistState() {
+    public @NonNull PersistState getPersistState() {
         if (mUuid == null) {
             return PersistState.PERSIST_NOT_REQUESTED;
         }

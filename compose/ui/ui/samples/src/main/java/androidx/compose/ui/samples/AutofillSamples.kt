@@ -34,7 +34,7 @@ fun AutofillableTextFieldWithAutofillModifier() {
         state = rememberTextFieldState(),
         label = { Text("Enter your new username here.") },
         // Set the content type hint with the modifier extension.
-        modifier = Modifier.contentType(ContentType.NewUsername)
+        modifier = Modifier.contentType(ContentType.NewUsername),
     )
 }
 
@@ -45,6 +45,6 @@ fun AutofillableTextFieldWithContentTypeSemantics() {
         state = rememberTextFieldState(),
         label = { Text("Enter your new password here.") },
         // Set the content type hint with semantics.
-        modifier = Modifier.semantics { contentType = ContentType.NewPassword }
+        modifier = Modifier.semantics { contentType = ContentType.NewPassword },
     )
 }

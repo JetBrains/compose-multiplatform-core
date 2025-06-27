@@ -1248,7 +1248,7 @@ class NavArgumentGeneratorTest {
                 .generateNavArguments(
                     mapOf(
                         typeOf<ArrayList<String>?>() to CustomStringList,
-                        typeOf<ArrayList<Int>>() to CustomIntList
+                        typeOf<ArrayList<Int>>() to CustomIntList,
                     )
                 )
         val expectedStringList =
@@ -1271,7 +1271,7 @@ class NavArgumentGeneratorTest {
         @Serializable
         class TestClass(
             val arg: ArrayList<String>? = arrayListOf(),
-            val arg2: ArrayList<Int> = arrayListOf()
+            val arg2: ArrayList<Int> = arrayListOf(),
         )
 
         val CustomStringList =
@@ -1297,7 +1297,7 @@ class NavArgumentGeneratorTest {
                 .generateNavArguments(
                     mapOf(
                         typeOf<ArrayList<String>?>() to CustomStringList,
-                        typeOf<ArrayList<Int>>() to CustomIntList
+                        typeOf<ArrayList<Int>>() to CustomIntList,
                     )
                 )
         val expectedStringList =
@@ -1553,7 +1553,7 @@ class NavArgumentGeneratorTest {
     private class EnumWrapper {
         enum class NestedEnum {
             ONE,
-            TWO
+            TWO,
         }
     }
 }

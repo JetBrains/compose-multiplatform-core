@@ -242,6 +242,9 @@ package androidx.camera.core {
   @SuppressCompatibility @RequiresOptIn @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalRetryPolicy {
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalSessionConfig {
+  }
+
   @SuppressCompatibility @RequiresOptIn @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface ExperimentalUseCaseApi {
   }
 
@@ -626,6 +629,27 @@ package androidx.camera.core {
     method public androidx.camera.core.RetryPolicy.RetryConfig build();
     method public androidx.camera.core.RetryPolicy.RetryConfig.Builder setRetryDelayInMillis(@IntRange(from=100, to=2000) long);
     method public androidx.camera.core.RetryPolicy.RetryConfig.Builder setShouldRetry(boolean);
+  }
+
+  @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public class SessionConfig {
+    ctor public SessionConfig(androidx.camera.core.UseCase... useCases);
+    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases);
+    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort);
+    ctor public SessionConfig(java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects);
+    method public final java.util.List<androidx.camera.core.CameraEffect> getEffects();
+    method public final java.util.List<androidx.camera.core.UseCase> getUseCases();
+    method public final androidx.camera.core.ViewPort? getViewPort();
+    property public final java.util.List<androidx.camera.core.CameraEffect> effects;
+    property public final java.util.List<androidx.camera.core.UseCase> useCases;
+    property public final androidx.camera.core.ViewPort? viewPort;
+  }
+
+  @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public static final class SessionConfig.Builder {
+    ctor public SessionConfig.Builder(androidx.camera.core.UseCase... useCases);
+    ctor public SessionConfig.Builder(java.util.List<? extends androidx.camera.core.UseCase> useCases);
+    method public androidx.camera.core.SessionConfig.Builder addEffect(androidx.camera.core.CameraEffect effect);
+    method public androidx.camera.core.SessionConfig build();
+    method public androidx.camera.core.SessionConfig.Builder setViewPort(androidx.camera.core.ViewPort viewPort);
   }
 
   public class SurfaceOrientedMeteringPointFactory extends androidx.camera.core.MeteringPointFactory {

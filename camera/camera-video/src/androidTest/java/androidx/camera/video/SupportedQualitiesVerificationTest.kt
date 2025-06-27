@@ -88,9 +88,7 @@ class SupportedQualitiesVerificationTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -107,9 +105,7 @@ class SupportedQualitiesVerificationTest(
     companion object {
         private const val VIDEO_TIMEOUT_SEC = 10L
 
-        @JvmStatic
-        private val cameraSelectors =
-            arrayOf(CameraSelector.DEFAULT_BACK_CAMERA, CameraSelector.DEFAULT_FRONT_CAMERA)
+        @JvmStatic private val cameraSelectors = CameraUtil.getAvailableCameraSelectors()
 
         @JvmStatic
         private val dynamicRanges =
@@ -147,7 +143,7 @@ class SupportedQualitiesVerificationTest(
                                     dynamicRange,
                                     quality,
                                     Camera2Config.defaultConfig(),
-                                    Camera2Config::class.simpleName
+                                    Camera2Config::class.simpleName,
                                 )
                             )
                             add(
@@ -157,7 +153,7 @@ class SupportedQualitiesVerificationTest(
                                     dynamicRange,
                                     quality,
                                     CameraPipeConfig.defaultConfig(),
-                                    CameraPipeConfig::class.simpleName
+                                    CameraPipeConfig::class.simpleName,
                                 )
                             )
                         }
@@ -193,7 +189,7 @@ class SupportedQualitiesVerificationTest(
         val videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
         assumeTrue(
             "Camera ${cameraSelector.lensFacing} not support $quality, skip this test item.",
-            videoCapabilities.isQualitySupported(quality, dynamicRange)
+            videoCapabilities.isQualitySupported(quality, dynamicRange),
         )
     }
 
@@ -313,15 +309,11 @@ class SupportedQualitiesVerificationTest(
                 !hasSizeCannotEncodeVideoQuirk(
                     resolutionToVerify,
                     rotationDegrees,
-                    isSurfaceProcessingEnabled(videoCapture)
+                    isSurfaceProcessingEnabled(videoCapture),
                 ) &&
                 !isFlexibleQuality(quality)
         ) {
-            verifyVideoResolution(
-                context,
-                file,
-                rotateSize(resolutionToVerify, rotationDegrees),
-            )
+            verifyVideoResolution(context, file, rotateSize(resolutionToVerify, rotationDegrees))
         }
 
         // Clean up
@@ -333,7 +325,7 @@ class SupportedQualitiesVerificationTest(
 
     private fun VideoCapture<Recorder>.startVideoRecording(
         file: File,
-        eventListener: Consumer<VideoRecordEvent>
+        eventListener: Consumer<VideoRecordEvent>,
     ): Recording =
         output
             .prepareRecording(context, FileOutputOptions.Builder(file).build())
@@ -342,7 +334,7 @@ class SupportedQualitiesVerificationTest(
     private fun hasSizeCannotEncodeVideoQuirk(
         resolution: Size,
         rotationDegrees: Int,
-        isSurfaceProcessingEnabled: Boolean
+        isSurfaceProcessingEnabled: Boolean,
     ): Boolean {
         // The quirk will adjust the video resolution so the resolution of VideoProfile can't be
         // used to verify the saved video.

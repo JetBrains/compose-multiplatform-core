@@ -83,11 +83,7 @@ internal class SingleTextSelectionGesturesRtlTest : TextSelectionGesturesTest() 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             BasicText(
                 text = textContent.value,
-                style =
-                    TextStyle(
-                        fontFamily = fontFamily,
-                        fontSize = fontSize,
-                    ),
+                style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
                 modifier = Modifier.fillMaxWidth().testTag(testTag),
             )
         }

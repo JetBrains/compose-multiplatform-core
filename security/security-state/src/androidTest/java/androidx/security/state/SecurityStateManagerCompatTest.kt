@@ -68,7 +68,7 @@ class SecurityStateManagerCompatTest {
                 if (value!!.isNotEmpty()) {
                     assertTrue(
                         "WebView version format incorrect for $key: $value",
-                        value.matches(versionRegexWebView.toRegex())
+                        value.matches(versionRegexWebView.toRegex()),
                     )
                     break
                 }
@@ -114,7 +114,7 @@ class SecurityStateManagerCompatTest {
 
     @SdkSuppress(
         minSdkVersion = Build.VERSION_CODES.LOLLIPOP,
-        maxSdkVersion = Build.VERSION_CODES.LOLLIPOP_MR1
+        maxSdkVersion = Build.VERSION_CODES.LOLLIPOP_MR1,
     )
     @Test
     fun testGetGlobalSecurityState_sdkBelow23_containsOnlyKernel() {

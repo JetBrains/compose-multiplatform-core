@@ -57,7 +57,7 @@ public interface TransformationSpec {
      */
     public fun getTransformedHeight(
         measuredHeight: Int,
-        scrollProgress: TransformingLazyColumnItemScrollProgress
+        scrollProgress: TransformingLazyColumnItemScrollProgress,
     ): Int
 
     /**
@@ -66,7 +66,7 @@ public interface TransformationSpec {
      * @param scrollProgress The scroll progress of the item.
      */
     public fun GraphicsLayerScope.applyContentTransformation(
-        scrollProgress: TransformingLazyColumnItemScrollProgress,
+        scrollProgress: TransformingLazyColumnItemScrollProgress
     )
 
     /**
@@ -75,7 +75,7 @@ public interface TransformationSpec {
      * @param scrollProgress The scroll progress of the item.
      */
     public fun GraphicsLayerScope.applyContainerTransformation(
-        scrollProgress: TransformingLazyColumnItemScrollProgress,
+        scrollProgress: TransformingLazyColumnItemScrollProgress
     )
 
     /**
@@ -89,14 +89,14 @@ public interface TransformationSpec {
     public fun TransformedContainerPainterScope.createTransformedContainerPainter(
         painter: Painter,
         shape: Shape,
-        border: BorderStroke?
+        border: BorderStroke?,
     ): Painter
 }
 
 /** Convenience modifier to calculate transformed height using [TransformationSpec]. */
 public fun Modifier.transformedHeight(
     scope: TransformingLazyColumnItemScope,
-    transformationSpec: TransformationSpec
+    transformationSpec: TransformationSpec,
 ): Modifier = with(scope) { transformedHeight(transformationSpec::getTransformedHeight) }
 
 /** Provides additional information to the painter inside [TransformationSpec]. */
@@ -232,7 +232,7 @@ public class TransformationVariableSpec(
             targetValue,
             bottomValue,
             transformationZoneEnterFraction,
-            transformationZoneExitFraction
+            transformationZoneExitFraction,
         )
     }
 }
@@ -241,7 +241,7 @@ public class TransformationVariableSpec(
 public fun lerp(
     start: TransformationVariableSpec,
     stop: TransformationVariableSpec,
-    progress: Float
+    progress: Float,
 ): TransformationVariableSpec =
     TransformationVariableSpec(
         topValue = lerp(start.topValue, stop.topValue, progress),
@@ -251,12 +251,12 @@ public fun lerp(
             lerp(
                 start.transformationZoneEnterFraction,
                 stop.transformationZoneEnterFraction,
-                progress
+                progress,
             ),
         transformationZoneExitFraction =
             lerp(
                 start.transformationZoneExitFraction,
                 stop.transformationZoneExitFraction,
-                progress
+                progress,
             ),
     )

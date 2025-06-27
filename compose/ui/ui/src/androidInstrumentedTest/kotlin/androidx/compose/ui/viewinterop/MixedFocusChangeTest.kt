@@ -150,7 +150,7 @@ class MixedFocusChangeTest {
                                 LinearLayoutManager(context, RecyclerView.VERTICAL, reverse)
                             adapter = MyAdapter()
                         }
-                    }
+                    },
                 )
                 Box(
                     modifier =
@@ -166,7 +166,7 @@ class MixedFocusChangeTest {
                     Text(
                         text = "Click Me",
                         color = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center),
                     )
                 }
             }
@@ -182,7 +182,7 @@ class MixedFocusChangeTest {
                     layoutParams =
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
                         )
                     setPadding(16, 16, 16, 16)
                     isFocusable = true // Makes the item focusable

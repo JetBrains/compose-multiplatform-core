@@ -65,13 +65,13 @@ package androidx.health.connect.client.testing {
     property public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateRequest,androidx.health.connect.client.aggregate.AggregationResult>? aggregate;
     property public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateGroupByDurationRequest,java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration>>? aggregateGroupByDuration;
     property public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.AggregateGroupByPeriodRequest,java.util.List<androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod>>? aggregateGroupByPeriod;
-    property public androidx.health.connect.client.testing.stubs.Stub? deleteRecords;
+    property public androidx.health.connect.client.testing.stubs.Stub<java.lang.Object,java.lang.Void>? deleteRecords;
     property public androidx.health.connect.client.testing.stubs.Stub<java.lang.String,androidx.health.connect.client.response.ChangesResponse>? getChanges;
     property public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.ChangesTokenRequest,java.lang.String>? getChangesToken;
     property public androidx.health.connect.client.testing.stubs.Stub<java.util.List<? extends java.lang.Object?>,androidx.health.connect.client.response.InsertRecordsResponse>? insertRecords;
     property public androidx.health.connect.client.testing.stubs.Stub<java.lang.String,androidx.health.connect.client.response.ReadRecordResponse<? extends java.lang.Object?>>? readRecord;
     property public androidx.health.connect.client.testing.stubs.Stub<androidx.health.connect.client.request.ReadRecordsRequest<? extends java.lang.Object?>,androidx.health.connect.client.response.ReadRecordsResponse<? extends java.lang.Object?>>? readRecords;
-    property public androidx.health.connect.client.testing.stubs.Stub? updateRecords;
+    property public androidx.health.connect.client.testing.stubs.Stub<java.lang.Object,java.lang.Void>? updateRecords;
   }
 
   public final class FakePermissionController implements androidx.health.connect.client.PermissionController {

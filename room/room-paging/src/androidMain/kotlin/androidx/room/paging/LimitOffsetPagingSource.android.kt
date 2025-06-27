@@ -81,7 +81,7 @@ actual constructor(
 
     protected actual open suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
-        itemCount: Int
+        itemCount: Int,
     ): List<Value> {
         return performSuspending(db, isReadOnly = true, inTransaction = false) { connection ->
             connection.prepare(limitOffsetQuery.sql).use { statement ->

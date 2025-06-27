@@ -48,7 +48,7 @@ public interface SpatializerConstants {
             [
                 AMBISONICS_ORDER_FIRST_ORDER,
                 AMBISONICS_ORDER_SECOND_ORDER,
-                AMBISONICS_ORDER_THIRD_ORDER
+                AMBISONICS_ORDER_THIRD_ORDER,
             ]
     )
     public annotation class AmbisonicsOrder

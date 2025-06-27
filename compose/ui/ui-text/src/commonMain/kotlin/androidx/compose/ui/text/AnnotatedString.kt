@@ -83,7 +83,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
     constructor(
         text: String,
         spanStyles: List<Range<SpanStyle>> = listOf(),
-        paragraphStyles: List<Range<ParagraphStyle>> = listOf()
+        paragraphStyles: List<Range<ParagraphStyle>> = listOf(),
     ) : this(constructAnnotationsFromSpansAndParagraphs(spanStyles, paragraphStyles), text)
 
     /**
@@ -111,7 +111,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
      */
     constructor(
         text: String,
-        annotations: List<Range<out Annotation>> = listOf()
+        annotations: List<Range<out Annotation>> = listOf(),
     ) : this(annotations.ifEmpty { null }, text)
 
     init {
@@ -181,7 +181,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
         val text = text.substring(startIndex, endIndex)
         return AnnotatedString(
             text = text,
-            annotations = filterRanges(annotations, startIndex, endIndex)
+            annotations = filterRanges(annotations, startIndex, endIndex),
         )
     }
 
@@ -406,7 +406,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
             val item: T,
             val start: Int,
             var end: Int = Int.MIN_VALUE,
-            val tag: String = ""
+            val tag: String = "",
         ) {
             /**
              * Create an immutable [Range] object.
@@ -471,7 +471,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
             message =
                 "Replaced by the append(Char) method that returns an Appendable. " +
                     "This method must be kept around for binary compatibility.",
-            level = DeprecationLevel.HIDDEN
+            level = DeprecationLevel.HIDDEN,
         )
         @Suppress("FunctionName", "unused")
         // Set the JvmName to preserve compatibility with bytecode that expects a void return type.
@@ -562,7 +562,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
                         it.item,
                         insertionStart + it.start,
                         insertionStart + it.end,
-                        it.tag
+                        it.tag,
                     )
                 )
             }
@@ -639,7 +639,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
                     item = StringAnnotation(annotation),
                     start = start,
                     end = end,
-                    tag = tag
+                    tag = tag,
                 )
             )
         }
@@ -674,7 +674,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
         @Suppress("SetterReturnsThis", "Deprecation")
         @Deprecated(
             "Use LinkAnnotation API for links instead",
-            ReplaceWith("addLink(, start, end)")
+            ReplaceWith("addLink(, start, end)"),
         )
         fun addUrlAnnotation(urlAnnotation: UrlAnnotation, start: Int, end: Int) {
             annotations.add(MutableRange(urlAnnotation, start, end))
@@ -822,7 +822,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
         fun <R : Any> withBulletList(
             indentation: TextUnit = Bullet.DefaultIndentation,
             bullet: Bullet = Bullet.Default,
-            block: BulletScope.() -> R
+            block: BulletScope.() -> R,
         ): R {
             val adjustedIndentation =
                 bulletScope.bulletListSettingStack.lastOrNull()?.first?.let {
@@ -866,7 +866,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
          */
         fun <R : Any> BulletScope.withBulletListItem(
             bullet: Bullet? = null,
-            block: Builder.() -> R
+            block: Builder.() -> R,
         ): R {
             val lastItemInStack = bulletListSettingStack.lastOrNull()
             val itemIndentation = lastItemInStack?.first ?: Bullet.DefaultIndentation
@@ -932,7 +932,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
         @Suppress("BuilderSetStyle", "Deprecation")
         @Deprecated(
             "Use LinkAnnotation API for links instead",
-            ReplaceWith("pushLink(, start, end)")
+            ReplaceWith("pushLink(, start, end)"),
         )
         fun pushUrlAnnotation(urlAnnotation: UrlAnnotation): Int {
             MutableRange(item = urlAnnotation, start = text.length).also {
@@ -996,7 +996,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
         fun toAnnotatedString(): AnnotatedString {
             return AnnotatedString(
                 text = text.toString(),
-                annotations = annotations.fastMap { it.toRange(text.length) }
+                annotations = annotations.fastMap { it.toRange(text.length) },
             )
         }
 
@@ -1052,7 +1052,7 @@ internal constructor(internal val annotations: List<Range<out Annotation>>?, val
 
 private fun constructAnnotationsFromSpansAndParagraphs(
     spanStyles: List<Range<SpanStyle>>,
-    paragraphStyles: List<Range<ParagraphStyle>>
+    paragraphStyles: List<Range<ParagraphStyle>>,
 ): List<Range<out Annotation>>? {
     return if (spanStyles.isEmpty() && paragraphStyles.isEmpty()) {
         null
@@ -1207,7 +1207,7 @@ internal fun AnnotatedString.normalizedParagraphStyles(
  */
 private fun AnnotatedString.getLocalParagraphStyles(
     start: Int,
-    end: Int
+    end: Int,
 ): List<Range<ParagraphStyle>>? {
     if (start == end) return null
     val paragraphStyles = paragraphStylesOrNull ?: return null
@@ -1219,7 +1219,7 @@ private fun AnnotatedString.getLocalParagraphStyles(
         Range(
             it.item,
             it.start.fastCoerceIn(start, end) - start,
-            it.end.fastCoerceIn(start, end) - start
+            it.end.fastCoerceIn(start, end) - start,
         )
     }
 }
@@ -1232,7 +1232,7 @@ private fun AnnotatedString.getLocalParagraphStyles(
 private fun AnnotatedString.getLocalAnnotations(
     start: Int,
     end: Int,
-    predicate: ((Annotation) -> Boolean)? = null
+    predicate: ((Annotation) -> Boolean)? = null,
 ): List<Range<out AnnotatedString.Annotation>>? {
     if (start == end) return null
     val annotations = annotations ?: return null
@@ -1251,7 +1251,7 @@ private fun AnnotatedString.getLocalAnnotations(
             tag = it.tag,
             item = it.item,
             start = it.start.coerceIn(start, end) - start,
-            end = it.end.coerceIn(start, end) - start
+            end = it.end.coerceIn(start, end) - start,
         )
     }
 }
@@ -1268,14 +1268,14 @@ private fun AnnotatedString.getLocalAnnotations(
 private fun AnnotatedString.substringWithoutParagraphStyles(start: Int, end: Int): AnnotatedString {
     return AnnotatedString(
         text = if (start != end) text.substring(start, end) else "",
-        annotations = getLocalAnnotations(start, end) { it !is ParagraphStyle } ?: listOf()
+        annotations = getLocalAnnotations(start, end) { it !is ParagraphStyle } ?: listOf(),
     )
 }
 
 internal inline fun <T> AnnotatedString.mapEachParagraphStyle(
     defaultParagraphStyle: ParagraphStyle,
     crossinline block:
-        (annotatedString: AnnotatedString, paragraphStyle: Range<ParagraphStyle>) -> T
+        (annotatedString: AnnotatedString, paragraphStyle: Range<ParagraphStyle>) -> T,
 ): List<T> {
     return normalizedParagraphStyles(defaultParagraphStyle).fastMap { paragraphStyleRange ->
         val annotatedString =
@@ -1411,7 +1411,7 @@ inline fun <R : Any> Builder.withStyle(style: SpanStyle, block: Builder.() -> R)
  */
 inline fun <R : Any> Builder.withStyle(
     style: ParagraphStyle,
-    crossinline block: Builder.() -> R
+    crossinline block: Builder.() -> R,
 ): R {
     val index = pushStyle(style)
     return try {
@@ -1435,7 +1435,7 @@ inline fun <R : Any> Builder.withStyle(
 inline fun <R : Any> Builder.withAnnotation(
     tag: String,
     annotation: String,
-    crossinline block: Builder.() -> R
+    crossinline block: Builder.() -> R,
 ): R {
     val index = pushStringAnnotation(tag, annotation)
     return try {
@@ -1458,7 +1458,7 @@ inline fun <R : Any> Builder.withAnnotation(
  */
 inline fun <R : Any> Builder.withAnnotation(
     ttsAnnotation: TtsAnnotation,
-    crossinline block: Builder.() -> R
+    crossinline block: Builder.() -> R,
 ): R {
     val index = pushTtsAnnotation(ttsAnnotation)
     return try {
@@ -1483,7 +1483,7 @@ inline fun <R : Any> Builder.withAnnotation(
 @Suppress("Deprecation")
 inline fun <R : Any> Builder.withAnnotation(
     urlAnnotation: UrlAnnotation,
-    crossinline block: Builder.() -> R
+    crossinline block: Builder.() -> R,
 ): R {
     val index = pushUrlAnnotation(urlAnnotation)
     return try {
@@ -1532,7 +1532,7 @@ private fun <T> filterRanges(ranges: List<Range<out T>>?, start: Int, end: Int):
                 item = it.item,
                 start = maxOf(start, it.start) - start,
                 end = minOf(end, it.end) - start,
-                tag = it.tag
+                tag = it.tag,
             )
         }
         .ifEmpty { null }
@@ -1547,12 +1547,12 @@ private fun <T> filterRanges(ranges: List<Range<out T>>?, start: Int, end: Int):
 fun AnnotatedString(
     text: String,
     spanStyle: SpanStyle,
-    paragraphStyle: ParagraphStyle? = null
+    paragraphStyle: ParagraphStyle? = null,
 ): AnnotatedString =
     AnnotatedString(
         text,
         listOf(Range(spanStyle, 0, text.length)),
-        if (paragraphStyle == null) listOf() else listOf(Range(paragraphStyle, 0, text.length))
+        if (paragraphStyle == null) listOf() else listOf(Range(paragraphStyle, 0, text.length)),
     )
 
 /**

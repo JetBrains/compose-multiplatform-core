@@ -28,11 +28,11 @@ import androidx.xr.runtime.math.Pose
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class HandState(
-    internal val trackingState: TrackingState = TrackingState.Paused,
+    internal val trackingState: TrackingState = TrackingState.PAUSED,
     internal val handJoints: List<Pose> = listOf(),
 ) {
     init {
-        require(trackingState != TrackingState.Tracking || handJoints.isNotEmpty()) {
+        require(trackingState != TrackingState.TRACKING || handJoints.isNotEmpty()) {
             "Hand joints cannot be empty if the hand is being tracked."
         }
     }

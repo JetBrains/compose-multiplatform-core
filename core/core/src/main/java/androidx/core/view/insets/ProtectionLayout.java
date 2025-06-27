@@ -24,6 +24,7 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.FrameLayout;
 
 import androidx.annotation.AttrRes;
@@ -49,17 +50,8 @@ import java.util.List;
  * view constructor.
  *
  * <p>If this view will be attached to a hierarchy owned by a {@link android.view.Window Window}, it
- * is strongly recommended to call the following APIs or equivalent ones to make sure the view can
- * reach the edges of the window and the framework color views are removed:
- * <pre>
- * WindowCompat.setDecorFitsSystemWindows(window, false);
- * window.setStatusBarColor(Color.TRANSPARENT);
- * window.setNavigationBarColor(Color.TRANSPARENT);
- * if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
- *     window.setStatusBarContrastEnforced(false);
- *     window.setNavigationBarContrastEnforced(false);
- * }
- * </pre>
+ * is strongly recommended to call {@link androidx.core.view.WindowCompat#enableEdgeToEdge(Window)}
+ * to make sure the view can reach the edges of the window and the framework color views are gone.
  */
 public class ProtectionLayout extends FrameLayout {
 

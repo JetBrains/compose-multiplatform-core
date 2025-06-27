@@ -106,13 +106,13 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
                             createFakeHighSpeedEncoderProfilesProxy(
                                 RESOLUTION_2160P,
                                 videoFrameRate = FPS_240,
-                                dynamicRanges = setOf(SDR, HLG_10_BIT)
+                                dynamicRanges = setOf(SDR, HLG_10_BIT),
                             )
                         val profile720p480fpsSdrHlg =
                             createFakeHighSpeedEncoderProfilesProxy(
                                 RESOLUTION_720P,
                                 videoFrameRate = FPS_480,
-                                dynamicRanges = setOf(SDR, HLG_10_BIT)
+                                dynamicRanges = setOf(SDR, HLG_10_BIT),
                             )
                         // Add the same profiles to support parameterized test.
                         add(QUALITY_HIGH_SPEED_HIGH, profile2160p240fpsSdrHlg)
@@ -137,25 +137,25 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
             supportedDynamicRanges = defaultDynamicRanges
             setSupportedResolutions(
                 INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
-                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P)
+                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P),
             )
             // 120 FPS -  2160P, 1080P, 720P, 480P
             setSupportedHighSpeedResolutions(
                 FPS_30_120,
-                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P)
+                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P),
             )
             setSupportedHighSpeedResolutions(
                 FPS_120_120,
-                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P)
+                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P),
             )
             // 240 FPS - 2160P, 1080P, 720P, 480P
             setSupportedHighSpeedResolutions(
                 FPS_30_240,
-                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P)
+                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P),
             )
             setSupportedHighSpeedResolutions(
                 FPS_240_240,
-                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P)
+                listOf(RESOLUTION_2160P, RESOLUTION_1080P, RESOLUTION_720P, RESOLUTION_480P),
             )
             // 480 FPS - 720P, 480P
             setSupportedHighSpeedResolutions(FPS_30_480, listOf(RESOLUTION_720P, RESOLUTION_480P))
@@ -168,7 +168,7 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
                 createFakeHighSpeedEncoderProfilesProxy(
                     RESOLUTION_2160P,
                     videoFrameRate = FPS_240,
-                    dynamicRanges = setOf(SDR)
+                    dynamicRanges = setOf(SDR),
                 )
             else PROFILES_2160P
         )
@@ -178,7 +178,7 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
                 createFakeHighSpeedEncoderProfilesProxy(
                     RESOLUTION_720P,
                     videoFrameRate = FPS_480,
-                    dynamicRanges = setOf(SDR)
+                    dynamicRanges = setOf(SDR),
                 )
             else PROFILES_720P
         )
@@ -186,7 +186,7 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
         RecorderVideoCapabilities(
             VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE,
             cameraInfo,
-            videoCaptureType
+            videoCaptureType,
         ) {
             FakeVideoEncoderInfo()
         }
@@ -374,7 +374,7 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
         assertThat(
                 videoCapabilities.findNearestHigherSupportedEncoderProfilesFor(
                     aboveHighestSize,
-                    SDR
+                    SDR,
                 )
             )
             .isEqualTo(validatedProfiles2160p)
@@ -403,43 +403,6 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
     }
 
     @Test
-    fun canGetHighSpeedSupportedFrameRateRanges() {
-        assumeTrue(isHighSpeed)
-
-        // UHD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(UHD, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(UHD, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240)
-
-        // FHD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(FHD, SDR)).isEmpty()
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(FHD, HLG_10_BIT)).isEmpty()
-
-        // HD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HD, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HD, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-
-        // SD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(SD, SDR)).isEmpty()
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(SD, HLG_10_BIT)).isEmpty()
-
-        // HIGHEST is UHD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HIGHEST, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(HIGHEST, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240)
-
-        // LOWEST is HD
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(LOWEST, SDR))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-        assertThat(videoCapabilities.getSupportedFrameRateRanges(LOWEST, HLG_10_BIT))
-            .containsExactly(FPS_120_120, FPS_240_240, FPS_480_480)
-    }
-
-    @Test
     fun createBySourceCodecCapabilities_additionalQualitiesAreSupported() {
         // TODO(b/399585664): Remove this assumption when high speed quality exploration is
         //  supported.
@@ -449,7 +412,7 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
             RecorderVideoCapabilities(
                 VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES,
                 cameraInfo,
-                videoCaptureType
+                videoCaptureType,
             ) {
                 FakeVideoEncoderInfo()
             }
@@ -470,7 +433,7 @@ class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
             RecorderVideoCapabilities(
                 VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFILE,
                 cameraInfo,
-                videoCaptureType
+                videoCaptureType,
             ) {
                 FakeVideoEncoderInfo()
             }

@@ -31,7 +31,7 @@ open class DataClass(
     properties: List<Property>,
     val embeddedProperties: List<EmbeddedProperty>,
     val relations: List<Relation>,
-    val constructor: Constructor? = null
+    val constructor: Constructor? = null,
 ) : HasProperties {
     val className: XClassName by lazy { element.asClassName() }
     val typeName: XTypeName by lazy { type.asTypeName() }

@@ -74,7 +74,7 @@ class PasswordCredentialEntryTest {
     fun constructor_emptyUsername_throwsIAE() {
         assertThrows(
             "Expected empty username to throw IllegalArgumentException",
-            IllegalArgumentException::class.java
+            IllegalArgumentException::class.java,
         ) {
             PasswordCredentialEntry(mContext, "", mPendingIntent, BEGIN_OPTION)
         }
@@ -149,7 +149,7 @@ class PasswordCredentialEntryTest {
     fun isAutoSelectAllowedFromOption_optionAllows_returnsTrue() {
         BEGIN_OPTION.candidateQueryData.putBoolean(
             CredentialOption.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED,
-            true
+            true,
         )
         val entry =
             PasswordCredentialEntry.Builder(mContext, USERNAME, mPendingIntent, BEGIN_OPTION)
@@ -208,7 +208,7 @@ class PasswordCredentialEntryTest {
                 DISPLAYNAME,
                 LAST_USED_TIME,
                 ICON,
-                affiliatedDomain = expectedAffiliatedDomain
+                affiliatedDomain = expectedAffiliatedDomain,
             )
 
         assertThat(entryWithAffiliationType.affiliatedDomain).isEqualTo(expectedAffiliatedDomain)
@@ -226,7 +226,7 @@ class PasswordCredentialEntryTest {
                 DISPLAYNAME,
                 LAST_USED_TIME,
                 ICON,
-                isDefaultIconPreferredAsSingleProvider = expectedPreferredDefaultIconBit
+                isDefaultIconPreferredAsSingleProvider = expectedPreferredDefaultIconBit,
             )
 
         assertThat(entry.isDefaultIconPreferredAsSingleProvider)

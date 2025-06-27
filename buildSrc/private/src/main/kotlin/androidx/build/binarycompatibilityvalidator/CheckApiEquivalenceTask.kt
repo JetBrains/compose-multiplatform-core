@@ -18,9 +18,12 @@ package androidx.build.binarycompatibilityvalidator
 
 import androidx.build.metalava.checkEqual
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -37,8 +40,17 @@ abstract class CheckAbiEquivalenceTask : DefaultTask() {
     @get:InputFile
     abstract var builtDump: Provider<RegularFileProperty>
 
+    @get:Input abstract val shouldWriteVersionedApiFile: Property<Boolean>
+    @get:Input abstract val version: Property<String>
+
     @TaskAction
     fun execute() {
+        if (shouldWriteVersionedApiFile.get()) {
+            val versionedFile = checkedInDump.get().asFile.get().parentFile.resolve(version.get())
+            if (!versionedFile.exists()) {
+                throw GradleException("Missing versioned api file for version: ${version.get()}")
+            }
+        }
         checkEqual(checkedInDump.get().asFile.get(), builtDump.get().asFile.get(), "updateAbi")
     }
 }

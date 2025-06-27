@@ -39,7 +39,7 @@ internal class TestAsyncGlesRenderInitWatchFaceService(
     testContext: Context,
     private var surfaceHolderOverride: SurfaceHolder,
     private var onUiThreadGlSurfaceCreatedFuture: ListenableFuture<Unit>,
-    private var onBackgroundThreadGlContextFuture: ListenableFuture<Unit>
+    private var onBackgroundThreadGlContextFuture: ListenableFuture<Unit>,
 ) : WatchFaceService() {
     val lock = Any()
     val onUiThreadGlSurfaceCreatedFutureLatch = CountDownLatch(1)
@@ -57,7 +57,7 @@ internal class TestAsyncGlesRenderInitWatchFaceService(
         surfaceHolder: SurfaceHolder,
         watchState: WatchState,
         complicationSlotsManager: ComplicationSlotsManager,
-        currentUserStyleRepository: CurrentUserStyleRepository
+        currentUserStyleRepository: CurrentUserStyleRepository,
     ) =
         WatchFace(
             WatchFaceType.DIGITAL,
@@ -66,7 +66,7 @@ internal class TestAsyncGlesRenderInitWatchFaceService(
                 ListenableGlesRenderer(surfaceHolder, currentUserStyleRepository, watchState, 16) {
                 override fun onUiThreadGlSurfaceCreatedFuture(
                     width: Int,
-                    height: Int
+                    height: Int,
                 ): ListenableFuture<Unit> {
                     onUiThreadGlSurfaceCreatedFutureLatch.countDown()
                     return onUiThreadGlSurfaceCreatedFuture
@@ -86,7 +86,7 @@ internal class TestAsyncGlesRenderInitWatchFaceService(
                 override fun renderHighlightLayer(zonedDateTime: ZonedDateTime) {
                     // NOP
                 }
-            }
+            },
         )
 }
 
@@ -104,7 +104,7 @@ public class AsyncListenableGlesRendererTest : WatchFaceControlClientServiceTest
                 context,
                 glSurfaceHolder,
                 onUiThreadGlSurfaceCreatedFuture,
-                onBackgroundThreadGlContextFuture
+                onBackgroundThreadGlContextFuture,
             )
         val controlClient = createWatchFaceControlClientService()
 
@@ -116,7 +116,7 @@ public class AsyncListenableGlesRendererTest : WatchFaceControlClientServiceTest
                     DeviceConfig(false, false, 0, 0),
                     WatchUiState(false, 0),
                     null,
-                    emptyMap()
+                    emptyMap(),
                 )
             }
 
@@ -127,7 +127,7 @@ public class AsyncListenableGlesRendererTest : WatchFaceControlClientServiceTest
             assertThat(
                     watchFaceService.onBackgroundThreadGlContextFutureLatch.await(
                         TIMEOUT_MILLIS,
-                        TimeUnit.MILLISECONDS
+                        TimeUnit.MILLISECONDS,
                     )
                 )
                 .isTrue()
@@ -139,7 +139,7 @@ public class AsyncListenableGlesRendererTest : WatchFaceControlClientServiceTest
             assertThat(
                     watchFaceService.onUiThreadGlSurfaceCreatedFutureLatch.await(
                         TIMEOUT_MILLIS,
-                        TimeUnit.MILLISECONDS
+                        TimeUnit.MILLISECONDS,
                     )
                 )
                 .isTrue()

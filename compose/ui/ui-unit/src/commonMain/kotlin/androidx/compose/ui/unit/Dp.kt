@@ -279,7 +279,7 @@ fun lerp(start: DpOffset, stop: DpOffset, fraction: Float): DpOffset =
     DpOffset(
         packFloats(
             lerp(start.x.value, stop.x.value, fraction),
-            lerp(start.y.value, stop.y.value, fraction)
+            lerp(start.y.value, stop.y.value, fraction),
         )
     )
 
@@ -396,7 +396,7 @@ fun lerp(start: DpSize, stop: DpSize, fraction: Float): DpSize =
     DpSize(
         packFloats(
             lerp(start.width, stop.width, fraction).value,
-            lerp(start.height, stop.height, fraction).value
+            lerp(start.height, stop.height, fraction).value,
         )
     )
 
@@ -407,12 +407,12 @@ data class DpRect(
     @Stable val left: Dp,
     @Stable val top: Dp,
     @Stable val right: Dp,
-    @Stable val bottom: Dp
+    @Stable val bottom: Dp,
 ) {
     /** Constructs a [DpRect] from the top-left [origin] and the width and height in [size]. */
     constructor(
         origin: DpOffset,
-        size: DpSize
+        size: DpSize,
     ) : this(origin.x, origin.y, origin.x + size.width, origin.y + size.height)
 
     companion object

@@ -109,7 +109,7 @@ private class CoreEntityAccumulator : CoreEntityScope {
         val result = CoreEntityAccumulator()
         result.alpha = alpha * next.alpha
         result.scale = scale * next.scale
-        result.size = next.size
+        result.size = next.size ?: size
         return result
     }
 

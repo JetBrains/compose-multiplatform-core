@@ -134,13 +134,13 @@ class TimePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 modifier = Modifier.testTag(TestTag).size(340.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 ClockFace(
                     modifier = Modifier.then(ClockFaceSizeModifier()),
                     state = state,
                     colors = TimePickerDefaults.colors(),
-                    autoSwitchToMinute = true
+                    autoSwitchToMinute = true,
                 )
             }
         }
@@ -157,13 +157,13 @@ class TimePickerScreenshotTest(private val scheme: ColorSchemeWrapper) {
         rule.setMaterialContent(scheme.colorScheme) {
             Box(
                 modifier = Modifier.testTag(TestTag).size(300.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 ClockFace(
                     modifier = Modifier.then(ClockFaceSizeModifier()),
                     state = state,
                     colors = TimePickerDefaults.colors(),
-                    autoSwitchToMinute = true
+                    autoSwitchToMinute = true,
                 )
             }
         }

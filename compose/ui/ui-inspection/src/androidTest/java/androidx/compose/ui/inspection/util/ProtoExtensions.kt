@@ -43,7 +43,7 @@ internal fun GetParametersCommand(
     node: ComposableNode,
     useDelayedParameterExtraction: Boolean,
     generation: Int = 1,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     if (useDelayedParameterExtraction) {
         GetParametersByAnchorIdCommand(
@@ -51,7 +51,7 @@ internal fun GetParametersCommand(
             node.anchorHash,
             node.id,
             generation,
-            skipSystemComposables
+            skipSystemComposables,
         )
     } else {
         GetParametersByIdCommand(rootViewId, node.id, skipSystemComposables)
@@ -60,7 +60,7 @@ internal fun GetParametersCommand(
 internal fun GetParametersByIdCommand(
     rootViewId: Long,
     composableId: Long,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -80,7 +80,7 @@ internal fun GetParametersByAnchorIdCommand(
     anchorId: Int,
     composableId: Long,
     generation: Int = 1,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -145,7 +145,7 @@ internal fun GetParameterDetailsCommand(
     reference: ParameterReference,
     startIndex: Int,
     maxElements: Int,
-    skipSystemComposables: Boolean = true
+    skipSystemComposables: Boolean = true,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -170,7 +170,7 @@ internal fun GetComposablesCommand(
     rootViewId: Long,
     skipSystemComposables: Boolean = true,
     generation: Int = 1,
-    extractAllParameters: Boolean = false
+    extractAllParameters: Boolean = false,
 ): Command =
     Command.newBuilder()
         .apply {
@@ -205,7 +205,7 @@ internal fun GetComposablesResponse.roots(): List<InspectorNode> {
 
 internal fun ComposableNode.isAncestorOf(
     ancestor: ComposableNode,
-    tree: GetComposablesResponse
+    tree: GetComposablesResponse,
 ): Boolean {
     val pending = mutableListOf<ComposableNode>()
     val map = MutableLongLongMap()
@@ -234,7 +234,7 @@ private fun List<ComposableNode>.convert(strings: Map<Int, String>): List<Inspec
             it.bounds.layout.x,
             it.bounds.layout.y,
             it.bounds.layout.x + it.bounds.layout.w,
-            it.bounds.layout.y + it.bounds.layout.h
+            it.bounds.layout.y + it.bounds.layout.h,
         )
     node.children.addAll(it.childrenList.convert(strings))
     node.inlined = (it.flags and ComposableNode.Flags.INLINED_VALUE) != 0
@@ -245,7 +245,7 @@ internal fun GetUpdateSettingsCommand(
     includeRecomposeCounts: Boolean = false,
     keepRecomposeCounts: Boolean = false,
     delayParameterExtractions: Boolean = false,
-    reduceChildNesting: Boolean = false
+    reduceChildNesting: Boolean = false,
 ): Command =
     Command.newBuilder()
         .apply {

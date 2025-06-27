@@ -47,7 +47,7 @@ data class TransferParameters(
     /** Value e in the equation of the EOTF described above. */
     val e: Double = 0.0,
     /** Value f in the equation of the EOTF described above. */
-    val f: Double = 0.0
+    val f: Double = 0.0,
 ) {
     init {
         if (

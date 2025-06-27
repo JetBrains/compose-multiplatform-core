@@ -153,6 +153,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(button.clickAndWait(Until.newWindow(), TIMEOUT_MS));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testClickAndWait_pointAndConditionAndTimeout() {
         launchTestActivity(ClickAndWaitTestActivity.class);
@@ -456,6 +457,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(button.isClickable());
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testIsEnabled() {
         launchTestActivity(IsEnabledTestActivity.class);
@@ -501,6 +503,7 @@ public class UiObject2Test extends BaseTest {
         assertFalse(nonLongClickableButton.isLongClickable());
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testIsScrollable() {
         launchTestActivity(VerticalScrollTestActivity.class);
@@ -657,6 +660,7 @@ public class UiObject2Test extends BaseTest {
         assertEquals("This object has already been recycled.", e.getMessage());
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testScroll() {
         launchTestActivity(VerticalScrollTestActivity.class);
@@ -673,6 +677,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testScroll_untilEnd() {
         launchTestActivity(VerticalScrollTestActivity.class);
@@ -686,6 +691,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testScrollUntil_conditionSatisfied() {
         Assume.assumeFalse(SDK_INT == 26); // b/272346700
@@ -700,6 +706,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testScrollUntil_conditionNotSatisfied() {
         launchTestActivity(VerticalScrollTestActivity.class);
@@ -714,6 +721,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testScrollUntil_eventConditionSatisfied() {
         launchTestActivity(VerticalScrollTestActivity.class);
@@ -726,6 +734,7 @@ public class UiObject2Test extends BaseTest {
         assertTrue(mDevice.hasObject(By.res(TEST_APP, "bottom_text")));
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testScrollUntil_eventConditionNotSatisfied() {
         launchTestActivity(VerticalScrollTestActivity.class);

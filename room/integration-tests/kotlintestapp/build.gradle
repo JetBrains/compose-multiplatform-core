@@ -18,6 +18,8 @@
 // -Dorg.gradle.debug=true
 // -Dkotlin.compiler.execution.strategy="in-process"
 
+
+import androidx.build.KotlinTarget
 import com.google.devtools.ksp.gradle.KspTask
 
 plugins {
@@ -138,4 +140,8 @@ tasks.withType(KspTask).configureEach { kspTask ->
             provider { kspTask.name.contains("GenKotlin") }
         )
     )
+}
+
+androidx {
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

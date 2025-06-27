@@ -43,7 +43,7 @@ internal interface WindowBackend {
     fun registerLayoutChangeCallback(
         @UiContext context: Context,
         executor: Executor,
-        callback: Consumer<WindowLayoutInfo>
+        callback: Consumer<WindowLayoutInfo>,
     )
 
     /** Unregisters a callback for window layout changes. */

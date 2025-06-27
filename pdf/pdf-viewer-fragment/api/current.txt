@@ -14,6 +14,7 @@ package androidx.pdf.viewer.fragment {
     method public final boolean isTextSearchActive();
     method public final boolean isToolboxVisible();
     method public static final androidx.pdf.viewer.fragment.PdfViewerFragment newInstance(androidx.pdf.viewer.fragment.PdfStylingOptions pdfStylingOptions);
+    method protected boolean onLinkClicked(androidx.pdf.content.ExternalLink externalLink);
     method public void onLoadDocumentError(Throwable error);
     method public void onLoadDocumentSuccess();
     method public void onRequestImmersiveMode(boolean enterImmersive);

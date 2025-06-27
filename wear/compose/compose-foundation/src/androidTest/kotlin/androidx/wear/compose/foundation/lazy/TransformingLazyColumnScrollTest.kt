@@ -63,17 +63,12 @@ class TransformingLazyColumnScrollTest {
         spacingPx: Int = 0,
         containerSizePx: Int = itemSizePx * 3,
         scrollBlock: suspend () -> Unit,
-        assertBlock: () -> Unit
+        assertBlock: () -> Unit,
     ) {
         rule.setContent {
             state = rememberTransformingLazyColumnState()
             scope = rememberCoroutineScope()
-            with(rule.density) {
-                TestContent(
-                    spacingPx.toDp(),
-                    containerSizePx.toDp(),
-                )
-            }
+            with(rule.density) { TestContent(spacingPx.toDp(), containerSizePx.toDp()) }
         }
         runBlocking { withContext(Dispatchers.Main + AutoTestFrameClock()) { scrollBlock() } }
         rule.runOnIdle { assertBlock() }
@@ -122,14 +117,11 @@ class TransformingLazyColumnScrollTest {
         }
 
     @Composable
-    private fun TestContent(
-        spacingDp: Dp,
-        containerSizeDp: Dp,
-    ) =
+    private fun TestContent(spacingDp: Dp, containerSizeDp: Dp) =
         TransformingLazyColumn(
             Modifier.height(containerSizeDp).testTag(lazyListTag),
             state,
-            verticalArrangement = Arrangement.spacedBy(spacingDp)
+            verticalArrangement = Arrangement.spacedBy(spacingDp),
         ) {
             items(itemsCount) { Spacer(modifier = Modifier.height(itemSizeDp)) }
         }

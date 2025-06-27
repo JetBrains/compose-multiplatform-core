@@ -66,7 +66,7 @@ class CircularProgressIndicatorTest {
                     Modifier.testTag(TEST_TAG).semantics {
                         progressBarRangeInfo = ProgressBarRangeInfo(progress.value, 0f..1f)
                     },
-                progress = { progress.value }
+                progress = { progress.value },
             )
         }
 
@@ -87,7 +87,7 @@ class CircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -110,7 +110,7 @@ class CircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -135,7 +135,7 @@ class CircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -162,7 +162,7 @@ class CircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -189,7 +189,7 @@ class CircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -215,7 +215,7 @@ class CircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -287,7 +287,7 @@ class DrawCircularProgressIndicatorTest {
                     Modifier.testTag(TEST_TAG).semantics {
                         progressBarRangeInfo = ProgressBarRangeInfo(progress.value, 0f..1f)
                     },
-                progress = progress.value
+                progress = progress.value,
             )
         }
 
@@ -308,7 +308,7 @@ class DrawCircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -331,7 +331,7 @@ class DrawCircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -356,7 +356,7 @@ class DrawCircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -383,7 +383,7 @@ class DrawCircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -410,7 +410,7 @@ class DrawCircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -436,7 +436,7 @@ class DrawCircularProgressIndicatorTest {
                 colors =
                     ProgressIndicatorDefaults.colors(
                         indicatorColor = Color.Yellow,
-                        trackColor = Color.Red
+                        trackColor = Color.Red,
                     ),
             )
         }
@@ -495,7 +495,7 @@ internal fun CircularProgressIndicatorStatic(
     colors: ProgressIndicatorColors = ProgressIndicatorDefaults.colors(),
     strokeWidth: Dp = CircularProgressIndicatorDefaults.largeStrokeWidth,
     gapSize: Dp = CircularProgressIndicatorDefaults.calculateRecommendedGapSize(strokeWidth),
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     Spacer(
         modifier.fillMaxSize().focusable().drawWithCache {
@@ -508,7 +508,7 @@ internal fun CircularProgressIndicatorStatic(
                     strokeWidth = strokeWidth,
                     colors = colors,
                     gapSize = gapSize,
-                    enabled = enabled
+                    enabled = enabled,
                 )
             }
         }

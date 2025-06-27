@@ -32,10 +32,7 @@ import org.robolectric.annotation.Config
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(minSdk = RobolectricMinSdk)
 class AdvanceEventTimeTest(private val config: TestConfig) : InputDispatcherTest() {
-    data class TestConfig(
-        val firstDelayMillis: Long,
-        val secondDelayMillis: Long,
-    )
+    data class TestConfig(val firstDelayMillis: Long, val secondDelayMillis: Long)
 
     companion object {
         private val anyPosition = Offset.Zero
@@ -46,12 +43,7 @@ class AdvanceEventTimeTest(private val config: TestConfig) : InputDispatcherTest
             return mutableListOf<TestConfig>().apply {
                 for (delay1 in listOf(0L, 23L)) {
                     for (delay2 in listOf(0L, 47L)) {
-                        add(
-                            TestConfig(
-                                firstDelayMillis = delay1,
-                                secondDelayMillis = delay2,
-                            )
-                        )
+                        add(TestConfig(firstDelayMillis = delay1, secondDelayMillis = delay2))
                     }
                 }
             }

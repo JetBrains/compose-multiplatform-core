@@ -35,7 +35,7 @@ import kotlin.math.max
 internal open class JankStatsApi24Impl(
     jankStats: JankStats,
     view: View,
-    private val window: Window
+    private val window: Window,
 ) : JankStatsApi16Impl(jankStats, view) {
 
     // Workaround for situation like b/206956036, where platform would sometimes send completely
@@ -75,7 +75,7 @@ internal open class JankStatsApi24Impl(
     internal open fun getFrameData(
         startTime: Long,
         expectedDuration: Long,
-        frameMetrics: FrameMetrics
+        frameMetrics: FrameMetrics,
     ): FrameDataApi24 {
         val uiDuration =
             frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION) +
@@ -108,14 +108,14 @@ internal open class JankStatsApi24Impl(
                 if (listenerAddedTime == 0L) {
                     DelegatingFrameMetricsListener.addDelegateToWindow(
                         window,
-                        frameMetricsAvailableListenerDelegate
+                        frameMetricsAvailableListenerDelegate,
                     )
                     listenerAddedTime = System.nanoTime()
                 }
             } else {
                 DelegatingFrameMetricsListener.removeDelegateFromWindow(
                     window,
-                    frameMetricsAvailableListenerDelegate
+                    frameMetricsAvailableListenerDelegate,
                 )
                 listenerAddedTime = 0
             }
@@ -152,7 +152,7 @@ private class DelegatingFrameMetricsListener(
     override fun onFrameMetricsAvailable(
         window: Window?,
         frameMetrics: FrameMetrics?,
-        dropCount: Int
+        dropCount: Int,
     ) {
         // prevent concurrent modification of delegates list by synchronizing on
         // this delegator object while iterating and modifying

@@ -94,7 +94,7 @@ constructor(
 
     public fun setFlashAsync(
         @ImageCapture.FlashMode flashMode: Int,
-        cancelPreviousTask: Boolean = true
+        cancelPreviousTask: Boolean = true,
     ): Deferred<Unit> {
         debug { "setFlashAsync: flashMode = $flashMode, requestControl = $requestControl" }
         val signal = CompletableDeferred<Unit>()

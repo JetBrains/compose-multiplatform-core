@@ -34,20 +34,20 @@ public interface Service {
 public class Feature private constructor(private val value: Int) {
     public companion object {
         /** The Android platform is running normally (i.e. not Robolectric). */
-        @JvmField public val FullStack: Feature = Feature(0)
+        @JvmField public val FULLSTACK: Feature = Feature(0)
 
         /** The device supports OpenXR. */
-        @JvmField public val OpenXr: Feature = Feature(1)
+        @JvmField public val OPEN_XR: Feature = Feature(1)
 
         /** The device supports Android XR Spatial APIs. */
-        @JvmField public val Spatial: Feature = Feature(2)
+        @JvmField public val SPATIAL: Feature = Feature(2)
     }
 
     override fun toString(): String =
         when (this) {
-            FullStack -> "FullStack"
-            OpenXr -> "OpenXr"
-            Spatial -> "Spatial"
-            else -> "Unknown"
+            FULLSTACK -> "FULLSTACK"
+            OPEN_XR -> "OPEN_XR"
+            SPATIAL -> "SPATIAL"
+            else -> "UNKNOWN"
         }
 }

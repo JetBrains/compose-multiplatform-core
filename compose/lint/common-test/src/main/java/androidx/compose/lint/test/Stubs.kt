@@ -175,7 +175,7 @@ object Stubs {
         5/Dyrr18deUcN/6h07qgs0addd5rjdFnjE2SLfOGF6l7Ly1q4T7xiPktdrJ9
         jJyDpoMdh29m18H7uOXgA3x4DCFxGx8dY0aiIPGxxJrEJxIbEpsSNYmqxFya
         WZBopE7xb1ipCXciBgAA
-        """
+        """,
         )
 
     val Composable: TestFile =
@@ -216,7 +216,7 @@ object Stubs {
         RxuTt6ZRF27okmD+L8MCZUKc4pdUlcSPJvgKr+n8giR9QIr8ywJpPMBDlaqN
         uMAKVhVkFGQVPMYaaZ9MtU/xDM8VbSMmkENeQVbBOjaQwAuym9g08dLEFraJ
         YsfELvbaYCH2cdCGFqIQ4vA3hGOdXq0DAAA=
-        """
+        """,
         )
 
     val Composables: TestFile =
@@ -281,7 +281,7 @@ object Stubs {
         wGgHMDJjGLmXkCaghPBwVOxvpNkErCzSVOcMVgKlAFYGayj7sDLnYBWnYMWF
         U0gCtnxawyPi35L1XeruvX2E6rhdh1pHBet1VHGnTn/nd/fBHHyAD/cx72DZ
         wUcOIj7NO/jYgehg1cGab7nnQPIFxUH0X0eNH/YRCAAA
-        """
+        """,
         )
 
     val Modifier: TestFile =
@@ -413,7 +413,7 @@ object Stubs {
         zDnHVvnz6DTJ81vg+C7Hk4zp433Cpc+4/HGUZHCP1xnGCdbx2WeJscK4zLiY
         K+B+6oQ7eMD4jCUm2fNKE5kQV0NcC3EdUxxiOmSV2SbIYA43msgZzBvcNMga
         LBj4Bos/AU5gqBi8AwAA
-        """
+        """,
         )
 
     val PaddingValues: TestFile =
@@ -445,7 +445,7 @@ object Stubs {
         mDCe/PdJDuac8O92W3he3my9ytSjLhXh5rU2Xldqqp2elerBGOsPbq7NmTjC
         bwlcHfAS1zxHbHnM3U7RShAk6CToImSKkwSnOEtBDue4SCEcIofeD+cWtEFp
         AQAA
-        """
+        """,
         )
 
     val Remember: TestFile =
@@ -521,7 +521,7 @@ object Stubs {
         xZvEixKLnnjRAfHmkKTphGMNind3vHjBPg8BXzhthpYrcELebWK2cwJPHrt5
         3MtDRipPazydx33sU4CFj/HgBJIFn4VPLIQsfGrBb2HZwmcWliysWlixsGFh
         zcJDC0nHf+c//GYG8S4LAAA=
-        """
+        """,
         )
 
     val StateFactoryMarker: TestFile =
@@ -557,7 +557,7 @@ object Stubs {
         eno0ATXc+JN4FmiGQlcmsSvqfkjXVu7M6r33lX8eisWNqQrNgBtUZ8XMT/jp
         tT1Ahf4BcvQBeeJX+2ACBdzELfJuC6zhDopErs/cu7iH+wZe6zbwAA+RRamP
         jIOyg00HW3hEENsOHmOHVAq72OvDUthXePITiiesbIsDAAA=
-        """
+        """,
         )
 
     val SnapshotState: TestFile =
@@ -1018,7 +1018,7 @@ object Stubs {
         jO+fY/Z3LDyLBSms02qT2Q0q2+cU/N0YnYmNmK5QpoEq6RepDrf3YFbhVFGp
         YgnLxOJOlb6wH+2BhfgYn+zBDjEa4tMQn4XIhRiLmYkQpRCTxP8H9SluIpUH
         AAA=
-        """
+        """,
         )
 
     val Effects: TestFile =
@@ -1283,7 +1283,7 @@ object Stubs {
         zNIX3FkqfMb4p27mY5JDhDSwBRMvMEx6mWLjvRzcRVZtnyzVj/X7JbFCOsn6
         DTXYXZlHkfQmRSeJwNQ+EmVMl3GvjBncJxOzZTzAw32wEDnM7SMVIhviUYh0
         iPkQC13bCDH6C4u/Nd/9BAAA
-        """
+        """,
         )
 
     val Dp: TestFile =
@@ -1354,7 +1354,7 @@ object Stubs {
         f6iaOsnG0ia9j01pZJEdSS2p+roslRFG0qdhHxwt/LfXQxsuxfuUHVDkFD3n
         oH/+HSvfrHE8IHQvKl3sEN8kxkm5jlVSqRtrxGznwwu8h5DiS6oFtHt9CifG
         RowbMW7iVkzjt2NsoTcF0+hje4q2xh2NgcZdbbn7D0kxfkBPAgAA
-        """
+        """,
         )
 
     val Animatable: TestFile =
@@ -1427,7 +1427,7 @@ object Stubs {
             z0qLA7WQmaTfJ2vf6KGc6zydiIG0su5N6eWtQhyRp1WU7nStyahgjzLPukVY
             2/+O+9+sj3hKsV6QbTyj2CwLCDcJnxc1DbwgtBd1j3Cj4F4WcRf7hO9Js0Wa
             7REqAVoB2gE6eEBbPAzwCI9HYBmeYGeEWmZXN0OvWM0/0M/P208DAAA=
-            """
+            """,
         )
 
     val IntOffset: TestFile =
@@ -1461,7 +1461,7 @@ object Stubs {
         4X/OS7fJaiGo1T2ym3MpytQMeaRbszzSzTllVrC6aB3qS5O3Gl+w9OnKht5c
         sGhYRuXKYv9/ijnu53YLD8gfUO465W60YUSoRliLUMM6hdiIcBO32mASt7HZ
         RlEikLgj4eZ2WcKWWJFYlaj8BpHq1rYeAwAA
-        """
+        """,
         )
 
     val CompositionLocal =
@@ -1598,7 +1598,7 @@ object Stubs {
                 a1pxiYh9GPT4s/Xqv4AYNimqUt4gn9jd+4YbXwkZ2CJrTrIFqsnjPqHVKQuL
                 WJqoJJDBMik9mFSksE0+qaXTBGKzdAzFib+Hh+Rf02mWBFfaiNWQqyFfw00U
                 CGK1hltYa4OFWMdGG4kQSyFuh7gTIhPibojkH2XEsYYYBAAA
-                """
+                """,
         )
 }
 
@@ -1622,7 +1622,7 @@ fun kotlinAndBytecodeStub(
     filepath: String,
     checksum: Long,
     @Language("kotlin") source: String,
-    vararg bytecode: String
+    vararg bytecode: String,
 ): KotlinAndBytecodeStub {
     val filenameWithoutExtension = filename.substringBefore(".").lowercase(Locale.ROOT)
     val kotlin = kotlin(source).to("$filepath/$filename")
@@ -1651,5 +1651,5 @@ fun bytecodeStub(
     filepath: String,
     checksum: Long,
     @Language("kotlin") source: String,
-    vararg bytecode: String
+    vararg bytecode: String,
 ): TestFile = kotlinAndBytecodeStub(filename, filepath, checksum, source, *bytecode).bytecode
