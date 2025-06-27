@@ -254,6 +254,8 @@ internal object AriaRoleId {
     // Other ARIA roles not specified explicitly by [androidx.compose.ui.semantics.Role]:
     const val Heading = 7
     const val TextBox = 8
+    const val List = 9
+    const val Grid = 10
 }
 
 internal fun SemanticsConfiguration.getRoleId(): Int {
@@ -291,6 +293,15 @@ internal fun SemanticsConfiguration.getRoleId(): Int {
         roleId = AriaRoleId.TextBox
     }
 
+    if (this.contains(SemanticsProperties.CollectionInfo)) {
+        val info = this.get(SemanticsProperties.CollectionInfo)
+        roleId = if (info.columnCount > 1 && info.rowCount > 1) {
+            AriaRoleId.Grid
+        } else {
+            AriaRoleId.List
+        }
+    }
+
     return roleId
 }
 
@@ -326,8 +337,14 @@ internal fun setA11YAriaRole(element: HTMLElement, ariaRoleId: Int) {
             case 7: // heading https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/heading_role
                 roleValue = "heading";
                 break;
-            case 8: // Role.TextBox
+            case 8: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/textbox_role
                 roleValue = "textbox";
+                break;
+            case 9: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/list_role
+                roleValue = "list";
+                break;
+            case 10: // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/grid_role
+                roleValue = "grid";
                 break;
             default:
                 break;
