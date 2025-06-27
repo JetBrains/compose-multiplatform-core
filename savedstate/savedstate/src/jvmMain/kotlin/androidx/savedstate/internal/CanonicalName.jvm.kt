@@ -16,6 +16,7 @@
 
 package androidx.savedstate.internal
 
-import platform.posix.PTHREAD_MUTEX_RECURSIVE
+import kotlin.reflect.KClass
 
-internal actual val PTHREAD_MUTEX_RECURSIVE: Int = PTHREAD_MUTEX_RECURSIVE.toInt()
+internal actual val KClass<*>?.canonicalName: String?
+    get() = this?.qualifiedName
