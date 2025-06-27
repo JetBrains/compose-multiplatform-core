@@ -42,7 +42,7 @@ class XClassName
 internal constructor(
     override val java: JClassName,
     override val kotlin: KClassName,
-    nullability: XNullability
+    nullability: XNullability,
 ) : XTypeName(java, kotlin, nullability) {
 
     // TODO(b/248000692): Using the JClassName as source of truth. This is wrong since we need to
@@ -59,9 +59,7 @@ internal constructor(
      *
      * @see [XTypeName.rawTypeName]
      */
-    fun parametrizedBy(
-        vararg typeArguments: XTypeName,
-    ): XTypeName {
+    fun parametrizedBy(vararg typeArguments: XTypeName): XTypeName {
         return XTypeName(
             java = JParameterizedTypeName.get(java, *typeArguments.map { it.java }.toTypedArray()),
             kotlin =
@@ -72,7 +70,7 @@ internal constructor(
                     kotlin.parameterizedBy(typeArguments.map { it.kotlin })
                 } else {
                     UNAVAILABLE_KTYPE_NAME
-                }
+                },
         )
     }
 
@@ -80,14 +78,14 @@ internal constructor(
         XClassName(
             java = java.nestedClass(name),
             kotlin = kotlin.nestedClass(name),
-            nullability = XNullability.NONNULL
+            nullability = XNullability.NONNULL,
         )
 
     fun peerClass(name: String) =
         XClassName(
             java = java.peerClass(name),
             kotlin = kotlin.peerClass(name),
-            nullability = XNullability.NONNULL
+            nullability = XNullability.NONNULL,
         )
 
     fun enclosingClassName(): XClassName? {
@@ -95,7 +93,7 @@ internal constructor(
             XClassName(
                 java = java.enclosingClassName(),
                 kotlin = kotlin.enclosingClassName()!!,
-                nullability = XNullability.NONNULL
+                nullability = XNullability.NONNULL,
             )
         } else {
             check(java.enclosingClassName() == null)
@@ -108,7 +106,7 @@ internal constructor(
         XClassName(
             java = java.topLevelClassName(),
             kotlin = kotlin.topLevelClassName(),
-            nullability = XNullability.NONNULL
+            nullability = XNullability.NONNULL,
         )
 
     override fun copy(nullable: Boolean): XClassName {
@@ -120,7 +118,7 @@ internal constructor(
                 } else {
                     UNAVAILABLE_KTYPE_NAME
                 },
-            nullability = if (nullable) XNullability.NULLABLE else XNullability.NONNULL
+            nullability = if (nullable) XNullability.NULLABLE else XNullability.NONNULL,
         )
     }
 
@@ -131,7 +129,7 @@ internal constructor(
             return XClassName(
                 java = JClassName.get(packageName, names.first(), *names.drop(1).toTypedArray()),
                 kotlin = KClassName(packageName, *names),
-                nullability = XNullability.NONNULL
+                nullability = XNullability.NONNULL,
             )
         }
     }

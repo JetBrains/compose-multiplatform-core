@@ -20,11 +20,11 @@ import android.os.Bundle
 import androidx.annotation.RestrictTo
 
 /**
- * Interface implemented by client side SandboxedUiAdapters. This interface provides the underlying
- * Bundle of the SandboxedUiAdapter.
+ * Interface implemented by client side UI adapters. This interface provides the underlying Bundle
+ * of the various UI adapters.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface ClientAdapterWrapper {
-    /** Provides the underlying bundle with which the client side SandboxedUiAdapter was created. */
-    fun getSourceBundle(): Bundle
+public interface ClientAdapterWrapper {
+    /** Provides the underlying Bundle with which the client side UI adapter was created. */
+    public fun getSourceBundle(): Bundle
 }

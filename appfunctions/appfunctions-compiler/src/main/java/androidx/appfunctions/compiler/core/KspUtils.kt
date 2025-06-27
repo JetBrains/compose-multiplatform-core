@@ -19,6 +19,7 @@ package androidx.appfunctions.compiler.core
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
+import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSName
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeArgument
@@ -29,7 +30,6 @@ import com.google.devtools.ksp.symbol.Variance.CONTRAVARIANT
 import com.google.devtools.ksp.symbol.Variance.COVARIANT
 import com.google.devtools.ksp.symbol.Variance.INVARIANT
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.STAR
@@ -38,6 +38,31 @@ import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
+
+/**
+ * Resolves [KSTypeReference] based on the declaration.
+ *
+ * If the declaration is [KSClassDeclaration], returns the self type directly. If the declaration is
+ * [KSTypeParameter], returns the upper bound type instead.
+ */
+fun KSTypeReference.resolveSelfOrUpperBoundType(): KSTypeReference {
+    val declaration = this.resolve().declaration
+    return when (declaration) {
+        is KSClassDeclaration -> {
+            this
+        }
+        is KSTypeParameter -> {
+            declaration.bounds.singleOrNull()
+                ?: throw ProcessingException(
+                    "AppFunction compiler does not support multi-bounds type parameter",
+                    declaration,
+                )
+        }
+        else -> {
+            throw ProcessingException("Unsupported declaration type", declaration)
+        }
+    }
+}
 
 /** Gets the [TypeVariableName] from [KSTypeParameter]. */
 fun KSTypeParameter.toTypeVariableName(): TypeVariableName {
@@ -54,11 +79,74 @@ fun KSDeclaration.ensureQualifiedName(): String {
         ?: throw ProcessingException("Unable to resolve the qualified name", this)
 }
 
-/** Gets [ClassName] from [KSClassDeclaration]. */
-fun KSClassDeclaration.toClassName(): ClassName {
+/**
+ * Gets the full [ClassName] from the [KSDeclaration].
+ *
+ * This ensures that the multi-layer declaration would return the right [ClassName] including all
+ * the parent declarations. For example,
+ * ```
+ * package com.example
+ *
+ * class Something {
+ *   class AnotherThing
+ * }
+ * ````
+ *
+ * Calling this function on AnotherThing's declaration would return
+ * `com.example.Something.AnotherThing`.
+ */
+fun KSDeclaration.toClassName(): ClassName {
     val packageName = this.packageName.asString()
-    val simpleName = this.simpleName.asString()
-    return ClassName(packageName, simpleName)
+    val simpleNames =
+        buildList {
+                var currentDeclaration: KSDeclaration? = this@toClassName
+                while (currentDeclaration != null) {
+                    add(currentDeclaration.simpleName.asString())
+                    val parent = currentDeclaration.parentDeclaration
+                    if (parent == null || parent is KSFile) {
+                        break
+                    }
+                    currentDeclaration = parent
+                }
+            }
+            .reversed()
+    return ClassName(packageName, simpleNames)
+}
+
+/**
+ * Gets the JVM qualified name from [KSDeclaration].
+ *
+ * This ensures that the multi-layer declaration would return the right JVM qualified name. For
+ * example,
+ * ```
+ * package com.example
+ *
+ * class Something {
+ *   class AnotherThing
+ * }
+ * ````
+ *
+ * Calling this function on AnotherThing's declaration would return
+ * `com.example.Something$AnotherThing`.
+ */
+fun KSDeclaration.getJvmQualifiedName(): String {
+    return toClassName().reflectionName()
+}
+
+/**
+ * Returns the JVM class name which takes into account multi-layer class declarations. For example,
+ * ```
+ * package com.example
+ *
+ * class Something {
+ *   class AnotherThing
+ * }
+ * ````
+ *
+ * Calling this function on AnotherThing's declaration would return `Something$AnotherThing`.
+ */
+fun KSDeclaration.getJvmClassName(): String {
+    return toClassName().reflectionName().substringAfterLast('.')
 }
 
 /**
@@ -71,7 +159,7 @@ fun KSTypeReference.resolveListParameterizedType(): KSTypeReference {
     if (!isOfType(LIST)) {
         throw ProcessingException(
             "Unable to resolve list parameterized type for non list type",
-            this
+            this,
         )
     }
     return resolve().arguments.firstOrNull()?.type
@@ -115,7 +203,7 @@ fun KSTypeReference.ensureQualifiedTypeName(): KSName =
     resolve().declaration.qualifiedName
         ?: throw ProcessingException(
             "Unable to resolve the qualified type name for this reference",
-            this
+            this,
         )
 
 /** Returns the value of the annotation property if found. */
@@ -143,8 +231,7 @@ private fun KSType.toTypeName(arguments: List<KSTypeArgument> = emptyList()): Ty
     val type =
         when (declaration) {
             is KSClassDeclaration -> {
-                val typeClassName =
-                    ClassName(declaration.packageName.asString(), declaration.simpleName.asString())
+                val typeClassName = declaration.toClassName()
                 typeClassName.withTypeArguments(arguments.map { it.toTypeName() })
             }
             else -> throw ProcessingException("Unable to resolve TypeName", null)
@@ -171,11 +258,3 @@ private fun ClassName.withTypeArguments(arguments: List<TypeName>): TypeName {
 }
 
 fun KClass<*>.ensureQualifiedName(): String = checkNotNull(qualifiedName)
-
-fun FileSpec.Builder.addGeneratedTimeStamp(): FileSpec.Builder {
-    this.addFileComment(
-        "Last generated time (Workaround for now, will be reverted): " +
-            "${System.currentTimeMillis()}"
-    )
-    return this
-}

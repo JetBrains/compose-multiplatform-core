@@ -119,7 +119,7 @@ package androidx.compose.ui {
   @kotlin.RequiresOptIn(message="This API is experimental and is likely to change in the future.") public @interface ExperimentalComposeUiApi {
   }
 
-  @kotlin.RequiresOptIn(message="Unstable API for use only between compose-ui modules sharing the same exact version, " + "subject to change without notice in major, minor, or patch releases.") public @interface InternalComposeUiApi {
+  @kotlin.RequiresOptIn(message="Unstable API for use only between compose-ui modules sharing the same exact version, subject to change without notice in major, minor, or patch releases.") public @interface InternalComposeUiApi {
   }
 
   @androidx.compose.runtime.Stable public interface Modifier {

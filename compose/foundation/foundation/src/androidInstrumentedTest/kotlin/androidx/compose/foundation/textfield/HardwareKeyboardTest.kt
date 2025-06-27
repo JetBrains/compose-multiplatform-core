@@ -201,7 +201,7 @@ class HardwareKeyboardTest {
                 TextFieldValue(
                     text,
                     // Place cursor at end.
-                    selection = TextRange(text.length)
+                    selection = TextRange(text.length),
                 )
             )
         keysSequenceTest(value = value) {
@@ -567,7 +567,7 @@ class HardwareKeyboardTest {
 
     private inner class SequenceScope(
         val state: MutableState<TextFieldValue>,
-        val nodeGetter: () -> SemanticsNodeInteraction
+        val nodeGetter: () -> SemanticsNodeInteraction,
     ) {
         fun Key.downAndUp(metaState: Int = 0) {
             this.down(metaState)
@@ -604,7 +604,7 @@ class HardwareKeyboardTest {
             modifier = modifier,
             singleLine = singleLine,
             useEmojiCompat = useEmojiCompat,
-            sequence = sequence
+            sequence = sequence,
         )
     }
 

@@ -48,7 +48,7 @@ fun Project.configureLint() {
             is KotlinMultiplatformAndroidPlugin ->
                 configureAndroidMultiplatformProjectForLint(
                     extensions.getByType<AndroidXMultiplatformExtension>().agpKmpExtension,
-                    extensions.getByType<KotlinMultiplatformAndroidComponentsExtension>()
+                    extensions.getByType<KotlinMultiplatformAndroidComponentsExtension>(),
                 )
             // Only configure non-multiplatform Java projects via JavaPlugin. Multiplatform
             // projects targeting Java (e.g. `jvm { withJava() }`) are configured via
@@ -84,7 +84,7 @@ private fun Project.configureAndroidProjectForLint(isLibrary: Boolean) =
 
 private fun Project.configureAndroidMultiplatformProjectForLint(
     extension: KotlinMultiplatformAndroidLibraryTarget,
-    componentsExtension: KotlinMultiplatformAndroidComponentsExtension
+    componentsExtension: KotlinMultiplatformAndroidComponentsExtension,
 ) {
     componentsExtension.finalizeDsl {
         // The lintAnalyze task is used by `androidx-studio-integration-lint.sh`.
@@ -329,6 +329,13 @@ private fun Project.configureLint(lint: Lint, isLibrary: Boolean) {
             fatal.add("ExperimentalPropertyAnnotation")
         }
 
+        if (!isLibrary) {
+            // This lint check is specifically for libraries.
+            disable.add("MissingServiceExportedEqualsTrue")
+        }
+
+        fatal.add("CheckResult")
+
         val lintXmlPath =
             if (extension.type == SoftwareType.SAMPLES) {
                 "buildSrc/lint/lint_samples.xml"
@@ -386,7 +393,7 @@ private fun ConfigurableFileCollection.withChangesAllowed(
 private fun Any.findDeclaredFieldOnClass(name: String): Field? =
     try {
         this::class.java.getDeclaredField(name)
-    } catch (e: NoSuchFieldException) {
+    } catch (_: NoSuchFieldException) {
         null
     }
 

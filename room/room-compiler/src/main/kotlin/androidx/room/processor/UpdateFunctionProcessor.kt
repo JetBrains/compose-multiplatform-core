@@ -26,7 +26,7 @@ import androidx.room.vo.findPropertyByColumnName
 class UpdateFunctionProcessor(
     baseContext: Context,
     val containing: XType,
-    val executableElement: XMethodElement
+    val executableElement: XMethodElement,
 ) {
     val context = baseContext.fork(executableElement)
 
@@ -39,7 +39,7 @@ class UpdateFunctionProcessor(
         context.checker.check(
             onConflict in OnConflictStrategy.NONE..OnConflictStrategy.IGNORE,
             executableElement,
-            ProcessorErrors.INVALID_ON_CONFLICT_VALUE
+            ProcessorErrors.INVALID_ON_CONFLICT_VALUE,
         )
 
         val (entities, params) =
@@ -56,10 +56,10 @@ class UpdateFunctionProcessor(
                         executableElement,
                         ProcessorErrors.missingPrimaryKeysInPartialEntityForUpdate(
                             partialEntityName = pojo.typeName.toString(context.codeLanguage),
-                            primaryKeyNames = missingPrimaryKeys.map { it.columnName }
-                        )
+                            primaryKeyNames = missingPrimaryKeys.map { it.columnName },
+                        ),
                     )
-                }
+                },
             )
 
         val returnType = delegate.extractReturnType()
@@ -68,7 +68,7 @@ class UpdateFunctionProcessor(
         context.checker.check(
             functionBinder.adapter != null,
             executableElement,
-            ProcessorErrors.CANNOT_FIND_UPDATE_RESULT_ADAPTER
+            ProcessorErrors.CANNOT_FIND_UPDATE_RESULT_ADAPTER,
         )
 
         return UpdateFunction(
@@ -76,7 +76,7 @@ class UpdateFunctionProcessor(
             entities = entities,
             onConflictStrategy = onConflict,
             functionBinder = functionBinder,
-            parameters = params
+            parameters = params,
         )
     }
 }

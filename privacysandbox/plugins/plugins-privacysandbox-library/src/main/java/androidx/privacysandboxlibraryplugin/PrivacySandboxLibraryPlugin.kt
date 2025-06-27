@@ -48,11 +48,7 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
                 val frameworkAidlInputs =
                     project.objects.newInstance(FrameworkAidlInputs::class.java)
                 frameworkAidlInputs.frameworkAidl.set(
-                    sdkDirectory.map {
-                        it.dir("platforms")
-                            .dir(libraryExtension.compileSdkVersion!!)
-                            .file("framework.aidl")
-                    }
+                    libraryAndroidComponentsExtension.sdkComponents.aidl.flatMap { it.framework }
                 )
                 frameworkAidlInputs.platformSdk.set(
                     frameworkAidlInputs.frameworkAidl.map { it.asFile.parentFile.absolutePath }
@@ -88,15 +84,15 @@ abstract class PrivacySandboxLibraryPlugin : Plugin<Project> {
                 add("implementation", "androidx.privacysandbox.tools:tools:$toolsVersion")
                 add(
                     "implementation",
-                    "androidx.privacysandbox.sdkruntime:sdkruntime-core:$sdkRuntimeVersion"
+                    "androidx.privacysandbox.sdkruntime:sdkruntime-core:$sdkRuntimeVersion",
                 )
                 add(
                     "implementation",
-                    "androidx.privacysandbox.sdkruntime:sdkruntime-client:$sdkRuntimeVersion"
+                    "androidx.privacysandbox.sdkruntime:sdkruntime-client:$sdkRuntimeVersion",
                 )
                 add(
                     "implementation",
-                    "androidx.privacysandbox.sdkruntime:sdkruntime-provider:$sdkRuntimeVersion"
+                    "androidx.privacysandbox.sdkruntime:sdkruntime-provider:$sdkRuntimeVersion",
                 )
             }
             project.afterEvaluate {

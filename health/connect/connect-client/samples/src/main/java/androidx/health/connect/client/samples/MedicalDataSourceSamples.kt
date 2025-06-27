@@ -47,7 +47,7 @@ suspend fun CreateMedicalDataSourceSample(healthConnectClient: HealthConnectClie
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 }
@@ -70,7 +70,7 @@ suspend fun DeleteMedicalDataSourceWithDataSample(healthConnectClient: HealthCon
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -82,7 +82,7 @@ suspend fun DeleteMedicalDataSourceWithDataSample(healthConnectClient: HealthCon
 @Sampled
 suspend fun GetMedicalDataSourcesByRequestSample(
     healthConnectClient: HealthConnectClient,
-    anotherPackageName: String
+    anotherPackageName: String,
 ) {
     // Ensure `FEATURE_PERSONAL_HEALTH_RECORD` is available before calling PHR apis
     if (
@@ -99,7 +99,7 @@ suspend fun GetMedicalDataSourcesByRequestSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -132,7 +132,7 @@ suspend fun GetMedicalDataSourcesByIdsSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 

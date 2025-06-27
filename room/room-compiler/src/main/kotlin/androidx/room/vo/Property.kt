@@ -44,7 +44,7 @@ data class Property(
     // index might be removed when being merged into an Entity
     var indexed: Boolean = false,
     /** Whether the table column for this property should be NOT NULL */
-    val nonNull: Boolean = calcNonNull(type, parent)
+    val nonNull: Boolean = calcNonNull(type, parent),
 ) : HasSchemaIdentity {
     lateinit var getter: PropertyGetter
     lateinit var setter: PropertySetter
@@ -148,7 +148,7 @@ data class Property(
             columnName,
             affinity?.name ?: SQLTypeAffinity.TEXT.name,
             nonNull,
-            defaultValue
+            defaultValue,
         )
 
     companion object {

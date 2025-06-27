@@ -25,8 +25,13 @@ import androidx.xr.runtime.SessionConnector
 import androidx.xr.runtime.internal.Entity as RtEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
+import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
+import androidx.xr.runtime.internal.SpatialModeChangeListener as RtSpatialModeChangeListener
 import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
+import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor
@@ -39,8 +44,6 @@ import java.util.function.Consumer
  * Once created, the application can use the Scene object to create spatialized entities, such as
  * Widget panels and geometric models, set the background environment, and anchor content to the
  * real world.
- *
- * @param session the Session to create the Scene for.
  */
 @Suppress("NotCloseable")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -49,15 +52,18 @@ public class Scene : SessionConnector {
     internal val entityManager = EntityManager()
 
     internal lateinit var platformAdapter: JxrPlatformAdapter
+        private set
 
-    @Suppress("MutableBareField") public lateinit var spatialEnvironment: SpatialEnvironment
+    public lateinit var spatialEnvironment: SpatialEnvironment
+        private set
 
     /**
      * The PerceptionSpace represents the origin of the space in which the ARCore for XR API
      * provides tracking info. The transformations provided by the PerceptionSpace are only valid
      * for the call frame, as the transformation can be changed by the system at any time.
      */
-    @Suppress("MutableBareField") public lateinit var perceptionSpace: PerceptionSpace
+    public lateinit var perceptionSpace: PerceptionSpace
+        private set
 
     /**
      * The ActivitySpace is a special entity that represents the space in which the application is
@@ -65,13 +71,16 @@ public class Scene : SessionConnector {
      *
      * The ActivitySpace is created automatically when the Session is created.
      */
-    @Suppress("MutableBareField") public lateinit var activitySpace: ActivitySpace
+    public lateinit var activitySpace: ActivitySpace
+        private set
 
     // TODO: 378706624 - Remove this method once we have a better way to handle the root entity.
-    @Suppress("MutableBareField") public lateinit var activitySpaceRoot: Entity
+    public lateinit var activitySpaceRoot: Entity
+        private set
 
     /** The SpatialUser contains information about the user. */
-    @Suppress("MutableBareField") public lateinit var spatialUser: SpatialUser
+    public lateinit var spatialUser: SpatialUser
+        private set
 
     /**
      * A spatialized PanelEntity associated with the "main window" for the Activity. When in
@@ -79,17 +88,53 @@ public class Scene : SessionConnector {
      *
      * If called multiple times, this will return the same PanelEntity.
      */
-    @Suppress("MutableBareField") public lateinit var mainPanelEntity: PanelEntity
+    public lateinit var mainPanelEntity: PanelEntity
+        private set
 
     /**
      * Returns the current [SpatialCapabilities] of the Session. The set of capabilities can change
      * within a session. The returned object will not update if the capabilities change; this method
      * should be called again to get the latest set of capabilities.
      */
-    @Suppress("MutableBareField") public lateinit var spatialCapabilities: SpatialCapabilities
+    public var spatialCapabilities: SpatialCapabilities = SpatialCapabilities(0)
+        private set
+        get() = platformAdapter.spatialCapabilities.toSpatialCapabilities()
+
+    /**
+     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
+     * location provided by the system thinks is an optimal placement for content when the scene
+     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
+     * attention between sequential FULL_SPACE_MANAGED sessions.
+     *
+     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
+     */
+    public var keyEntity: Entity? = null
+        private set
+
+    /**
+     * The [SpatialModeChangeListener] used to handle scenegraph updates when the spatial mode for
+     * the scene changes.
+     */
+    public var spatialModeChangeListener: SpatialModeChangeListener =
+        /**
+         * The default [spatialModeChangeListener], which translates the key entity to the
+         * recommended pose when the scene encounters spatial mode change, and applies the
+         * recommended scale. This default handler can be replaced with the client's own
+         * [SpatialModeChangeListener] by updating the [Scene.spatialModeChangeListener] property.
+         */
+        object : SpatialModeChangeListener {
+            override fun onSpatialModeChanged(recommendedPose: Pose, recommendedScale: Float) {
+                keyEntity?.setPose(recommendedPose, Space.ACTIVITY)
+                keyEntity?.setScale(recommendedScale, Space.ACTIVITY)
+            }
+        }
 
     private val spatialCapabilitiesListeners:
         ConcurrentMap<Consumer<SpatialCapabilities>, Consumer<RtSpatialCapabilities>> =
+        ConcurrentHashMap()
+
+    private val perceivedResolutionListeners:
+        ConcurrentMap<Consumer<IntSize2d>, Consumer<RtPixelDimensions>> =
         ConcurrentHashMap()
 
     override fun initialize(
@@ -101,15 +146,51 @@ public class Scene : SessionConnector {
         perceptionSpace = PerceptionSpace.create(platformAdapter)
         activitySpace = ActivitySpace.create(platformAdapter, entityManager)
         spatialUser = SpatialUser.create(lifecycleManager, platformAdapter)
-        mainPanelEntity = PanelEntity.createMainPanelEntity(platformAdapter, entityManager)
+        mainPanelEntity =
+            PanelEntity.createMainPanelEntity(lifecycleManager, platformAdapter, entityManager)
         activitySpaceRoot =
             entityManager.getEntityForRtEntity(platformAdapter.activitySpaceRootImpl)!!
-        spatialCapabilities = platformAdapter.spatialCapabilities.toSpatialCapabilities()
+        platformAdapter.spatialModeChangeListener =
+            object : RtSpatialModeChangeListener {
+                override fun onSpatialModeChanged(
+                    recommendedPose: Pose,
+                    recommendedScale: Vector3,
+                ) {
+                    spatialModeChangeListener.onSpatialModeChanged(
+                        recommendedPose,
+                        recommendedScale.x,
+                    )
+                }
+            }
     }
 
     override fun close(): Unit {
         entityManager.clear()
     }
+
+    /**
+     * Sets whether the depth test is enabled for all panels in the Scene when the Scene is in full
+     * space mode. Panels in home space mode are unaffected.
+     *
+     * <p>When the depth test for panels is enabled, panels in the Scene will undergo depth testing,
+     * where they can appear behind other content in the Scene. When the depth test is disabled,
+     * panels in the Scene do not undergo depth tests, that will always be drawn on top of other
+     * objects in the Scene that were already drawn. Panels and non-panel content (ex:
+     * SurfaceEntity, GltfEntity) are always drawn after the SpatialEnvironment in back to front
+     * order when such an order exists. Subsequent content will be drawn on top of panels with no
+     * depth test if the subsequent content is drawn later.
+     *
+     * <p>This method says "panel" because it only affects panels. Other content in the Scene is
+     * unaffected by this setting.
+     *
+     * <p>By default the depth test is enabled for all panels in the Scene. It can be disabled, or
+     * re-enabled, by using this method.
+     *
+     * @param enabled true to enable the depth test for all panels in the Scene (default), false to
+     *   disable the depth test for all panels in the Scene.
+     */
+    public fun enablePanelDepthTest(enabled: Boolean): Unit =
+        platformAdapter.enablePanelDepthTest(enabled)
 
     /**
      * Adds the given [Consumer] as a listener to be invoked when this Session's current
@@ -312,4 +393,122 @@ public class Scene : SessionConnector {
     /** Releases the listener previously added by [setSpatialVisibilityChangedListener]. */
     public fun clearSpatialVisibilityChangedListener(): Unit =
         platformAdapter.clearSpatialVisibilityChangedListener()
+
+    /**
+     * The [Entity] that will be used by the default [SpatialModeChangeListener] to be placed at a
+     * location provided by the system thinks is an optimal placement for content when the scene
+     * enters FULL_SPACE_MANAGED mode or is re-centered. This ensures continuity of the user's
+     * attention between sequential FULL_SPACE_MANAGED sessions.
+     *
+     * Unmovable entities are not allowed to be the key, for example, [AnchorEntity].
+     *
+     * Setting null as key is allowed - in which case the default spatial mode change handler will
+     * be no-op.
+     *
+     * @param entity the entity to set as the key.
+     * @return true if the entity was successfully set as the key, false otherwise.
+     */
+    public fun setKeyEntity(entity: Entity?): Boolean {
+        when (entity) {
+            is AnchorEntity -> return false
+            else -> {
+                keyEntity = entity
+                return true
+            }
+        }
+    }
+
+    /**
+     * Sets the listener to be invoked when the perceived resolution of the main window changes in
+     * Home Space Mode.
+     *
+     * The main panel's own rotation and the display's viewing direction are disregarded; this value
+     * represents the pixel dimensions of the panel on the camera view without changing its distance
+     * to the display.
+     *
+     * The listener is invoked on the provided executor. If the app intends to modify the UI
+     * elements/views during the callback, the app should provide the thread executor that is
+     * appropriate for the UI operations. For example, if the app is using the main thread to render
+     * the UI, the app should provide the main thread (Looper.getMainLooper()) executor. If the app
+     * is using a separate thread to render the UI, the app should provide the executor for that
+     * thread.
+     *
+     * Non-zero values are only guaranteed in Home Space Mode. In Full Space Mode, the callback will
+     * always return a (0,0) size. Use the [PanelEntity.getPerceivedResolution] or
+     * [SurfaceEntity.getPerceivedResolution] methods directly on the relevant entities to retrieve
+     * non-zero values in Full Space Mode.
+     *
+     * @param callbackExecutor The executor to run the listener on.
+     * @param listener The [Consumer] to be invoked asynchronously on the given callbackExecutor
+     *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
+     *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
+     *   resolution.
+     */
+    public fun addPerceivedResolutionChangedListener(
+        callbackExecutor: Executor,
+        listener: Consumer<IntSize2d>,
+    ): Unit {
+        val rtListener =
+            Consumer<RtPixelDimensions> { rtDimensions: RtPixelDimensions ->
+                listener.accept(rtDimensions.toIntSize2d())
+            }
+        perceivedResolutionListeners.compute(
+            listener,
+            { _, _ ->
+                platformAdapter.addPerceivedResolutionChangedListener(callbackExecutor, rtListener)
+                rtListener
+            },
+        )
+    }
+
+    /**
+     * Sets the listener to be invoked on the Main Thread Executor when the perceived resolution of
+     * the main window changes in Home Space Mode.
+     *
+     * The main panel's own rotation and the display's viewing direction are disregarded; this value
+     * represents the pixel dimensions of the panel on the camera view without changing its distance
+     * to the display.
+     *
+     * There can only be one listener set at a time. If a new listener is set, the previous listener
+     * will be released.
+     *
+     * Non-zero values are only guaranteed in Home Space Mode. In Full Space Mode, the callback will
+     * always return a (0,0) size. Use the [PanelEntity.getPerceivedResolution] or
+     * [SurfaceEntity.getPerceivedResolution] methods directly on the relevant entities to retrieve
+     * non-zero values in Full Space Mode.
+     *
+     * @param listener The [Consumer] to be invoked asynchronously on the given callbackExecutor
+     *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
+     *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
+     *   resolution.
+     */
+    public fun addPerceivedResolutionChangedListener(listener: Consumer<IntSize2d>): Unit =
+        addPerceivedResolutionChangedListener(HandlerExecutor.mainThreadExecutor, listener)
+
+    /**
+     * Releases the listener previously added by [addPerceivedResolutionChangedListener].
+     *
+     * @param listener The [Consumer] to be removed. It will no longer receive change events.
+     */
+    public fun removePerceivedResolutionChangedListener(listener: Consumer<IntSize2d>): Unit {
+        perceivedResolutionListeners.computeIfPresent(
+            listener,
+            { _, rtListener ->
+                platformAdapter.removePerceivedResolutionChangedListener(rtListener)
+                null
+            },
+        )
+    }
+
+    /**
+     * If the primary Activity in a [Session] has focus, causes the Session to be placed in
+     * FullSpace Mode. Otherwise, this call does nothing.
+     */
+    public fun requestFullSpaceMode(): Unit = platformAdapter.requestFullSpaceMode()
+
+    /**
+     * If the primary Activity in a [Session] has focus, causes the Session to be placed in
+     * HomeSpace Mode. Otherwise, this call does nothing.
+     */
+    public fun requestHomeSpaceMode(): Unit = platformAdapter.requestHomeSpaceMode()
 }

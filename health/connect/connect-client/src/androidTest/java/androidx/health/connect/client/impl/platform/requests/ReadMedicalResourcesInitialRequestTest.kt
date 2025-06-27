@@ -41,7 +41,7 @@ class ReadMedicalResourcesInitialRequestTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -51,18 +51,18 @@ class ReadMedicalResourcesInitialRequestTest {
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_CONDITIONS,
                 MEDICAL_DATA_SOURCE_IDS_1,
-                DEFAULT_PAGE_SIZE
+                DEFAULT_PAGE_SIZE,
             )
         val request2 =
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_CONDITIONS,
                 MEDICAL_DATA_SOURCE_IDS_1,
-                DEFAULT_PAGE_SIZE
+                DEFAULT_PAGE_SIZE,
             )
         val request3 =
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_CONDITIONS,
-                MEDICAL_DATA_SOURCE_IDS_1
+                MEDICAL_DATA_SOURCE_IDS_1,
                 // page size is not specified, DEFAULT_PAGE_SIZE should be used, hence it should
                 // be equal to others in this group
             )
@@ -70,19 +70,19 @@ class ReadMedicalResourcesInitialRequestTest {
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_VITAL_SIGNS, // different type
                 MEDICAL_DATA_SOURCE_IDS_1,
-                DEFAULT_PAGE_SIZE
+                DEFAULT_PAGE_SIZE,
             )
         val request5 =
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_CONDITIONS,
                 MEDICAL_DATA_SOURCE_IDS_2, // different data source
-                DEFAULT_PAGE_SIZE
+                DEFAULT_PAGE_SIZE,
             )
         val request6 =
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_CONDITIONS,
                 MEDICAL_DATA_SOURCE_IDS_1,
-                DEFAULT_PAGE_SIZE + 1 // different page size
+                DEFAULT_PAGE_SIZE + 1, // different page size
             )
 
         assertThat(request1).isEqualTo(request2)
@@ -115,7 +115,7 @@ class ReadMedicalResourcesInitialRequestTest {
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_CONDITIONS,
                 MEDICAL_DATA_SOURCE_IDS_1,
-                DEFAULT_PAGE_SIZE
+                DEFAULT_PAGE_SIZE,
             )
 
         val toString = request.toString()
@@ -132,7 +132,7 @@ class ReadMedicalResourcesInitialRequestTest {
             ReadMedicalResourcesInitialRequest(
                 MEDICAL_RESOURCE_TYPE_CONDITIONS,
                 MEDICAL_DATA_SOURCE_IDS_1,
-                DEFAULT_PAGE_SIZE
+                DEFAULT_PAGE_SIZE,
             )
 
         assertThat(sdkRequest.platformReadMedicalResourcesRequest)

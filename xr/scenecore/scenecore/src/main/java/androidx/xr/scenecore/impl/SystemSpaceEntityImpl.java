@@ -18,8 +18,6 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.SystemSpaceEntity;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
@@ -28,9 +26,14 @@ import androidx.xr.runtime.math.Vector3;
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A parentless system-controlled JXRCore Entity that defines its own coordinate space.
@@ -39,11 +42,14 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSpaceEntity {
 
+    // Transform for this space's origin in OpenXR reference space.
+    protected final AtomicReference<Matrix4> mOpenXrReferenceSpaceTransform =
+            new AtomicReference<>(Matrix4.Identity);
     protected Pose mOpenXrReferenceSpacePose;
     protected Vector3 mWorldSpaceScale = new Vector3(1f, 1f, 1f);
     // Visible for testing.
     Closeable mNodeTransformCloseable;
-    private OnSpaceUpdatedListener mSpaceUpdatedListener;
+    private Runnable mSpaceUpdatedListener;
     private Executor mSpaceUpdatedExecutor;
 
     SystemSpaceEntityImpl(
@@ -62,14 +68,14 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
     /** Called when the underlying space has changed. */
     public void onSpaceUpdated() {
         if (mSpaceUpdatedListener != null) {
-            mSpaceUpdatedExecutor.execute(() -> mSpaceUpdatedListener.onSpaceUpdated());
+            mSpaceUpdatedExecutor.execute(() -> mSpaceUpdatedListener.run());
         }
     }
 
     /** Registers the SDK layer / application's listener for space updates. */
     @Override
     public void setOnSpaceUpdatedListener(
-            @Nullable OnSpaceUpdatedListener listener, @Nullable Executor executor) {
+            @Nullable Runnable listener, @Nullable Executor executor) {
         mSpaceUpdatedListener = listener;
         mSpaceUpdatedExecutor = executor == null ? mExecutor : executor;
     }
@@ -93,21 +99,29 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
      *     XrExtensions#getOpenXrActivitySpaceType()} method.
      */
     protected void setOpenXrReferenceSpacePose(Matrix4 openXrReferenceSpaceTransform) {
+        // TODO: b/420718824 - Remove this check once we have a better way to handle zero matrices.
+        float[] zero = new float[16];
+        if (Arrays.equals(openXrReferenceSpaceTransform.getData(), zero)) {
+            return;
+        }
+        mOpenXrReferenceSpaceTransform.set(openXrReferenceSpaceTransform);
         // TODO: b/353511649 - Make SystemSpaceEntityImpl thread safe.
         mOpenXrReferenceSpacePose = Matrix4Ext.getUnscaled(openXrReferenceSpaceTransform).getPose();
 
-        // TODO: b/367780918 - Consider using Matrix4.scale when it is fixed.
-        // Retrieve the scale from the matrix. The scale can be retrieved from the matrix by getting
-        // the magnitude of one of the rows of the matrix. Note that we are assuming uniform scale.
+        // Matrix4.scale returns either a positive or negative scale based on the rotation
+        // matrix determinant, but we keep it positive for now to avoid any unexpected issues.
         // SpaceFlinger might apply a scale to the task node, for example if the user caused the
-        // main
-        // panel to scale in Homespace mode.
-        float data00 = openXrReferenceSpaceTransform.getData()[0];
-        float data01 = openXrReferenceSpaceTransform.getData()[1];
-        float data02 = openXrReferenceSpaceTransform.getData()[2];
-        float scale = (float) Math.sqrt(data00 * data00 + data01 * data01 + data02 * data02);
-        mWorldSpaceScale = new Vector3(scale, scale, scale);
-        this.setScaleInternal(new Vector3(scale, scale, scale));
+        // main panel to scale in Homespace mode.
+        Vector3 actualScale = openXrReferenceSpaceTransform.getScale();
+        if (actualScale.getX() < 0 || actualScale.getY() < 0 || actualScale.getZ() < 0) {
+            Log.d(
+                    "SystemSpaceEntity",
+                    "Received an OpenXrReferenceSpaceTransform with negative scale");
+        }
+        // TODO: b/367780918 - Use the original scale, when the new matrix decomposition is tested
+        // thoroughly.
+        mWorldSpaceScale = Vector3.abs(actualScale);
+        this.setScaleInternal(mWorldSpaceScale.copy());
         onSpaceUpdated();
     }
 
@@ -121,15 +135,14 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
     private void subscribeToNodeTransform(Node node, ScheduledExecutorService executor) {
         mNodeTransformCloseable =
                 node.subscribeToTransform(
+                        executor,
                         (transform) ->
                                 setOpenXrReferenceSpacePose(
-                                        RuntimeUtils.getMatrix(transform.getTransform())),
-                        executor);
+                                        RuntimeUtils.getMatrix(transform.getTransform())));
     }
 
-    @NonNull
     @Override
-    public Vector3 getWorldSpaceScale() {
+    public @NonNull Vector3 getWorldSpaceScale() {
         return mWorldSpaceScale;
     }
 

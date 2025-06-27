@@ -1,5 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha02)" variant="all" version="8.11.0-alpha02">
+<issues format="6" by="lint 8.12.0-alpha02" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha02)" variant="all" version="8.12.0-alpha02">
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="                assertThat(dateRangePickerState.getSelectedEndDate())"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/DateRangePickerTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="            assertThat(sheetState.currentValue == SheetValue.Expanded)"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="        assertThat(keylines.firstFocal == keylines.firstNonAnchor)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidUnitTest/kotlin/androidx/compose/material3/carousel/MultiBrowseTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="        assertThat(keylines.lastFocal == keylines.lastNonAnchor)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidUnitTest/kotlin/androidx/compose/material3/carousel/MultiBrowseTest.kt"/>
+    </issue>
+
+    <issue
+        id="CheckResult"
+        message="The result of `assertThat` is not used"
+        errorLine1="        assertThat(rule.onNodeWithTag(&quot;ROW_TAG&quot;).assertWidthIsEqualTo(expectedWidth))"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/NavigationBarTest.kt"/>
+    </issue>
 
     <issue
         id="BanThreadSleep"
@@ -400,6 +445,24 @@
     <issue
         id="ComposableLambdaParameterNaming"
         message="Composable lambda parameter should be named `content`"
+        errorLine1="    text: @Composable () -> Unit,"
+        errorLine2="    ~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/material3/Tooltip.android.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
+        errorLine1="    text: @Composable () -> Unit,"
+        errorLine2="    ~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/material3/Tooltip.android.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterNaming"
+        message="Composable lambda parameter should be named `content`"
         errorLine1="        tooltipContent: @Composable () -> Unit = {},"
         errorLine2="        ~~~~~~~~~~~~~~">
         <location
@@ -434,6 +497,87 @@
     </issue>
 
     <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            screenHeight = context.resources.configuration.screenHeightDp.dp"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="    LocalConfiguration.current.screenHeightDp.dp"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidMain/kotlin/androidx/compose/material3/SearchBar.android.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="                currentDensity.density * (currentConfiguration.screenWidthDp.dp / simulatedWidth)"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ShortNavigationBarScreenshotTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="                currentDensity.density * (currentConfiguration.screenWidthDp.dp / simulatedWidth)"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ShortNavigationBarTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenHeightDp = 800"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenWidthDp = 500"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenHeightDp = 500"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="            newConfiguration.screenWidthDp = 800"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TimePickerTest.kt"/>
+    </issue>
+
+    <issue
         id="CoroutineCreationDuringComposition"
         message="Calls to launch should happen inside a LaunchedEffect and not composition"
         errorLine1="            scope.launch { topState.show() }"
@@ -467,6 +611,42 @@
         errorLine2="                  ~~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/TooltipTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            val resScreenWidth = context.resources.configuration.screenWidthDp"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/AlertDialogTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            val resScreenWidth = context.resources.configuration.screenWidthDp"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/AlertDialogTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            val screenHeight = LocalContext.current.resources.configuration.screenHeightDp.dp"
+        errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
+    </issue>
+
+    <issue
+        id="LocalContextConfigurationRead"
+        message="Reading Configuration using LocalContext.current.resources.configuration"
+        errorLine1="            screenHeight = context.resources.configuration.screenHeightDp.dp"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ModalBottomSheetTest.kt"/>
     </issue>
 
     <issue
@@ -499,7 +679,7 @@
     <issue
         id="UnrememberedMutableInteractionSource"
         message="Creating a MutableInteractionSource during composition without using `remember`"
-        errorLine1="                endThumb = { SliderDefaults.Thumb(MutableInteractionSource()) }"
+        errorLine1="                endThumb = { SliderDefaults.Thumb(MutableInteractionSource()) },"
         errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/SliderTest.kt"/>
@@ -643,8 +823,8 @@
     <issue
         id="UnusedMaterial3ScaffoldPaddingParameter"
         message="Content padding parameter it is not used"
-        errorLine1="                ) {"
-        errorLine2="                  ^">
+        errorLine1="                    ) {"
+        errorLine2="                      ^">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ScaffoldTest.kt"/>
     </issue>
@@ -652,8 +832,8 @@
     <issue
         id="UnusedMaterial3ScaffoldPaddingParameter"
         message="Content padding parameter it is not used"
-        errorLine1="                Scaffold {"
-        errorLine2="                         ^">
+        errorLine1="                ) {"
+        errorLine2="                  ^">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/ScaffoldTest.kt"/>
     </issue>
@@ -688,8 +868,8 @@
     <issue
         id="AutoboxingStateValueProperty"
         message="Reading `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="                progress = { progress.value },"
-        errorLine2="                                      ~~~~~">
+        errorLine1="            LoadingIndicator(modifier = Modifier.testTag(TestTag), progress = { progress.value })"
+        errorLine2="                                                                                         ~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/LoadingIndicatorTest.kt"/>
     </issue>
@@ -724,7 +904,7 @@
     <issue
         id="AutoboxingStateValueProperty"
         message="Reading `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="                progress = { progress.value }"
+        errorLine1="                progress = { progress.value },"
         errorLine2="                                      ~~~~~">
         <location
             file="src/androidInstrumentedTest/kotlin/androidx/compose/material3/LoadingIndicatorTest.kt"/>

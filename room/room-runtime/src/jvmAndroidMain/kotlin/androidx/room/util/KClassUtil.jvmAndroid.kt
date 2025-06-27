@@ -26,7 +26,7 @@ import androidx.annotation.RestrictTo
  * `@Database` annotated type.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun <T, C> findAndInstantiateDatabaseImpl(klass: Class<C>, suffix: String = "_Impl"): T {
+public fun <T, C> findAndInstantiateDatabaseImpl(klass: Class<C>, suffix: String = "_Impl"): T {
     val fullPackage: String = klass.getPackage()?.name ?: ""
     val name: String = klass.canonicalName!!
     val postPackageName =
@@ -46,7 +46,7 @@ fun <T, C> findAndInstantiateDatabaseImpl(klass: Class<C>, suffix: String = "_Im
         throw RuntimeException(
             "Cannot find implementation for ${klass.canonicalName}. $implName does not " +
                 "exist. Is Room annotation processor correctly configured?",
-            e
+            e,
         )
     } catch (e: IllegalAccessException) {
         throw RuntimeException("Cannot access the constructor ${klass.canonicalName}", e)

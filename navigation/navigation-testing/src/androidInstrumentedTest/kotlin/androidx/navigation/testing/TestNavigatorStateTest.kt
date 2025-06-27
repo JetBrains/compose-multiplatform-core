@@ -259,7 +259,7 @@ class TestNavigatorStateTest {
                 launchSingleTop = true
                 restoreState = true
             },
-            null
+            null,
         )
 
         val viewModel = ViewModelProvider(secondEntry).get(TestViewModel::class.java)
@@ -273,7 +273,7 @@ class TestNavigatorStateTest {
                 launchSingleTop = true
                 restoreState = true
             },
-            null
+            null,
         )
 
         state.transitionsInProgress.value.forEach { state.markTransitionComplete(it) }
@@ -417,7 +417,7 @@ class TestNavigatorStateTest {
         override fun navigate(
             entries: List<NavBackStackEntry>,
             navOptions: NavOptions?,
-            navigatorExtras: Extras?
+            navigatorExtras: Extras?,
         ) {
             entries.forEach { entry -> state.pushWithTransition(entry) }
         }
@@ -451,7 +451,7 @@ class TestNavigatorStateTest {
         override fun navigate(
             entries: List<NavBackStackEntry>,
             navOptions: NavOptions?,
-            navigatorExtras: Extras?
+            navigatorExtras: Extras?,
         ) {
             entries.forEach { entry -> state.pushWithTransition(entry) }
         }

@@ -37,13 +37,13 @@ import androidx.test.uiautomator.watcher.WatcherRegistration
  *
  *     startActivity(MyActivity::class.java)
  *
- *     onView { id == "button" }.click()
+ *     onElement { id == "button" }.click()
  *
- *     onView { id == "nested_elements" }
+ *     onElement { id == "nested_elements" }
  *         .apply {
- *             onView { text == "First Level" }
- *             onView { text == "Second Level" }
- *             onView { text == "Third Level" }
+ *             onElement { text == "First Level" }
+ *             onElement { text == "Second Level" }
+ *             onElement { text == "Third Level" }
  *         }
  * }
  * ```
@@ -51,38 +51,45 @@ import androidx.test.uiautomator.watcher.WatcherRegistration
  * @param block A block containing the test to run within the [UiAutomatorTestScope].
  */
 public fun uiAutomator(block: UiAutomatorTestScope.() -> (Unit)) {
-    val scope = UiAutomatorTestScope()
+    val scope = UiAutomatorTestScope.create()
     block(scope)
-    scope.afterBlock()
+    scope.unregisterWatchers()
 }
 
 /** A UiAutomator scope that allows to easily access UiAutomator api and utils class. */
-public class UiAutomatorTestScope
-internal constructor(
-    public val instrumentation: Instrumentation = InstrumentationRegistry.getInstrumentation(),
-    public val uiAutomation: UiAutomation = instrumentation.uiAutomation,
-    public val uiDevice: UiDevice = UiDevice.getInstance(instrumentation),
-) {
+public open class UiAutomatorTestScope protected constructor() {
 
     internal companion object {
         internal const val TAG = "UiAutomatorTestScope"
+
+        /**
+         * This function is needed because the constructor is protected (to allow extensions) and
+         * therefore it cannot be instantiated outside the class itself in kotlin (so we cannot have
+         * the factory method [uiAutomator] outside the class.
+         */
+        internal fun create() = UiAutomatorTestScope()
     }
+
+    public val instrumentation: Instrumentation = InstrumentationRegistry.getInstrumentation()
+    public val uiAutomation: UiAutomation = instrumentation.uiAutomation
+    public val device: UiDevice = UiDevice.getInstance(instrumentation)
 
     private val appManager = AppManager(context = instrumentation.targetContext)
     private val watcherRegistrations = mutableSetOf<WatcherRegistration>()
 
-    internal fun afterBlock() {
+    /** Unregisters all the watchers previously registered with [watchFor]. */
+    public fun unregisterWatchers() {
         watcherRegistrations.forEach { it.unregister() }
     }
 
     /**
      * Registers a watcher for this [androidx.test.uiautomator.UiAutomatorTestScope] to handle
      * unexpected UI elements. Internally this method uses the existing [UiDevice.registerWatcher]
-     * api. When the given [androidx.test.uiautomator.watcher.ScopedUiWatcher.isVisible] condition
-     * is satisfied, then the given [block] is executed. scope. This method returns a handler with
-     * the [WatcherRegistration] to unregister it before the block is complete. Note that this api
-     * helps with unexpected ui elements, such as system dialogs, and that for expected dialogs the
-     * [onView] api should be used.
+     * api. When the given [ScopedUiWatcher.isVisible] condition is satisfied, then the given
+     * [block] is executed. scope. This method returns a handler with the [WatcherRegistration] to
+     * unregister it before the block is complete. Note that this api helps with unexpected ui
+     * elements, such as system dialogs, and that for expected dialogs the [onElement] api should be
+     * used.
      *
      * Usage:
      * ```kotlin
@@ -104,11 +111,11 @@ internal constructor(
      */
     public fun <T> watchFor(
         watcher: ScopedUiWatcher<T>,
-        block: T.() -> (Unit)
+        block: T.() -> (Unit),
     ): WatcherRegistration {
         val id = watcher.toString()
 
-        uiDevice.registerWatcher(id) {
+        device.registerWatcher(id) {
             val visible = watcher.isVisible()
             if (visible) block(watcher.scope())
             visible
@@ -117,7 +124,7 @@ internal constructor(
         val registration =
             object : WatcherRegistration {
                 override fun unregister() {
-                    uiDevice.removeWatcher(id)
+                    device.removeWatcher(id)
                     watcherRegistrations.remove(this)
                 }
             }
@@ -134,21 +141,21 @@ internal constructor(
      *
      * Example:
      * ```kotlin
-     * onView { textAsString == "Search" }.click()
+     * onElement { textAsString == "Search" }.click()
      * ```
      *
-     * @param timeoutMs a timeout to find the view that satisfies the given condition.
+     * @param timeoutMs a timeout to find the element that satisfies the given condition.
      * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for
      *   updates.
      * @param block a block that specifies a condition on the node to find.
      * @return a [UiObject2] from a node that matches the given [block] condition.
      */
     @JvmOverloads
-    public fun onView(
+    public fun onElement(
         timeoutMs: Long = 10000,
         pollIntervalMs: Long = 100,
         block: AccessibilityNodeInfo.() -> (Boolean),
-    ): UiObject2 = uiDevice.onView(timeoutMs, pollIntervalMs, block)
+    ): UiObject2 = device.onElement(timeoutMs, pollIntervalMs, block)
 
     /**
      * Performs a DFS on the accessibility tree starting from the root node in the active window and
@@ -158,21 +165,21 @@ internal constructor(
      *
      * Example:
      * ```kotlin
-     * onView { textAsString == "Search" }.click()
+     * onElement { textAsString == "Search" }.click()
      * ```
      *
-     * @param timeoutMs a timeout to find the view that satisfies the given condition.
+     * @param timeoutMs a timeout to find the element that satisfies the given condition.
      * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for
      *   updates.
      * @param block a block that specifies a condition on the node to find.
      * @return a [UiObject2] from a node that matches the given [block] condition or null.
      */
     @JvmOverloads
-    public fun onViewOrNull(
+    public fun onElementOrNull(
         timeoutMs: Long = 10000,
         pollIntervalMs: Long = 100,
         block: AccessibilityNodeInfo.() -> (Boolean),
-    ): UiObject2? = uiDevice.onViewOrNull(timeoutMs, pollIntervalMs, block)
+    ): UiObject2? = device.onElementOrNull(timeoutMs, pollIntervalMs, block)
 
     /**
      * Performs a DFS on the accessibility tree starting from the root node in the active window and
@@ -182,21 +189,21 @@ internal constructor(
      *
      * Example:
      * ```kotlin
-     * node.onViews { isClass(Button::class.java) }
+     * node.onElements { isClass(Button::class.java) }
      * ```
      *
-     * @param timeoutMs a timeout to find the view that satisfies the given condition.
+     * @param timeoutMs a timeout to find the element that satisfies the given condition.
      * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for
      *   updates.
      * @param block a block that specifies a condition on the node to find.
      * @return a list of [UiObject2] from nodes that matches the given [block] condition.
      */
     @JvmOverloads
-    public fun onViews(
+    public fun onElements(
         timeoutMs: Long = 10000,
         pollIntervalMs: Long = 100,
         block: AccessibilityNodeInfo.() -> (Boolean),
-    ): List<UiObject2> = uiDevice.onViews(timeoutMs, pollIntervalMs, block)
+    ): List<UiObject2> = device.onElements(timeoutMs, pollIntervalMs, block)
 
     /**
      * Waits for an application to become visible. Note that internally it checks if an
@@ -212,10 +219,7 @@ internal constructor(
         appPackageName: String = instrumentation.targetContext.packageName,
         timeoutMs: Long = 10000L,
     ): Boolean =
-        uiDevice.waitForAppToBeVisible(
-            appPackageName = appPackageName,
-            timeoutMs = timeoutMs,
-        )
+        device.waitForAppToBeVisible(appPackageName = appPackageName, timeoutMs = timeoutMs)
 
     /**
      * Types the given [text] string simulating key press through [Instrumentation.sendKeySync].
@@ -225,36 +229,61 @@ internal constructor(
      *
      * @param text the text to type.
      */
-    public fun type(text: String): Unit = uiDevice.type(text)
+    public fun type(text: String): Unit = device.type(text)
 
     /**
      * Similar to [type] but presses the delete key for the given [count] times.
      *
      * @param count how many times the press delete key should be pressed.
      */
-    public fun pressDelete(count: Int): Unit = uiDevice.pressDelete(count)
+    public fun pressDelete(count: Int): Unit = device.pressDelete(count)
 
     /** Press the enter key. */
-    public fun pressEnter(): Boolean = uiDevice.pressEnter()
+    public fun pressEnter(): Boolean = device.pressEnter()
 
     /** Press the back key. */
-    public fun pressBack(): Boolean = uiDevice.pressBack()
+    public fun pressBack(): Boolean = device.pressBack()
 
     /** Press the home key. */
-    public fun pressHome(): Boolean = uiDevice.pressHome()
+    public fun pressHome(): Boolean = device.pressHome()
 
     /** Returns all the windows on all the displays. */
-    public fun windows(): List<AccessibilityWindowInfo> = uiDevice.windows()
+    public fun windows(): List<AccessibilityWindowInfo> = device.windows()
 
     /** Returns all the window roots on all the displays. */
-    public fun windowRoots(): List<AccessibilityNodeInfo> = uiDevice.windowRoots
+    public fun windowRoots(): List<AccessibilityNodeInfo> = device.windowRoots
 
     /**
-     * Returns the active window. Note that calling this method after [startApp], [startActivity] or
-     * [startIntent] without waiting for the app to be visible, will return the active window at the
-     * time of starting the app, i.e. the launcher if starting from there.
+     * Waits for the root node of the active window to become stable.
+     *
+     * A node is considered stable when it and its descendants have not changed over an interval of
+     * time. Optionally also the node image can be checked. Internally it works checking
+     * periodically that the internal properties of the node have not changed.
+     *
+     * @param stableTimeoutMs a timeout for the wait operation, to ensure not waiting forever for
+     *   stability.
+     * @param stableIntervalMs the interval during which the node should not be changing, in order
+     *   to be considered stable.
+     * @param stablePollIntervalMs specifies how often the ui should be checked for changes.
+     * @param requireStableScreenshot specifies if also the bitmap of the node should not change
+     *   over the specified [stableIntervalMs]. Note that this won't work with elements that change
+     *   constantly, like a video player.
+     * @return a [StableResult] containing the latest acquired element hierarchy and screenshot, and
+     *   a flag indicating if the node was stable before timeout.
      */
-    public fun activeWindow(): AccessibilityWindowInfo = activeWindowRoot().window
+    @JvmOverloads
+    public fun waitForStableInActiveWindow(
+        stableTimeoutMs: Long = 3000,
+        stableIntervalMs: Long = 500,
+        stablePollIntervalMs: Long = 50,
+        requireStableScreenshot: Boolean = true,
+    ): StableResult =
+        device.waitForStableInActiveWindow(
+            stableTimeoutMs = stableTimeoutMs,
+            stablePollIntervalMs = stablePollIntervalMs,
+            stableIntervalMs = stableIntervalMs,
+            requireStableScreenshot = requireStableScreenshot,
+        )
 
     /**
      * Returns the active window root node. Note that calling this method after [startApp],
@@ -262,7 +291,7 @@ internal constructor(
      * active window root at the time of starting the app, i.e. the root of the launcher if starting
      * from there.
      */
-    public fun activeWindowRoot(): AccessibilityNodeInfo = uiDevice.waitForRootInActiveWindow()
+    public fun activeWindowRoot(): AccessibilityNodeInfo = device.waitForRootInActiveWindow()
 
     /** Starts the instrumentation test target app using the target app package name. */
     public fun startApp(): Unit = startApp(instrumentation.targetContext.packageName)
@@ -280,10 +309,8 @@ internal constructor(
      * @param packageName the app package name of the activity to start.
      * @param activityName the name of the activity to start.
      */
-    public fun startActivity(
-        packageName: String,
-        activityName: String,
-    ): Unit = appManager.startActivity(packageName = packageName, activityName = activityName)
+    public fun startActivity(packageName: String, activityName: String): Unit =
+        appManager.startActivity(packageName = packageName, activityName = activityName)
 
     /**
      * Starts an activity with the given class.

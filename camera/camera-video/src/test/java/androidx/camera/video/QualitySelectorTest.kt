@@ -21,7 +21,6 @@ import android.media.CamcorderProfile.QUALITY_720P
 import android.media.CamcorderProfile.QUALITY_HIGH
 import android.media.CamcorderProfile.QUALITY_LOW
 import android.os.Build
-import android.util.Range
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
@@ -61,7 +60,7 @@ class QualitySelectorTest {
         createFakeVideoCapabilities(
             mapOf(
                 SDR to listOf(Quality.UHD, Quality.HD),
-                HLG_10_BIT to listOf(Quality.FHD, Quality.SD)
+                HLG_10_BIT to listOf(Quality.FHD, Quality.SD),
             )
         )
 
@@ -178,7 +177,7 @@ class QualitySelectorTest {
         val qualitySelector =
             QualitySelector.from(
                 Quality.FHD,
-                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD)
+                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD),
             )
 
         // Act.
@@ -234,9 +233,9 @@ class QualitySelectorTest {
                     Quality.FHD,
                     Quality.UHD,
                     Quality.LOWEST,
-                    Quality.HIGHEST
+                    Quality.HIGHEST,
                 ),
-                FallbackStrategy.higherQualityThan(Quality.LOWEST)
+                FallbackStrategy.higherQualityThan(Quality.LOWEST),
             )
 
         // Act.
@@ -254,7 +253,7 @@ class QualitySelectorTest {
         val qualitySelector =
             QualitySelector.from(
                 Quality.FHD,
-                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD)
+                FallbackStrategy.lowerQualityOrHigherThan(Quality.FHD),
             )
 
         // Act.
@@ -362,7 +361,7 @@ class QualitySelectorTest {
         val qualitySelector =
             QualitySelector.from(
                 Quality.UHD,
-                FallbackStrategy.higherQualityOrLowerThan(Quality.UHD)
+                FallbackStrategy.higherQualityOrLowerThan(Quality.UHD),
             )
 
         // Act.
@@ -418,13 +417,6 @@ class QualitySelectorTest {
             }
 
             override fun isQualitySupported(quality: Quality, dynamicRange: DynamicRange): Boolean {
-                throw UnsupportedOperationException("Not supported.")
-            }
-
-            override fun getSupportedFrameRateRanges(
-                quality: Quality,
-                dynamicRange: DynamicRange
-            ): Set<Range<Int>> {
                 throw UnsupportedOperationException("Not supported.")
             }
 

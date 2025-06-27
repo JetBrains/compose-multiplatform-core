@@ -23,7 +23,7 @@ import androidx.xr.runtime.internal.GltfModelResource;
  *
  * <p>This is used to create to load a glTF that can later be used when creating a GltfEntity.
  */
-// TODO: b/362368652 - Add an interface which returns an integer animation IDX given a string
+// TODO: b/417750821 - Add an interface which returns an integer animation IDX given a string
 //                     animation name for a loaded GLTF.
 final class GltfModelResourceImpl implements GltfModelResource {
     private final long mToken;

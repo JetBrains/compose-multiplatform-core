@@ -109,7 +109,7 @@ class StateRestorationTester(private val composeTestRule: ComposeContentTestRule
             currentRegistry =
                 SaveableStateRegistry(
                     restoredValues = savedMap,
-                    canBeSaved = { original.canBeSaved(it) }
+                    canBeSaved = { original.canBeSaved(it) },
                 )
             shouldEmitChildren = true
         }
@@ -138,9 +138,7 @@ class StateRestorationTester(private val composeTestRule: ComposeContentTestRule
  */
 @VisibleForTesting internal var IS_PLATFORM_ENCODING_AND_DECODING_ENABLED = false
 
-internal fun platformEncodeDecode(
-    savedState: Map<String, List<Any?>>,
-): Map<String, List<Any?>> {
+internal fun platformEncodeDecode(savedState: Map<String, List<Any?>>): Map<String, List<Any?>> {
     // If platform encoding/decoding is disabled, return the state as-is.
     if (!IS_PLATFORM_ENCODING_AND_DECODING_ENABLED) return savedState
 

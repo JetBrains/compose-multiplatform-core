@@ -25,7 +25,7 @@ import androidx.compose.ui.util.fastFirstOrNull
 internal actual class InternalPointerEvent
 actual constructor(
     actual val changes: LongSparseArray<PointerInputChange>,
-    val pointerInputEvent: PointerInputEvent
+    val pointerInputEvent: PointerInputEvent,
 ) {
     val motionEvent: MotionEvent?
         get() = pointerInputEvent.motionEvent

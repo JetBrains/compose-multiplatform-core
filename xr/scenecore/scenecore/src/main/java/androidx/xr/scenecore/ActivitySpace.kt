@@ -21,6 +21,8 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.math.BoundingBox
+import androidx.xr.runtime.math.FloatSize3d
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executor
@@ -40,12 +42,12 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
     internal companion object {
         internal fun create(
             adapter: JxrPlatformAdapter,
-            entityManager: EntityManager
+            entityManager: EntityManager,
         ): ActivitySpace = ActivitySpace(adapter.activitySpace, entityManager)
     }
 
     private val boundsListeners:
-        ConcurrentMap<Consumer<Dimensions>, RtActivitySpace.OnBoundsChangedListener> =
+        ConcurrentMap<Consumer<FloatSize3d>, RtActivitySpace.OnBoundsChangedListener> =
         ConcurrentHashMap()
 
     /**
@@ -53,15 +55,15 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * keep this reference so it can be removed using the corresponding unregister method.
      */
     // TODO: b/370538244 - remove with deprecated spatial state callbacks
-    private var registeredBoundsListener: Consumer<Dimensions>? = null
+    private var registeredBoundsListener: Consumer<FloatSize3d>? = null
 
     /**
      * Retrieves a copy of the current bounds of this ActivitySpace.
      *
-     * @return [Dimensions] representing the current bounds of this ActivitySpace.
+     * @return [FloatSize3d] representing the current bounds of this ActivitySpace.
      */
     // TODO b/370618648: remove suppression after API review is complete.
-    public fun getBounds(): Dimensions = rtEntity.bounds.toDimensions()
+    public fun getBounds(): FloatSize3d = rtEntity.bounds.toFloatSize3d()
 
     /**
      * Adds the given [Consumer] as a listener to be invoked when this ActivitySpace's current
@@ -71,7 +73,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      *   changes.
      */
     // TODO b/370618648: remove suppression after API review is complete.
-    public fun addBoundsChangedListener(listener: Consumer<Dimensions>): Unit =
+    public fun addBoundsChangedListener(listener: Consumer<FloatSize3d>): Unit =
         addBoundsChangedListener(HandlerExecutor.mainThreadExecutor, listener)
 
     /**
@@ -85,11 +87,11 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
     // TODO b/370618648: remove suppression after API review is complete.
     public fun addBoundsChangedListener(
         callbackExecutor: Executor,
-        listener: Consumer<Dimensions>
+        listener: Consumer<FloatSize3d>,
     ) {
         val rtListener: RtActivitySpace.OnBoundsChangedListener =
             RtActivitySpace.OnBoundsChangedListener { rtDimensions ->
-                callbackExecutor.execute { listener.accept(rtDimensions.toDimensions()) }
+                callbackExecutor.execute { listener.accept(rtDimensions.toFloatSize3d()) }
             }
         boundsListeners.compute(
             listener,
@@ -107,7 +109,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      * @param listener The Consumer to be removed from receiving updates.
      */
     // TODO b/370618648: remove suppression after API review is complete.
-    public fun removeBoundsChangedListener(listener: Consumer<Dimensions>): Unit {
+    public fun removeBoundsChangedListener(listener: Consumer<FloatSize3d>): Unit {
         boundsListeners.computeIfPresent(
             listener,
             { _, rtListener ->
@@ -129,7 +131,7 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
     public fun registerOnBoundsChangedListener(listener: OnBoundsChangeListener) {
         if (registeredBoundsListener != null) unregisterOnBoundsChangedListener()
         registeredBoundsListener =
-            Consumer<Dimensions> { bounds -> listener.onBoundsChanged(bounds) }
+            Consumer<FloatSize3d> { bounds -> listener.onBoundsChanged(bounds) }
         addBoundsChangedListener(registeredBoundsListener!!)
     }
 
@@ -151,20 +153,24 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      */
     @JvmOverloads
     @Suppress("ExecutorRegistration")
-    public fun setOnSpaceUpdatedListener(
-        listener: OnSpaceUpdatedListener?,
-        executor: Executor? = null,
-    ) {
-        rtEntity.setOnSpaceUpdatedListener(
-            listener?.let { { it.onSpaceUpdated() } } ?: {},
-            executor
-        )
+    public fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor? = null) {
+        rtEntity.setOnSpaceUpdatedListener(listener, executor)
     }
+
+    /**
+     * A recommended box for content to be placed in when in Full Space Mode.
+     *
+     * The box is relative to the ActivitySpace's coordinate system. It is not scaled by the
+     * ActivitySpace's transform. The dimensions are always in meters. This provides a
+     * device-specific default volume that developers can use to size their content appropriately.
+     */
+    public val recommendedContentBoxInFullSpace: BoundingBox =
+        rtEntity.recommendedContentBoxInFullSpace
 }
 
 // TODO: b/370538244 - remove with deprecated spatial state callbacks
 @Deprecated(message = "Use addBoundsChangedListener(Consumer<Dimensions>)")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun interface OnBoundsChangeListener {
-    public fun onBoundsChanged(bounds: Dimensions) // Dimensions are in meters.
+    public fun onBoundsChanged(bounds: FloatSize3d) // Dimensions are in meters.
 }

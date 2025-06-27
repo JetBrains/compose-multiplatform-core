@@ -72,9 +72,12 @@ import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MirrorMode;
 import androidx.camera.core.Preview;
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureResult;
@@ -579,6 +582,57 @@ public final class Camera2CameraImplTest {
     }
 
     @Test
+    public void attachImageCapture_meteringRepeatingIsAttachedIfDisabled() {
+        UseCase imageCapture = new ImageCapture.Builder().setMeteringRepeatingEnabled(
+                false).build();
+
+        mCamera2CameraImpl.attachUseCases(singletonList(imageCapture));
+
+        assertThat(mCamera2CameraImpl.isMeteringRepeatingAttached()).isFalse();
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(
+                () -> mCamera2CameraImpl.detachUseCases(singletonList(imageCapture)));
+    }
+
+    @Test
+    public void startFocusMetering_throwExceptionIfFocusMeteringDisabled()
+            throws InterruptedException {
+        UseCase imageCapture = createImageCapture(false);
+
+        mCamera2CameraImpl.attachUseCases(singletonList(imageCapture));
+
+        try {
+            SurfaceOrientedMeteringPointFactory meteringPointFactory =
+                    new SurfaceOrientedMeteringPointFactory(1f, 1f);
+            MeteringPoint validMeteringPoint = meteringPointFactory.createPoint(0f, 0f);
+            mCamera2CameraImpl.getCameraControl().startFocusAndMetering(
+                    new FocusMeteringAction.Builder(validMeteringPoint).build()).get();
+        } catch (ExecutionException e) {
+            assertThat(e).isInstanceOf(CameraControl.OperationCanceledException.class);
+        }
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(
+                () -> mCamera2CameraImpl.detachUseCases(singletonList(imageCapture)));
+    }
+
+    @Test
+    public void cancelFocusMetering_throwExceptionIfFocusMeteringDisabled()
+            throws InterruptedException {
+        UseCase imageCapture = createImageCapture(false);
+
+        mCamera2CameraImpl.attachUseCases(singletonList(imageCapture));
+
+        try {
+            mCamera2CameraImpl.getCameraControl().cancelFocusAndMetering().get();
+        } catch (ExecutionException e) {
+            assertThat(e).isInstanceOf(CameraControl.OperationCanceledException.class);
+        }
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(
+                () -> mCamera2CameraImpl.detachUseCases(singletonList(imageCapture)));
+    }
+
+    @Test
     public void attachStreamSharingWithNonRepeatingChildren_meteringRepeatingIsNotAttached() {
         // StreamSharing use case adds a repeating surface by default, no need for MeteringRepeating
         Set<UseCase> useCases = new HashSet<>();
@@ -967,10 +1021,15 @@ public final class Camera2CameraImplTest {
     }
 
     private @NonNull ImageCapture createImageCapture() {
+        return createImageCapture(true);
+    }
+
+    private @NonNull ImageCapture createImageCapture(boolean meteringRepeatingEnabled) {
         UseCaseConfigFactory useCaseConfigFactory =
                 new Camera2UseCaseConfigFactory(ApplicationProvider.getApplicationContext());
 
-        ImageCapture imageCapture = new ImageCapture.Builder().build();
+        ImageCapture imageCapture = new ImageCapture.Builder().setMeteringRepeatingEnabled(
+                meteringRepeatingEnabled).build();
 
         FakeUseCaseConfig.Builder configBuilder =
                 new FakeUseCaseConfig.Builder().setSessionOptionUnpacker(

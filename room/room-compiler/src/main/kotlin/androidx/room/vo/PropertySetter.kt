@@ -29,7 +29,7 @@ data class PropertySetter(
     val propertyName: String,
     val jvmName: String,
     val type: XType,
-    val callType: CallType
+    val callType: CallType,
 ) {
     fun writeSet(ownerVar: String, inVar: String, builder: XCodeBlock.Builder) {
         if (callType == CallType.CONSTRUCTOR) {
@@ -57,7 +57,7 @@ data class PropertySetter(
         stmtVar: String,
         indexVar: String,
         reader: StatementValueReader,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         when (scope.language) {
             CodeLanguage.JAVA ->

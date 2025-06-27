@@ -70,7 +70,7 @@ class TransformingLazyColumnStateTest {
             state =
                 rememberTransformingLazyColumnState(
                     initialAnchorItemIndex = 10,
-                    initialAnchorItemScrollOffset = 20
+                    initialAnchorItemScrollOffset = 20,
                 )
         }
         assertThat(state.anchorItemIndex).isEqualTo(10)
@@ -113,14 +113,11 @@ class TransformingLazyColumnStateTest {
             state =
                 rememberTransformingLazyColumnState(
                     initialAnchorItemIndex = 10,
-                    initialAnchorItemScrollOffset = 20
+                    initialAnchorItemScrollOffset = 20,
                 )
             scope = rememberCoroutineScope()
 
-            TransformingLazyColumn(
-                Modifier.height(itemSizeDp * 3f).testTag(lazyListTag),
-                state,
-            ) {
+            TransformingLazyColumn(Modifier.height(itemSizeDp * 3f).testTag(lazyListTag), state) {
                 items(itemsCount) { Spacer(modifier = Modifier.height(itemSizeDp)) }
             }
         }

@@ -167,7 +167,7 @@ class E2ECallExtensionExtrasTests : BaseTelecomTest() {
                             // Always send disconnect signal if possible.
                             assertEquals(
                                 CallControlResult.Success(),
-                                disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                                disconnect(DisconnectCause(DisconnectCause.LOCAL)),
                             )
                         }
                     }

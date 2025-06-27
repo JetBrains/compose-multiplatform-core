@@ -1,9 +1,5 @@
 // Baseline format: 1.0
-ChangedStatic: androidx.compose.ui.tooling.preview.Devices#getWEAR_OS_LARGE_ROUND():
-    Method androidx.compose.ui.tooling.preview.Devices.getWEAR_OS_LARGE_ROUND has changed 'static' qualifier
-ChangedStatic: androidx.compose.ui.tooling.preview.Devices#getWEAR_OS_RECT():
-    Method androidx.compose.ui.tooling.preview.Devices.getWEAR_OS_RECT has changed 'static' qualifier
-ChangedStatic: androidx.compose.ui.tooling.preview.Devices#getWEAR_OS_SMALL_ROUND():
-    Method androidx.compose.ui.tooling.preview.Devices.getWEAR_OS_SMALL_ROUND has changed 'static' qualifier
-ChangedStatic: androidx.compose.ui.tooling.preview.Devices#getWEAR_OS_SQUARE():
-    Method androidx.compose.ui.tooling.preview.Devices.getWEAR_OS_SQUARE has changed 'static' qualifier
+AddedMethod: androidx.compose.ui.tooling.preview.Preview#Preview(String, String, int, int, int, String, float, boolean, boolean, long, int, String, int):
+    Added constructor androidx.compose.ui.tooling.preview.Preview(String,String,int,int,int,String,float,boolean,boolean,long,int,String,int)
+AddedMethod: androidx.compose.ui.tooling.preview.PreviewParameter#PreviewParameter(kotlin.reflect.KClass<? extends androidx.compose.ui.tooling.preview.PreviewParameterProvider<?>>, int):
+    Added constructor androidx.compose.ui.tooling.preview.PreviewParameter(kotlin.reflect.KClass<? extends androidx.compose.ui.tooling.preview.PreviewParameterProvider<?>>,int)

@@ -22,12 +22,14 @@ dependencies {
     implementation(project(":compose:material:material:integration-tests:material-demos"))
     implementation(project(":compose:material3:material3:integration-tests:material3-demos"))
     implementation(project(":navigation:navigation-compose:integration-tests:navigation-demos"))
+    implementation(project(":navigation3:navigation3-ui:integration-tests:navigation3-demos"))
     implementation(project(":paging:paging-compose:integration-tests:paging-demos"))
     implementation(project(":compose:ui:ui:integration-tests:ui-demos"))
 
     implementation(libs.kotlinReflect)
     implementation(libs.kotlinStdlib)
 
+    implementation(project(":activity:activity"))
     implementation("androidx.core:core-ktx:1.15.0")
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation-layout"))
@@ -46,6 +48,6 @@ dependencies {
 ApkCopyHelperKt.setupAppApkCopy(project, "release")
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.compose.integration.demos"
 }

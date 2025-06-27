@@ -84,7 +84,7 @@ public class FloorsClimbedRecord(
             AggregateMetric.doubleMetric(
                 "FloorsClimbed",
                 AggregateMetric.AggregationType.TOTAL,
-                "floors"
+                "floors",
             )
     }
 }

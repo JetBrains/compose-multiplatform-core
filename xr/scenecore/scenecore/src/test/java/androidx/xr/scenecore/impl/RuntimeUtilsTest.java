@@ -19,54 +19,107 @@ package androidx.xr.scenecore.impl;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertPose;
 import static androidx.xr.runtime.testing.math.MathAssertions.assertVector3;
 
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_END;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_ONGOING;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_START;
+import static com.android.extensions.xr.node.ReformEvent.REFORM_STATE_UNKNOWN;
+
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import android.util.Log;
 
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
+import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.InputEvent;
+import androidx.xr.runtime.internal.PixelDimensions;
 import androidx.xr.runtime.internal.PlaneSemantic;
 import androidx.xr.runtime.internal.PlaneType;
 import androidx.xr.runtime.internal.ResizeEvent;
 import androidx.xr.runtime.internal.SpatialCapabilities;
+import androidx.xr.runtime.internal.SpatialPointerIcon;
 import androidx.xr.runtime.internal.SpatialVisibility;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
+import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
+import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.environment.EnvironmentVisibilityState;
 import com.android.extensions.xr.environment.PassthroughVisibilityState;
 import com.android.extensions.xr.environment.ShadowPassthroughVisibilityState;
 import com.android.extensions.xr.node.Mat4f;
+import com.android.extensions.xr.node.Node;
+import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Vec3;
+import com.android.extensions.xr.space.PerceivedResolution;
 import com.android.extensions.xr.space.ShadowSpatialCapabilities;
 import com.android.extensions.xr.space.VisibilityState;
+
+import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
+import com.google.ar.imp.apibindings.FakeImpressApiImpl;
+import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.junit.rules.ExpectedLogMessagesRule;
 
 import java.util.regex.Pattern;
 
 @RunWith(RobolectricTestRunner.class)
 public final class RuntimeUtilsTest {
-    // TODO(b/402408284): Remove once the constants are available in the host version of ReformEvent
-    public static final int REFORM_STATE_UNKNOWN = 0;
-    public static final int REFORM_STATE_START = 1;
-    public static final int REFORM_STATE_ONGOING = 2;
-    public static final int REFORM_STATE_END = 3;
 
     @Rule
     public final ExpectedLogMessagesRule expectedLogMessagesRule = new ExpectedLogMessagesRule();
+
+    JxrPlatformAdapterAxr createPlatformAdapter(EntityManager entityManager) {
+        ActivityController<Activity> mActivityController;
+        Activity mActivity;
+        mActivityController = Robolectric.buildActivity(Activity.class);
+        mActivity = mActivityController.create().start().get();
+
+        FakeScheduledExecutorService mFakeExecutor = new FakeScheduledExecutorService();
+        XrExtensions xrExtensions = XrExtensionsProvider.getXrExtensions();
+        FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
+        PerceptionLibrary mPerceptionLibrary = mock(PerceptionLibrary.class);
+        Session mSession = mock(Session.class);
+        when(mPerceptionLibrary.initSession(eq(mActivity), anyInt(), eq(mFakeExecutor)))
+                .thenReturn(immediateFuture(mSession));
+        when(mPerceptionLibrary.getActivity()).thenReturn(mActivity);
+        SplitEngineSubspaceManager mSplitEngineSubspaceManager =
+                Mockito.mock(SplitEngineSubspaceManager.class);
+        ImpSplitEngineRenderer mSplitEngineRenderer = Mockito.mock(ImpSplitEngineRenderer.class);
+        return JxrPlatformAdapterAxr.create(
+                mActivity,
+                mFakeExecutor,
+                xrExtensions,
+                mFakeImpressApi,
+                entityManager,
+                mPerceptionLibrary,
+                mSplitEngineSubspaceManager,
+                mSplitEngineRenderer,
+                /* useSplitEngine= */ true,
+                /* unscaledGravityAlignedActivitySpace= */ false);
+    }
 
     @Test
     public void getPlaneTypeHorizontal_returnsHorizontal() {
@@ -317,19 +370,19 @@ public final class RuntimeUtilsTest {
     }
 
     @Test
-    public void getIsSpatialEnvironmentPreferenceActive_convertsFromExtensionState() {
+    public void getIsPreferredSpatialEnvironmentActive_convertsFromExtensionState() {
         assertThat(
-                        RuntimeUtils.getIsSpatialEnvironmentPreferenceActive(
+                        RuntimeUtils.getIsPreferredSpatialEnvironmentActive(
                                 EnvironmentVisibilityState.INVISIBLE))
                 .isFalse();
 
         assertThat(
-                        RuntimeUtils.getIsSpatialEnvironmentPreferenceActive(
+                        RuntimeUtils.getIsPreferredSpatialEnvironmentActive(
                                 EnvironmentVisibilityState.HOME_VISIBLE))
                 .isFalse();
 
         assertThat(
-                        RuntimeUtils.getIsSpatialEnvironmentPreferenceActive(
+                        RuntimeUtils.getIsPreferredSpatialEnvironmentActive(
                                 EnvironmentVisibilityState.APP_VISIBLE))
                 .isTrue();
     }
@@ -379,6 +432,136 @@ public final class RuntimeUtilsTest {
                 Log.ERROR,
                 "RuntimeUtils",
                 Pattern.compile(".* Opacity should be greater than zero.*"));
+    }
+
+    @Test
+    public void getHitInfo_convertsFromHitInfo() {
+
+        EntityManager entityManager = new EntityManager();
+        JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
+        Entity testEntity =
+                platformAdapter.createGroupEntity(
+                        new Pose(), "testGroup", platformAdapter.getActivitySpace());
+        Node testNode = ((AndroidXrEntity) testEntity).getNode();
+        entityManager.setEntityForNode(testNode, testEntity);
+
+        float[] expectedTransform =
+                new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        Mat4f transform = new Mat4f(expectedTransform);
+        Vector3 expectedHitPosition = new Vector3(1, 2, 3);
+        Vec3 hitPosition = new Vec3(1, 2, 3);
+
+        com.android.extensions.xr.node.InputEvent.HitInfo extensionHitInfo =
+                new com.android.extensions.xr.node.InputEvent.HitInfo(
+                        1, testNode, transform, hitPosition);
+        InputEvent.Companion.HitInfo hitInfo =
+                RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+        assertThat(hitInfo.getInputEntity()).isEqualTo(testEntity);
+        assertVector3(hitInfo.getHitPosition(), expectedHitPosition);
+        assertThat(hitInfo.getTransform().getData())
+                .usingExactEquality()
+                .containsExactly(new Matrix4(expectedTransform).getData())
+                .inOrder();
+    }
+
+    @Test
+    public void getHitInfo_nullHitInfo_returnsNull() {
+        EntityManager entityManager = new EntityManager();
+        assertThat(RuntimeUtils.getHitInfo(null, entityManager)).isNull();
+    }
+
+    @Test
+    public void getHitInfo_nullInputNode_returnsNull() {
+
+        EntityManager entityManager = new EntityManager();
+        JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
+        Entity testEntity =
+                platformAdapter.createGroupEntity(
+                        new Pose(), "testGroup", platformAdapter.getActivitySpace());
+        Node testNode = ((AndroidXrEntity) testEntity).getNode();
+        entityManager.setEntityForNode(testNode, testEntity);
+
+        float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        Mat4f transform = new Mat4f(transformData);
+        Vec3 hitPosition = new Vec3(1, 2, 3);
+
+        com.android.extensions.xr.node.InputEvent.HitInfo extensionHitInfo =
+                new com.android.extensions.xr.node.InputEvent.HitInfo(
+                        1, null, transform, hitPosition);
+        InputEvent.Companion.HitInfo hitInfo =
+                RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+        assertThat(hitInfo).isNull();
+    }
+
+    @Test
+    public void getHitInfo_nullTransform_returnsNull() {
+        EntityManager entityManager = new EntityManager();
+        JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
+        Entity testEntity =
+                platformAdapter.createGroupEntity(
+                        new Pose(), "testGroup", platformAdapter.getActivitySpace());
+        Node testNode = ((AndroidXrEntity) testEntity).getNode();
+        entityManager.setEntityForNode(testNode, testEntity);
+
+        Vec3 hitPosition = new Vec3(1, 2, 3);
+
+        com.android.extensions.xr.node.InputEvent.HitInfo extensionHitInfo =
+                new com.android.extensions.xr.node.InputEvent.HitInfo(
+                        1, testNode, null, hitPosition);
+        InputEvent.Companion.HitInfo hitInfo =
+                RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+        assertThat(hitInfo).isNull();
+    }
+
+    @Test
+    public void getHitInfo_nullHitEntity_returnsNull() {
+        // Create the entity manager but do not set the hit entity.
+        EntityManager entityManager = new EntityManager();
+        JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
+        Entity testEntity =
+                platformAdapter.createGroupEntity(
+                        new Pose(), "testGroup", platformAdapter.getActivitySpace());
+        Node testNode = ((AndroidXrEntity) testEntity).getNode();
+
+        float[] transformData = new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        Mat4f transform = new Mat4f(transformData);
+        Vec3 hitPosition = new Vec3(1, 2, 3);
+
+        com.android.extensions.xr.node.InputEvent.HitInfo extensionHitInfo =
+                new com.android.extensions.xr.node.InputEvent.HitInfo(
+                        1, null, transform, hitPosition);
+        InputEvent.Companion.HitInfo hitInfo =
+                RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+        assertThat(hitInfo).isNull();
+    }
+
+    @Test
+    public void getHitInfo_nullHitPosition_convertsFromHitInfo() {
+
+        EntityManager entityManager = new EntityManager();
+        JxrPlatformAdapterAxr platformAdapter = createPlatformAdapter(entityManager);
+        Entity testEntity =
+                platformAdapter.createGroupEntity(
+                        new Pose(), "testGroup", platformAdapter.getActivitySpace());
+        Node testNode = ((AndroidXrEntity) testEntity).getNode();
+        entityManager.setEntityForNode(testNode, testEntity);
+
+        float[] expectedTransform =
+                new float[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        Mat4f transform = new Mat4f(expectedTransform);
+        Vec3 hitPosition = null;
+
+        com.android.extensions.xr.node.InputEvent.HitInfo extensionHitInfo =
+                new com.android.extensions.xr.node.InputEvent.HitInfo(
+                        1, testNode, transform, hitPosition);
+        InputEvent.Companion.HitInfo hitInfo =
+                RuntimeUtils.getHitInfo(extensionHitInfo, entityManager);
+        assertThat(hitInfo.getInputEntity()).isEqualTo(testEntity);
+        assertThat(hitInfo.getHitPosition()).isNull();
+        assertThat(hitInfo.getTransform().getData())
+                .usingExactEquality()
+                .containsExactly(new Matrix4(expectedTransform).getData())
+                .inOrder();
     }
 
     @Test
@@ -568,31 +751,40 @@ public final class RuntimeUtilsTest {
 
     @Test
     public void convertSpatialVisibility_convertsFromExtensionVisibility() {
-        assertThat(
-                        RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityState(VisibilityState.FULLY_VISIBLE)))
+        com.android.extensions.xr.space.PerceivedResolution perceivedResolution =
+                new com.android.extensions.xr.space.PerceivedResolution(0, 0);
+        assertThat(RuntimeUtils.convertSpatialVisibility(VisibilityState.FULLY_VISIBLE))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.WITHIN_FOV));
 
-        assertThat(
-                        RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityState(VisibilityState.PARTIALLY_VISIBLE)))
+        assertThat(RuntimeUtils.convertSpatialVisibility(VisibilityState.PARTIALLY_VISIBLE))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.PARTIALLY_WITHIN_FOV));
 
-        assertThat(
-                        RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityState(VisibilityState.NOT_VISIBLE)))
+        assertThat(RuntimeUtils.convertSpatialVisibility(VisibilityState.NOT_VISIBLE))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.OUTSIDE_FOV));
 
-        assertThat(
-                        RuntimeUtils.convertSpatialVisibility(
-                                new VisibilityState(VisibilityState.UNKNOWN)))
+        assertThat(RuntimeUtils.convertSpatialVisibility(VisibilityState.UNKNOWN))
                 .isEqualTo(new SpatialVisibility(SpatialVisibility.UNKNOWN));
     }
 
     @Test
     public void convertSpatialVisibility_throwsExceptionForInvalidValue() {
         assertThrows(
-                IllegalArgumentException.class,
-                () -> RuntimeUtils.convertSpatialVisibility(new VisibilityState(100)));
+                IllegalArgumentException.class, () -> RuntimeUtils.convertSpatialVisibility(100));
+    }
+
+    @Test
+    public void convertPerceivedResolution_convertsFromExtension() {
+        assertThat(RuntimeUtils.convertPerceivedResolution(new PerceivedResolution(100, 200)))
+                .isEqualTo(new PixelDimensions(100, 200));
+    }
+
+    @Test
+    public void convertSpatialPointerIconType_convertsFromRuntimeIconType() {
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_NONE))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_NONE);
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_DEFAULT))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_DEFAULT);
+        assertThat(RuntimeUtils.convertSpatialPointerIconType(SpatialPointerIcon.TYPE_CIRCLE))
+                .isEqualTo(NodeTransaction.POINTER_ICON_TYPE_CIRCLE);
     }
 }

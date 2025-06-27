@@ -22,7 +22,6 @@ import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.SurfaceRequest
@@ -58,7 +57,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class VideoEncoderConfigVideoProfileResolverTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     companion object {
         @JvmStatic
@@ -66,7 +65,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
 
         private const val FRAME_RATE_30 = 30
@@ -75,12 +74,9 @@ class VideoEncoderConfigVideoProfileResolverTest(
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private val defaultVideoSpec = VideoSpec.builder().build()
     private val timebase = Timebase.UPTIME
 
@@ -90,12 +86,12 @@ class VideoEncoderConfigVideoProfileResolverTest(
 
     @Before
     fun setUp() {
-        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         CameraXUtil.initialize(context, cameraConfig).get()
@@ -137,7 +133,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             videoProfile.resolution,
                             videoProfile,
                             dynamicRange,
-                            Range(videoProfile.frameRate, videoProfile.frameRate)
+                            Range(videoProfile.frameRate, videoProfile.frameRate),
                         )
                         .get()
 
@@ -182,7 +178,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             increasedSurfaceSize,
                             profile,
                             dynamicRange,
-                            profileFrameRate
+                            profileFrameRate,
                         )
                         .get()
                         .bitrate
@@ -197,7 +193,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             decreasedSurfaceSize,
                             profile,
                             dynamicRange,
-                            profileFrameRate
+                            profileFrameRate,
                         )
                         .get()
                         .bitrate
@@ -221,7 +217,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                         surfaceSize,
                         profile,
                         dynamicRange,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                     )
                     .get()
                     .bitrate
@@ -243,7 +239,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             profile,
                             dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                         )
                         .get()
                         .bitrate
@@ -258,7 +254,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             profile,
                             dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                         )
                         .get()
                         .bitrate
@@ -282,7 +278,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             profile,
                             dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                         )
                         .get()
                         .encodeFrameRate
@@ -308,7 +304,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                         surfaceSize,
                         profile,
                         dynamicRange,
-                        expectedCaptureFrameRateRange
+                        expectedCaptureFrameRateRange,
                     )
                     .get()
                     .encodeFrameRate
@@ -336,7 +332,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                         surfaceSize,
                         profile,
                         dynamicRange,
-                        operatingRange
+                        operatingRange,
                     )
                     .get()
                     .bitrate
@@ -367,7 +363,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             videoProfile,
                             dynamicRange,
-                            Range(videoProfile.frameRate, videoProfile.frameRate)
+                            Range(videoProfile.frameRate, videoProfile.frameRate),
                         )
                         .get()
                         .profile
@@ -397,7 +393,7 @@ class VideoEncoderConfigVideoProfileResolverTest(
                             surfaceSize,
                             videoProfile,
                             dynamicRange,
-                            Range(videoProfile.frameRate, videoProfile.frameRate)
+                            Range(videoProfile.frameRate, videoProfile.frameRate),
                         )
                         .get()
                         .dataSpace

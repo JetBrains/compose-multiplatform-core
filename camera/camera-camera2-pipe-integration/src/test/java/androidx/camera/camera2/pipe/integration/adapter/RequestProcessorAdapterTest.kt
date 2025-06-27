@@ -102,10 +102,7 @@ class RequestProcessorAdapterTest {
             .build()
 
     private val sessionProcessorSurfaces =
-        listOf(
-            previewProcessorSurface,
-            imageCaptureProcessorSurface,
-        )
+        listOf(previewProcessorSurface, imageCaptureProcessorSurface)
 
     private var cameraGraphSimulator: CameraGraphSimulator? = null
     private var requestProcessorAdapter: RequestProcessorAdapter? = null
@@ -136,11 +133,11 @@ class RequestProcessorAdapterTest {
             buildMap<DeferrableSurface, StreamId> {
                 put(
                     previewProcessorSurface,
-                    checkNotNull(simulator.streams[previewStreamConfig]).id
+                    checkNotNull(simulator.streams[previewStreamConfig]).id,
                 )
                 put(
                     imageCaptureProcessorSurface,
-                    checkNotNull(simulator.streams[imageCaptureStreamConfig]).id
+                    checkNotNull(simulator.streams[imageCaptureStreamConfig]).id,
                 )
             }
         val useCaseGraphConfig =
@@ -206,7 +203,7 @@ class RequestProcessorAdapterTest {
                         .apply {
                             setCaptureRequestOption(
                                 CaptureRequest.CONTROL_AE_MODE,
-                                CONTROL_AE_MODE_OFF
+                                CONTROL_AE_MODE_OFF,
                             )
                         }
                         .build()

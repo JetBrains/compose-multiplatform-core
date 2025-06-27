@@ -33,7 +33,7 @@ internal class FakeCamera2DeviceManager : Camera2DeviceManager {
         sharedCameraIds: List<CameraId>,
         graphListener: GraphListener,
         isPrewarm: Boolean,
-        isForegroundObserver: (Unit) -> Boolean
+        isForegroundObserver: (Unit) -> Boolean,
     ): VirtualCamera {
         return FakeVirtualCamera(cameraId).also { fakeVirtualCameraMap[cameraId] = it }
     }

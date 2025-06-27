@@ -135,7 +135,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
         createPager(
             pageCount = { DefaultPageCount },
             userScrollEnabled = false,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
 
         // Act
@@ -204,7 +204,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
         createPager(
             modifier = Modifier.size(210.dp), // make sure one page is halfway shown
             pageCount = { DefaultPageCount },
-            pageSize = { PageSize.Fixed(50.dp) }
+            pageSize = { PageSize.Fixed(50.dp) },
         )
         val lastVisibleItem = pagerState.layoutInfo.visiblePagesInfo.last().index
         rule.runOnUiThread { focusRequesters[lastVisibleItem - 1]?.requestFocus() }
@@ -240,7 +240,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
             modifier = Modifier.size(210.dp), // make sure one page is halfway shown
             pageCount = { DefaultPageCount },
             pageSize = { PageSize.Fixed(50.dp) },
-            bringIntoViewSpec = PivotBringIntoViewSpec
+            bringIntoViewSpec = PivotBringIntoViewSpec,
         )
         val lastVisibleItem = pagerState.layoutInfo.visiblePagesInfo.last().index
         rule.runOnUiThread { focusRequesters[lastVisibleItem - 1]?.requestFocus() }
@@ -282,7 +282,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())
                 }
-            }
+            },
         )
         rule.runOnUiThread { initialFocusedItem.requestFocus() }
         rule.waitForIdle()
@@ -320,7 +320,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())
                 }
             },
-            bringIntoViewSpec = PivotBringIntoViewSpec
+            bringIntoViewSpec = PivotBringIntoViewSpec,
         )
         rule.runOnUiThread { initialFocusedItem.requestFocus() }
         rule.waitForIdle()
@@ -358,7 +358,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
                     // focus bounds is smaller than page itself
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())
                 }
-            }
+            },
         )
         val lastVisibleItem = pagerState.layoutInfo.visiblePagesInfo.last().index
         rule.runOnUiThread { focusRequesters[lastVisibleItem - 1]?.requestFocus() }
@@ -404,7 +404,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
                     Box(modifier = Modifier.size(30.dp).focusRequester(focusRequester).focusable())
                 }
             },
-            bringIntoViewSpec = PivotBringIntoViewSpec
+            bringIntoViewSpec = PivotBringIntoViewSpec,
         )
         val lastVisibleItem = pagerState.layoutInfo.visiblePagesInfo.last().index
         rule.runOnUiThread { focusRequesters[lastVisibleItem - 1]?.requestFocus() }
@@ -442,7 +442,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
         createPager(
             initialPage = initialPage,
             pageCount = { DefaultPageCount },
-            userScrollEnabled = false
+            userScrollEnabled = false,
         ) {
             Page(index = it, initialFocusedItemIndex = initialPage)
         }
@@ -477,7 +477,7 @@ class PagerAccessibilityTest(config: ParamConfig) : BasePagerTest(config = confi
             initialPage = initialPage,
             pageCount = { DefaultPageCount },
             userScrollEnabled = false,
-            pageSize = { PageSize.Fixed(10.dp) }
+            pageSize = { PageSize.Fixed(10.dp) },
         ) {
             Page(index = it, initialFocusedItemIndex = initialPage)
         }

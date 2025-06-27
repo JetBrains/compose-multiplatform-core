@@ -88,7 +88,7 @@ internal constructor(
     public val userStyle: UserStyleData,
     public val previewComplicationsData: Map<Int, ComplicationData>,
     @get:JvmName("shouldCommitChanges") public val shouldCommitChanges: Boolean,
-    public val previewImage: Bitmap?
+    public val previewImage: Bitmap?,
 ) {
     override fun toString(): String =
         "{watchFaceId: ${watchFaceId.id}, userStyle: $userStyle" +
@@ -128,7 +128,7 @@ public fun EditorStateWireFormat.asApiEditorState(): EditorState {
         UserStyleData(userStyle.mUserStyle),
         previewComplicationData.associateBy(
             { it.id },
-            { it.complicationData.toApiComplicationData() }
+            { it.complicationData.toApiComplicationData() },
         ),
         commitChanges,
         previewImageBundle?.let {
@@ -137,6 +137,6 @@ public fun EditorStateWireFormat.asApiEditorState(): EditorState {
             } else {
                 null
             }
-        }
+        },
     )
 }

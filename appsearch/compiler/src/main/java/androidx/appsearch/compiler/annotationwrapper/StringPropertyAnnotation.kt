@@ -73,7 +73,7 @@ data class StringPropertyAnnotation(
         @Throws(ProcessingException::class)
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String
+            defaultName: String,
         ): StringPropertyAnnotation {
             val name = annotationParams["name"] as? String
             val serializerInAnnotation = annotationParams["serializer"] as TypeMirror
@@ -84,7 +84,7 @@ data class StringPropertyAnnotation(
                 } else {
                     SerializerClass.create(
                         MoreTypes.asElement(serializerInAnnotation) as TypeElement,
-                        SerializerClass.Kind.STRING_SERIALIZER
+                        SerializerClass.Kind.STRING_SERIALIZER,
                     )
                 }
             return StringPropertyAnnotation(

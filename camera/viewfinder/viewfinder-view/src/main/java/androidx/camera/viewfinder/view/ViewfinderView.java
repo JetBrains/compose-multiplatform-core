@@ -21,7 +21,6 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.hardware.display.DisplayManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
@@ -35,18 +34,15 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.UiThread;
-import androidx.annotation.VisibleForTesting;
 import androidx.camera.viewfinder.core.ImplementationMode;
 import androidx.camera.viewfinder.core.ScaleType;
 import androidx.camera.viewfinder.core.TransformationInfo;
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest;
 import androidx.camera.viewfinder.core.ViewfinderSurfaceSession;
+import androidx.camera.viewfinder.core.impl.ImplementationModeCompat;
 import androidx.camera.viewfinder.core.impl.RefCounted;
 import androidx.camera.viewfinder.core.impl.ViewfinderSurfaceSessionImpl;
 import androidx.camera.viewfinder.view.internal.futures.Futures;
-import androidx.camera.viewfinder.view.internal.quirk.DeviceQuirks;
-import androidx.camera.viewfinder.view.internal.quirk.SurfaceViewNotCroppedByParentQuirk;
-import androidx.camera.viewfinder.view.internal.quirk.SurfaceViewStretchedQuirk;
 import androidx.camera.viewfinder.view.internal.utils.Logger;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.content.ContextCompat;
@@ -74,7 +70,8 @@ public final class ViewfinderView extends FrameLayout {
     private static final String TAG = "ViewfinderView";
 
     @ColorRes private static final int DEFAULT_BACKGROUND_COLOR = android.R.color.black;
-    private static final ImplementationMode DEFAULT_IMPL_MODE = ImplementationMode.EXTERNAL;
+    private static final ImplementationMode DEFAULT_IMPL_MODE =
+            ImplementationModeCompat.chooseCompatibleMode();
 
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
@@ -167,20 +164,18 @@ public final class ViewfinderView extends FrameLayout {
     /**
      * Returns the {@link ImplementationMode}.
      *
-     * <p> For each {@link ViewfinderSurfaceRequest} sent to
-     * {@link ViewfinderView}, the
-     * {@link ImplementationMode} set in the
-     * {@link ViewfinderSurfaceRequest} will be used first.
-     * If it's not set, the {@code app:implementationMode} in the layout xml will be used. If
-     * it's not set in the layout xml, the default value
-     * {@link ImplementationMode#EXTERNAL}
-     * will be used. Each {@link ViewfinderSurfaceRequest} sent
-     * to {@link ViewfinderView} can override the
-     * {@link ImplementationMode} once it has set the
-     * {@link ImplementationMode}.
+     * <p> The {@link ImplementationMode} can be specified in multiple ways, with the following
+     * order of precedence:
+     * <ol>
+     *     <li>Set directly in the {@link ViewfinderSurfaceRequest}.</li>
+     *     <li>Set via the {@code app:implementationMode} attribute in the layout XML.</li>
+     *     <li>If not specified in either of the above, it defaults to
+     *     {@link ImplementationMode#EXTERNAL}, except on devices with known compatibility
+     *     issues with the {@code EXTERNAL} implementation or on API levels 24 and below, where it
+     *     will default to {@link ImplementationMode#EMBEDDED}.</li>
+     * </ol>
      *
-     * @return The {@link ImplementationMode} for
-     * {@link ViewfinderView}.
+     * @return The currently active {@link ImplementationMode} for {@link ViewfinderView}.
      */
     @UiThread
     public @NonNull ImplementationMode getSurfaceImplementationMode() {
@@ -274,7 +269,7 @@ public final class ViewfinderView extends FrameLayout {
         }
 
         ViewfinderImplementation viewfinderImplementation =
-                shouldUseTextureView(mCurrentImplementationMode)
+                mCurrentImplementationMode == ImplementationMode.EMBEDDED
                         ? new TextureViewImplementation(
                         ViewfinderView.this, mViewfinderTransformation)
                         : new SurfaceViewImplementation(
@@ -382,32 +377,6 @@ public final class ViewfinderView extends FrameLayout {
         super.onDetachedFromWindow();
         removeOnLayoutChangeListener(mOnLayoutChangeListener);
         stopListeningToDisplayChange();
-    }
-
-    @VisibleForTesting
-    static boolean shouldUseTextureView(
-            final @NonNull ImplementationMode implementationMode
-    ) {
-        boolean hasSurfaceViewQuirk = DeviceQuirks.get(
-                SurfaceViewStretchedQuirk.class) != null
-                ||  DeviceQuirks.get(
-                SurfaceViewNotCroppedByParentQuirk.class) != null;
-        if (Build.VERSION.SDK_INT <= 24 || hasSurfaceViewQuirk) {
-            // Force to use TextureView when the device is running android 7.0 and below, legacy
-            // level or SurfaceView has quirks.
-            Logger.d(TAG, "Implementation mode to set is not supported, forcing to use "
-                    + "TextureView, because transform APIs are not supported on these devices.");
-            return true;
-        }
-        switch (implementationMode) {
-            case EMBEDDED:
-                return true;
-            case EXTERNAL:
-                return false;
-            default:
-                throw new IllegalArgumentException(
-                        "Invalid implementation mode: " + implementationMode);
-        }
     }
 
     // Synthetic access

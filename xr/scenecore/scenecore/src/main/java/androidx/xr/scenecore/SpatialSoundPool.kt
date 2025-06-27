@@ -112,7 +112,7 @@ public class SpatialSoundPool private constructor() {
         public fun getSpatialSourceType(
             session: Session,
             soundPool: SoundPool,
-            streamId: Int
+            streamId: Int,
         ): Int {
             return session.platformAdapter.soundPoolExtensionsWrapper
                 .getSpatialSourceType(soundPool, streamId)

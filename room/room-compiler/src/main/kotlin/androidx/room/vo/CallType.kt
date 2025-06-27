@@ -20,5 +20,5 @@ enum class CallType {
     PROPERTY,
     FUNCTION,
     SYNTHETIC_FUNCTION, // i.e. Kotlin synthetic getter / setter for a property
-    CONSTRUCTOR
+    CONSTRUCTOR,
 }

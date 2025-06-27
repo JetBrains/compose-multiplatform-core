@@ -73,20 +73,20 @@ class ButtonGroupScreenshotTest {
                 ButtonGroup(
                     Modifier.testTag(TEST_TAG),
                     spacing = spacing,
-                    expansionWidth = expansionWidth
+                    expansionWidth = expansionWidth,
                 ) {
                     // Modifiers inverted here to check order doesn't matter
                     Text("A", Modifier.background(Color.Gray).weight(weight1).minWidth(minWidth1))
                     if (numItems >= 2) {
                         Text(
                             "B",
-                            Modifier.background(Color.Gray).minWidth(minWidth2).weight(weight2)
+                            Modifier.background(Color.Gray).minWidth(minWidth2).weight(weight2),
                         )
                     }
                     if (numItems >= 3) {
                         Text(
                             "C",
-                            Modifier.background(Color.Gray).minWidth(minWidth3).weight(weight3)
+                            Modifier.background(Color.Gray).minWidth(minWidth3).weight(weight3),
                         )
                     }
                 }

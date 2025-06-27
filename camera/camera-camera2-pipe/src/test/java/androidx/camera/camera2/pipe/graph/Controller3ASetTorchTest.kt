@@ -104,9 +104,9 @@ internal class Controller3ASetTorchTest {
                     resultMetadata =
                         mapOf(
                             CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
-                            CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH
-                        )
-                )
+                            CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH,
+                        ),
+                ),
             )
         }
 
@@ -129,8 +129,8 @@ internal class Controller3ASetTorchTest {
                     FakeFrameMetadata(
                         frameNumber = FrameNumber(101L),
                         resultMetadata =
-                            mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH)
-                    )
+                            mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH),
+                    ),
                 )
             }
             .join()
@@ -175,8 +175,8 @@ internal class Controller3ASetTorchTest {
                 FrameNumber(101L),
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
-                    resultMetadata = mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_OFF)
-                )
+                    resultMetadata = mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_OFF),
+                ),
             )
         }
         val result3A = result.await()
@@ -199,8 +199,8 @@ internal class Controller3ASetTorchTest {
                         FakeFrameMetadata(
                             frameNumber = FrameNumber(101L),
                             resultMetadata =
-                                mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_OFF)
-                        )
+                                mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_OFF),
+                        ),
                     )
                 }
                 .join()
@@ -226,9 +226,9 @@ internal class Controller3ASetTorchTest {
                             mapOf(
                                 CaptureResult.CONTROL_AE_MODE to
                                     CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH,
-                                CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_OFF
-                            )
-                    )
+                                CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_OFF,
+                            ),
+                    ),
                 )
             }
             val result3A = result.await()
@@ -263,8 +263,8 @@ internal class Controller3ASetTorchTest {
                     FakeFrameMetadata(
                         frameNumber = FrameNumber(101L),
                         resultMetadata =
-                            mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH)
-                    )
+                            mapOf(CaptureResult.FLASH_MODE to CaptureResult.FLASH_MODE_TORCH),
+                    ),
                 )
             }
             val result3A = result.await()

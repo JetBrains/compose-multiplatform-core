@@ -47,13 +47,13 @@ class BaselineActivity : ComponentActivity() {
                             flingBehavior =
                                 PagerScaffoldDefaults.snapWithSpringFlingBehavior(
                                     state = pagerState
-                                )
+                                ),
                         ) { page ->
                             AnimatedPage(pageIndex = page, pagerState = pagerState) {
                                 ScreenScaffold {
                                     Box(
                                         modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
+                                        contentAlignment = Alignment.Center,
                                     ) {
                                         BaselineProfileScreens[page].content.invoke(this)
                                     }

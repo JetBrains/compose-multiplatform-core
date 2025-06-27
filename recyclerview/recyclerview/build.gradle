@@ -55,6 +55,7 @@ android {
         compileSdk = 35
         testInstrumentationRunner "androidx.recyclerview.test.TestRunner"
     }
+    testOptions.unitTests.returnDefaultValues = true
     namespace = "androidx.recyclerview"
 }
 

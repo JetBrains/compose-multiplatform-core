@@ -25,7 +25,6 @@ import androidx.appfunctions.compiler.core.AppFunctionInventoryCodeBuilder
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
 import androidx.appfunctions.compiler.core.IntrospectionHelper
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionComponentRegistryAnnotation
-import androidx.appfunctions.compiler.core.addGeneratedTimeStamp
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -47,9 +46,7 @@ import com.squareup.kotlinpoet.buildCodeBlock
  * process exactly once for each compilation unit to generate a single registry for looking up all
  * generated inventories within the compilation unit.
  */
-class AppFunctionInventoryProcessor(
-    private val codeGenerator: CodeGenerator,
-) : SymbolProcessor {
+class AppFunctionInventoryProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     private var hasProcessed = false
 
@@ -70,7 +67,7 @@ class AppFunctionInventoryProcessor(
                     val inventoryQualifiedName =
                         generateAppFunctionInventoryClass(
                             appFunctionClass,
-                            resolvedAnnotatedSerializableProxies
+                            resolvedAnnotatedSerializableProxies,
                         )
                     add(
                         AppFunctionComponent(
@@ -99,7 +96,7 @@ class AppFunctionInventoryProcessor(
      */
     private fun generateAppFunctionInventoryClass(
         appFunctionClass: AnnotatedAppFunctions,
-        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
     ): String {
         val originalPackageName = appFunctionClass.classDeclaration.packageName.asString()
         val originalClassName = appFunctionClass.classDeclaration.simpleName.asString()
@@ -116,14 +113,13 @@ class AppFunctionInventoryProcessor(
 
         val fileSpec =
             FileSpec.builder(originalPackageName, inventoryClassName)
-                .addGeneratedTimeStamp()
                 .addType(inventoryClassBuilder.build())
                 .build()
         codeGenerator
             .createNewFile(
                 Dependencies(aggregating = true, *appFunctionClass.getSourceFiles().toTypedArray()),
                 originalPackageName,
-                inventoryClassName
+                inventoryClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }

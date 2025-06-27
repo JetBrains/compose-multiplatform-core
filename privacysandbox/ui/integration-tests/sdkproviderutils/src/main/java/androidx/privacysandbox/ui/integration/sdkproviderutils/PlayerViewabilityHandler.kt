@@ -54,7 +54,7 @@ class PlayerViewabilityHandler {
                 if (updatedVisibility != isPlayerVisible) {
                     Log.i(
                         TAG,
-                        "Video player previous visibility $isPlayerVisible, updated visibility $updatedVisibility"
+                        "Video player previous visibility $isPlayerVisible, updated visibility $updatedVisibility",
                     )
                     isPlayerVisible = updatedVisibility
                     if (isPlayerVisible) {
@@ -78,7 +78,7 @@ class PlayerViewabilityHandler {
 
         fun addObserverFactoryToAdapter(
             adapter: AbstractSandboxedUiAdapter,
-            playerViewProvider: PlayerViewProvider
+            playerViewProvider: PlayerViewProvider,
         ) {
             return adapter.addObserverFactory(SessionObserverFactoryImpl(playerViewProvider))
         }

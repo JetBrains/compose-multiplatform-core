@@ -48,7 +48,7 @@ class FakeStateExtenderTest {
 
     @Test
     fun initialize_setsInitializedToTrue() {
-        check(underTest.isInitialized == false)
+        check(!underTest.isInitialized)
 
         underTest.initialize(FakeRuntime(FakeLifecycleManager(), FakePerceptionManager()))
 

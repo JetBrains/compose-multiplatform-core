@@ -179,7 +179,7 @@ class ActivityResultContracts private constructor() {
 
         override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<Map<String, Boolean>>? {
             if (input.isEmpty()) {
                 return SynchronousResult(emptyMap())
@@ -223,7 +223,7 @@ class ActivityResultContracts private constructor() {
 
         override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Boolean>? {
             val granted =
                 ContextCompat.checkSelfPermission(context, input) ==
@@ -252,7 +252,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Void?
+            input: Void?,
         ): SynchronousResult<Bitmap?>? = null
 
         @Suppress("DEPRECATION")
@@ -278,7 +278,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Boolean>? = null
 
         @Suppress("AutoBoxing")
@@ -308,7 +308,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Bitmap?>? = null
 
         @Suppress("DEPRECATION")
@@ -334,7 +334,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Boolean>? = null
 
         @Suppress("AutoBoxing")
@@ -381,7 +381,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -412,7 +412,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<List<Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
@@ -463,7 +463,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -494,7 +494,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<List<Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
@@ -529,7 +529,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri?
+            input: Uri?,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -554,7 +554,7 @@ class ActivityResultContracts private constructor() {
                 "the automatic handling of file extensions. Instead, specify the mime type by " +
                 "using the constructor that takes an concrete mime type (e.g.., " +
                 "CreateDocument(\"image/png\")).",
-            ReplaceWith("CreateDocument(\"todo/todo\")")
+            ReplaceWith("CreateDocument(\"todo/todo\")"),
         )
         constructor() : this("*/*")
 
@@ -567,7 +567,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -614,7 +614,7 @@ class ActivityResultContracts private constructor() {
                 message =
                     "This method is deprecated in favor of isPhotoPickerAvailable(context) " +
                         "to support the picker provided by updatable system apps",
-                replaceWith = ReplaceWith("isPhotoPickerAvailable(context)")
+                replaceWith = ReplaceWith("isPhotoPickerAvailable(context)"),
             )
             @JvmStatic
             fun isPhotoPickerAvailable(): Boolean {
@@ -732,7 +732,7 @@ class ActivityResultContracts private constructor() {
             internal fun getSystemFallbackPicker(context: Context): ResolveInfo? {
                 return context.packageManager.resolveActivity(
                     Intent(ACTION_SYSTEM_FALLBACK_PICK_IMAGES),
-                    PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY
+                    PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY,
                 )
             }
 
@@ -784,7 +784,7 @@ class ActivityResultContracts private constructor() {
                 @Target(
                     AnnotationTarget.TYPE,
                     AnnotationTarget.PROPERTY,
-                    AnnotationTarget.VALUE_PARAMETER
+                    AnnotationTarget.VALUE_PARAMETER,
                 )
                 annotation class HdrType
 
@@ -881,7 +881,7 @@ class ActivityResultContracts private constructor() {
                         input.mediaCapabilitiesForTranscoding?.let { capabilities ->
                             putExtra(
                                 MediaStore.EXTRA_MEDIA_CAPABILITIES,
-                                capabilities.toApplicationMediaCapabilities()
+                                capabilities.toApplicationMediaCapabilities(),
                             )
                         }
                     }
@@ -917,7 +917,7 @@ class ActivityResultContracts private constructor() {
         @Suppress("InvalidNullabilityOverride")
         final override fun getSynchronousResult(
             context: Context,
-            input: PickVisualMediaRequest
+            input: PickVisualMediaRequest,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -998,7 +998,7 @@ class ActivityResultContracts private constructor() {
                         input.mediaCapabilitiesForTranscoding?.let { capabilities ->
                             putExtra(
                                 MediaStore.EXTRA_MEDIA_CAPABILITIES,
-                                capabilities.toApplicationMediaCapabilities()
+                                capabilities.toApplicationMediaCapabilities(),
                             )
                         }
                     }
@@ -1041,7 +1041,7 @@ class ActivityResultContracts private constructor() {
         @Suppress("InvalidNullabilityOverride")
         final override fun getSynchronousResult(
             context: Context,
-            input: PickVisualMediaRequest
+            input: PickVisualMediaRequest,
         ): SynchronousResult<List<@JvmSuppressWildcards Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {

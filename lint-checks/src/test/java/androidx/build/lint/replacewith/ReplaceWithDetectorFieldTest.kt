@@ -28,7 +28,7 @@ class ReplaceWithDetectorFieldTest {
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.StaticFieldExplicitClass")
+                javaSample("replacewith.StaticFieldExplicitClass"),
             )
 
         val expected =
@@ -57,7 +57,7 @@ Fix for src/replacewith/StaticFieldExplicitClass.java line 25: Replace with `Vie
         val input =
             arrayOf(
                 javaSample("replacewith.ReplaceWithUsageJava"),
-                javaSample("replacewith.StaticFieldImplicitClass")
+                javaSample("replacewith.StaticFieldImplicitClass"),
             )
 
         val expected =

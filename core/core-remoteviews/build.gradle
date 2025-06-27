@@ -50,19 +50,10 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinTest)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
-    testImplementation('org.robolectric:annotations:4.14')
-    testImplementation('org.robolectric:shadowapi:4.14')
-    testImplementation('org.robolectric:shadows-framework:4.14')
 }
 
 android {
-    testOptions {
-        unitTests {
-            includeAndroidResources = true
-        }
-    }
     namespace = "androidx.core.remoteviews"
 }
 
@@ -72,4 +63,5 @@ androidx {
     mavenVersion = LibraryVersions.CORE_REMOTEVIEWS
     inceptionYear = "2021"
     description = "AndroidX RemoteViews Support"
+    enableRobolectric()
 }

@@ -140,7 +140,7 @@ internal constructor(
         Preconditions.checkArgumentNonnegative(minHeightDp, "minHeightDp must be non-negative")
         Preconditions.checkArgumentNonnegative(
             minSmallestWidthDp,
-            "minSmallestWidthDp must be non-negative"
+            "minSmallestWidthDp must be non-negative",
         )
     }
 

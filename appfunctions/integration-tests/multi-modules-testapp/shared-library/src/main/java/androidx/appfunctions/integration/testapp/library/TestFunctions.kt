@@ -18,8 +18,8 @@ package androidx.appfunctions.integration.testapp.library
 
 import android.net.Uri
 import android.util.Log
-import androidx.appfunctions.AppFunction
 import androidx.appfunctions.AppFunctionContext
+import androidx.appfunctions.service.AppFunction
 
 @Suppress("UNUSED_PARAMETER")
 class TestFunctions2 {

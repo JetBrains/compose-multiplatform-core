@@ -467,6 +467,7 @@ public class UiDeviceTest extends BaseTest {
         validateMainActivityXml(xml);
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427264336
     @Test
     public void testWaitForWindowUpdate() {
         launchTestActivity(WaitTestActivity.class);

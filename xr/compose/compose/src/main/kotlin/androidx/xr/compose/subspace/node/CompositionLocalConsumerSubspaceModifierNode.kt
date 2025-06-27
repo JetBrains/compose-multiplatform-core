@@ -16,21 +16,49 @@
 
 package androidx.xr.compose.subspace.node
 
-import androidx.annotation.RestrictTo
 import androidx.compose.runtime.CompositionLocal
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 
-/** Interface for nodes that can consume composition local values. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * Implementing this interface allows your [SubspaceModifier.Node] subclass to read
+ * [CompositionLocals][CompositionLocal] via the [currentValueOf] function. The values of each
+ * CompositionLocal will be resolved based on the context of the layout node that the modifier is
+ * attached to, meaning that the modifier will see the same values of each CompositionLocal as its
+ * corresponding layout node.
+ *
+ * @see SubspaceModifier.Node
+ * @see CompositionLocal
+ */
 public interface CompositionLocalConsumerSubspaceModifierNode
 
 /**
- * Returns the current value of the given composition local.
+ * Returns the current value of [local] at the position in the composition hierarchy of this
+ * modifier's attached layout node.
  *
- * @param local The composition local to get the value of.
- * @return The current value of the given composition local.
+ * Unlike [CompositionLocal.current], reads via this function are not automatically tracked by
+ * Compose. Modifiers are not able to recompose in the same way that a Composable can, and therefore
+ * can't receive updates arbitrarily for a CompositionLocal.
+ *
+ * Because CompositionLocals may change arbitrarily, it is strongly recommended to ensure that the
+ * composition local is observed instead of being read once. If you call [currentValueOf] inside of
+ * a modifier callback like [SubspaceLayoutModifierNode.measure], then Compose will track the
+ * CompositionLocal read. This happens automatically, because these Compose UI phases take place in
+ * a snapshot observer that tracks which states are read. If the value of the CompositionLocal
+ * changes, and it was read inside of the measure or draw phase, then that phase will automatically
+ * be invalidated.
+ *
+ * For all other reads of a CompositionLocal, this function will **not** notify you when the value
+ * of the local changes.
+ *
+ * This function will fail with an [IllegalStateException] if you attempt to read a CompositionLocal
+ * before the node is [attached][SubspaceModifier.Node.onAttach] or after the node is
+ * [detached][SubspaceModifier.Node.onDetach].
+ *
+ * @param local The CompositionLocal to get the current value of
+ * @return The value provided by the nearest CompositionLocalProvider component that invokes,
+ *   directly or indirectly, the composable function that this modifier is attached to. If [local]
+ *   was never provided, its default value will be returned instead.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun <T : Any?> CompositionLocalConsumerSubspaceModifierNode.currentValueOf(
     local: CompositionLocal<T>
 ): T {

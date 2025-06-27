@@ -72,7 +72,7 @@ internal class Api33SdkProviderGenerator(parsedApi: ParsedApi) :
             returns(viewClass)
             addStatement(
                 "throw UnsupportedOperationException(%S)",
-                "This SDK doesn't support explicit SurfaceView requests."
+                "This SDK doesn't support explicit SurfaceView requests.",
             )
         }
     }

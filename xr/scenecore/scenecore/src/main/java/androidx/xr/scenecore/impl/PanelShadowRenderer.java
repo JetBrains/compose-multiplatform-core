@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -38,6 +39,7 @@ import com.android.extensions.xr.node.NodeTransaction;
 import java.util.Objects;
 
 /** Class for rendering the border of a panel onto a perception plane. */
+@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 class PanelShadowRenderer {
     private static final float STROKE_WIDTH = 20f;
     private static final float HALF_STROKE_WIDTH = STROKE_WIDTH / 2;

@@ -32,6 +32,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CH
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -176,7 +177,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     AccessibilityActionCompat(ACTION_CLICK, clickActionLabel),
                     AccessibilityActionCompat(ACTION_DISMISS, dismissActionLabel),
                     AccessibilityActionCompat(ACTION_EXPAND, expandActionLabel),
-                    AccessibilityActionCompat(ACTION_COLLAPSE, collapseActionLabel)
+                    AccessibilityActionCompat(ACTION_COLLAPSE, collapseActionLabel),
                 )
             assertThat(info.stateDescription).isEqualTo(state)
             assertThat(info.viewIdResourceName).isEqualTo(tag)
@@ -797,7 +798,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     .contains(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionSetProgress,
-                            setProgressActionLabel
+                            setProgressActionLabel,
                         )
                     )
             }
@@ -843,21 +844,21 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 .containsAtLeast(
                     AccessibilityActionCompat(
                         AccessibilityNodeInfoCompat.ACTION_SET_SELECTION,
-                        setSelectionActionLabel
+                        setSelectionActionLabel,
                     ),
                     AccessibilityActionCompat(
                         AccessibilityNodeInfoCompat.ACTION_SET_TEXT,
-                        setTextActionLabel
+                        setTextActionLabel,
                     ),
                     AccessibilityActionCompat.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
-                    AccessibilityActionCompat.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY
+                    AccessibilityActionCompat.ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY,
                 )
             if (SDK_INT >= 26) {
                 assertThat(info.unwrap().availableExtraData)
                     .containsExactly(
                         "androidx.compose.ui.semantics.id",
                         "androidx.compose.ui.semantics.testTag",
-                        EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
+                        EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
                     )
             }
         }
@@ -1028,7 +1029,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     ExtraDataShapeTypeKey,
                     ExtraDataShapeRectKey,
                     ExtraDataShapeRectCornersKey,
-                    ExtraDataShapeRegionKey
+                    ExtraDataShapeRegionKey,
                 )
         }
     }
@@ -1052,7 +1053,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                     ExtraDataShapeTypeKey,
                     ExtraDataShapeRectKey,
                     ExtraDataShapeRectCornersKey,
-                    ExtraDataShapeRegionKey
+                    ExtraDataShapeRegionKey,
                 )
         }
     }
@@ -1079,7 +1080,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeTypeKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1096,7 +1097,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1128,7 +1129,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1142,7 +1143,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1175,7 +1176,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeTypeKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1192,7 +1193,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1210,7 +1211,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             3.dp.toPx(),
                             3.dp.toPx(),
                             4.dp.toPx(),
-                            4.dp.toPx()
+                            4.dp.toPx(),
                         )
                     )
             }
@@ -1241,7 +1242,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 1.
@@ -1255,7 +1256,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             /* left = */ 0,
                             /* top = */ 0,
                             /* right = */ 10.dp.roundToPx(),
-                            /* bottom = */ 10.dp.roundToPx()
+                            /* bottom = */ 10.dp.roundToPx(),
                         )
                     )
             }
@@ -1272,7 +1273,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectCornersKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 2.
@@ -1291,7 +1292,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                             3.dp.toPx(),
                             3.dp.toPx(),
                             4.dp.toPx(),
-                            4.dp.toPx()
+                            4.dp.toPx(),
                         )
                     )
             }
@@ -1323,7 +1324,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeTypeKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1377,7 +1378,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRegionKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1429,7 +1430,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectCornersKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 1.
@@ -1444,7 +1445,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRegionKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 2.
@@ -1473,7 +1474,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRegionKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert.
@@ -1502,7 +1503,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 1.
@@ -1515,7 +1516,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                 virtualViewId,
                 info,
                 ExtraDataShapeRectCornersKey,
-                Bundle()
+                Bundle(),
             )
 
         // Assert 2.
@@ -1988,6 +1989,171 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
         }
     }
 
+    @Test
+    @SdkSuppress(minSdkVersion = 24)
+    fun drawingOrder_defaultOrder() {
+        // Arrange.
+        rule.setContentWithAccessibilityEnabled {
+            Column(
+                Modifier.semantics {
+                    testTag = "container"
+                    text = AnnotatedString("container")
+                }
+            ) {
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item0"
+                        text = AnnotatedString("item0")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item1"
+                        text = AnnotatedString("item1")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item2"
+                        text = AnnotatedString("item2")
+                    }
+                )
+            }
+        }
+        val containerId = rule.onNodeWithTag("container").semanticsId()
+        val item0Id = rule.onNodeWithTag("item0").semanticsId()
+        val item1Id = rule.onNodeWithTag("item1").semanticsId()
+        val item2Id = rule.onNodeWithTag("item2").semanticsId()
+
+        // Act.
+        rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(containerId) }
+        val info0 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item0Id) }
+        val info1 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item1Id) }
+        val info2 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item2Id) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info0.drawingOrder).isEqualTo(0)
+            assertThat(info1.drawingOrder).isEqualTo(1)
+            assertThat(info2.drawingOrder).isEqualTo(2)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 24)
+    fun drawingOrder_customZIndex() {
+        // Arrange.
+        rule.setContentWithAccessibilityEnabled {
+            Column(
+                Modifier.semantics {
+                    testTag = "container"
+                    text = AnnotatedString("container")
+                }
+            ) {
+                Box(
+                    Modifier.zIndex(100f).size(10.dp).semantics {
+                        testTag = "item0"
+                        text = AnnotatedString("item0")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item1"
+                        text = AnnotatedString("item1")
+                    }
+                )
+                Box(
+                    Modifier.size(10.dp).semantics {
+                        testTag = "item2"
+                        text = AnnotatedString("item2")
+                    }
+                )
+            }
+        }
+        val containerId = rule.onNodeWithTag("container").semanticsId()
+        val item0Id = rule.onNodeWithTag("item0").semanticsId()
+        val item1Id = rule.onNodeWithTag("item1").semanticsId()
+        val item2Id = rule.onNodeWithTag("item2").semanticsId()
+
+        // Act.
+        rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(containerId) }
+        val info0 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item0Id) }
+        val info1 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item1Id) }
+        val info2 = rule.runOnIdle { androidComposeView.createAccessibilityNodeInfo(item2Id) }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info0.drawingOrder).isEqualTo(2)
+            assertThat(info1.drawingOrder).isEqualTo(0)
+            assertThat(info2.drawingOrder).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun nodeAddition_sendsSubtreeChangedEvent() {
+        // Arrange.
+        var hasContentDescription by mutableStateOf(false)
+        rule.mainClock.autoAdvance = false
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).semantics {
+                    if (hasContentDescription) {
+                        contentDescription = "Test"
+                    }
+                }
+            )
+        }
+
+        // Act.
+        rule.runOnIdle { hasContentDescription = !hasContentDescription }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents)
+                .comparingElementsUsing(AccessibilityEventComparator)
+                .containsExactly(
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_WINDOW_CONTENT_CHANGED
+                        contentChangeTypes = CONTENT_CHANGE_TYPE_CONTENT_DESCRIPTION
+                        contentDescription = "Test"
+                    }
+                )
+        }
+    }
+
+    @Test
+    fun nodeRemoval_sendsSubtreeChangedEvent() {
+        // Arrange.
+        var hasContentDescription by mutableStateOf(true)
+        rule.mainClock.autoAdvance = false
+        rule.setContentWithAccessibilityEnabled {
+            Box(
+                Modifier.size(10.dp).semantics {
+                    if (hasContentDescription) {
+                        contentDescription = "Test"
+                    }
+                }
+            )
+        }
+
+        // Act.
+        rule.runOnIdle { hasContentDescription = !hasContentDescription }
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(dispatchedAccessibilityEvents)
+                .comparingElementsUsing(AccessibilityEventComparator)
+                .containsExactly(
+                    AccessibilityEvent().apply {
+                        eventType = TYPE_WINDOW_CONTENT_CHANGED
+                        contentDescription = null
+                    }
+                )
+        }
+    }
+
     private fun Int.toDp(): Dp = with(rule.density) { this@toDp.toDp() }
 
     private fun ComposeContentTestRule.setContentWithAccessibilityEnabled(
@@ -2029,7 +2195,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                         actual.id == expected.id &&
                         actual.label == expected.label
                 },
-                "has same id and label as"
+                "has same id and label as",
             )
 
         internal val AccessibilityEventComparator =
@@ -2068,7 +2234,7 @@ class AndroidComposeViewAccessibilityDelegateCompatTest {
                         actual.parcelableData == expected.parcelableData &&
                         actual.recordCount == expected.recordCount
                 },
-                "has same properties as"
+                "has same properties as",
             )
     }
 

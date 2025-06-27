@@ -38,6 +38,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -586,6 +587,7 @@ class InvalidationTrackerTest {
     private fun runTest(testBody: suspend TestScope.() -> Unit) =
         testCoroutineScope.runTest {
             testBody.invoke(this)
+            testScheduler.advanceUntilIdle()
             roomDatabase.close()
         }
 
@@ -630,7 +632,7 @@ class InvalidationTrackerTest {
     private inner class FakeRoomDatabase(
         private val shadowTablesMap: Map<String, String>,
         private val viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-        private val tableNames: Array<String>
+        private val tableNames: Array<String>,
     ) : RoomDatabase() {
 
         override fun createInvalidationTracker(): InvalidationTracker {
@@ -674,6 +676,8 @@ class InvalidationTrackerTest {
         }
 
         private inner class FakeSQLiteConnection : SQLiteConnection {
+
+            override fun inTransaction() = false
 
             override fun prepare(sql: String): SQLiteStatement {
                 preparedQueries.add(sql)

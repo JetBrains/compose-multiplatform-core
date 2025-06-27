@@ -103,7 +103,7 @@ internal val EGL_CONFIG_ATTRIB_LIST =
         8,
         EGL14.EGL_ALPHA_SIZE,
         8,
-        EGL14.EGL_NONE
+        EGL14.EGL_NONE,
     )
 
 private val EGL_CONTEXT_ATTRIB_LIST =
@@ -134,7 +134,7 @@ internal fun verticalFlip(buffer: ByteBuffer, width: Int, height: Int) {
             (heightMinusOne - i) * stride,
             buffer.array(),
             i * stride,
-            stride
+            stride,
         )
 
         System.arraycopy(tmp, 0, buffer.array(), (heightMinusOne - i) * stride, stride)
@@ -389,7 +389,7 @@ constructor(
     @UiThread
     internal abstract fun takeScreenshot(
         zonedDateTime: ZonedDateTime,
-        renderParameters: RenderParameters
+        renderParameters: RenderParameters,
     ): Bitmap
 
     /**
@@ -406,7 +406,7 @@ constructor(
     internal abstract fun renderScreenshotToSurface(
         zonedDateTime: ZonedDateTime,
         renderParameters: RenderParameters,
-        screenShotSurfaceHolder: SurfaceHolder
+        screenShotSurfaceHolder: SurfaceHolder,
     )
 
     /**
@@ -431,7 +431,7 @@ constructor(
             (centerX - quarterX).toInt(),
             (centerY - quarterY).toInt(),
             (centerX + quarterX).toInt(),
-            (centerY + quarterY).toInt()
+            (centerY + quarterY).toInt(),
         )
     }
 
@@ -486,6 +486,10 @@ constructor(
 
     @WorkerThread internal open suspend fun backgroundThreadInitInternal() {}
 
+    // Note: public experimental properties are not allowed because the accessors will not appear
+    // experimental to Java clients. There are public accessors for this property below.
+    @WatchFaceExperimental private var watchfaceColors: WatchFaceColors? = null
+
     /**
      * Representative [WatchFaceColors] which are made available to system clients via
      * [androidx.wear.watchface.client.InteractiveWatchFaceClient.OnWatchFaceColorsListener].
@@ -493,23 +497,28 @@ constructor(
      * Initially this value is `null` signifying that the colors are unknown. When possible the
      * watchFace should assign `non null` [WatchFaceColors] and keep this updated when the colors
      * change (e.g. due to a style change).
+     *
+     * @see [setWatchfaceColors]
+     */
+    @WatchFaceExperimental public fun getWatchfaceColors(): WatchFaceColors? = watchfaceColors
+
+    /**
+     * Setter for the representative [WatchFaceColors].
+     *
+     * @see [getWatchfaceColors]
      */
     @WatchFaceExperimental
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @get:WatchFaceExperimental
-    @set:WatchFaceExperimental
-    public var watchfaceColors: WatchFaceColors? = null
-        set(value) {
-            require(value != null) { "watchfaceColors must be non-null " }
+    public fun setWatchfaceColors(value: WatchFaceColors?) {
+        require(value != null) { "watchfaceColors must be non-null " }
 
-            val hostApi = watchFaceHostApi
-            if (hostApi == null) {
-                pendingWatchFaceColors = value
-                pendingWatchFaceColorsSet = true
-            } else {
-                hostApi.onWatchFaceColorsChanged(value)
-            }
+        val hostApi = watchFaceHostApi
+        if (hostApi == null) {
+            pendingWatchFaceColors = value
+            pendingWatchFaceColorsSet = true
+        } else {
+            hostApi.onWatchFaceColorsChanged(value)
         }
+    }
 
     /**
      * Multiple [WatchFaceService] instances and hence Renderers can exist concurrently (e.g. a
@@ -591,13 +600,13 @@ constructor(
         watchState: WatchState,
         @CanvasTypeIntDef private val canvasType: Int,
         @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
-        val clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean = false
+        val clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean = false,
     ) :
         Renderer(
             surfaceHolder,
             currentUserStyleRepository,
             watchState,
-            interactiveDrawModeUpdateDelayMillis
+            interactiveDrawModeUpdateDelayMillis,
         ) {
         internal override fun renderInternal(zonedDateTime: ZonedDateTime) {
             val canvas =
@@ -623,7 +632,7 @@ constructor(
 
         internal override fun takeScreenshot(
             zonedDateTime: ZonedDateTime,
-            renderParameters: RenderParameters
+            renderParameters: RenderParameters,
         ): Bitmap =
             TraceEvent("CanvasRenderer.takeScreenshot").use {
                 val prevRenderParameters = this.renderParameters
@@ -636,7 +645,7 @@ constructor(
                     val picture = Picture()
                     renderAndComposite(
                         picture.beginRecording(screenBounds.width(), screenBounds.height()),
-                        zonedDateTime
+                        zonedDateTime,
                     )
                     picture.endRecording()
                     this.renderParameters = prevRenderParameters
@@ -645,14 +654,14 @@ constructor(
                         picture,
                         screenBounds.width(),
                         screenBounds.height(),
-                        Bitmap.Config.ARGB_8888
+                        Bitmap.Config.ARGB_8888,
                     )
                 } else {
                     val bitmap =
                         Bitmap.createBitmap(
                             screenBounds.width(),
                             screenBounds.height(),
-                            Bitmap.Config.ARGB_8888
+                            Bitmap.Config.ARGB_8888,
                         )
                     renderAndComposite(Canvas(bitmap), zonedDateTime)
                     this.renderParameters = prevRenderParameters
@@ -664,7 +673,7 @@ constructor(
         internal override fun renderScreenshotToSurface(
             zonedDateTime: ZonedDateTime,
             renderParameters: RenderParameters,
-            screenShotSurfaceHolder: SurfaceHolder
+            screenShotSurfaceHolder: SurfaceHolder,
         ) {
             val prevRenderParameters = this.renderParameters
             val originalIsForScreenshot = renderParameters.isForScreenshot
@@ -706,14 +715,14 @@ constructor(
                                 picture,
                                 screenBounds.width(),
                                 screenBounds.height(),
-                                Bitmap.Config.ARGB_8888
+                                Bitmap.Config.ARGB_8888,
                             )
                     } else {
                         highlightLayerBitmap =
                             Bitmap.createBitmap(
                                 screenBounds.width(),
                                 screenBounds.height(),
-                                Bitmap.Config.ARGB_8888
+                                Bitmap.Config.ARGB_8888,
                             )
                         val highlightCanvas = Canvas(highlightLayerBitmap)
                         if (clearWithBackgroundTintBeforeRenderingHighlightLayer) {
@@ -812,7 +821,7 @@ constructor(
         public abstract fun renderHighlightLayer(
             canvas: Canvas,
             bounds: Rect,
-            zonedDateTime: ZonedDateTime
+            zonedDateTime: ZonedDateTime,
         )
 
         internal override fun dumpInternal(writer: IndentingPrintWriter) {
@@ -878,7 +887,7 @@ constructor(
         watchState: WatchState,
         @CanvasTypeIntDef private val canvasType: Int,
         @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
-        clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean
+        clearWithBackgroundTintBeforeRenderingHighlightLayer: Boolean,
     ) :
         CanvasRenderer(
             surfaceHolder,
@@ -886,7 +895,7 @@ constructor(
             watchState,
             canvasType,
             interactiveDrawModeUpdateDelayMillis,
-            clearWithBackgroundTintBeforeRenderingHighlightLayer
+            clearWithBackgroundTintBeforeRenderingHighlightLayer,
         ) where SharedAssetsT : SharedAssets {
         /**
          * When editing multiple [WatchFaceService] instances and hence Renderers can exist
@@ -937,7 +946,7 @@ constructor(
             canvas: Canvas,
             bounds: Rect,
             zonedDateTime: ZonedDateTime,
-            sharedAssets: SharedAssetsT
+            sharedAssets: SharedAssetsT,
         )
 
         /**
@@ -966,7 +975,7 @@ constructor(
             canvas: Canvas,
             bounds: Rect,
             zonedDateTime: ZonedDateTime,
-            sharedAssets: SharedAssetsT
+            sharedAssets: SharedAssetsT,
         )
 
         final override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {
@@ -975,21 +984,21 @@ constructor(
                 canvas,
                 bounds,
                 zonedDateTime,
-                sharedAssetsHolder.sharedAssets!! as SharedAssetsT
+                sharedAssetsHolder.sharedAssets!! as SharedAssetsT,
             )
         }
 
         final override fun renderHighlightLayer(
             canvas: Canvas,
             bounds: Rect,
-            zonedDateTime: ZonedDateTime
+            zonedDateTime: ZonedDateTime,
         ) {
             @Suppress("UNCHECKED_CAST") // We know the type is correct.
             renderHighlightLayer(
                 canvas,
                 bounds,
                 zonedDateTime,
-                sharedAssetsHolder.sharedAssets!! as SharedAssetsT
+                sharedAssetsHolder.sharedAssets!! as SharedAssetsT,
             )
         }
     }
@@ -1030,13 +1039,13 @@ constructor(
         @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
         private val eglConfigAttribListList: List<IntArray>,
         private val eglSurfaceAttribList: IntArray,
-        private val eglContextAttribList: IntArray
+        private val eglContextAttribList: IntArray,
     ) :
         Renderer(
             surfaceHolder,
             currentUserStyleRepository,
             watchState,
-            interactiveDrawModeUpdateDelayMillis
+            interactiveDrawModeUpdateDelayMillis,
         ) {
         internal companion object {
             internal const val TAG = "Gles2WatchFace"
@@ -1080,7 +1089,7 @@ constructor(
             @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
             eglConfigAttribList: IntArray = EGL_CONFIG_ATTRIB_LIST,
             eglSurfaceAttribList: IntArray = EGL_SURFACE_ATTRIB_LIST,
-            eglContextAttribList: IntArray = EGL_CONTEXT_ATTRIB_LIST
+            eglContextAttribList: IntArray = EGL_CONTEXT_ATTRIB_LIST,
         ) : this(
             surfaceHolder,
             currentUserStyleRepository,
@@ -1088,7 +1097,7 @@ constructor(
             interactiveDrawModeUpdateDelayMillis,
             listOf(eglConfigAttribList),
             eglSurfaceAttribList,
-            eglContextAttribList
+            eglContextAttribList,
         )
 
         /** Exception thrown if a GL call fails */
@@ -1162,16 +1171,16 @@ constructor(
                     EGL14.EGL_NO_TEXTURE,
                     EGL14.EGL_TEXTURE_FORMAT,
                     EGL14.EGL_NO_TEXTURE,
-                    EGL14.EGL_NONE
+                    EGL14.EGL_NONE,
                 ),
-                0
+                0,
             )
         private lateinit var eglSurface: EGLSurface
         private var calledOnGlContextCreated = false
         private val renderBufferTexture by lazy {
             RenderBufferTexture(
                 surfaceHolder.surfaceFrame.width(),
-                surfaceHolder.surfaceFrame.height()
+                surfaceHolder.surfaceFrame.height(),
             )
         }
 
@@ -1196,7 +1205,7 @@ constructor(
                         0,
                         eglConfigs.size,
                         numEglConfigs,
-                        0
+                        0,
                     )
                 ) {
                     if (this is GlesRenderer2<*>) {
@@ -1237,9 +1246,9 @@ constructor(
                                 width,
                                 EGL14.EGL_HEIGHT,
                                 height,
-                                EGL14.EGL_NONE
+                                EGL14.EGL_NONE,
                             ),
-                            0
+                            0,
                         )
                     } else {
                         require(surfaceHolder.surface.isValid) {
@@ -1250,7 +1259,7 @@ constructor(
                             eglConfig,
                             surfaceHolder.surface,
                             eglSurfaceAttribList,
-                            0
+                            0,
                         )
                     }
                 if (eglSurface == EGL14.EGL_NO_SURFACE) {
@@ -1309,7 +1318,7 @@ constructor(
                         eglDisplay,
                         fakeBackgroundThreadSurface,
                         fakeBackgroundThreadSurface,
-                        eglBackgroundThreadContext
+                        eglBackgroundThreadContext,
                     )
                 ) {
                     throw IllegalStateException(
@@ -1322,7 +1331,7 @@ constructor(
                         0,
                         0,
                         surfaceHolder.surfaceFrame.width(),
-                        surfaceHolder.surfaceFrame.height()
+                        surfaceHolder.surfaceFrame.height(),
                     )
                     commands()
                 } finally {
@@ -1330,7 +1339,7 @@ constructor(
                         eglDisplay,
                         EGL14.EGL_NO_SURFACE,
                         EGL14.EGL_NO_SURFACE,
-                        EGL14.EGL_NO_CONTEXT
+                        EGL14.EGL_NO_CONTEXT,
                     )
                 }
             }
@@ -1352,7 +1361,7 @@ constructor(
                             eglConfig,
                             EGL14.EGL_NO_CONTEXT,
                             eglContextAttribList,
-                            0
+                            0,
                         )
                     if (sharedAssetsHolder.eglBackgroundThreadContext == EGL14.EGL_NO_CONTEXT) {
                         throw RuntimeException("eglCreateContext failed")
@@ -1404,7 +1413,7 @@ constructor(
                         0,
                         0,
                         surfaceHolder.surfaceFrame.width(),
-                        surfaceHolder.surfaceFrame.height()
+                        surfaceHolder.surfaceFrame.height(),
                     )
                     commands()
                 } finally {
@@ -1412,7 +1421,7 @@ constructor(
                         eglDisplay,
                         EGL14.EGL_NO_SURFACE,
                         EGL14.EGL_NO_SURFACE,
-                        EGL14.EGL_NO_CONTEXT
+                        EGL14.EGL_NO_CONTEXT,
                     )
                 }
             }
@@ -1434,7 +1443,7 @@ constructor(
                             eglConfig,
                             eglBackgroundThreadContext,
                             intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE),
-                            0
+                            0,
                         )
                 }
 
@@ -1444,7 +1453,7 @@ constructor(
                             holder: SurfaceHolder,
                             format: Int,
                             width: Int,
-                            height: Int
+                            height: Int,
                         ) {
                             uiThreadCoroutineScope.launch { createWindowSurface(width, height) }
                         }
@@ -1465,7 +1474,7 @@ constructor(
                 // typically going to fail because members have not been initialized.
                 createWindowSurface(
                     surfaceHolder.surfaceFrame.width(),
-                    surfaceHolder.surfaceFrame.height()
+                    surfaceHolder.surfaceFrame.height(),
                 )
             }
 
@@ -1508,7 +1517,7 @@ constructor(
 
         internal override fun takeScreenshot(
             zonedDateTime: ZonedDateTime,
-            renderParameters: RenderParameters
+            renderParameters: RenderParameters,
         ): Bitmap =
             TraceEvent("GlesRenderer.takeScreenshot").use {
                 val width = screenBounds.width()
@@ -1531,7 +1540,7 @@ constructor(
                             height,
                             GLES20.GL_RGBA,
                             GLES20.GL_UNSIGNED_BYTE,
-                            pixelBuf
+                            pixelBuf,
                         )
                         // The image is flipped when using read pixels because the first pixel in
                         // the OpenGL buffer is in bottom left.
@@ -1545,7 +1554,7 @@ constructor(
         internal override fun renderScreenshotToSurface(
             zonedDateTime: ZonedDateTime,
             renderParameters: RenderParameters,
-            screenShotSurfaceHolder: SurfaceHolder
+            screenShotSurfaceHolder: SurfaceHolder,
         ) {
             val prevRenderParameters = this.renderParameters
             val originalIsForScreenshot = renderParameters.isForScreenshot
@@ -1563,7 +1572,7 @@ constructor(
                             eglConfig,
                             surfaceHolder.surface,
                             eglSurfaceAttribList,
-                            0
+                            0,
                         )
 
                     if (
@@ -1571,7 +1580,7 @@ constructor(
                             eglDisplay,
                             tempEglSurface,
                             tempEglSurface,
-                            eglUiThreadContext
+                            eglUiThreadContext,
                         )
                     ) {
                         throw IllegalStateException(
@@ -1585,7 +1594,7 @@ constructor(
                             0,
                             0,
                             surfaceHolder.surfaceFrame.width(),
-                            surfaceHolder.surfaceFrame.height()
+                            surfaceHolder.surfaceFrame.height(),
                         )
 
                         renderAndComposite(zonedDateTime)
@@ -1598,7 +1607,7 @@ constructor(
                             eglDisplay,
                             EGL14.EGL_NO_SURFACE,
                             EGL14.EGL_NO_SURFACE,
-                            EGL14.EGL_NO_CONTEXT
+                            EGL14.EGL_NO_CONTEXT,
                         )
                         EGL14.eglDestroySurface(eglDisplay, tempEglSurface)
                     }
@@ -1773,7 +1782,7 @@ constructor(
         @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
         eglConfigAttribListList: List<IntArray>,
         eglSurfaceAttribList: IntArray,
-        eglContextAttribList: IntArray
+        eglContextAttribList: IntArray,
     ) :
         GlesRenderer(
             surfaceHolder,
@@ -1782,7 +1791,7 @@ constructor(
             interactiveDrawModeUpdateDelayMillis,
             eglConfigAttribListList,
             eglSurfaceAttribList,
-            eglContextAttribList
+            eglContextAttribList,
         ) where SharedAssetsT : SharedAssets {
 
         /**
@@ -1818,7 +1827,7 @@ constructor(
             @IntRange(from = 0, to = 60000) interactiveDrawModeUpdateDelayMillis: Long,
             eglConfigAttribList: IntArray = EGL_CONFIG_ATTRIB_LIST,
             eglSurfaceAttribList: IntArray = EGL_SURFACE_ATTRIB_LIST,
-            eglContextAttribList: IntArray = EGL_CONTEXT_ATTRIB_LIST
+            eglContextAttribList: IntArray = EGL_CONTEXT_ATTRIB_LIST,
         ) : this(
             surfaceHolder,
             currentUserStyleRepository,
@@ -1826,7 +1835,7 @@ constructor(
             interactiveDrawModeUpdateDelayMillis,
             listOf(eglConfigAttribList),
             eglSurfaceAttribList,
-            eglContextAttribList
+            eglContextAttribList,
         )
 
         /**
@@ -1921,7 +1930,7 @@ constructor(
         @UiThread
         public abstract fun renderHighlightLayer(
             zonedDateTime: ZonedDateTime,
-            sharedAssets: SharedAssetsT
+            sharedAssets: SharedAssetsT,
         )
 
         final override fun render(zonedDateTime: ZonedDateTime) {

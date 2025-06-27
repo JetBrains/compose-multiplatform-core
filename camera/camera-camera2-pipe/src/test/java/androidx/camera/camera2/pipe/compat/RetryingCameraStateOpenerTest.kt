@@ -72,14 +72,14 @@ class RetryingCameraStateOpenerTest {
 
             override suspend fun getCameraExtensionMetadata(
                 cameraId: CameraId,
-                extension: Int
+                extension: Int,
             ): CameraExtensionMetadata {
                 throw UnsupportedOperationException("Not supported for this test")
             }
 
             override fun awaitCameraExtensionMetadata(
                 cameraId: CameraId,
-                extension: Int
+                extension: Int,
             ): CameraExtensionMetadata {
                 throw UnsupportedOperationException("Not supported for this test")
             }
@@ -113,7 +113,7 @@ class RetryingCameraStateOpenerTest {
             override fun onCameraError(
                 cameraId: CameraId,
                 cameraError: CameraError,
-                willAttemptRetry: Boolean
+                willAttemptRetry: Boolean,
             ) {
                 numberOfErrorCalls++
             }
@@ -127,14 +127,14 @@ class RetryingCameraStateOpenerTest {
             fakeCamera2Quirks,
             fakeTimeSource,
             cameraInteropConfig = null,
-            FakeThreads.fromTestScope(TestScope())
+            FakeThreads.fromTestScope(TestScope()),
         )
 
     private val cameraAvailabilityMonitor =
         object : CameraAvailabilityMonitor {
             override suspend fun awaitAvailableCamera(
                 cameraId: CameraId,
-                timeoutMillis: Long
+                timeoutMillis: Long,
             ): Boolean {
                 delay(timeoutMillis)
                 fakeTimeSource.currentTimestamp += DurationNs.fromMs(timeoutMillis)
@@ -620,7 +620,7 @@ class RetryingCameraStateOpenerTest {
                 1,
                 Timestamps.now(fakeTimeSource),
                 cameraDeviceCloser,
-                audioRestrictionController
+                audioRestrictionController,
             )
 
         assertThat(result.errorCode).isEqualTo(ERROR_CAMERA_IN_USE)
@@ -635,7 +635,7 @@ class RetryingCameraStateOpenerTest {
                 1,
                 Timestamps.now(fakeTimeSource),
                 cameraDeviceCloser,
-                audioRestrictionController
+                audioRestrictionController,
             )
 
         assertThat(result.errorCode).isEqualTo(ERROR_UNKNOWN_EXCEPTION)
@@ -650,14 +650,14 @@ class RetryingCameraStateOpenerTest {
                     "android.hardware.Camera",
                     "_enableShutterSound",
                     "Native Method",
-                    0
+                    0,
                 ),
                 StackTraceElement(
                     "android.hardware.Camera",
                     "updateAppOpsPlayAudio",
                     "Camera.java",
-                    1770
-                )
+                    1770,
+                ),
             )
         cameraOpener.toThrow = throwable
 
@@ -668,7 +668,7 @@ class RetryingCameraStateOpenerTest {
                     1,
                     Timestamps.now(fakeTimeSource),
                     cameraDeviceCloser,
-                    audioRestrictionController
+                    audioRestrictionController,
                 )
             assertThat(result.errorCode).isEqualTo(ERROR_DO_NOT_DISTURB_ENABLED)
         } catch (throwable: Throwable) {

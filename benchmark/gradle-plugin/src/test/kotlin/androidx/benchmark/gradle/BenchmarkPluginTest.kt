@@ -111,7 +111,7 @@ class BenchmarkPluginTest {
                 androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha01"
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
@@ -152,7 +152,7 @@ class BenchmarkPluginTest {
                     namespace = "androidx.benchmark.gradle.test"
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
@@ -173,7 +173,7 @@ class BenchmarkPluginTest {
                 androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha01"
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
@@ -202,7 +202,7 @@ class BenchmarkPluginTest {
                 println android.testBuildType
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         projectSetup.gradlePropertiesFile.appendText("android.enableAdditionalTestOutput=true")
@@ -245,7 +245,7 @@ class BenchmarkPluginTest {
                 println android.testBuildType
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         versionPropertiesFile.writeText("buildVersion=3.5.0-rc03")
@@ -286,7 +286,7 @@ class BenchmarkPluginTest {
                 println extension.buildTypes.getByName("debug").testCoverageEnabled
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         val runnerOutput = gradleRunner.withArguments("printTestInstrumentationRunner").build()
@@ -330,7 +330,7 @@ class BenchmarkPluginTest {
                 println extension.buildTypes.getByName("debug").testCoverageEnabled
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         val runnerOutput = gradleRunner.withArguments("printTestInstrumentationRunner").build()
@@ -357,7 +357,7 @@ class BenchmarkPluginTest {
                 androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha04"
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
         projectSetup.gradlePropertiesFile.appendText("android.enableAdditionalTestOutput=true")
 
@@ -383,7 +383,7 @@ class BenchmarkPluginTest {
                 androidTestImplementation "androidx.benchmark:benchmark:1.0.0-alpha04"
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         assertFailsWith(UnexpectedBuildFailure::class) {
@@ -414,7 +414,7 @@ class BenchmarkPluginTest {
                 println "BenchmarkPluginTestKt_applyPluginSigningConfig_${"$"}signingConfigName"
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         val releaseTask = gradleRunner.withArguments("printReleaseSigningConfig").build()

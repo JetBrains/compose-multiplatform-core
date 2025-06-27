@@ -38,7 +38,7 @@ class DaoProcessor(
     baseContext: Context,
     val element: XTypeElement,
     val dbType: XType,
-    val dbVerifier: DatabaseVerifier?
+    val dbVerifier: DatabaseVerifier?,
 ) {
     val context = baseContext.fork(element)
 
@@ -50,7 +50,7 @@ class DaoProcessor(
                 Query::class,
                 Update::class,
                 Upsert::class,
-                RawQuery::class
+                RawQuery::class,
             )
     }
 
@@ -69,18 +69,18 @@ class DaoProcessor(
                 transactionFunctions = emptyList(),
                 kotlinBoxedPrimitiveFunctionDelegates = emptyList(),
                 kotlinDefaultFunctionDelegates = emptyList(),
-                constructorParamType = null
+                constructorParamType = null,
             )
         }
         context.checker.hasAnnotation(
             element,
             androidx.room.Dao::class,
-            ProcessorErrors.DAO_MUST_BE_ANNOTATED_WITH_DAO
+            ProcessorErrors.DAO_MUST_BE_ANNOTATED_WITH_DAO,
         )
         context.checker.check(
             element.isAbstract() || element.isInterface(),
             element,
-            ProcessorErrors.DAO_MUST_BE_AN_ABSTRACT_CLASS_OR_AN_INTERFACE
+            ProcessorErrors.DAO_MUST_BE_AN_ABSTRACT_CLASS_OR_AN_INTERFACE,
         )
 
         val declaredType = element.type
@@ -93,21 +93,21 @@ class DaoProcessor(
                         context.checker.check(
                             predicate = function.hasAnnotation(Query::class),
                             element = function,
-                            errorMsg = ProcessorErrors.INVALID_ANNOTATION_IN_DAO_PROPERTY
+                            errorMsg = ProcessorErrors.INVALID_ANNOTATION_IN_DAO_PROPERTY,
                         )
                     } else {
                         context.checker.check(
                             predicate =
                                 PROCESSED_ANNOTATIONS.count { function.hasAnnotation(it) } <= 1,
                             element = function,
-                            errorMsg = ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_FUNCTION
+                            errorMsg = ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_FUNCTION,
                         )
                     }
                     if (function.hasAnnotation(JvmName::class)) {
                         context.logger.w(
                             Warning.JVM_NAME_ON_OVERRIDDEN_FUNCTION,
                             function,
-                            ProcessorErrors.JVM_NAME_ON_OVERRIDDEN_FUNCTION
+                            ProcessorErrors.JVM_NAME_ON_OVERRIDDEN_FUNCTION,
                         )
                     }
                     if (function.hasAnnotation(Query::class)) {
@@ -143,7 +143,7 @@ class DaoProcessor(
                         baseContext = context,
                         containing = declaredType,
                         executableElement = it,
-                        dbVerifier = processorVerifier
+                        dbVerifier = processorVerifier,
                     )
                     .process()
             } ?: emptyList()
@@ -153,7 +153,7 @@ class DaoProcessor(
                 RawQueryFunctionProcessor(
                         baseContext = context,
                         containing = declaredType,
-                        executableElement = it
+                        executableElement = it,
                     )
                     .process()
             } ?: emptyList()
@@ -163,7 +163,7 @@ class DaoProcessor(
                 InsertFunctionProcessor(
                         baseContext = context,
                         containing = declaredType,
-                        executableElement = it
+                        executableElement = it,
                     )
                     .process()
             } ?: emptyList()
@@ -173,7 +173,7 @@ class DaoProcessor(
                 DeleteFunctionProcessor(
                         baseContext = context,
                         containing = declaredType,
-                        executableElement = it
+                        executableElement = it,
                     )
                     .process()
             } ?: emptyList()
@@ -183,7 +183,7 @@ class DaoProcessor(
                 UpdateFunctionProcessor(
                         baseContext = context,
                         containing = declaredType,
-                        executableElement = it
+                        executableElement = it,
                     )
                     .process()
             } ?: emptyList()
@@ -193,7 +193,7 @@ class DaoProcessor(
                 UpsertFunctionProcessor(
                         baseContext = context,
                         containing = declaredType,
-                        executableElement = it
+                        executableElement = it,
                     )
                     .process()
             } ?: emptyList()
@@ -209,7 +209,7 @@ class DaoProcessor(
                             baseContext = context,
                             containingElement = element,
                             containingType = declaredType,
-                            executableElement = it
+                            executableElement = it,
                         )
                         .process()
                 }
@@ -222,7 +222,7 @@ class DaoProcessor(
             if (element.superClass != null || element.getSuperInterfaceElements().isNotEmpty()) {
                 matchKotlinBoxedPrimitiveFunctions(
                     unannotatedFunctions,
-                    functions.values.flatten() - unannotatedFunctions
+                    functions.values.flatten() - unannotatedFunctions,
                 )
             } else {
                 emptyList()
@@ -261,7 +261,7 @@ class DaoProcessor(
         context.checker.notUnbound(
             declaredType,
             element,
-            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_DAO_CLASSES
+            ProcessorErrors.CANNOT_USE_UNBOUND_GENERICS_IN_DAO_CLASSES,
         )
 
         val invalidAnnotatedFunctions =
@@ -282,7 +282,7 @@ class DaoProcessor(
             transactionFunctions = transactionFunctions.toList(),
             kotlinBoxedPrimitiveFunctionDelegates = kotlinBoxedPrimitiveBridgeFunctions,
             kotlinDefaultFunctionDelegates = kotlinDefaultFunctionDelegates.toList(),
-            constructorParamType = constructorParamType
+            constructorParamType = constructorParamType,
         )
     }
 
@@ -292,8 +292,8 @@ class DaoProcessor(
                 element,
                 ProcessorErrors.daoMustHaveMatchingConstructor(
                     element.qualifiedName,
-                    dbType.asTypeName().toString(context.codeLanguage)
-                )
+                    dbType.asTypeName().toString(context.codeLanguage),
+                ),
             )
         }
     }
@@ -306,7 +306,7 @@ class DaoProcessor(
      */
     private fun matchKotlinBoxedPrimitiveFunctions(
         unannotatedFunctions: List<XMethodElement>,
-        annotatedFunctions: List<XMethodElement>
+        annotatedFunctions: List<XMethodElement>,
     ) =
         unannotatedFunctions.mapNotNull { unannotated ->
             annotatedFunctions

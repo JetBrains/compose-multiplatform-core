@@ -65,7 +65,7 @@ private fun AnnotationSpec.Builder.addAnnotationValue(annotationValue: XAnnotati
                     name,
                     "\$T.\$L",
                     asEnum().enclosingElement.asClassName().java,
-                    asEnum().name
+                    asEnum().name,
                 )
             hasTypeValue() -> addMember(name, "\$T.class", asType().asTypeName().java)
             hasStringValue() -> addMember(name, "\$S", asString())
@@ -162,7 +162,7 @@ object MethodSpecHelper {
         owner: XType =
             checkNotNull(elm.enclosingElement.type) {
                 "Cannot override method without enclosing class"
-            }
+            },
     ): MethodSpec.Builder {
         val asMember = elm.asMemberOf(owner)
         return overriding(executableElement = elm, resolvedType = asMember)
@@ -171,7 +171,7 @@ object MethodSpecHelper {
     private fun overriding(
         executableElement: XMethodElement,
         resolvedType: XMethodType = executableElement.executableType,
-        vararg paramModifiers: Modifier
+        vararg paramModifiers: Modifier,
     ): MethodSpec.Builder {
         val methodJvmName =
             if (executableElement.hasValidJvmSourceName()) {
@@ -192,7 +192,7 @@ object MethodSpecHelper {
                             // use
                             // the jvmName instead, which should be a valid java name.
                             executableElement.parameters[index].jvmName,
-                            *paramModifiers
+                            *paramModifiers,
                         )
                         .build()
                 )

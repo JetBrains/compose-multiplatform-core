@@ -103,21 +103,21 @@ class ButtonGroupScreenshotTest {
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     ) {
                         Text("Work")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     ) {
                         Text("Restaurant")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     ) {
                         Text("Coffee")
                     }
@@ -139,21 +139,21 @@ class ButtonGroupScreenshotTest {
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     ) {
                         Text("Work")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     ) {
                         Text("Restaurant")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     ) {
                         Text("Coffee")
                     }
@@ -175,21 +175,21 @@ class ButtonGroupScreenshotTest {
                     ToggleButton(
                         checked = true,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     ) {
                         Text("Work")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     ) {
                         Text("Restaurant")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     ) {
                         Text("Coffee")
                     }
@@ -211,21 +211,21 @@ class ButtonGroupScreenshotTest {
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     ) {
                         Text("Work")
                     }
                     ToggleButton(
                         checked = true,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     ) {
                         Text("Restaurant")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     ) {
                         Text("Coffee")
                     }
@@ -247,21 +247,21 @@ class ButtonGroupScreenshotTest {
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     ) {
                         Text("Work")
                     }
                     ToggleButton(
                         checked = false,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     ) {
                         Text("Restaurant")
                     }
                     ToggleButton(
                         checked = true,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     ) {
                         Text("Coffee")
                     }
@@ -283,21 +283,21 @@ class ButtonGroupScreenshotTest {
                     ToggleButton(
                         checked = true,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                     ) {
                         Text("Work")
                     }
                     ToggleButton(
                         checked = true,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                     ) {
                         Text("Restaurant")
                     }
                     ToggleButton(
                         checked = true,
                         onCheckedChange = { /* Do nothing */ },
-                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                     ) {
                         Text("Coffee")
                     }
@@ -463,7 +463,7 @@ class ButtonGroupScreenshotTest {
                         IconButton(onClick = {}) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                     }
@@ -488,7 +488,7 @@ class ButtonGroupScreenshotTest {
                         IconButton(onClick = {}) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                     }
@@ -518,11 +518,11 @@ class ButtonGroupScreenshotTest {
                                     menuState.show()
                                 }
                             },
-                            modifier = Modifier.testTag(overflowIndicator)
+                            modifier = Modifier.testTag(overflowIndicator),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                     }
@@ -535,9 +535,9 @@ class ButtonGroupScreenshotTest {
                                     enabled = true,
                                     text = { Text("$i") },
                                     modifier = Modifier.testTag("$i MenuItem"),
-                                    onClick = {}
+                                    onClick = {},
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -564,11 +564,11 @@ class ButtonGroupScreenshotTest {
                                     menuState.show()
                                 }
                             },
-                            modifier = Modifier.testTag(overflowIndicator)
+                            modifier = Modifier.testTag(overflowIndicator),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "Localized description"
+                                contentDescription = "Localized description",
                             )
                         }
                     }
@@ -581,9 +581,9 @@ class ButtonGroupScreenshotTest {
                                     enabled = true,
                                     text = { Text("$i") },
                                     modifier = Modifier.testTag("$i MenuItem"),
-                                    onClick = {}
+                                    onClick = {},
                                 )
-                            }
+                            },
                         )
                     }
                 }

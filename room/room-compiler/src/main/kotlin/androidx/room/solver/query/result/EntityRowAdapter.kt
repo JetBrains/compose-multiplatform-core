@@ -54,7 +54,7 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
                                 XCodeBlock.of("%M(%L, %S)", packageMember, stmtVarName, columnName)
                                     // indexVar expects a string, and that depends on the language.
                                     // We should change the function signature to accept XCodeBlock.
-                                    .toString(scope.language)
+                                    .toString(scope.language),
                         )
                     }
             }
@@ -65,7 +65,7 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
     override fun onStatementReady(
         stmtVarName: String,
         scope: CodeGenScope,
-        indices: List<ColumnIndexVar>
+        indices: List<ColumnIndexVar>,
     ) {
         // Check if given indices are the default ones, i.e. onStatementReady() was called without
         // an indices argument and these are the default parameter ones, which means a wrapped
@@ -92,8 +92,8 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
                         packageMember,
                         stmtVarName,
                         entityColumnNamesParam,
-                        entityColumnIndicesParam
-                    )
+                        entityColumnIndicesParam,
+                    ),
             )
         }
         functionSpec =
@@ -105,7 +105,7 @@ class EntityRowAdapter(val entity: Entity, out: XType) : QueryMappedRowAdapter(o
             "%L = %N(%L)",
             outVarName,
             functionSpec,
-            stmtDelegateVarName ?: stmtVarName
+            stmtDelegateVarName ?: stmtVarName,
         )
     }
 

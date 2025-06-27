@@ -1039,7 +1039,7 @@ class NavHostTest {
                 composable(first) { BasicText(first) }
                 composable(
                     second,
-                    deepLinks = listOf(navDeepLink { action = Intent.ACTION_MAIN })
+                    deepLinks = listOf(navDeepLink { action = Intent.ACTION_MAIN }),
                 ) {
                     BasicText(second)
                 }
@@ -1292,6 +1292,42 @@ class NavHostTest {
 
         composeTestRule.runOnIdle {
             assertWithMessage("Lifecycle should not have been stopped").that(stopCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun navBackStackEntrySingleTopLifecycleTest() {
+        var lastEvent: Lifecycle.Event? = null
+        lateinit var navController: NavHostController
+        composeTestRule.setContent {
+            navController = rememberNavController()
+            NavHost(navController, startDestination = "First") {
+                composable("First") {
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event -> lastEvent = event }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+
+                        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                    }
+                }
+                composable("Second") {}
+            }
+        }
+
+        composeTestRule.runOnIdle { navController.navigate("Second") }
+
+        composeTestRule.runOnIdle {
+            navController.navigate("First") {
+                popUpTo("First")
+                launchSingleTop = true
+            }
+        }
+
+        composeTestRule.runOnIdle {
+            assertWithMessage("Lifecycle should have been resumed")
+                .that(lastEvent)
+                .isEqualTo(Lifecycle.Event.ON_RESUME)
         }
     }
 

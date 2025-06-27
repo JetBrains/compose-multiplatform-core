@@ -28,15 +28,14 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
-    api("androidx.navigation:navigation-runtime:2.5.1")
+    api(project(":hilt:hilt-lifecycle-viewmodel"))
+    api("androidx.navigation:navigation-runtime:2.9.0")
     api(libs.hiltAndroid)
-    ksp(libs.hiltCompiler)
 }
 
 androidx {

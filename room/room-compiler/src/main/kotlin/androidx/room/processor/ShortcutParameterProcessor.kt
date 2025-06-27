@@ -26,7 +26,7 @@ import androidx.room.vo.ShortcutQueryParameter
 class ShortcutParameterProcessor(
     baseContext: Context,
     val containing: XType,
-    val element: XExecutableParameterElement
+    val element: XExecutableParameterElement,
 ) {
     val context = baseContext.fork(element)
 
@@ -38,7 +38,7 @@ class ShortcutParameterProcessor(
                 msg =
                     ProcessorErrors.nullableParamInShortcutFunction(
                         asMember.asTypeName().toString(context.codeLanguage)
-                    )
+                    ),
             )
         }
 
@@ -46,7 +46,7 @@ class ShortcutParameterProcessor(
         context.checker.check(
             !name.startsWith("_"),
             element = element,
-            errorMsg = ProcessorErrors.QUERY_PARAMETERS_CANNOT_START_WITH_UNDERSCORE
+            errorMsg = ProcessorErrors.QUERY_PARAMETERS_CANNOT_START_WITH_UNDERSCORE,
         )
 
         val (pojoType, isMultiple) = extractPojoType(asMember)
@@ -55,7 +55,7 @@ class ShortcutParameterProcessor(
             name = name,
             type = asMember,
             pojoType = pojoType,
-            isMultiple = isMultiple
+            isMultiple = isMultiple,
         )
     }
 

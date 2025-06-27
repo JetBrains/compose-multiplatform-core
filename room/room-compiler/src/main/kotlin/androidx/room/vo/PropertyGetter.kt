@@ -37,7 +37,7 @@ data class PropertyGetter(
         builder.addLocalVariable(
             name = outVar,
             typeName = type.asTypeName(),
-            assignExpr = getterExpression(ownerVar)
+            assignExpr = getterExpression(ownerVar),
         )
     }
 
@@ -46,7 +46,7 @@ data class PropertyGetter(
         stmtParamVar: String,
         indexVar: String,
         binder: StatementValueBinder,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         val varExpr = getterExpression(ownerVar)
         // A temporary local val is needed in Kotlin whenever the getter function returns nullable
@@ -59,7 +59,7 @@ data class PropertyGetter(
             scope.builder.addLocalVariable(
                 name = tmpProperty,
                 typeName = type.asTypeName(),
-                assignExpr = varExpr
+                assignExpr = varExpr,
             )
             binder.bindToStmt(stmtParamVar, indexVar, tmpProperty, scope)
         } else {
@@ -69,7 +69,7 @@ data class PropertyGetter(
                 // This function expects a String, which depends on the language. We should change
                 // the function signature to accept an XCodeBlock instead.
                 varExpr.toString(scope.language),
-                scope
+                scope,
             )
         }
     }

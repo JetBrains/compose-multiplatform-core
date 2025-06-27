@@ -130,7 +130,7 @@ class ClickableTest {
     private val InstanceOf =
         Correspondence.from<Any, KClass<*>>(
             { obj, clazz -> clazz?.isInstance(obj) ?: false },
-            "is an instance of"
+            "is an instance of",
         )
 
     @Before
@@ -171,7 +171,7 @@ class ClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").clickable(enabled = false) {}
+                    modifier = Modifier.testTag("myClickable").clickable(enabled = false) {},
                 )
             }
         }
@@ -192,7 +192,7 @@ class ClickableTest {
                 BasicText(
                     "ClickableText",
                     modifier =
-                        Modifier.testTag("myClickable").clickable(enabled = enabled, role = role) {}
+                        Modifier.testTag("myClickable").clickable(enabled = enabled, role = role) {},
                 )
             }
         }
@@ -229,7 +229,7 @@ class ClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").clickable(onClick = onClick)
+                    modifier = Modifier.testTag("myClickable").clickable(onClick = onClick),
                 )
             }
         }
@@ -239,6 +239,37 @@ class ClickableTest {
         rule.runOnIdle { assertThat(counter).isEqualTo(1) }
 
         rule.onNodeWithTag("myClickable").performClick()
+
+        rule.runOnIdle { assertThat(counter).isEqualTo(2) }
+    }
+
+    @Test
+    fun click_withIndirectTouchEvent() {
+        var counter = 0
+        val onClick: () -> Unit = { ++counter }
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .clickable(onClick = onClick),
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent()
+
+        rule.runOnIdle { assertThat(counter).isEqualTo(1) }
+
+        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent()
 
         rule.runOnIdle { assertThat(counter).isEqualTo(2) }
     }
@@ -358,8 +389,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -391,6 +422,58 @@ class ClickableTest {
     }
 
     @Test
+    fun interactionSource_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(currentTime = 0L)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(currentTime = 16L)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_immediateRelease_noScrollableContainer() {
         val interactionSource = MutableInteractionSource()
 
@@ -406,8 +489,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -422,6 +505,55 @@ class ClickableTest {
             down(center)
             up()
         }
+
+        // Press finished so we should see both press and release
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateRelease_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+        lateinit var inputModeManager: InputModeManager
+
+        rule.mainClock.autoAdvance = false
+
+        val focusRequester = FocusRequester()
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(16L)
 
         // Press finished so we should see both press and release
         rule.runOnIdle {
@@ -449,8 +581,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -465,6 +597,52 @@ class ClickableTest {
             down(center)
             cancel()
         }
+
+        // We are not in a scrollable container, so we should see a press and immediate cancel
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateCancel_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
 
         // We are not in a scrollable container, so we should see a press and immediate cancel
         rule.runOnIdle {
@@ -493,9 +671,9 @@ class ClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
-                            .clickable(interactionSource = interactionSource, indication = null) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -510,6 +688,58 @@ class ClickableTest {
             down(centerLeft)
             moveTo(centerRight)
         }
+
+        // The press should fire, and then the drag should instantly cancel it
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateDrag_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
 
         // The press should fire, and then the drag should instantly cancel it
         rule.runOnIdle {
@@ -537,8 +767,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -578,6 +808,70 @@ class ClickableTest {
     }
 
     @Test
+    fun interactionSource_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+
+        val halfTapIndicationDelay = TapIndicationDelay / 2
+
+        rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
+
+        // Haven't reached the tap delay yet, so we shouldn't have started a press
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        // Advance past the tap delay
+        rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchReleaseEvent(halfTapIndicationDelay + 16L)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_immediateRelease_scrollableContainer() {
         val interactionSource = MutableInteractionSource()
 
@@ -593,8 +887,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -609,6 +903,54 @@ class ClickableTest {
             down(center)
             up()
         }
+
+        // We haven't reached the tap delay, but we have finished a press so we should have
+        // emitted both press and release
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateRelease_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(16L)
 
         // We haven't reached the tap delay, but we have finished a press so we should have
         // emitted both press and release
@@ -637,8 +979,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -653,6 +995,47 @@ class ClickableTest {
             down(center)
             cancel()
         }
+
+        // We haven't reached the tap delay, and a cancel was emitted, so no press should ever be
+        // shown
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+    }
+
+    @Test
+    fun interactionSource_immediateCancel_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
 
         // We haven't reached the tap delay, and a cancel was emitted, so no press should ever be
         // shown
@@ -676,9 +1059,9 @@ class ClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
-                            .clickable(interactionSource = interactionSource, indication = null) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -693,6 +1076,52 @@ class ClickableTest {
             down(centerLeft)
             moveTo(centerRight)
         }
+
+        rule.mainClock.advanceTimeBy(TapIndicationDelay)
+
+        // We started a drag before the timeout, so no press should be emitted
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+    }
+
+    @Test
+    fun interactionSource_immediateDrag_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -717,9 +1146,9 @@ class ClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
-                            .clickable(interactionSource = interactionSource, indication = null) {}
+                            .clickable(interactionSource = interactionSource, indication = null) {},
                 )
             }
         }
@@ -752,6 +1181,64 @@ class ClickableTest {
     }
 
     @Test
+    fun interactionSource_dragAfterTimeout_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+
+        rule.mainClock.advanceTimeBy(TapIndicationDelay)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
+
+        // The drag should cancel the press
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_cancelledGesture_scrollableContainer() {
         val interactionSource = MutableInteractionSource()
 
@@ -767,8 +1254,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -800,6 +1287,61 @@ class ClickableTest {
     }
 
     @Test
+    fun interactionSource_cancelledGesture_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+
+        rule.mainClock.advanceTimeBy(TapIndicationDelay)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_resetWhenDisposed() {
         val interactionSource = MutableInteractionSource()
         var emitClickableText by mutableStateOf(true)
@@ -817,8 +1359,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").clickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                     )
                 }
             }
@@ -871,8 +1413,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").clickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                     )
                 }
             }
@@ -922,8 +1464,8 @@ class ClickableTest {
                 modifier =
                     Modifier.testTag("myClickable").clickable(
                         interactionSource = interactionSource,
-                        indication = null
-                    ) {}
+                        indication = null,
+                    ) {},
             )
         }
 
@@ -979,8 +1521,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1022,8 +1564,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1067,8 +1609,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1103,8 +1645,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1152,7 +1694,7 @@ class ClickableTest {
                     "ClickableText",
                     modifier =
                         Modifier.testTag("myClickable")
-                            .clickable(enabled = enabled.value, onClick = onClick)
+                            .clickable(enabled = enabled.value, onClick = onClick),
                 )
             }
         }
@@ -1213,7 +1755,7 @@ class ClickableTest {
     private fun Modifier.dynamicPointerInputModifierWithDetectTapGestures(
         enabled: Boolean,
         key: Any? = Unit,
-        onTap: () -> Unit = {}
+        onTap: () -> Unit = {},
     ) =
         if (enabled) {
             pointerInput(key) { detectTapGestures { onTap() } }
@@ -1473,7 +2015,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         key = "unique_key_123",
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -1518,7 +2060,7 @@ class ClickableTest {
                     .testTag("myClickable")
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -1583,12 +2125,12 @@ class ClickableTest {
                         onRelease = {
                             dynamicPointerInputReleaseCounter++
                             activeDynamicPointerInput2 = true
-                        }
+                        },
                     )
                     .dynamicPointerInputModifier(
                         enabled = activeDynamicPointerInput2,
                         onPress = { dynamicPointerInput2PressCounter++ },
-                        onRelease = { dynamicPointerInput2ReleaseCounter++ }
+                        onRelease = { dynamicPointerInput2ReleaseCounter++ },
                     )
                     .pointerInput(Unit) {
                         originalPointerInputLambdaExecutionCount++
@@ -1919,7 +2461,7 @@ class ClickableTest {
                         onRelease = {
                             dynamicPointerInputReleaseCounter++
                             activeDynamicClickable = true
-                        }
+                        },
                     )
                     .dynamicClickableModifier(activeDynamicClickable) { dynamicClickableCounter++ }
                     .pointerInput(Unit) {
@@ -2055,7 +2597,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         key = "unique_key_123",
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -2109,7 +2651,7 @@ class ClickableTest {
                     .testTag("myClickable")
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -2173,7 +2715,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         onPress = { dynamicPressCounter++ },
-                        onRelease = { dynamicReleaseCounter++ }
+                        onRelease = { dynamicReleaseCounter++ },
                     )
                     .background(Color.Green)
                     .pointerInput(Unit) {
@@ -2247,7 +2789,7 @@ class ClickableTest {
                     .testTag("myClickable")
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
-                        onPress = { dynamicPressCounter++ }
+                        onPress = { dynamicPressCounter++ },
                     )
                     .clickable {
                         clickableClickCounter++
@@ -2319,7 +2861,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         onPress = { dynamicPressCounter++ },
-                        onRelease = { dynamicReleaseCounter++ }
+                        onRelease = { dynamicReleaseCounter++ },
                     )
             )
         }
@@ -2406,7 +2948,7 @@ class ClickableTest {
                     .dynamicPointerInputModifier(
                         enabled = activateDynamicPointerInput,
                         onPress = { dynamicPressCounter++ },
-                        onRelease = { dynamicReleaseCounter++ }
+                        onRelease = { dynamicReleaseCounter++ },
                     )
             )
         }
@@ -2477,7 +3019,7 @@ class ClickableTest {
                         .dynamicPointerInputModifier(
                             enabled = activateDynamicPointerInput,
                             onPress = { dynamicPressCounter++ },
-                            onRelease = { dynamicReleaseCounter++ }
+                            onRelease = { dynamicReleaseCounter++ },
                         )
                 )
             }
@@ -2560,7 +3102,7 @@ class ClickableTest {
                             onRelease = {
                                 dynamicReleaseCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2624,7 +3166,7 @@ class ClickableTest {
                             onRelease = {
                                 dynamicReleaseCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2688,7 +3230,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2760,7 +3302,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2821,7 +3363,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2882,7 +3424,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -2943,7 +3485,7 @@ class ClickableTest {
                             onTap = {
                                 dynamicTapGestureCounter++
                                 activateDynamicPointerInput = false
-                            }
+                            },
                         )
                 )
             }
@@ -3013,7 +3555,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
                     .background(Color.Green)
                     .pointerInput(Unit) {
@@ -3115,7 +3657,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
                     .background(Color.Green)
                     .pointerInput("unique_key_5678") {
@@ -3237,7 +3779,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
             )
         }
@@ -3339,7 +3881,7 @@ class ClickableTest {
                         enabled = activateDynamicPointerInput,
                         onEnter = { dynamicEnterCounter++ },
                         onMove = { dynamicMoveCounter++ },
-                        onExit = { dynamicExitCounter++ }
+                        onExit = { dynamicExitCounter++ },
                     )
             )
         }
@@ -3441,7 +3983,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
             }
@@ -3541,7 +4083,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
             }
@@ -3618,7 +4160,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
                 Box(
@@ -3718,7 +4260,7 @@ class ClickableTest {
                             enabled = activateDynamicPointerInput,
                             onEnter = { dynamicEnterCounter++ },
                             onMove = { dynamicMoveCounter++ },
-                            onExit = { dynamicExitCounter++ }
+                            onExit = { dynamicExitCounter++ },
                         )
                 )
                 Box(
@@ -3817,8 +4359,8 @@ class ClickableTest {
                             enabled = enabled.value,
                             onClick = {},
                             interactionSource = interactionSource,
-                            indication = null
-                        )
+                            indication = null,
+                        ),
             )
         }
 
@@ -3883,7 +4425,7 @@ class ClickableTest {
                             Modifier.testTag("myClickable")
                                 .focusRequester(requester)
                                 .onFocusEvent { focusState = it }
-                                .clickable(enabled = enabled.value) {}
+                                .clickable(enabled = enabled.value) {},
                     )
                 }
             }
@@ -3965,7 +4507,7 @@ class ClickableTest {
                     "role",
                     "interactionSource",
                     "indicationNodeFactory",
-                    "onClick"
+                    "onClick",
                 )
         }
     }
@@ -3978,7 +4520,7 @@ class ClickableTest {
                 Modifier.clickable(
                         onClick = onClick,
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("clickable")
@@ -3990,7 +4532,7 @@ class ClickableTest {
                     "onClick",
                     "role",
                     "indicationNodeFactory",
-                    "interactionSource"
+                    "interactionSource",
                 )
         }
     }
@@ -4100,8 +4642,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -4127,7 +4669,7 @@ class ClickableTest {
                     Box(Modifier.padding(10.dp)) {
                         BasicText(
                             "ClickableText",
-                            modifier = Modifier.testTag("clickable").clickable {}
+                            modifier = Modifier.testTag("clickable").clickable {},
                         )
                     }
                 }
@@ -4147,7 +4689,7 @@ class ClickableTest {
                     Box(Modifier.padding(10.dp)) {
                         BasicText(
                             "ClickableText",
-                            modifier = Modifier.testTag("clickable").clickable {}
+                            modifier = Modifier.testTag("clickable").clickable {},
                         )
                     }
                 }
@@ -4171,7 +4713,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4200,7 +4742,7 @@ class ClickableTest {
                     BasicText(
                         "ClickableText",
                         modifier =
-                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {},
                     )
                 }
             }
@@ -4244,7 +4786,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                                 interactionSource = null
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4328,6 +4870,67 @@ class ClickableTest {
     }
 
     /**
+     * Test case for initializing indication when an IndirectTouchEvent is received. Focus is
+     * required for indirect touch, so normally just focusing the clickable will cause indication to
+     * be initialized via focus logic, but if a focused child receives indirect touch and doesn't
+     * consume it, it will still be passed up to a non-focused parent, so we test this scenario here
+     * and make sure that this indirect touch event bubbling up causes indication to be created.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun localIndication_noInteractionSource_lazilyCreated_indirectTouch() {
+        var created = false
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                inputModeManager = LocalInputModeManager.current
+                // Add focusable to the top so that when initial focus is dispatched, the clickable
+                // doesn't become focused
+                Box(Modifier.padding(10.dp).focusable()) {
+                    Box(
+                        modifier =
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                    ) {
+                        Box(Modifier.focusRequester(focusRequester).focusable())
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            inputModeManager.requestInputMode(Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            // We are focusing the child, not the clickable, so we shouldn't create indication yet
+            assertThat(created).isFalse()
+        }
+
+        // The indirect touch event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, 0f)
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
      * Test case for changing from an IndicationNodeFactory instance to an Indication instance - we
      * should crash as Indication is not supported.
      */
@@ -4356,7 +4959,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4414,7 +5017,7 @@ class ClickableTest {
                     BasicText(
                         "ClickableText",
                         modifier =
-                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {},
                     )
                 }
             }
@@ -4478,7 +5081,7 @@ class ClickableTest {
                     BasicText(
                         "ClickableText",
                         modifier =
-                            Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                            Modifier.testTag("clickable").clickable(interactionSource = null) {},
                     )
                 }
             }
@@ -4545,7 +5148,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4597,8 +5200,8 @@ class ClickableTest {
                         "ClickableText",
                         modifier =
                             Modifier.testTag("clickable").clickable(
-                                interactionSource = interactionSource,
-                            ) {}
+                                interactionSource = interactionSource
+                            ) {},
                     )
                 }
             }
@@ -4653,7 +5256,7 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -4708,7 +5311,7 @@ class ClickableTest {
                         BasicText(
                             "ClickableText",
                             modifier =
-                                Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                                Modifier.testTag("clickable").clickable(interactionSource = null) {},
                         )
                     }
                 }
@@ -4799,7 +5402,7 @@ class ClickableTest {
                             modifier =
                                 Modifier.testTag("clickable")
                                     .focusRequester(focusRequester)
-                                    .clickable(interactionSource = null) {}
+                                    .clickable(interactionSource = null) {},
                         )
                     }
                 }
@@ -4882,7 +5485,7 @@ class ClickableTest {
             CompositionLocalProvider(LocalIndication provides indication) {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("clickable").clickable(interactionSource = null) {}
+                    modifier = Modifier.testTag("clickable").clickable(interactionSource = null) {},
                 )
             }
         }
@@ -4974,7 +5577,7 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = null
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -5053,8 +5656,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5073,8 +5676,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5106,8 +5709,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5147,8 +5750,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5190,8 +5793,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5246,7 +5849,7 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
+                            indication = indication,
                         ) {}
                 ) {
                     Box(Modifier.focusRequester(focusRequester).focusable())
@@ -5266,6 +5869,68 @@ class ClickableTest {
 
         // The key input event should cause the indication node to be created
         rule.onNodeWithTag("clickable").performKeyInput { keyDown(Key.Enter) }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Test case for initializing indication when an IndirectTouchEvent is received. Focus is
+     * required for indirect touch, so normally just focusing the clickable will cause indication to
+     * be initialized via focus logic, but if a focused child receives indirect touch and doesn't
+     * consume it, it will still be passed up to a non-focused parent, so we test this scenario here
+     * and make sure that this indirect touch event bubbling up causes indication to be created.
+     */
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun indicationNodeFactory_noInteractionSource_lazilyCreated_indirectTouch() {
+        var created = false
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        lateinit var interactionSource: InteractionSource
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { source, coroutineScope ->
+            interactionSource = source
+            created = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            // Add focusable to the top so that when initial focus is dispatched, the clickable
+            // doesn't become focused
+            Box(Modifier.padding(10.dp).focusable()) {
+                Box(
+                    modifier =
+                        Modifier.testTag("clickable").clickable(
+                            interactionSource = null,
+                            indication = indication,
+                        ) {}
+                ) {
+                    Box(Modifier.focusRequester(focusRequester).focusable())
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            inputModeManager.requestInputMode(Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        rule.runOnIdle {
+            // We are focusing the child, not the clickable, so we shouldn't create indication yet
+            assertThat(created).isFalse()
+        }
+
+        // The indirect touch event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, 0f)
 
         rule.runOnIdle {
             assertThat(created).isTrue()
@@ -5303,8 +5968,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5363,8 +6028,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5428,8 +6093,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5494,8 +6159,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5546,8 +6211,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5600,8 +6265,8 @@ class ClickableTest {
                     modifier =
                         Modifier.testTag("clickable").clickable(
                             interactionSource = interactionSource,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -5656,8 +6321,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").clickable(
                                 interactionSource = null,
-                                indication = indication
-                            ) {}
+                                indication = indication,
+                            ) {},
                     )
                 }
             }
@@ -5746,8 +6411,8 @@ class ClickableTest {
                         modifier =
                             Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                                 interactionSource = null,
-                                indication = indication
-                            ) {}
+                                indication = indication,
+                            ) {},
                     )
                 }
             }
@@ -5831,8 +6496,8 @@ class ClickableTest {
                 modifier =
                     Modifier.testTag("clickable").clickable(
                         interactionSource = null,
-                        indication = indication
-                    ) {}
+                        indication = indication,
+                    ) {},
             )
         }
 
@@ -5922,8 +6587,8 @@ class ClickableTest {
                 modifier =
                     Modifier.testTag("clickable").focusRequester(focusRequester).clickable(
                         interactionSource = null,
-                        indication = indication
-                    ) {}
+                        indication = indication,
+                    ) {},
             )
         }
 
@@ -6033,12 +6698,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = indication2
+                                            indication = indication2,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6110,12 +6775,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = null
+                                            indication = null,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6188,12 +6853,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = indication1
+                                            indication = indication1,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6264,12 +6929,12 @@ class ClickableTest {
                                     if (useExplicitIndication) {
                                         Modifier.clickable(
                                             interactionSource = null,
-                                            indication = null
+                                            indication = null,
                                         ) {}
                                     } else {
                                         Modifier.clickable(interactionSource = null) {}
                                     }
-                                )
+                                ),
                     )
                 }
             }
@@ -6310,7 +6975,7 @@ class ClickableTest {
             Modifier.clickable(
                 interactionSource = interactionSource,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6323,7 +6988,7 @@ class ClickableTest {
                 interactionSource = null,
                 indication = null,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6337,7 +7002,7 @@ class ClickableTest {
                 interactionSource = interactionSource,
                 indication = null,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6351,7 +7016,7 @@ class ClickableTest {
                 interactionSource = null,
                 indication = indication,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6379,7 +7044,7 @@ class ClickableTest {
                 interactionSource = interactionSource,
                 indication = indication,
                 enabled = toggleInput,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -6393,13 +7058,13 @@ class ClickableTest {
             Modifier.clickable(
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.clickable(
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -6437,7 +7102,7 @@ class ClickableTest {
         // Act.
         assertFailsWith(
             exceptionClass = AssertionError::class,
-            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]"
+            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]",
         ) {
             rule.onNodeWithTag(tag).requestFocus()
         }
@@ -6470,13 +7135,13 @@ class ClickableTest {
         }
         assertFailsWith(
             exceptionClass = AssertionError::class,
-            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]"
+            message = "Failed to perform action RequestFocus, the node is missing [RequestFocus]",
         ) {
             rule.onNodeWithTag(tag).requestFocus()
         }
         assertFailsWith(
             exceptionClass = AssertionError::class,
-            message = "Failed to assert the following: (Focused = 'false')"
+            message = "Failed to assert the following: (Focused = 'false')",
         ) {
             rule.onNodeWithTag(tag).assertIsNotFocused()
         }
@@ -6503,8 +7168,8 @@ class ClickableTest {
                             modifier =
                                 Modifier.testTag("clickable").clickable(
                                     role = if (moveContent) Role.Button else Role.Checkbox,
-                                    onClickLabel = moveContent.toString()
-                                ) {}
+                                    onClickLabel = moveContent.toString(),
+                                ) {},
                         )
                     }
                 }
@@ -6570,7 +7235,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertFalse(
                 isClicked,
-                "The Box is NOT expected to receive a Click while dragging using touch"
+                "The Box is NOT expected to receive a Click while dragging using touch",
             )
         }
 
@@ -6583,7 +7248,7 @@ class ClickableTest {
         rule.runOnIdle {
             assertTrue(
                 isClicked,
-                "The Box is expected to receive a Click, there was no dragging using touch"
+                "The Box is expected to receive a Click, there was no dragging using touch",
             )
         }
     }
@@ -6608,6 +7273,37 @@ class ClickableTest {
         rule.runOnIdle { focusRequester.requestFocus() }
 
         rule.onNodeWithTag(tag).assertIsFocused()
+    }
+
+    @Test
+    fun lazilyCreatedIndicatorReceivesPressedInteraction() {
+        var created = false
+        val interactions = mutableListOf<Interaction>()
+        val indication = TestIndicationNodeFactory { interactionSource, coroutineScope ->
+            created = true
+            coroutineScope.launch {
+                interactionSource.interactions.collect { interaction ->
+                    interactions.add(interaction)
+                }
+            }
+        }
+
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(modifier = Modifier.testTag("clickable").clickable {})
+            }
+        }
+
+        rule.runOnIdle { assertThat(created).isFalse() }
+
+        // The touch event should cause the indication node to be created
+        rule.onNodeWithTag("clickable").performTouchInput { down(center) }
+
+        rule.runOnIdle {
+            assertThat(created).isTrue()
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
     }
 }
 
@@ -6640,7 +7336,7 @@ internal class TestIndication(val onCreate: (InteractionSource) -> Unit) : Indic
  */
 internal class TestIndicationNodeFactory(
     val onDetach: () -> Unit = {},
-    val onAttach: ((InteractionSource, CoroutineScope) -> Unit)
+    val onAttach: ((InteractionSource, CoroutineScope) -> Unit),
 ) : IndicationNodeFactory {
     override fun create(interactionSource: InteractionSource): DelegatableNode {
         return object : Modifier.Node() {

@@ -37,13 +37,13 @@ internal interface InternalXAnnotated : XAnnotated {
      */
     fun <T : Annotation> getAnnotations(
         annotation: KClass<T>,
-        containerAnnotation: KClass<out Annotation>? = annotation.containerAnnotation
+        containerAnnotation: KClass<out Annotation>? = annotation.containerAnnotation,
     ): List<XAnnotation>
 
     override fun <T : Annotation> getAnnotations(annotation: KClass<T>) =
         getAnnotations(
             annotation = annotation,
-            containerAnnotation = annotation.containerAnnotation
+            containerAnnotation = annotation.containerAnnotation,
         )
 
     override fun hasAnnotation(annotation: KClass<out Annotation>) =
@@ -62,6 +62,6 @@ internal interface InternalXAnnotated : XAnnotated {
      */
     fun hasAnnotation(
         annotation: KClass<out Annotation>,
-        containerAnnotation: KClass<out Annotation>? = annotation.containerAnnotation
+        containerAnnotation: KClass<out Annotation>? = annotation.containerAnnotation,
     ): Boolean
 }

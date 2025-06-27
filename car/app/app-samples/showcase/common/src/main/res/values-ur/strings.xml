@@ -237,6 +237,7 @@
     <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"ریڈیو بٹن کا سیکشن"</string>
     <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"سیکشن ٹوگل کریں"</string>
     <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"بہت قطاروں کا سیکشن"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"گرڈ آئٹم کا سیکشن"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"پین کی تمثیل کا ڈیمو"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"مقام کی فہرست کی تمثیل کا ڈیمو"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"مقامات براؤز کریں"</string>

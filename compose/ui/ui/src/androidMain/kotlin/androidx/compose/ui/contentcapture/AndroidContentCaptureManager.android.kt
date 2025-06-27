@@ -48,6 +48,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
+import androidx.compose.ui.util.trace
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -63,7 +64,7 @@ import kotlinx.coroutines.delay
 @Suppress("NullAnnotationGroup")
 internal class AndroidContentCaptureManager(
     val view: AndroidComposeView,
-    var onContentCaptureSession: () -> ContentCaptureSessionCompat?
+    var onContentCaptureSession: () -> ContentCaptureSessionCompat?,
 ) : ContentCaptureManager, DefaultLifecycleObserver, View.OnAttachStateChangeListener {
 
     @VisibleForTesting internal var contentCaptureSession: ContentCaptureSessionCompat? = null
@@ -87,7 +88,7 @@ internal class AndroidContentCaptureManager(
      */
     private enum class TranslateStatus {
         SHOW_ORIGINAL,
-        SHOW_TRANSLATED
+        SHOW_TRANSLATED,
     }
 
     private var translateStatus = TranslateStatus.SHOW_ORIGINAL
@@ -130,23 +131,28 @@ internal class AndroidContentCaptureManager(
     private val contentCaptureChangeChecker = Runnable {
         if (!isEnabled) return@Runnable
 
-        // TODO(mnuzen): there might be a case where `view.measureAndLayout()` is called twice --
-        // once by the CC checker and once by the a11y checker.
-        view.measureAndLayout()
+        trace("ContentCapture:changeChecker") {
+            // TODO(mnuzen): there might be a case where `view.measureAndLayout()` is called twice
+            // --
+            // once by the CC checker and once by the a11y checker.
+            view.measureAndLayout()
 
-        // Semantics structural change
-        // Always send disappear event first.
-        sendContentCaptureDisappearEvents()
-        sendContentCaptureAppearEvents(
-            view.semanticsOwner.unmergedRootSemanticsNode,
-            previousSemanticsRoot
-        )
+            // Semantics structural change
+            // Always send disappear event first.
+            sendContentCaptureDisappearEvents()
+            trace("ContentCapture:sendAppearEvents") {
+                sendContentCaptureAppearEvents(
+                    view.semanticsOwner.unmergedRootSemanticsNode,
+                    previousSemanticsRoot,
+                )
+            }
 
-        // Property change
-        checkForContentCapturePropertyChanges(currentSemanticsNodes)
-        updateSemanticsCopy()
+            // Property change
+            checkForContentCapturePropertyChanges(currentSemanticsNodes)
+            updateSemanticsCopy()
 
-        checkingForSemanticsChanges = false
+            checkingForSemanticsChanges = false
+        }
     }
 
     override fun onViewAttachedToWindow(v: View) {}
@@ -345,7 +351,7 @@ internal class AndroidContentCaptureManager(
             // This timestamp in the extra bundle is the equivalent substitution.
             it.putLong(
                 VIEW_STRUCTURE_BUNDLE_KEY_TIMESTAMP,
-                currentSemanticsNodesSnapshotTimestampMillis
+                currentSemanticsNodesSnapshotTimestampMillis,
             )
             // An additional index to help the System Intelligence to rebuild hierarchy with order.
             it.putInt(VIEW_STRUCTURE_BUNDLE_KEY_ADDITIONAL_INDEX, index)
@@ -394,7 +400,7 @@ internal class AndroidContentCaptureManager(
 
     private inline fun <T> List<T>.fastForEachIndexedWithFilter(
         action: (Int, T) -> Unit,
-        predicate: (T) -> Boolean
+        predicate: (T) -> Boolean,
     ) {
         var i = 0
         for (index in indices) {
@@ -408,7 +414,7 @@ internal class AndroidContentCaptureManager(
 
     private fun bufferContentCaptureViewAppeared(
         virtualId: Int,
-        viewStructure: ViewStructureCompat?
+        viewStructure: ViewStructureCompat?,
     ) {
         if (viewStructure == null) {
             return
@@ -419,7 +425,7 @@ internal class AndroidContentCaptureManager(
                 virtualId,
                 currentSemanticsNodesSnapshotTimestampMillis,
                 ContentCaptureEventType.VIEW_APPEAR,
-                viewStructure
+                viewStructure,
             )
         )
     }
@@ -430,7 +436,7 @@ internal class AndroidContentCaptureManager(
                 virtualId,
                 currentSemanticsNodesSnapshotTimestampMillis,
                 ContentCaptureEventType.VIEW_DISAPPEAR,
-                null
+                null,
             )
         )
     }
@@ -547,7 +553,7 @@ internal class AndroidContentCaptureManager(
             contentCaptureManager: AndroidContentCaptureManager,
             virtualIds: LongArray,
             supportedFormats: IntArray,
-            requestsCollector: Consumer<ViewTranslationRequest?>
+            requestsCollector: Consumer<ViewTranslationRequest?>,
         ) {
 
             virtualIds.forEach {
@@ -557,7 +563,7 @@ internal class AndroidContentCaptureManager(
                 val requestBuilder =
                     ViewTranslationRequest.Builder(
                         contentCaptureManager.view.autofillId,
-                        node.id.toLong()
+                        node.id.toLong(),
                     )
 
                 val text =
@@ -569,7 +575,7 @@ internal class AndroidContentCaptureManager(
 
                 requestBuilder.setValue(
                     ViewTranslationRequest.ID_TEXT,
-                    TranslationRequestValue.forText(text)
+                    TranslationRequestValue.forText(text),
                 )
                 requestsCollector.accept(requestBuilder.build())
             }
@@ -578,7 +584,7 @@ internal class AndroidContentCaptureManager(
         @RequiresApi(Build.VERSION_CODES.S)
         fun onVirtualViewTranslationResponses(
             contentCaptureManager: AndroidContentCaptureManager,
-            response: LongSparseArray<ViewTranslationResponse?>
+            response: LongSparseArray<ViewTranslationResponse?>,
         ) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                 return
@@ -595,7 +601,7 @@ internal class AndroidContentCaptureManager(
 
         private fun doTranslation(
             contentCaptureManager: AndroidContentCaptureManager,
-            response: LongSparseArray<ViewTranslationResponse?>
+            response: LongSparseArray<ViewTranslationResponse?>,
         ) {
             val size = response.size()
             for (i in 0 until size) {
@@ -617,24 +623,24 @@ internal class AndroidContentCaptureManager(
     internal fun onCreateVirtualViewTranslationRequests(
         virtualIds: LongArray,
         supportedFormats: IntArray,
-        requestsCollector: Consumer<ViewTranslationRequest?>
+        requestsCollector: Consumer<ViewTranslationRequest?>,
     ) {
         ViewTranslationHelperMethods.onCreateVirtualViewTranslationRequests(
             this,
             virtualIds,
             supportedFormats,
-            requestsCollector
+            requestsCollector,
         )
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
     internal fun onVirtualViewTranslationResponses(
         contentCaptureManager: AndroidContentCaptureManager,
-        response: LongSparseArray<ViewTranslationResponse?>
+        response: LongSparseArray<ViewTranslationResponse?>,
     ) {
         ViewTranslationHelperMethods.onVirtualViewTranslationResponses(
             contentCaptureManager,
-            response
+            response,
         )
     }
 

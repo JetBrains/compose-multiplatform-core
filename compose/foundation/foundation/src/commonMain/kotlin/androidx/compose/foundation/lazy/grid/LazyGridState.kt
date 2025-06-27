@@ -74,7 +74,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun rememberLazyGridState(
     initialFirstVisibleItemIndex: Int = 0,
-    initialFirstVisibleItemScrollOffset: Int = 0
+    initialFirstVisibleItemScrollOffset: Int = 0,
 ): LazyGridState {
     return rememberSaveable(saver = LazyGridState.Saver) {
         LazyGridState(initialFirstVisibleItemIndex, initialFirstVisibleItemScrollOffset)
@@ -126,7 +126,7 @@ fun rememberLazyGridState(
 fun rememberLazyGridState(
     cacheWindow: LazyLayoutCacheWindow,
     initialFirstVisibleItemIndex: Int = 0,
-    initialFirstVisibleItemScrollOffset: Int = 0
+    initialFirstVisibleItemScrollOffset: Int = 0,
 ): LazyGridState {
     return rememberSaveable(cacheWindow, saver = LazyGridState.saver(cacheWindow)) {
         LazyGridState(
@@ -169,11 +169,11 @@ constructor(
     constructor(
         cacheWindow: LazyLayoutCacheWindow,
         firstVisibleItemIndex: Int = 0,
-        firstVisibleItemScrollOffset: Int = 0
+        firstVisibleItemScrollOffset: Int = 0,
     ) : this(
         firstVisibleItemIndex,
         firstVisibleItemScrollOffset,
-        LazyGridCacheWindowPrefetchStrategy(cacheWindow)
+        LazyGridCacheWindowPrefetchStrategy(cacheWindow),
     )
 
     /**
@@ -183,7 +183,7 @@ constructor(
      */
     constructor(
         firstVisibleItemIndex: Int = 0,
-        firstVisibleItemScrollOffset: Int = 0
+        firstVisibleItemScrollOffset: Int = 0,
     ) : this(firstVisibleItemIndex, firstVisibleItemScrollOffset, LazyGridPrefetchStrategy())
 
     internal var hasLookaheadOccurred: Boolean = false
@@ -310,6 +310,7 @@ constructor(
 
     internal val beyondBoundsInfo = LazyLayoutBeyondBoundsInfo()
 
+    @Suppress("DEPRECATION") // b/420551535
     internal val prefetchState =
         LazyLayoutPrefetchState(prefetchStrategy.prefetchScheduler) {
             with(prefetchStrategy) {
@@ -328,7 +329,7 @@ constructor(
             @Suppress("PrimitiveInCollection")
             override fun scheduleLinePrefetch(
                 lineIndex: Int,
-                onPrefetchFinished: (LazyGridPrefetchResultScope.() -> Unit)?
+                onPrefetchFinished: (LazyGridPrefetchResultScope.() -> Unit)?,
             ): List<LazyLayoutPrefetchState.PrefetchHandle> {
                 // Without read observation since this can be triggered from scroll - this will then
                 // cause us to recompose when the measure result changes. We don't care since the
@@ -353,7 +354,7 @@ constructor(
                                 prefetchState.schedulePrecompositionAndPremeasure(
                                     lineInfo.first,
                                     lineInfo.second,
-                                    executeRequestsInHighPriorityMode
+                                    executeRequestsInHighPriorityMode,
                                 ) {
                                     var itemMainAxisItemSize = 0
                                     repeat(placeablesCount) {
@@ -372,7 +373,7 @@ constructor(
                                             onPrefetchFinished.invoke(
                                                 LazyGridPrefetchResultScopeImpl(
                                                     lineIndex,
-                                                    itemSizes
+                                                    itemSizes,
                                                 )
                                             )
                                         }
@@ -469,7 +470,7 @@ constructor(
      */
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ) {
         awaitLayoutModifier.waitForFirstLayout()
         scrollableState.scroll(scrollPriority, block)
@@ -515,7 +516,7 @@ constructor(
             var scrolledLayoutInfo =
                 layoutInfoState.value.copyWithScrollDeltaWithoutRemeasure(
                     delta = intDelta,
-                    updateAnimations = !hasLookaheadOccurred
+                    updateAnimations = !hasLookaheadOccurred,
                 )
             if (scrolledLayoutInfo != null && this.approachLayoutInfo != null) {
                 // if we were able to scroll the lookahead layout info without remeasure, lets
@@ -523,7 +524,7 @@ constructor(
                 val scrolledApproachLayoutInfo =
                     approachLayoutInfo?.copyWithScrollDeltaWithoutRemeasure(
                         delta = intDelta,
-                        updateAnimations = true
+                        updateAnimations = true,
                     )
                 if (scrolledApproachLayoutInfo != null) {
                     // we can apply scroll delta for both phases without remeasure
@@ -537,14 +538,14 @@ constructor(
                 applyMeasureResult(
                     result = scrolledLayoutInfo,
                     isLookingAhead = hasLookaheadOccurred,
-                    visibleItemsStayedTheSame = true
+                    visibleItemsStayedTheSame = true,
                 )
                 // we don't need to remeasure, so we only trigger re-placement:
                 placementScopeInvalidator.invalidateScope()
 
                 notifyPrefetchOnScroll(
                     preScrollToBeConsumed - scrollToBeConsumed,
-                    scrolledLayoutInfo
+                    scrolledLayoutInfo,
                 )
             } else {
                 remeasurement?.forceRemeasure()
@@ -594,7 +595,7 @@ constructor(
     internal fun applyMeasureResult(
         result: LazyGridMeasureResult,
         isLookingAhead: Boolean,
-        visibleItemsStayedTheSame: Boolean = false
+        visibleItemsStayedTheSame: Boolean = false,
     ) {
         // update the prefetch state with the number of nested prefetch items this layout
         // should use.
@@ -626,7 +627,7 @@ constructor(
                 _lazyLayoutScrollDeltaBetweenPasses.updateScrollDeltaForApproach(
                     result.scrollBackAmount,
                     result.density,
-                    result.coroutineScope
+                    result.coroutineScope,
                 )
             }
             numMeasurePasses++
@@ -645,7 +646,7 @@ constructor(
      */
     internal fun updateScrollPositionIfTheFirstItemWasMoved(
         itemProvider: LazyGridItemProvider,
-        firstItemIndex: Int
+        firstItemIndex: Int,
     ): Int = scrollPosition.updateScrollPositionIfTheFirstItemWasMoved(itemProvider, firstItemIndex)
 
     companion object {
@@ -656,9 +657,9 @@ constructor(
                 restore = {
                     LazyGridState(
                         firstVisibleItemIndex = it[0],
-                        firstVisibleItemScrollOffset = it[1]
+                        firstVisibleItemScrollOffset = it[1],
                     )
-                }
+                },
             )
 
         /**
@@ -673,9 +674,9 @@ constructor(
                     LazyGridState(
                         firstVisibleItemIndex = it[0],
                         firstVisibleItemScrollOffset = it[1],
-                        prefetchStrategy
+                        prefetchStrategy,
                     )
-                }
+                },
             )
 
         /**
@@ -692,7 +693,7 @@ constructor(
                         firstVisibleItemIndex = it[0],
                         firstVisibleItemScrollOffset = it[1],
                     )
-                }
+                },
             )
     }
 }
@@ -726,5 +727,5 @@ private val EmptyLazyGridLayoutInfo =
         density = Density(1f),
         slotsPerLine = 0,
         coroutineScope = CoroutineScope(EmptyCoroutineContext),
-        prefetchInfoRetriever = { emptyList() }
+        prefetchInfoRetriever = { emptyList() },
     )

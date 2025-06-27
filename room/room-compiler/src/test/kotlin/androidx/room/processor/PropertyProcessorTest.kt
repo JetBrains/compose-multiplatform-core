@@ -60,7 +60,7 @@ class PropertyProcessorTest {
                 XTypeName.PRIMITIVE_LONG,
                 XTypeName.PRIMITIVE_CHAR,
                 XTypeName.PRIMITIVE_FLOAT,
-                XTypeName.PRIMITIVE_DOUBLE
+                XTypeName.PRIMITIVE_DOUBLE,
             )
         val ALL_BOXED_PRIMITIVES =
             arrayListOf(
@@ -70,7 +70,7 @@ class PropertyProcessorTest {
                 XTypeName.BOXED_LONG,
                 XTypeName.BOXED_CHAR,
                 XTypeName.BOXED_FLOAT,
-                XTypeName.BOXED_DOUBLE
+                XTypeName.BOXED_DOUBLE,
             )
         val ARRAY_CONVERTER =
             Source.java(
@@ -105,7 +105,7 @@ class PropertyProcessorTest {
             }
             |}
             """
-                    .trimMargin()
+                    .trimMargin(),
             )
 
         private fun XTypeName.affinity(): SQLTypeAffinity {
@@ -136,9 +136,9 @@ class PropertyProcessorTest {
                             name = "x",
                             type = primitive.typeMirror(invocation),
                             element = property.element,
-                            affinity = primitive.affinity()
+                            affinity = primitive.affinity(),
                         )
-                    )
+                    ),
                 )
             }
         }
@@ -156,9 +156,9 @@ class PropertyProcessorTest {
                             name = "y",
                             type = boxedPrimitive.typeMirror(invocation).makeNullable(),
                             element = property.element,
-                            affinity = boxedPrimitive.affinity()
+                            affinity = boxedPrimitive.affinity(),
                         )
-                    )
+                    ),
                 )
             }
         }
@@ -181,9 +181,9 @@ class PropertyProcessorTest {
                         type = XTypeName.PRIMITIVE_INT.typeMirror(invocation),
                         element = property.element,
                         columnName = "foo",
-                        affinity = SQLTypeAffinity.INTEGER
+                        affinity = SQLTypeAffinity.INTEGER,
                     )
-                )
+                ),
             )
         }
     }
@@ -205,9 +205,9 @@ class PropertyProcessorTest {
                         element = property.element,
                         columnName = "foo",
                         affinity = SQLTypeAffinity.INTEGER,
-                        indexed = true
+                        indexed = true,
                     )
-                )
+                ),
             )
         }
     }
@@ -242,13 +242,13 @@ class PropertyProcessorTest {
                                 .getArrayType(XTypeName.PRIMITIVE_BYTE)
                                 .makeNonNullable(),
                         element = property.element,
-                        affinity = SQLTypeAffinity.TEXT
+                        affinity = SQLTypeAffinity.TEXT,
                     )
-                )
+                ),
             )
             assertThat(
                 (property.statementValueReader as? ColumnTypeAdapter)?.typeAffinity,
-                `is`(SQLTypeAffinity.TEXT)
+                `is`(SQLTypeAffinity.TEXT),
             )
         }
     }
@@ -273,9 +273,9 @@ class PropertyProcessorTest {
                                     SQLTypeAffinity.BLOB
                                 } else {
                                     SQLTypeAffinity.TEXT
-                                }
+                                },
                         )
-                    )
+                    ),
                 )
             }
         }
@@ -294,7 +294,7 @@ class PropertyProcessorTest {
                         type = invocation.processingEnv.getArrayType(boxedPrimitive),
                         element = property.element,
                         affinity = SQLTypeAffinity.TEXT,
-                        nonNull = false // no annotation
+                        nonNull = false, // no annotation
                     )
                 // When source is parsed, it will have a flexible type in KSP and we have no way of
                 // obtaining a flexible type of:
@@ -307,7 +307,7 @@ class PropertyProcessorTest {
                             // don't compare type
                             type = property.type
                         )
-                    )
+                    ),
                 )
                 val elementType =
                     if (invocation.isKsp2) {
@@ -318,7 +318,7 @@ class PropertyProcessorTest {
                     }
                 assertThat(
                     property.type.asTypeName(),
-                    `is`(XTypeName.getArrayName(elementType).copy(nullable = true))
+                    `is`(XTypeName.getArrayName(elementType).copy(nullable = true)),
                 )
             }
         }
@@ -344,9 +344,9 @@ class PropertyProcessorTest {
                         name = "item",
                         type = XTypeName.PRIMITIVE_INT.box(invocation).makeNonNullable(),
                         element = property.element,
-                        affinity = SQLTypeAffinity.INTEGER
+                        affinity = SQLTypeAffinity.INTEGER,
                     )
-                )
+                ),
             )
         }
     }
@@ -383,30 +383,30 @@ class PropertyProcessorTest {
                         propertyElement,
                         "x",
                         XTypeName.PRIMITIVE_INT.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("x"))
+                `is`(arrayListOf("x")),
             )
             assertThat(
                 Property(
                         propertyElement,
                         "x",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("x"))
+                `is`(arrayListOf("x")),
             )
             assertThat(
                 Property(
                         propertyElement,
                         "xAll",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("xAll"))
+                `is`(arrayListOf("xAll")),
             )
         }
     }
@@ -420,40 +420,40 @@ class PropertyProcessorTest {
                         elm,
                         "isX",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("isX", "x"))
+                `is`(arrayListOf("isX", "x")),
             )
             assertThat(
                 Property(
                         elm,
                         "isX",
                         XTypeName.PRIMITIVE_INT.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("isX"))
+                `is`(arrayListOf("isX")),
             )
             assertThat(
                 Property(
                         elm,
                         "is",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("is"))
+                `is`(arrayListOf("is")),
             )
             assertThat(
                 Property(
                         elm,
                         "isAllItems",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("isAllItems", "allItems"))
+                `is`(arrayListOf("isAllItems", "allItems")),
             )
         }
     }
@@ -467,40 +467,40 @@ class PropertyProcessorTest {
                         elm,
                         "hasX",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("hasX", "x"))
+                `is`(arrayListOf("hasX", "x")),
             )
             assertThat(
                 Property(
                         elm,
                         "hasX",
                         XTypeName.PRIMITIVE_INT.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("hasX"))
+                `is`(arrayListOf("hasX")),
             )
             assertThat(
                 Property(
                         elm,
                         "has",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("has"))
+                `is`(arrayListOf("has")),
             )
             assertThat(
                 Property(
                         elm,
                         "hasAllItems",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("hasAllItems", "allItems"))
+                `is`(arrayListOf("hasAllItems", "allItems")),
             )
         }
     }
@@ -514,55 +514,55 @@ class PropertyProcessorTest {
                         elm,
                         "mall",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("mall"))
+                `is`(arrayListOf("mall")),
             )
             assertThat(
                 Property(
                         elm,
                         "mallVars",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("mallVars"))
+                `is`(arrayListOf("mallVars")),
             )
             assertThat(
                 Property(
                         elm,
                         "mAll",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("mAll", "all"))
+                `is`(arrayListOf("mAll", "all")),
             )
             assertThat(
                 Property(elm, "m", XTypeName.PRIMITIVE_INT.typeMirror(it), SQLTypeAffinity.INTEGER)
                     .nameWithVariations,
-                `is`(arrayListOf("m"))
+                `is`(arrayListOf("m")),
             )
             assertThat(
                 Property(
                         elm,
                         "mallItems",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("mallItems"))
+                `is`(arrayListOf("mallItems")),
             )
             assertThat(
                 Property(
                         elm,
                         "mAllItems",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("mAllItems", "allItems"))
+                `is`(arrayListOf("mAllItems", "allItems")),
             )
         }
     }
@@ -576,25 +576,25 @@ class PropertyProcessorTest {
                         elm,
                         "_all",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("_all", "all"))
+                `is`(arrayListOf("_all", "all")),
             )
             assertThat(
                 Property(elm, "_", XTypeName.PRIMITIVE_INT.typeMirror(it), SQLTypeAffinity.INTEGER)
                     .nameWithVariations,
-                `is`(arrayListOf("_"))
+                `is`(arrayListOf("_")),
             )
             assertThat(
                 Property(
                         elm,
                         "_allItems",
                         XTypeName.PRIMITIVE_BOOLEAN.typeMirror(it),
-                        SQLTypeAffinity.INTEGER
+                        SQLTypeAffinity.INTEGER,
                     )
                     .nameWithVariations,
-                `is`(arrayListOf("_allItems", "allItems"))
+                `is`(arrayListOf("_allItems", "allItems")),
             )
         }
     }
@@ -622,9 +622,9 @@ class PropertyProcessorTest {
                             element = property.element,
                             columnName = "code",
                             collate = collate,
-                            affinity = SQLTypeAffinity.TEXT
+                            affinity = SQLTypeAffinity.TEXT,
                         )
-                    )
+                    ),
                 )
             }
         }
@@ -699,7 +699,7 @@ class PropertyProcessorTest {
     private fun testDefaultValue(
         defaultValue: String,
         propertyType: String,
-        body: (String?, XTestInvocation) -> Unit
+        body: (String?, XTestInvocation) -> Unit,
     ) {
         singleEntity(
             """
@@ -713,15 +713,15 @@ class PropertyProcessorTest {
 
     fun singleEntity(
         vararg input: String,
-        handler: (Property, invocation: XTestInvocation) -> Unit
+        handler: (Property, invocation: XTestInvocation) -> Unit,
     ) {
         val sources =
             listOf(
                 Source.java(
                     "foo.bar.MyEntity",
-                    ENTITY_PREFIX + input.joinToString("\n") + ENTITY_SUFFIX
+                    ENTITY_PREFIX + input.joinToString("\n") + ENTITY_SUFFIX,
                 ),
-                ARRAY_CONVERTER
+                ARRAY_CONVERTER,
             )
         runProcessorTest(sources = sources) { invocation ->
             val (owner, propertyElement) =
@@ -741,7 +741,7 @@ class PropertyProcessorTest {
                     propertyParent = null,
                     onBindingError = { property, errorMsg ->
                         invocation.context.logger.e(property.element, errorMsg)
-                    }
+                    },
                 )
             handler(parser.process(), invocation)
         }

@@ -40,7 +40,7 @@ class TestSink : TraceSink() {
             packets.add(
                 MutableTracePacket(
                         timestamp = INVALID_LONG,
-                        trusted_packet_sequence_id = 1 // arbitrary value
+                        trusted_packet_sequence_id = 1, // arbitrary value
                     )
                     .apply {
                         track_event = MutableTrackEvent(track_uuid = INVALID_LONG)
@@ -55,7 +55,7 @@ class TestSink : TraceSink() {
                             scratchTrackDescriptor = MutableTrackDescriptor(),
                             // this is sometimes not used, but we don't care about extra
                             // allocations during this test
-                            scratchTrackEvent = MutableTrackEvent(track_uuid = INVALID_LONG)
+                            scratchTrackEvent = MutableTrackEvent(track_uuid = INVALID_LONG),
                         )
                     }
             )

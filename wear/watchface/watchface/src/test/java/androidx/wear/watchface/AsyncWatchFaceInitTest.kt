@@ -56,7 +56,7 @@ internal class TestAsyncWatchFaceService(
     private val handler: Handler,
     private val factory: AsyncWatchFaceFactory,
     private val watchState: MutableWatchState,
-    private val directBootParams: WallpaperInteractiveWatchFaceInstanceParams?
+    private val directBootParams: WallpaperInteractiveWatchFaceInstanceParams?,
 ) : WatchFaceService() {
     init {
         attachBaseContext(ApplicationProvider.getApplicationContext())
@@ -73,7 +73,7 @@ internal class TestAsyncWatchFaceService(
             surfaceHolder: SurfaceHolder,
             watchState: WatchState,
             complicationSlotsManager: ComplicationSlotsManager,
-            currentUserStyleRepository: CurrentUserStyleRepository
+            currentUserStyleRepository: CurrentUserStyleRepository,
         ): Deferred<WatchFace>
     }
 
@@ -87,14 +87,14 @@ internal class TestAsyncWatchFaceService(
         surfaceHolder: SurfaceHolder,
         watchState: WatchState,
         complicationSlotsManager: ComplicationSlotsManager,
-        currentUserStyleRepository: CurrentUserStyleRepository
+        currentUserStyleRepository: CurrentUserStyleRepository,
     ) =
         factory
             .createWatchFaceAsync(
                 surfaceHolder,
                 watchState,
                 complicationSlotsManager,
-                currentUserStyleRepository
+                currentUserStyleRepository,
             )
             .await()
 
@@ -109,7 +109,7 @@ internal class TestAsyncWatchFaceService(
     override fun writeDirectBootPrefs(
         context: Context,
         fileName: String,
-        prefs: WallpaperInteractiveWatchFaceInstanceParams
+        prefs: WallpaperInteractiveWatchFaceInstanceParams,
     ) {}
 }
 
@@ -129,7 +129,7 @@ public class AsyncWatchFaceInitTest {
             UserStyle(emptyMap()).toWireFormat(),
             null,
             null,
-            null
+            null,
         )
 
     private class Task(val runTimeMillis: Long, val runnable: Runnable) : Comparable<Task> {
@@ -205,11 +205,11 @@ public class AsyncWatchFaceInitTest {
                         surfaceHolder: SurfaceHolder,
                         watchState: WatchState,
                         complicationSlotsManager: ComplicationSlotsManager,
-                        currentUserStyleRepository: CurrentUserStyleRepository
+                        currentUserStyleRepository: CurrentUserStyleRepository,
                     ) = completableWatchFace
                 },
                 MutableWatchState(),
-                initParams
+                initParams,
             )
 
         val engineWrapper = service.onCreateEngine() as WatchFaceService.EngineWrapper
@@ -262,7 +262,7 @@ public class AsyncWatchFaceInitTest {
                             ) {
                                 fail("WatchFace crashed: $exception")
                             }
-                        }
+                        },
                     )
                 )
         )
@@ -281,7 +281,7 @@ public class AsyncWatchFaceInitTest {
                         surfaceHolder: SurfaceHolder,
                         watchState: WatchState,
                         complicationSlotsManager: ComplicationSlotsManager,
-                        currentUserStyleRepository: CurrentUserStyleRepository
+                        currentUserStyleRepository: CurrentUserStyleRepository,
                     ): Deferred<WatchFace> {
                         pendingSurfaceHolder = surfaceHolder
                         pendingWatchState = watchState
@@ -290,7 +290,7 @@ public class AsyncWatchFaceInitTest {
                     }
                 },
                 MutableWatchState(),
-                initParams
+                initParams,
             )
 
         val engineWrapper = service.onCreateEngine() as WatchFaceService.EngineWrapper
@@ -307,8 +307,8 @@ public class AsyncWatchFaceInitTest {
                     pendingSurfaceHolder,
                     pendingCurrentUserStyleRepository,
                     pendingWatchState,
-                    16L
-                )
+                    16L,
+                ),
             )
         )
 

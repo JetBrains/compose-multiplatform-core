@@ -50,7 +50,7 @@ private val defaultPlatformDataValues =
         .put(PlatformHealthSources.Keys.HEART_RATE_BPM, DynamicDataValue.fromFloat(80f))
         .put(
             PlatformHealthSources.Keys.HEART_RATE_ACCURACY,
-            DynamicHeartRateAccuracy.dynamicDataValueOf(HEART_RATE_ACCURACY_MEDIUM)
+            DynamicHeartRateAccuracy.dynamicDataValueOf(HEART_RATE_ACCURACY_MEDIUM),
         )
         .put(PlatformHealthSources.Keys.DAILY_STEPS, DynamicDataValue.fromInt(4710))
         .put(PlatformHealthSources.Keys.DAILY_FLOORS, DynamicDataValue.fromFloat(12.5f))
@@ -64,7 +64,7 @@ private val defaultPlatformDataValues =
  */
 internal fun Class<out Any>.findMethod(
     name: String,
-    vararg parameterTypes: Class<out Any>
+    vararg parameterTypes: Class<out Any>,
 ): Method {
     var currentClass: Class<out Any>? = this
     while (currentClass != null) {
@@ -111,7 +111,7 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
                 }
                 .addPlatformDataProvider(
                     StaticPlatformDataProvider(platformDataValues),
-                    *platformDataValues.all.keys.toTypedArray()
+                    *platformDataValues.all.keys.toTypedArray(),
                 )
                 .build()
 
@@ -120,7 +120,7 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
 
     private fun TileRenderer.previewTile(
         tilePreview: TilePreviewData,
-        currentState: StateBuilders.State? = null
+        currentState: StateBuilders.State? = null,
     ) {
         val deviceParams = context.buildDeviceParameters()
         val tileRequest =
@@ -149,7 +149,7 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
                     (it.layoutParams as LayoutParams).gravity = Gravity.CENTER
                 }
             },
-            executor
+            executor,
         )
     }
 

@@ -81,7 +81,7 @@ public class WatchState(
     public val digitalPreviewReferenceTimeMillis: Long,
     @Px @get:Px public val chinHeight: Int,
     public val isHeadless: Boolean,
-    public val watchFaceInstanceId: StateFlow<String>
+    public val watchFaceInstanceId: StateFlow<String>,
 ) {
     /** Whether the device is locked or not. */
     internal var isLocked: StateFlow<Boolean> = MutableStateFlow(false)
@@ -98,7 +98,7 @@ public class WatchState(
         @Px chinHeight: Int,
         isHeadless: Boolean,
         watchFaceInstanceId: StateFlow<String>,
-        isLocked: StateFlow<Boolean>
+        isLocked: StateFlow<Boolean>,
     ) : this(
         interruptionFilter,
         isAmbient,
@@ -110,7 +110,7 @@ public class WatchState(
         digitalPreviewReferenceTimeMillis,
         chinHeight,
         isHeadless,
-        watchFaceInstanceId
+        watchFaceInstanceId,
     ) {
         this.isLocked = isLocked
     }
@@ -126,7 +126,7 @@ public class WatchState(
         analogPreviewReferenceTimeMillis: Long,
         digitalPreviewReferenceTimeMillis: Long,
         chinHeight: Int,
-        isHeadless: Boolean
+        isHeadless: Boolean,
     ) : this(
         interruptionFilter,
         isAmbient,
@@ -139,7 +139,7 @@ public class WatchState(
         chinHeight,
         isHeadless,
         watchFaceInstanceId = MutableStateFlow(DEFAULT_INSTANCE_ID),
-        MutableStateFlow(false)
+        MutableStateFlow(false),
     )
 
     @UiThread
@@ -197,6 +197,6 @@ public class MutableWatchState() {
             chinHeight = chinHeight,
             isHeadless = isHeadless,
             watchFaceInstanceId = watchFaceInstanceId,
-            isLocked = isLocked
+            isLocked = isLocked,
         )
 }

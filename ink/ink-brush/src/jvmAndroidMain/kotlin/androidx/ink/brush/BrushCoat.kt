@@ -111,9 +111,12 @@ private constructor(
     override fun toString(): String = "BrushCoat(tip=$tip, paint=$paint)"
 
     /** Deletes native BrushCoat memory. */
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
-        BrushCoatNative.free(nativePointer)
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            BrushCoatNative.free(nativePointer)
+        }
     }
 
     // Companion object gets initialized before anything else.
@@ -144,20 +147,20 @@ private object BrushCoatNative {
     }
 
     /** Create underlying native object and return reference for all subsequent native calls. */
-    @UsedByNative public external fun create(tipNativePointer: Long, paintNativePointer: Long): Long
+    @UsedByNative external fun create(tipNativePointer: Long, paintNativePointer: Long): Long
 
     /** Release the underlying memory allocated in [create]. */
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 
     /**
      * Returns a new, unowned native pointer to a copy of the `BrushTip` in the pointed-at
      * `BrushCoat`.
      */
-    @UsedByNative public external fun newCopyOfBrushTip(nativePointer: Long): Long
+    @UsedByNative external fun newCopyOfBrushTip(nativePointer: Long): Long
 
     /**
      * Returns a new, unowned native pointer to a copy of the `BrushPaint` in the pointed-at
      * `BrushCoat`.
      */
-    @UsedByNative public external fun newCopyOfBrushPaint(nativePointer: Long): Long
+    @UsedByNative external fun newCopyOfBrushPaint(nativePointer: Long): Long
 }

@@ -93,7 +93,7 @@ internal class ReceiveContentNode(var receiveContentListener: ReceiveContentList
         delegate(
             ReceiveContentDragAndDropNode(
                 receiveContentConfiguration = receiveContentConfiguration,
-                dragAndDropRequestPermission = { dragAndDropRequestPermission(it) }
+                dragAndDropRequestPermission = { dragAndDropRequestPermission(it) },
             )
         )
     }

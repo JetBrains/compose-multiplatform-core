@@ -92,7 +92,7 @@ class ObservedTableStatesTest {
                         1 to ObserveOp.ADD,
                         2 to ObserveOp.REMOVE,
                         3 to ObserveOp.ADD,
-                        4 to ObserveOp.REMOVE
+                        4 to ObserveOp.REMOVE,
                     )
                 )
             )

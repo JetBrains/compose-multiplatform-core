@@ -261,4 +261,42 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE)
                 .isEqualTo("com.android.appsearch.flags.enable_compression_mem_level_one");
     }
+
+    @Test
+    public void testFlagValue_enableResultAborted() {
+        assertThat(Flags.FLAG_ENABLE_RESULT_ABORTED)
+                .isEqualTo("com.android.appsearch.flags.enable_result_aborted");
+    }
+
+    @Test
+    public void testFlagValue_enableThrowExceptionForNativeNotFoundPageToken() {
+        assertThat(Flags.FLAG_ENABLE_THROW_EXCEPTION_FOR_NATIVE_NOT_FOUND_PAGE_TOKEN)
+                .isEqualTo("com.android.appsearch.flags"
+                        + ".enable_throw_exception_for_native_not_found_page_token");
+    }
+
+    @Test
+    public void testFlagValue_enableDatabaseScopedSchemaOperations() {
+        assertThat(Flags.FLAG_ENABLE_DATABASE_SCOPED_SCHEMA_OPERATIONS)
+                .isEqualTo("com.android.appsearch.flags.enable_database_scoped_schema_operations");
+    }
+
+    @Test
+    public void testFlagValue_enableSmallerDecompressionBufferSize() {
+        assertThat(Flags.FLAG_ENABLE_SMALLER_DECOMPRESSION_BUFFER_SIZE)
+                .isEqualTo("com.android.appsearch.flags.enable_smaller_decompression_buffer_size");
+    }
+
+    @Test
+    public void testFlagValue_enableEigenEmbeddingScoring() {
+        assertThat(Flags.FLAG_ENABLE_EIGEN_EMBEDDING_SCORING)
+                .isEqualTo("com.android.appsearch.flags.enable_eigen_embedding_scoring");
+    }
+
+    @Test
+    public void testFlagValue_enableInitializationRetriesBeforeReset() {
+        assertThat(Flags.FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET)
+                .isEqualTo(
+                        "com.android.appsearch.flags.enable_initialization_retries_before_reset");
+    }
 }

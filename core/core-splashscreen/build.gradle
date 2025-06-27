@@ -48,7 +48,7 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":appcompat:appcompat"))
+    androidTestImplementation("androidx.appcompat:appcompat:1.7.0")
     androidTestImplementation(project(":test:screenshot:screenshot"))
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")

@@ -53,7 +53,7 @@ open class XTypeName
 protected constructor(
     internal open val java: JTypeName,
     internal open val kotlin: KTypeName,
-    val nullability: XNullability
+    val nullability: XNullability,
 ) {
     val isPrimitive: Boolean
         get() = java.isPrimitive
@@ -83,7 +83,7 @@ protected constructor(
                 } else {
                     UNAVAILABLE_KTYPE_NAME
                 },
-            nullability = if (nullable) XNullability.NULLABLE else XNullability.NONNULL
+            nullability = if (nullable) XNullability.NULLABLE else XNullability.NONNULL,
         )
     }
 
@@ -141,7 +141,7 @@ protected constructor(
             XClassName(
                 java = JClassName.get("java.lang", "SuppressWarnings"),
                 kotlin = KClassName("kotlin", "Suppress"),
-                nullability = XNullability.NONNULL
+                nullability = XNullability.NONNULL,
             )
 
         /**
@@ -152,7 +152,7 @@ protected constructor(
         val ENUM =
             XTypeName(
                 java = JClassName.get(java.lang.Enum::class.java),
-                kotlin = com.squareup.kotlinpoet.ENUM
+                kotlin = com.squareup.kotlinpoet.ENUM,
             )
 
         @JvmField val STRING = String::class.asClassName()
@@ -192,7 +192,7 @@ protected constructor(
         val ANY_WILDCARD =
             XTypeName(
                 java = JWildcardTypeName.subtypeOf(Object::class.java),
-                kotlin = com.squareup.kotlinpoet.STAR
+                kotlin = com.squareup.kotlinpoet.STAR,
             )
 
         /** The default [KTypeName] returned by xprocessing APIs when the backend is not KSP. */
@@ -202,7 +202,7 @@ protected constructor(
         operator fun invoke(
             java: JTypeName,
             kotlin: KTypeName,
-            nullability: XNullability = XNullability.NONNULL
+            nullability: XNullability = XNullability.NONNULL,
         ): XTypeName {
             return XTypeName(java, kotlin, nullability)
         }
@@ -249,7 +249,7 @@ protected constructor(
                         kotlin
                     } else {
                         UNAVAILABLE_KTYPE_NAME
-                    }
+                    },
             )
         }
 
@@ -268,7 +268,7 @@ protected constructor(
                         KWildcardTypeName.consumerOf(bound.kotlin)
                     } else {
                         UNAVAILABLE_KTYPE_NAME
-                    }
+                    },
             )
         }
 
@@ -286,7 +286,7 @@ protected constructor(
                         KWildcardTypeName.producerOf(bound.kotlin)
                     } else {
                         UNAVAILABLE_KTYPE_NAME
-                    }
+                    },
             )
         }
 
@@ -295,7 +295,7 @@ protected constructor(
         fun getTypeVariableName(name: String, bounds: List<XTypeName> = emptyList()): XTypeName {
             return XTypeName(
                 java = JTypeVariableName.get(name, *bounds.map { it.java }.toTypedArray()),
-                kotlin = KTypeVariableName(name, bounds.map { it.kotlin })
+                kotlin = KTypeVariableName(name, bounds.map { it.kotlin }),
             )
         }
     }

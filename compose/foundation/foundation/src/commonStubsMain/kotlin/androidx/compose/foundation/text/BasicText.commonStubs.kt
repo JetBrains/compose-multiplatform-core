@@ -30,7 +30,7 @@ import androidx.compose.ui.text.font.FontFamily
 internal actual fun BackgroundTextMeasurement(
     text: String,
     style: TextStyle,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 ): Unit = implementedInJetBrainsFork()
 
 @Suppress("ComposableNaming")
@@ -40,5 +40,5 @@ internal actual fun BackgroundTextMeasurement(
     text: AnnotatedString,
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
-    placeholders: List<AnnotatedString.Range<Placeholder>>?
+    placeholders: List<AnnotatedString.Range<Placeholder>>?,
 ): Unit = implementedInJetBrainsFork()

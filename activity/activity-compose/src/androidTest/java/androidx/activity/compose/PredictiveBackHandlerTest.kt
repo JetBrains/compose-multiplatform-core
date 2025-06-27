@@ -431,7 +431,7 @@ class PredictiveBackHandlerTestApi {
             dispatcher.addCallback(lifecycleOwner) {}
             CompositionLocalProvider(
                 LocalOnBackPressedDispatcherOwner provides dispatcherOwner,
-                LocalLifecycleOwner provides lifecycleOwner
+                LocalLifecycleOwner provides lifecycleOwner,
             ) {
                 PredictiveBackHandler { progress ->
                     interceptedBack = true

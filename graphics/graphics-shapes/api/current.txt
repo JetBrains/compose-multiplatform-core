@@ -118,6 +118,7 @@ package androidx.graphics.shapes {
 
   public fun interface PointTransformer {
     method public long transform(float x, float y);
+    method @BytecodeOnly public long transform-XgqJiTY(float, float);
   }
 
   public final class RoundedPolygon {
@@ -202,6 +203,7 @@ package androidx.graphics.shapes {
   }
 
   public final class SvgPathParser {
+    ctor @BytecodeOnly public SvgPathParser(long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public static java.util.List<androidx.graphics.shapes.Feature> parseFeatures(String svgPath);
     field public static final androidx.graphics.shapes.SvgPathParser.Companion Companion;
   }

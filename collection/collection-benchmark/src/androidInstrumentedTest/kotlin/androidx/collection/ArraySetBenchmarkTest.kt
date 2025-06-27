@@ -60,7 +60,7 @@ class ArraySetBenchmarkTest(size: Int, sparse: Boolean) {
             buildParameters(
                 // Slow tests, so only run the suite up to 1000 elements.
                 listOf(10, 100, 1_000),
-                listOf(true, false)
+                listOf(true, false),
             )
     }
 }

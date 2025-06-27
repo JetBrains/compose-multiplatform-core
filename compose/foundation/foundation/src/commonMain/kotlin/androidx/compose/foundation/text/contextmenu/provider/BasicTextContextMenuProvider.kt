@@ -61,7 +61,7 @@ internal fun ProvideBasicTextContextMenu(
             dataProvider: TextContextMenuDataProvider,
             anchorLayoutCoordinates: () -> LayoutCoordinates,
         ) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ProvideBasicTextContextMenu(Modifier, providableCompositionLocal, contextMenu, content)
 }
@@ -77,7 +77,7 @@ internal fun ProvideBasicTextContextMenu(
             dataProvider: TextContextMenuDataProvider,
             anchorLayoutCoordinates: () -> LayoutCoordinates,
         ) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     var layoutCoordinates: LayoutCoordinates? by remember {
         mutableStateOf(null, neverEqualPolicy())
@@ -87,7 +87,7 @@ internal fun ProvideBasicTextContextMenu(
     CompositionLocalProvider(providableCompositionLocal provides provider) {
         Box(
             propagateMinConstraints = true,
-            modifier = modifier.onGloballyPositioned { layoutCoordinates = it }
+            modifier = modifier.onGloballyPositioned { layoutCoordinates = it },
         ) {
             content()
             provider.ContextMenu { checkPreconditionNotNull(layoutCoordinates) }
@@ -103,7 +103,7 @@ internal fun basicTextContextMenuProvider(
             session: TextContextMenuSession,
             dataProvider: TextContextMenuDataProvider,
             anchorLayoutCoordinates: () -> LayoutCoordinates,
-        ) -> Unit,
+        ) -> Unit
 ): BasicTextContextMenuProvider {
     val provider = remember(contextMenu) { BasicTextContextMenuProvider(contextMenu) }
     DisposableEffect(provider) { onDispose { provider.cancel() } }
@@ -144,9 +144,8 @@ internal class BasicTextContextMenuProvider(
         session?.close()
     }
 
-    private inner class SessionImpl(
-        val dataProvider: TextContextMenuDataProvider,
-    ) : TextContextMenuSession {
+    private inner class SessionImpl(val dataProvider: TextContextMenuDataProvider) :
+        TextContextMenuSession {
         private val channel = Channel<Unit>()
 
         override fun close() {

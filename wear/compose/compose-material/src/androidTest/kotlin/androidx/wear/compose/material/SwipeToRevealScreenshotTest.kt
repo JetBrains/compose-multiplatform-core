@@ -51,7 +51,7 @@ class SwipeToRevealScreenshotTest {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealCard(
                 revealState = rememberRevealState(initialValue = RevealValue.RightRevealing),
-                secondaryAction = null
+                secondaryAction = null,
             )
         }
     }
@@ -61,7 +61,7 @@ class SwipeToRevealScreenshotTest {
         rule.verifyScreenshot(screenshotRule = screenshotRule, methodName = testName.methodName) {
             swipeToRevealChip(
                 revealState = rememberRevealState(initialValue = RevealValue.RightRevealing),
-                secondaryAction = null
+                secondaryAction = null,
             )
         }
     }
@@ -131,23 +131,23 @@ class SwipeToRevealScreenshotTest {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
                 onClick = {},
-                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") }
+                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") },
             )
         },
         undoPrimaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
         },
         undoSecondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
-        }
+        },
     ) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
             SwipeToRevealCard(
@@ -157,14 +157,14 @@ class SwipeToRevealScreenshotTest {
                         revealState = revealState,
                         onClick = {},
                         icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
-                        label = { Text("Delete") }
+                        label = { Text("Delete") },
                     )
                 },
                 onFullSwipe = {},
                 secondaryAction = secondaryAction,
                 undoPrimaryAction = undoPrimaryAction,
                 undoSecondaryAction = undoSecondaryAction,
-                revealState = revealState
+                revealState = revealState,
             ) {
                 TitleCard(
                     onClick = { /*TODO*/ },
@@ -184,23 +184,23 @@ class SwipeToRevealScreenshotTest {
             SwipeToRevealSecondaryAction(
                 revealState = revealState,
                 onClick = {},
-                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") }
+                content = { Icon(SwipeToRevealDefaults.MoreOptions, "More Options") },
             )
         },
         undoPrimaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
         },
         undoSecondaryAction: (@Composable () -> Unit)? = {
             SwipeToRevealUndoAction(
                 revealState = revealState,
                 onClick = {},
-                label = { Text("Undo") }
+                label = { Text("Undo") },
             )
-        }
+        },
     ) {
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
             SwipeToRevealChip(
@@ -210,19 +210,19 @@ class SwipeToRevealScreenshotTest {
                         revealState = revealState,
                         onClick = {},
                         icon = { Icon(SwipeToRevealDefaults.Delete, "Delete") },
-                        label = { Text("Delete") }
+                        label = { Text("Delete") },
                     )
                 },
                 onFullSwipe = {},
                 secondaryAction = secondaryAction,
                 undoPrimaryAction = undoPrimaryAction,
                 undoSecondaryAction = undoSecondaryAction,
-                revealState = revealState
+                revealState = revealState,
             ) {
                 Chip(
                     onClick = { /* onClick handler for chip */ },
                     colors = ChipDefaults.primaryChipColors(),
-                    border = ChipDefaults.outlinedChipBorder()
+                    border = ChipDefaults.outlinedChipBorder(),
                 ) {
                     Text("Swipe To Reveal - Chip")
                 }

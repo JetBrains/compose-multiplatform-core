@@ -201,7 +201,7 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
         ): TaskProvider<CreateLibraryBuildInfoFileTask> {
             return project.tasks.register(
                 TASK_NAME + variant.taskSuffix,
-                CreateLibraryBuildInfoFileTask::class.java
+                CreateLibraryBuildInfoFileTask::class.java,
             ) { task ->
                 val group = project.group.toString()
                 val artifactId = variant.artifactId
@@ -254,8 +254,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
                         this.artifactId = it.name.toString()
-                        this.groupId = it.group.toString()
-                        this.version = it.version.toString()
+                        this.groupId = it.group!!
+                        this.version = it.version!!
                         this.isTipOfTree =
                             it is ProjectDependency || it is BuildInfoVariantDependency
                     }
@@ -269,8 +269,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 .map {
                     LibraryBuildInfoFile.Dependency().apply {
                         this.artifactId = it.name.toString()
-                        this.groupId = it.group.toString()
-                        this.version = it.version.toString()
+                        this.groupId = it.group
+                        this.version = it.version!!
                         this.isTipOfTree = it is DefaultProjectDependencyConstraint
                     }
                 }
@@ -391,7 +391,7 @@ private fun Project.createBuildInfoTask(
                 dependencyConstraints =
                     pub.component.map { component ->
                         component.usages.orEmpty().flatMap { it.dependencyConstraints }
-                    }
+                    },
             ),
         shaProvider = shaProvider,
         // There's a build_info file for each KMP platform, but only the artifact without a platform

@@ -30,6 +30,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -80,7 +81,7 @@ class AudioEncoderTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
 
         encoderCallback = Mockito.mock(EncoderCallback::class.java)
@@ -104,7 +105,7 @@ class AudioEncoderTest {
                     .setEncodeSampleRate(SAMPLE_RATE)
                     .setChannelCount(CHANNEL_COUNT)
                     .build(),
-                SESSION_TYPE_REGULAR
+                SESSION_TYPE_REGULAR,
             )
         encoder.setEncoderCallback(encoderCallback, CameraXExecutors.directExecutor())
 
@@ -146,7 +147,7 @@ class AudioEncoderTest {
         // Skip for b/269129619
         assumeFalse(
             "Skip test for Cuttlefish API 30 flaky native crash",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30,
         )
 
         // Arrange.
@@ -279,9 +280,11 @@ class AudioEncoderTest {
 
         val presentationTimeUs = AtomicLong()
         val encoderCallback = Mockito.mock(EncoderCallback::class.java)
+        var presentationTimeLatch = CountDownLatch(1)
         Mockito.doAnswer { args: InvocationOnMock ->
                 val encodedData: EncodedData = args.getArgument(0)
                 presentationTimeUs.set(encodedData.presentationTimeUs)
+                presentationTimeLatch.countDown()
                 encodedData.close()
                 null
             }
@@ -294,24 +297,25 @@ class AudioEncoderTest {
         encoder.start()
 
         // Get presentation time of encoded data before pause.
-        verify(encoderCallback, timeout(timeoutWaitDataMs).atLeastOnce()).onEncodedData(any())
+        assertThat(presentationTimeLatch.await(timeoutWaitDataMs, TimeUnit.MILLISECONDS)).isTrue()
         val presentationTimeBeforePause = presentationTimeUs.get()
 
         encoder.pause()
         Thread.sleep(pauseDurationMs)
+        presentationTimeLatch = CountDownLatch(1)
         encoder.start()
 
         // Get presentation time of encoded data after resume.
-        verify(encoderCallback, timeout(timeoutWaitDataMs).atLeastOnce()).onEncodedData(any())
+        assertThat(presentationTimeLatch.await(timeoutWaitDataMs, TimeUnit.MILLISECONDS)).isTrue()
         val presentationTimeAfterResume = presentationTimeUs.get()
 
         // Assert.
-        assertThat(presentationTimeAfterResume > presentationTimeBeforePause)
+        assertThat(presentationTimeAfterResume).isGreaterThan(presentationTimeBeforePause)
         val timeDiffMs =
             TimeUnit.MICROSECONDS.toMillis(
                 presentationTimeAfterResume - presentationTimeBeforePause
             )
-        assertThat(timeDiffMs < pauseDurationMs)
+        assertThat(timeDiffMs).isAtMost(pauseDurationMs)
     }
 
     @Test
@@ -395,7 +399,7 @@ class AudioEncoderTest {
                     stateRef.set(null)
                     lock.release()
                 }
-            }
+            },
         )
 
         // Assert.

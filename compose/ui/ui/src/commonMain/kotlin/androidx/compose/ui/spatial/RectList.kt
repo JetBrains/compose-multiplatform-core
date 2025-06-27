@@ -164,7 +164,7 @@ internal class RectList {
                 //  a problem
                 updated = true,
                 focusable,
-                gesturable
+                gesturable,
             )
 
         if (parentId < 0) return
@@ -311,7 +311,7 @@ internal class RectList {
                     gesturable = false,
                 ),
             deltaX = deltaX,
-            deltaY = deltaY
+            deltaY = deltaY,
         )
     }
 
@@ -468,13 +468,7 @@ internal class RectList {
      * For a provided rectangle, executes [block] for each value in the collection whose associated
      * rectangle intersects the provided one. The argument passed into [block] will be the value.
      */
-    inline fun forEachIntersection(
-        l: Int,
-        t: Int,
-        r: Int,
-        b: Int,
-        block: (Int) -> Unit,
-    ) {
+    inline fun forEachIntersection(l: Int, t: Int, r: Int, b: Int, block: (Int) -> Unit) {
         val destTopLeft = packXY(l, t)
         val destTopRight = packXY(r, b)
         val items = items
@@ -499,13 +493,7 @@ internal class RectList {
      * intersects with the provided rectangle, the function executes [block]. The argument passed
      * into [block] will be the value (item id).
      */
-    inline fun forEachGesturableIntersection(
-        l: Int,
-        t: Int,
-        r: Int,
-        b: Int,
-        block: (Int) -> Unit,
-    ) {
+    inline fun forEachGesturableIntersection(l: Int, t: Int, r: Int, b: Int, block: (Int) -> Unit) {
         val destTopLeft = packXY(l, t)
         val destTopRight = packXY(r, b)
         val items = items
@@ -529,9 +517,7 @@ internal class RectList {
         }
     }
 
-    inline fun forEachRect(
-        block: (Int, Int, Int, Int, Int) -> Unit,
-    ) {
+    inline fun forEachRect(block: (Int, Int, Int, Int, Int) -> Unit) {
         val items = items
         val size = itemsSize
         var i = 0
@@ -556,11 +542,7 @@ internal class RectList {
      * For a provided point, executes [block] for each value in the collection whose associated
      * rectangle contains the provided point. The argument passed into [block] will be the value.
      */
-    inline fun forEachIntersection(
-        x: Int,
-        y: Int,
-        block: (Int) -> Unit,
-    ) {
+    inline fun forEachIntersection(x: Int, y: Int, block: (Int) -> Unit) {
         val destXY = packXY(x, y)
         val items = items
         val size = itemsSize
@@ -583,7 +565,7 @@ internal class RectList {
      */
     inline fun forEachIntersectingRectWithValueAt(
         index: Int,
-        block: (Int, Int, Int, Int, Int) -> Unit
+        block: (Int, Int, Int, Int, Int) -> Unit,
     ) {
         val items = items
         val size = itemsSize
@@ -606,7 +588,7 @@ internal class RectList {
                     unpackY(topLeft),
                     unpackX(bottomRight),
                     unpackY(bottomRight),
-                    unpackMetaValue(items[i + 2])
+                    unpackMetaValue(items[i + 2]),
                 )
             }
             i += LongsPerItem
@@ -661,14 +643,7 @@ internal class RectList {
         block: (score: Int, id: Int, l: Int, t: Int, r: Int, b: Int) -> Unit,
     ) {
         // this list is 1:1 with items and holds the score for each item
-        val list =
-            neighborsScoredByDistance(
-                searchAxis,
-                l,
-                t,
-                r,
-                b,
-            )
+        val list = neighborsScoredByDistance(searchAxis, l, t, r, b)
         val items = items
 
         var sent = 0
@@ -790,11 +765,7 @@ internal class RectList {
             if (unpackMetaUpdated(meta) != 0) {
                 val topLeft = items[i + 0]
                 val bottomRight = items[i + 1]
-                block(
-                    unpackMetaValue(meta),
-                    topLeft,
-                    bottomRight,
-                )
+                block(unpackMetaValue(meta), topLeft, bottomRight)
             }
             i += LongsPerItem
         }
@@ -908,7 +879,7 @@ internal inline fun rectIntersectsRect(
     srcLT: Long,
     srcRB: Long,
     destLT: Long,
-    destRB: Long
+    destRB: Long,
 ): Boolean {
     // destRB - srcLT = [r2 - l1, b2 - t1]
     // srcRB - destLT = [r1 - l2, b1 - t2]

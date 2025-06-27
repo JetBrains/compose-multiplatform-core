@@ -103,7 +103,7 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
     ) {
         LEFT(x = -6f, coercedX = 1f),
         CENTER(x = 10f, coercedX = 10f),
-        RIGHT(x = 26f, coercedX = 19f)
+        RIGHT(x = 26f, coercedX = 19f),
     }
 
     enum class TestVertical(
@@ -119,7 +119,7 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
         OVERLAP_BELONGS_TO_SECOND(y = 31f, coercedY = 41f),
         NO_OVERLAP_BELONGS_TO_SECOND(y = 35f, coercedY = 41f),
         ON_SECOND(y = 50f, coercedY = 50f),
-        BELOW(y = 66f, coercedY = 59f)
+        BELOW(y = 66f, coercedY = 59f),
     }
 
     enum class ExpectedText(val selectableId: Long?, val crossed: Boolean) {
@@ -159,7 +159,7 @@ internal class MultiTextMinTouchBoundsSelectionGesturesTest(
         SelectionContainer(
             selection = selection.value,
             onSelectionChange = { selection.value = it },
-            modifier = Modifier.testTag(pointerAreaTag)
+            modifier = Modifier.testTag(pointerAreaTag),
         ) {
             CompositionLocalProvider(LocalViewConfiguration provides testViewConfiguration) {
                 Column(verticalArrangement = Arrangement.spacedBy(dpLen)) {

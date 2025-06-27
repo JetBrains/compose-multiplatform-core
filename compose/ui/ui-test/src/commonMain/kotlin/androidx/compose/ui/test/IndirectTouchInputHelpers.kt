@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.test
 
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
 
 /**
@@ -24,7 +24,7 @@ import androidx.compose.ui.input.indirect.IndirectTouchEvent
  *
  * @return true if the event was consumed. False otherwise.
  */
-@ExperimentalComposeUiApi
+@ExperimentalIndirectTouchTypeApi
 fun SemanticsNodeInteraction.performIndirectTouchEvent(
     indirectTouchEvent: IndirectTouchEvent
 ): Boolean {

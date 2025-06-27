@@ -78,7 +78,7 @@ internal class ToolbarRequesterImpl : ToolbarRequester() {
  * [requester]. `suspend` [onShow]/[onHide] callbacks are available if you need to run any
  * setup/cleanup before showing the toolbar. The modifier will use this point in the hierarchy to
  * visit ancestors in search for
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] and
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] and
  * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents] and then provide the
  * results to the [LocalTextContextMenuToolbarProvider]'s [currentValueOf]'s
  * [showTextContextMenu][TextContextMenuProvider.showTextContextMenu].
@@ -218,7 +218,7 @@ internal class TextContextMenuToolbarHandlerNode(
 internal fun translateRootToDestination(
     rootContentBounds: Rect,
     localCoordinates: LayoutCoordinates,
-    destinationCoordinates: LayoutCoordinates
+    destinationCoordinates: LayoutCoordinates,
 ): Rect {
     if (!localCoordinates.isAttached || !destinationCoordinates.isAttached) return Rect.Zero
     val rootContentPosition = rootContentBounds.topLeft
@@ -226,7 +226,7 @@ internal fun translateRootToDestination(
     val destinationContentPosition =
         destinationCoordinates.localPositionOf(
             sourceCoordinates = rootCoordinates,
-            relativeToSource = rootContentPosition
+            relativeToSource = rootContentPosition,
         )
     return Rect(destinationContentPosition, rootContentBounds.size)
 }

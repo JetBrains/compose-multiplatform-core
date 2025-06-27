@@ -148,8 +148,6 @@ class VelocityTrackingParityTest {
             draggableView.visibility = View.GONE
         }
 
-        rule.waitForIdle()
-
         checkVisibility(composeView, View.VISIBLE)
         checkVisibility(draggableView, View.GONE)
 
@@ -216,8 +214,6 @@ class VelocityTrackingParityTest {
             composeView.visibility = View.VISIBLE
             draggableView.visibility = View.GONE
         }
-
-        rule.waitForIdle()
 
         checkVisibility(composeView, View.VISIBLE)
         checkVisibility(draggableView, View.GONE)
@@ -352,8 +348,6 @@ class VelocityTrackingParityTest {
             draggableView.visibility = View.GONE
         }
 
-        rule.waitForIdle()
-
         checkVisibility(composeView, View.VISIBLE)
         checkVisibility(draggableView, View.GONE)
 
@@ -396,7 +390,7 @@ internal fun smallGestureVeryFast(id: Int) {
             espressoSwipe(
                 SwiperWithTime(15),
                 GeneralLocation.CENTER,
-                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -50f)
+                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -50f),
             )
         )
 }
@@ -407,7 +401,7 @@ internal fun smallGestureFast(id: Int) {
             espressoSwipe(
                 SwiperWithTime(25),
                 GeneralLocation.CENTER,
-                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -50f)
+                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -50f),
             )
         )
 }
@@ -418,7 +412,7 @@ internal fun smallGestureSlow(id: Int) {
             espressoSwipe(
                 SwiperWithTime(200),
                 GeneralLocation.CENTER,
-                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -50f)
+                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -50f),
             )
         )
 }
@@ -429,7 +423,7 @@ internal fun largeGestureFast(id: Int) {
             espressoSwipe(
                 SwiperWithTime(25),
                 GeneralLocation.CENTER,
-                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -500f)
+                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -500f),
             )
         )
 }
@@ -440,7 +434,7 @@ internal fun largeGestureVeryFast(id: Int) {
             espressoSwipe(
                 SwiperWithTime(15),
                 GeneralLocation.CENTER,
-                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -500f)
+                GeneralLocation.translate(GeneralLocation.CENTER, 0f, -500f),
             )
         )
 }
@@ -451,7 +445,7 @@ internal fun orthogonalGesture(id: Int) {
             espressoSwipe(
                 SwiperWithTime(50),
                 GeneralLocation.CENTER,
-                GeneralLocation.translate(GeneralLocation.CENTER, -200f, -200f)
+                GeneralLocation.translate(GeneralLocation.CENTER, -200f, -200f),
             )
         )
 }
@@ -462,7 +456,7 @@ internal fun regularGestureOne(id: Int) {
             espressoSwipe(
                 SwiperWithTime(100),
                 GeneralLocation.CENTER,
-                GeneralLocation.BOTTOM_CENTER
+                GeneralLocation.BOTTOM_CENTER,
             )
         )
 }
@@ -477,7 +471,7 @@ internal fun regularGestureTwo(id: Int) {
 private fun espressoSwipe(
     swiper: Swiper,
     start: CoordinatesProvider,
-    end: CoordinatesProvider
+    end: CoordinatesProvider,
 ): GeneralSwipeAction {
     return GeneralSwipeAction(swiper, start, end, Press.FINGER)
 }
@@ -485,7 +479,7 @@ private fun espressoSwipe(
 @Composable
 fun TestComposeDraggable(
     twoDimensional: Boolean = false,
-    onDragStopped: (velocity: Velocity) -> Unit
+    onDragStopped: (velocity: Velocity) -> Unit,
 ) {
     val viewConfiguration =
         object : ViewConfiguration by LocalViewConfiguration.current {
@@ -500,13 +494,13 @@ fun TestComposeDraggable(
                     if (twoDimensional) {
                         Modifier.draggable2D(
                             rememberDraggable2DState {},
-                            onDragStopped = onDragStopped
+                            onDragStopped = onDragStopped,
                         )
                     } else {
                         Modifier.draggable(
                             rememberDraggableState(onDelta = {}),
                             onDragStopped = { onDragStopped.invoke(Velocity(0.0f, it)) },
-                            orientation = Orientation.Vertical
+                            orientation = Orientation.Vertical,
                         )
                     }
                 )
@@ -578,14 +572,14 @@ internal data class SwiperWithTime(val gestureDurationMs: Int) : Swiper {
         uiController: UiController,
         startCoordinates: FloatArray,
         endCoordinates: FloatArray,
-        precision: FloatArray
+        precision: FloatArray,
     ): Swiper.Status {
         return sendLinearSwipe(
             uiController,
             startCoordinates,
             endCoordinates,
             precision,
-            gestureDurationMs
+            gestureDurationMs,
         )
     }
 
@@ -628,7 +622,7 @@ internal data class SwiperWithTime(val gestureDurationMs: Int) : Swiper {
         startCoordinates: FloatArray,
         endCoordinates: FloatArray,
         precision: FloatArray,
-        duration: Int
+        duration: Int,
     ): Swiper.Status {
         val steps = interpolate(startCoordinates, endCoordinates, 10)
         val events: MutableList<MotionEvent> = ArrayList()
@@ -657,7 +651,7 @@ internal data class SwiperWithTime(val gestureDurationMs: Int) : Swiper {
 
 private suspend inline fun AwaitPointerEventScope.awaitDragOrUp(
     pointerId: PointerId,
-    hasDragged: (PointerInputChange) -> Boolean
+    hasDragged: (PointerInputChange) -> Boolean,
 ): PointerInputChange? {
     var pointer = pointerId
     while (true) {

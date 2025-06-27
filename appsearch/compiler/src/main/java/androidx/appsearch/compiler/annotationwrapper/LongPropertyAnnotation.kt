@@ -67,7 +67,7 @@ data class LongPropertyAnnotation(
         @Throws(ProcessingException::class)
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String
+            defaultName: String,
         ): LongPropertyAnnotation {
             val name = annotationParams["name"] as String
             val serializerInAnnotation = annotationParams["serializer"] as TypeMirror
@@ -78,7 +78,7 @@ data class LongPropertyAnnotation(
                 } else {
                     SerializerClass.create(
                         MoreTypes.asElement(serializerInAnnotation) as TypeElement,
-                        SerializerClass.Kind.LONG_SERIALIZER
+                        SerializerClass.Kind.LONG_SERIALIZER,
                     )
                 }
             return LongPropertyAnnotation(

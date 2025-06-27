@@ -168,7 +168,7 @@ class SearchBarTest {
                 TextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester)
+                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester),
                 )
             }
         }
@@ -320,11 +320,11 @@ class SearchBarTest {
                             trailingIcon = {
                                 IconButton(
                                     onClick = { iconClicked = true },
-                                    modifier = Modifier.testTag(IconTestTag)
+                                    modifier = Modifier.testTag(IconTestTag),
                                 ) {
                                     Icon(Icons.Default.MoreVert, null)
                                 }
-                            }
+                            },
                         )
                     },
                     expanded = expanded,
@@ -414,7 +414,7 @@ class SearchBarTest {
                 TextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester)
+                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester),
                 )
             }
         }
@@ -522,11 +522,11 @@ class SearchBarTest {
                             trailingIcon = {
                                 IconButton(
                                     onClick = { iconClicked = true },
-                                    modifier = Modifier.testTag(IconTestTag)
+                                    modifier = Modifier.testTag(IconTestTag),
                                 ) {
                                     Icon(Icons.Default.MoreVert, null)
                                 }
-                            }
+                            },
                         )
                     },
                     expanded = expanded,
@@ -738,13 +738,13 @@ class SearchBarTest {
                             modifier = Modifier.testTag(ExpandedInputFieldTestTag),
                         )
                     },
-                    content = {}
+                    content = {},
                 )
 
                 TextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester)
+                    modifier = Modifier.testTag("SIBLING").focusRequester(focusRequester),
                 )
             }
         }
@@ -787,7 +787,7 @@ class SearchBarTest {
                             modifier = Modifier.testTag(ExpandedInputFieldTestTag),
                         )
                     },
-                    content = { Text("Content") }
+                    content = { Text("Content") },
                 )
             }
         }
@@ -842,7 +842,7 @@ class SearchBarTest {
                             trailingIcon = {
                                 IconButton(
                                     onClick = { iconClicked = true },
-                                    modifier = Modifier.testTag(IconTestTag)
+                                    modifier = Modifier.testTag(IconTestTag),
                                 ) {
                                     Icon(Icons.Default.MoreVert, null)
                                 }
@@ -860,7 +860,7 @@ class SearchBarTest {
                             // don't need a trailing icon since the search bar should never expand
                         )
                     },
-                    content = { Text("Content", modifier = Modifier.testTag(ContentTestTag)) }
+                    content = { Text("Content", modifier = Modifier.testTag(ContentTestTag)) },
                 )
             }
         }
@@ -968,12 +968,8 @@ class SearchBarTest {
         var canScroll by mutableStateOf(true)
         rule.setMaterialContent(lightColorScheme()) {
             val scrollBehavior =
-                SearchBarDefaults.enterAlwaysSearchBarScrollBehavior(
-                    canScroll = { canScroll },
-                )
-            SearchBarWithScrollableContent(
-                searchBarScrollBehavior = scrollBehavior,
-            )
+                SearchBarDefaults.enterAlwaysSearchBarScrollBehavior(canScroll = { canScroll })
+            SearchBarWithScrollableContent(searchBarScrollBehavior = scrollBehavior)
         }
 
         // search bar is initially displayed
@@ -1073,7 +1069,7 @@ class SearchBarTest {
                         )
                     },
                 )
-            }
+            },
         ) { innerPadding ->
             LazyColumn(
                 modifier = Modifier.testTag(ScrollableContentTestTag),

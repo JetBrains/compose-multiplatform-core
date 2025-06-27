@@ -157,7 +157,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -186,7 +186,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -239,7 +239,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(semanticsId),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
     }
 
@@ -268,7 +268,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -315,7 +315,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(semanticsId),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
     }
 
@@ -357,14 +357,14 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(firstSemanticsId),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
         verify(am, times(1)).commit()
         verify(am)
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(secondSemanticsId),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -431,7 +431,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(semanticsId),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
     }
 
@@ -459,7 +459,7 @@ class AndroidAutofillManagerTest {
             .notifyValueChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                autofillValue = argThat { isText && textValue == "1234" }
+                autofillValue = argThat { isText && textValue == "1234" },
             )
     }
 
@@ -487,7 +487,7 @@ class AndroidAutofillManagerTest {
             .notifyValueChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                autofillValue = argThat { isText && textValue == "1234" }
+                autofillValue = argThat { isText && textValue == "1234" },
             )
     }
 
@@ -515,7 +515,7 @@ class AndroidAutofillManagerTest {
             .notifyValueChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                autofillValue = argThat { isText && textValue == "" }
+                autofillValue = argThat { isText && textValue == "" },
             )
     }
 
@@ -544,7 +544,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -573,7 +573,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
     }
 
@@ -602,7 +602,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -631,7 +631,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
     }
 
@@ -661,7 +661,7 @@ class AndroidAutofillManagerTest {
                         with(rule.density) {
                             Rect(0, 0, width.toPx().toInt(), height.toPx().toInt())
                         }
-                    )
+                    ),
             )
     }
 
@@ -712,7 +712,7 @@ class AndroidAutofillManagerTest {
                         with(rule.density) {
                             Rect(0, 0, width.toPx().toInt(), height.toPx().toInt())
                         }
-                    )
+                    ),
             )
     }
 
@@ -755,7 +755,7 @@ class AndroidAutofillManagerTest {
                             with(rule.density) {
                                 Rect(0, 0, width.toPx().toInt(), height.toPx().toInt())
                             }
-                        )
+                        ),
                 )
         }
     }
@@ -802,7 +802,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
     }
 
@@ -835,7 +835,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(rule.onNodeWithTag("username").semanticsId()),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -876,13 +876,13 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(beforeId),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
         verify(am)
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(afterId),
-                isVisible = eq(true)
+                isVisible = eq(true),
             )
     }
 
@@ -962,7 +962,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(semanticsId),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
     }
 
@@ -1031,7 +1031,7 @@ class AndroidAutofillManagerTest {
             .notifyViewVisibilityChanged(
                 view = eq(view),
                 semanticsId = eq(semanticsId),
-                isVisible = eq(false)
+                isVisible = eq(false),
             )
         verify(am).commit()
     }
@@ -1057,7 +1057,7 @@ class AndroidAutofillManagerTest {
                         with(rule.density) {
                             Rect(0, 0, width.toPx().toInt(), height.toPx().toInt())
                         }
-                    )
+                    ),
             )
     }
 

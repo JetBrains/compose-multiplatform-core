@@ -58,5 +58,5 @@ expect fun DatePickerDialog(
     tonalElevation: Dp = DatePickerDefaults.TonalElevation,
     colors: DatePickerColors = DatePickerDefaults.colors(),
     properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 )

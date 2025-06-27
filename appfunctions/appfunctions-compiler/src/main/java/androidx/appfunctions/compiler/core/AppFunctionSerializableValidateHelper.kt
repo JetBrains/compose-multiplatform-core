@@ -36,21 +36,15 @@ class AppFunctionSerializableValidateHelper(
         if (primaryConstructor == null) {
             throw ProcessingException(
                 "A valid AppFunctionSerializable must have a primary constructor.",
-                annotatedSerializable.attributeNode
+                annotatedSerializable.attributeNode,
             )
         }
         val primaryConstructorDeclaration = checkNotNull(primaryConstructor)
-        if (primaryConstructorDeclaration.parameters.isEmpty()) {
-            throw ProcessingException(
-                "A valid AppFunctionSerializable must have a non-empty primary constructor.",
-                annotatedSerializable.attributeNode
-            )
-        }
 
         if (primaryConstructorDeclaration.getVisibility() != Visibility.PUBLIC) {
             throw ProcessingException(
                 "A valid AppFunctionSerializable must have  a public primary constructor.",
-                annotatedSerializable.attributeNode
+                annotatedSerializable.attributeNode,
             )
         }
 
@@ -58,7 +52,7 @@ class AppFunctionSerializableValidateHelper(
             if (!checkHasGetter(parameter)) {
                 throw ProcessingException(
                     "All parameters in @AppFunctionSerializable primary constructor must have getters",
-                    parameter
+                    parameter,
                 )
             }
         }
@@ -77,14 +71,36 @@ class AppFunctionSerializableValidateHelper(
         return matchedProperty != null
     }
 
-    /** Validate if the parameters are valid. */
-    fun validateParameters() {
+    /**
+     * Validate if the parameters are valid.
+     *
+     * @param allowSerializableInterfaceTypes Whether to allow the serializable to use serializable
+     *   interface types. The @AppFunctionSerializableInterface should only be considered as a
+     *   supported type when processing schema definitions.
+     */
+    fun validateParameters(allowSerializableInterfaceTypes: Boolean) {
         val parametersToValidate =
             annotatedSerializable
                 .getProperties()
                 .associateBy { checkNotNull(it.name) }
                 .toMutableMap()
 
+        if (annotatedSerializable !is AnnotatedAppFunctionSerializableInterface) {
+            validateSuperTypes(parametersToValidate, allowSerializableInterfaceTypes)
+        }
+
+        // Validate the remaining parameters
+        if (parametersToValidate.isNotEmpty()) {
+            for ((_, parameterToValidate) in parametersToValidate) {
+                validateSerializableParameter(parameterToValidate, allowSerializableInterfaceTypes)
+            }
+        }
+    }
+
+    private fun validateSuperTypes(
+        parametersToValidate: MutableMap<String, AppFunctionPropertyDeclaration>,
+        allowSerializableInterfaceTypes: Boolean,
+    ) {
         val superTypesWithSerializableAnnotation =
             annotatedSerializable.findSuperTypesWithSerializableAnnotation()
         val superTypesWithCapabilityAnnotation =
@@ -93,7 +109,8 @@ class AppFunctionSerializableValidateHelper(
 
         for (superType in superTypesWithSerializableAnnotation) {
             val superTypeAnnotatedSerializable =
-                AnnotatedAppFunctionSerializable(superType).validate()
+                AnnotatedAppFunctionSerializable(superType)
+                    .validate(allowSerializableInterfaceTypes)
             for (superTypeProperty in superTypeAnnotatedSerializable.getProperties()) {
                 // Parameter has now been visited
                 val parameterInSuperType = parametersToValidate.remove(superTypeProperty.name)
@@ -101,10 +118,10 @@ class AppFunctionSerializableValidateHelper(
                     throw ProcessingException(
                         "All parameters in @AppFunctionSerializable " +
                             "supertypes must be present in subtype",
-                        superTypeProperty.type
+                        superTypeProperty.type,
                     )
                 }
-                validateSerializableParameter(parameterInSuperType)
+                validateSerializableParameter(parameterInSuperType, allowSerializableInterfaceTypes)
             }
         }
 
@@ -119,17 +136,10 @@ class AppFunctionSerializableValidateHelper(
                     throw ProcessingException(
                         "All Properties in @AppFunctionSchemaCapability " +
                             "supertypes must be present in subtype",
-                        superTypeProperty
+                        superTypeProperty,
                     )
                 }
-                validateSerializableParameter(parameterInSuperType)
-            }
-        }
-
-        // Validate the remaining parameters
-        if (parametersToValidate.isNotEmpty()) {
-            for ((_, parameterToValidate) in parametersToValidate) {
-                validateSerializableParameter(parameterToValidate)
+                validateSerializableParameter(parameterInSuperType, allowSerializableInterfaceTypes)
             }
         }
     }
@@ -151,7 +161,7 @@ class AppFunctionSerializableValidateHelper(
      */
     private fun validateSuperTypes(
         superTypesWithSerializableAnnotation: Set<KSClassDeclaration>,
-        superTypesWithCapabilityAnnotation: Set<KSClassDeclaration>
+        superTypesWithCapabilityAnnotation: Set<KSClassDeclaration>,
     ) {
         val classesWithMultipleAnnotations =
             superTypesWithSerializableAnnotation.intersect(superTypesWithCapabilityAnnotation)
@@ -159,24 +169,27 @@ class AppFunctionSerializableValidateHelper(
             throw ProcessingException(
                 "A class cannot be annotated with both @AppFunctionSerializable and " +
                     "@AppFunctionSchemaCapability.",
-                classesWithMultipleAnnotations.first() // Choose the first one as a sample
+                classesWithMultipleAnnotations.first(), // Choose the first one as a sample
             )
         }
     }
 
-    private fun validateSerializableParameter(propertyDeclaration: AppFunctionPropertyDeclaration) {
+    private fun validateSerializableParameter(
+        propertyDeclaration: AppFunctionPropertyDeclaration,
+        allowSerializableInterfaceTypes: Boolean,
+    ) {
         if (propertyDeclaration.isGenericType) {
             // Don't validate a generic type. Whether a generic type is valid or not would be
             // validated when it is parameterized.
             return
         }
-        if (!isSupportedType(propertyDeclaration.type)) {
+        if (!isSupportedType(propertyDeclaration.type, allowSerializableInterfaceTypes)) {
             throw ProcessingException(
                 "AppFunctionSerializable properties must be one of the following types:\n" +
                     SUPPORTED_TYPES_STRING +
                     ", an @AppFunctionSerializable or a list of @AppFunctionSerializable\nbut found " +
                     propertyDeclaration.type.toTypeName(),
-                propertyDeclaration.type
+                propertyDeclaration.type,
             )
         }
     }

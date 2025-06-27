@@ -83,7 +83,7 @@ class KspTypeNamesGoldenTest {
         runKspTest(
             sources = sources,
             classpath = classpath,
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS
+            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS,
         ) { invocation ->
             ksp1Signatures = collectSignatures(invocation, subjects)
         }
@@ -136,7 +136,7 @@ class KspTypeNamesGoldenTest {
     private data class MethodSignature(
         val name: String,
         val returnType: TypeName,
-        val parameterTypes: List<TypeName>
+        val parameterTypes: List<TypeName>,
     ) {
         companion object {
             operator fun invoke(method: XMethodElement, owner: XTypeElement): MethodSignature {
@@ -144,19 +144,19 @@ class KspTypeNamesGoldenTest {
                 return MethodSignature(
                     name = "${prefix(method, owner)}.${method.jvmName}",
                     returnType = methodType.returnType.typeName,
-                    parameterTypes = methodType.parameterTypes.map { it.typeName }
+                    parameterTypes = methodType.parameterTypes.map { it.typeName },
                 )
             }
 
             operator fun invoke(
                 constructor: XConstructorElement,
-                owner: XTypeElement
+                owner: XTypeElement,
             ): MethodSignature {
                 val constructorType = constructor.asMemberOf(owner.type)
                 return MethodSignature(
                     name = "${prefix(constructor, owner)}.<init>",
                     returnType = TypeName.VOID,
-                    parameterTypes = constructorType.parameterTypes.map { it.typeName }
+                    parameterTypes = constructorType.parameterTypes.map { it.typeName },
                 )
             }
 
@@ -173,7 +173,7 @@ class KspTypeNamesGoldenTest {
 
     private fun collectSignatures(
         invocation: XTestInvocation,
-        subjects: List<String>
+        subjects: List<String>,
     ): List<MethodSignature> {
         // collect all methods in the Object class to exclude them from matching
         val objectMethodNames =
@@ -260,19 +260,19 @@ class KspTypeNamesGoldenTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         return listOf(
                 createBasicSubject(pkg),
                 createVarianceSubject(
                     pkg = pkg,
                     className = "VarianceSubject",
-                    suppressWildcards = false
+                    suppressWildcards = false,
                 ),
                 createVarianceSubject(
                     pkg,
                     className = "VarianceSubjectSuppressed",
-                    suppressWildcards = true
+                    suppressWildcards = true,
                 ),
                 createOverrideSubjects(pkg),
                 createSelfReferencingType(pkg),
@@ -283,7 +283,7 @@ class KspTypeNamesGoldenTest {
                 createMultiLevelInheritanceSubjects(pkg),
                 createJavaOverridesKotlinSubjects(pkg),
                 createOverrideWithBoundsSubjects(pkg),
-                createOverrideWithMultipleBoundsSubjects(pkg)
+                createOverrideWithMultipleBoundsSubjects(pkg),
             )
             .fold(TestInput(declarations, emptyList())) { acc, next ->
                 acc +
@@ -456,9 +456,9 @@ class KspTypeNamesGoldenTest {
                         ): MyGenericOut<suspend (MyGenericOut<suspend () -> Unit>) -> MyGenericOut<suspend () -> Unit>> = TODO()
                     }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             ),
-            listOf("Subject")
+            listOf("Subject"),
         )
     }
 
@@ -475,7 +475,7 @@ class KspTypeNamesGoldenTest {
                         void method2(SelfReferencingJava<?> sr);
                     }
                 """
-                            .trimIndent()
+                            .trimIndent(),
                     ),
                     Source.java(
                         "$pkg.SubSelfReferencingJava",
@@ -483,7 +483,7 @@ class KspTypeNamesGoldenTest {
                     package $pkg;
                     public interface SubSelfReferencingJava extends SelfReferencingJava<SubSelfReferencingJava> {}
                 """
-                            .trimIndent()
+                            .trimIndent(),
                     ),
                     Source.kotlin(
                         "SelfReferencing.kt",
@@ -494,7 +494,7 @@ class KspTypeNamesGoldenTest {
                     }
                     interface SubSelfReferencingKotlin : SelfReferencingKotlin<SubSelfReferencingKotlin>
                     """
-                            .trimIndent()
+                            .trimIndent(),
                     ),
                 ),
             subjects =
@@ -502,8 +502,8 @@ class KspTypeNamesGoldenTest {
                     "SubSelfReferencingJava",
                     "SelfReferencingJava",
                     "SelfReferencingKotlin",
-                    "SubSelfReferencingKotlin"
-                )
+                    "SubSelfReferencingKotlin",
+                ),
         )
     }
 
@@ -511,7 +511,7 @@ class KspTypeNamesGoldenTest {
     private fun createVarianceSubject(
         pkg: String,
         className: String,
-        suppressWildcards: Boolean
+        suppressWildcards: Boolean,
     ): TestInput {
         val annotation =
             if (suppressWildcards) {
@@ -698,9 +698,9 @@ class KspTypeNamesGoldenTest {
                     fun mapTypeAlias12(param: MyGeneric<MyMapAliasWithJSW<MyGeneric<MyInterface>>>): MyGeneric<MyMapAliasWithJSW<MyGeneric<MyInterface>>> = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             ),
-            listOf(className)
+            listOf(className),
         )
     }
 
@@ -745,7 +745,7 @@ class KspTypeNamesGoldenTest {
                 override fun receiveReturnListTWithWildcard(t : List<Number>): List<Number>
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         return TestInput(
             source,
@@ -756,8 +756,8 @@ class KspTypeNamesGoldenTest {
                 "SuppressInInterface",
                 "OverrideWithSuppress",
                 "OverrideWildcardMethod",
-                "OverrideWildcardMethodSuppressed"
-            )
+                "OverrideWildcardMethodSuppressed",
+            ),
         )
     }
 
@@ -889,7 +889,7 @@ class KspTypeNamesGoldenTest {
                 "SubInterfaceWithGenericPrimitive",
                 "SubInterfaceWithGenericPrimitiveNullable",
                 "SubInterfaceWithGenericArray",
-                "SubInterfaceWithGenericArrayPrimitive"
+                "SubInterfaceWithGenericArrayPrimitive",
             )
         return TestInput(Source.kotlin("OverridesWithGenerics.kt", code), classNames)
     }
@@ -908,7 +908,7 @@ class KspTypeNamesGoldenTest {
                 T receiveReturnTOverridden(T t);
                 List<T> receiveReturnTListOverridden(List<T> t);
             }
-            """
+            """,
             )
 
         fun buildInterface(name: String, typeArg: String) =
@@ -941,7 +941,7 @@ class KspTypeNamesGoldenTest {
                 "SubInterfaceOverridingJavaFinal",
                 "SubInterfaceOverridingJavaPrimitive",
                 "SubInterfaceOverridingJavaPrimitiveNullable",
-            )
+            ),
         )
     }
 
@@ -962,7 +962,7 @@ class KspTypeNamesGoldenTest {
                 void receiveTOverridden(T t);
                 void receiveTListOverridden(List<T> t);
             }
-            """
+            """,
             )
 
         fun buildInterface(name: String, typeArg: String) =
@@ -983,12 +983,12 @@ class KspTypeNamesGoldenTest {
                     buildInterface("SubInterfaceOverridingJavaWithGenericFinal", "List<String>"),
                     buildInterface(
                         "SubInterfaceOverridingJavaWithGenericPrimitive",
-                        "List<Number>"
+                        "List<Number>",
                     ),
                     buildInterface(
                         "SubInterfaceOverridingJavaWithGenericPrimitiveNullable",
-                        "List<Number?>"
-                    )
+                        "List<Number?>",
+                    ),
                 )
                 .joinToString("\n")
         val sources =
@@ -1002,7 +1002,7 @@ class KspTypeNamesGoldenTest {
                 "SubInterfaceOverridingJavaWithGenericFinal",
                 "SubInterfaceOverridingJavaWithGenericPrimitive",
                 "SubInterfaceOverridingJavaWithGenericPrimitiveNullable",
-            )
+            ),
         )
     }
 
@@ -1061,7 +1061,7 @@ class KspTypeNamesGoldenTest {
                 "MultiSubInterfaceFinal",
                 "MultiSubInterfacePrimitive",
                 "MultiSubInterfacePrimitiveNullable",
-            )
+            ),
         )
     }
 
@@ -1076,7 +1076,7 @@ class KspTypeNamesGoldenTest {
                 fun receiveReturnTList(t: List<T>): List<T>
             }
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         fun buildInterface(name: String, typeArg: String) =
@@ -1088,7 +1088,7 @@ class KspTypeNamesGoldenTest {
             public interface $name extends BaseKotlinOverriddenByJava<$typeArg> {
             }
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
         return TestInput(
             sources =
@@ -1097,7 +1097,7 @@ class KspTypeNamesGoldenTest {
                     buildInterface("JavaOverridesKotlinOpen", "Number"),
                     buildInterface("JavaOverridesKotlinFinal", "String"),
                 ),
-            subjects = listOf("JavaOverridesKotlinOpen", "JavaOverridesKotlinFinal")
+            subjects = listOf("JavaOverridesKotlinOpen", "JavaOverridesKotlinFinal"),
         )
     }
 
@@ -1228,7 +1228,7 @@ class KspTypeNamesGoldenTest {
                 "BaseInterfaceWithMultipleBounds",
                 "SubInterfaceMergedBounds",
                 "SubInterfaceOpenImpl",
-                "SubInterfaceFinalImpl"
+                "SubInterfaceFinalImpl",
             )
         return TestInput(Source.kotlin("MultipleBoundsOverrides.kt", code), classNames)
     }

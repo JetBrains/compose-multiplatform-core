@@ -26,19 +26,23 @@ import androidx.xr.runtime.internal.InputEvent as RuntimeInputEvent
 import androidx.xr.runtime.internal.InputEvent.Companion.HitInfo as RuntimeHitInfo
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.MoveEvent as RuntimeMoveEvent
+import androidx.xr.runtime.internal.PerceivedResolutionResult as RuntimePerceivedResolutionResult
 import androidx.xr.runtime.internal.PixelDimensions as RuntimePixelDimensions
 import androidx.xr.runtime.internal.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.runtime.internal.PlaneType as RtPlaneType
 import androidx.xr.runtime.internal.ResizeEvent as RuntimeResizeEvent
 import androidx.xr.runtime.internal.SpatialCapabilities as RuntimeSpatialCapabilities
+import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
 import androidx.xr.runtime.internal.SpatialVisibility as RuntimeSpatialVisibility
 import androidx.xr.runtime.internal.TextureSampler as RuntimeTextureSampler
+import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Matrix4
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.ActivityPose.HitTestFilter
+import androidx.xr.scenecore.ScenePose.HitTestFilter
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -229,23 +233,26 @@ class UtilsTest {
     }
 
     @Test
-    fun verifyRtDimensionsToDimensions() {
-        val dimensions: Dimensions = RuntimeDimensions(2f, 4f, 6f).toDimensions()
+    fun verifyRtDimensionsToFloatSize3d() {
+        val dimensions: FloatSize3d = RuntimeDimensions(2f, 4f, 6f).toFloatSize3d()
+
         assertThat(dimensions.width).isEqualTo(2f)
         assertThat(dimensions.height).isEqualTo(4f)
         assertThat(dimensions.depth).isEqualTo(6f)
     }
 
     @Test
-    fun verifyRtPixelDimensionsToPixelDimensions() {
-        val pixelDimensions: PixelDimensions = RuntimePixelDimensions(14, 15).toPixelDimensions()
+    fun verifyRtPixelDimensionsToIntSize2d() {
+        val pixelDimensions: IntSize2d = RuntimePixelDimensions(14, 15).toIntSize2d()
+
         assertThat(pixelDimensions.width).isEqualTo(14)
         assertThat(pixelDimensions.height).isEqualTo(15)
     }
 
     @Test
-    fun verifyPixelDimensionsToRtPixelDimensions() {
-        val pixelDimensions: PixelDimensions = RuntimePixelDimensions(17, 18).toPixelDimensions()
+    fun verifyIntSize2dToRtPixelDimensions() {
+        val pixelDimensions: IntSize2d = RuntimePixelDimensions(17, 18).toIntSize2d()
+
         assertThat(pixelDimensions.width).isEqualTo(17)
         assertThat(pixelDimensions.height).isEqualTo(18)
     }
@@ -591,10 +598,10 @@ class UtilsTest {
             .thenReturn(mockAnchorPlacement2)
 
         val anchorPlacement1 =
-            AnchorPlacement.createForPlanes(planeTypeFilter = setOf(PlaneType.HORIZONTAL))
+            AnchorPlacement.createForPlanes(planeTypeFilter = setOf(PlaneOrientation.HORIZONTAL))
         val anchorPlacement2 =
             AnchorPlacement.createForPlanes(
-                planeSemanticFilter = setOf(PlaneSemantic.WALL, PlaneSemantic.FLOOR)
+                planeSemanticFilter = setOf(PlaneSemanticType.WALL, PlaneSemanticType.FLOOR)
             )
 
         val rtPlacementSet =
@@ -707,5 +714,69 @@ class UtilsTest {
                 HitTestResult.SurfaceType.PLANE,
                 HitTestResult.SurfaceType.OBJECT,
             )
+    }
+
+    @Test
+    fun spatialPointerIconToRtSpatialPointerIcon_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        SpatialPointerIcon.DEFAULT,
+                        SpatialPointerIcon.NONE,
+                        SpatialPointerIcon.CIRCLE,
+                    )
+                    .map { it.toRtSpatialPointerIcon() }
+            )
+            .containsExactly(
+                RtSpatialPointerIcon.TYPE_DEFAULT,
+                RtSpatialPointerIcon.TYPE_NONE,
+                RtSpatialPointerIcon.TYPE_CIRCLE,
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun rtSpatialPointerIconToInt_convertsCorrectly() {
+        assertThat(
+                listOf(
+                        RtSpatialPointerIcon.TYPE_DEFAULT,
+                        RtSpatialPointerIcon.TYPE_NONE,
+                        RtSpatialPointerIcon.TYPE_CIRCLE,
+                    )
+                    .map { it.toSpatialPointerIcon() }
+            )
+            .containsExactly(
+                SpatialPointerIcon.DEFAULT,
+                SpatialPointerIcon.NONE,
+                SpatialPointerIcon.CIRCLE,
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun rtPerceivedResolutionResultSuccess_convertsCorrectly() {
+        val runtimeSuccess =
+            RuntimePerceivedResolutionResult.Success(RuntimePixelDimensions(100, 200))
+        val result = runtimeSuccess.toPerceivedResolutionResult()
+
+        assertThat(result).isInstanceOf(PerceivedResolutionResult.Success::class.java)
+        val success = result as PerceivedResolutionResult.Success
+        assertThat(success.perceivedResolution.width).isEqualTo(100)
+        assertThat(success.perceivedResolution.height).isEqualTo(200)
+    }
+
+    @Test
+    fun rtPerceivedResolutionResultEntityTooClose_convertsCorrectly() {
+        val runtimeEntityTooClose = RuntimePerceivedResolutionResult.EntityTooClose()
+        val result = runtimeEntityTooClose.toPerceivedResolutionResult()
+
+        assertThat(result).isInstanceOf(PerceivedResolutionResult.EntityTooClose::class.java)
+    }
+
+    @Test
+    fun rtPerceivedResolutionResultInvalidCameraView_convertsCorrectly() {
+        val runtimeInvalidCamera = RuntimePerceivedResolutionResult.InvalidCameraView()
+        val result = runtimeInvalidCamera.toPerceivedResolutionResult()
+
+        assertThat(result).isInstanceOf(PerceivedResolutionResult.InvalidCameraView::class.java)
     }
 }

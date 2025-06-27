@@ -27,8 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusStateImpl.Active
 import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
@@ -63,7 +61,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
-import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -255,9 +252,6 @@ class FocusTargetAttachDetachTest {
 
     @Test
     fun removingActiveItemThatIsBeyondBounds_clearsFocusFromHierarchy() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        assumeTrue(ComposeUiFlags.isClearFocusOnResetEnabled)
-
         // Arrange.
         val item0 = FocusRequester()
         val item1FocusStates = mutableListOf<FocusState>()
@@ -729,9 +723,7 @@ class FocusTargetAttachDetachTest {
 
         // Assert.
         rule.runOnIdle {
-            assertThat(focusTarget1.isInitialized()).isTrue()
             assertThat(focusTarget1.focusState).isEqualTo(Inactive)
-            assertThat(focusTarget2.isInitialized()).isTrue()
             assertThat(focusTarget2.focusState).isEqualTo(Inactive)
         }
     }
@@ -759,11 +751,8 @@ class FocusTargetAttachDetachTest {
 
         // Assert.
         rule.runOnIdle {
-            assertThat(focusTarget1.isInitialized()).isTrue()
             assertThat(focusTarget1.focusState).isEqualTo(Inactive)
-            assertThat(focusTarget2.isInitialized()).isTrue()
             assertThat(focusTarget2.focusState).isEqualTo(Inactive)
-            assertThat(focusTarget3.isInitialized()).isTrue()
             assertThat(focusTarget3.focusState).isEqualTo(Inactive)
         }
     }
@@ -792,7 +781,6 @@ class FocusTargetAttachDetachTest {
 
         // Assert.
         rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(ActiveParent)
             assertThat(focusState).isEqualTo(ActiveParent)
         }
@@ -823,7 +811,6 @@ class FocusTargetAttachDetachTest {
 
         // Assert.
         rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(ActiveParent)
             assertThat(focusState).isEqualTo(ActiveParent)
         }
@@ -1168,7 +1155,7 @@ class FocusTargetAttachDetachTest {
                 KeyEvent(
                     NativeKeyEvent(
                         android.view.KeyEvent.ACTION_DOWN,
-                        android.view.KeyEvent.KEYCODE_ENTER
+                        android.view.KeyEvent.KEYCODE_ENTER,
                     )
                 )
             )
@@ -1225,7 +1212,7 @@ class FocusTargetAttachDetachTest {
                 KeyEvent(
                     NativeKeyEvent(
                         android.view.KeyEvent.ACTION_DOWN,
-                        android.view.KeyEvent.KEYCODE_ENTER
+                        android.view.KeyEvent.KEYCODE_ENTER,
                     )
                 )
             )
@@ -1433,30 +1420,24 @@ class FocusTargetAttachDetachTest {
     }
 
     @Test
-    fun reuseInactiveFocusTarget_stateInitializedToInactive() {
+    fun reuseInactiveFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         var reuseKey by mutableStateOf(0)
         rule.setFocusableContent {
             ReusableContent(reuseKey) { Box(Modifier.then(elementFor(instance = focusTarget))) }
         }
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
 
         // Act.
         rule.runOnIdle { reuseKey = 1 }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     @Test
-    fun reuseActiveFocusTarget_stateInitializedToInactive() {
+    fun reuseActiveFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         val focusRequester = FocusRequester()
@@ -1470,7 +1451,6 @@ class FocusTargetAttachDetachTest {
         }
         rule.runOnIdle {
             focusRequester.requestFocus()
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(Active)
         }
 
@@ -1478,14 +1458,11 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle { reuseKey = 1 }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     @Test
-    fun reuseCapturedFocusTarget_stateInitializedToInactive() {
+    fun reuseCapturedFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         val focusRequester = FocusRequester()
@@ -1500,7 +1477,6 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle {
             focusRequester.requestFocus()
             focusRequester.captureFocus()
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(Captured)
         }
 
@@ -1508,14 +1484,11 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle { reuseKey = 1 }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     @Test
-    fun reuseActiveParentFocusTarget_stateInitializedToInactive() {
+    fun reuseActiveParentFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         val focusRequester = FocusRequester()
@@ -1529,7 +1502,6 @@ class FocusTargetAttachDetachTest {
         }
         rule.runOnIdle {
             focusRequester.requestFocus()
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(ActiveParent)
         }
 
@@ -1537,14 +1509,11 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle { reuseKey = 1 }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     @Test
-    fun moveInactiveFocusTarget_stateInitializedToInactive() {
+    fun moveInactiveFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         var moveContent by mutableStateOf(false)
@@ -1556,23 +1525,17 @@ class FocusTargetAttachDetachTest {
                 Box(Modifier.size(10.dp)) { content() }
             }
         }
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
 
         // Act.
         rule.runOnIdle { moveContent = true }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     @Test
-    fun moveActiveFocusTarget_stateInitializedToInactive() {
+    fun moveActiveFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         val focusRequester = FocusRequester()
@@ -1589,7 +1552,6 @@ class FocusTargetAttachDetachTest {
         }
         rule.runOnIdle {
             focusRequester.requestFocus()
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(Active)
         }
 
@@ -1597,14 +1559,11 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle { moveContent = true }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     @Test
-    fun moveCapturedFocusTarget_stateInitializedToInactive() {
+    fun moveCapturedFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         val focusRequester = FocusRequester()
@@ -1622,7 +1581,6 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle {
             focusRequester.requestFocus()
             focusRequester.captureFocus()
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(Captured)
         }
 
@@ -1630,14 +1588,11 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle { moveContent = true }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     @Test
-    fun moveActiveParentFocusTarget_stateInitializedToInactive() {
+    fun moveActiveParentFocusTarget_stateInactive() {
         // Arrange.
         val focusTarget = FocusTargetNode()
         val focusRequester = FocusRequester()
@@ -1656,7 +1611,6 @@ class FocusTargetAttachDetachTest {
         }
         rule.runOnIdle {
             focusRequester.requestFocus()
-            assertThat(focusTarget.isInitialized()).isTrue()
             assertThat(focusTarget.focusState).isEqualTo(ActiveParent)
         }
 
@@ -1664,10 +1618,7 @@ class FocusTargetAttachDetachTest {
         rule.runOnIdle { moveContent = true }
 
         // Assert.
-        rule.runOnIdle {
-            assertThat(focusTarget.isInitialized()).isTrue()
-            assertThat(focusTarget.focusState).isEqualTo(Inactive)
-        }
+        rule.runOnIdle { assertThat(focusTarget.focusState).isEqualTo(Inactive) }
     }
 
     private inline fun Modifier.thenIf(condition: Boolean, block: () -> Modifier): Modifier {

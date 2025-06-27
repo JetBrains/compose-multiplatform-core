@@ -73,7 +73,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }
@@ -87,7 +87,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_AUTO,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }
@@ -99,14 +99,14 @@ class SensitiveContentModifierTest {
         rule.setContent {
             Text(
                 "Dynamic sensitive Content",
-                modifier = Modifier.sensitiveContent(isContentSensitive)
+                modifier = Modifier.sensitiveContent(isContentSensitive),
             )
             androidComposeView = LocalView.current
         }
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -115,7 +115,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_AUTO,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }
@@ -128,11 +128,11 @@ class SensitiveContentModifierTest {
             Row {
                 Text(
                     "Dynamic sensitive Content",
-                    modifier = if (isContentSensitive) Modifier.sensitiveContent() else Modifier
+                    modifier = if (isContentSensitive) Modifier.sensitiveContent() else Modifier,
                 )
                 Text(
                     "Dynamic sensitive Content",
-                    modifier = if (isContentSensitive2) Modifier.sensitiveContent() else Modifier
+                    modifier = if (isContentSensitive2) Modifier.sensitiveContent() else Modifier,
                 )
             }
             androidComposeView = LocalView.current
@@ -140,7 +140,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -149,7 +149,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -158,7 +158,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_AUTO,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -167,7 +167,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }
@@ -178,14 +178,14 @@ class SensitiveContentModifierTest {
         rule.setContent {
             Text(
                 "Dynamic sensitive Content",
-                modifier = if (isModifierIncluded) Modifier.sensitiveContent() else Modifier
+                modifier = if (isModifierIncluded) Modifier.sensitiveContent() else Modifier,
             )
             androidComposeView = LocalView.current
         }
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -194,7 +194,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_AUTO,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }
@@ -205,14 +205,14 @@ class SensitiveContentModifierTest {
         rule.setContent {
             Text(
                 "Dynamic sensitive Content",
-                modifier = if (isModifierIncluded) Modifier.sensitiveContent() else Modifier
+                modifier = if (isModifierIncluded) Modifier.sensitiveContent() else Modifier,
             )
             androidComposeView = LocalView.current
         }
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_AUTO,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -221,7 +221,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }
@@ -238,7 +238,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -247,7 +247,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_AUTO,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }
@@ -264,7 +264,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_AUTO,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
 
@@ -273,7 +273,7 @@ class SensitiveContentModifierTest {
         rule.runOnIdle {
             Assert.assertEquals(
                 View.CONTENT_SENSITIVITY_SENSITIVE,
-                androidComposeView.getContentSensitivity()
+                androidComposeView.getContentSensitivity(),
             )
         }
     }

@@ -48,7 +48,7 @@ class PlaneStateTest {
     fun fromOpenXrTrackingState_withValidValue_convertsTrackingState() {
         val trackingState: TrackingState = TrackingState.fromOpenXrTrackingState(0)
 
-        assertThat(trackingState).isEqualTo(TrackingState.Paused)
+        assertThat(trackingState).isEqualTo(TrackingState.PAUSED)
     }
 
     @Test

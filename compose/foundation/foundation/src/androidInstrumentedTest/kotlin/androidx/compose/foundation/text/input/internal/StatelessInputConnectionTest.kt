@@ -136,7 +136,7 @@ class StatelessInputConnectionTest {
 
             override fun previewHandwritingGesture(
                 gesture: PreviewableHandwritingGesture,
-                cancellationSignal: CancellationSignal?
+                cancellationSignal: CancellationSignal?,
             ): Boolean {
                 return false
             }
@@ -273,7 +273,7 @@ class StatelessInputConnectionTest {
             ic.commitContent(
                 InputContentInfo(contentUri, description, linkUri),
                 InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION,
-                extras
+                extras,
             )
 
         assertThat(transferableContent).isNotNull()
@@ -340,7 +340,7 @@ class StatelessInputConnectionTest {
                 editorInfo,
                 InputContentInfoCompat(contentUri, description, linkUri),
                 InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION,
-                extras
+                extras,
             )
 
         assertThat(transferableContent).isNotNull()
@@ -375,7 +375,7 @@ class StatelessInputConnectionTest {
                 setSpan(BackgroundColorSpan(Color.BLUE), 3, 5, 0)
                 setSpan(UnderlineSpan(), 0, 5, 0)
             },
-            1
+            1,
         )
 
         assertThat(requestEditsCalled).isEqualTo(1)
@@ -387,18 +387,18 @@ class StatelessInputConnectionTest {
                     AnnotatedString.Range(
                         SpanStyle(background = androidx.compose.ui.graphics.Color.Red),
                         6,
-                        9
+                        9,
                     ),
                     AnnotatedString.Range(
                         SpanStyle(background = androidx.compose.ui.graphics.Color.Blue),
                         9,
-                        11
+                        11,
                     ),
                     AnnotatedString.Range(
                         SpanStyle(textDecoration = TextDecoration.Underline),
                         6,
-                        11
-                    )
+                        11,
+                    ),
                 )
             )
     }
@@ -410,7 +410,7 @@ class StatelessInputConnectionTest {
                 AnnotatedString.Range(
                     SpanStyle(background = androidx.compose.ui.graphics.Color.Red),
                     0,
-                    1
+                    1,
                 )
             )
         val actual =
@@ -429,7 +429,7 @@ class StatelessInputConnectionTest {
                 AnnotatedString.Range(
                     SpanStyle(color = androidx.compose.ui.graphics.Color.Red),
                     0,
-                    1
+                    1,
                 )
             )
         val actual =
@@ -459,7 +459,7 @@ class StatelessInputConnectionTest {
                 AnnotatedString.Range(
                     SpanStyle(fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic),
                     0,
-                    1
+                    1,
                 )
             )
         val actual = buildSpannableString(StyleSpan(Typeface.BOLD_ITALIC)).toAnnotationList()
@@ -526,7 +526,7 @@ class StatelessInputConnectionTest {
         state =
             TransformedTextFieldState(
                 textFieldState = TextFieldState("abc def"),
-                outputTransformation = { insert(4, "ghi ") }
+                outputTransformation = { insert(4, "ghi ") },
             )
         var requestEditsCalled = 0
         onRequestEdit = { block ->
@@ -623,7 +623,7 @@ class StatelessInputConnectionTest {
                     ImeAction.Search,
                     ImeAction.Send,
                     ImeAction.Default, // Unspecified is evaluated back to Default.
-                    ImeAction.Default // Unrecognized is evaluated back to Default.
+                    ImeAction.Default, // Unrecognized is evaluated back to Default.
                 )
             )
     }
@@ -691,7 +691,7 @@ class StatelessInputConnectionTest {
         assertFalse(
             SIC_DEBUG,
             "Oops, looks like you accidentally enabled logging. Don't worry, we've all " +
-                "been there. Just remember to turn it off before you deploy your code."
+                "been there. Just remember to turn it off before you deploy your code.",
         )
     }
 

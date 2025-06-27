@@ -44,7 +44,7 @@ internal actual typealias NativePointerKeyboardModifiers = Int
     CLASSIFICATION_AMBIGUOUS_GESTURE,
     CLASSIFICATION_DEEP_PRESS,
     CLASSIFICATION_TWO_FINGER_SWIPE,
-    CLASSIFICATION_PINCH
+    CLASSIFICATION_PINCH,
 )
 @Retention(AnnotationRetention.SOURCE) // Only for compile-time checks
 internal annotation class MotionEventClassification
@@ -54,7 +54,7 @@ actual class PointerEvent
 internal actual constructor(
     /** The changes. */
     actual val changes: List<PointerInputChange>,
-    internal val internalPointerEvent: InternalPointerEvent?
+    internal val internalPointerEvent: InternalPointerEvent?,
 ) {
     /**
      * The underlying Android [MotionEvent] that triggered this [PointerEvent].
@@ -155,7 +155,7 @@ internal actual constructor(
                             change.pressed,
                             change.pressure,
                             change.type,
-                            this.internalPointerEvent?.activeHoverEvent(change.id) == true
+                            this.internalPointerEvent?.activeHoverEvent(change.id) == true,
                         )
                 }
 

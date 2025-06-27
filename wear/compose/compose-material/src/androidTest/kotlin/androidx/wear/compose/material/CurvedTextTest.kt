@@ -50,7 +50,7 @@ class CurvedTextTest {
                     curvedText(
                         text = testText,
                         color = Color.Red,
-                        style = CurvedTextStyle(color = Color.Blue)
+                        style = CurvedTextStyle(color = Color.Blue),
                     )
                 }
             }
@@ -82,13 +82,7 @@ class CurvedTextTest {
     fun uses_LocalContentColor_as_fallback() {
         rule.setContent {
             CompositionLocalProvider(LocalContentColor provides Color.Yellow) {
-                CurvedLayout {
-                    curvedRow {
-                        curvedText(
-                            text = testText,
-                        )
-                    }
-                }
+                CurvedLayout { curvedRow { curvedText(text = testText) } }
             }
         }
 

@@ -59,7 +59,7 @@ class Bullet(
     val padding: TextUnit,
     val brush: Brush? = null,
     val alpha: Float = Float.NaN,
-    val drawStyle: DrawStyle = Fill
+    val drawStyle: DrawStyle = Fill,
 ) : AnnotatedString.Annotation {
     /** Copies the existing [Bullet] replacing some of the fields as desired. */
     fun copy(
@@ -122,7 +122,7 @@ private object CircleShape : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
-        density: Density
+        density: Density,
     ): Outline {
         val cornerRadius = CornerRadius(size.minDimension / 2f)
         return Outline.Rounded(
@@ -131,7 +131,7 @@ private object CircleShape : Shape {
                 topLeft = cornerRadius,
                 topRight = cornerRadius,
                 bottomRight = cornerRadius,
-                bottomLeft = cornerRadius
+                bottomLeft = cornerRadius,
             )
         )
     }

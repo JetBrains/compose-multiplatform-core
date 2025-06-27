@@ -71,6 +71,8 @@ import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 // TODO link to mio page when available.
@@ -86,8 +88,10 @@ import kotlinx.coroutines.launch
  * A connected button group is a variant of a button group that have leading and trailing buttons
  * that are asymmetric in shape and are used to make a selection.
  *
- * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
  * @sample androidx.compose.material3.samples.SingleSelectConnectedButtonGroupSample
+ * @sample androidx.compose.material3.samples.SingleSelectConnectedButtonGroupWithFlowLayoutSample
+ * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
+ * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupWithFlowLayoutSample
  * @param modifier the [Modifier] to be applied to the button group.
  * @param expandedRatio the percentage, represented by a float, of the width of the interacted child
  *   element that will be used to expand the interacted child element as well as compress the
@@ -109,7 +113,7 @@ import kotlinx.coroutines.launch
         ReplaceWith(
             "ButtonGroup(overflowIndicator, modifier, expandedRatio, horizontalArrangement, content)"
         ),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
 @Composable
 @ExperimentalMaterial3ExpressiveApi
@@ -117,7 +121,7 @@ fun ButtonGroup(
     modifier: Modifier = Modifier,
     @FloatRange(0.0) expandedRatio: Float = ButtonGroupDefaults.ExpandedRatio,
     horizontalArrangement: Arrangement.Horizontal = ButtonGroupDefaults.HorizontalArrangement,
-    content: @Composable ButtonGroupScope.() -> Unit
+    content: @Composable ButtonGroupScope.() -> Unit,
 ) {
     // TODO Load the motionScheme tokens from the component tokens file
     val defaultAnimationSpec = MotionSchemeKeyTokens.FastSpatial.value<Float>()
@@ -127,7 +131,7 @@ fun ButtonGroup(
         remember(horizontalArrangement) {
             NonAdaptiveButtonGroupMeasurePolicy(
                 horizontalArrangement = horizontalArrangement,
-                expandedRatio = expandedRatio
+                expandedRatio = expandedRatio,
             )
         }
 
@@ -148,8 +152,10 @@ fun ButtonGroup(
  * A connected button group is a variant of a button group that have leading and trailing buttons
  * that are asymmetric in shape and are used to make a selection.
  *
- * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
  * @sample androidx.compose.material3.samples.SingleSelectConnectedButtonGroupSample
+ * @sample androidx.compose.material3.samples.SingleSelectConnectedButtonGroupWithFlowLayoutSample
+ * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupSample
+ * @sample androidx.compose.material3.samples.MultiSelectConnectedButtonGroupWithFlowLayoutSample
  * @param overflowIndicator composable that is displayed at the end of the button group if it needs
  *   to overflow. It receives a [ButtonGroupMenuState].
  * @param modifier the [Modifier] to be applied to the button group.
@@ -171,7 +177,7 @@ fun ButtonGroup(
     modifier: Modifier = Modifier,
     @FloatRange(0.0) expandedRatio: Float = ButtonGroupDefaults.ExpandedRatio,
     horizontalArrangement: Arrangement.Horizontal = ButtonGroupDefaults.HorizontalArrangement,
-    content: ButtonGroupScope.() -> Unit
+    content: ButtonGroupScope.() -> Unit,
 ) {
     // TODO Load the motionScheme tokens from the component tokens file
     val defaultAnimationSpec = MotionSchemeKeyTokens.FastSpatial.value<Float>()
@@ -185,7 +191,7 @@ fun ButtonGroup(
             ButtonGroupMeasurePolicy(
                 overflowState = overflowState,
                 horizontalArrangement = horizontalArrangement,
-                expandedRatio = expandedRatio
+                expandedRatio = expandedRatio,
             )
         }
 
@@ -198,7 +204,7 @@ fun ButtonGroup(
                         overflowIndicator(menuState)
                         DropdownMenu(
                             expanded = menuState.isExpanded,
-                            onDismissRequest = { menuState.dismiss() }
+                            onDismissRequest = { menuState.dismiss() },
                         ) {
                             for (i in
                                 overflowState.visibleItemCount until overflowState.totalItemCount) {
@@ -206,10 +212,10 @@ fun ButtonGroup(
                             }
                         }
                     }
-                }
+                },
             ),
         measurePolicy = measurePolicy,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -239,7 +245,7 @@ object ButtonGroupDefaults {
                 topStart = ShapeDefaults.CornerFull,
                 bottomStart = ShapeDefaults.CornerFull,
                 topEnd = ConnectedButtonGroupSmallTokens.InnerCornerCornerSize,
-                bottomEnd = ConnectedButtonGroupSmallTokens.InnerCornerCornerSize
+                bottomEnd = ConnectedButtonGroupSmallTokens.InnerCornerCornerSize,
             )
 
     /** Default shape for the pressed state for the leading button in a connected button group. */
@@ -250,7 +256,7 @@ object ButtonGroupDefaults {
                 topStart = ShapeDefaults.CornerFull,
                 bottomStart = ShapeDefaults.CornerFull,
                 topEnd = ConnectedButtonGroupSmallTokens.PressedInnerCornerCornerSize,
-                bottomEnd = ConnectedButtonGroupSmallTokens.PressedInnerCornerCornerSize
+                bottomEnd = ConnectedButtonGroupSmallTokens.PressedInnerCornerCornerSize,
             )
 
     /** Default shape for the trailing button in a connected button group */
@@ -261,7 +267,7 @@ object ButtonGroupDefaults {
                 topEnd = ShapeDefaults.CornerFull,
                 bottomEnd = ShapeDefaults.CornerFull,
                 topStart = ConnectedButtonGroupSmallTokens.InnerCornerCornerSize,
-                bottomStart = ConnectedButtonGroupSmallTokens.InnerCornerCornerSize
+                bottomStart = ConnectedButtonGroupSmallTokens.InnerCornerCornerSize,
             )
 
     /** Default shape for the pressed state for the trailing button in a connected button group. */
@@ -272,7 +278,7 @@ object ButtonGroupDefaults {
                 topEnd = ShapeDefaults.CornerFull,
                 bottomEnd = ShapeDefaults.CornerFull,
                 topStart = ConnectedButtonGroupSmallTokens.PressedInnerCornerCornerSize,
-                bottomStart = ConnectedButtonGroupSmallTokens.PressedInnerCornerCornerSize
+                bottomStart = ConnectedButtonGroupSmallTokens.PressedInnerCornerCornerSize,
             )
 
     /** Default shape for the checked state for the buttons in a connected button group */
@@ -288,7 +294,7 @@ object ButtonGroupDefaults {
     fun connectedLeadingButtonShapes(
         shape: Shape = connectedLeadingButtonShape,
         pressedShape: Shape = connectedLeadingButtonPressShape,
-        checkedShape: Shape = connectedButtonCheckedShape
+        checkedShape: Shape = connectedButtonCheckedShape,
     ): ToggleButtonShapes =
         ToggleButtonShapes(shape = shape, pressedShape = pressedShape, checkedShape = checkedShape)
 
@@ -300,7 +306,7 @@ object ButtonGroupDefaults {
     fun connectedMiddleButtonShapes(
         shape: Shape = ShapeDefaults.Small,
         pressedShape: Shape = connectedMiddleButtonPressShape,
-        checkedShape: Shape = connectedButtonCheckedShape
+        checkedShape: Shape = connectedButtonCheckedShape,
     ): ToggleButtonShapes =
         ToggleButtonShapes(shape = shape, pressedShape = pressedShape, checkedShape = checkedShape)
 
@@ -309,7 +315,7 @@ object ButtonGroupDefaults {
     fun connectedTrailingButtonShapes(
         shape: Shape = connectedTrailingButtonShape,
         pressedShape: Shape = connectedTrailingButtonPressShape,
-        checkedShape: Shape = connectedButtonCheckedShape
+        checkedShape: Shape = connectedButtonCheckedShape,
     ): ToggleButtonShapes =
         ToggleButtonShapes(shape = shape, pressedShape = pressedShape, checkedShape = checkedShape)
 }
@@ -335,11 +341,11 @@ class ButtonGroupMenuState(initialIsExpanded: Boolean = false) {
 // TODO delete when the overload using this is removed.
 private class NonAdaptiveButtonGroupMeasurePolicy(
     val horizontalArrangement: Arrangement.Horizontal,
-    val expandedRatio: Float
+    val expandedRatio: Float,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val arrangementSpacingInt = horizontalArrangement.spacing.roundToPx()
         val arrangementSpacingPx = arrangementSpacingInt.toLong()
@@ -433,7 +439,7 @@ private class NonAdaptiveButtonGroupMeasurePolicy(
                                 } else {
                                     0
                                 },
-                            maxWidth = childMainAxisSize
+                            maxWidth = childMainAxisSize,
                         )
 
                     childrenMainAxisSize[i] = childMainAxisSize
@@ -482,7 +488,7 @@ private class NonAdaptiveButtonGroupMeasurePolicy(
                 placeable.measure(
                     (childrenConstraints[index] ?: constraints).copy(
                         minWidth = widths[index],
-                        maxWidth = widths[index]
+                        maxWidth = widths[index],
                     )
                 )
             }
@@ -496,7 +502,7 @@ private class NonAdaptiveButtonGroupMeasurePolicy(
                 mainAxisLayoutSize,
                 childrenMainAxisSize,
                 measureScope.layoutDirection,
-                mainAxisPositions
+                mainAxisPositions,
             )
         }
 
@@ -528,11 +534,11 @@ private class NonAdaptiveButtonGroupMeasurePolicy(
 private class ButtonGroupMeasurePolicy(
     val overflowState: ButtonGroupOverflowState,
     val horizontalArrangement: Arrangement.Horizontal,
-    val expandedRatio: Float
+    val expandedRatio: Float,
 ) : MultiContentMeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<List<Measurable>>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val (contentMeasurables, overflowMeasurables) = measurables
         overflowState.totalItemCount = contentMeasurables.size
@@ -629,7 +635,7 @@ private class ButtonGroupMeasurePolicy(
                                 } else {
                                     0
                                 },
-                            maxWidth = childMainAxisSize
+                            maxWidth = childMainAxisSize,
                         )
 
                     childrenMainAxisSize[i] = childMainAxisSize
@@ -720,15 +726,14 @@ private class ButtonGroupMeasurePolicy(
                 contentMeasurables[index].measure(
                     (childrenConstraints[index] ?: constraints).copy(
                         minWidth = widths[index],
-                        maxWidth = widths[index]
+                        maxWidth = widths[index],
                     )
                 )
             )
         }
 
         // Compute the row size and position the children.
-        val mainAxisLayoutSize = min(mainSpace.coerceAtLeast(0), mainAxisMax)
-
+        val mainAxisLayoutSize = max(mainSpace.coerceAtLeast(0), mainAxisMin)
         val mainAxisPositions = IntArray(lastItem)
         val measureScope = this
         with(horizontalArrangement) {
@@ -736,7 +741,7 @@ private class ButtonGroupMeasurePolicy(
                 mainAxisLayoutSize,
                 childrenMainAxisSize.sliceArray(0..lastItem - 1),
                 measureScope.layoutDirection,
-                mainAxisPositions
+                mainAxisPositions,
             )
         }
 
@@ -788,7 +793,7 @@ interface ButtonGroupScope {
     @Deprecated("For binary compatibility", level = DeprecationLevel.HIDDEN)
     fun Modifier.weight(
         @FloatRange(from = 0.0, fromInclusive = false) weight: Float,
-        fill: Boolean = true
+        fill: Boolean = true,
     ): Modifier
 
     /**
@@ -823,7 +828,7 @@ interface ButtonGroupScope {
         label: String,
         icon: (@Composable () -> Unit)? = null,
         weight: Float = Float.NaN,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     )
 
     /**
@@ -842,7 +847,7 @@ interface ButtonGroupScope {
         onCheckedChange: (Boolean) -> Unit,
         icon: (@Composable () -> Unit)? = null,
         weight: Float = Float.NaN,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     )
 
     /**
@@ -867,7 +872,7 @@ internal val ButtonGroupParentData?.weight: Float
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal data class ButtonGroupParentData(
     var weight: Float = 0f,
-    var pressedAnimatable: Animatable<Float, AnimationVector1D> = Animatable(0f)
+    var pressedAnimatable: Animatable<Float, AnimationVector1D> = Animatable(0f),
 )
 
 internal class ButtonGroupElement(val weight: Float = 0f) : ModifierNodeElement<ButtonGroupNode>() {
@@ -938,7 +943,7 @@ internal class EnlargeOnPressElement(
 
 internal class EnlargeOnPressNode(
     var interactionSource: InteractionSource,
-    var animationSpec: AnimationSpec<Float>
+    var animationSpec: AnimationSpec<Float>,
 ) : ParentDataModifierNode, Modifier.Node() {
     private val pressedAnimatable: Animatable<Float, AnimationVector1D> = Animatable(0f)
 
@@ -959,23 +964,28 @@ internal class EnlargeOnPressNode(
         collectionJob?.cancel()
         collectionJob =
             coroutineScope.launch {
+                val pressInteractions = mutableListOf<PressInteraction.Press>()
                 launch {
-                    // Use collect here to ensure we don't lose any events.
-                    interactionSource.interactions.collectLatest { interaction ->
-                        when (interaction) {
-                            is PressInteraction.Press -> {
-                                coroutineScope.launch {
-                                    pressedAnimatable.animateTo(1f, animationSpec)
-                                }
+                    interactionSource.interactions
+                        .map { interaction ->
+                            when (interaction) {
+                                is PressInteraction.Press -> pressInteractions.add(interaction)
+                                is PressInteraction.Release ->
+                                    pressInteractions.remove(interaction.press)
+                                is PressInteraction.Cancel ->
+                                    pressInteractions.remove(interaction.press)
                             }
-                            is PressInteraction.Release,
-                            is PressInteraction.Cancel -> {
-                                coroutineScope.launch {
-                                    pressedAnimatable.animateTo(0f, animationSpec)
-                                }
+                            pressInteractions.isNotEmpty()
+                        }
+                        .distinctUntilChanged()
+                        .collectLatest { pressed ->
+                            if (pressed) {
+                                launch { pressedAnimatable.animateTo(1f, animationSpec) }
+                            } else {
+                                waitUntil { pressedAnimatable.value > 0.75f }
+                                pressedAnimatable.animateTo(0f, animationSpec)
                             }
                         }
-                    }
                 }
             }
     }
@@ -1006,7 +1016,7 @@ internal class ClickableButtonGroupItem(
     private val modifier: Modifier,
     private val interactionSource: MutableInteractionSource,
     private val enabled: Boolean,
-    private val label: String
+    private val label: String,
 ) : ButtonGroupItem {
 
     @Composable
@@ -1015,7 +1025,7 @@ internal class ClickableButtonGroupItem(
             onClick = onClick,
             modifier = modifier,
             interactionSource = interactionSource,
-            enabled = enabled
+            enabled = enabled,
         ) {
             icon?.let {
                 it.invoke()
@@ -1034,7 +1044,7 @@ internal class ClickableButtonGroupItem(
             onClick = {
                 onClick()
                 state.dismiss()
-            }
+            },
         )
     }
 }
@@ -1047,7 +1057,7 @@ internal class ToggleableButtonGroupItem(
     private val interactionSource: MutableInteractionSource,
     private val icon: (@Composable () -> Unit)?,
     private val enabled: Boolean,
-    private val label: String
+    private val label: String,
 ) : ButtonGroupItem {
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -1077,7 +1087,7 @@ internal class ToggleableButtonGroupItem(
             onClick = {
                 onCheckedChange(!checked)
                 state.dismiss()
-            }
+            },
         )
     }
 }
@@ -1117,6 +1127,15 @@ private fun rememberOverflowState(): ButtonGroupOverflowState {
     return rememberSaveable(saver = OverflowStateImpl.Saver) { OverflowStateImpl() }
 }
 
+private suspend fun waitUntil(condition: () -> Boolean) {
+    val initialTimeMillis = withFrameMillis { it }
+    while (!condition()) {
+        val timeMillis = withFrameMillis { it }
+        if (timeMillis - initialTimeMillis > MAX_WAIT_TIME_MILLIS) return
+    }
+    return
+}
+
 /** Implementation of [ButtonGroupOverflowState]. */
 private class OverflowStateImpl : ButtonGroupOverflowState {
     override var totalItemCount: Int by mutableIntStateOf(0)
@@ -1131,7 +1150,7 @@ private class OverflowStateImpl : ButtonGroupOverflowState {
                         totalItemCount = it[0]
                         visibleItemCount = it[1]
                     }
-                }
+                },
             )
     }
 }
@@ -1145,7 +1164,7 @@ private class OverflowStateImpl : ButtonGroupOverflowState {
 @Composable
 private fun rememberButtonGroupScopeState(
     content: ButtonGroupScope.() -> Unit,
-    animationSpec: AnimationSpec<Float>
+    animationSpec: AnimationSpec<Float>,
 ): State<ButtonGroupScopeImpl> {
     val latestContent = rememberUpdatedState(content)
     return remember {
@@ -1176,7 +1195,7 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
         label: String,
         icon: (@Composable (() -> Unit))?,
         weight: Float,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         val interactionSource = MutableInteractionSource()
         items.add(
@@ -1205,7 +1224,7 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
         onCheckedChange: (Boolean) -> Unit,
         icon: (@Composable (() -> Unit))?,
         weight: Float,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         val interactionSource = MutableInteractionSource()
         items.add(
@@ -1253,7 +1272,9 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
         this.then(
             EnlargeOnPressElement(
                 interactionSource = interactionSource,
-                animationSpec = animationSpec
+                animationSpec = animationSpec,
             )
         )
 }
+
+private const val MAX_WAIT_TIME_MILLIS = 1_000L

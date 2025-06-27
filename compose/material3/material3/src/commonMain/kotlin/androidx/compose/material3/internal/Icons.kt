@@ -39,7 +39,7 @@ internal object Icons {
                     _keyboardArrowLeft =
                         materialIcon(
                             name = "AutoMirrored.Filled.KeyboardArrowLeft",
-                            autoMirror = true
+                            autoMirror = true,
                         ) {
                             materialPath {
                                 moveTo(15.41f, 16.59f)
@@ -65,7 +65,7 @@ internal object Icons {
                     _keyboardArrowRight =
                         materialIcon(
                             name = "AutoMirrored.Filled.KeyboardArrowRight",
-                            autoMirror = true
+                            autoMirror = true,
                         ) {
                             materialPath {
                                 moveTo(8.59f, 16.59f)
@@ -368,22 +368,7 @@ internal object Icons {
 
 private inline fun materialIcon(
     name: String,
-    block: ImageVector.Builder.() -> ImageVector.Builder
-): ImageVector =
-    ImageVector.Builder(
-            name = name,
-            defaultWidth = MaterialIconDimension.dp,
-            defaultHeight = MaterialIconDimension.dp,
-            viewportWidth = MaterialIconDimension,
-            viewportHeight = MaterialIconDimension
-        )
-        .block()
-        .build()
-
-private inline fun materialIcon(
-    name: String,
-    autoMirror: Boolean = false,
-    block: ImageVector.Builder.() -> ImageVector.Builder
+    block: ImageVector.Builder.() -> ImageVector.Builder,
 ): ImageVector =
     ImageVector.Builder(
             name = name,
@@ -391,7 +376,22 @@ private inline fun materialIcon(
             defaultHeight = MaterialIconDimension.dp,
             viewportWidth = MaterialIconDimension,
             viewportHeight = MaterialIconDimension,
-            autoMirror = autoMirror
+        )
+        .block()
+        .build()
+
+private inline fun materialIcon(
+    name: String,
+    autoMirror: Boolean = false,
+    block: ImageVector.Builder.() -> ImageVector.Builder,
+): ImageVector =
+    ImageVector.Builder(
+            name = name,
+            defaultWidth = MaterialIconDimension.dp,
+            defaultHeight = MaterialIconDimension.dp,
+            viewportWidth = MaterialIconDimension,
+            viewportHeight = MaterialIconDimension,
+            autoMirror = autoMirror,
         )
         .block()
         .build()
@@ -400,7 +400,7 @@ private inline fun ImageVector.Builder.materialPath(
     fillAlpha: Float = 1f,
     strokeAlpha: Float = 1f,
     pathFillType: PathFillType = DefaultFillType,
-    pathBuilder: PathBuilder.() -> Unit
+    pathBuilder: PathBuilder.() -> Unit,
 ) =
     path(
         fill = SolidColor(Color.Black),
@@ -412,7 +412,7 @@ private inline fun ImageVector.Builder.materialPath(
         strokeLineJoin = StrokeJoin.Bevel,
         strokeLineMiter = 1f,
         pathFillType = pathFillType,
-        pathBuilder = pathBuilder
+        pathBuilder = pathBuilder,
     )
 
 // All Material icons (currently) are 24dp by 24dp, with a viewport size of 24 by 24.

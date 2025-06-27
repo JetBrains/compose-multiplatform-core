@@ -25,11 +25,13 @@ import android.os.Build;
 import androidx.annotation.DoNotInline;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -138,12 +140,12 @@ public final class SchemaToPlatformConverter {
             // Check joinable value type.
             if (stringProperty.getJoinableValueType()
                     == AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                     throw new UnsupportedOperationException(
                         "StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID is not supported"
                                 + " on this AppSearch implementation.");
                 }
-                ApiHelperForU.setJoinableValueType(platformBuilder,
+                ApiHelperForSdkExtensionUBase.setJoinableValueType(platformBuilder,
                         stringProperty.getJoinableValueType());
             }
 
@@ -222,13 +224,13 @@ public final class SchemaToPlatformConverter {
                             .setShouldIndexNestedProperties(
                                     documentProperty.shouldIndexNestedProperties());
             if (!documentProperty.getIndexableNestedProperties().isEmpty()) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                     throw new UnsupportedOperationException(
                             "DocumentPropertyConfig.addIndexableNestedProperties is not supported "
                                     + "on this AppSearch implementation.");
                 }
-                ApiHelperForV.addIndexableNestedProperties(
-                        platformBuilder, documentProperty.getIndexableNestedProperties());
+                ApiHelperForSdkExtensionVBase.addIndexableNestedProperties(platformBuilder,
+                        documentProperty.getIndexableNestedProperties());
             }
             return platformBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.EmbeddingPropertyConfig) {
@@ -270,9 +272,9 @@ public final class SchemaToPlatformConverter {
                             .setCardinality(stringProperty.getCardinality())
                             .setIndexingType(stringProperty.getIndexingType())
                             .setTokenizerType(stringProperty.getTokenizerType());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                 jetpackBuilder.setJoinableValueType(
-                        ApiHelperForU.getJoinableValueType(stringProperty));
+                        ApiHelperForSdkExtensionUBase.getJoinableValueType(stringProperty));
             }
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             // available in platform.
@@ -328,9 +330,9 @@ public final class SchemaToPlatformConverter {
                             .setCardinality(documentProperty.getCardinality())
                             .setShouldIndexNestedProperties(
                                     documentProperty.shouldIndexNestedProperties());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                List<String> indexableNestedProperties =
-                        ApiHelperForV.getIndexableNestedProperties(documentProperty);
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.V_BASE) {
+                List<String> indexableNestedProperties = ApiHelperForSdkExtensionVBase
+                        .getIndexableNestedProperties(documentProperty);
                 jetpackBuilder.addIndexableNestedProperties(indexableNestedProperties);
             }
             return jetpackBuilder.build();
@@ -348,9 +350,11 @@ public final class SchemaToPlatformConverter {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private static class ApiHelperForU {
-        private ApiHelperForU() {
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.U_BASE)
+    private static class ApiHelperForSdkExtensionUBase {
+        private ApiHelperForSdkExtensionUBase() {
             // This class is not instantiable.
         }
 
@@ -369,6 +373,13 @@ public final class SchemaToPlatformConverter {
         static int getJoinableValueType(
                 android.app.appsearch.AppSearchSchema.StringPropertyConfig stringPropertyConfig) {
             return stringPropertyConfig.getJoinableValueType();
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private static class ApiHelperForU {
+        private ApiHelperForU() {
+            // This class is not instantiable.
         }
 
         @DoNotInline
@@ -390,6 +401,31 @@ public final class SchemaToPlatformConverter {
     }
 
 
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static void addIndexableNestedProperties(
+                android.app.appsearch.AppSearchSchema.DocumentPropertyConfig.Builder
+                        platformBuilder,
+                @NonNull Collection<String> indexableNestedProperties) {
+            platformBuilder.addIndexableNestedProperties(indexableNestedProperties);
+        }
+
+
+        @DoNotInline
+        static List<String> getIndexableNestedProperties(
+                android.app.appsearch.AppSearchSchema.DocumentPropertyConfig
+                        platformDocumentProperty) {
+            return platformDocumentProperty.getIndexableNestedProperties();
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private static class ApiHelperForV {
         private ApiHelperForV() {}
@@ -403,23 +439,8 @@ public final class SchemaToPlatformConverter {
         }
 
         @DoNotInline
-        static void addIndexableNestedProperties(
-                android.app.appsearch.AppSearchSchema.DocumentPropertyConfig.Builder
-                        platformBuilder,
-                @NonNull Collection<String> indexableNestedProperties) {
-            platformBuilder.addIndexableNestedProperties(indexableNestedProperties);
-        }
-
-        @DoNotInline
         static List<String> getParentTypes(android.app.appsearch.AppSearchSchema platformSchema) {
             return platformSchema.getParentTypes();
-        }
-
-        @DoNotInline
-        static List<String> getIndexableNestedProperties(
-                android.app.appsearch.AppSearchSchema.DocumentPropertyConfig
-                        platformDocumentProperty) {
-            return platformDocumentProperty.getIndexableNestedProperties();
         }
     }
 
@@ -443,8 +464,7 @@ public final class SchemaToPlatformConverter {
 
         @DoNotInline
         @SuppressLint("WrongConstant")
-        static AppSearchSchema.EmbeddingPropertyConfig
-                createJetpackEmbeddingPropertyConfig(
+        static AppSearchSchema.EmbeddingPropertyConfig createJetpackEmbeddingPropertyConfig(
                 android.app.appsearch.AppSearchSchema.@NonNull EmbeddingPropertyConfig
                         platformEmbeddingProperty) {
             return new AppSearchSchema.EmbeddingPropertyConfig.Builder(

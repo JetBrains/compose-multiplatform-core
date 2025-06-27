@@ -66,7 +66,7 @@ class Fts3TableEntityProcessorTest : BaseFtsEntityParserTest() {
         ) { entity, invocation ->
             assertThat(
                 entity.type.asTypeName().toString(CodeLanguage.JAVA),
-                `is`("foo.bar.MyEntity")
+                `is`("foo.bar.MyEntity"),
             )
             assertThat(entity.properties.size, `is`(1))
             val field = entity.properties.first()
@@ -79,17 +79,17 @@ class Fts3TableEntityProcessorTest : BaseFtsEntityParserTest() {
                         name = "rowId",
                         type = intType,
                         columnName = "rowid",
-                        affinity = SQLTypeAffinity.INTEGER
+                        affinity = SQLTypeAffinity.INTEGER,
                     )
-                )
+                ),
             )
             assertThat(
                 field.setter,
-                `is`(PropertySetter("rowId", "setRowId", intType, CallType.FUNCTION))
+                `is`(PropertySetter("rowId", "setRowId", intType, CallType.FUNCTION)),
             )
             assertThat(
                 field.getter,
-                `is`(PropertyGetter("rowId", "getRowId", intType, CallType.FUNCTION))
+                `is`(PropertyGetter("rowId", "getRowId", intType, CallType.FUNCTION)),
             )
             assertThat(entity.primaryKey.properties, `is`(Properties(field)))
             assertThat(entity.shadowTableName, `is`("MyEntity_content"))
@@ -184,7 +184,7 @@ class Fts3TableEntityProcessorTest : BaseFtsEntityParserTest() {
                 public int getRowId() { return rowId; }
                 public void setRowId(int id) { this.rowId = rowId; }
                 """,
-            ftsAttributes = hashMapOf("tokenizer" to "FtsOptions.TOKENIZER_PORTER")
+            ftsAttributes = hashMapOf("tokenizer" to "FtsOptions.TOKENIZER_PORTER"),
         ) { entity, _ ->
             assertThat(entity.ftsOptions.tokenizer, `is`(FtsOptions.TOKENIZER_PORTER))
         }
@@ -200,7 +200,7 @@ class Fts3TableEntityProcessorTest : BaseFtsEntityParserTest() {
                 public int getRowId() { return rowId; }
                 public void setRowId(int id) { this.rowId = rowId; }
                 """,
-            ftsAttributes = hashMapOf("tokenizer" to "\"customICU\"")
+            ftsAttributes = hashMapOf("tokenizer" to "\"customICU\""),
         ) { entity, _ ->
             assertThat(entity.ftsOptions.tokenizer, `is`("customICU"))
         }

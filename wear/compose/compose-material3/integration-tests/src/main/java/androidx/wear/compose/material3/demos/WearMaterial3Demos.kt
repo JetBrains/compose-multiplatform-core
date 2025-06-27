@@ -37,10 +37,11 @@ import androidx.wear.compose.material3.samples.LevelIndicatorSample
 import androidx.wear.compose.material3.samples.ListHeaderSample
 import androidx.wear.compose.material3.samples.SimpleSwipeToDismissBox
 import androidx.wear.compose.material3.samples.StatefulSwipeToDismissBox
-import androidx.wear.compose.material3.samples.SwipeToRevealNonAnchoredSample
+import androidx.wear.compose.material3.samples.SwipeToRevealNoPartiallyRevealedStateSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSample
 import androidx.wear.compose.material3.samples.SwipeToRevealSingleActionCardSample
-import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnSample
+import androidx.wear.compose.material3.samples.SwipeToRevealWithScalingLazyColumnResetOnScrollSample
+import androidx.wear.compose.material3.samples.SwipeToRevealWithTransformingLazyColumnResetOnScrollSample
 import androidx.wear.compose.material3.samples.TitleCardWithImageWithTimeAndTitleSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnAnimationSample
 import androidx.wear.compose.material3.samples.TransformingLazyColumnExpandableCardSample
@@ -76,7 +77,7 @@ val WearMaterial3Demos =
                         ComposableDemo("Fading Expanding Label") {
                             FadingExpandingLabelButtonSample()
                         },
-                    )
+                    ),
                 ),
                 ComposableDemo("Color Scheme") { ColorSchemeDemos() },
                 ComposableDemo("Dynamic Color Scheme") { DynamicColorSchemeDemos() },
@@ -104,7 +105,7 @@ val WearMaterial3Demos =
                         ComposableDemo("Edge Button Below TLC") {
                             EdgeButtonBelowTransformingLazyColumnDemo()
                         },
-                    )
+                    ),
                 ),
                 Material3DemoCategory(
                     "Button Group",
@@ -113,9 +114,15 @@ val WearMaterial3Demos =
                         ComposableDemo("ABC") { Centralize { ButtonGroupThreeButtonsSample() } },
                         ComposableDemo("Text And Icon") { ButtonGroupDemo() },
                         ComposableDemo("ToggleButtons") { ButtonGroupToggleButtonsDemo() },
-                    )
+                    ),
                 ),
-                ComposableDemo("List Header") { Centralize { ListHeaderSample() } },
+                Material3DemoCategory(
+                    "List Header",
+                    listOf(
+                        ComposableDemo("List headers") { ListHeaderSample() },
+                        ComposableDemo("Long list headers") { ListHeaderDemo() },
+                    ),
+                ),
                 Material3DemoCategory("Time Text", TimeTextDemos),
                 Material3DemoCategory(
                     "Card",
@@ -128,8 +135,8 @@ val WearMaterial3Demos =
                         ComposableDemo("Image Card") {
                             Centralize { TitleCardWithImageWithTimeAndTitleSample() }
                         },
-                        ComposableDemo("Image Card Builder") { ImageCardBuilder() }
-                    )
+                        ComposableDemo("Image Card Builder") { ImageCardBuilder() },
+                    ),
                 ),
                 ComposableDemo("Text Toggle Button") { TextToggleButtonDemo() },
                 ComposableDemo("Icon Toggle Button") { IconToggleButtonDemo() },
@@ -146,7 +153,7 @@ val WearMaterial3Demos =
                 *(if (Build.VERSION.SDK_INT >= 26)
                     arrayOf(
                         Material3DemoCategory("TimePicker", TimePickerDemos),
-                        Material3DemoCategory("DatePicker", DatePickerDemos)
+                        Material3DemoCategory("DatePicker", DatePickerDemos),
                     )
                 else emptyArray<Material3DemoCategory>()),
                 Material3DemoCategory("Progress Indicator", ProgressIndicatorDemos),
@@ -157,20 +164,18 @@ val WearMaterial3Demos =
                     listOf(
                         ComposableDemo("Simple") { SimpleSwipeToDismissBox(it.navigateBack) },
                         ComposableDemo("Stateful") { StatefulSwipeToDismissBox() },
-                        ComposableDemo("Edge swipe") {
-                            EdgeSwipeForSwipeToDismiss(it.navigateBack)
-                        },
-                    )
+                        ComposableDemo("Edge swipe") { EdgeSwipeForSwipeToDismiss(it.navigateBack) },
+                    ),
                 ),
                 Material3DemoCategory(title = "Page Indicator", PageIndicatorDemos),
                 Material3DemoCategory(
                     title = "Swipe to Reveal",
                     listOf(
-                        ComposableDemo("Single Action with Anchoring") {
-                            SwipeToRevealSingleButtonWithAnchoring()
+                        ComposableDemo("Single Action with partial reveal") {
+                            SwipeToRevealSingleButtonWithPartialReveal()
                         },
-                        ComposableDemo("Bi-directional / Non-anchoring") {
-                            SwipeToRevealBothDirectionsNonAnchoring()
+                        ComposableDemo("Bi-directional / No partial reveal") {
+                            SwipeToRevealBothDirectionsNoPartialReveal()
                         },
                         ComposableDemo("Bi-directional Two Actions") {
                             SwipeToRevealBothDirections()
@@ -186,17 +191,31 @@ val WearMaterial3Demos =
                             SwipeToRevealInScalingLazyColumn()
                         },
                         ComposableDemo("In TransformingLazyColumn") {
-                            SwipeToRevealWithTransformingLazyColumnSample()
+                            SwipeToRevealWithTransformingLazyColumnNoResetOnScrollDemo()
                         },
-                        ComposableDemo("Non-anchoring") {
-                            ScalingLazyDemo { item { SwipeToRevealNonAnchoredSample() } }
+                        ComposableDemo("In TLC, with icon action") {
+                            SwipeToRevealWithTransformingLazyColumnIconActionNoResetOnScrollDemo()
+                        },
+                        ComposableDemo("In TLC with expansions and deletions") {
+                            SwipeToRevealWithTransformingLazyColumnExpansionAndDeletionDemo()
+                        },
+                        ComposableDemo("In TLC, with reset on scroll") {
+                            SwipeToRevealWithTransformingLazyColumnResetOnScrollSample()
+                        },
+                        ComposableDemo("In SLC, with reset on scroll") {
+                            SwipeToRevealWithScalingLazyColumnResetOnScrollSample()
+                        },
+                        ComposableDemo("No Partial Reveal") {
+                            ScalingLazyDemo {
+                                item { SwipeToRevealNoPartiallyRevealedStateSample() }
+                            }
                         },
                         ComposableDemo("Long labels") { SwipeToRevealWithLongLabels() },
                         ComposableDemo("Custom Icons") { SwipeToRevealWithCustomIcons() },
                         ComposableDemo("With edgeSwipeToDismiss") { params ->
                             SwipeToRevealWithEdgeSwipeToDismiss(params.swipeToDismissBoxState)
                         },
-                    )
+                    ),
                 ),
                 Material3DemoCategory(
                     "Animated Text",
@@ -214,7 +233,7 @@ val WearMaterial3Demos =
                         )
                     } else {
                         emptyList()
-                    }
+                    },
                 ),
                 ComposableDemo("Settings Demo") { SettingsDemo() },
                 Material3DemoCategory(
@@ -222,6 +241,9 @@ val WearMaterial3Demos =
                     listOf(
                         ComposableDemo("Notifications") {
                             TransformingLazyColumnNotificationsDemo()
+                        },
+                        ComposableDemo("Morphing Notifications") {
+                            TransformingLazyColumnMorphingNotificationsDemo()
                         },
                         ComposableDemo("Expandable Cards") {
                             TransformingLazyColumnExpandableCardSample()
@@ -233,11 +255,11 @@ val WearMaterial3Demos =
                         ComposableDemo("Reduced Motion") {
                             TransformingLazyColumnReducedMotionSample()
                         },
-                    )
+                    ),
                 ),
-                ComposableDemo("Text") { TextWeightDemo() }
+                ComposableDemo("Text") { TextWeightDemo() },
             )
-            .sortedBy { it.title }
+            .sortedBy { it.title },
     )
 
 internal fun showOnClickToast(context: Context) {

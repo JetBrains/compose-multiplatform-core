@@ -57,7 +57,7 @@ class WindowSizeClass(
     /** Returns the lower bound for the width of the size class in dp. */
     val minWidthDp: Int,
     /** Returns the lower bound for the height of the size class in dp. */
-    val minHeightDp: Int
+    val minHeightDp: Int,
 ) {
 
     /** A convenience constructor that will truncate to ints. */
@@ -174,7 +174,7 @@ class WindowSizeClass(
 
         private fun createBreakpointSet(
             widthBreakpoints: List<Int>,
-            heightBreakpoints: List<Int>
+            heightBreakpoints: List<Int>,
         ): Set<WindowSizeClass> {
             return widthBreakpoints
                 .flatMap { widthBp ->
@@ -216,8 +216,8 @@ class WindowSizeClass(
             "Use computeWindowSizeClass instead.",
             ReplaceWith(
                 "BREAKPOINTS_V1.computeWindowSizeClass(widthDp = dpWidth, heightDp = dpHeight)",
-                "androidx.window.core.layout.computeWindowSizeClass"
-            )
+                "androidx.window.core.layout.computeWindowSizeClass",
+            ),
         )
         fun compute(dpWidth: Float, dpHeight: Float): WindowSizeClass {
             val widthDp =

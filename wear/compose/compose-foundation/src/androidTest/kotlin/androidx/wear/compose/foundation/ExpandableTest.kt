@@ -57,7 +57,7 @@ class ExpandableTest {
     fun initially_collapsed() =
         verifyExpandable(
             setupState = { rememberExpandableState(initiallyExpanded = false) },
-            bitmapAssert = { assertDoesContainColor(COLLAPSED_COLOR) }
+            bitmapAssert = { assertDoesContainColor(COLLAPSED_COLOR) },
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -65,7 +65,7 @@ class ExpandableTest {
     fun initially_expanded() =
         verifyExpandable(
             setupState = { rememberExpandableState(initiallyExpanded = true) },
-            bitmapAssert = { assertDoesContainColor(EXPANDED_COLOR) }
+            bitmapAssert = { assertDoesContainColor(EXPANDED_COLOR) },
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -73,7 +73,7 @@ class ExpandableTest {
     fun expand() =
         verifyExpandable(
             setupState = { rememberExpandableState(initiallyExpanded = false) },
-            bitmapAssert = { assertDoesContainColor(EXPANDED_COLOR) }
+            bitmapAssert = { assertDoesContainColor(EXPANDED_COLOR) },
         ) { state ->
             state.expanded = true
             waitForIdle()
@@ -84,7 +84,7 @@ class ExpandableTest {
     fun collapse() =
         verifyExpandable(
             setupState = { rememberExpandableState(initiallyExpanded = true) },
-            bitmapAssert = { assertDoesContainColor(COLLAPSED_COLOR) }
+            bitmapAssert = { assertDoesContainColor(COLLAPSED_COLOR) },
         ) { state ->
             state.expanded = false
             waitForIdle()
@@ -124,7 +124,7 @@ class ExpandableTest {
             bitmapAssert = { assertEquals(listOf(initiallyExpanded), clicked) },
             expandableContent = { expanded ->
                 Box(modifier = Modifier.fillMaxSize().clickable { clicked.add(expanded) })
-            }
+            },
         ) { _ ->
             onNodeWithTag(TEST_TAG).performClick()
             waitForIdle()
@@ -136,7 +136,7 @@ class ExpandableTest {
         setupState: @Composable () -> ExpandableState,
         bitmapAssert: ImageBitmap.() -> Unit,
         expandableContent: @Composable (Boolean) -> Unit = {},
-        act: ComposeTestRule.(ExpandableState) -> Unit = {}
+        act: ComposeTestRule.(ExpandableState) -> Unit = {},
     ) {
         // Arrange - set up the content for the test including expandable content
         var slcState: ScalingLazyListState? = null

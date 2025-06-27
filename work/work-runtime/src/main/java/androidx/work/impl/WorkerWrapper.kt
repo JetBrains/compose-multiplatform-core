@@ -65,8 +65,8 @@ import kotlinx.coroutines.withContext
  * Worker, and then calls it.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class WorkerWrapper internal constructor(builder: Builder) {
-    val workSpec: WorkSpec = builder.workSpec
+public class WorkerWrapper internal constructor(builder: Builder) {
+    public val workSpec: WorkSpec = builder.workSpec
     private val appContext: Context = builder.appContext
     private val workSpecId: String = workSpec.id
     private val runtimeExtras: WorkerParameters.RuntimeExtras = builder.runtimeExtras
@@ -85,10 +85,10 @@ class WorkerWrapper internal constructor(builder: Builder) {
 
     private val workerJob = Job()
 
-    val workGenerationalId: WorkGenerationalId
+    public val workGenerationalId: WorkGenerationalId
         get() = workSpec.generationalId()
 
-    fun launch(): ListenableFuture<Boolean> =
+    public fun launch(): ListenableFuture<Boolean> =
         launchFuture(workTaskExecutor.taskCoroutineDispatcher + Job()) {
             val resolution: Resolution =
                 try {
@@ -136,7 +136,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
                 // Use hashCode() instead of a generational id given we want to allow concurrent
                 // execution of Workers with the same name. Additionally `generation` is already
                 // a part of the WorkSpec's hashCode.
-                workSpec.hashCode()
+                workSpec.hashCode(),
             )
         }
         // Needed for nested transactions, such as when we're in a dependent work request when
@@ -223,7 +223,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
                 workTaskExecutor,
                 configuration.workerFactory,
                 WorkProgressUpdater(workDatabase, workTaskExecutor),
-                WorkForegroundUpdater(workDatabase, foregroundProcessor, workTaskExecutor)
+                WorkForegroundUpdater(workDatabase, foregroundProcessor, workTaskExecutor),
             )
 
         // Not always creating a worker here, as the WorkerWrapper.Builder can set a worker override
@@ -234,14 +234,14 @@ class WorkerWrapper internal constructor(builder: Builder) {
                     configuration.workerFactory.createWorkerWithDefaultFallback(
                         appContext,
                         workSpec.workerClassName,
-                        params
+                        params,
                     )
                 } catch (e: Throwable) {
                     loge(TAG) { "Could not create Worker ${workSpec.workerClassName}" }
 
                     configuration.workerInitializationExceptionHandler?.safeAccept(
                         WorkerExceptionInfo(workSpec.workerClassName, params, e),
-                        TAG
+                        TAG,
                     )
                     return Resolution.Failed()
                 }
@@ -302,7 +302,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
                         workSpec,
                         worker,
                         foregroundUpdater,
-                        workTaskExecutor
+                        workTaskExecutor,
                     )
                     logd(TAG) { "Starting work for ${workSpec.workerClassName}" }
                     // *important* we can't pass future around suspension points
@@ -318,7 +318,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
             loge(TAG, throwable) { "$workDescription failed because it threw an exception/error" }
             configuration.workerExecutionExceptionHandler?.safeAccept(
                 WorkerExceptionInfo(workSpec.workerClassName, params, throwable),
-                TAG
+                TAG,
             )
             return Resolution.Failed()
         }
@@ -344,7 +344,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    fun interrupt(stopReason: Int) {
+    public fun interrupt(stopReason: Int) {
         workerJob.cancel(WorkerStoppedException(stopReason))
     }
 
@@ -414,14 +414,14 @@ class WorkerWrapper internal constructor(builder: Builder) {
         )
 
     @VisibleForTesting
-    fun setFailed(result: ListenableWorker.Result): Boolean {
+    public fun setFailed(result: ListenableWorker.Result): Boolean {
         iterativelyFailWorkAndDependents(workSpecId)
         val failure = result as Failure
         // Update Data as necessary.
         val output = failure.outputData
         workSpecDao.resetWorkSpecNextScheduleTimeOverride(
             workSpecId,
-            workSpec.nextScheduleTimeOverrideGeneration
+            workSpec.nextScheduleTimeOverrideGeneration,
         )
         workSpecDao.setOutput(workSpecId, output)
         return false
@@ -444,7 +444,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
         workSpecDao.setLastEnqueueTime(workSpecId, clock.currentTimeMillis())
         workSpecDao.resetWorkSpecNextScheduleTimeOverride(
             workSpecId,
-            workSpec.nextScheduleTimeOverrideGeneration
+            workSpec.nextScheduleTimeOverrideGeneration,
         )
         workSpecDao.markWorkSpecScheduled(workSpecId, WorkSpec.SCHEDULE_NOT_REQUESTED_YET)
         workSpecDao.setStopReason(workSpecId, stopReason)
@@ -461,7 +461,7 @@ class WorkerWrapper internal constructor(builder: Builder) {
         workSpecDao.resetWorkSpecRunAttemptCount(workSpecId)
         workSpecDao.resetWorkSpecNextScheduleTimeOverride(
             workSpecId,
-            workSpec.nextScheduleTimeOverrideGeneration
+            workSpec.nextScheduleTimeOverrideGeneration,
         )
         workSpecDao.incrementPeriodCount(workSpecId)
         workSpecDao.markWorkSpecScheduled(workSpecId, WorkSpec.SCHEDULE_NOT_REQUESTED_YET)
@@ -496,27 +496,27 @@ class WorkerWrapper internal constructor(builder: Builder) {
 
     /** Builder class for [WorkerWrapper] */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    class Builder
+    public class Builder
     @SuppressLint("LambdaLast")
     constructor(
         context: Context,
-        val configuration: Configuration,
-        val workTaskExecutor: TaskExecutor,
-        val foregroundProcessor: ForegroundProcessor,
-        val workDatabase: WorkDatabase,
-        val workSpec: WorkSpec,
-        val tags: List<String>
+        public val configuration: Configuration,
+        public val workTaskExecutor: TaskExecutor,
+        public val foregroundProcessor: ForegroundProcessor,
+        public val workDatabase: WorkDatabase,
+        public val workSpec: WorkSpec,
+        public val tags: List<String>,
     ) {
-        val appContext: Context = context.applicationContext
-        var worker: ListenableWorker? = null
-        var runtimeExtras = WorkerParameters.RuntimeExtras()
+        public val appContext: Context = context.applicationContext
+        public var worker: ListenableWorker? = null
+        public var runtimeExtras: WorkerParameters.RuntimeExtras = WorkerParameters.RuntimeExtras()
 
         /**
          * @param runtimeExtras The [WorkerParameters.RuntimeExtras] for the worker; if this is
          *   `null`, it will be ignored and the default value will be retained.
          * @return The instance of [Builder] for chaining.
          */
-        fun withRuntimeExtras(runtimeExtras: WorkerParameters.RuntimeExtras?): Builder {
+        public fun withRuntimeExtras(runtimeExtras: WorkerParameters.RuntimeExtras?): Builder {
             if (runtimeExtras != null) {
                 this.runtimeExtras = runtimeExtras
             }
@@ -529,13 +529,13 @@ class WorkerWrapper internal constructor(builder: Builder) {
          * @return The instance of [Builder] for chaining.
          */
         @VisibleForTesting
-        fun withWorker(worker: ListenableWorker): Builder {
+        public fun withWorker(worker: ListenableWorker): Builder {
             this.worker = worker
             return this
         }
 
         /** @return The instance of [WorkerWrapper]. */
-        fun build(): WorkerWrapper {
+        public fun build(): WorkerWrapper {
             return WorkerWrapper(this)
         }
     }
@@ -547,7 +547,7 @@ private val TAG = Logger.tagWithPrefix("WorkerWrapper")
 // it is needed that we specifically want to call .stop() on worker itself before
 // calling cancel() of the future.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-suspend fun <T> ListenableFuture<T>.awaitWithin(worker: ListenableWorker): T {
+public suspend fun <T> ListenableFuture<T>.awaitWithin(worker: ListenableWorker): T {
     try {
         if (isDone) return getUninterruptibly(this)
     } catch (e: ExecutionException) {
@@ -571,11 +571,11 @@ suspend fun <T> ListenableFuture<T>.awaitWithin(worker: ListenableWorker): T {
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class WorkerStoppedException(val reason: Int) : CancellationException()
+public class WorkerStoppedException(public val reason: Int) : CancellationException()
 
 private class ToContinuation<T>(
     val futureToObserve: ListenableFuture<T>,
-    val continuation: CancellableContinuation<T>
+    val continuation: CancellableContinuation<T>,
 ) : Runnable {
     override fun run() {
         if (futureToObserve.isCancelled) {

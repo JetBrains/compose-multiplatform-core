@@ -88,7 +88,6 @@ package androidx.camera.testing.fakes {
     method public androidx.camera.core.FocusMeteringAction? getLastSubmittedFocusMeteringAction();
     method public float getLinearZoom();
     method public androidx.camera.core.ImageCapture.ScreenFlash? getScreenFlash();
-    method public android.graphics.Rect getSensorRect();
     method public androidx.camera.core.impl.SessionConfig getSessionConfig();
     method public boolean getTorchEnabled();
     method public float getZoomRatio();

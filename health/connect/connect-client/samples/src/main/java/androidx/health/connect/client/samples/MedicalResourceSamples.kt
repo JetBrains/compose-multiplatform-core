@@ -59,7 +59,7 @@ suspend fun UpsertMedicalResourcesSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -70,7 +70,7 @@ suspend fun UpsertMedicalResourcesSample(
                 UpsertMedicalResourceRequest(
                     medicalDataSource.id,
                     medicalDataSource.fhirVersion,
-                    medicationJsonToInsert // a valid FHIR json string
+                    medicationJsonToInsert, // a valid FHIR json string
                 )
             )
         )
@@ -86,7 +86,7 @@ suspend fun UpsertMedicalResourcesSample(
                     // if this resource has the same type and ID as in `medicationJsonToInsert`,
                     // this `upsertMedicalResources()` call will update the previously inserted
                     // `MedicalResource`
-                    updatedMedicationJsonToInsert
+                    updatedMedicationJsonToInsert,
                 )
             )
         )
@@ -96,7 +96,7 @@ suspend fun UpsertMedicalResourcesSample(
 @Sampled
 suspend fun ReadMedicalResourcesByRequestSample(
     healthConnectClient: HealthConnectClient,
-    exampleLabResults: List<UpsertMedicalResourceRequest>
+    exampleLabResults: List<UpsertMedicalResourceRequest>,
 ) {
     // Ensure `FEATURE_PERSONAL_HEALTH_RECORD` is available before calling PHR apis
     if (
@@ -112,7 +112,7 @@ suspend fun ReadMedicalResourcesByRequestSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -152,7 +152,7 @@ suspend fun ReadMedicalResourcesByRequestSample(
 @Sampled
 suspend fun ReadMedicalResourcesByIdsSample(
     healthConnectClient: HealthConnectClient,
-    medicationJsonToInsert: String
+    medicationJsonToInsert: String,
 ) {
     // Ensure `FEATURE_PERSONAL_HEALTH_RECORD` is available before calling PHR apis
     if (
@@ -168,7 +168,7 @@ suspend fun ReadMedicalResourcesByIdsSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -179,7 +179,7 @@ suspend fun ReadMedicalResourcesByIdsSample(
                 UpsertMedicalResourceRequest(
                     medicalDataSource.id,
                     medicalDataSource.fhirVersion,
-                    medicationJsonToInsert // a valid FHIR json string
+                    medicationJsonToInsert, // a valid FHIR json string
                 )
             )
         )
@@ -192,7 +192,7 @@ suspend fun ReadMedicalResourcesByIdsSample(
                 MedicalResourceId(
                     dataSourceId = medicalDataSource.id,
                     fhirResourceType = medicalResource.id.fhirResourceType,
-                    fhirResourceId = medicalResource.id.fhirResourceId
+                    fhirResourceId = medicalResource.id.fhirResourceId,
                 )
             }
         )
@@ -202,7 +202,7 @@ suspend fun ReadMedicalResourcesByIdsSample(
 @Sampled
 suspend fun DeleteMedicalResourcesSample(
     healthConnectClient: HealthConnectClient,
-    medicationJsonToInsert: String
+    medicationJsonToInsert: String,
 ) {
     // Ensure `FEATURE_PERSONAL_HEALTH_RECORD` is available before calling PHR apis
     if (
@@ -218,7 +218,7 @@ suspend fun DeleteMedicalResourcesSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -229,7 +229,7 @@ suspend fun DeleteMedicalResourcesSample(
                 UpsertMedicalResourceRequest(
                     medicalDataSource.id,
                     medicalDataSource.fhirVersion,
-                    medicationJsonToInsert // a valid FHIR json string
+                    medicationJsonToInsert, // a valid FHIR json string
                 )
             )
         )
@@ -240,7 +240,7 @@ suspend fun DeleteMedicalResourcesSample(
             MedicalResourceId(
                 dataSourceId = medicalDataSource.id,
                 fhirResourceType = medicalResource.id.fhirResourceType,
-                fhirResourceId = medicalResource.id.fhirResourceId
+                fhirResourceId = medicalResource.id.fhirResourceId,
             )
         }
     )
@@ -250,7 +250,7 @@ suspend fun DeleteMedicalResourcesSample(
 @Sampled
 suspend fun DeleteMedicalResourcesByRequestSample(
     healthConnectClient: HealthConnectClient,
-    medicationJsonToInsert: String
+    medicationJsonToInsert: String,
 ) {
     // Ensure `FEATURE_PERSONAL_HEALTH_RECORD` is available before calling PHR apis
     if (
@@ -266,7 +266,7 @@ suspend fun DeleteMedicalResourcesByRequestSample(
             CreateMedicalDataSourceRequest(
                 fhirBaseUri = Uri.parse("https://fhir.com/oauth/api/FHIR/R4/"),
                 displayName = "Test Data Source",
-                fhirVersion = FhirVersion(4, 0, 1)
+                fhirVersion = FhirVersion(4, 0, 1),
             )
         )
 
@@ -277,7 +277,7 @@ suspend fun DeleteMedicalResourcesByRequestSample(
                 UpsertMedicalResourceRequest(
                     medicalDataSource.id,
                     medicalDataSource.fhirVersion,
-                    medicationJsonToInsert // a valid FHIR json string
+                    medicationJsonToInsert, // a valid FHIR json string
                 )
             )
         )
@@ -287,7 +287,7 @@ suspend fun DeleteMedicalResourcesByRequestSample(
     healthConnectClient.deleteMedicalResources(
         DeleteMedicalResourcesRequest(
             dataSourceIds = setOf(medicalDataSource.id),
-            medicalResourceTypes = setOf(MEDICAL_RESOURCE_TYPE_MEDICATIONS)
+            medicalResourceTypes = setOf(MEDICAL_RESOURCE_TYPE_MEDICATIONS),
         )
     )
 }

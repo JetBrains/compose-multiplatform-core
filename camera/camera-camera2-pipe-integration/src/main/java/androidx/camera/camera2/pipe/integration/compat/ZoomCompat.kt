@@ -38,7 +38,7 @@ public interface ZoomCompat {
 
     public fun applyAsync(
         zoomRatio: Float,
-        requestControl: UseCaseCameraRequestControl
+        requestControl: UseCaseCameraRequestControl,
     ): Deferred<Unit>
 
     /**
@@ -77,7 +77,7 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
             val ratio =
                 cameraProperties.metadata.getOrDefault(
                     CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM,
-                    minZoomRatio
+                    minZoomRatio,
                 )
             if (nearZero(ratio)) {
                 Log.warn { "Invalid max zoom ratio of $ratio detected, defaulting to 1.0f" }
@@ -90,7 +90,7 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
 
     override fun applyAsync(
         zoomRatio: Float,
-        requestControl: UseCaseCameraRequestControl
+        requestControl: UseCaseCameraRequestControl,
     ): Deferred<Unit> {
         val sensorRect =
             cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]!!
@@ -118,7 +118,7 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
             left.toInt(),
             top.toInt(),
             (left + cropWidth).toInt(),
-            (top + cropHeight).toInt()
+            (top + cropHeight).toInt(),
         )
     }
 }
@@ -136,7 +136,7 @@ public class AndroidRZoomCompat(
 
     override fun applyAsync(
         zoomRatio: Float,
-        requestControl: UseCaseCameraRequestControl
+        requestControl: UseCaseCameraRequestControl,
     ): Deferred<Unit> {
         require(zoomRatio in minZoomRatio..maxZoomRatio)
         val parameters: MutableMap<CaptureRequest.Key<*>, Any> =

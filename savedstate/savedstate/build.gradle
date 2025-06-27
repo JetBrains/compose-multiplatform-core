@@ -14,12 +14,18 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.savedstate"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+    }
     desktop()
     mac()
     linux()
@@ -68,14 +74,13 @@ androidXMultiplatform {
                 api("androidx.annotation:annotation:1.8.1")
                 implementation("androidx.core:core-ktx:1.13.1")
                 implementation("androidx.core:core-viewtree:1.0.0")
-                api(libs.kotlinStdlib)
+
             }
         }
 
         androidUnitTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(libs.robolectric)
             }
         }
 
@@ -216,19 +221,11 @@ androidXMultiplatform {
     }
 }
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
-    namespace = "androidx.savedstate"
-    experimentalProperties["android.lint.useK2Uast"] = false // TODO(b/345531033)
-}
-
 androidx {
     name = "Saved State"
     type = SoftwareType.PUBLISHED_LIBRARY
     samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
-    metalavaK2UastEnabled = false
+    enableRobolectric()
 }

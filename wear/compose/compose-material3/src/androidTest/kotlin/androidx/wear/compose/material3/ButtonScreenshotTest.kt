@@ -128,7 +128,7 @@ class ButtonScreenshotTest {
         ImageBackgroundButton(
             enabled = false,
             containerImage = painterResource(R.drawable.backgroundimage1),
-            sizeToIntrinsics = false
+            sizeToIntrinsics = false,
         )
     }
 
@@ -137,7 +137,7 @@ class ButtonScreenshotTest {
         ImageBackgroundButton(
             sizeToIntrinsics = true,
             alignment = Alignment.CenterEnd,
-            contentScale = ContentScale.None
+            contentScale = ContentScale.None,
         )
     }
 
@@ -146,7 +146,7 @@ class ButtonScreenshotTest {
         ImageBackgroundButton(
             sizeToIntrinsics = true,
             alignment = Alignment.Center,
-            contentScale = ContentScale.None
+            contentScale = ContentScale.None,
         )
     }
 
@@ -155,7 +155,7 @@ class ButtonScreenshotTest {
         Button(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -177,7 +177,7 @@ class ButtonScreenshotTest {
             label = { Text("Label", modifier = Modifier.fillMaxWidth()) },
             secondaryLabel = { Text("Secondary label", modifier = Modifier.fillMaxWidth()) },
             icon = { ButtonIcon(size = ButtonDefaults.LargeIconSize) },
-            contentPadding = ButtonDefaults.ButtonWithLargeIconContentPadding
+            contentPadding = ButtonDefaults.ButtonWithLargeIconContentPadding,
         )
     }
 
@@ -189,7 +189,7 @@ class ButtonScreenshotTest {
             label = { Text("Label", modifier = Modifier.fillMaxWidth()) },
             secondaryLabel = { Text("Secondary label", modifier = Modifier.fillMaxWidth()) },
             icon = { ButtonIcon(size = ButtonDefaults.ExtraLargeIconSize) },
-            contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding
+            contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding,
         )
     }
 
@@ -198,7 +198,7 @@ class ButtonScreenshotTest {
         FilledTonalButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -217,7 +217,7 @@ class ButtonScreenshotTest {
         OutlinedButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -236,7 +236,7 @@ class ButtonScreenshotTest {
         ChildButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -259,7 +259,7 @@ class ButtonScreenshotTest {
         CompactButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
-            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) }
+            label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
         )
     }
 
@@ -280,7 +280,7 @@ class ButtonScreenshotTest {
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
             label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
             transformation =
-                morphingSurfaceTransformation(heightProportion = 0.6f, contentAlpha = 0.5f)
+                morphingSurfaceTransformation(heightProportion = 0.6f, contentAlpha = 0.5f),
         )
     }
 
@@ -291,7 +291,7 @@ class ButtonScreenshotTest {
             enabled = true,
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
             label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
-            transformation = morphingSurfaceTransformation(heightProportion = 0.6f)
+            transformation = morphingSurfaceTransformation(heightProportion = 0.6f),
         )
     }
 
@@ -301,7 +301,7 @@ class ButtonScreenshotTest {
             onClick = {},
             modifier = Modifier.fillMaxWidth().testTag(TEST_TAG),
             label = { Text("Label only", modifier = Modifier.fillMaxWidth()) },
-            transformation = morphingSurfaceTransformation(heightProportion = 1f, contentAlpha = 0f)
+            transformation = morphingSurfaceTransformation(heightProportion = 1f, contentAlpha = 0f),
         )
     }
 
@@ -320,7 +320,7 @@ class ButtonScreenshotTest {
             label = { Text("Three Slot Button") },
             secondaryLabel = { Text("Secondary Label") },
             icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
-            modifier = Modifier.testTag(TEST_TAG)
+            modifier = Modifier.testTag(TEST_TAG),
         )
     }
 
@@ -338,7 +338,7 @@ class ButtonScreenshotTest {
             painterResource(androidx.wear.compose.material3.samples.R.drawable.backgroundimage),
         enabled: Boolean = true,
         alignment: Alignment = Alignment.Center,
-        contentScale: ContentScale = ContentScale.Fit
+        contentScale: ContentScale = ContentScale.Fit,
     ) {
         Button(
             enabled = enabled,
@@ -353,7 +353,7 @@ class ButtonScreenshotTest {
                     contentScale = contentScale,
                 ),
             icon = { ButtonIcon(size = ButtonDefaults.IconSize) },
-            modifier = Modifier.testTag(TEST_TAG)
+            modifier = Modifier.testTag(TEST_TAG),
         )
     }
 
@@ -364,13 +364,13 @@ class ButtonScreenshotTest {
             label = { Text("Compact Button") },
             icon = { ButtonIcon(size = ButtonDefaults.ExtraSmallIconSize) },
             enabled = enabled,
-            modifier = Modifier.testTag(TEST_TAG)
+            modifier = Modifier.testTag(TEST_TAG),
         )
     }
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
@@ -399,7 +399,7 @@ class ButtonScreenshotTest {
         Icon(
             imageVector = testImage,
             contentDescription = iconLabel,
-            modifier = modifier.testTag(iconLabel).size(size)
+            modifier = modifier.testTag(iconLabel).size(size),
         )
     }
 
@@ -408,7 +408,7 @@ class ButtonScreenshotTest {
             override fun createContainerPainter(
                 painter: Painter,
                 shape: Shape,
-                border: BorderStroke?
+                border: BorderStroke?,
             ): Painter =
                 object : Painter() {
                     override val intrinsicSize: Size
@@ -419,7 +419,7 @@ class ButtonScreenshotTest {
                             shape.createOutline(
                                 size.copy(height = size.height * heightProportion),
                                 layoutDirection,
-                                this@onDraw
+                                this@onDraw,
                             )
                         clipPath(Path().apply { addOutline(shapeOutline) }) {
                             with(painter) {
@@ -441,12 +441,12 @@ class ButtonScreenshotTest {
                         override fun createOutline(
                             size: Size,
                             layoutDirection: LayoutDirection,
-                            density: Density
+                            density: Density,
                         ): Outline =
                             shape.createOutline(
                                 size = size.copy(height = size.height * heightProportion),
                                 layoutDirection = layoutDirection,
-                                density = density
+                                density = density,
                             )
                     }
             }

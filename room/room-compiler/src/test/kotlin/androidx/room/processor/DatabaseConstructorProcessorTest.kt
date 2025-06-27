@@ -40,7 +40,7 @@ class DatabaseConstructorProcessorTest {
         @Entity
         data class TestEntity(@PrimaryKey val id: Long)
         """
-                .trimIndent()
+                .trimIndent(),
         )
 
     @Test
@@ -55,7 +55,7 @@ class DatabaseConstructorProcessorTest {
 
                 expect class TestDatabaseCtor : RoomDatabaseConstructor<TestDatabase>
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         ) {
             it.assertCompilationResult {
@@ -76,7 +76,7 @@ class DatabaseConstructorProcessorTest {
 
                 object TestDatabaseCtor : RoomDatabaseConstructor<TestDatabase>
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         ) {
             it.assertCompilationResult {
@@ -97,7 +97,7 @@ class DatabaseConstructorProcessorTest {
 
                 expect object TestDatabaseCtor
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         ) {
             it.assertCompilationResult {
@@ -122,7 +122,7 @@ class DatabaseConstructorProcessorTest {
 
                 expect object TestDatabaseCtor : RoomDatabaseConstructor<RoomDatabase>
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         ) {
             it.assertCompilationResult {

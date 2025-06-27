@@ -160,7 +160,7 @@ internal abstract class SelectionAsserter<S>(
         subAssert()
         rule.assertSelectionHandlesShown(
             startShown = startSelectionHandleShown ?: selectionHandlesShown,
-            endShown = endSelectionHandleShown ?: selectionHandlesShown
+            endShown = endSelectionHandleShown ?: selectionHandlesShown,
         )
 
         if (ComposeFoundationFlags.isNewContextMenuEnabled) {
@@ -196,7 +196,7 @@ internal abstract class TextSelectionAsserter(
         textToolbar,
         spyTextActionModeCallback,
         hapticFeedback,
-        getActual
+        getActual,
     ) {
     var selection: TextRange? = null
 }

@@ -22,7 +22,7 @@ import perfetto.protos.MutableTrackEvent
 
 internal fun List<MutableTracePacket>.trackEventPacket(
     name: String?,
-    type: MutableTrackEvent.Type? = null
+    type: MutableTrackEvent.Type? = null,
 ): MutableTracePacket? {
     return find { packet ->
         var result = packet.track_event?.name == name

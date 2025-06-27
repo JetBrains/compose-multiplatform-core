@@ -25,7 +25,7 @@ data class ForeignKey(
     val childProperties: List<Property>,
     val onDelete: ForeignKeyAction,
     val onUpdate: ForeignKeyAction,
-    val deferred: Boolean
+    val deferred: Boolean,
 ) : HasSchemaIdentity {
     override fun getIdKey(): String {
         return parentTable +
@@ -60,6 +60,6 @@ data class ForeignKey(
             onDelete.sqlName,
             onUpdate.sqlName,
             childProperties.map { it.columnName },
-            parentColumns
+            parentColumns,
         )
 }

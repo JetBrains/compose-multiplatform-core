@@ -24,6 +24,7 @@ public object FrameRateUtil {
     public const val FPS_240: Int = 240
     public const val FPS_480: Int = 480
 
+    public val FPS_30_30: Range<Int> = Range(FPS_30, FPS_30)
     public val FPS_30_120: Range<Int> = Range(FPS_30, FPS_120)
     public val FPS_120_120: Range<Int> = Range(FPS_120, FPS_120)
     public val FPS_30_240: Range<Int> = Range(FPS_30, FPS_240)

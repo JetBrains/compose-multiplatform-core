@@ -28,7 +28,7 @@ import org.junit.runners.Parameterized
 class VideoCaptureLifecycleStatusChangeStreamSharingStressTest(
     implName: String,
     cameraConfig: CameraXConfig,
-    cameraId: String
+    cameraId: String,
 ) : VideoCaptureLifecycleStatusChangeStressTestBase(implName, cameraConfig, cameraId) {
 
     override val enableStreamSharing: Boolean = true

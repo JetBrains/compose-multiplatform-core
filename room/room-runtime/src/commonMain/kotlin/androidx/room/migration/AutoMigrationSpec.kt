@@ -27,11 +27,11 @@ import androidx.sqlite.SQLiteConnection
  *
  * @see [androidx.room.AutoMigration]
  */
-expect interface AutoMigrationSpec {
+public expect interface AutoMigrationSpec {
     /**
      * Invoked after the migration is completed.
      *
      * @param connection The database connection.
      */
-    open fun onPostMigrate(connection: SQLiteConnection)
+    public open fun onPostMigrate(connection: SQLiteConnection)
 }

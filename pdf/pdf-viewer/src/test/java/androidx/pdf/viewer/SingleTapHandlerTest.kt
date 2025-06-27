@@ -73,7 +73,7 @@ class SingleTapHandlerTest {
                 mockSelectionModel,
                 mockPaginationModel,
                 mockLayoutHandler,
-                mockImmersiveModeRequester
+                mockImmersiveModeRequester,
             )
         whenever(mockSelectionModel.selection()).thenReturn(mockSelection)
         whenever(mockSelectionModel.selection().get()).thenReturn(mockPageSelection)
@@ -221,7 +221,7 @@ class SingleTapHandlerTest {
                 mockZoomView.viewportWidth.toFloat(),
                 mockZoomView.viewportHeight.toFloat(),
                 mockPageRect.width().toFloat(),
-                1F
+                1F,
             )
 
         // Verify the zoom level and centering
@@ -229,7 +229,7 @@ class SingleTapHandlerTest {
         verify(mockZoomView)
             .centerAt(
                 mockPageRect.centerX().toFloat(),
-                mockPaginationModel.getLookAtY(pageNumber, yCoordinate.toInt()).toFloat()
+                mockPaginationModel.getLookAtY(pageNumber, yCoordinate.toInt()).toFloat(),
             )
     }
 
@@ -283,7 +283,7 @@ class SingleTapHandlerTest {
                 mockZoomView.viewportWidth.toFloat(),
                 mockZoomView.viewportHeight.toFloat(),
                 mockPageRect.width().toFloat(),
-                mockPageRect.height().toFloat()
+                mockPageRect.height().toFloat(),
             )
 
         verify(mockZoomView).setZoom(expectedZoom)

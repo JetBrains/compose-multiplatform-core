@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -35,7 +36,8 @@ import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
 
 /**
- * CompositionLocal that enables/disables premeasurement behavior on BasicText when non-null.
+ * CompositionLocal that provides an Executor for background text processing to potentially get run
+ * on.
  *
  * BasicText premeasure is the process of using a background thread to early start metrics
  * calculation for Text composables on Android to warm up the underlying text layout cache. This
@@ -43,9 +45,9 @@ import java.util.concurrent.RejectedExecutionException
  * a frame, which gives the background thread enough time to fully calculate text metrics. This
  * approximately reduces text layout duration on main thread from 50% to 90%.
  *
- * By default this CompositionLocal provides null, which means that prefetch behavior is disabled
- * for `BasicText`. You can provide an executor like `Executors.newSingleThreadExecutor()` for
- * BasicText to schedule background tasks, by doing so also enabling prefetch behavior.
+ * By default this CompositionLocal provides null, which means that any text prefetch behavior will
+ * revert to the system default. You can provide an executor like
+ * `Executors.newSingleThreadExecutor()` for BasicText to schedule background tasks.
  *
  * Please note that prefetch text does not guarantee a net performance increase. It may actually be
  * harmful in certain scenarios where there is not enough time between composition and measurement
@@ -63,7 +65,7 @@ val LocalBackgroundTextMeasurementExecutor = staticCompositionLocalOf<Executor?>
 internal actual fun BackgroundTextMeasurement(
     text: String,
     style: TextStyle,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 ) {
     val executor = LocalBackgroundTextMeasurementExecutor.current
     if (executor != null && shouldPrefetch(text.length)) {
@@ -73,16 +75,18 @@ internal actual fun BackgroundTextMeasurement(
         try {
             executor.execute {
                 trace("BackgroundTextMeasurement") {
-                    val resolvedStyle = resolveDefaults(style, layoutDirection)
-                    val intrinsics =
-                        ParagraphIntrinsics(
-                            text = text,
-                            style = resolvedStyle,
-                            density = density,
-                            fontFamilyResolver = fontFamilyResolver,
-                            annotations = emptyList()
-                        )
-                    intrinsics.maxIntrinsicWidth
+                    Snapshot.withMutableSnapshot {
+                        val resolvedStyle = resolveDefaults(style, layoutDirection)
+                        val intrinsics =
+                            ParagraphIntrinsics(
+                                text = text,
+                                style = resolvedStyle,
+                                density = density,
+                                fontFamilyResolver = fontFamilyResolver,
+                                annotations = emptyList(),
+                            )
+                        intrinsics.maxIntrinsicWidth
+                    }
                 }
             }
         } catch (_: RejectedExecutionException) {}
@@ -95,7 +99,7 @@ internal actual fun BackgroundTextMeasurement(
     text: AnnotatedString,
     style: TextStyle,
     fontFamilyResolver: FontFamily.Resolver,
-    placeholders: List<AnnotatedString.Range<Placeholder>>?
+    placeholders: List<AnnotatedString.Range<Placeholder>>?,
 ) {
     val executor = LocalBackgroundTextMeasurementExecutor.current
     if (executor != null && shouldPrefetch(text.length)) {
@@ -105,16 +109,18 @@ internal actual fun BackgroundTextMeasurement(
         try {
             executor.execute {
                 trace("BackgroundTextMeasurement") {
-                    val resolvedStyle = resolveDefaults(style, layoutDirection)
-                    val intrinsics =
-                        MultiParagraphIntrinsics(
-                            annotatedString = text,
-                            style = resolvedStyle,
-                            density = density,
-                            placeholders = placeholders ?: emptyList(),
-                            fontFamilyResolver = fontFamilyResolver
-                        )
-                    intrinsics.maxIntrinsicWidth
+                    Snapshot.withMutableSnapshot {
+                        val resolvedStyle = resolveDefaults(style, layoutDirection)
+                        val intrinsics =
+                            MultiParagraphIntrinsics(
+                                annotatedString = text,
+                                style = resolvedStyle,
+                                density = density,
+                                placeholders = placeholders ?: emptyList(),
+                                fontFamilyResolver = fontFamilyResolver,
+                            )
+                        intrinsics.maxIntrinsicWidth
+                    }
                 }
             }
         } catch (_: RejectedExecutionException) {}

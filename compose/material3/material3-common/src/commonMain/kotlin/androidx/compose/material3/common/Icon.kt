@@ -73,7 +73,7 @@ fun Icon(
         painter = rememberVectorPainter(imageVector),
         contentDescription = contentDescription,
         modifier = modifier,
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -110,7 +110,7 @@ fun Icon(
         painter = painter,
         contentDescription = contentDescription,
         modifier = modifier,
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -201,7 +201,7 @@ fun Icon(
                     tint?.let { this@apply.colorFilter = ColorFilter.tint(it()) }
                 }
                 onDrawWithContent { drawLayer(graphicsLayer = layer) }
-            }
+            },
     )
 }
 

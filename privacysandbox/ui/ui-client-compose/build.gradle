@@ -35,7 +35,7 @@ dependencies {
     api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.12.0")
-    api("androidx.compose.ui:ui:1.7.8")
+    api("androidx.compose.ui:ui:1.8.2")
     implementation(project(":privacysandbox:ui:ui-client"))
 
     androidTestImplementation(project(":internal-testutils-runtime"))
@@ -53,13 +53,13 @@ dependencies {
     androidTestImplementation(project(":appcompat:appcompat"))
     androidTestImplementation(project(":privacysandbox:ui:ui-provider"))
     androidTestImplementation(project(":privacysandbox:ui:integration-tests:testingutils"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.8")
-    androidTestImplementation("androidx.compose.foundation:foundation-layout:1.7.8")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.8")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.8.0")
+    androidTestImplementation("androidx.compose.foundation:foundation-layout:1.8.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.8.0")
 }
 
 android {
-    namespace "androidx.privacysandbox.ui.client.compose"
+    namespace = "androidx.privacysandbox.ui.client.compose"
     compileSdk = 35
 }
 

@@ -66,7 +66,7 @@ fun ReceiveContentBasicSample() {
                             } ?: false
                         }
                         .also { images = newImages }
-                }
+                },
         )
     }
 }
@@ -130,7 +130,7 @@ fun ReceiveContentFullSample() {
                                         .also { images = newImages }
                                 }
                             }
-                    )
+                    ),
         )
     }
 }

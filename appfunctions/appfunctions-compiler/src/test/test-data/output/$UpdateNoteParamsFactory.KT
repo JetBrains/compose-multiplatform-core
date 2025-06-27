@@ -10,19 +10,13 @@ import kotlin.collections.List
 public class `$UpdateNoteParamsFactory` : AppFunctionSerializableFactory<UpdateNoteParams> {
   override fun fromAppFunctionData(appFunctionData: AppFunctionData): UpdateNoteParams {
     val setFieldKotlinStringFactory = `$SetFieldFactory`<String>(
-      AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java),
-    )
+      AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java))
     val setFieldKotlinStringNullableFactory = `$SetFieldFactory`<String?>(
-      @Suppress("UNCHECKED_CAST")
-      AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java as Class<String?>),
-    )
+      @Suppress("UNCHECKED_CAST") AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java as Class<String?>))
     val setFieldKotlinCollectionsListComTestdataAttachmentFactory = `$SetFieldFactory`<List<Attachment>>(
-      AppFunctionSerializableFactory.TypeParameter.ListTypeParameter(Attachment::class.java),
-    )
+      AppFunctionSerializableFactory.TypeParameter.SerializableListTypeParameter(Attachment::class.java, `$AttachmentFactory`()))
     val setFieldKotlinCollectionsListComTestdataAttachmentNullableFactory = `$SetFieldFactory`<List<Attachment>?>(
-      @Suppress("UNCHECKED_CAST")
-      AppFunctionSerializableFactory.TypeParameter.ListTypeParameter(Attachment::class.java as Class<List<Attachment>?>),
-    )
+      AppFunctionSerializableFactory.TypeParameter.SerializableListTypeParameter(Attachment::class.java, `$AttachmentFactory`()))
 
     val titleData = appFunctionData.getAppFunctionData("title")
     var title: SetField<String>? = null
@@ -52,19 +46,13 @@ public class `$UpdateNoteParamsFactory` : AppFunctionSerializableFactory<UpdateN
   override fun toAppFunctionData(appFunctionSerializable: UpdateNoteParams): AppFunctionData {
     val updateNoteParams_appFunctionSerializable = appFunctionSerializable
     val setFieldKotlinStringFactory = `$SetFieldFactory`<String>(
-      AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java),
-    )
+      AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java))
     val setFieldKotlinStringNullableFactory = `$SetFieldFactory`<String?>(
-      @Suppress("UNCHECKED_CAST")
-      AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java as Class<String?>),
-    )
+      @Suppress("UNCHECKED_CAST") AppFunctionSerializableFactory.TypeParameter.PrimitiveTypeParameter(String::class.java as Class<String?>))
     val setFieldKotlinCollectionsListComTestdataAttachmentFactory = `$SetFieldFactory`<List<Attachment>>(
-      AppFunctionSerializableFactory.TypeParameter.ListTypeParameter(Attachment::class.java),
-    )
+      AppFunctionSerializableFactory.TypeParameter.SerializableListTypeParameter(Attachment::class.java, `$AttachmentFactory`()))
     val setFieldKotlinCollectionsListComTestdataAttachmentNullableFactory = `$SetFieldFactory`<List<Attachment>?>(
-      @Suppress("UNCHECKED_CAST")
-      AppFunctionSerializableFactory.TypeParameter.ListTypeParameter(Attachment::class.java as Class<List<Attachment>?>),
-    )
+      AppFunctionSerializableFactory.TypeParameter.SerializableListTypeParameter(Attachment::class.java, `$AttachmentFactory`()))
 
     val builder = AppFunctionData.Builder("com.testdata.UpdateNoteParams")
     val title = updateNoteParams_appFunctionSerializable.title

@@ -67,18 +67,18 @@ private val unwantedCalls =
         "Inspectable",
         "ProvideAndroidCompositionLocals",
         "ProvideCommonCompositionLocals",
+        "ProvideCompositionLocals",
     )
+
+private val knownCompositionHolders = setOf("LayoutSpatialElevation", "SpatialElevation")
 
 /** Builder of [InspectorNode] trees from [root] compositions. */
 @OptIn(UiToolingDataApi::class)
-internal class CompositionBuilder(
-    private val info: SharedBuilderData,
-) : SharedBuilderData by info {
+internal class CompositionBuilder(private val info: SharedBuilderData) : SharedBuilderData by info {
     private var ownerView: View? = null
     private var subCompositionsFound = 0
     private val subCompositions = mutableMapOf<Any?, MutableList<SubCompositionResult>>()
-    private var capturingSubCompositions =
-        mutableMapOf<MutableInspectorNode, MutableList<SubCompositionResult>>()
+    private val capturingSubComposition = mutableMapOf<MutableInspectorNode, SubCompositionResult>()
     private var listIndex = -1
 
     /**
@@ -88,7 +88,7 @@ internal class CompositionBuilder(
     fun convert(
         composition: CompositionInstance,
         root: CompositionData,
-        childCompositions: List<SubCompositionResult>
+        childCompositions: List<SubCompositionResult>,
     ): SubCompositionResult {
         reset(root, childCompositions)
         val node = root.mapTree(::convert, contextCache) ?: newNode()
@@ -108,7 +108,7 @@ internal class CompositionBuilder(
             .forEach { result ->
                 subCompositions.getOrPut(result.group) { mutableListOf() }.add(result)
             }
-        capturingSubCompositions.clear()
+        capturingSubComposition.clear()
         listIndex = -1
     }
 
@@ -132,7 +132,7 @@ internal class CompositionBuilder(
     private fun convert(
         group: CompositionGroup,
         context: SourceContext,
-        children: List<MutableInspectorNode>
+        children: List<MutableInspectorNode>,
     ): MutableInspectorNode {
         val parent = parse(group, context, children)
         addToParent(parent, children)
@@ -144,10 +144,7 @@ internal class CompositionBuilder(
      * Adds the nodes in [input] to the children of [parentNode]. Nodes without a reference to a
      * wanted Composable are skipped. A single skipped render id will be added to [parentNode].
      */
-    private fun addToParent(
-        parentNode: MutableInspectorNode,
-        input: List<MutableInspectorNode>,
-    ) {
+    private fun addToParent(parentNode: MutableInspectorNode, input: List<MutableInspectorNode>) {
         // If we're adding an unwanted node from the `input` to the parent node and it has a
         // View ID, then assign it to the parent view so that we don't lose the context that we
         // found a View as a descendant of the parent node. Most likely, there were one or more
@@ -221,14 +218,17 @@ internal class CompositionBuilder(
                 subCompositions.forEach { subComposition ->
                     if (subComposition.ownerView == ownerView || subComposition.ownerView == null) {
                         // Steal all the nodes from the sub-compositions and add them to the parent.
+                        // Propagate the size to the parent node if the parent has no size.
                         parent.children.addAll(subComposition.nodes)
+                        if (parent.box == emptyBox) {
+                            subComposition.nodes.forEach { parent.box = parent.box.union(it.box) }
+                            parent.boxSizeOverridden = true
+                        }
                         subComposition.nodes = emptyList()
                     } else {
                         // If the sub-composition belongs to a different view prepare to copy the
                         // parent node to the sub-composition. See: checkCapturingSubCompositions.
-                        capturingSubCompositions
-                            .getOrPut(parent) { mutableListOf() }
-                            .add(subComposition)
+                        capturingSubComposition[parent] = subComposition
                     }
                 }
             }
@@ -239,14 +239,19 @@ internal class CompositionBuilder(
     private fun parse(
         group: CompositionGroup,
         context: SourceContext,
-        children: List<MutableInspectorNode>
+        children: List<MutableInspectorNode>,
     ): MutableInspectorNode {
         val node = newNode()
         node.name = context.name ?: ""
         node.key = group.key as? Int ?: 0
         node.inlined = context.isInline
         node.box = context.bounds.emptyCheck()
-
+        if (node.box == emptyBox && children.any { it.boxSizeOverridden }) {
+            // If this node has no size and a child box size comes from a sub-composition propagate
+            // the size to the parent node.
+            children.forEach { node.box = node.box.union(it.box) }
+            node.boxSizeOverridden = true
+        }
         if (node.name == LAZY_ITEM) {
             listIndex = getListIndexOfLazyItem(context)
         }
@@ -284,7 +289,7 @@ internal class CompositionBuilder(
         // Keep an empty node if we are capturing nodes into sub-compositions.
         // Mark it unwanted after copying the node to the sub-compositions.
         if (
-            (node.box == emptyBox && !capturingSubCompositions.contains(node)) ||
+            (node.box == emptyBox && !capturingSubComposition.contains(node)) ||
                 unwantedName(node.name)
         ) {
             return node.markUnwanted()
@@ -318,7 +323,7 @@ internal class CompositionBuilder(
             left = min(left, other.left),
             top = min(top, other.top),
             bottom = max(bottom, other.bottom),
-            right = max(right, other.right)
+            right = max(right, other.right),
         )
     }
 
@@ -339,63 +344,69 @@ internal class CompositionBuilder(
      * The Button & Text will be in a sub-composition and the AlertDialog will be in a parent
      * composition with an empty size. We would like to show the Button inside the AlertDialog in
      * the sub-composition. Otherwise it will look like a random Button in the component tree.
+     *
+     * The [capturingSubComposition] will be setup when we encounter a sub-composition that belongs
+     * to a different compose View. This method will move nodes from the parent composition to the
+     * sub-composition if the parent node has no size or the parent node is one of the
+     * [knownCompositionHolders] that has a size but should be moved to the sub-composition.
+     *
+     * If a node has multiple sub-compositions among its children, stop capturing and keep the node
+     * in the parent composition.
      */
     private fun checkCapturingSubCompositions(
         node: MutableInspectorNode,
-        children: List<MutableInspectorNode>
+        children: List<MutableInspectorNode>,
     ) {
-        if (capturingSubCompositions.isEmpty()) {
+        if (capturingSubComposition.isEmpty()) {
             return
         }
-
-        var nodeSubCompositions: MutableList<SubCompositionResult>? = null
-        val subCompositionChildren = children.intersect(capturingSubCompositions.keys)
-        subCompositionChildren.forEach { child ->
-            val subCompositions = capturingSubCompositions.remove(child)!!
-            if (!child.isUnwanted) {
-                copyNodeToAllSubCompositions(child, subCompositions)
-                if (child.box == emptyBox) {
+        val childrenWithSubCompositions = children.intersect(capturingSubComposition.keys)
+        if (childrenWithSubCompositions.isEmpty()) {
+            return
+        }
+        var box: IntRect = emptyBox
+        var stopCapturing = false
+        childrenWithSubCompositions.forEach { child ->
+            val subComposition = capturingSubComposition.remove(child)!!
+            val isKnownChildCompositionHolder = knownCompositionHolders.contains(child.name)
+            if (!child.isUnwanted || isKnownChildCompositionHolder) {
+                copyNodeToSubComposition(child, subComposition)
+                if (child.box == emptyBox || isKnownChildCompositionHolder) {
                     child.markUnwanted()
                 }
             }
-            nodeSubCompositions = addAll(nodeSubCompositions, subCompositions)
+            if (
+                childrenWithSubCompositions.size == 1 &&
+                    (node.box == emptyBox || knownCompositionHolders.contains(node.name))
+            ) {
+                // Prepare to copy the current node to the sub composition:
+                capturingSubComposition[node] = subComposition
+            } else {
+                stopCapturing = true
+                box = box.union(subComposition.ownerViewBox ?: emptyBox)
+            }
         }
-        if (node.box == emptyBox) {
-            // Prepare to copy the current
-            nodeSubCompositions?.let { capturingSubCompositions[node] = it }
+        if (stopCapturing && node.box == emptyBox) {
+            // Propagate the box size to the parent of the sub-composition if necessary.
+            node.box = box
+            node.boxSizeOverridden = true
         }
     }
 
-    private fun addAll(
-        first: MutableList<SubCompositionResult>?,
-        second: MutableList<SubCompositionResult>?
-    ): MutableList<SubCompositionResult>? =
-        when {
-            first == null -> second
-            second == null -> first
-            first === second -> first
-            else -> {
-                first.addAll(second)
-                first
-            }
-        }
-
-    private fun copyNodeToAllSubCompositions(
+    private fun copyNodeToSubComposition(
         node: MutableInspectorNode,
-        subCompositions: List<SubCompositionResult>
+        subComposition: SubCompositionResult,
     ) {
-        subCompositions.forEach { subComposition ->
-            val copy = newNode(node)
-            copy.box = subComposition.ownerViewBox ?: emptyBox
-            copy.children.addAll(subComposition.nodes)
-            subComposition.nodes = listOf(copy.build())
-        }
+        val copy = newNode(node)
+        copy.box = subComposition.ownerViewBox ?: emptyBox
+        copy.children.addAll(subComposition.nodes)
+        subComposition.nodes = listOf(copy.build())
     }
 
     private fun updateSubCompositionsAtEnd(node: MutableInspectorNode?) {
-        val subCompositions = node?.let { capturingSubCompositions.remove(node) } ?: return
+        val subComposition = node?.let { capturingSubComposition.remove(node) } ?: return
         if (!node.isUnwanted) {
-            copyNodeToAllSubCompositions(node, subCompositions)
+            copyNodeToSubComposition(node, subComposition)
             if (node.box == emptyBox) {
                 node.markUnwanted()
             }
@@ -405,7 +416,7 @@ internal class CompositionBuilder(
     private fun parseLayoutInfo(
         layoutInfo: LayoutInfo,
         context: SourceContext,
-        node: MutableInspectorNode
+        node: MutableInspectorNode,
     ): MutableInspectorNode {
         val box = context.bounds
         val size = box.size.toSize()
@@ -548,7 +559,7 @@ internal class CompositionBuilder(
      */
     private fun updateTree(
         node: MutableInspectorNode,
-        modification: (MutableInspectorNode) -> Unit
+        modification: (MutableInspectorNode) -> Unit,
     ) {
         val oldChildren = node.children.toList()
         node.children.clear()
@@ -558,7 +569,7 @@ internal class CompositionBuilder(
 
     private fun updateTree(
         node: InspectorNode,
-        modification: (MutableInspectorNode) -> Unit
+        modification: (MutableInspectorNode) -> Unit,
     ): InspectorNode {
         val newNode = newNode()
         newNode.shallowCopy(node)
@@ -620,7 +631,7 @@ internal class SubCompositionResult(
      * The index of this reusable sub-composition or -1 if this is not reusable content. Example: an
      * item in a LazyColumn.
      */
-    val listIndex: Int
+    val listIndex: Int,
 ) {
     /**
      * The identity of the parent [CompositionGroup] where this composition belongs in a parent

@@ -69,7 +69,7 @@ class FragmentTestActivity : FragmentActivity(R.layout.activity_content) {
                                 retainInstance = true
                             }
                         },
-                        CHILD_FRAGMENT_TAG
+                        CHILD_FRAGMENT_TAG,
                     )
                     .commitNow()
             }

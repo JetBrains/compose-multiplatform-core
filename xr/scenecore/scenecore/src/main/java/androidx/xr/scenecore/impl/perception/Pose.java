@@ -16,8 +16,9 @@
 
 package androidx.xr.scenecore.impl.perception;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /** A translation and rotation of an object (e.g. Trackable, Anchor). */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -42,8 +43,7 @@ public final class Pose {
     }
 
     /** A pose at zero position and orientation. */
-    @NonNull
-    public static Pose identity() {
+    public static @NonNull Pose identity() {
         return new Pose(0, 0, 0, 0, 0, 0, 1);
     }
 

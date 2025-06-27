@@ -21,6 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.SdkResourceGenerator
 
@@ -101,4 +103,5 @@ androidx {
     type = SoftwareType.GRADLE_PLUGIN
     inceptionYear = "2023"
     description = "Android Room Gradle Plugin"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

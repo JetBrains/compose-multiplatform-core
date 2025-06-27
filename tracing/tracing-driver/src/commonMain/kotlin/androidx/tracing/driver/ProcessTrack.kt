@@ -108,11 +108,7 @@ private const val EMPTY_PROCESS_ID = -1
 private const val EMPTY_PROCESS_NAME = "Empty Process"
 
 internal class EmptyProcessTrack(context: EmptyTraceContext) :
-    ProcessTrack(
-        context = context,
-        id = EMPTY_PROCESS_ID,
-        name = EMPTY_PROCESS_NAME,
-    ) {
+    ProcessTrack(context = context, id = EMPTY_PROCESS_ID, name = EMPTY_PROCESS_NAME) {
 
     private val emptyContext: EmptyTraceContext = context
 

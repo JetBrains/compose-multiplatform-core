@@ -53,7 +53,7 @@ internal abstract class JavacType(
             env.wrap<JavacType>(
                 typeMirror = it,
                 kotlinType = KmClassContainer.createFor(env, element)?.type,
-                elementNullability = element.nullability
+                elementNullability = element.nullability,
             )
         }
     }
@@ -80,7 +80,7 @@ internal abstract class JavacType(
         XTypeName(
             typeMirror.safeTypeName(),
             XTypeName.UNAVAILABLE_KTYPE_NAME,
-            maybeNullability ?: XNullability.UNKNOWN
+            maybeNullability ?: XNullability.UNKNOWN,
         )
     }
 
@@ -88,14 +88,14 @@ internal abstract class JavacType(
 
     override fun <T : Annotation> getAnnotations(
         annotation: KClass<T>,
-        containerAnnotation: KClass<out Annotation>?
+        containerAnnotation: KClass<out Annotation>?,
     ): List<XAnnotation> {
         throw UnsupportedOperationException("No plan to support XAnnotationBox.")
     }
 
     override fun hasAnnotation(
         annotation: KClass<out Annotation>,
-        containerAnnotation: KClass<out Annotation>?
+        containerAnnotation: KClass<out Annotation>?,
     ): Boolean {
         val annotationClassName: String = annotation.java.canonicalName!!
         return getAllAnnotations().any { it.qualifiedName == annotationClassName }
@@ -163,7 +163,7 @@ internal abstract class JavacType(
             env.wrap<JavacType>(
                 typeMirror = it,
                 kotlinType = (kotlinType as? KmTypeContainer)?.extendsBound,
-                elementNullability = maybeNullability
+                elementNullability = maybeNullability,
             )
         }
     }

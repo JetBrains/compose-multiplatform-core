@@ -18,7 +18,7 @@ package androidx.xr.compose.unit
 
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.scenecore.Dimensions
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
 import com.android.extensions.xr.ShadowConfig
 import com.google.common.truth.Truth.assertThat
@@ -57,12 +57,12 @@ class DpVolumeSizeTest {
 
         val dimensions = dpVolumeSize.toDimensionsInMeters()
 
-        assertThat(dimensions).isEqualTo(Dimensions(1f, 1f, 1f))
+        assertThat(dimensions).isEqualTo(FloatSize3d(1f, 1f, 1f))
     }
 
     @Test
     fun dpVolumeSize_fromMeters_returnsCorrectDpVolumeSize() {
-        val dpVolumeSize = Dimensions(1f, 1f, 1f).toDpVolumeSize()
+        val dpVolumeSize = FloatSize3d(1f, 1f, 1f).toDpVolumeSize()
 
         assertThat(dpVolumeSize).isEqualTo(DpVolumeSize(1.dp, 1.dp, 1.dp))
     }

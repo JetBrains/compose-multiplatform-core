@@ -1,61 +1,6 @@
 // Signature format: 4.0
 package androidx.sqlite.db.framework {
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FrameworkSQLiteDatabase implements androidx.sqlite.db.SupportSQLiteDatabase {
-    ctor public FrameworkSQLiteDatabase(android.database.sqlite.SQLiteDatabase delegate);
-    method public void beginTransaction();
-    method public void beginTransactionNonExclusive();
-    method public void beginTransactionWithListener(android.database.sqlite.SQLiteTransactionListener transactionListener);
-    method public void beginTransactionWithListenerNonExclusive(android.database.sqlite.SQLiteTransactionListener transactionListener);
-    method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public void close() throws java.io.IOException;
-    method public androidx.sqlite.db.SupportSQLiteStatement compileStatement(String sql);
-    method public int delete(String table, String? whereClause, Object?[]? whereArgs);
-    method public void disableWriteAheadLogging();
-    method public boolean enableWriteAheadLogging();
-    method public void endTransaction();
-    method @kotlin.jvm.Throws(exceptionClasses=SQLException::class) public void execSQL(String sql) throws android.database.SQLException;
-    method @kotlin.jvm.Throws(exceptionClasses=SQLException::class) public void execSQL(String sql, Object?[] bindArgs) throws android.database.SQLException;
-    method public java.util.List<android.util.Pair<java.lang.String,java.lang.String>>? getAttachedDbs();
-    method public long getMaximumSize();
-    method public long getPageSize();
-    method public String? getPath();
-    method public int getVersion();
-    method public boolean inTransaction();
-    method @kotlin.jvm.Throws(exceptionClasses=SQLException::class) public long insert(String table, int conflictAlgorithm, android.content.ContentValues values) throws android.database.SQLException;
-    method public boolean isDatabaseIntegrityOk();
-    method public boolean isDbLockedByCurrentThread();
-    method public boolean isOpen();
-    method public boolean isReadOnly();
-    method public boolean isWriteAheadLoggingEnabled();
-    method public boolean needUpgrade(int newVersion);
-    method public android.database.Cursor query(androidx.sqlite.db.SupportSQLiteQuery query);
-    method public android.database.Cursor query(androidx.sqlite.db.SupportSQLiteQuery query, android.os.CancellationSignal? cancellationSignal);
-    method public android.database.Cursor query(String query);
-    method public android.database.Cursor query(String query, Object?[] bindArgs);
-    method public void setForeignKeyConstraintsEnabled(boolean enabled);
-    method public void setLocale(java.util.Locale locale);
-    method public void setMaxSqlCacheSize(int cacheSize);
-    method public void setMaximumSize(long);
-    method public long setMaximumSize(long numBytes);
-    method public void setPageSize(long);
-    method public void setTransactionSuccessful();
-    method public void setVersion(int);
-    method public int update(String table, int conflictAlgorithm, android.content.ContentValues values, String? whereClause, Object?[]? whereArgs);
-    method public boolean yieldIfContendedSafely();
-    method public boolean yieldIfContendedSafely(long sleepAfterYieldDelayMillis);
-    property public java.util.List<android.util.Pair<java.lang.String,java.lang.String>>? attachedDbs;
-    property public boolean isDatabaseIntegrityOk;
-    property public boolean isDbLockedByCurrentThread;
-    property public boolean isExecPerConnectionSQLSupported;
-    property public boolean isOpen;
-    property public boolean isReadOnly;
-    property public boolean isWriteAheadLoggingEnabled;
-    property public long maximumSize;
-    property public long pageSize;
-    property public String? path;
-    property public int version;
-  }
-
   public final class FrameworkSQLiteOpenHelperFactory implements androidx.sqlite.db.SupportSQLiteOpenHelper.Factory {
     ctor public FrameworkSQLiteOpenHelperFactory();
     method public androidx.sqlite.db.SupportSQLiteOpenHelper create(androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration configuration);
@@ -64,10 +9,6 @@ package androidx.sqlite.db.framework {
 }
 
 package androidx.sqlite.driver {
-
-  public final class AndroidSQLite {
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.sqlite.db.SupportSQLiteDatabase getSupportSQLiteDatabase(androidx.sqlite.driver.AndroidSQLiteConnection);
-  }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class AndroidSQLiteConnection implements androidx.sqlite.SQLiteConnection {
     ctor public AndroidSQLiteConnection(android.database.sqlite.SQLiteDatabase db);
@@ -80,6 +21,21 @@ package androidx.sqlite.driver {
   public final class AndroidSQLiteDriver implements androidx.sqlite.SQLiteDriver {
     ctor public AndroidSQLiteDriver();
     method public androidx.sqlite.SQLiteConnection open(String fileName);
+    property public boolean hasConnectionPool;
+  }
+
+  public final class SupportSQLiteConnection implements androidx.sqlite.SQLiteConnection {
+    ctor public SupportSQLiteConnection(androidx.sqlite.db.SupportSQLiteDatabase db);
+    method public void close();
+    method public androidx.sqlite.db.SupportSQLiteDatabase getDb();
+    method public androidx.sqlite.SQLiteStatement prepare(String sql);
+    property public androidx.sqlite.db.SupportSQLiteDatabase db;
+  }
+
+  public final class SupportSQLiteDriver implements androidx.sqlite.SQLiteDriver {
+    ctor public SupportSQLiteDriver(androidx.sqlite.db.SupportSQLiteOpenHelper openHelper);
+    method public androidx.sqlite.driver.SupportSQLiteConnection open(String fileName);
+    property public boolean hasConnectionPool;
   }
 
 }

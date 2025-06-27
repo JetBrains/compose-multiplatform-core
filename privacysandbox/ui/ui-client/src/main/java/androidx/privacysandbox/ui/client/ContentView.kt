@@ -22,7 +22,6 @@ import android.view.MotionEvent
 import android.view.SurfaceView
 import android.view.animation.AnimationUtils
 import androidx.privacysandbox.ui.core.IMotionEventTransferCallback
-import androidx.privacysandbox.ui.core.IRemoteSessionController
 
 /**
  * Custom implementation of the [android.view.SurfaceView] that holds the
@@ -33,7 +32,7 @@ import androidx.privacysandbox.ui.core.IRemoteSessionController
  */
 internal class ContentView(
     context: Context,
-    val remoteSessionController: IRemoteSessionController
+    val remoteSessionController: IRemoteSessionController,
 ) : SurfaceView(context) {
     private var currentGestureMotionEventTransferCallback: IMotionEventTransferCallback? = null
     private var requestDisallowInterceptHandler: Handler? = null
@@ -66,7 +65,7 @@ internal class ContentView(
         remoteSessionController.notifyMotionEvent(
             motionEvent,
             eventTargetFrameTime,
-            currentGestureMotionEventTransferCallback
+            currentGestureMotionEventTransferCallback,
         )
         return true
     }

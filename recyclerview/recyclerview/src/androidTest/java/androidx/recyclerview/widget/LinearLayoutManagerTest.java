@@ -1405,6 +1405,7 @@ public class LinearLayoutManagerTest extends BaseLinearLayoutManagerTest {
         assertFirstItemIsAtTop();
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427263206
     @Test
     public void performAccessibilityAction_actionScrollToPosition_verticalWithRowArg_scrolls()
             throws Throwable {

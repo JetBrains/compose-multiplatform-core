@@ -40,7 +40,7 @@ class InProcessorTest(private val kotlinCode: Boolean) {
                 abstract fun setFoo(foo: String):Unit
                 }
                 """
-                            .trimIndent()
+                            .trimIndent(),
                 )
             } else {
                 Source.java(
@@ -53,7 +53,7 @@ class InProcessorTest(private val kotlinCode: Boolean) {
                 abstract public void setFoo(String foo);
                 }
                 """
-                            .trimIndent()
+                            .trimIndent(),
                 )
             }
 

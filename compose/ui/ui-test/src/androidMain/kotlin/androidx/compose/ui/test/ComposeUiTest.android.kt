@@ -60,18 +60,18 @@ import kotlinx.coroutines.withContext
 @ExperimentalTestApi
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout"
+    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout",
 )
 @JvmName("runComposeUiTest")
 fun runComposeUiTestNonSuspendingLambda(
     effectContext: CoroutineContext = EmptyCoroutineContext,
-    block: ComposeUiTest.() -> Unit
+    block: ComposeUiTest.() -> Unit,
 ) {
     runAndroidComposeUiTest(
         activityClass = ComponentActivity::class.java,
         effectContext = effectContext,
         runTestContext = EmptyCoroutineContext,
-        testTimeout = Duration.INFINITE
+        testTimeout = Duration.INFINITE,
     ) {
         block()
     }
@@ -80,19 +80,19 @@ fun runComposeUiTestNonSuspendingLambda(
 @ExperimentalTestApi
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout"
+    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout",
 )
 @JvmName("runAndroidComposeUiTest")
 fun <A : ComponentActivity> runAndroidComposeUiTestNonSuspendingLambda(
     activityClass: Class<A>,
     effectContext: CoroutineContext = EmptyCoroutineContext,
-    block: AndroidComposeUiTest<A>.() -> Unit
+    block: AndroidComposeUiTest<A>.() -> Unit,
 ) {
     runAndroidComposeUiTest(
         activityClass = activityClass,
         effectContext = effectContext,
         runTestContext = EmptyCoroutineContext,
-        testTimeout = Duration.INFINITE
+        testTimeout = Duration.INFINITE,
     ) {
         block()
     }
@@ -101,18 +101,18 @@ fun <A : ComponentActivity> runAndroidComposeUiTestNonSuspendingLambda(
 @ExperimentalTestApi
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout"
+    message = "Replaced with same function, but with suspend block, runTextContext, testTimeout",
 )
 @JvmName("runAndroidComposeUiTest")
 inline fun <reified A : ComponentActivity> runAndroidComposeUiTestNonSuspendingLambda(
     effectContext: CoroutineContext = EmptyCoroutineContext,
-    noinline block: AndroidComposeUiTest<A>.() -> Unit
+    noinline block: AndroidComposeUiTest<A>.() -> Unit,
 ) {
     runAndroidComposeUiTest(
         activityClass = A::class.java,
         effectContext = effectContext,
         runTestContext = EmptyCoroutineContext,
-        testTimeout = Duration.INFINITE
+        testTimeout = Duration.INFINITE,
     ) {
         block()
     }
@@ -121,18 +121,18 @@ inline fun <reified A : ComponentActivity> runAndroidComposeUiTestNonSuspendingL
 @ExperimentalTestApi
 @Deprecated(
     level = DeprecationLevel.HIDDEN,
-    message = "Replaced with same function, but with runTextContext and testTimeout"
+    message = "Replaced with same function, but with runTextContext and testTimeout",
 )
 @JvmName("AndroidComposeUiTestEnvironment")
 inline fun <A : ComponentActivity> AndroidComposeUiTestEnvironmentNoSuspendingLambda(
     effectContext: CoroutineContext = EmptyCoroutineContext,
-    crossinline activityProvider: () -> A?
+    crossinline activityProvider: () -> A?,
 ): AndroidComposeUiTestEnvironment<A> {
     return AndroidComposeUiTestEnvironment(
         effectContext,
         EmptyCoroutineContext,
         Duration.INFINITE,
-        activityProvider
+        activityProvider,
     )
 }
 
@@ -154,14 +154,14 @@ actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
     testTimeout: Duration,
-    block: suspend ComposeUiTest.() -> Unit
+    block: suspend ComposeUiTest.() -> Unit,
 ): TestResult {
     return runAndroidComposeUiTest(
         ComponentActivity::class.java,
         effectContext,
         runTestContext,
         testTimeout,
-        block
+        block,
     )
 }
 
@@ -190,7 +190,7 @@ inline fun <reified A : ComponentActivity> runAndroidComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = 60.seconds,
-    noinline block: suspend AndroidComposeUiTest<A>.() -> Unit
+    noinline block: suspend AndroidComposeUiTest<A>.() -> Unit,
 ): TestResult {
     return runAndroidComposeUiTest(A::class.java, effectContext, runTestContext, testTimeout, block)
 }
@@ -222,7 +222,7 @@ fun <A : ComponentActivity> runAndroidComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = 60.seconds,
-    block: suspend AndroidComposeUiTest<A>.() -> Unit
+    block: suspend AndroidComposeUiTest<A>.() -> Unit,
 ): TestResult {
     // Don't start the scenario now, wait until we're inside runTest { },
     // in case the Activity's onCreate/Start/Resume calls setContent
@@ -231,7 +231,7 @@ fun <A : ComponentActivity> runAndroidComposeUiTest(
         AndroidComposeUiTestEnvironment(
             effectContext = effectContext,
             runTestContext = runTestContext,
-            testTimeout = testTimeout
+            testTimeout = testTimeout,
         ) {
             requireNotNull(scenario) {
                     "ActivityScenario has not yet been launched, or has already finished. Make sure that " +
@@ -358,7 +358,7 @@ inline fun <A : ComponentActivity> AndroidComposeUiTestEnvironment(
     effectContext: CoroutineContext = EmptyCoroutineContext,
     runTestContext: CoroutineContext = EmptyCoroutineContext,
     testTimeout: Duration = 60.seconds,
-    crossinline activityProvider: () -> A?
+    crossinline activityProvider: () -> A?,
 ): AndroidComposeUiTestEnvironment<A> {
     return object : AndroidComposeUiTestEnvironment<A>(effectContext, runTestContext, testTimeout) {
         override val activity: A?
@@ -393,7 +393,7 @@ inline fun <A : ComponentActivity> AndroidComposeUiTestEnvironment(
 abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
     private val effectContext: CoroutineContext = EmptyCoroutineContext,
     private val runTestContext: CoroutineContext = EmptyCoroutineContext,
-    private val testTimeout: Duration = 60.seconds
+    private val testTimeout: Duration = 60.seconds,
 ) {
 
     @Suppress("unused")
@@ -450,7 +450,7 @@ abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
                     composeRootRegistry.getRegisteredComposeRoots().forEach {
                         it.measureAndLayoutForTest()
                     }
-                }
+                },
             )
         // The applying interceptor needs to be the outermost wrapper since TestMonotonicFrameClock
         // will not delegate if the dispatcher dispatch is not needed at the time of intercept.
@@ -531,7 +531,7 @@ abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
 
     @Deprecated(
         level = DeprecationLevel.HIDDEN,
-        message = "Replace with the same function, but with suspend block"
+        message = "Replace with the same function, but with suspend block",
     )
     @JvmName("runTest") // for binary compatibility
     fun <R> runTestNonSuspendingLambda(block: AndroidComposeUiTest<A>.() -> R?): R? {
@@ -548,7 +548,7 @@ abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
         runCatching {
                 kotlinx.coroutines.test.runTest(
                     context = combinedRunTestCoroutineContext,
-                    timeout = testTimeout
+                    timeout = testTimeout,
                 ) {
                     if (HasRobolectricFingerprint) {
                         idlingStrategy =
@@ -580,7 +580,7 @@ abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
                 ) {
                     throw AndroidComposeUiTestTimeoutException(
                             "runTest did not complete within the testTimeout of $testTimeout",
-                            throwable
+                            throwable,
                         )
                         .also { it.addSuppressed(throwable) }
                 } else {
@@ -635,7 +635,7 @@ abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
 
                 override fun onRegistrationChanged(
                     composeRoot: ViewRootForTest,
-                    registered: Boolean
+                    registered: Boolean,
                 ) {
                     composeRoot.setUncaughtExceptionHandler(
                         if (registered) {
@@ -741,7 +741,7 @@ abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
         override fun waitUntil(
             conditionDescription: String?,
             timeoutMillis: Long,
-            condition: () -> Boolean
+            condition: () -> Boolean,
         ) {
             val startTime = System.nanoTime()
             while (!condition()) {
@@ -769,14 +769,14 @@ abstract class AndroidComposeUiTestEnvironment<A : ComponentActivity>(
 
         override fun onNode(
             matcher: SemanticsMatcher,
-            useUnmergedTree: Boolean
+            useUnmergedTree: Boolean,
         ): SemanticsNodeInteraction {
             return SemanticsNodeInteraction(testContext, useUnmergedTree, matcher)
         }
 
         override fun onAllNodes(
             matcher: SemanticsMatcher,
-            useUnmergedTree: Boolean
+            useUnmergedTree: Boolean,
         ): SemanticsNodeInteractionCollection {
             return SemanticsNodeInteractionCollection(testContext, useUnmergedTree, matcher)
         }
@@ -887,7 +887,7 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     actual fun waitUntil(
         conditionDescription: String?,
         timeoutMillis: Long,
-        condition: () -> Boolean
+        condition: () -> Boolean,
     )
 
     /** Registers an [IdlingResource] in this test. */

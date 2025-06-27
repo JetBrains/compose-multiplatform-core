@@ -78,7 +78,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme"
+            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme",
         )
     }
 
@@ -97,7 +97,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme_pressed"
+            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme_pressed",
         )
     }
 
@@ -115,7 +115,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme_disabled"
+            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme_disabled",
         )
     }
 
@@ -154,7 +154,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme_twoLinesLabel"
+            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_lightTheme_twoLinesLabel",
         )
     }
 
@@ -172,7 +172,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_darkTheme"
+            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_darkTheme",
         )
     }
 
@@ -191,7 +191,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(10f, 10f)),
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_darkTheme_pressed"
+            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_darkTheme_pressed",
         )
     }
 
@@ -209,7 +209,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_darkTheme_disabled"
+            goldenIdentifier = "shortNavigationBar_equalWeightArrangement_darkTheme_disabled",
         )
     }
 
@@ -223,7 +223,7 @@ class ShortNavigationBarScreenshotTest {
             DefaultShortNavigationBar(
                 interactionSource = interactionSource,
                 arrangement = ShortNavigationBarArrangement.Centered,
-                iconPosition = NavigationItemIconPosition.Start
+                iconPosition = NavigationItemIconPosition.Start,
             )
         }
 
@@ -231,7 +231,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme"
+            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme",
         )
     }
 
@@ -246,7 +246,7 @@ class ShortNavigationBarScreenshotTest {
             DefaultShortNavigationBar(
                 interactionSource = interactionSource,
                 arrangement = ShortNavigationBarArrangement.Centered,
-                iconPosition = NavigationItemIconPosition.Start
+                iconPosition = NavigationItemIconPosition.Start,
             )
         }
 
@@ -254,7 +254,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(140f, 10f)),
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme_pressed"
+            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme_pressed",
         )
     }
 
@@ -269,7 +269,7 @@ class ShortNavigationBarScreenshotTest {
                 interactionSource = interactionSource,
                 setUnselectedItemsAsDisabled = true,
                 arrangement = ShortNavigationBarArrangement.Centered,
-                iconPosition = NavigationItemIconPosition.Start
+                iconPosition = NavigationItemIconPosition.Start,
             )
         }
 
@@ -277,7 +277,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme_disabled"
+            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme_disabled",
         )
     }
 
@@ -319,7 +319,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme_oneWiderItem"
+            goldenIdentifier = "shortNavigationBar_centeredArrangement_lightTheme_oneWiderItem",
         )
     }
 
@@ -333,7 +333,7 @@ class ShortNavigationBarScreenshotTest {
             DefaultShortNavigationBar(
                 interactionSource = interactionSource,
                 arrangement = ShortNavigationBarArrangement.Centered,
-                iconPosition = NavigationItemIconPosition.Start
+                iconPosition = NavigationItemIconPosition.Start,
             )
         }
 
@@ -341,7 +341,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_darkTheme"
+            goldenIdentifier = "shortNavigationBar_centeredArrangement_darkTheme",
         )
     }
 
@@ -356,7 +356,7 @@ class ShortNavigationBarScreenshotTest {
             DefaultShortNavigationBar(
                 interactionSource = interactionSource,
                 arrangement = ShortNavigationBarArrangement.Centered,
-                iconPosition = NavigationItemIconPosition.Start
+                iconPosition = NavigationItemIconPosition.Start,
             )
         }
 
@@ -364,7 +364,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = PressInteraction.Press(Offset(140f, 10f)),
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_darkTheme_pressed"
+            goldenIdentifier = "shortNavigationBar_centeredArrangement_darkTheme_pressed",
         )
     }
 
@@ -379,7 +379,7 @@ class ShortNavigationBarScreenshotTest {
                 interactionSource = interactionSource,
                 setUnselectedItemsAsDisabled = true,
                 arrangement = ShortNavigationBarArrangement.Centered,
-                iconPosition = NavigationItemIconPosition.Start
+                iconPosition = NavigationItemIconPosition.Start,
             )
         }
 
@@ -387,7 +387,7 @@ class ShortNavigationBarScreenshotTest {
             scope = scope,
             interactionSource = interactionSource,
             interaction = null,
-            goldenIdentifier = "shortNavigationBar_centeredArrangement_darkTheme_disabled"
+            goldenIdentifier = "shortNavigationBar_centeredArrangement_darkTheme_disabled",
         )
     }
 
@@ -405,7 +405,7 @@ class ShortNavigationBarScreenshotTest {
         scope: CoroutineScope,
         interactionSource: MutableInteractionSource,
         interaction: Interaction? = null,
-        goldenIdentifier: String
+        goldenIdentifier: String,
     ) {
         if (interaction != null) {
             composeTestRule.runOnIdle {
@@ -445,7 +445,7 @@ private fun DefaultShortNavigationBar(
     modifier: Modifier = Modifier,
     setUnselectedItemsAsDisabled: Boolean = false,
     arrangement: ShortNavigationBarArrangement = ShortNavigationBarArrangement.EqualWeight,
-    iconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top
+    iconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top,
 ) {
     Box(modifier.semantics(mergeDescendants = true) {}.testTag(Tag)) {
         ShortNavigationBar(arrangement = arrangement) {
@@ -455,7 +455,7 @@ private fun DefaultShortNavigationBar(
                 selected = true,
                 label = { Text("Label") },
                 onClick = {},
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
             ShortNavigationBarItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
@@ -463,7 +463,7 @@ private fun DefaultShortNavigationBar(
                 selected = false,
                 label = { Text("Label") },
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
             ShortNavigationBarItem(
                 icon = { Icon(Icons.Filled.Favorite, null) },
@@ -471,7 +471,7 @@ private fun DefaultShortNavigationBar(
                 selected = false,
                 label = { Text("Label") },
                 enabled = !setUnselectedItemsAsDisabled,
-                onClick = {}
+                onClick = {},
             )
         }
     }
@@ -482,7 +482,7 @@ private fun ComposeContentTestRule.setContentWithSimulatedSize(
     simulatedHeight: Dp,
     colorScheme: ColorScheme,
     modifier: Modifier = Modifier,
-    composable: @Composable () -> Unit
+    composable: @Composable () -> Unit,
 ) {
     setContent {
         val currentDensity = LocalDensity.current
@@ -494,11 +494,7 @@ private fun ComposeContentTestRule.setContentWithSimulatedSize(
         MaterialTheme(colorScheme = colorScheme) {
             Surface(modifier = modifier) {
                 CompositionLocalProvider(LocalDensity provides simulatedDensity) {
-                    Box(
-                        Modifier.fillMaxWidth().height(simulatedHeight),
-                    ) {
-                        composable()
-                    }
+                    Box(Modifier.fillMaxWidth().height(simulatedHeight)) { composable() }
                 }
             }
         }

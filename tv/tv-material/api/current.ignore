@@ -1,7 +1,17 @@
 // Baseline format: 1.0
-AddedMethod: androidx.tv.material3.DrawerState#DrawerState():
-    Added constructor androidx.tv.material3.DrawerState()
-AddedMethod: androidx.tv.material3.Shapes#Shapes():
-    Added constructor androidx.tv.material3.Shapes()
-AddedMethod: androidx.tv.material3.Typography#Typography():
-    Added constructor androidx.tv.material3.Typography()
+RemovedMethod: androidx.tv.material3.Border#Border(androidx.compose.foundation.BorderStroke, float, androidx.compose.ui.graphics.Shape):
+    Binary breaking change: Removed constructor androidx.tv.material3.Border(androidx.compose.foundation.BorderStroke,float,androidx.compose.ui.graphics.Shape)
+RemovedMethod: androidx.tv.material3.CheckboxColors#CheckboxColors(long, long, long, long, long, long, long, long, long, long, long, long):
+    Binary breaking change: Removed constructor androidx.tv.material3.CheckboxColors(long,long,long,long,long,long,long,long,long,long,long,long)
+RemovedMethod: androidx.tv.material3.ColorScheme#ColorScheme(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long):
+    Binary breaking change: Removed constructor androidx.tv.material3.ColorScheme(long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long)
+RemovedMethod: androidx.tv.material3.Glow#Glow(long, float):
+    Binary breaking change: Removed constructor androidx.tv.material3.Glow(long,float)
+RemovedMethod: androidx.tv.material3.ListItemColors#ListItemColors(long, long, long, long, long, long, long, long, long, long, long, long, long, long):
+    Binary breaking change: Removed constructor androidx.tv.material3.ListItemColors(long,long,long,long,long,long,long,long,long,long,long,long,long,long)
+RemovedMethod: androidx.tv.material3.NavigationDrawerItemColors#NavigationDrawerItemColors(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long):
+    Binary breaking change: Removed constructor androidx.tv.material3.NavigationDrawerItemColors(long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long)
+RemovedMethod: androidx.tv.material3.RadioButtonColors#RadioButtonColors(long, long, long, long):
+    Binary breaking change: Removed constructor androidx.tv.material3.RadioButtonColors(long,long,long,long)
+RemovedMethod: androidx.tv.material3.SwitchColors#SwitchColors(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long):
+    Binary breaking change: Removed constructor androidx.tv.material3.SwitchColors(long,long,long,long,long,long,long,long,long,long,long,long,long,long,long,long)

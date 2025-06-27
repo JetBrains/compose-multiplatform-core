@@ -179,7 +179,7 @@ import java.util.Set;
  * {@code adapter.notify*} methods when content changes, or you can use one of the easier solutions
  * RecyclerView provides:
  * <p>
- * <h4>List diffing with DiffUtil</h4>
+ * <h3>List diffing with DiffUtil</h3>
  * If your RecyclerView is displaying a list that is re-fetched from scratch for each update (e.g.
  * from the network, or from a database), {@link DiffUtil} can calculate the difference between
  * versions of the list. {@code DiffUtil} takes both lists as input and computes the difference,
@@ -201,7 +201,7 @@ import java.util.Set;
  * API you can use to compute the diffs yourself. Each approach allows you to specify how diffs
  * should be computed based on item data.
  * <p>
- * <h4>List mutation with SortedList</h4>
+ * <h3>List mutation with SortedList</h3>
  * If your RecyclerView receives updates incrementally, e.g. item X is inserted, or item Y is
  * removed, you can use {@link SortedList} to manage your list. You define how to order items,
  * and it will automatically trigger update signals that RecyclerView can use. SortedList works
@@ -210,7 +210,7 @@ import java.util.Set;
  * {@link SortedList#replaceAll(Object[])}, but this method is more limited than the list diffing
  * behavior above.
  * <p>
- * <h4>Paging Library</h4>
+ * <h3>Paging Library</h3>
  * The <a href="https://developer.android.com/topic/libraries/architecture/paging/">Paging
  * library</a> extends the diff-based approach to additionally support paged loading. It provides
  * the {@link androidx.paging.PagedList} class that operates as a self-loading list, provided a
@@ -219,8 +219,6 @@ import java.util.Set;
  * information about the Paging library, see the
  * <a href="https://developer.android.com/topic/libraries/architecture/paging/">library
  * documentation</a>.
- *
- * {@link androidx.recyclerview.R.attr#layoutManager}
  */
 public class RecyclerView extends ViewGroup implements ScrollingView,
         NestedScrollingChild2, NestedScrollingChild3 {

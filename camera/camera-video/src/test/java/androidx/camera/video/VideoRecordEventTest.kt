@@ -73,7 +73,7 @@ class VideoRecordEventTest {
                 TEST_RECORDING_STATE,
                 TEST_OUTPUT_RESULT,
                 error,
-                cause
+                cause,
             )
 
         assertThat(event).isInstanceOf(VideoRecordEvent.Finalize::class.java)
@@ -93,7 +93,7 @@ class VideoRecordEventTest {
                 TEST_RECORDING_STATE,
                 TEST_OUTPUT_RESULT,
                 ERROR_NONE,
-                RuntimeException()
+                RuntimeException(),
             )
         }
     }

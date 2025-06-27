@@ -26,6 +26,8 @@ import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
 public class FakeJxrPlatformAdapterFactory() : JxrPlatformAdapterFactory {
     override val requirements: Set<Feature> = emptySet()
 
-    override fun createPlatformAdapter(activity: Activity): FakeJxrPlatformAdapter =
-        FakeJxrPlatformAdapter()
+    override fun createPlatformAdapter(
+        activity: Activity,
+        unscaledGravityAlignedActivitySpace: Boolean,
+    ): FakeJxrPlatformAdapter = FakeJxrPlatformAdapter()
 }

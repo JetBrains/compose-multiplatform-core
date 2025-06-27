@@ -573,6 +573,7 @@ public abstract class GlobalSearchSessionCtsTestBase {
         List<GenericDocument> documents =
                 snapshotResults("body", new SearchSpec.Builder()
                         .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .addFilterPackageNames(mContext.getPackageName())
                         .addProjection(
                                 AppSearchEmail.SCHEMA_TYPE, ImmutableList.of("subject", "to"))
                         .build());
@@ -635,6 +636,7 @@ public abstract class GlobalSearchSessionCtsTestBase {
         List<GenericDocument> documents =
                 snapshotResults("body", new SearchSpec.Builder()
                         .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .addFilterPackageNames(mContext.getPackageName())
                         .addProjection(AppSearchEmail.SCHEMA_TYPE,
                                 Collections.emptyList())
                         .build());
@@ -692,6 +694,7 @@ public abstract class GlobalSearchSessionCtsTestBase {
         List<GenericDocument> documents =
                 snapshotResults("body", new SearchSpec.Builder()
                         .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .addFilterPackageNames(mContext.getPackageName())
                         .addProjection("NonExistentType", Collections.emptyList())
                         .addProjection(
                                 AppSearchEmail.SCHEMA_TYPE, ImmutableList.of("subject", "to"))
@@ -840,6 +843,7 @@ public abstract class GlobalSearchSessionCtsTestBase {
         List<GenericDocument> documents =
                 snapshotResults("body", new SearchSpec.Builder()
                         .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .addFilterPackageNames(mContext.getPackageName())
                         .setResultGrouping(
                                 SearchSpec.GROUPING_TYPE_PER_PACKAGE, /*limit=*/ 1)
                         .build());
@@ -850,6 +854,7 @@ public abstract class GlobalSearchSessionCtsTestBase {
         documents =
                 snapshotResults("body", new SearchSpec.Builder()
                         .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .addFilterPackageNames(mContext.getPackageName())
                         .setResultGrouping(
                                 SearchSpec.GROUPING_TYPE_PER_NAMESPACE, /*limit=*/ 1)
                         .build());
@@ -860,6 +865,7 @@ public abstract class GlobalSearchSessionCtsTestBase {
         documents =
                 snapshotResults("body", new SearchSpec.Builder()
                         .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .addFilterPackageNames(mContext.getPackageName())
                         .setResultGrouping(
                                 SearchSpec.GROUPING_TYPE_PER_NAMESPACE
                                         | SearchSpec.GROUPING_TYPE_PER_PACKAGE, /*limit=*/ 1)
@@ -1511,6 +1517,69 @@ public abstract class GlobalSearchSessionCtsTestBase {
                     temporaryObserver);
             mGlobalSearchSession.unregisterObserverCallback(mContext.getPackageName(),
                     permanentObserver);
+        }
+    }
+
+    // Previously, there was a bug in PlatformStorage where an observer that was registered for
+    // multiple packages could only be unregistered once
+    @Test
+    public void testRemoveObserver_multiplePackages() throws Exception {
+        assumeTrue(mGlobalSearchSession.getFeatures()
+                .isFeatureSupported(Features.GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK));
+
+        TestObserverCallback observer1 = new TestObserverCallback();
+        TestObserverCallback observer2 = new TestObserverCallback();
+
+        // Set up the email type in both databases, and the gift type in db1
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder()
+                .addSchemas(AppSearchEmail.SCHEMA).build()).get();
+
+        // Register observer1 for the local package and a temporary package and observer2 for
+        // just the local package
+        mGlobalSearchSession.registerObserverCallback(
+                mContext.getPackageName(),
+                new ObserverSpec.Builder().build(),
+                EXECUTOR,
+                observer1);
+        mGlobalSearchSession.registerObserverCallback(
+                "foo",
+                new ObserverSpec.Builder().build(),
+                EXECUTOR,
+                observer1);
+        mGlobalSearchSession.registerObserverCallback(
+                mContext.getPackageName(),
+                new ObserverSpec.Builder().build(),
+                EXECUTOR,
+                observer2);
+
+        // Unregister observer1 from both packages starting with the non-existent package; with
+        // the previous bug, observer1 would not be unregistered from the local package
+        mGlobalSearchSession.unregisterObserverCallback("foo", observer1);
+        mGlobalSearchSession.unregisterObserverCallback(mContext.getPackageName(), observer1);
+
+        try {
+            // Index two documents in two separate calls
+            AppSearchEmail email1 = new AppSearchEmail.Builder("namespace", "id1").build();
+            AppSearchEmail email2 = new AppSearchEmail.Builder("namespace", "id2").build();
+
+            checkIsBatchResultSuccess(
+                    mDb1.putAsync(new PutDocumentsRequest.Builder()
+                            .addGenericDocuments(email1).build()));
+            checkIsBatchResultSuccess(
+                    mDb1.putAsync(new PutDocumentsRequest.Builder()
+                            .addGenericDocuments(email2).build()));
+
+            // If observer2 has received both notifications, then it is highly likely that if
+            // observer1 is still mistakenly registered, it has received at least 1 notification
+            observer2.waitForNotificationCount(2);
+            observer1.waitForNotificationCount(0);
+
+            // Verify that observer1 was indeed unregistered
+            assertThat(observer1.getSchemaChanges()).isEmpty();
+            assertThat(observer1.getDocumentChanges()).isEmpty();
+        } finally {
+            mGlobalSearchSession.unregisterObserverCallback(
+                    mContext.getPackageName(), observer2);
         }
     }
 

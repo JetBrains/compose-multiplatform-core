@@ -19,14 +19,15 @@ package androidx.xr.scenecore.impl.perception;
 import android.app.Activity;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.scenecore.impl.perception.exceptions.FailedToInitializeException;
 import androidx.xr.scenecore.impl.perception.exceptions.LibraryLoadingException;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -84,8 +85,7 @@ public class PerceptionLibrary {
     // within AndroidX. We're in the process of migrating to AndroidX. Without suppressing this
     // warning, however, we get a build error - go/bugpattern/RestrictTo.
     @SuppressWarnings({"RestrictTo", "AsyncSuffixFuture"})
-    @Nullable
-    public ListenableFuture<Session> initSession(
+    public @Nullable ListenableFuture<Session> initSession(
             @NonNull Activity activity,
             @PerceptionLibraryConstants.OpenXrSpaceType int referenceSpaceType,
             @NonNull ExecutorService executor) {
@@ -140,14 +140,12 @@ public class PerceptionLibrary {
 
     /** Returns the previously created session or null. */
     @SuppressWarnings("VisiblySynchronized")
-    @Nullable
-    public synchronized Session getSession() {
+    public synchronized @Nullable Session getSession() {
         return mSession;
     }
 
     /** Returns the activity associated with the session. */
-    @NonNull
-    public Activity getActivity() {
+    public @NonNull Activity getActivity() {
         return mSession.mActivity;
     }
 

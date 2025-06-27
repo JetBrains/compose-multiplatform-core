@@ -41,7 +41,7 @@ interface EntityProcessor : EntityOrViewProcessor {
         fun extractIndices(annotation: XAnnotation, tableName: String): List<IndexInput> {
             val indicesAnnotations = annotation["indices"]?.asAnnotationList() ?: emptyList()
             return indicesAnnotations.map { indexAnnotation ->
-                val unique = indexAnnotation["unique"]?.asBoolean() == true
+                val unique = indexAnnotation["unique"]?.asBoolean() ?: false
                 val nameValue = indexAnnotation["name"]?.asString() ?: ""
                 val columns = indexAnnotation["value"]?.asStringList() ?: emptyList()
                 val orders =
@@ -77,7 +77,7 @@ interface EntityProcessor : EntityOrViewProcessor {
                         ForeignKeyAction.fromAnnotationValue(
                             foreignKeyAnnotation["onUpdate"]?.asInt() ?: NO_ACTION
                         ),
-                    deferred = foreignKeyAnnotation["deferred"]?.asBoolean() == true
+                    deferred = foreignKeyAnnotation["deferred"]?.asBoolean() ?: false,
                 )
             }
         }
@@ -89,7 +89,7 @@ data class IndexInput(
     val name: String,
     val unique: Boolean,
     val columnNames: List<String>,
-    val orders: List<androidx.room.Index.Order>
+    val orders: List<androidx.room.Index.Order>,
 )
 
 /** ForeignKey, before it is processed in the context of a database. */
@@ -99,13 +99,13 @@ data class ForeignKeyInput(
     val childColumns: List<String>,
     val onDelete: ForeignKeyAction?,
     val onUpdate: ForeignKeyAction?,
-    val deferred: Boolean
+    val deferred: Boolean,
 )
 
 fun EntityProcessor(
     context: Context,
     element: XTypeElement,
-    referenceStack: LinkedHashSet<String> = LinkedHashSet()
+    referenceStack: LinkedHashSet<String> = LinkedHashSet(),
 ): EntityProcessor {
     return if (element.hasAnyAnnotation(Fts3::class, Fts4::class)) {
         FtsTableEntityProcessor(context, element, referenceStack)

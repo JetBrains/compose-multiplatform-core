@@ -1,5 +1,9 @@
 // Baseline format: 1.0
-RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetMillis():
-    Removed method androidx.compose.animation.core.StartOffset.getOffsetMillis()
-RemovedMethod: androidx.compose.animation.core.StartOffset#getOffsetType():
-    Removed method androidx.compose.animation.core.StartOffset.getOffsetType()
+AddedMethod: androidx.compose.animation.core.InfiniteRepeatableSpec#InfiniteRepeatableSpec(androidx.compose.animation.core.DurationBasedAnimationSpec, androidx.compose.animation.core.RepeatMode, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.animation.core.InfiniteRepeatableSpec(androidx.compose.animation.core.DurationBasedAnimationSpec,androidx.compose.animation.core.RepeatMode,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.animation.core.RepeatableSpec#RepeatableSpec(int, androidx.compose.animation.core.DurationBasedAnimationSpec, androidx.compose.animation.core.RepeatMode, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.animation.core.RepeatableSpec(int,androidx.compose.animation.core.DurationBasedAnimationSpec,androidx.compose.animation.core.RepeatMode,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.animation.core.VectorizedInfiniteRepeatableSpec#VectorizedInfiniteRepeatableSpec(androidx.compose.animation.core.VectorizedDurationBasedAnimationSpec, androidx.compose.animation.core.RepeatMode, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.animation.core.VectorizedInfiniteRepeatableSpec(androidx.compose.animation.core.VectorizedDurationBasedAnimationSpec,androidx.compose.animation.core.RepeatMode,long,kotlin.jvm.internal.DefaultConstructorMarker)
+AddedMethod: androidx.compose.animation.core.VectorizedRepeatableSpec#VectorizedRepeatableSpec(int, androidx.compose.animation.core.VectorizedDurationBasedAnimationSpec, androidx.compose.animation.core.RepeatMode, long, kotlin.jvm.internal.DefaultConstructorMarker):
+    Added constructor androidx.compose.animation.core.VectorizedRepeatableSpec(int,androidx.compose.animation.core.VectorizedDurationBasedAnimationSpec,androidx.compose.animation.core.RepeatMode,long,kotlin.jvm.internal.DefaultConstructorMarker)

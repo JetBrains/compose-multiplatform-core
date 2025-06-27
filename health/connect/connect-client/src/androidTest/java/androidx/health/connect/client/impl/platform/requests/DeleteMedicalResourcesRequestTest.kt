@@ -38,7 +38,7 @@ class DeleteMedicalResourcesRequestTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -47,12 +47,12 @@ class DeleteMedicalResourcesRequestTest {
         val request1 =
             DeleteMedicalResourcesRequest(
                 dataSourceIds = TEST_DATA_SOURCE_IDS,
-                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES
+                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES,
             )
         val request2 =
             DeleteMedicalResourcesRequest(
                 dataSourceIds = TEST_DATA_SOURCE_IDS,
-                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES
+                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES,
             )
         val request3 = DeleteMedicalResourcesRequest(dataSourceIds = TEST_DATA_SOURCE_IDS_2)
         val request4 =
@@ -82,7 +82,7 @@ class DeleteMedicalResourcesRequestTest {
         val deleteMedicalResourcesRequest =
             DeleteMedicalResourcesRequest(
                 dataSourceIds = TEST_DATA_SOURCE_IDS,
-                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES
+                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES,
             )
 
         val toString = deleteMedicalResourcesRequest.toString()
@@ -104,7 +104,7 @@ class DeleteMedicalResourcesRequestTest {
         val deleteMedicalResourcesRequest =
             DeleteMedicalResourcesRequest(
                 dataSourceIds = TEST_DATA_SOURCE_IDS,
-                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES
+                medicalResourceTypes = TEST_MEDICAL_RESOURCE_TYPES,
             )
 
         val platformDeleteMedicalResourcesRequest =

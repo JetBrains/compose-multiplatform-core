@@ -20,13 +20,16 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.navigation.compose"
+        androidResources.enable = true
+    }
     jvmStubs()
     linuxX64Stubs()
 
@@ -46,11 +49,11 @@ androidXMultiplatform {
                 implementation("androidx.compose.animation:animation-core:1.7.2")
                 implementation("androidx.compose.foundation:foundation-layout:1.7.2")
                 implementation("androidx.collection:collection:1.4.5")
-                implementation("androidx.lifecycle:lifecycle-common:2.9.0")
-                implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
-                implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.0")
-                implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.0")
-                implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
+                implementation("androidx.lifecycle:lifecycle-common:2.9.1")
+                implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
+                implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.1")
+                implementation("androidx.lifecycle:lifecycle-viewmodel:2.9.1")
+                implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
                 implementation("androidx.savedstate:savedstate:1.3.0")
                 implementation("androidx.savedstate:savedstate-compose:1.3.0")
                 implementation(libs.kotlinCoroutinesCore)
@@ -126,6 +129,9 @@ androidXMultiplatform {
                 implementation(project(":compose:test-utils"))
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:ui:ui-tooling"))
+                implementation(project(":internal-testutils-navigation"), {
+                    exclude group: "androidx.navigation", module: "navigation-common"
+                })
             }
         }
         nonJvmCommonMain {
@@ -148,9 +154,6 @@ androidXMultiplatform {
 dependencies {
     lintChecks(project(":navigation:navigation-compose-lint"))
     lintPublish(project(":navigation:navigation-compose-lint"))
-    androidTestImplementation(project(":internal-testutils-navigation"), {
-        exclude group: "androidx.navigation", module: "navigation-common"
-    })
 }
 
 androidx {
@@ -159,11 +162,5 @@ androidx {
     inceptionYear = "2020"
     description = "Compose integration with Navigation"
     samples(project(":navigation:navigation-compose:navigation-compose-samples"))
-    metalavaK2UastEnabled = false
     addGoldenImageAssets()
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.navigation.compose"
 }

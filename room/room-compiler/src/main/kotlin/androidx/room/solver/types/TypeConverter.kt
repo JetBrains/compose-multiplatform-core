@@ -29,7 +29,7 @@ abstract class TypeConverter(val from: XType, val to: XType, val cost: Cost = Co
     protected abstract fun doConvert(
         inputVarName: String,
         outputVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     )
 
     /**
@@ -82,7 +82,7 @@ abstract class TypeConverter(val from: XType, val to: XType, val cost: Cost = Co
             converters: Int,
             nullSafeWrapper: Int = 0,
             upCasts: Int = 0,
-            requireNotNull: Int = 0
+            requireNotNull: Int = 0,
         ) : this(
             // NOTE: construction order here MUST match the [Buckets]
             intArrayOf(requireNotNull, converters, nullSafeWrapper, upCasts)

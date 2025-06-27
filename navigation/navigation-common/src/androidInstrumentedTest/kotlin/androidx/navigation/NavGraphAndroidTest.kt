@@ -208,7 +208,7 @@ class NavGraphAndroidTest {
             NavDeepLinkRequest(
                 Uri.parse("https://www.example.com/$intArg/wildCardMatch"),
                 testAction,
-                null
+                null,
             )
         val match = graph.matchDeepLink(deepLinkRequest)
 
@@ -292,7 +292,7 @@ class NavGraphAndroidTest {
             NavDeepLinkRequest(
                 Uri.parse("https://www.example.com/path/wildCard?token=$intArg"),
                 testAction,
-                null
+                null,
             )
         val match = graph.matchDeepLink(deepLinkRequest)
 

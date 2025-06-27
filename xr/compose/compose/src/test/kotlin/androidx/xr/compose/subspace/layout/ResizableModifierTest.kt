@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -121,7 +122,7 @@ class ResizableModifierTest {
                     ) {
                         Button(
                             modifier = Modifier.testTag("button"),
-                            onClick = { panelWidth += 50.dp }
+                            onClick = { panelWidth += 50.dp },
                         ) {
                             Text(text = "Click to change width")
                         }
@@ -206,7 +207,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -242,7 +243,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -345,7 +346,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -386,7 +387,7 @@ class ResizableModifierTest {
                         SubspaceModifier.testTag("panel")
                             .resizable(
                                 enabled = resizableEnabled,
-                                onSizeChange = { onSizeReturnValue }
+                                onSizeChange = { onSizeReturnValue },
                             )
                     ) {
                         Button(
@@ -562,6 +563,7 @@ class ResizableModifierTest {
         assertResizableComponentDoesNotExist("row")
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun resizable_volumeEntity_noComponentByDefault() {
         composeTestRule.setContent {
@@ -576,6 +578,7 @@ class ResizableModifierTest {
         )
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun resizable_volumeEntity_noComponentWhenResizableIsEnabled() {
         composeTestRule.setContent {
@@ -584,6 +587,7 @@ class ResizableModifierTest {
         assertResizableComponentDoesNotExist("volume")
     }
 
+    @OptIn(ExperimentalSubspaceVolumeApi::class)
     @Test
     fun resizable_volumeEntity_noComponentWhenResizableIsDisabled() {
         composeTestRule.setContent {
@@ -611,7 +615,7 @@ class ResizableModifierTest {
 
     private fun assertResizableComponentMaxSizeIsSet(
         testTag: String = "panel",
-        size: DpVolumeSize
+        size: DpVolumeSize,
     ) {
         val resizableComponent =
             composeTestRule
@@ -642,7 +646,7 @@ class ResizableModifierTest {
 
     private fun assertResizableComponentMinSizeIsSet(
         testTag: String = "panel",
-        size: DpVolumeSize
+        size: DpVolumeSize,
     ) {
         val resizableComponent =
             composeTestRule

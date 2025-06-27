@@ -74,14 +74,14 @@ class TextLayoutTest {
                 modifier =
                     Modifier.onGloballyPositioned { coordinates ->
                         textSize.value = coordinates.size
-                    }
+                    },
             )
             TestingText(
                 "aaaa",
                 modifier =
                     Modifier.onGloballyPositioned { coordinates ->
                         doubleTextSize.value = coordinates.size
-                    }
+                    },
             )
         }
 
@@ -111,7 +111,7 @@ class TextLayoutTest {
                     object : MeasurePolicy {
                         override fun MeasureScope.measure(
                             measurables: List<Measurable>,
-                            constraints: Constraints
+                            constraints: Constraints,
                         ): MeasureResult {
                             measurables.forEach { it.measure(constraints) }
                             textMeasurable = measurables.first()
@@ -120,24 +120,24 @@ class TextLayoutTest {
 
                         override fun IntrinsicMeasureScope.minIntrinsicWidth(
                             measurables: List<IntrinsicMeasurable>,
-                            height: Int
+                            height: Int,
                         ) = 0
 
                         override fun IntrinsicMeasureScope.minIntrinsicHeight(
                             measurables: List<IntrinsicMeasurable>,
-                            width: Int
+                            width: Int,
                         ) = 0
 
                         override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                             measurables: List<IntrinsicMeasurable>,
-                            height: Int
+                            height: Int,
                         ) = 0
 
                         override fun IntrinsicMeasureScope.maxIntrinsicHeight(
                             measurables: List<IntrinsicMeasurable>,
-                            width: Int
+                            width: Int,
                         ) = 0
-                    }
+                    },
             )
         }
 
@@ -240,7 +240,7 @@ class TextLayoutTest {
                                     measurable.measure(constraints.copy(minWidth = minWidth))
                                 layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                             }
-                            .testTag(tag)
+                            .testTag(tag),
                 )
             }
         }
@@ -255,7 +255,7 @@ class TextLayoutTest {
 private fun TestingText(
     text: String,
     modifier: Modifier = Modifier,
-    onTextLayout: (TextLayoutResult) -> Unit = {}
+    onTextLayout: (TextLayoutResult) -> Unit = {},
 ) {
     val textStyle = remember { TextStyle(fontFamily = TEST_FONT_FAMILY) }
     BasicText(
@@ -266,6 +266,6 @@ private fun TestingText(
         maxLines = Int.MAX_VALUE,
         overflow = TextOverflow.Clip,
         inlineContent = mapOf(),
-        onTextLayout = onTextLayout
+        onTextLayout = onTextLayout,
     )
 }

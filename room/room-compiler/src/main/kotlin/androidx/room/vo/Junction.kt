@@ -20,5 +20,5 @@ package androidx.room.vo
 data class Junction(
     val entity: EntityOrView,
     val parentProperty: Property,
-    val entityProperty: Property
+    val entityProperty: Property,
 )

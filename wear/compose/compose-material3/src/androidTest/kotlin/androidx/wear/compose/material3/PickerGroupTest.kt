@@ -45,9 +45,7 @@ class PickerGroupTest {
     @Test
     fun supports_test_tag() {
         rule.setContentWithTheme {
-            PickerGroup(
-                modifier = Modifier.testTag(TEST_TAG_1),
-            ) {
+            PickerGroup(modifier = Modifier.testTag(TEST_TAG_1)) {
                 addPickerColumns(count = 1, selectedColumn = 0)
             }
         }
@@ -93,12 +91,12 @@ class PickerGroupTest {
                     addPickerColumnWithTag(
                         TEST_TAG_1,
                         isSelected = selectedIndex.value == 0,
-                        onSelected = { selectedIndex.value = 0 }
+                        onSelected = { selectedIndex.value = 0 },
                     )
                     addPickerColumnWithTag(
                         TEST_TAG_2,
                         isSelected = selectedIndex.value == 1,
-                        onSelected = { selectedIndex.value = 1 }
+                        onSelected = { selectedIndex.value = 1 },
                     )
                 }
             }
@@ -116,7 +114,7 @@ class PickerGroupTest {
             PickerGroupItem(
                 pickerState = PickerState(10),
                 selected = selectedColumn == it,
-                onSelected = {}
+                onSelected = {},
             ) { index: Int, _: Boolean ->
                 Box(modifier = Modifier.size(100.dp)) { Text(text = "$index") }
             }
@@ -126,13 +124,13 @@ class PickerGroupTest {
     private fun PickerGroupScope.addPickerColumnWithTag(
         tag: String,
         isSelected: Boolean,
-        onSelected: () -> Unit = {}
+        onSelected: () -> Unit = {},
     ) =
         PickerGroupItem(
             selected = isSelected,
             pickerState = PickerState(10),
             modifier = Modifier.testTag(tag),
-            onSelected = onSelected
+            onSelected = onSelected,
         ) { _: Int, _: Boolean ->
             Box(modifier = Modifier.size(20.dp))
         }

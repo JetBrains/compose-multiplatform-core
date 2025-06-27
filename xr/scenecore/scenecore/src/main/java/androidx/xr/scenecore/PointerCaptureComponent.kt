@@ -69,7 +69,7 @@ private constructor(
         platformAdapter.createPointerCaptureComponent(
             executor,
             rtStateListener,
-            rtInputEventListener
+            rtInputEventListener,
         )
     }
 
@@ -80,7 +80,7 @@ private constructor(
             [
                 POINTER_CAPTURE_STATE_PAUSED,
                 POINTER_CAPTURE_STATE_ACTIVE,
-                POINTER_CAPTURE_STATE_STOPPED
+                POINTER_CAPTURE_STATE_STOPPED,
             ]
     )
     internal annotation class PointerCaptureState

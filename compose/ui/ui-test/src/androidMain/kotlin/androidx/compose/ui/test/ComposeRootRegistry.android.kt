@@ -253,7 +253,7 @@ internal fun ComposeRootRegistry.waitForComposeRoots(atLeastOneRootExpected: Boo
             object : ComposeRootRegistry.OnRegistrationChangedListener {
                 override fun onRegistrationChanged(
                     composeRoot: ViewRootForTest,
-                    registered: Boolean
+                    registered: Boolean,
                 ) {
                     if (hasComposeRoots) {
                         latch.countDown()
@@ -296,7 +296,7 @@ internal suspend fun ComposeRootRegistry.awaitComposeRoots() {
                 object : ComposeRootRegistry.OnRegistrationChangedListener {
                     override fun onRegistrationChanged(
                         composeRoot: ViewRootForTest,
-                        registered: Boolean
+                        registered: Boolean,
                     ) {
                         if (hasComposeRoots) {
                             resume(this)

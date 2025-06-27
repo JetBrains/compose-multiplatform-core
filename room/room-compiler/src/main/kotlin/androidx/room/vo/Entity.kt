@@ -33,7 +33,7 @@ open class Entity(
     val indices: List<Index>,
     val foreignKeys: List<ForeignKey>,
     constructor: Constructor?,
-    val shadowTableName: String?
+    val shadowTableName: String?,
 ) :
     DataClass(element, type, properties, embeddedProperties, emptyList(), constructor),
     HasSchemaIdentity,
@@ -91,7 +91,7 @@ open class Entity(
             this@Entity.properties.map { it.toBundle() },
             primaryKey.toBundle(),
             indices.map { it.toBundle() },
-            foreignKeys.map { it.toBundle() }
+            foreignKeys.map { it.toBundle() },
         )
 
     fun isUnique(columns: List<String>): Boolean {

@@ -110,6 +110,7 @@ val taskNamesKnownToDuplicateOutputs =
 
         // b/308798582
         "transformNonJvmMainCInteropDependenciesMetadataForIde",
+        "transformAppleTestCInteropDependenciesMetadataForIde",
         "transformDarwinTestCInteropDependenciesMetadataForIde",
         "transformDarwinMainCInteropDependenciesMetadataForIde",
         "transformCommonMainCInteropDependenciesMetadataForIde",
@@ -121,7 +122,6 @@ val taskNamesKnownToDuplicateOutputs =
         "transformUnixMainCInteropDependenciesMetadataForIde",
         "transformUnixTestCInteropDependenciesMetadataForIde",
         "transformLinuxMainCInteropDependenciesMetadataForIde",
-        "transformNonIosNativeTestCInteropDependenciesMetadataForIde",
         "transformLinuxTestCInteropDependenciesMetadataForIde",
         "transformNonIosNativeTestCInteropDependenciesMetadataForIde",
         "transformNonJvmCommonMainCInteropDependenciesMetadataForIde",
@@ -148,11 +148,6 @@ val taskNamesKnownToDuplicateOutputs =
         "wasmJsBrowserProductionWebpack",
         "wasmJsBrowserProductionRun",
         "jsTestTestDevelopmentExecutableCompileSync",
-
-        // Remove when https://youtrack.jetbrains.com/issue/KT-71688 is resolved and set
-        // destinationDirectory to the project's build directory
-        "wasmJsTestTestDevelopmentExecutableCompileSync",
-        "wasmJsTestTestProductionExecutableCompileSync",
 
         // TODO file a bug
         "kotlinNodeJsSetup",

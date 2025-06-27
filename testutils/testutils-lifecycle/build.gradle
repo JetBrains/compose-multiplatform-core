@@ -31,14 +31,6 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.testutils.lifecycle"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
     }
     desktop()
     mac()
@@ -57,6 +49,7 @@ androidXMultiplatform {
             dependencies {
                 api(project(":lifecycle:lifecycle-runtime"))
                 api("androidx.annotation:annotation:1.9.1")
+
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinCoroutinesTest)

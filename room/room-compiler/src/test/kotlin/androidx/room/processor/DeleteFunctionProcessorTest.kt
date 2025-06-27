@@ -35,7 +35,7 @@ class DeleteFunctionProcessorTest :
     override fun process(
         baseContext: Context,
         containing: XType,
-        executableElement: XMethodElement
+        executableElement: XMethodElement,
     ): DeleteFunction {
         return DeleteFunctionProcessor(baseContext, containing, executableElement).process()
     }

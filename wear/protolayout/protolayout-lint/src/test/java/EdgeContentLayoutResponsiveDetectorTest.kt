@@ -108,7 +108,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()
@@ -179,7 +179,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             // To confirm they are not mixed up.
             .issues(EDGE_CONTENT_LAYOUT_ISSUE, PRIMARY_LAYOUT_ISSUE)
@@ -311,7 +311,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()
@@ -364,7 +364,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()
@@ -454,7 +454,7 @@ class EdgeContentLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(EDGE_CONTENT_LAYOUT_ISSUE)
             .run()

@@ -16,16 +16,18 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -41,8 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrNull
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 import kotlin.math.roundToInt
 import kotlinx.coroutines.coroutineScope
 
@@ -78,7 +80,7 @@ public fun PickerGroup(
     selectedPickerState: PickerState? = null,
     autoCenter: Boolean = true,
     propagateMinConstraints: Boolean = false,
-    content: @Composable PickerGroupScope.() -> Unit
+    content: @Composable PickerGroupScope.() -> Unit,
 ) {
     val touchExplorationServicesEnabled by
         LocalTouchExplorationStateProvider.current.touchExplorationState()
@@ -94,13 +96,13 @@ public fun PickerGroup(
                     Modifier.scrollable(
                         state = selectedPickerState,
                         orientation = Orientation.Vertical,
-                        reverseDirection = true
+                        reverseDirection = true,
                     )
                 } else {
                     Modifier
                 }
             ),
-        propagateMinConstraints = propagateMinConstraints
+        propagateMinConstraints = propagateMinConstraints,
     ) {
         with(scope) {
             autoCenteringEnabled = autoCenter
@@ -118,11 +120,9 @@ public class PickerGroupScope {
      * @param selected If the [Picker] is selected.
      * @param onSelected Action triggered when the [Picker] is selected by clicking.
      * @param modifier [Modifier] to be applied to the [Picker].
-     * @param contentDescription Text used by accessibility services to describe what the selected
-     *   option represents. This text should be localized, such as by using
-     *   [androidx.compose.ui.res.stringResource] or similar. Typically, the content description is
-     *   inferred via derivedStateOf to avoid unnecessary recompositions, like this: val description
-     *   by remember { derivedStateOf { /* expression using state.selectedOption */ } }.
+     * @param contentDescription A block which computes text used by accessibility services to
+     *   describe what the selected option represents. This text should be localized, such as by
+     *   using [androidx.compose.ui.res.stringResource] or similar.
      * @param focusRequester Optional [FocusRequester] for the [Picker]. If not provided, a local
      *   instance of [FocusRequester] will be created to handle the focus between different pickers.
      *   If it is provided, the caller is responsible for handling the focus.
@@ -140,15 +140,16 @@ public class PickerGroupScope {
         selected: Boolean,
         onSelected: () -> Unit,
         modifier: Modifier = Modifier,
-        contentDescription: String? = null,
+        contentDescription: (() -> String)? = null,
         focusRequester: FocusRequester? = null,
         readOnlyLabel: @Composable (BoxScope.() -> Unit)? = null,
         verticalSpacing: Dp = 0.dp,
-        option: @Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit
+        option: @Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit,
     ) {
         val touchExplorationServicesEnabled by
             LocalTouchExplorationStateProvider.current.touchExplorationState()
 
+        val latestOnSelected by rememberUpdatedState(onSelected)
         Picker(
             state = pickerState,
             contentDescription = contentDescription,
@@ -161,39 +162,34 @@ public class PickerGroupScope {
                         if (selected && autoCenteringEnabled) Modifier.autoCenteringTarget()
                         else Modifier
                     )
-                    .hierarchicalFocus(focusEnabled = selected)
+                    .then(
+                        Modifier.pointerInput(touchExplorationServicesEnabled, selected) {
+                            // better to restart this PointerInputScope when the keys change
+                            // than trigger the entire modifier chain
+                            if (touchExplorationServicesEnabled || selected) {
+                                return@pointerInput
+                            }
+                            coroutineScope {
+                                awaitEachGesture {
+                                    awaitFirstDown(requireUnconsumed = false)
+                                    latestOnSelected()
+                                }
+                            }
+                        }
+                    )
+                    .hierarchicalFocusGroup(active = selected)
                     .then(
                         // If the user provided a focus requester, we add it here, otherwise,
                         // we take care of focus using the HFC.
                         focusRequester?.let { Modifier.focusRequester(it) }
-                            ?: Modifier.hierarchicalFocusRequester()
+                            ?: Modifier.requestFocusOnHierarchyActive()
                     ),
             // Do not need focusable as it's already set in ScalingLazyColumn
             readOnlyLabel = readOnlyLabel,
-            onSelected = onSelected,
+            onSelected = latestOnSelected,
             verticalSpacing = verticalSpacing,
             userScrollEnabled = !touchExplorationServicesEnabled || selected,
-            option = { optionIndex ->
-                Box(
-                    if (touchExplorationServicesEnabled || selected) {
-                        Modifier
-                    } else
-                        Modifier.pointerInput(Unit) {
-                            coroutineScope {
-                                // Keep looking for touch events on the picker if it is
-                                // not selected
-                                while (true) {
-                                    awaitEachGesture {
-                                        awaitFirstDown(requireUnconsumed = false)
-                                        onSelected()
-                                    }
-                                }
-                            }
-                        }
-                ) {
-                    option(optionIndex, selected)
-                }
-            }
+            option = { optionIndex -> option(optionIndex, selected) },
         )
     }
 
@@ -203,6 +199,7 @@ public class PickerGroupScope {
 /*
  * A row that horizontally aligns the center of the first child that has
  * Modifier.autoCenteringTarget() with the center of this row.
+ * The change of centered child is animated.
  * If no child has that modifier, the whole row is horizontally centered.
  * Vertically, each child is centered.
  */
@@ -210,8 +207,16 @@ public class PickerGroupScope {
 private fun AutoCenteringRow(
     modifier: Modifier = Modifier,
     propagateMinConstraints: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
+    var targetCenteringOffset by remember { mutableFloatStateOf(0f) }
+
+    val animatedCenteringOffset by
+        animateFloatAsState(
+            targetValue = targetCenteringOffset,
+            animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        )
+
     Layout(modifier = modifier, content = content) { measurables, parentConstraints ->
         // Reset the min width and height of the constraints used to measure child composables
         // if min constraints are not supposed to propagated.
@@ -221,13 +226,16 @@ private fun AutoCenteringRow(
             } else {
                 parentConstraints.copyMaxDimensions()
             }
+
         val placeables = measurables.fastMap { it.measure(constraints) }
-        val centeringOffset = computeCenteringOffset(placeables)
+        targetCenteringOffset = computeCenteringOffset(placeables).toFloat()
+
         val rowWidth =
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
         val rowHeight = calculateHeight(constraints, placeables)
+
         layout(width = rowWidth, height = rowHeight) {
-            var x = rowWidth / 2f - centeringOffset
+            var x = rowWidth / 2f - animatedCenteringOffset
             placeables.fastForEach {
                 it.placeRelative(x.roundToInt(), ((rowHeight - it.height) / 2f).roundToInt())
                 x += it.width

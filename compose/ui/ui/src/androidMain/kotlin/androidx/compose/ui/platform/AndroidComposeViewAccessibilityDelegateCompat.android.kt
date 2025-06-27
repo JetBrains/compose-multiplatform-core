@@ -26,6 +26,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Parcelable
 import android.os.SystemClock
 import android.text.SpannableString
 import android.util.Log
@@ -50,11 +51,11 @@ import androidx.collection.MutableObjectIntMap
 import androidx.collection.SparseArrayCompat
 import androidx.collection.intListOf
 import androidx.collection.intObjectMapOf
+import androidx.collection.mutableIntIntMapOf
 import androidx.collection.mutableIntListOf
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectIntMapOf
-import androidx.compose.ui.ComposeUiFlags.isFocusActionExitsTouchModeEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.R
 import androidx.compose.ui.contentcapture.ContentCaptureManager
@@ -92,6 +93,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsProperties.IsSensitiveData
 import androidx.compose.ui.semantics.SemanticsPropertiesAndroid
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
@@ -117,12 +119,14 @@ import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_ASSERTIVE
 import androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE
 import androidx.core.view.accessibility.AccessibilityEventCompat
+import androidx.core.view.accessibility.AccessibilityManagerCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_ACCESSIBILITY
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_INPUT
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import androidx.lifecycle.Lifecycle
+import java.io.Serializable
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -218,7 +222,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 R.id.accessibility_custom_action_28,
                 R.id.accessibility_custom_action_29,
                 R.id.accessibility_custom_action_30,
-                R.id.accessibility_custom_action_31
+                R.id.accessibility_custom_action_31,
             )
     }
 
@@ -252,6 +256,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     internal var SendRecurringAccessibilityEventsIntervalMillis = 100L
 
     private val enabledStateListener = AccessibilityStateChangeListener { enabled ->
+        // `getEnabledAccessibilityServiceList` returns an empty list if there are no services
         enabledServices =
             if (enabled) {
                 accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
@@ -261,6 +266,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     }
 
     private val touchExplorationStateListener = TouchExplorationStateChangeListener {
+        // `getEnabledAccessibilityServiceList` returns an empty list if there are no services
         enabledServices = accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
     }
 
@@ -287,6 +293,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             accessibilityForceEnabledForTesting ||
                 (accessibilityManager.isEnabled && accessibilityManager.isTouchExplorationEnabled)
 
+    internal var requestFromAccessibilityToolForTesting: Boolean? = null
     private val handler = Handler(Looper.getMainLooper())
     private var nodeProvider = ComposeAccessibilityNodeProvider()
 
@@ -318,7 +325,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val granularity: Int,
         val fromIndex: Int,
         val toIndex: Int,
-        val traverseTime: Long
+        val traverseTime: Long,
     )
 
     private var pendingTextTraversedEvent: PendingTextTraversedEvent? = null
@@ -367,12 +374,23 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         SemanticsNodeCopy(view.semanticsOwner.unmergedRootSemanticsNode, intObjectMapOf())
     private var checkingForSemanticsChanges = false
 
+    // A mapping from semantics node IDs to the local drawing order (among the children of a single
+    // parent) of the corresponding layout nodes.
+    private val drawingOrder = mutableIntIntMapOf()
+
     init {
         // Remove callbacks that rely on view being attached to a window when we become detached.
         view.addOnAttachStateChangeListener(
             object : View.OnAttachStateChangeListener {
                 override fun onViewAttachedToWindow(view: View) {
+                    // Whenever the window is reattached, update the `enabledServices` value in case
+                    // there have been changes while the window was detached that the listeners
+                    // might not catch.
                     with(accessibilityManager) {
+                        enabledServices =
+                            accessibilityManager.getEnabledAccessibilityServiceList(
+                                FEEDBACK_ALL_MASK
+                            )
                         addAccessibilityStateChangeListener(enabledStateListener)
                         addTouchExplorationStateChangeListener(touchExplorationStateListener)
                     }
@@ -411,7 +429,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
         vertical: Boolean,
         direction: Int,
-        position: Offset
+        position: Offset,
     ): Boolean {
         // No down event has occurred yet which gives us a location to hit test.
         if (position == Offset.Unspecified || !position.isValid()) return false
@@ -462,6 +480,17 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         return foundNode
     }
 
+    private fun isRequestFromAccessibilityTool(): Boolean {
+        when (requestFromAccessibilityToolForTesting) {
+            true -> return true
+            false -> return false
+            else ->
+                return AccessibilityManagerCompat.isRequestFromAccessibilityTool(
+                    accessibilityManager
+                )
+        }
+    }
+
     private fun createNodeInfo(virtualViewId: Int): AccessibilityNodeInfoCompat? {
         if (
             view.viewTreeOwners?.lifecycleOwner?.lifecycle?.currentState ==
@@ -472,7 +501,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val semanticsNodeWithAdjustedBounds =
             currentSemanticsNodes[virtualViewId] ?: return emptyNodeInfoOrNull()
         val semanticsNode: SemanticsNode = semanticsNodeWithAdjustedBounds.semanticsNode
+        val isSensitiveData = semanticsNode.config.getOrNull(IsSensitiveData) == true
+        if (isSensitiveData && !isRequestFromAccessibilityTool()) {
+            return null
+        }
         val info: AccessibilityNodeInfoCompat = AccessibilityNodeInfoCompat.obtain()
+        info.setAccessibilityDataSensitive(isSensitiveData)
         if (virtualViewId == AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
             info.setParent(view.getParentForAccessibility() as? View)
         } else {
@@ -524,14 +558,14 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             floor(min(topLeftInScreen.x, bottomRightInScreen.x)).toInt(),
             floor(min(topLeftInScreen.y, bottomRightInScreen.y)).toInt(),
             ceil(max(topLeftInScreen.x, bottomRightInScreen.x)).toInt(),
-            ceil(max(topLeftInScreen.y, bottomRightInScreen.y)).toInt()
+            ceil(max(topLeftInScreen.y, bottomRightInScreen.y)).toInt(),
         )
     }
 
     private fun populateAccessibilityNodeInfoProperties(
         virtualViewId: Int,
         info: AccessibilityNodeInfoCompat,
-        semanticsNode: SemanticsNode
+        semanticsNode: SemanticsNode,
     ) {
         val resources = view.context.resources
 
@@ -581,6 +615,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         //   and the root of the SemanticsNode tree.
         info.isImportantForAccessibility = semanticsNode.isImportantForAccessibility()
 
+        val isRequestFromAccessibilityTool = isRequestFromAccessibilityTool()
+        var childDrawingOrder = 0
         semanticsNode.replacedChildren.fastForEach { child ->
             if (currentSemanticsNodes.contains(child.id)) {
                 val holder = view.androidViewsHandler.layoutNodeToHolder[child.layoutNode]
@@ -591,8 +627,20 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 if (holder != null) {
                     info.addChild(holder)
                 } else {
-                    info.addChild(view, child.id)
+                    val childHasSensitiveData =
+                        currentSemanticsNodes[child.id]
+                            ?.semanticsNode
+                            ?.config
+                            ?.getOrNull(IsSensitiveData) == true
+                    // If the child has isSensitiveData=true then the node request must come
+                    // from an accessibility tool in order for the child to be included.
+                    if (isRequestFromAccessibilityTool || !childHasSensitiveData) {
+                        info.addChild(view, child.id)
+                    }
                 }
+                // The children are already ordered by the drawing order at this point.
+                drawingOrder.put(child.id, childDrawingOrder)
+                childDrawingOrder++
             }
         }
 
@@ -670,6 +718,21 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         semanticsNode.unmergedConfig.getOrNull(SemanticsProperties.Heading)?.let {
             info.isHeading = true
         }
+
+        // Drawing order is not applicable for the root node.
+        if (virtualViewId != AccessibilityNodeProviderCompat.HOST_VIEW_ID) {
+            val drawingOrderForNode = drawingOrder.getOrDefault(semanticsNode.id, -1)
+            if (drawingOrderForNode != -1) {
+                info.drawingOrder = drawingOrderForNode
+            } else {
+                Log.w(
+                    LogTag,
+                    "Drawing order is not available, was AccessibilityNodeInfo requested " +
+                        "for a child node before its parent?",
+                )
+            }
+        }
+
         info.isPassword = semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
         info.isEditable = semanticsNode.unmergedConfig.contains(SemanticsProperties.IsEditable)
         info.maxTextLength =
@@ -718,7 +781,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 info.addAction(
                     AccessibilityActionCompat(
                         AccessibilityNodeInfoCompat.ACTION_LONG_CLICK,
-                        it.label
+                        it.label,
                     )
                 )
             }
@@ -757,7 +820,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             AccessibilityNodeInfoCompat.ACTION_PASTE,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -768,7 +831,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         if (!text.isNullOrEmpty()) {
             info.setTextSelection(
                 getAccessibilitySelectionStart(semanticsNode),
-                getAccessibilitySelectionEnd(semanticsNode)
+                getAccessibilitySelectionEnd(semanticsNode),
             )
             val setSelectionAction =
                 semanticsNode.unmergedConfig.getOrNull(SemanticsActions.SetSelection)
@@ -777,7 +840,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             info.addAction(
                 AccessibilityActionCompat(
                     AccessibilityNodeInfoCompat.ACTION_SET_SELECTION,
-                    setSelectionAction?.label
+                    setSelectionAction?.label,
                 )
             )
             info.addAction(AccessibilityNodeInfoCompat.ACTION_NEXT_AT_MOVEMENT_GRANULARITY)
@@ -821,6 +884,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 extraDataKeys.add(ExtraDataShapeRegionKey)
             }
 
+            semanticsNode.unmergedConfig.accessibilityExtraKeys?.forEach { key ->
+                key.accessibilityExtraKey?.let { extraDataKeys.add(it) }
+            }
+
             info.availableExtraData = extraDataKeys
         }
 
@@ -838,7 +905,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         AccessibilityNodeInfoCompat.RangeInfoCompat.RANGE_TYPE_FLOAT,
                         rangeInfo.range.start,
                         rangeInfo.range.endInclusive,
-                        rangeInfo.current
+                        rangeInfo.current,
                     )
             }
             if (
@@ -1031,7 +1098,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 virtualViewId,
                 info,
                 ExtraDataTestTraversalBeforeVal,
-                null
+                null,
             )
         }
 
@@ -1047,7 +1114,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     virtualViewId,
                     info,
                     ExtraDataTestTraversalAfterVal,
-                    null
+                    null,
                 )
             }
         }
@@ -1075,16 +1142,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             toAccessibilitySpannableString(
                 density = view.density,
                 fontFamilyResolver = fontFamilyResolver,
-                urlSpanCache = urlSpanCache
+                urlSpanCache = urlSpanCache,
             ),
-            ParcelSafeTextLength
+            ParcelSafeTextLength,
         )
     }
 
-    private fun setText(
-        node: SemanticsNode,
-        info: AccessibilityNodeInfoCompat,
-    ) {
+    private fun setText(node: SemanticsNode, info: AccessibilityNodeInfoCompat) {
         info.text = getInfoText(node)?.toSpannableString()
     }
 
@@ -1118,7 +1182,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             if (accessibilityFocusedVirtualViewId != InvalidId) {
                 sendEventForVirtualView(
                     accessibilityFocusedVirtualViewId,
-                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED
+                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED,
                 )
             }
 
@@ -1129,7 +1193,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             view.invalidate()
             sendEventForVirtualView(
                 virtualViewId,
-                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED
+                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED,
             )
             return true
         }
@@ -1159,7 +1223,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         virtualViewId: Int,
         eventType: Int,
         contentChangeType: Int? = null,
-        contentDescription: List<String>? = null
+        contentDescription: List<String>? = null,
     ): Boolean {
         if (virtualViewId == InvalidId || !isEnabled) {
             return false
@@ -1226,6 +1290,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             currentSemanticsNodes[virtualViewId]?.let {
                 event.isPassword =
                     it.semanticsNode.unmergedConfig.contains(SemanticsProperties.Password)
+                AccessibilityEventCompat.setAccessibilityDataSensitive(
+                    event,
+                    it.semanticsNode.unmergedConfig.getOrNull(IsSensitiveData) == true,
+                )
             }
         }
 
@@ -1237,7 +1305,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         fromIndex: Int?,
         toIndex: Int?,
         itemCount: Int?,
-        text: CharSequence?
+        text: CharSequence?,
     ): AccessibilityEvent {
         return createEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED)
             .apply {
@@ -1261,7 +1329,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             view.invalidate()
             sendEventForVirtualView(
                 virtualViewId,
-                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED
+                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED,
             )
             return true
         }
@@ -1270,6 +1338,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun performActionHelper(virtualViewId: Int, action: Int, arguments: Bundle?): Boolean {
         val node = currentSemanticsNodes[virtualViewId]?.semanticsNode ?: return false
+
+        if (
+            node.unmergedConfig.getOrNull(IsSensitiveData) == true &&
+                !isRequestFromAccessibilityTool()
+        ) {
+            return false
+        }
 
         // Actions can be performed when disabled.
         when (action) {
@@ -1292,7 +1367,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         node,
                         granularity,
                         action == AccessibilityNodeInfoCompat.ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
-                        extendSelection
+                        extendSelection,
                     )
                 }
                 return false
@@ -1301,12 +1376,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 val start =
                     arguments?.getInt(
                         AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_START_INT,
-                        -1
+                        -1,
                     ) ?: -1
                 val end =
                     arguments?.getInt(
                         AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_END_INT,
-                        -1
+                        -1,
                     ) ?: -1
                 // Note: This is a little different from current android framework implementation.
                 val success = setAccessibilitySelection(node, start, end, false)
@@ -1315,7 +1390,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 if (success) {
                     sendEventForVirtualView(
                         semanticsNodeIdToAccessibilityVirtualNodeId(node.id),
-                        AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
+                        AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                     )
                 }
                 return success
@@ -1506,12 +1581,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 // We considered calling super.performAccessibilityAction() which would put the
                 // system in keyboard mode, but it only works when AndroidComposeView did not have
                 // focus.
-                if (
-                    @OptIn(ExperimentalComposeUiApi::class) isFocusActionExitsTouchModeEnabled &&
-                        view.isInTouchMode
-                ) {
-                    view.requestFocusFromTouch()
-                }
+                if (view.isInTouchMode) view.requestFocusFromTouch()
 
                 return node.unmergedConfig.getOrNull(RequestFocus)?.action?.invoke() ?: false
             }
@@ -1521,7 +1591,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         force = false,
                         refreshFocusEvents = true,
                         clearOwnerFocus = true,
-                        focusDirection = Exit
+                        focusDirection = Exit,
                     )
                     true
                 } else {
@@ -1585,7 +1655,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 floor(left).toInt(),
                                 floor(top).toInt(),
                                 ceil(right).roundToInt(),
-                                ceil(bottom).roundToInt()
+                                ceil(bottom).roundToInt(),
                             )
                         }
                     return view.requestRectangleOnScreen(rect)
@@ -1647,7 +1717,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         virtualViewId: Int,
         info: AccessibilityNodeInfoCompat,
         extraDataKey: String,
-        arguments: Bundle?
+        arguments: Bundle?,
     ) {
         val node = currentSemanticsNodes[virtualViewId]?.semanticsNode ?: return
         val text = getIterableTextForAccessibility(node)
@@ -1723,7 +1793,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         info.extras.putParcelable(ExtraDataShapeRectKey, outline.toAndroidRect())
                         info.extras.putFloatArray(
                             ExtraDataShapeRectCornersKey,
-                            outline.toCornerArray()
+                            outline.toCornerArray(),
                         )
                     }
                     is Outline.Generic -> {
@@ -1748,6 +1818,23 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
                 shape.createOutline(node).toRegion()?.let { region ->
                     info.extras.putParcelable(ExtraDataShapeRegionKey, region)
+                }
+            }
+        } else {
+            node.unmergedConfig.accessibilityExtraKeys?.forEach { key ->
+                val extraKey = key.accessibilityExtraKey
+                if (extraKey == extraDataKey) {
+                    val value = node.unmergedConfig.getOrNull(key)
+                    when (value) {
+                        is Serializable -> info.extras.putSerializable(extraKey, value)
+                        is Parcelable -> info.extras.putParcelable(extraKey, value)
+                        else ->
+                            throw IllegalStateException(
+                                "Accessibility extra values must be " +
+                                    "either Serializable or Parcelable."
+                            )
+                    }
+                    return@forEach
                 }
             }
         }
@@ -1776,7 +1863,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 min(topLeftInScreen.x, bottomRightInScreen.x),
                 min(topLeftInScreen.y, bottomRightInScreen.y),
                 max(topLeftInScreen.x, bottomRightInScreen.x),
-                max(topLeftInScreen.y, bottomRightInScreen.y)
+                max(topLeftInScreen.y, bottomRightInScreen.y),
             )
         } else {
             null
@@ -1803,7 +1890,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 roundRect.bottomRightCornerRadius.x,
                 roundRect.bottomRightCornerRadius.y,
                 roundRect.bottomLeftCornerRadius.x,
-                roundRect.bottomLeftCornerRadius.y
+                roundRect.bottomLeftCornerRadius.y,
             )
         } else null
 
@@ -1881,7 +1968,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val hitSemanticsEntities = HitTestResult()
         view.root.hitTestSemantics(
             pointerPosition = Offset(x, y),
-            hitSemanticsEntities = hitSemanticsEntities
+            hitSemanticsEntities = hitSemanticsEntities,
         )
 
         // Iterate front-to-back until we find a node with semantics that are important-for-a11y
@@ -1959,7 +2046,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      */
     private fun <T : CharSequence> trimToSize(
         text: T?,
-        @Suppress("SameParameterValue") @IntRange(from = 1) size: Int
+        @Suppress("SameParameterValue") @IntRange(from = 1) size: Int,
     ): T? {
         require(size > 0) { "size should be greater than 0" }
         var len = size
@@ -1967,7 +2054,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         if (Character.isHighSurrogate(text[size - 1]) && Character.isLowSurrogate(text[size])) {
             len = size - 1
         }
-        @Suppress("UNCHECKED_CAST") return text.subSequence(0, len) as T
+        @Suppress("UNCHECKED_CAST")
+        return text.subSequence(0, len) as T
     }
 
     // TODO (in a separate cl): Called when the SemanticsNode with id semanticsNodeId disappears.
@@ -2005,7 +2093,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         val layoutNode = subtreeChangedLayoutNodes.valueAt(i)
                         sendSubtreeChangeAccessibilityEvents(
                             layoutNode,
-                            subtreeChangedSemanticsNodesIds
+                            subtreeChangedSemanticsNodesIds,
                         )
                         sendTypeViewScrolledAccessibilityEvent(layoutNode)
                     }
@@ -2094,7 +2182,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun sendSubtreeChangeAccessibilityEvents(
         layoutNode: LayoutNode,
-        subtreeChangedSemanticsNodesIds: MutableIntSet
+        subtreeChangedSemanticsNodesIds: MutableIntSet,
     ) {
         // The node may be no longer available while we were waiting so check
         // again.
@@ -2128,7 +2216,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         sendEventForVirtualView(
             semanticsNodeIdToAccessibilityVirtualNodeId(id),
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-            AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE
+            AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE,
         )
     }
 
@@ -2138,7 +2226,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             if (isEnabled) {
                 sendAccessibilitySemanticsStructureChangeEvents(
                     view.semanticsOwner.unmergedRootSemanticsNode,
-                    previousSemanticsRoot
+                    previousSemanticsRoot,
                 )
             }
         }
@@ -2164,7 +2252,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     AccessibilityEventCompat.CONTENT_CHANGE_TYPE_PANE_DISAPPEARED,
                     previousSemanticsNodes[id]
                         ?.unmergedConfig
-                        ?.getOrNull(SemanticsProperties.PaneTitle)
+                        ?.getOrNull(SemanticsProperties.PaneTitle),
                 )
             }
         }
@@ -2178,7 +2266,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 sendPaneChangeEvents(
                     key,
                     AccessibilityEventCompat.CONTENT_CHANGE_TYPE_PANE_APPEARED,
-                    value.semanticsNode.unmergedConfig[SemanticsProperties.PaneTitle]
+                    value.semanticsNode.unmergedConfig[SemanticsProperties.PaneTitle],
                 )
             }
             previousSemanticsNodes[key] =
@@ -2225,7 +2313,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendPaneChangeEvents(
                                 id,
                                 AccessibilityEventCompat.CONTENT_CHANGE_TYPE_PANE_TITLE,
-                                paneTitle
+                                paneTitle,
                             )
                         }
                     }
@@ -2234,7 +2322,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION,
                         )
                         // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
                         // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2242,14 +2330,14 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
                         )
                     }
                     SemanticsProperties.ProgressBarRangeInfo -> {
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION,
                         )
                         // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
                         // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2257,7 +2345,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                            AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
                         )
                     }
                     SemanticsProperties.Selected -> {
@@ -2275,7 +2363,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 val event =
                                     createEvent(
                                         semanticsNodeIdToAccessibilityVirtualNodeId(id),
-                                        AccessibilityEvent.TYPE_VIEW_SELECTED
+                                        AccessibilityEvent.TYPE_VIEW_SELECTED,
                                     )
                                 // Here we use the merged node. Because we specifically are using
                                 // the merged node, we must also use the merged version of the
@@ -2298,14 +2386,14 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 sendEventForVirtualView(
                                     semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                     AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                    AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                                    AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
                                 )
                             }
                         } else {
                             sendEventForVirtualView(
                                 semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
+                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_STATE_DESCRIPTION,
                             )
                             // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
                             // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2313,7 +2401,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendEventForVirtualView(
                                 semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED
+                                AccessibilityEventCompat.CONTENT_CHANGE_TYPE_UNDEFINED,
                             )
                         }
                     }
@@ -2322,7 +2410,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
                             AccessibilityEvent.CONTENT_CHANGE_TYPE_CONTENT_DESCRIPTION,
-                            value as List<String>
+                            value as List<String>,
                         )
                     }
                     SemanticsProperties.EditableText -> {
@@ -2389,12 +2477,12 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                         fromIndex = 0,
                                         toIndex = 0,
                                         itemCount = newTextLen,
-                                        text = trimmedNewText
+                                        text = trimmedNewText,
                                     )
                                 } else {
                                     createEvent(
                                             semanticsNodeIdToAccessibilityVirtualNodeId(id),
-                                            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED
+                                            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED,
                                         )
                                         .apply {
                                             this.fromIndex = startCount
@@ -2420,7 +2508,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendEventForVirtualView(
                                 semanticsNodeIdToAccessibilityVirtualNodeId(id),
                                 AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                                AccessibilityEvent.CONTENT_CHANGE_TYPE_TEXT
+                                AccessibilityEvent.CONTENT_CHANGE_TYPE_TEXT,
                             )
                         }
                     }
@@ -2435,7 +2523,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                                 textRange.start,
                                 textRange.end,
                                 newText.length,
-                                trimToSize(newText, ParcelSafeTextLength)
+                                trimToSize(newText, ParcelSafeTextLength),
                             )
                         sendEvent(event)
                         sendPendingTextTraversedAtGranularityEvent(newNode.id)
@@ -2460,7 +2548,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                             sendEvent(
                                 createEvent(
                                     semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
-                                    AccessibilityEvent.TYPE_VIEW_FOCUSED
+                                    AccessibilityEvent.TYPE_VIEW_FOCUSED,
                                 )
                             )
                         }
@@ -2470,7 +2558,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                         sendEventForVirtualView(
                             semanticsNodeIdToAccessibilityVirtualNodeId(newNode.id),
                             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                            AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
+                            AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                         )
                     }
                     CustomActions -> {
@@ -2510,7 +2598,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 sendEventForVirtualView(
                     semanticsNodeIdToAccessibilityVirtualNodeId(id),
                     AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-                    AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED
+                    AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED,
                 )
             }
         }
@@ -2531,7 +2619,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun registerScrollingId(
         id: Int,
-        oldScrollObservationScopes: List<ScrollObservationScope>
+        oldScrollObservationScopes: List<ScrollObservationScope>,
     ): Boolean {
         var newlyObservingScroll = false
         val oldScope = oldScrollObservationScopes.findById(id)
@@ -2546,7 +2634,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     oldXValue = null,
                     oldYValue = null,
                     horizontalScrollAxisRange = null,
-                    verticalScrollAxisRange = null
+                    verticalScrollAxisRange = null,
                 )
             }
         scrollObservationScopes.add(newScope)
@@ -2559,7 +2647,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
         view.snapshotObserver.observeReads(
             scrollObservationScope,
-            scheduleScrollEventIfNeededLambda
+            scheduleScrollEventIfNeededLambda,
         ) {
             val newXState = scrollObservationScope.horizontalScrollAxisRange
             val newYState = scrollObservationScope.verticalScrollAxisRange
@@ -2644,7 +2732,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         val event =
             createEvent(
                 semanticsNodeIdToAccessibilityVirtualNodeId(semanticsNodeId),
-                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
             )
         event.contentChangeTypes = contentChangeType
         if (title != null) {
@@ -2655,7 +2743,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun sendAccessibilitySemanticsStructureChangeEvents(
         newNode: SemanticsNode,
-        oldNode: SemanticsNodeCopy
+        oldNode: SemanticsNodeCopy,
     ) {
         val newChildren: MutableIntSet = mutableIntSetOf()
 
@@ -2679,11 +2767,10 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
 
         newNode.replacedChildren.fastForEach { child ->
-            if (currentSemanticsNodes.contains(child.id)) {
-                sendAccessibilitySemanticsStructureChangeEvents(
-                    child,
-                    previousSemanticsNodes[child.id]!!
-                )
+            previousSemanticsNodes[child.id]?.let { previousNode ->
+                if (currentSemanticsNodes.contains(child.id)) {
+                    sendAccessibilitySemanticsStructureChangeEvents(child, previousNode)
+                }
             }
         }
     }
@@ -2699,7 +2786,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         node: SemanticsNode,
         granularity: Int,
         forward: Boolean,
-        extendSelection: Boolean
+        extendSelection: Boolean,
     ): Boolean {
         if (node.id != previousTraversedNode) {
             accessibilityCursorPosition = AccessibilityCursorPositionUndefined
@@ -2742,7 +2829,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 granularity,
                 segmentStart,
                 segmentEnd,
-                SystemClock.uptimeMillis()
+                SystemClock.uptimeMillis(),
             )
         setAccessibilitySelection(node, selectionStart, selectionEnd, true)
         return true
@@ -2758,7 +2845,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 val event =
                     createEvent(
                         semanticsNodeIdToAccessibilityVirtualNodeId(it.node.id),
-                        AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY
+                        AccessibilityEvent.TYPE_VIEW_TEXT_TRAVERSED_AT_MOVEMENT_GRANULARITY,
                     )
                 event.fromIndex = it.fromIndex
                 event.toIndex = it.toIndex
@@ -2775,7 +2862,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         node: SemanticsNode,
         start: Int,
         end: Int,
-        traversalMode: Boolean
+        traversalMode: Boolean,
     ): Boolean {
         // Any widget which has custom action_set_selection needs to provide cursor
         // positions, so events will be sent when cursor position change.
@@ -2805,7 +2892,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 if (nonEmptyText) accessibilityCursorPosition else null,
                 if (nonEmptyText) accessibilityCursorPosition else null,
                 if (nonEmptyText) text.length else null,
-                text
+                text,
             )
         sendEvent(event)
         sendPendingTextTraversedAtGranularityEvent(node.id)
@@ -2843,7 +2930,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
 
     private fun getIteratorForGranularity(
         node: SemanticsNode?,
-        granularity: Int
+        granularity: Int,
     ): AccessibilityIterators.TextSegmentIterator? {
         if (node == null) return null
 
@@ -2944,7 +3031,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             virtualViewId: Int,
             info: AccessibilityNodeInfoCompat,
             extraDataKey: String,
-            arguments: Bundle?
+            arguments: Bundle?,
         ) {
             addExtraDataToAccessibilityNodeInfoHelper(virtualViewId, info, extraDataKey, arguments)
         }
@@ -2971,7 +3058,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionSetProgress,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -2994,7 +3081,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionPageDown,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -3002,7 +3089,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionPageLeft,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -3010,7 +3097,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     info.addAction(
                         AccessibilityActionCompat(
                             android.R.id.accessibilityActionPageRight,
-                            it.label
+                            it.label,
                         )
                     )
                 }
@@ -3035,7 +3122,7 @@ private fun setTraversalValues(
     currentSemanticsNodes: IntObjectMap<SemanticsNodeWithAdjustedBounds>,
     outputBeforeMap: MutableIntIntMap,
     outputAfterMap: MutableIntIntMap,
-    resources: Resources
+    resources: Resources,
 ) {
     outputBeforeMap.clear()
     outputAfterMap.clear()
@@ -3047,7 +3134,7 @@ private fun setTraversalValues(
         hostSemanticsNode.subtreeSortedByGeometryGrouping(
             isVisible = { currentSemanticsNodes.containsKey(it.id) },
             isFocusableContainer = { isScreenReaderFocusable(it, resources) },
-            listToSort = listOf(hostSemanticsNode)
+            listToSort = listOf(hostSemanticsNode),
         )
 
     // Iterate through our ordered list, and creating a mapping of current node to next node ID
@@ -3247,14 +3334,11 @@ private fun AccessibilityAction<*>.accessibilityEquals(other: Any?): Boolean {
         ReplaceWith(
             expression = "!ContentCaptureManager.isEnabled",
             imports =
-                ["androidx.compose.ui.contentcapture.ContentCaptureManager.Companion.isEnabled"]
+                ["androidx.compose.ui.contentcapture.ContentCaptureManager.Companion.isEnabled"],
         ),
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
-@Suppress("GetterSetterNames", "OPT_IN_MARKER_ON_WRONG_TARGET", "NullAnnotationGroup")
-@get:Suppress("GetterSetterNames")
-@get:ExperimentalComposeUiApi
-@set:ExperimentalComposeUiApi
+@Suppress("GetterSetterNames", "NullAnnotationGroup")
 @ExperimentalComposeUiApi
 var DisableContentCapture: Boolean
     get() = ContentCaptureManager.isEnabled

@@ -170,7 +170,7 @@ class DpTest {
     fun dpRectConstructor() {
         assertEquals(
             DpRect(10.dp, 5.dp, 25.dp, 15.dp),
-            DpRect(DpOffset(10.dp, 5.dp), DpSize(15.dp, 10.dp))
+            DpRect(DpOffset(10.dp, 5.dp), DpSize(15.dp, 10.dp)),
         )
     }
 

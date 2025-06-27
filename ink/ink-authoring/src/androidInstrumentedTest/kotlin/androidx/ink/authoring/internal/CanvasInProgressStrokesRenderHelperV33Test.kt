@@ -62,7 +62,7 @@ import org.mockito.kotlin.whenever
 @MediumTest
 @SdkSuppress(
     maxSdkVersion = Build.VERSION_CODES.TIRAMISU,
-    minSdkVersion = Build.VERSION_CODES.TIRAMISU
+    minSdkVersion = Build.VERSION_CODES.TIRAMISU,
 )
 class CanvasInProgressStrokesRenderHelperV33Test {
 

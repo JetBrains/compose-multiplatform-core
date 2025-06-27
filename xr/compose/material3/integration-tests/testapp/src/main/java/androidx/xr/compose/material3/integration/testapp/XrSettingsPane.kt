@@ -45,14 +45,14 @@ import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.ExperimentalMaterial3XrApi
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.scenecore.scene
 
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
 internal fun XrSettingsPane(
     onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit,
-    onOrbiterEdgeOffsetChanged: (EdgeOffset?) -> Unit,
+    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType?) -> Unit,
 ) {
     Scaffold { innerPadding ->
         Column(
@@ -79,9 +79,9 @@ private fun XrModeButton() {
         enabled = isDeviceXr,
         onClick = {
             if (isFullSpaceMode) {
-                session?.scene?.spatialEnvironment?.requestHomeSpaceMode()
+                session?.scene?.requestHomeSpaceMode()
             } else {
-                session?.scene?.spatialEnvironment?.requestFullSpaceMode()
+                session?.scene?.requestFullSpaceMode()
             }
         },
     ) {
@@ -94,19 +94,35 @@ private fun XrModeButton() {
 
 @Composable
 private fun NavigationSuiteTypeButton(onNavSuiteTypeChanged: (NavigationSuiteType?) -> Unit) {
-    var navSuiteType: MutableState<NavigationSuiteType?> = remember { mutableStateOf(null) }
-    var expanded = remember { mutableStateOf(false) }
+    val navSuiteType: MutableState<NavigationSuiteType?> = remember { mutableStateOf(null) }
+    val expanded = remember { mutableStateOf(false) }
     SimpleDropdown(
         dropdownLabel = "NavigationSuiteType",
-        items = listOf(null, NavigationSuiteType.NavigationRail, NavigationSuiteType.NavigationBar),
+        items =
+            listOf(
+                null,
+                NavigationSuiteType.NavigationRail,
+                NavigationSuiteType.NavigationBar,
+                NavigationSuiteType.ShortNavigationBarCompact,
+                NavigationSuiteType.ShortNavigationBarMedium,
+            ),
         selectedItem = navSuiteType,
         expanded = expanded,
-        itemLabel = { it?.toString() ?: "Default" },
+        itemLabel = {
+            when (it) {
+                null -> "Default"
+                NavigationSuiteType.NavigationRail -> "Rail"
+                NavigationSuiteType.NavigationBar -> "Bar"
+                NavigationSuiteType.ShortNavigationBarCompact -> "Expressive Bar (Compact)"
+                NavigationSuiteType.ShortNavigationBarMedium -> "Expressive Bar (Medium)"
+                else -> error("Unexpected NavigationSuiteType: $it")
+            }
+        },
         onSelectedChange = onNavSuiteTypeChanged,
     )
 }
 
-private enum class OrbiterEdgeOffsetChoices {
+private enum class OrbiterEdgeOffsetTypeChoices {
     /** The default Orbiter EdgeOffset, as defined in the implementation. */
     Default,
     /** An inner Orbiter EdgeOffset. */
@@ -117,24 +133,26 @@ private enum class OrbiterEdgeOffsetChoices {
 
 @OptIn(ExperimentalMaterial3XrApi::class)
 @Composable
-private fun XrNavigationOrbiterEdgeOffset(onOrbiterEdgeOffsetChanged: (EdgeOffset?) -> Unit) {
-    val selectedItem = remember { mutableStateOf(OrbiterEdgeOffsetChoices.Default) }
+private fun XrNavigationOrbiterEdgeOffset(
+    onOrbiterEdgeOffsetChanged: (OrbiterOffsetType?) -> Unit
+) {
+    val selectedItem = remember { mutableStateOf(OrbiterEdgeOffsetTypeChoices.Default) }
     val expanded = remember { mutableStateOf(false) }
 
-    val selectedEdgeOffset =
+    val selectedEdgeOffsetType =
         when (selectedItem.value) {
-            OrbiterEdgeOffsetChoices.Default -> EdgeOffset.outer(24.dp)
-            OrbiterEdgeOffsetChoices.Inner -> EdgeOffset.inner(24.dp)
-            OrbiterEdgeOffsetChoices.Overlap -> EdgeOffset.overlap(24.dp)
+            OrbiterEdgeOffsetTypeChoices.Default -> OrbiterOffsetType.OuterEdge
+            OrbiterEdgeOffsetTypeChoices.Inner -> OrbiterOffsetType.InnerEdge
+            OrbiterEdgeOffsetTypeChoices.Overlap -> OrbiterOffsetType.Overlap
         }
 
     SimpleDropdown(
         dropdownLabel = "NavigationRail Orbiter EdgeOffset",
-        items = OrbiterEdgeOffsetChoices.values().asList(),
+        items = OrbiterEdgeOffsetTypeChoices.values().asList(),
         selectedItem = selectedItem,
         expanded = expanded,
         itemLabel = { it.name },
-        onSelectedChange = { onOrbiterEdgeOffsetChanged(selectedEdgeOffset) },
+        onSelectedChange = { onOrbiterEdgeOffsetChanged(selectedEdgeOffsetType) },
     )
 }
 

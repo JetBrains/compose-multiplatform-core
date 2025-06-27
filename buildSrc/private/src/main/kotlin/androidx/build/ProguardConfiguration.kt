@@ -70,8 +70,8 @@ internal fun Project.setUpBlankProguardFileForAarIfNeeded(buildType: LibraryBuil
 @Suppress("UnstableApiUsage") // b/393137152
 internal fun Project.setUpBlankProguardFileForKmpAarIfNeeded(consumerKeepRules: ConsumerKeepRules) {
     if (consumerKeepRules.files.isEmpty()) {
-        file(project.blankProguardRules())
         consumerKeepRules.publish = true
+        consumerKeepRules.files.add(blankProguardRules())
     }
 }
 

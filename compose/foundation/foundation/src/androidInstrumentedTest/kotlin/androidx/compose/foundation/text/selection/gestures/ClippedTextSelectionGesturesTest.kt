@@ -100,7 +100,7 @@ internal class ClippedTextSelectionGesturesTest : AbstractSelectionGesturesTest(
         SelectionContainer(
             selection = selection.value,
             onSelectionChange = { selection.value = it },
-            modifier = Modifier.testTag(pointerAreaTag)
+            modifier = Modifier.testTag(pointerAreaTag),
         ) {
             Box(Modifier.padding(32.dp), Alignment.Center) {
                 BasicText(
@@ -108,7 +108,7 @@ internal class ClippedTextSelectionGesturesTest : AbstractSelectionGesturesTest(
                     style = style,
                     maxLines = maxLinesState.value,
                     overflow = overflowState.value,
-                    modifier = Modifier.width(100.dp).testTag(textTag)
+                    modifier = Modifier.width(100.dp).testTag(textTag),
                 )
             }
         }

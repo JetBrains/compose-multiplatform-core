@@ -64,17 +64,13 @@ internal class MultiTextWithSpaceSelectionGesturesRegressionTest : AbstractSelec
         SelectionContainer(
             selection = selection.value,
             onSelectionChange = { selection.value = it },
-            modifier = Modifier.testTag(pointerAreaTag)
+            modifier = Modifier.testTag(pointerAreaTag),
         ) {
             Column {
                 texts.fastForEach { (str, tag) ->
                     BasicText(
                         text = str,
-                        style =
-                            TextStyle(
-                                fontFamily = fontFamily,
-                                fontSize = fontSize,
-                            ),
+                        style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
                         modifier = Modifier.testTag(tag),
                     )
                 }
@@ -92,7 +88,7 @@ internal class MultiTextWithSpaceSelectionGesturesRegressionTest : AbstractSelec
                     textToolbar = textToolbar,
                     spyTextActionModeCallback = spyTextActionModeCallback,
                     hapticFeedback = hapticFeedback,
-                    getActual = { selection.value }
+                    getActual = { selection.value },
                 ) {
                 override fun subAssert() {
                     Truth.assertAbout(MultiSelectionSubject.withContent(texts))

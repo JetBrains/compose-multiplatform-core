@@ -106,7 +106,7 @@ data class AnnotatedGetterOrField(
     enum class ElementTypeCategory {
         SINGLE,
         COLLECTION,
-        ARRAY
+        ARRAY,
     }
 
     companion object {
@@ -142,7 +142,7 @@ data class AnnotatedGetterOrField(
         private fun create(
             annotation: PropertyAnnotation,
             getterOrField: Element,
-            env: ProcessingEnvironment
+            env: ProcessingEnvironment,
         ): AnnotatedGetterOrField {
             requireIsGetterOrField(getterOrField)
 
@@ -173,7 +173,7 @@ data class AnnotatedGetterOrField(
                             ProcessingException(
                                 "Failed to find a suitable getter for element " +
                                     "\"${method.simpleName}\"",
-                                method
+                                method,
                             )
                         err.addWarnings(errors)
                         throw err
@@ -190,7 +190,7 @@ data class AnnotatedGetterOrField(
          */
         private fun inferTypeCategory(
             getterOrField: Element,
-            env: ProcessingEnvironment
+            env: ProcessingEnvironment,
         ): ElementTypeCategory {
             val jvmType = IntrospectionHelper.getPropertyType(getterOrField)
             val typeUtils = env.typeUtils
@@ -220,7 +220,7 @@ data class AnnotatedGetterOrField(
         @Throws(ProcessingException::class)
         private fun inferComponentType(
             getterOrField: Element,
-            typeCategory: ElementTypeCategory
+            typeCategory: ElementTypeCategory,
         ): TypeMirror {
             val jvmType = IntrospectionHelper.getPropertyType(getterOrField)
             return when (typeCategory) {
@@ -232,7 +232,7 @@ data class AnnotatedGetterOrField(
                     if (typeArguments.isEmpty()) {
                         throw ProcessingException(
                             "Property is repeated but has no generic rawType",
-                            getterOrField
+                            getterOrField,
                         )
                     }
                     typeArguments.first()
@@ -256,7 +256,7 @@ data class AnnotatedGetterOrField(
         @Throws(ProcessingException::class)
         private fun requireTypeMatchesAnnotation(
             getterOrField: AnnotatedGetterOrField,
-            env: ProcessingEnvironment
+            env: ProcessingEnvironment,
         ) {
             val annotation = getterOrField.annotation
             when (annotation.propertyKind) {
@@ -264,13 +264,13 @@ data class AnnotatedGetterOrField(
                     requireTypeMatchesMetadataPropertyAnnotation(
                         getterOrField,
                         annotation as MetadataPropertyAnnotation,
-                        env
+                        env,
                     )
                 PropertyAnnotation.Kind.DATA_PROPERTY ->
                     requireTypeMatchesDataPropertyAnnotation(
                         getterOrField,
                         annotation as DataPropertyAnnotation,
-                        env
+                        env,
                     )
             }
         }
@@ -369,7 +369,7 @@ data class AnnotatedGetterOrField(
         private fun requireTypeMatchesMetadataPropertyAnnotation(
             getterOrField: AnnotatedGetterOrField,
             annotation: MetadataPropertyAnnotation,
-            env: ProcessingEnvironment
+            env: ProcessingEnvironment,
         ) {
             val helper = IntrospectionHelper(env)
             when (annotation) {
@@ -379,7 +379,7 @@ data class AnnotatedGetterOrField(
                         getterOrField,
                         listOf(helper.stringType),
                         env,
-                        allowRepeated = false
+                        allowRepeated = false,
                     )
                 MetadataPropertyAnnotation.TTL_MILLIS,
                 MetadataPropertyAnnotation.CREATION_TIMESTAMP_MILLIS ->
@@ -389,17 +389,17 @@ data class AnnotatedGetterOrField(
                             helper.longPrimitiveType,
                             helper.intPrimitiveType,
                             helper.longBoxType,
-                            helper.integerBoxType
+                            helper.integerBoxType,
                         ),
                         env,
-                        allowRepeated = false
+                        allowRepeated = false,
                     )
                 MetadataPropertyAnnotation.SCORE ->
                     requireTypeIsOneOf(
                         getterOrField,
                         listOf(helper.intPrimitiveType, helper.integerBoxType),
                         env,
-                        allowRepeated = false
+                        allowRepeated = false,
                     )
             }
         }
@@ -415,7 +415,7 @@ data class AnnotatedGetterOrField(
         private fun requireTypeMatchesDataPropertyAnnotation(
             getterOrField: AnnotatedGetterOrField,
             annotation: DataPropertyAnnotation,
-            env: ProcessingEnvironment
+            env: ProcessingEnvironment,
         ) {
             val helper = IntrospectionHelper(env)
             when (annotation.dataPropertyKind) {
@@ -425,14 +425,14 @@ data class AnnotatedGetterOrField(
                         requireComponentTypeMatchesWithSerializer(
                             getterOrField,
                             stringSerializer,
-                            env
+                            env,
                         )
                     } else {
                         requireTypeIsOneOf(
                             getterOrField,
                             listOf(helper.stringType),
                             env,
-                            allowRepeated = true
+                            allowRepeated = true,
                         )
                     }
                 }
@@ -444,7 +444,7 @@ data class AnnotatedGetterOrField(
                         requireComponentTypeMatchesWithSerializer(
                             getterOrField,
                             longSerializer,
-                            env
+                            env,
                         )
                     } else {
                         requireTypeIsOneOf(
@@ -453,10 +453,10 @@ data class AnnotatedGetterOrField(
                                 helper.longPrimitiveType,
                                 helper.intPrimitiveType,
                                 helper.longBoxType,
-                                helper.integerBoxType
+                                helper.integerBoxType,
                             ),
                             env,
-                            allowRepeated = true
+                            allowRepeated = true,
                         )
                     }
                 }
@@ -467,38 +467,38 @@ data class AnnotatedGetterOrField(
                             helper.doublePrimitiveType,
                             helper.floatPrimitiveType,
                             helper.doubleBoxType,
-                            helper.floatBoxType
+                            helper.floatBoxType,
                         ),
                         env,
-                        allowRepeated = true
+                        allowRepeated = true,
                     )
                 DataPropertyAnnotation.Kind.BOOLEAN_PROPERTY ->
                     requireTypeIsOneOf(
                         getterOrField,
                         listOf(helper.booleanPrimitiveType, helper.booleanBoxType),
                         env,
-                        allowRepeated = true
+                        allowRepeated = true,
                     )
                 DataPropertyAnnotation.Kind.BYTES_PROPERTY ->
                     requireTypeIsOneOf(
                         getterOrField,
                         listOf(helper.bytePrimitiveArrayType),
                         env,
-                        allowRepeated = true
+                        allowRepeated = true,
                     )
                 DataPropertyAnnotation.Kind.EMBEDDING_PROPERTY ->
                     requireTypeIsOneOf(
                         getterOrField,
                         listOf(helper.embeddingType),
                         env,
-                        allowRepeated = true
+                        allowRepeated = true,
                     )
                 DataPropertyAnnotation.Kind.BLOB_HANDLE_PROPERTY ->
                     requireTypeIsOneOf(
                         getterOrField,
                         listOf(helper.blobHandleType),
                         env,
-                        allowRepeated = true
+                        allowRepeated = true,
                     )
             }
         }
@@ -514,7 +514,7 @@ data class AnnotatedGetterOrField(
             getterOrField: AnnotatedGetterOrField,
             expectedTypes: Collection<TypeMirror>,
             env: ProcessingEnvironment,
-            allowRepeated: Boolean
+            allowRepeated: Boolean,
         ) {
             val typeUtils = env.typeUtils
             val target = if (allowRepeated) getterOrField.componentType else getterOrField.jvmType
@@ -545,7 +545,7 @@ data class AnnotatedGetterOrField(
         private fun requireComponentTypeMatchesWithSerializer(
             getterOrField: AnnotatedGetterOrField,
             serializerClass: SerializerClass,
-            env: ProcessingEnvironment
+            env: ProcessingEnvironment,
         ) {
             // The component type must exactly match the type for which we have a serializer.
             // Subtypes do not work e.g.
@@ -561,9 +561,9 @@ data class AnnotatedGetterOrField(
                         .format(
                             getterOrField.annotation.className.simpleName(),
                             serializerClass.element.simpleName,
-                            serializerClass.customType
+                            serializerClass.customType,
                         ),
-                    getterOrField.element
+                    getterOrField.element,
                 )
             }
         }
@@ -576,7 +576,7 @@ data class AnnotatedGetterOrField(
         @Throws(ProcessingException::class)
         private fun requireTypeIsSomeDocumentClass(
             annotatedGetterOrField: AnnotatedGetterOrField,
-            env: ProcessingEnvironment
+            env: ProcessingEnvironment,
         ) {
             val componentType = annotatedGetterOrField.componentType
             if (componentType.kind == TypeKind.DECLARED) {
@@ -588,7 +588,7 @@ data class AnnotatedGetterOrField(
             throw ProcessingException(
                 "Invalid type for @DocumentProperty. Must be another class " +
                     "annotated with @Document (or collection or array of)",
-                annotatedGetterOrField.element
+                annotatedGetterOrField.element,
             )
         }
     }

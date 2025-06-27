@@ -186,7 +186,7 @@ class PathParserTest {
             dx2: Float,
             dy2: Float,
             dx3: Float,
-            dy3: Float
+            dy3: Float,
         ) {
             // NO-OP
         }
@@ -195,7 +195,7 @@ class PathParserTest {
             rect: Rect,
             startAngleDegrees: Float,
             sweepAngleDegrees: Float,
-            forceMoveTo: Boolean
+            forceMoveTo: Boolean,
         ) {
             // NO-OP
         }

@@ -132,7 +132,7 @@ class InvalidateSubtreeTest {
 
         override fun MeasureScope.measure(
             measurable: Measurable,
-            constraints: Constraints
+            constraints: Constraints,
         ): MeasureResult {
             measureCount++
             val p = measurable.measure(constraints)

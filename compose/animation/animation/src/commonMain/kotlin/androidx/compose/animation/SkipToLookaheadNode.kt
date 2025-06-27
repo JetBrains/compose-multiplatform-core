@@ -50,7 +50,7 @@ internal class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled:
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         if (isLookingAhead) {
             lookaheadConstraints = constraints
@@ -79,17 +79,17 @@ internal class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled:
                     } else
                         contentScale.computeScaleFactor(
                             lookaheadSize.toSize(),
-                            constrainedSize.toSize()
+                            constrainedSize.toSize(),
                         )
 
                 val (x, y) =
                     scaleToBounds.alignment.align(
                         IntSize(
                             (lookaheadSize.width * resolvedScale.scaleX).roundToInt(),
-                            (lookaheadSize.height * resolvedScale.scaleY).roundToInt()
+                            (lookaheadSize.height * resolvedScale.scaleY).roundToInt(),
                         ),
                         constrainedSize,
-                        layoutDirection
+                        layoutDirection,
                     )
                 p.placeWithLayer(x, y) {
                     scaleX = resolvedScale.scaleX
@@ -102,7 +102,7 @@ internal class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled:
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         // If lookahead has already occurred, return the lookahead width/height to skip propagating
         // the call further, and ensure convergence with lookahead.
@@ -115,7 +115,7 @@ internal class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled:
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         // If lookahead has already occurred, return the lookahead width/height to skip propagating
         // the call further, and ensure convergence with lookahead.
@@ -128,7 +128,7 @@ internal class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled:
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int {
         // If lookahead has already occurred, return the lookahead width/height to skip propagating
         // the call further, and ensure convergence with lookahead.
@@ -141,7 +141,7 @@ internal class SkipToLookaheadNode(scaleToBounds: ScaleToBoundsImpl?, isEnabled:
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int {
         // If lookahead has already occurred, return the lookahead width/height to skip propagating
         // the call further, and ensure convergence with lookahead.
@@ -179,7 +179,7 @@ private val DefaultEnabled: () -> Boolean = { true }
 @OptIn(ExperimentalSharedTransitionApi::class)
 internal fun Modifier.createContentScaleModifier(
     scaleToBounds: ScaleToBoundsImpl,
-    isEnabled: () -> Boolean
+    isEnabled: () -> Boolean,
 ): Modifier =
     this.then(
         if (scaleToBounds.contentScale == ContentScale.Crop) {
