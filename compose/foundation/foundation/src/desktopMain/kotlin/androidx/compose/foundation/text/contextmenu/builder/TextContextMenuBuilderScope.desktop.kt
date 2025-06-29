@@ -16,7 +16,8 @@
 
 package androidx.compose.foundation.text.contextmenu.builder
 
-import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItem
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuItemWithComposableLeadingIcon
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuSession
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
  * @param leadingIcon Icon that precedes the label in the context menu.
  * @param onClick Action to perform upon the item being clicked/pressed.
  */
+@ExperimentalFoundationApi
 fun TextContextMenuBuilderScope.item(
     key: Any,
     label: String,
@@ -37,5 +39,5 @@ fun TextContextMenuBuilderScope.item(
     leadingIcon: (@Composable (color: Color) -> Unit)? = null,
     onClick: TextContextMenuSession.() -> Unit,
 ) {
-    addComponent(TextContextMenuItem(key, label, enabled, leadingIcon, onClick))
+    addComponent(TextContextMenuItemWithComposableLeadingIcon(key, label, enabled, leadingIcon, onClick))
 }

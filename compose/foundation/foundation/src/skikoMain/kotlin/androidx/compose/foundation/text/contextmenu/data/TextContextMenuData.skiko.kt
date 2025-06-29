@@ -33,7 +33,7 @@ import androidx.compose.ui.graphics.Color
  *   menu item as a result of the click.
  */
 // TODO(grantapher-cm-api-publicize) Make class public
-internal class TextContextMenuItem
+internal class TextContextMenuItemWithComposableLeadingIcon
 internal constructor(
     key: Any,
     val label: String,

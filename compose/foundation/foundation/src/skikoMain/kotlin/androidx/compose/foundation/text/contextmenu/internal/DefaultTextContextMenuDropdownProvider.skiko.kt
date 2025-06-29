@@ -39,8 +39,9 @@ import androidx.compose.ui.window.PopupPositionProvider
 //       move it to common and upstream
 //   https://youtrack.jetbrains.com/issue/CMP-8453/Commonize-and-upstream-shared-code-in-new-context-menu
 
+// TODO(grantapher) Consider making public.
 @Composable
-fun ProvideDefaultTextContextMenuDropdown(
+internal fun ProvideDefaultTextContextMenuDropdown(
     content: @Composable () -> Unit
 ) {
     ProvideBasicTextContextMenu(
