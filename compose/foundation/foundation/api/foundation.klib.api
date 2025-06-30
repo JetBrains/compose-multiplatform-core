@@ -2385,7 +2385,3 @@ final fun androidx.compose.foundation/androidx_compose_foundation_PlatformMagnif
 
 // Targets: [ios]
 final fun androidx.compose.foundation/androidx_compose_foundation_PlatformMagnifierFactoryIos17Impl_PlatformMagnifierImpl$stableprop_getter(): kotlin/Int // androidx.compose.foundation/androidx_compose_foundation_PlatformMagnifierFactoryIos17Impl_PlatformMagnifierImpl$stableprop_getter|androidx_compose_foundation_PlatformMagnifierFactoryIos17Impl_PlatformMagnifierImpl$stableprop_getter(){}[0]
-
-// Targets: [js, wasmJs]
-final val androidx.compose.foundation.text/isTypedEvent // androidx.compose.foundation.text/isTypedEvent|@androidx.compose.ui.input.key.KeyEvent{}isTypedEvent[0]
-    final fun (androidx.compose.ui.input.key/KeyEvent).<get-isTypedEvent>(): kotlin/Boolean // androidx.compose.foundation.text/isTypedEvent.<get-isTypedEvent>|<get-isTypedEvent>@androidx.compose.ui.input.key.KeyEvent(){}[0]
