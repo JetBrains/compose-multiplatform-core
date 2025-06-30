@@ -97,7 +97,6 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
-import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.compose.ui.util.trace
 import androidx.compose.ui.viewinterop.InteropPointerInputModifier
 import androidx.compose.ui.viewinterop.InteropView
@@ -691,6 +690,10 @@ internal class RootNodeOwner(
             snapshotInvalidationTracker.requestMeasureAndLayout()
         }
 
+        override fun voteFrameRate(frameRate: Float) {
+            ownedLayerManager.voteFrameRate(frameRate)
+        }
+
         private var keepScreenOnCount = 0
 
         override fun incrementKeepScreenOnCount() {
@@ -855,6 +858,25 @@ internal class RootNodeOwner(
             snapshotInvalidationTracker.requestDraw()
         }
 
+        override val isArrEnabled: Boolean = @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isAdaptiveRefreshRateEnabled
+        private var currentFrameRate = Float.NaN
+
+        override fun voteFrameRate(frameRate: Float) {
+            if (isArrEnabled) {
+                val effectiveFrameRate = if (frameRate > 0) {
+                    frameRate
+                } else if (frameRate < 0) {
+                    platformContext.resolveFrameRateCategory(frameRate)
+                } else {
+                    return
+                }
+
+                if (currentFrameRate.isNaN() || effectiveFrameRate > currentFrameRate) {
+                    currentFrameRate = effectiveFrameRate
+                }
+            }
+        }
+
         fun draw(canvas: Canvas) {
             isDrawingContent = true
 
@@ -884,6 +906,11 @@ internal class RootNodeOwner(
                 val postponed = postponedDirtyLayers!!
                 dirtyLayers.addAll(postponed)
                 postponed.clear()
+            }
+
+            if (isArrEnabled && !currentFrameRate.isNaN()) {
+                platformContext.setFrameRate(currentFrameRate)
+                currentFrameRate = Float.NaN
             }
 
             isDrawingContent = false

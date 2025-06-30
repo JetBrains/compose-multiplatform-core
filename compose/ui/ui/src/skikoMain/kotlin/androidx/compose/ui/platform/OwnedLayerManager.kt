@@ -43,4 +43,8 @@ internal interface OwnedLayerManager {
      * Triggers redrawing of Compose content during the next frame.
      */
     fun invalidate()
+
+    val isArrEnabled: Boolean
+
+    fun voteFrameRate(frameRate: Float)
 }

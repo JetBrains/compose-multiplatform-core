@@ -159,7 +159,9 @@ internal class MetalRedrawer(
 
     var isForcedToPresentWithTransactionEveryFrame = false
 
-    var maximumFramesPerSecond: NSInteger
+    var maximumFramesPerSecond: NSInteger = 0
+
+    var preferredFramesPerSecond: NSInteger
         get() = caDisplayLink?.preferredFramesPerSecond ?: 0
         set(value) {
             caDisplayLink?.preferredFramesPerSecond = value

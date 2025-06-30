@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
@@ -103,6 +104,7 @@ import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
+import platform.QuartzCore.CAFrameRateRangeDefault
 import platform.QuartzCore.CATransaction
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventButtonMaskPrimary
@@ -716,6 +718,19 @@ internal class ComposeSceneMediator(
         override var isKeepScreenOnEnabled: Boolean
             get() = UIKitIdleTimerManager.isIdleTimerDisabled
             set(value) { UIKitIdleTimerManager.setIdleTimerState(this@ComposeSceneMediator, value) }
+
+        override fun setFrameRate(frameRate: Float) {
+            redrawer.preferredFramesPerSecond = frameRate.toLong()
+        }
+
+        override fun resolveFrameRateCategory(frameRateCategory: Float): Float {
+            return when (frameRateCategory) {
+                FrameRateCategory.Default.value -> CAFrameRateRangeDefault.maximum
+                FrameRateCategory.Normal.value -> 60f
+                FrameRateCategory.High.value -> redrawer.maximumFramesPerSecond.toFloat()
+                else -> redrawer.maximumFramesPerSecond.toFloat()
+            }
+        }
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)

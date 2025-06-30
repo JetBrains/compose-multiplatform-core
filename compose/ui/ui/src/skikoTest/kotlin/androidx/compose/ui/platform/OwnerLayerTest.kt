@@ -612,6 +612,9 @@ class OwnerLayerTest {
                 override fun invalidate() {
                     invalidateBlock()
                 }
+
+                override val isArrEnabled: Boolean = false
+                override fun voteFrameRate(frameRate: Float) = Unit
             },
             drawBlock = drawBlock,
             invalidateParentLayer = {}

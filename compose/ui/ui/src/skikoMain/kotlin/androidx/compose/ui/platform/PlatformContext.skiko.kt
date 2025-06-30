@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
@@ -126,6 +127,10 @@ interface PlatformContext {
     var isKeepScreenOnEnabled: Boolean
         get() = false
         set(value) {}
+
+    fun setFrameRate(frameRate: Float) = Unit
+
+    fun resolveFrameRateCategory(frameRateCategory: Float): Float = Float.NaN
 
     /**
      * The listener to track [RootForTest]s.
