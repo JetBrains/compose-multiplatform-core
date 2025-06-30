@@ -18,7 +18,9 @@
 
 package androidx.compose.runtime.tooling
 
+import androidx.compose.runtime.internal.logError
 import androidx.compose.runtime.snapshots.fastAny
+import kotlin.math.min
 
 /**
  * Source information of a [CompositionGroup].
@@ -54,28 +56,30 @@ public class LocationSourceInformation(
     public val isRepeatable: Boolean,
 )
 
-private class ParseException(message: String) : Exception(message)
+private class ParseException(override val message: String) : Exception(message)
 
 private class SourceInfoParserState(val data: String) {
     var i = 0
 
     fun expect(char: Char) {
         if (!matches(char)) {
-            parseError("expected $char")
+            throwParseError("expected $char")
         }
     }
 
-    fun parseError(message: String): Nothing =
+    fun throwParseError(message: String): Nothing {
+        val end = min(i, data.length)
         throw ParseException(
             "Error while parsing source information: $message at " +
-                "${data.substring(startIndex = 0, endIndex = i)}|${data.substring(startIndex = i)}"
+                "${data.substring(0, end)}|${data.substring(startIndex = end)}"
         )
+    }
 
     fun matches(char: Char) = i < data.length && data[i] == char
 
     fun takeIntUntil(separator: String): Int {
         val int = takeUntil(separator).toIntOrNull()
-        return int ?: parseError("expected int")
+        return int ?: throwParseError("expected int")
     }
 
     fun takeUntil(separator: String): String {
@@ -115,7 +119,8 @@ public fun parseSourceInformation(data: String): SourceInformation? {
 
     return try {
         parseSourceInformationInternal(data)
-    } catch (_: ParseException) {
+    } catch (e: ParseException) {
+        logError(e.message, e)
         null
     }
 }
@@ -161,7 +166,7 @@ internal fun parseSourceInformationInternal(data: String): SourceInformation {
                 p.advance(2) // Skip section header
                 while (count > 0 || !p.matches(')')) {
                     if (p.atEnd()) {
-                        p.parseError("unexpected end")
+                        p.throwParseError("unexpected end")
                     }
                     if (p.matches('(')) {
                         count++
