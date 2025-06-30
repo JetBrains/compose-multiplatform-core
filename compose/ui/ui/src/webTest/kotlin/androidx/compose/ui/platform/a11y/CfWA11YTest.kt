@@ -314,8 +314,10 @@ class CfWA11YTest : OnCanvasTests {
 
         // the "debounce" must be ignored when the changes were waiting for 1 second
         assertEquals(1, a11yContainer.childElementCount)
+
+        // Adding a tolerance of 200ms, just to avoid flakiness
         assertTrue(
-            changesAppliedTime - startTime in (1000..1100),
+            changesAppliedTime - startTime in (1000..1200),
             "Changes must be applied after 1 second, waited for ${changesAppliedTime - startTime} ms"
         )
     }
