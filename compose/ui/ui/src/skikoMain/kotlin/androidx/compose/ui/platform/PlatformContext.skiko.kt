@@ -130,6 +130,8 @@ interface PlatformContext {
 
     fun voteFrameRate(frameRate: Float) = Unit
 
+    fun applyVotedFrameRate(frameRate: Float) = Unit
+
     /**
      * Resolves a frame rate category to an actual frame rate value.
      *

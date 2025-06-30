@@ -873,6 +873,7 @@ internal class RootNodeOwner(
             }
 
             if (currentFrameRate.isNaN() || effectiveFrameRate > currentFrameRate) {
+                platformContext.voteFrameRate(frameRate)
                 currentFrameRate = effectiveFrameRate
             }
         }
@@ -909,7 +910,7 @@ internal class RootNodeOwner(
             }
 
             if (isArrEnabled && !currentFrameRate.isNaN()) {
-                platformContext.setFrameRate(currentFrameRate)
+                platformContext.applyVotedFrameRate(currentFrameRate)
                 currentFrameRate = Float.NaN
             }
 

@@ -719,8 +719,12 @@ internal class ComposeSceneMediator(
             get() = UIKitIdleTimerManager.isIdleTimerDisabled
             set(value) { UIKitIdleTimerManager.setIdleTimerState(this@ComposeSceneMediator, value) }
 
-        override fun setFrameRate(frameRate: Float) {
-            redrawer.preferredFramesPerSecond = frameRate.toLong()
+        override fun voteFrameRate(frameRate: Float) {
+            redrawer.voteFrameRate(frameRate)
+        }
+
+        override fun applyVotedFrameRate(frameRate: Float) {
+            redrawer.applyVotedFrameRate()
         }
 
         override fun resolveFrameRateCategory(frameRateCategory: Float): Float {

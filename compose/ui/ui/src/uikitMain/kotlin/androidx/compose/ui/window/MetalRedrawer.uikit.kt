@@ -299,6 +299,19 @@ internal class MetalRedrawer(
         draw(waitUntilCompletion, CACurrentMediaTime())
     }
 
+    private var currentFrameRate: Float = Float.NaN
+
+    fun voteFrameRate(frameRate: Float) {
+        if (currentFrameRate.isNaN() || frameRate > currentFrameRate) {
+            currentFrameRate = frameRate
+        }
+    }
+
+    fun applyVotedFrameRate() {
+        preferredFramesPerSecond = currentFrameRate.toLong()
+        currentFrameRate = Float.NaN
+    }
+
     /**
      * Encodes the frame and presents it on the screen.
      *
