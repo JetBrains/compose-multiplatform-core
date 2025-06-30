@@ -16,28 +16,6 @@
 
 #import "CMPEditMenuView.h"
 
-@implementation CMPEditMenuCustomAction
-
-- (id)initWithTitle:(NSString *)title action:(void (^)(void))actionBlock {
-    self = [super init];
-    if (self) {
-        _title = title;
-        _actionBlock = actionBlock;
-    }
-    return self;
-}
-
-- (BOOL)isEqual:(id)other {
-    return [self.title isEqualToString:((CMPEditMenuCustomAction *)other).title];
-}
-
-- (NSUInteger)hash {
-    return self.title.hash;
-}
-
-@end
-
-
 @interface CMPEditMenuViewRegister: NSObject
 
 @property (nonatomic, strong) NSMutableSet<CMPEditMenuView *> *trackedMenus;
@@ -322,20 +300,25 @@ id _editInteraction;
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
-    return ((@selector(copy:) == action && self.copyBlock != nil) ||
-            (@selector(paste:) == action && self.pasteBlock != nil) ||
-            (@selector(cut:) == action && self.cutBlock != nil) ||
-            (@selector(selectAll:) == action && self.selectAllBlock != nil) ||
-            (@selector(customAction0:) == action && self.customActions.count > 0) ||
-            (@selector(customAction1:) == action && self.customActions.count > 1) ||
-            (@selector(customAction2:) == action && self.customActions.count > 2) ||
-            (@selector(customAction3:) == action && self.customActions.count > 3) ||
-            (@selector(customAction4:) == action && self.customActions.count > 4) ||
-            (@selector(customAction5:) == action && self.customActions.count > 5) ||
-            (@selector(customAction6:) == action && self.customActions.count > 6) ||
-            (@selector(customAction7:) == action && self.customActions.count > 7) ||
-            (@selector(customAction8:) == action && self.customActions.count > 8) ||
-            (@selector(customAction9:) == action && self.customActions.count > 9));
+    BOOL handled = ((@selector(copy:) == action && self.copyBlock != nil) ||
+                    (@selector(paste:) == action && self.pasteBlock != nil) ||
+                    (@selector(cut:) == action && self.cutBlock != nil) ||
+                    (@selector(selectAll:) == action && self.selectAllBlock != nil) ||
+                    (@selector(customAction0:) == action && self.customActions.count > 0) ||
+                    (@selector(customAction1:) == action && self.customActions.count > 1) ||
+                    (@selector(customAction2:) == action && self.customActions.count > 2) ||
+                    (@selector(customAction3:) == action && self.customActions.count > 3) ||
+                    (@selector(customAction4:) == action && self.customActions.count > 4) ||
+                    (@selector(customAction5:) == action && self.customActions.count > 5) ||
+                    (@selector(customAction6:) == action && self.customActions.count > 6) ||
+                    (@selector(customAction7:) == action && self.customActions.count > 7) ||
+                    (@selector(customAction8:) == action && self.customActions.count > 8) ||
+                    (@selector(customAction9:) == action && self.customActions.count > 9));
+
+    if (handled) {
+        return YES;
+    }
+    return [super canPerformAction:action withSender:sender];
 }
 
 - (void)copy:(id)sender {
@@ -447,6 +430,26 @@ willPresentMenuForConfiguration:(UIEditMenuConfiguration *)configuration
     NSArray *allActions = [suggestedActions arrayByAddingObjectsFromArray:[self makeCustomMenuElements]];
     
     return [UIMenu menuWithTitle:@"" children:allActions];
+}
+
+- (void)activateTextInputInteractionIfNeeded {
+    if (@available(iOS 17, *)) {
+        for (id<UIInteraction> interaction in self.interactions) {
+            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
+                [((UITextSelectionDisplayInteraction *)interaction) setActivated:YES];
+            }
+        }
+    }
+}
+
+- (void)deactivateTextInputInteractionIfNeeded {
+    if (@available(iOS 17, *)) {
+        for (id<UIInteraction> interaction in self.interactions) {
+            if ([interaction isKindOfClass:[UITextSelectionDisplayInteraction class]]) {
+                [((UITextSelectionDisplayInteraction *)interaction) setActivated:NO];
+            }
+        }
+    }
 }
 
 @end
