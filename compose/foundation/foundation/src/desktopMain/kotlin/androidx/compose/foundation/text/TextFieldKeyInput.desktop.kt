@@ -27,6 +27,6 @@ private fun Char.isPrintable(): Boolean {
         block != Character.UnicodeBlock.SPECIALS
 }
 
-actual val KeyEvent.isTypedEvent: Boolean
+internal actual val KeyEvent.isTypedEvent: Boolean
     get() = awtEventOrNull?.id == java.awt.event.KeyEvent.KEY_TYPED &&
         awtEventOrNull?.keyChar?.isPrintable() == true
