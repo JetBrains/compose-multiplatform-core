@@ -308,6 +308,7 @@ internal class MetalRedrawer(
     }
 
     fun applyVotedFrameRate() {
+        if (currentFrameRate.isNaN()) return
         preferredFramesPerSecond = currentFrameRate.toLong()
         currentFrameRate = Float.NaN
     }
