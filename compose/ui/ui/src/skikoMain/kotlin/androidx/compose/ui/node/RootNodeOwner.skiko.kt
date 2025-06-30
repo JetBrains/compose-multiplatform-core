@@ -858,22 +858,22 @@ internal class RootNodeOwner(
             snapshotInvalidationTracker.requestDraw()
         }
 
-        override val isArrEnabled: Boolean = @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isAdaptiveRefreshRateEnabled
+        val isArrEnabled: Boolean = @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isAdaptiveRefreshRateEnabled
         private var currentFrameRate = Float.NaN
 
         override fun voteFrameRate(frameRate: Float) {
-            if (isArrEnabled) {
-                val effectiveFrameRate = if (frameRate > 0) {
-                    frameRate
-                } else if (frameRate < 0) {
-                    platformContext.resolveFrameRateCategory(frameRate)
-                } else {
-                    return
-                }
+            if (!isArrEnabled) return
 
-                if (currentFrameRate.isNaN() || effectiveFrameRate > currentFrameRate) {
-                    currentFrameRate = effectiveFrameRate
-                }
+            val effectiveFrameRate = if (frameRate > 0) {
+                frameRate
+            } else if (frameRate < 0) {
+                platformContext.resolveFrameRateCategory(frameRate)
+            } else {
+                return
+            }
+
+            if (currentFrameRate.isNaN() || effectiveFrameRate > currentFrameRate) {
+                currentFrameRate = effectiveFrameRate
             }
         }
 

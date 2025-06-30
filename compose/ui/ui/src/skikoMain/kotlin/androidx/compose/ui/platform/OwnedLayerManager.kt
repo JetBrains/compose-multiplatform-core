@@ -44,7 +44,5 @@ internal interface OwnedLayerManager {
      */
     fun invalidate()
 
-    val isArrEnabled: Boolean
-
     fun voteFrameRate(frameRate: Float)
 }

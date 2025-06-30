@@ -218,18 +218,14 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun move(position: IntOffset) {
-        if (layerManager.isArrEnabled) {
-            layerManager.voteFrameRate(FrameRateCategory.High.value)
-        }
+        layerManager.voteFrameRate(FrameRateCategory.High.value)
         graphicsLayer.topLeft = position
         triggerRepaint()
     }
 
     override fun resize(size: IntSize) {
         if (size != this.size) {
-            if (layerManager.isArrEnabled) {
-                layerManager.voteFrameRate(FrameRateCategory.High.value)
-            }
+            layerManager.voteFrameRate(FrameRateCategory.High.value)
             this.size = size
             invalidate()
         }
@@ -245,9 +241,7 @@ internal class GraphicsLayerOwnerLayer(
     }
 
     override fun updateDisplayList() {
-        if (layerManager.isArrEnabled && frameRate != 0f) {
-            layerManager.voteFrameRate(frameRate)
-        }
+        layerManager.voteFrameRate(frameRate)
         if (isDirty) {
             if (transformOrigin != TransformOrigin.Center && graphicsLayer.size != size) {
                 graphicsLayer.pivotOffset =
