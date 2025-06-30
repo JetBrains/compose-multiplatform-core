@@ -45,7 +45,6 @@ internal class ComposeWebSemanticsListener(
 
     private val invalidationChannel =
         Channel<Unit>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
-    private val syncTriggerChannel = Channel<Unit>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
 
     init {
         coroutineScope.launch {

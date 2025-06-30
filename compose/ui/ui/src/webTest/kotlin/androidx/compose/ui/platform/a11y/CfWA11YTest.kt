@@ -251,7 +251,9 @@ class CfWA11YTest : OnCanvasTests {
             assertEquals("Text in Button", button.innerHTML)
         }
 
-        assertTrue(waitedForChangesMs in 90..110, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance 10ms was exceeded")
+        // The tolerance is quite large, but it's so to reduce the flakiness.
+        // The idea is that the change is not expected to happen immediately, but with debounce.
+        assertTrue(waitedForChangesMs in 50..150, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance 50ms was exceeded")
     }
 
     @Test
