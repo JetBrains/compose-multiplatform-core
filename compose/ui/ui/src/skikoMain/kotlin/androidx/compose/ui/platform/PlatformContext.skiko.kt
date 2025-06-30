@@ -128,8 +128,14 @@ interface PlatformContext {
         get() = false
         set(value) {}
 
-    fun setFrameRate(frameRate: Float) = Unit
+    fun voteFrameRate(frameRate: Float) = Unit
 
+    /**
+     * Resolves a frame rate category to an actual frame rate value.
+     *
+     * @param frameRateCategory A negative float value representing a frame rate category
+     * @see FrameRateCategory values
+     */
     fun resolveFrameRateCategory(frameRateCategory: Float): Float = Float.NaN
 
     /**
