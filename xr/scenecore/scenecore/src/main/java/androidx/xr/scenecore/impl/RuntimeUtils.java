@@ -412,7 +412,7 @@ final class RuntimeUtils {
      *     com.android.extensions.xr.environment.EnvironmentVisibilityState} instance to be
      *     converted.
      */
-    static boolean getIsSpatialEnvironmentPreferenceActive(int environmentState) {
+    static boolean getIsPreferredSpatialEnvironmentActive(int environmentState) {
         return environmentState == EnvironmentVisibilityState.APP_VISIBLE;
     }
 

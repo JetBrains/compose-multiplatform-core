@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorNotTrackingException
 import androidx.xr.runtime.internal.ArDevice
+import androidx.xr.runtime.internal.DepthMap
 import androidx.xr.runtime.internal.Hand
 import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
@@ -176,6 +177,10 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     /** Returns a list of [ViewCamera] objects. */
     override val viewCameras: List<ViewCamera>
         get() = throw NotImplementedError("Not implemented on mobile runtime.")
+
+    /** Returns a list of [DepthMap] objects. */
+    override val depthMaps: List<DepthMap>
+        get() = throw NotImplementedError("Not implemented on mobile runtime")
 
     /**
      * Updates the perception manager.

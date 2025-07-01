@@ -97,6 +97,7 @@ internal object MetalavaTasks {
                     task.bootClasspath = compilationInputs.bootClasspath
                     task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
                     task.kotlinSourceLevel.set(kotlinSourceLevel)
+                    task.targetsJavaConsumers.set(targetsJavaConsumers)
                     task.cacheEvenIfNoOutputs()
                     task.dependsOn(generateApi)
                 }
@@ -113,6 +114,7 @@ internal object MetalavaTasks {
                     task.bootClasspath = compilationInputs.bootClasspath
                     task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
                     task.kotlinSourceLevel.set(kotlinSourceLevel)
+                    task.targetsJavaConsumers.set(targetsJavaConsumers)
                     task.dependsOn(generateApi)
                 }
         }

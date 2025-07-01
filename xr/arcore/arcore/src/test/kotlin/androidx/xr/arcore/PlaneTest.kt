@@ -80,7 +80,7 @@ class PlaneTest {
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
 
-        FakeRuntimeAnchor.anchorsCreated = 0
+        FakeRuntimeAnchor.anchorsCreatedCount = 0
     }
 
     @Test

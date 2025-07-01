@@ -32,11 +32,11 @@ import androidx.camera.core.internal.utils.SizeUtil
 public data class SurfaceConfig(
     public val configType: ConfigType,
     public val configSize: ConfigSize,
-    public val streamUseCase: Long = DEFAULT_STREAM_USE_CASE_VALUE,
+    public val streamUseCase: StreamUseCase = DEFAULT_STREAM_USE_CASE,
 ) {
 
     public companion object {
-        public const val DEFAULT_STREAM_USE_CASE_VALUE: Long = 0
+        @JvmField public val DEFAULT_STREAM_USE_CASE: StreamUseCase = StreamUseCase.DEFAULT
 
         private val FEATURE_COMBO_QUERY_SUPPORTED_SIZES: Array<ConfigSize> =
             arrayOf(
@@ -66,7 +66,7 @@ public data class SurfaceConfig(
         public fun create(
             type: ConfigType,
             size: ConfigSize,
-            streamUseCase: Long = DEFAULT_STREAM_USE_CASE_VALUE,
+            streamUseCase: StreamUseCase = DEFAULT_STREAM_USE_CASE,
         ): SurfaceConfig {
             return SurfaceConfig(type, size, streamUseCase)
         }
@@ -102,6 +102,7 @@ public data class SurfaceConfig(
             surfaceSizeDefinition: SurfaceSizeDefinition,
             @CameraMode.Mode cameraMode: Int = CameraMode.DEFAULT,
             configSource: ConfigSource = ConfigSource.CAPTURE_SESSION_TABLES,
+            streamUseCase: StreamUseCase = DEFAULT_STREAM_USE_CASE,
         ): SurfaceConfig {
             val configType = getConfigType(imageFormat)
             var configSize = ConfigSize.NOT_SUPPORT
@@ -161,23 +162,37 @@ public data class SurfaceConfig(
                 }
             }
 
-            return create(configType, configSize)
+            return create(type = configType, size = configSize, streamUseCase = streamUseCase)
         }
     }
 
     /**
-     * Check whether the input surface configuration has a smaller size than this object and can be
-     * supported
+     * Check whether the input surface configuration can be supported by this object.
      *
-     * @param surfaceConfig the surface configuration to be compared
+     * A surface configuration is considered "supported" if its properties (size, type, and stream
+     * use case) are compatible with this `SurfaceConfig`. Specifically, for `other` to be
+     * supported:
+     * * The `other` surface's config size must be smaller than this SurfaceConfig's configSize.
+     * * The `other` surface's configType must match this SurfaceConfig.
+     * * If both SurfaceConfig have a [StreamUseCase] other than [StreamUseCase.DEFAULT], then the
+     *   [StreamUseCase] must match.
+     *
+     * @param other the surface configuration to be compared
      * @return the check result that whether it could be supported
      */
-    public fun isSupported(surfaceConfig: SurfaceConfig): Boolean {
-        val otherConfigType = surfaceConfig.configType
-        val otherConfigSize = surfaceConfig.configSize
-
-        // Check size and type to make sure it could be supported
-        return otherConfigSize.id <= configSize.id && otherConfigType == configType
+    public fun isSupported(other: SurfaceConfig): Boolean {
+        if (other.configSize.id > configSize.id) {
+            return false
+        } else if (other.configType != configType) {
+            return false
+        } else if (
+            streamUseCase != StreamUseCase.DEFAULT &&
+                other.streamUseCase != StreamUseCase.DEFAULT &&
+                other.streamUseCase != streamUseCase
+        ) {
+            return false
+        }
+        return true
     }
 
     /** Returns the [ImageFormat] constant of the underlying [ConfigType]. */

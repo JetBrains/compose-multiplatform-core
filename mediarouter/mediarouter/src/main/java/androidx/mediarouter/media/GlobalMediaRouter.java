@@ -101,7 +101,7 @@ import java.util.Set;
 
     @VisibleForTesting
     RegisteredMediaRouteProviderWatcher mRegisteredProviderWatcher;
-    MediaRouter.RouteInfo mSelectedRoute;
+    @Nullable MediaRouter.RouteInfo mSelectedRoute;
     MediaRouteProvider.RouteController mSelectedRouteController;
     MediaRouter.OnPrepareTransferListener mOnPrepareTransferListener;
     MediaRouter.PrepareTransferNotifier mTransferNotifier;
@@ -376,7 +376,7 @@ import java.util.Set;
     }
 
     @NonNull
-        /* package */ MediaRouter.RouteInfo getSelectedRoute() {
+    /* package */ MediaRouter.RouteInfo getSelectedRoute() {
         if (mSelectedRoute == null) {
             // This should never happen once the media router has been fully
             // initialized but it is good to check for the error in case there
@@ -600,7 +600,10 @@ import java.util.Set;
             Log.w(TAG, "Ignoring attempt to select disabled route: " + route);
             return;
         }
-
+        if (isRouteSelected(route)) {
+            Log.w(TAG, "Ignoring attempt to select selected route: " + route);
+            return;
+        }
         // Check whether the route comes from MediaRouter2. The SDK check is required to avoid a
         // lint error but is not needed.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
@@ -667,6 +670,25 @@ import java.util.Set;
             routeConnection.disconnect();
             mRouteIdToRouteConnectionMap.remove(route.getId());
         }
+    }
+
+    private boolean isRouteSelected(MediaRouter.RouteInfo route) {
+        if (mSelectedRoute == route) {
+            return true;
+        }
+        MediaRouter.GroupRouteInfo selectedGroupRoute =
+                (mSelectedRoute != null) ? mSelectedRoute.asGroup() : null;
+        if (selectedGroupRoute != null
+                && selectedGroupRoute.getSelectedRoutesInGroup().size() == 1) {
+            int selectionState = selectedGroupRoute.getSelectionState(route);
+            return selectionState
+                            == MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor
+                                    .SELECTED
+                    || selectionState
+                            == MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor
+                                    .SELECTING;
+        }
+        return false;
     }
 
     private void notifyRouteConnectionFailed(
@@ -1645,7 +1667,9 @@ import java.util.Set;
                 // Nothing to do.
                 Log.d(
                         TAG,
-                        "A RouteController unrelated to the selected route is released."
+                        "A RouteController unrelated to the selected route ("
+                                + mSelectedRouteController
+                                + ") is released."
                                 + " controller="
                                 + controller);
             }

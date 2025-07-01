@@ -110,7 +110,7 @@ internal fun WorkManagerImpl.updateWorkImpl(
 
 /** Enqueue or update the work. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun WorkManagerImpl.enqueueUniquelyNamedPeriodic(
+public fun WorkManagerImpl.enqueueUniquelyNamedPeriodic(
     name: String,
     workRequest: WorkRequest,
 ): Operation =

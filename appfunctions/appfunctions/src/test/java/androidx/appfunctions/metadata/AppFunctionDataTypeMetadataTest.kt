@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.metadata
 
+import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
 import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
@@ -377,5 +378,89 @@ class AppFunctionDataTypeMetadataTest {
                     isNullable = false,
                 )
             )
+    }
+
+    @Test
+    fun appFunctionAllOfTypeMetadata_getPseudoObjectTypeMetadata_returnMergedObject() {
+        val nestedObjectTypeMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "stringValue" to
+                            AppFunctionPrimitiveTypeMetadata(TYPE_STRING, isNullable = true)
+                    ),
+                required = listOf("stringValue"),
+                qualifiedName = "testNestedObject",
+                isNullable = false,
+            )
+        val objectTypeMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("nestedObject" to nestedObjectTypeMetadata),
+                required = emptyList(),
+                qualifiedName = "testObject",
+                isNullable = false,
+            )
+        val nestedAllOfType =
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "intValue" to
+                                        AppFunctionPrimitiveTypeMetadata(
+                                            TYPE_INT,
+                                            isNullable = true,
+                                        )
+                                ),
+                            required = listOf("intValue"),
+                            qualifiedName = "testAllOfNestedObject",
+                            isNullable = false,
+                        )
+                    ),
+                qualifiedName = "testNestedAllOf",
+                isNullable = false,
+            )
+        val referenceTypeMetadata =
+            AppFunctionReferenceTypeMetadata(
+                referenceDataType = "testReferenceType",
+                isNullable = true,
+            )
+        val componentMetadata =
+            AppFunctionComponentsMetadata(
+                dataTypes =
+                    mapOf(
+                        "testReferenceType" to
+                            AppFunctionObjectTypeMetadata(
+                                properties =
+                                    mapOf(
+                                        "booleanValue" to
+                                            AppFunctionPrimitiveTypeMetadata(
+                                                TYPE_BOOLEAN,
+                                                isNullable = true,
+                                            )
+                                    ),
+                                required = listOf("booleanValue"),
+                                qualifiedName = "testReferenceObject",
+                                isNullable = false,
+                            )
+                    )
+            )
+        val allOfTypeMetadata =
+            AppFunctionAllOfTypeMetadata(
+                matchAll = listOf(objectTypeMetadata, nestedAllOfType, referenceTypeMetadata),
+                qualifiedName = null,
+                isNullable = false,
+            )
+
+        val pseudoObject = allOfTypeMetadata.getPseudoObjectTypeMetadata(componentMetadata)
+
+        assertThat(pseudoObject.properties).hasSize(3)
+        assertThat(pseudoObject.properties["nestedObject"]).isEqualTo(nestedObjectTypeMetadata)
+        assertThat(pseudoObject.properties["intValue"])
+            .isEqualTo(AppFunctionPrimitiveTypeMetadata(TYPE_INT, isNullable = true))
+        assertThat(pseudoObject.properties["booleanValue"])
+            .isEqualTo(AppFunctionPrimitiveTypeMetadata(TYPE_BOOLEAN, isNullable = true))
+        assertThat(pseudoObject.required).containsExactly("booleanValue", "intValue")
     }
 }

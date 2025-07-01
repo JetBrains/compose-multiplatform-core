@@ -35,8 +35,8 @@ internal constructor(
         if (!isTrackingAvailable) {
             throw AnchorNotTrackingException()
         }
-        ++anchorsCreated
-        if (anchorsCreated > ANCHOR_RESOURCE_LIMIT) {
+        ++anchorsCreatedCount
+        if (anchorsCreatedCount > ANCHOR_RESOURCE_LIMIT) {
             throw AnchorResourcesExhaustedException()
         }
     }
@@ -69,6 +69,6 @@ internal constructor(
         /** Limit for the number of anchors that can be created. */
         public const val ANCHOR_RESOURCE_LIMIT: Int = 5
         /** The current number of anchors created. */
-        @JvmStatic public var anchorsCreated: Int = 0
+        @JvmStatic public var anchorsCreatedCount: Int = 0
     }
 }

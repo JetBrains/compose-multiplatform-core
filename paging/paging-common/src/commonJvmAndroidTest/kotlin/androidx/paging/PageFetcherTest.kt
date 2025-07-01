@@ -48,7 +48,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -1318,10 +1317,8 @@ class PageFetcherTest {
             fetcherState.job.cancel()
         }
 
-    @Suppress("DEPRECATION")
-    // b/220884819
     @Test
-    fun injectRemoteEvents_remoteLoadAcrossGenerations() = runBlockingTest {
+    fun injectRemoteEvents_remoteLoadAcrossGenerations() = runTest {
         val neverEmitCh = Channel<Int>()
         var generation = 0
 
@@ -1332,7 +1329,7 @@ class PageFetcherTest {
                     object : PagingSource<Int, Int>() {
                         override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Int> {
                             // Wait for advanceUntilIdle()
-                            delay(1)
+                            delay(2)
 
                             return when (generation) {
                                 1 -> Page(data = listOf(), prevKey = null, nextKey = null)
@@ -1365,7 +1362,20 @@ class PageFetcherTest {
                         }
                     },
             )
-        val fetcherState = collectFetcherState(pageFetcher)
+
+        val pagingDataList: ArrayList<PagingData<Int>> = ArrayList()
+        val pageEventLists: ArrayList<ArrayList<PageEvent<Int>>> = ArrayList()
+
+        val job =
+            launch(UnconfinedTestDispatcher(testScheduler)) {
+                pageFetcher.flow.collectIndexed { index, pagingData ->
+                    pagingDataList.add(index, pagingData)
+                    pageEventLists.add(index, ArrayList())
+                    launch { pagingData.flow.toList(pageEventLists[index]) }
+                }
+            }
+
+        val fetcherState = FetcherState(pagingDataList, pageEventLists, job)
 
         assertThat(fetcherState.newEvents())
             .containsExactly(remoteLoadStateUpdate<Int>(source = loadStates(refresh = Loading)))
@@ -1400,7 +1410,11 @@ class PageFetcherTest {
                 remoteLoadStateUpdate<Int>(
                     source = loadStates(refresh = Loading),
                     mediator = loadStates(prepend = Loading, append = Loading),
-                )
+                ),
+                remoteLoadStateUpdate<Int>(
+                    source = loadStates(refresh = Loading),
+                    mediator = loadStates(refresh = Loading, prepend = Loading, append = Loading),
+                ),
             )
 
         // Let remote and source refresh finish.
@@ -1409,10 +1423,6 @@ class PageFetcherTest {
         // Second generation loads some data and has more to load from source.
         assertThat(fetcherState.newEvents())
             .containsExactly(
-                remoteLoadStateUpdate<Int>(
-                    source = loadStates(refresh = Loading),
-                    mediator = loadStates(refresh = Loading, prepend = Loading, append = Loading),
-                ),
                 remoteLoadStateUpdate<Int>(
                     source = loadStates(refresh = Loading),
                     mediator = loadStates(prepend = Loading, append = Loading),
@@ -1433,7 +1443,11 @@ class PageFetcherTest {
                 remoteLoadStateUpdate<Int>(
                     source = loadStates(refresh = Loading),
                     mediator = loadStates(prepend = Loading, append = Loading),
-                )
+                ),
+                remoteLoadStateUpdate<Int>(
+                    source = loadStates(refresh = Loading),
+                    mediator = loadStates(refresh = Loading, prepend = Loading, append = Loading),
+                ),
             )
 
         // Let remote and source refresh finish.
@@ -1441,10 +1455,6 @@ class PageFetcherTest {
 
         assertThat(fetcherState.newEvents())
             .containsExactly(
-                remoteLoadStateUpdate<Int>(
-                    source = loadStates(refresh = Loading),
-                    mediator = loadStates(refresh = Loading, prepend = Loading, append = Loading),
-                ),
                 remoteLoadStateUpdate<Int>(
                     source = loadStates(refresh = Loading),
                     mediator = loadStates(prepend = Loading, append = Loading),

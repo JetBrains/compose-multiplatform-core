@@ -37,9 +37,11 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedSendChannelException
@@ -50,6 +52,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 
@@ -169,11 +173,14 @@ public fun CameraXViewfinder(
                         // Send along the surface requests until one completes or a request is
                         // cancelled.
                         // We want to continue to use the same Surface until it is sent to a
-                        // SurfaceRequest
-                        // so we don't unnecessarily recreate the underlying SurfaceView or
-                        // TextureView
+                        // SurfaceRequest so we don't unnecessarily recreate the underlying
+                        // SurfaceView or TextureView.
                         try {
-                            value?.requestChannel?.send(surfaceRequest)
+                            val channel =
+                                checkNotNull(value?.requestChannel) {
+                                    "Surface request channel should not be null"
+                                }
+                            channel.send(surfaceRequest)
                         } catch (_: ClosedSendChannelException) {
                             // Channel was closed. The SurfaceRequest will have
                             // willNotProvideSurface()
@@ -195,12 +202,29 @@ public fun CameraXViewfinder(
                 onSurfaceSession {
                     with(scope) {
                         for (surfaceRequest in requestChannel) {
+                            // Since we provide the surface in a NonCancellable context, we want
+                            // to add a job outside that context to check if the surface is being
+                            // replaced.
+                            val cancellationWatcherJob = launch {
+                                try {
+                                    awaitCancellation()
+                                } catch (e: CancellationException) {
+                                    if (e.message?.contains("Surface replaced") == true) {
+                                        surfaceRequest.invalidate()
+                                    }
+                                }
+                            }
+
                             // If we're providing a surface, we must wait for the source to be
                             // finished with the surface before we allow the surface session to
                             // complete, so always run inside a non-cancellable context
                             withContext(NonCancellable) {
                                 val result =
                                     surfaceRequest.provideSurfaceAndWaitForCompletion(surface)
+
+                                // Now that we're done with the Surface, we need to cancel the
+                                // cancellation watcher job so the coroutine can complete.
+                                cancellationWatcherJob.cancel()
 
                                 when (result.resultCode) {
                                     // If the surface request is already fulfilled, we need to
@@ -211,6 +235,15 @@ public fun CameraXViewfinder(
                                         // any future requests.
                                     }
                                 }
+                            }
+
+                            if (!isActive) {
+                                // If the coroutine is no longer active, break out of the loop
+                                // before we try to dequeue another SurfaceRequest. If
+                                // onSurfaceSession is simply called again with a new
+                                // ViewfinderSurfaceSessionScope, we could potentially use the
+                                // SurfaceRequest currently enqueued in the Channel.
+                                break
                             }
                         }
                     }

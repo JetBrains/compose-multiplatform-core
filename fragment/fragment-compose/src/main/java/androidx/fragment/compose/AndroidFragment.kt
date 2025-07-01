@@ -49,7 +49,7 @@ import androidx.lifecycle.LifecycleOwner
  * @param onUpdate callback that provides the created fragment
  */
 @Composable
-inline fun <reified T : Fragment> AndroidFragment(
+public inline fun <reified T : Fragment> AndroidFragment(
     modifier: Modifier = Modifier,
     fragmentState: FragmentState = rememberFragmentState(),
     arguments: Bundle = Bundle.EMPTY,
@@ -74,7 +74,7 @@ inline fun <reified T : Fragment> AndroidFragment(
  */
 @Suppress("MissingJvmstatic")
 @Composable
-fun <T : Fragment> AndroidFragment(
+public fun <T : Fragment> AndroidFragment(
     clazz: Class<T>,
     modifier: Modifier = Modifier,
     fragmentState: FragmentState = rememberFragmentState(),

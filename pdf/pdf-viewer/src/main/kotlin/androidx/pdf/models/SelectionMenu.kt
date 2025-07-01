@@ -16,7 +16,7 @@
 
 package androidx.pdf.models
 
-import androidx.pdf.content.ContextMenuComponent
+import androidx.pdf.selection.ContextMenuComponent
 
 /**
  * A model class representing a selection menu, composed of a list of [ContextMenuComponent] items.

@@ -40,7 +40,7 @@ import java.util.concurrent.Executor
  */
 @SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
-fun SharedUiAdapter.toCoreLibInfo(): Bundle {
+public fun SharedUiAdapter.toCoreLibInfo(): Bundle {
     // If the ui adapter has already been wrapped as a client SharedUiAdapter
     // at some point it needs no further wrapping
     if (this is ClientAdapterWrapper) {

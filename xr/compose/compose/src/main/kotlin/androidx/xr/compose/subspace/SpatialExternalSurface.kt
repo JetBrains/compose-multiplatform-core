@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ExperimentalComposeApi
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -77,12 +78,18 @@ private class SpatialExternalSurfaceScopeInstance(private val entity: CoreSurfac
     SpatialExternalSurfaceScope {
 
     private var executedInit = false
+    private var executedDestroy = false
+    private var pendingOnCreate: ((Surface) -> Unit)? = null
     private var pendingOnDestroy: ((Surface) -> Unit)? = null
 
     override fun onSurfaceCreated(onSurfaceCreated: (Surface) -> Unit) {
+        pendingOnCreate = onSurfaceCreated
+    }
+
+    internal fun executeOnCreate() {
         if (!executedInit) {
             executedInit = true
-            onSurfaceCreated(entity.surfaceEntity.getSurface())
+            pendingOnCreate?.let { it(entity.surfaceEntity.getSurface()) }
         }
     }
 
@@ -91,8 +98,11 @@ private class SpatialExternalSurfaceScopeInstance(private val entity: CoreSurfac
     }
 
     internal fun executeOnDestroy() {
-        pendingOnDestroy?.let { it(entity.surfaceEntity.getSurface()) }
-        entity.dispose()
+        if (!executedDestroy) {
+            executedDestroy = true
+            pendingOnDestroy?.let { it(entity.surfaceEntity.getSurface()) }
+            entity.dispose()
+        }
     }
 }
 
@@ -101,12 +111,18 @@ private class SpatialExternalSphereSurfaceScopeInstance(
 ) : SpatialExternalSurfaceScope {
 
     private var executedInit = false
+    private var executedDestroy = false
+    private var pendingOnCreate: ((Surface) -> Unit)? = null
     private var pendingOnDestroy: ((Surface) -> Unit)? = null
 
     override fun onSurfaceCreated(onSurfaceCreated: (Surface) -> Unit) {
+        pendingOnCreate = onSurfaceCreated
+    }
+
+    internal fun executeOnCreate() {
         if (!executedInit) {
             executedInit = true
-            onSurfaceCreated(entity.surfaceEntity.getSurface())
+            pendingOnCreate?.let { it(entity.surfaceEntity.getSurface()) }
         }
     }
 
@@ -115,8 +131,11 @@ private class SpatialExternalSphereSurfaceScopeInstance(
     }
 
     internal fun executeOnDestroy() {
-        pendingOnDestroy?.let { it(entity.surfaceEntity.getSurface()) }
-        entity.dispose()
+        if (!executedDestroy) {
+            executedDestroy = true
+            pendingOnDestroy?.let { it(entity.surfaceEntity.getSurface()) }
+            entity.dispose()
+        }
     }
 }
 
@@ -172,8 +191,7 @@ public value class SurfaceProtection private constructor(public val value: Int) 
  *   user's eyes. This will affect how the content is interpreted and displayed on the surface.
  * @param featheringEffect A [SpatialFeatheringEffect] to apply to to canvas of the surface exposed
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated].
- * @param surfaceProtection Sets the Surface's protection from CPU access. Currently this field does
- *   not support recomposition.
+ * @param surfaceProtection Sets the Surface's protection from CPU access.
  * @param content Content block where the surface can be accessed using
  *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered over the
  *   Surface canvas. If using [StereoMode.SideBySide] or [StereoMode.TopBottom], it is recommended
@@ -192,28 +210,36 @@ public fun SpatialExternalSurface(
 ) {
     val session = LocalSession.current
 
-    val coreSurfaceEntity = rememberCoreSurfaceEntity {
-        SurfaceEntity.create(
-            session = checkNotNull(session) { "Session is required" },
-            stereoMode = stereoMode.value,
-            contentSecurityLevel = surfaceProtection.value,
-        )
-    }
-    val instance = remember { SpatialExternalSurfaceScopeInstance(coreSurfaceEntity) }
+    // When surface protection changes, the surface entity has to be recreated because protection is
+    // a non mutable setting.
+    val coreSurfaceEntity =
+        rememberCoreSurfaceEntity(key = surfaceProtection) {
+            SurfaceEntity.create(
+                session = checkNotNull(session) { "Session is required" },
+                stereoMode = stereoMode.value,
+                contentSecurityLevel = surfaceProtection.value,
+            )
+        }
+    val instance =
+        remember(coreSurfaceEntity) { SpatialExternalSurfaceScopeInstance(coreSurfaceEntity) }
 
     // Stereo mode can update during a recomposition.
     coreSurfaceEntity.stereoMode = stereoMode.value
-
     coreSurfaceEntity.setFeatheringEffect(featheringEffect)
 
-    DisposableEffect(instance) { onDispose { instance.executeOnDestroy() } }
+    DisposableEffect(instance) {
+        instance.executeOnCreate()
+        onDispose { instance.executeOnDestroy() }
+    }
 
-    SubspaceLayout(
-        modifier = modifier,
-        coreEntity = coreSurfaceEntity,
-        content = { instance.content() },
-        measurePolicy = SpatialBoxMeasurePolicy(SpatialAlignment.Center, false),
-    )
+    key(coreSurfaceEntity) {
+        SubspaceLayout(
+            modifier = modifier,
+            coreEntity = coreSurfaceEntity,
+            content = { instance.content() },
+            measurePolicy = SpatialBoxMeasurePolicy(SpatialAlignment.Center, false),
+        )
+    }
 }
 
 /**
@@ -239,8 +265,7 @@ public fun SpatialExternalSurface(
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated]. For hemisphere domes, vertical feathering
  *   applies to the top and bottom poles of the dome, while horizontal feathering applies to the
  *   left and right sides.
- * @param surfaceProtection Sets the Surface's protection from CPU access. Currently this field does
- *   not support recomposition.
+ * @param surfaceProtection Sets the Surface's protection from CPU access.
  * @param content Content block where the surface can be accessed using
  *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered in front of
  *   the user, slightly below the current gaze level. This default location is scaled with radius.
@@ -291,8 +316,7 @@ public fun SpatialExternalSurface180Hemisphere(
  *   from [SpatialExternalSurfaceScope.onSurfaceCreated]. For sphere domes, vertical feathering
  *   applies to the top and bottom poles of the dome, while horizontal feathering applies to the
  *   left and right sides where the video is stitched together.
- * @param surfaceProtection Sets the Surface's protection from CPU access. Currently this field does
- *   not support recomposition.
+ * @param surfaceProtection Sets the Surface's protection from CPU access.
  * @param content Content block where the surface can be accessed using
  *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered in front of
  *   the user, slightly below the current gaze level. This default location is scaled with radius.
@@ -332,48 +356,55 @@ private fun SpatialExternalSurfaceSphere(
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {
     val session = LocalSession.current
-
     val meterRadius = radius.toMeter().value
-    val coreSurfaceEntity = rememberCoreSphereSurfaceEntity {
-        SurfaceEntity.create(
-            session = checkNotNull(session) { "Session is required" },
-            stereoMode = stereoMode.value,
-            contentSecurityLevel = surfaceProtection.value,
-            canvasShape =
-                if (isHemisphere) {
-                    SurfaceEntity.CanvasShape.Vr180Hemisphere(meterRadius)
-                } else {
-                    SurfaceEntity.CanvasShape.Vr360Sphere(meterRadius)
-                },
-        )
-    }
-    val instance = remember { SpatialExternalSphereSurfaceScopeInstance(coreSurfaceEntity) }
+    val coreSurfaceEntity =
+        rememberCoreSphereSurfaceEntity(surfaceProtection) {
+            SurfaceEntity.create(
+                session = checkNotNull(session) { "Session is required" },
+                stereoMode = stereoMode.value,
+                contentSecurityLevel = surfaceProtection.value,
+                canvasShape =
+                    if (isHemisphere) {
+                        SurfaceEntity.CanvasShape.Vr180Hemisphere(meterRadius)
+                    } else {
+                        SurfaceEntity.CanvasShape.Vr360Sphere(meterRadius)
+                    },
+            )
+        }
+
+    val instance =
+        remember(coreSurfaceEntity) { SpatialExternalSphereSurfaceScopeInstance(coreSurfaceEntity) }
 
     coreSurfaceEntity.stereoMode = stereoMode.value
     coreSurfaceEntity.radius = meterRadius
     coreSurfaceEntity.setFeatheringEffect(featheringEffect)
 
-    DisposableEffect(instance) { onDispose { instance.executeOnDestroy() } }
+    DisposableEffect(instance) {
+        instance.executeOnCreate()
+        onDispose { instance.executeOnDestroy() }
+    }
 
-    val density = LocalDensity.current
-    SubspaceLayout(
-        modifier = modifier,
-        coreEntity = coreSurfaceEntity,
-        content = {
-            SpatialBox(
-                modifier =
-                    modifier
-                        .fillMaxSize()
-                        .offset(
-                            z = radius * SPHERE_CONTENT_Z_OFFSET_PERCENT,
-                            y = radius * SPHERE_CONTENT_Y_OFFSET_PERCENT,
-                        )
-            ) {
-                instance.content()
-            }
-        },
-        measurePolicy = SphereMeasurePolicy(with(density) { radius.roundToPx() }),
-    )
+    key(coreSurfaceEntity) {
+        val density = LocalDensity.current
+        SubspaceLayout(
+            modifier = modifier,
+            coreEntity = coreSurfaceEntity,
+            content = {
+                SpatialBox(
+                    modifier =
+                        modifier
+                            .fillMaxSize()
+                            .offset(
+                                z = radius * SPHERE_CONTENT_Z_OFFSET_PERCENT,
+                                y = radius * SPHERE_CONTENT_Y_OFFSET_PERCENT,
+                            )
+                ) {
+                    instance.content()
+                }
+            },
+            measurePolicy = SphereMeasurePolicy(with(density) { radius.roundToPx() }),
+        )
+    }
 }
 
 /** Uses [radius] to measure a cube out of the hemisphere or front half of a sphere. */

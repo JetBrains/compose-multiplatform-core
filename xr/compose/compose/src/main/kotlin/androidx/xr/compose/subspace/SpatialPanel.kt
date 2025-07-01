@@ -19,7 +19,6 @@ package androidx.xr.compose.subspace
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.Rect
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
@@ -70,6 +69,7 @@ import androidx.xr.compose.unit.Meter.Companion.millimeters
 import androidx.xr.compose.unit.toMeter
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
@@ -428,9 +428,13 @@ public fun SpatialPanel(
     val dialogManager = LocalDialogManager.current
     val density = LocalDensity.current
 
-    val rect = Rect(0, 0, DEFAULT_SIZE_PX, DEFAULT_SIZE_PX)
+    val pixelDimensions = IntSize2d(DEFAULT_SIZE_PX, DEFAULT_SIZE_PX)
     val activityPanelEntity = rememberCorePanelEntity {
-        ActivityPanelEntity.create(session, rect, entityName("ActivityPanel-${intent.action}"))
+        ActivityPanelEntity.create(
+                session,
+                pixelDimensions,
+                entityName("ActivityPanel-${intent.action}"),
+            )
             .also { it.launchActivity(intent) }
     }
 

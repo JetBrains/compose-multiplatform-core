@@ -24,6 +24,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraPipe.CameraBackendConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.ConfigQueryResult
 import androidx.camera.camera2.pipe.FrameGraph
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -104,6 +105,9 @@ private constructor(
 
     override fun cameraSurfaceManager(): CameraSurfaceManager =
         cameraPipeInternal.cameraSurfaceManager()
+
+    override fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult =
+        cameraPipeInternal.isConfigSupported(graphConfig)
 
     override var globalAudioRestrictionMode: AudioRestrictionMode
         get() = cameraPipeInternal.globalAudioRestrictionMode

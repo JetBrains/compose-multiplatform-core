@@ -451,7 +451,6 @@ class StillCaptureRequestControlTest {
             UseCaseCameraState(
                 useCaseGraphConfig = fakeUseCaseGraphConfig,
                 threads = fakeUseCaseThreads,
-                sessionProcessorManager = null,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
         val torchControl =
@@ -473,7 +472,6 @@ class StillCaptureRequestControlTest {
                         useCaseGraphConfig = fakeUseCaseGraphConfig,
                         useCaseCameraState = fakeUseCaseCameraState,
                         useTorchAsFlash = NotUseTorchAsFlash,
-                        sessionProcessorManager = null,
                         flashControl =
                             FlashControl(
                                 cameraProperties = fakeCameraProperties,

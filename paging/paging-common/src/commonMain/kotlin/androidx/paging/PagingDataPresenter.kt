@@ -496,15 +496,15 @@ public abstract class PagingDataPresenter<T : Any>(
 
     // Holds on to retry/refresh requests to deliver them when the real UiReceiver is attached.
     private class InitialUiReceiver : UiReceiver {
-        var retry = false
-        var refresh = false
+        var shouldRetry = false
+        var shouldRefresh = false
 
         override fun retry() {
-            retry = true
+            shouldRetry = true
         }
 
         override fun refresh() {
-            refresh = true
+            shouldRefresh = true
         }
     }
 
@@ -512,10 +512,10 @@ public abstract class PagingDataPresenter<T : Any>(
         val oldReceiver = this.uiReceiver
         this.uiReceiver = receiver
         if (oldReceiver is InitialUiReceiver) {
-            if (oldReceiver.retry) {
+            if (oldReceiver.shouldRetry) {
                 receiver.retry()
             }
-            if (oldReceiver.refresh) {
+            if (oldReceiver.shouldRefresh) {
                 receiver.refresh()
             }
         }

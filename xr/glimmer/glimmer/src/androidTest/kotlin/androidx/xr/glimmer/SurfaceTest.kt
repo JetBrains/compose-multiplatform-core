@@ -461,13 +461,15 @@ class SurfaceTest {
         rule.setContent {
             val modifiers = Modifier.surface().toList()
             assertThat((modifiers[0] as InspectableValue).nameFallback).isEqualTo("graphicsLayer")
-            val surfaceModifier = modifiers[1] as InspectableValue
+            assertThat((modifiers[1] as InspectableValue).nameFallback)
+                .isEqualTo("contentColorProvider")
+            val surfaceModifier = modifiers[2] as InspectableValue
             assertThat(surfaceModifier.nameFallback).isEqualTo("surface")
             assertThat(surfaceModifier.valueOverride).isNull()
             assertThat(surfaceModifier.inspectableElements.map { it.name }.asIterable())
-                .containsExactly("shape", "contentColor", "border", "interactionSource")
-            assertThat((modifiers[2] as InspectableValue).nameFallback).isEqualTo("background")
-            assertThat((modifiers[3] as InspectableValue).nameFallback).isEqualTo("focusable")
+                .containsExactly("shape", "border", "interactionSource")
+            assertThat((modifiers[3] as InspectableValue).nameFallback).isEqualTo("background")
+            assertThat((modifiers[4] as InspectableValue).nameFallback).isEqualTo("focusable")
         }
     }
 
@@ -476,13 +478,15 @@ class SurfaceTest {
         rule.setContent {
             val modifiers = Modifier.surface(onClick = {}).toList()
             assertThat((modifiers[0] as InspectableValue).nameFallback).isEqualTo("graphicsLayer")
-            val surfaceModifier = modifiers[1] as InspectableValue
+            assertThat((modifiers[1] as InspectableValue).nameFallback)
+                .isEqualTo("contentColorProvider")
+            val surfaceModifier = modifiers[2] as InspectableValue
             assertThat(surfaceModifier.nameFallback).isEqualTo("surface")
             assertThat(surfaceModifier.valueOverride).isNull()
             assertThat(surfaceModifier.inspectableElements.map { it.name }.asIterable())
-                .containsExactly("shape", "contentColor", "border", "interactionSource")
-            assertThat((modifiers[2] as InspectableValue).nameFallback).isEqualTo("background")
-            assertThat((modifiers[3] as InspectableValue).nameFallback).isEqualTo("clickable")
+                .containsExactly("shape", "border", "interactionSource")
+            assertThat((modifiers[3] as InspectableValue).nameFallback).isEqualTo("background")
+            assertThat((modifiers[4] as InspectableValue).nameFallback).isEqualTo("clickable")
         }
     }
 

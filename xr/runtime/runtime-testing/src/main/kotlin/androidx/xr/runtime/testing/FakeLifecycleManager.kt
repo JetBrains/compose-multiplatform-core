@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.LifecycleManager
@@ -77,6 +78,7 @@ public class FakeLifecycleManager(
     override var config: Config =
         Config(
             Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+            augmentedObjectCategories = AugmentedObjectCategory.all(),
             Config.HandTrackingMode.BOTH,
             Config.DeviceTrackingMode.LAST_KNOWN,
             Config.DepthEstimationMode.SMOOTH_AND_RAW,

@@ -82,7 +82,6 @@ class UseCaseCameraRequestControlTest {
         UseCaseCameraState(
             useCaseGraphConfig = fakeUseCaseGraphConfig,
             threads = useCaseThreads,
-            sessionProcessorManager = null,
             templateParamsOverride = NoOpTemplateParamsOverride,
         )
     private val requestControl =

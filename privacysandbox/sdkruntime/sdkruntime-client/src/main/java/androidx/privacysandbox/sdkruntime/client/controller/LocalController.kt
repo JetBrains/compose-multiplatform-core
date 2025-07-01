@@ -27,7 +27,7 @@ import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
 import java.util.concurrent.Executor
 
 /** Local implementation that will be injected to locally loaded SDKs. */
@@ -36,7 +36,7 @@ internal class LocalController(
     private val applicationContext: Context,
     private val localSdkRegistry: SdkRegistry,
     private val appOwnedSdkRegistry: AppOwnedSdkRegistry,
-) : SdkSandboxControllerCompat.SandboxControllerImpl {
+) : SdkSandboxControllerBackend {
 
     override fun loadSdk(
         sdkName: String,

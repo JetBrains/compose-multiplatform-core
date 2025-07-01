@@ -16,7 +16,7 @@
 package androidx.work.impl.constraints
 
 /** Stores information about network state. */
-data class NetworkState(
+public data class NetworkState(
     /** Determines if the network is connected. */
     val isConnected: Boolean,
 

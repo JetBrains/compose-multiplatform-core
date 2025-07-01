@@ -191,8 +191,9 @@ class SessionTest {
             underTest.config ==
                 Config(
                     planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                    augmentedObjectCategories = AugmentedObjectCategory.all(),
                     handTracking = Config.HandTrackingMode.BOTH,
-                    headTracking = Config.HeadTrackingMode.LAST_KNOWN,
+                    deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
                     depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW,
                     anchorPersistence = Config.AnchorPersistenceMode.LOCAL,
                 )
@@ -200,8 +201,9 @@ class SessionTest {
         val newConfig =
             Config(
                 planeTracking = Config.PlaneTrackingMode.DISABLED,
+                augmentedObjectCategories = listOf<AugmentedObjectCategory>(),
                 handTracking = Config.HandTrackingMode.DISABLED,
-                headTracking = Config.HeadTrackingMode.DISABLED,
+                deviceTracking = Config.DeviceTrackingMode.DISABLED,
                 depthEstimation = Config.DepthEstimationMode.DISABLED,
                 anchorPersistence = Config.AnchorPersistenceMode.DISABLED,
             )

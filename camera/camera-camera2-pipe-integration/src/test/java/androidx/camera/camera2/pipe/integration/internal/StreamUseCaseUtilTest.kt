@@ -40,6 +40,7 @@ import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
@@ -493,7 +494,7 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    StreamUseCase.PREVIEW,
                 )
             )
         TestCase.assertTrue(
@@ -511,7 +512,7 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    StreamUseCase.PREVIEW,
                 )
             )
         TestCase.assertFalse(
@@ -529,12 +530,12 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    StreamUseCase.PREVIEW,
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    StreamUseCase.VIDEO_RECORD,
                 ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> = HashMap()
@@ -571,12 +572,12 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    StreamUseCase.PREVIEW,
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    StreamUseCase.VIDEO_RECORD,
                 ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> = HashMap()
@@ -613,12 +614,12 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    StreamUseCase.PREVIEW,
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    StreamUseCase.VIDEO_RECORD,
                 ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: Map<Int, AttachedSurfaceInfo> = HashMap()
@@ -645,7 +646,7 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
+                    StreamUseCase.PREVIEW_VIDEO_STILL,
                 )
             )
         val useCaseConfigFactory: UseCaseConfigFactory = FakeUseCaseConfigFactory()
@@ -684,7 +685,7 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    StreamUseCase.VIDEO_RECORD,
                 )
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> =
@@ -724,7 +725,7 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    StreamUseCase.VIDEO_RECORD,
                 )
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> =
@@ -763,12 +764,12 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    StreamUseCase.PREVIEW,
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    StreamUseCase.VIDEO_RECORD,
                 ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo> =
@@ -825,12 +826,12 @@ class StreamUseCaseUtilTest {
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.PREVIEW,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
+                    StreamUseCase.PREVIEW,
                 ),
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
                     SurfaceConfig.ConfigSize.RECORD,
-                    CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                    StreamUseCase.VIDEO_RECORD,
                 ),
             )
         val surfaceConfigAttachedSurfaceInfoMap: Map<Int, AttachedSurfaceInfo> = HashMap()

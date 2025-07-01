@@ -17,17 +17,22 @@
 package androidx.pdf.view
 
 import android.content.Context
+import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Bundle
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.annotation.NonNull
 import androidx.annotation.VisibleForTesting
+import androidx.core.graphics.toRectF
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.customview.widget.ExploreByTouchHelper
+import androidx.pdf.PdfPoint
 import androidx.pdf.R
 import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.util.ExternalLinks
+import androidx.pdf.util.FormWidgetContentDescriptionFactory
 import androidx.pdf.util.buildPageIndicatorLabel
 import androidx.pdf.view.fastscroll.FastScroller
 import kotlin.math.roundToInt
@@ -42,13 +47,17 @@ internal class PdfViewAccessibilityManager(
     private val pdfView: PdfView,
     private val pageMetadataLoader: PageMetadataLoader,
     private val pageManager: PageManager,
+    private val formWidgetInteractionHandler: FormWidgetInteractionHandler,
     private val getFastScroller: () -> FastScroller?,
 ) : ExploreByTouchHelper(pdfView) {
 
     private val gotoLinks: MutableMap<Int, LinkWrapper<PdfPageGotoLinkContent>> = mutableMapOf()
     private val urlLinks: MutableMap<Int, LinkWrapper<PdfPageLinkContent>> = mutableMapOf()
+    // Maps a virtualViewId to a pair representing (pageNum , widgetIndex)
+    private val formWidgetInfos: MutableMap<Int, Pair<Int, Int>> = mutableMapOf()
     private val totalPages = pdfView.pdfDocument?.pageCount ?: 0
     private var isLinksLoaded = false
+    private var isFormWidgetInfoLoaded = false
 
     private val fastScrollVerticalThumbDrawableId = FAST_SCROLLER_OFFSET + 1
     private val fastScrollPageIndicatorBackgroundDrawableId = FAST_SCROLLER_OFFSET + 2
@@ -98,6 +107,22 @@ internal class PdfViewAccessibilityManager(
                 return it.key
             }
 
+        if (!isFormWidgetInfoLoaded) {
+            loadFormWidgetInfos()
+        }
+
+        formWidgetInfos.entries
+            .find { (_, pair) ->
+                pageManager.pages[pair.first]
+                    .formWidgetIndexToInfoMap
+                    ?.get(pair.second)
+                    ?.widgetRect
+                    ?.contains(contentX.roundToInt(), contentY.roundToInt()) == true
+            }
+            ?.let {
+                return it.key
+            }
+
         // Check if the coordinates fall within the visible page bounds
         return (visiblePages.lower..visiblePages.upper).firstOrNull { page ->
             pageMetadataLoader
@@ -109,11 +134,13 @@ internal class PdfViewAccessibilityManager(
     public override fun getVisibleVirtualViews(virtualViewIds: MutableList<Int>) {
         val visiblePages = pageMetadataLoader.visiblePages
         loadPageLinks()
+        loadFormWidgetInfos()
 
         virtualViewIds.apply {
             addAll(visiblePages.lower..visiblePages.upper)
             addAll(gotoLinks.keys)
             addAll(urlLinks.keys)
+            addAll(formWidgetInfos.keys)
             if (isFastScrollerStateValid()) {
                 add(fastScrollVerticalThumbDrawableId)
                 add(fastScrollPageIndicatorBackgroundDrawableId)
@@ -126,6 +153,7 @@ internal class PdfViewAccessibilityManager(
         @NonNull node: AccessibilityNodeInfoCompat,
     ) {
         if (!isLinksLoaded) loadPageLinks()
+        if (!isFormWidgetInfoLoaded) loadFormWidgetInfos()
 
         when {
             virtualViewId == fastScrollVerticalThumbDrawableId -> populateFastScrollThumbNode(node)
@@ -136,6 +164,7 @@ internal class PdfViewAccessibilityManager(
                 // Populate node for GoTo links and URL links
                 gotoLinks[virtualViewId]?.let { populateGotoLinkNode(it, node) }
                 urlLinks[virtualViewId]?.let { populateUrlLinkNode(it, node) }
+                formWidgetInfos[virtualViewId]?.let { populateFormWidgetNode(it, node) }
             }
         }
     }
@@ -194,6 +223,27 @@ internal class PdfViewAccessibilityManager(
         action: Int,
         arguments: Bundle?,
     ): Boolean {
+        if (action != AccessibilityNodeInfo.ACTION_CLICK) return false
+
+        formWidgetInfos[virtualViewId]?.let { pair ->
+            val pageNum = pair.first
+            val formWidgetIndex = pair.second
+            pageManager.pages[pageNum].formWidgetIndexToInfoMap?.get(formWidgetIndex)?.let {
+                formWidgetInfo ->
+                if (formWidgetInfo.readOnly) return true
+
+                val pdfTouchPoint =
+                    PdfPoint(
+                        pageNum,
+                        PointF(
+                            formWidgetInfo.widgetRect.centerX().toFloat(),
+                            formWidgetInfo.widgetRect.centerY().toFloat(),
+                        ),
+                    )
+                formWidgetInteractionHandler.handleInteraction(pdfTouchPoint, formWidgetInfo)
+                return true
+            }
+        }
         // This view does not handle any actions.
         return false
     }
@@ -249,21 +299,49 @@ internal class PdfViewAccessibilityManager(
         }
     }
 
+    private fun populateFormWidgetNode(
+        formWidgetInfoPair: Pair<Int, Int>,
+        node: AccessibilityNodeInfoCompat,
+    ) {
+        val pageNum = formWidgetInfoPair.first
+        val widgetIndex = formWidgetInfoPair.second
+        pageManager.pages[pageNum].formWidgetIndexToInfoMap?.get(widgetIndex)?.let { formWidgetInfo
+            ->
+            val bounds =
+                scalePageBounds(
+                    getPageAdjustedBounds(pageNum, formWidgetInfo.widgetRect.toRectF()),
+                    pdfView.zoom,
+                )
+            node.apply {
+                contentDescription =
+                    FormWidgetContentDescriptionFactory.getContentDescription(
+                        formWidgetInfo,
+                        pdfView.context,
+                    )
+                setBoundsInScreenFromBoundsInParent(node, bounds)
+                isFocusable = true
+            }
+            if (!formWidgetInfo.readOnly) {
+                node.addAction(AccessibilityNodeInfoCompat.ACTION_CLICK)
+            }
+        }
+    }
+
     /**
-     * Calculates the adjusted bounds of a link relative to the full content of the PDF.
+     * Calculates the adjusted bounds relative to the full content of the PDF.
      *
      * @param pageNumber The 0-indexed page number.
-     * @param linkBounds The bounds of the link on the page.
+     * @param bounds The bounds on the page.
      * @return The adjusted bounds in the content coordinate system.
      */
-    fun getLinkBounds(pageNumber: Int, linkBounds: RectF): RectF {
+    fun getPageAdjustedBounds(pageNumber: Int, bounds: RectF): RectF {
         val pageBounds =
             pageMetadataLoader.getPageLocation(pageNumber, pdfView.getVisibleAreaInContentCoords())
         return RectF(
-            linkBounds.left + pageBounds.left,
-            linkBounds.top + pageBounds.top,
-            linkBounds.right + pageBounds.left,
-            linkBounds.bottom + pageBounds.top,
+            bounds.left + pageBounds.left,
+            bounds.top + pageBounds.top,
+            bounds.right + pageBounds.left,
+            bounds.bottom + pageBounds.top,
         )
     }
 
@@ -303,17 +381,42 @@ internal class PdfViewAccessibilityManager(
             pageManager.pages[pageIndex]?.links?.let { links ->
                 links.gotoLinks.forEach { link ->
                     gotoLinks[cumulativeId] =
-                        LinkWrapper(pageIndex, link, getLinkBounds(pageIndex, link.bounds.first()))
+                        LinkWrapper(
+                            pageIndex,
+                            link,
+                            getPageAdjustedBounds(pageIndex, link.bounds.first()),
+                        )
                     cumulativeId++
                 }
                 links.externalLinks.forEach { link ->
                     urlLinks[cumulativeId] =
-                        LinkWrapper(pageIndex, link, getLinkBounds(pageIndex, link.bounds.first()))
+                        LinkWrapper(
+                            pageIndex,
+                            link,
+                            getPageAdjustedBounds(pageIndex, link.bounds.first()),
+                        )
                     cumulativeId++
                 }
             }
         }
         isLinksLoaded = true
+    }
+
+    fun loadFormWidgetInfos() {
+        formWidgetInfos.clear()
+        var currentAvailableVirtualViewId = FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET
+        val visiblePages = pageMetadataLoader.visiblePages
+        (visiblePages.lower..visiblePages.upper).forEach { pageIndex ->
+            pageManager.pages[pageIndex]?.formWidgetInfos?.let { formWidgetInfos ->
+                formWidgetInfos.forEach { formWidgetInfo ->
+                    this.formWidgetInfos[currentAvailableVirtualViewId] =
+                        pageIndex to formWidgetInfo.widgetIndex
+                    currentAvailableVirtualViewId++
+                }
+            }
+        }
+
+        isFormWidgetInfoLoaded = true
     }
 
     /**
@@ -332,6 +435,7 @@ internal class PdfViewAccessibilityManager(
 
     companion object {
         internal const val FAST_SCROLLER_OFFSET: Int = 1000001
+        internal const val FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET: Int = 10000001
 
         /**
          * Builds the content description for a page.

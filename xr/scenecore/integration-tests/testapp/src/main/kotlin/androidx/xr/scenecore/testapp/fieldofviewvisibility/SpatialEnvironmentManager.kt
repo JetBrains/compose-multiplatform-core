@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.testapp.fieldofviewvisibility
 
 import android.widget.Button
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.GltfModel
@@ -25,6 +26,7 @@ import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import java.nio.file.Paths
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /** Manage the UI for the Spatial Environment. */
 class SpatialEnvironmentManager(
@@ -47,34 +49,26 @@ class SpatialEnvironmentManager(
         }
 
     init {
-        loadExrImagesAndModels()
+        activity.lifecycleScope.launch { loadExrImagesAndModels() }
 
         activity.findViewById<Button>(R.id.button_set_both_geometry_and_skybox).also {
             it.setOnClickListener {
                 mSpatialEnvironmentPreference = SpatialEnvironmentPreference(skybox, geometry)
-                val unused =
-                    session.scene.spatialEnvironment.setSpatialEnvironmentPreference(
-                        mSpatialEnvironmentPreference
-                    )
+                session.scene.spatialEnvironment.preferredSpatialEnvironment =
+                    mSpatialEnvironmentPreference
             }
         }
 
         activity.findViewById<Button>(R.id.button_revert_to_system_default_env).also {
             it.setOnClickListener {
                 mSpatialEnvironmentPreference = null
-                session.scene.spatialEnvironment.setSpatialEnvironmentPreference(null)
+                session.scene.spatialEnvironment.preferredSpatialEnvironment = null
             }
         }
     }
 
-    private fun loadExrImagesAndModels() {
-        val groundGeoModelFuture =
-            GltfModel.createAsync(session, Paths.get("models", "GroundGeometry.glb"))
-        groundGeoModelFuture.addListener(
-            { geometry = groundGeoModelFuture.get() },
-            // This will cause the listener to be run on the UI thread
-            Runnable::run,
-        )
+    private suspend fun loadExrImagesAndModels() {
+        geometry = GltfModel.create(session, Paths.get("models", "GroundGeometry.glb"))
 
         val blueSkyboxModelFuture =
             ExrImage.createFromZipAsync(session, Paths.get("skyboxes", "BlueSkybox.zip"))

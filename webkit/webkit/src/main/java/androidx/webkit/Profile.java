@@ -27,7 +27,6 @@ import android.webkit.WebView;
 import androidx.annotation.AnyThread;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 
 import org.jspecify.annotations.NonNull;
@@ -304,7 +303,6 @@ public interface Profile {
      * @throws IllegalStateException if the {@code headerName} has already been set. Use
      * {@link #clearOriginMatchedHeader(String)} first in order to update the set header.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
@@ -319,7 +317,6 @@ public interface Profile {
      *
      * @param headerName Header to remove.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
@@ -329,7 +326,6 @@ public interface Profile {
      * Remove any currently set headers from being applied to network requests.
      * @see #setOriginMatchedHeader(String, String, Set)
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread

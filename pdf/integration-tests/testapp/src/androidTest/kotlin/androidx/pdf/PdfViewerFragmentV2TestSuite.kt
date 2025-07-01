@@ -38,7 +38,6 @@ import androidx.pdf.actions.SelectionViewActions
 import androidx.pdf.actions.clickOnPdfPoint
 import androidx.pdf.matchers.SearchViewAssertions
 import androidx.pdf.util.Preconditions
-import androidx.pdf.view.PdfPoint
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScroller

@@ -46,10 +46,8 @@ import kotlinx.coroutines.launch
  */
 public class SessionConfigAdapter(
     private val useCases: Collection<UseCase>,
-    private val sessionProcessorConfig: SessionConfig? = null,
     private val isPrimary: Boolean = true,
 ) {
-    public val isSessionProcessorEnabled: Boolean = sessionProcessorConfig != null
     public val surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> by lazy {
         val sessionConfigs = mutableListOf<SessionConfig>()
         val useCaseConfigs = mutableListOf<UseCaseConfig<*>>()
@@ -68,11 +66,6 @@ public class SessionConfigAdapter(
 
         for (useCase in useCases) {
             validatingBuilder.add(useCase.getSessionConfig(isPrimary))
-        }
-
-        if (sessionProcessorConfig != null) {
-            validatingBuilder.clearSurfaces()
-            validatingBuilder.add(sessionProcessorConfig)
         }
 
         validatingBuilder

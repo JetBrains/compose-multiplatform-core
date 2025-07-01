@@ -19,7 +19,6 @@ package androidx.xr.scenecore.samples.panelroundedcorner
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Resources
-import android.graphics.Rect
 import android.os.Bundle
 import android.util.TypedValue
 import android.widget.Switch
@@ -119,7 +118,7 @@ class MainPanelActivity : AppCompatActivity() {
                 !activityPanelCreated
         ) {
             activityPanelEntity =
-                ActivityPanelEntity.create(session, Rect(0, 0, 1280, 800), "activity_panel")
+                ActivityPanelEntity.create(session, IntSize2d(1280, 800), "activity_panel")
 
             val intent = Intent(this, ActivityPanelActivity::class.java)
             activityPanelEntity?.launchActivity(intent)

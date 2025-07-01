@@ -96,20 +96,12 @@ class PullToRefreshBoxTest {
     @Test
     fun boxVisible_VisibleToSemantics() {
         val state = PullToRefreshState()
-        rule.setContent {
-            PullToRefreshBox(
-                modifier = Modifier.testTag("PullToRefresh"),
-                isRefreshing = true,
-                state = state,
-                onRefresh = {},
-            ) {}
-        }
+        rule.setContent { PullToRefreshBox(isRefreshing = true, state = state, onRefresh = {}) {} }
 
         assertThat(state.distanceFraction).isEqualTo(1f)
         rule
-            .onNodeWithTag("PullToRefresh")
-            .onChild()
-            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+            .onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+            .assertExists()
     }
 
     @Test

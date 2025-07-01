@@ -16,19 +16,27 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
-
-/** Specifies the pointer icon that is rendered in the spatialized scene. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public sealed class SpatialPointerIcon protected constructor(private val name: String)
-
 /**
- * Do not render an icon for the pointer; this option can be used to hide the pointer icon, either
- * because the client wants it to be invisible or to implement custom icon rendering.
+ * Specifies the icon that is rendered at the pointer's location on entities in the spatialized
+ * scene.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public object SpatialPointerIconNone : SpatialPointerIcon("none")
+public class SpatialPointerIcon private constructor(private val value: Int) {
 
-/** Renders the icon for the pointer as a circle. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public object SpatialPointerIconCircle : SpatialPointerIcon("circle")
+    public companion object {
+        private const val NONE_VALUE = 0
+        private const val DEFAULT_VALUE = 1
+        private const val CIRCLE_VALUE = 2
+
+        /**
+         * Do not render an icon for the pointer; this option can be used to hide the pointer icon,
+         * either because the client wants it to be invisible or to implement custom icon rendering.
+         */
+        @JvmField public val NONE: SpatialPointerIcon = SpatialPointerIcon(NONE_VALUE)
+
+        /** Use the default pointer icon, as determined by the system. */
+        @JvmField public val DEFAULT: SpatialPointerIcon = SpatialPointerIcon(DEFAULT_VALUE)
+
+        /** Renders the icon for the pointer as a circle. */
+        @JvmField public val CIRCLE: SpatialPointerIcon = SpatialPointerIcon(CIRCLE_VALUE)
+    }
+}

@@ -37,6 +37,16 @@ dependencies {
     api(project(":xr:runtime:runtime"))
 
     implementation("androidx.annotation:annotation:1.8.1")
+    implementation("androidx.core:core-ktx:1.12.0")
+
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testRunner)
+    testImplementation(libs.truth)
+    testImplementation(project(":kruth:kruth"))
+    testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
 
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.junit)
@@ -68,4 +78,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "An implementation of the XR runtime using OpenXR."
+    enableRobolectric()
 }

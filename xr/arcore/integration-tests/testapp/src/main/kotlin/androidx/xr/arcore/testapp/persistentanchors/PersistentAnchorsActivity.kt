@@ -27,9 +27,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -37,6 +39,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,14 +61,17 @@ import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.AnchorLoadInvalidUuid
+import androidx.xr.arcore.ViewCamera
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.AnchorPersistenceMode
 import androidx.xr.runtime.Config.HeadTrackingMode
+import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -74,11 +80,12 @@ import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.scene
 import java.util.UUID
-import kotlin.collections.List
+import kotlin.math.atan2
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class PersistentAnchorsActivity : ComponentActivity() {
@@ -86,9 +93,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
     private lateinit var movableEntity: Entity
-    private val movableEntityOffset = Pose(Vector3(0f, 1f, -2.0f))
+    private val movableEntityOffset = Pose(Vector3(0f, 0.75f, -1.3f))
     private val uuids = MutableStateFlow<List<UUID>>(emptyList())
     private var anchorOffset = MutableStateFlow<Float>(0f)
+    private lateinit var viewCameras: List<ViewCamera>
+    private val panelInViewStatus = MutableStateFlow<List<Pair<String, Boolean>>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,6 +111,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
+                    this.viewCameras = ViewCamera.getAll(session)
 
                     createTargetPanel()
                     setContent { MainPanel() }
@@ -112,10 +122,50 @@ class PersistentAnchorsActivity : ComponentActivity() {
                         delay(2.seconds)
                         uuids.emit(Anchor.getPersistedAnchorUuids(session))
                     }
+
+                    startPanelInViewStatusUpdates()
+
                     lifecycleScope.launch { session.state.collect { updatePlaneEntity() } }
                 },
             )
         sessionHelper.tryCreateSession()
+    }
+
+    private fun startPanelInViewStatusUpdates() {
+        val cameraStateFlows = viewCameras.map { it.state }
+
+        lifecycleScope.launch {
+            combine(cameraStateFlows) { cameraStates ->
+                    val mainPanelEntity = session.scene.mainPanelEntity
+                    val panelPoseInActivitySpace = mainPanelEntity.getPose()
+                    val panelPoseInPerceptionSpace =
+                        session.scene.activitySpace.transformPoseTo(
+                            panelPoseInActivitySpace,
+                            session.scene.perceptionSpace,
+                        )
+                    val panelSizeInMeters = mainPanelEntity.size
+                    val newStatus =
+                        cameraStates.mapIndexed { index, cameraState ->
+                            val isInView =
+                                isPanelInView(
+                                    cameraPoseInPerceptionSpace = cameraState.pose,
+                                    cameraFov = cameraState.fieldOfView,
+                                    panelPoseInPerceptionSpace = panelPoseInPerceptionSpace,
+                                    panelSizeInMeters = panelSizeInMeters,
+                                )
+                            val cameraName =
+                                when {
+                                    viewCameras.size == 1 -> "ViewCamera"
+                                    index == 0 -> "Left Eye ViewCamera"
+                                    index == 1 -> "Right Eye ViewCamera"
+                                    else -> "ViewCamera ${index + 1}"
+                                }
+                            cameraName to isInView
+                        }
+                    panelInViewStatus.value = newStatus
+                }
+                .collect {}
+        }
     }
 
     private fun createTargetPanel() {
@@ -154,6 +204,76 @@ class PersistentAnchorsActivity : ComponentActivity() {
         parentView.setViewTreeLifecycleOwner(activity as LifecycleOwner)
         parentView.setViewTreeViewModelStoreOwner(activity as ViewModelStoreOwner)
         parentView.setViewTreeSavedStateRegistryOwner(activity as SavedStateRegistryOwner)
+    }
+
+    /**
+     * Checks if a rectangular panel is fully visible within the camera's field of view. Assumes the
+     * camera looks down -Z axis.
+     *
+     * @param cameraPoseInPerceptionSpace The position and orientation of the camera in perception
+     *   space.
+     * @param cameraFov The camera's field of view, defined by four angles.
+     * @param panelPoseInPerceptionSpace The position and orientation of the panel in perception
+     *   space.
+     * @param panelSizeInMeters The width and height of the panel.
+     * @return Returns true if all four corners of the panel are within the camera's field of view,
+     *   and false otherwise.
+     */
+    private fun isPanelInView(
+        cameraPoseInPerceptionSpace: Pose,
+        cameraFov: FieldOfView,
+        panelPoseInPerceptionSpace: Pose,
+        panelSizeInMeters: FloatSize2d,
+    ): Boolean {
+        val halfWidth = panelSizeInMeters.width / 2f
+        val halfHeight = panelSizeInMeters.height / 2f
+
+        val localCorners =
+            listOf(
+                Vector3(-halfWidth, halfHeight, 0f), // Top-left
+                Vector3(halfWidth, halfHeight, 0f), // Top-right
+                Vector3(-halfWidth, -halfHeight, 0f), // Bottom-left
+                Vector3(halfWidth, -halfHeight, 0f), // Bottom-right
+            )
+
+        // Loop through each corner to see if it's visible.
+        for (corner in localCorners) {
+            val cornerPositionInPerceptionSpace = panelPoseInPerceptionSpace.transformPoint(corner)
+            val vecCameraToCornerPerception =
+                cornerPositionInPerceptionSpace - cameraPoseInPerceptionSpace.translation
+
+            val vecCameraToCornerCameraLocal =
+                cameraPoseInPerceptionSpace.inverse.transformVector(vecCameraToCornerPerception)
+
+            val x = vecCameraToCornerCameraLocal.x
+            val y = vecCameraToCornerCameraLocal.y
+            val z = vecCameraToCornerCameraLocal.z
+
+            // Check if the corner is behind the camera.
+            // In a -Z forward system, points in front have a negative z.
+            // If z is positive, the point is behind the camera and not visible.
+            if (z > -0.001f) {
+                return false
+            }
+
+            // Calculate the horizontal and vertical angles and check if these angles are within the
+            // camera's Field of View.
+            val horizontalAngle = atan2(x, -z)
+            val verticalAngle = atan2(y, -z)
+
+            val inHorizontalFov =
+                horizontalAngle >= cameraFov.angleLeft && horizontalAngle <= cameraFov.angleRight
+
+            val inVerticalFov =
+                verticalAngle >= cameraFov.angleDown && verticalAngle <= cameraFov.angleUp
+
+            if (!(inHorizontalFov && inVerticalFov)) {
+                return false
+            }
+        }
+
+        // If all four corners passed the checks, the entire panel is considered to be in view.
+        return true
     }
 
     @Composable
@@ -214,6 +334,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
     @Composable
     private fun TargetPanel() {
+        val currentPanelInViewStatus by panelInViewStatus.collectAsStateWithLifecycle()
+
         Column(
             modifier =
                 Modifier.background(color = Color.White)
@@ -224,6 +346,26 @@ class PersistentAnchorsActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Button(onClick = { addAnchor() }) { Text(text = "Add anchor", fontSize = 38.sp) }
+
+            if (currentPanelInViewStatus.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Main Panel Visibility:",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    textAlign = TextAlign.Center,
+                )
+                currentPanelInViewStatus.forEach { (cameraName, isInView) ->
+                    Text(
+                        text = "$cameraName: ${if (isInView) "IN VIEW" else "NOT IN VIEW"}",
+                        fontSize = 16.sp,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
     }
 

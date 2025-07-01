@@ -25,7 +25,6 @@ import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.internal.AppFunctionReader
 import androidx.appfunctions.internal.findImpl
 import androidx.appfunctions.metadata.AppFunctionMetadata
-import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.service.internal.AppFunctionInventory
@@ -34,7 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
-@RequiresApi(Build.VERSION_CODES.S)
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
 
     private val packageToFunctionMetadataMapState:
@@ -78,24 +77,51 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
         searchFunctionSpec: AppFunctionSearchSpec
     ): Flow<List<AppFunctionMetadata>> =
         packageToFunctionMetadataMapState.map { packageToFunctionMetadataMap ->
-            packageToFunctionMetadataMap.flatMap { (packageName, metadataMap) ->
-                metadataMap.values.map { metadata ->
-                    AppFunctionMetadata(
-                        id = metadata.staticMetadata.id,
-                        packageName = packageName,
-                        isEnabled = metadata.computeEffectivelyEnabled(),
-                        schema = metadata.staticMetadata.schema,
-                        parameters = metadata.staticMetadata.parameters,
-                        response = metadata.staticMetadata.response,
-                        components = metadata.staticMetadata.components,
-                    )
+            packageToFunctionMetadataMap
+                .filterKeys {
+                    searchFunctionSpec.packageNames == null ||
+                        it in checkNotNull(searchFunctionSpec.packageNames)
                 }
-            }
+                .flatMap { (packageName, metadataMap) ->
+                    metadataMap.values
+                        .filter {
+                            if (
+                                searchFunctionSpec.schemaName != null &&
+                                    searchFunctionSpec.schemaName != it.staticMetadata.schema?.name
+                            ) {
+                                return@filter false
+                            }
+
+                            if (
+                                searchFunctionSpec.schemaCategory != null &&
+                                    searchFunctionSpec.schemaCategory !=
+                                        it.staticMetadata.schema?.category
+                            ) {
+                                return@filter false
+                            }
+
+                            // minSchemaVersion == 0 is treated as unset and basically will evaluate
+                            // true for all objects.
+                            (it.staticMetadata.schema?.version ?: 0) >=
+                                searchFunctionSpec.minSchemaVersion
+                        }
+                        .map { metadata ->
+                            AppFunctionMetadata(
+                                id = metadata.staticMetadata.id,
+                                packageName = packageName,
+                                isEnabled = metadata.computeEffectivelyEnabled(),
+                                schema = metadata.staticMetadata.schema,
+                                parameters = metadata.staticMetadata.parameters,
+                                response = metadata.staticMetadata.response,
+                                components = metadata.staticMetadata.components,
+                            )
+                        }
+                }
         }
 
-    suspend fun getAppFunctionMetadata(
-        packageName: String,
+    override suspend fun getAppFunctionMetadata(
         functionId: String,
+        packageName: String,
     ): AppFunctionMetadata? =
         packageToFunctionMetadataMapState.value[packageName]
             ?.get(functionId)
@@ -119,15 +145,6 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                     (existingPackageMap + (functionId to appFunctionStaticAndRuntimeMetadata)))
         }
     }
-
-    override suspend fun getAppFunctionSchemaMetadata(
-        functionId: String,
-        packageName: String,
-    ): AppFunctionSchemaMetadata? =
-        packageToFunctionMetadataMapState.value[packageName]
-            ?.get(functionId)
-            ?.staticMetadata
-            ?.schema
 }
 
 internal data class AppFunctionRuntimeMetadata(

@@ -16,10 +16,10 @@
 
 package androidx.camera.viewfinder.compose.internal
 
+import androidx.camera.viewfinder.compose.SurfaceReplacedCancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -53,7 +53,7 @@ internal abstract class BaseViewfinderExternalSurfaceState(val scope: CoroutineS
             job =
                 scope.launch(start = CoroutineStart.UNDISPATCHED) {
                     job?.apply {
-                        cancel("Surface replaced")
+                        cancel(SurfaceReplacedCancellationException())
                         join()
                     }
                     if (isActive) {

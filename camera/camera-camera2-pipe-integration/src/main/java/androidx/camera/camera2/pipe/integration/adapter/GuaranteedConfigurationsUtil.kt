@@ -18,11 +18,11 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice.CameraDeviceSetup
-import android.hardware.camera2.CameraMetadata
 import android.os.Build
 import android.util.Size
 import androidx.annotation.RequiresApi
 import androidx.camera.core.impl.ImageFormatConstants
+import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize
@@ -642,8 +642,7 @@ public object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.PRIV,
                         ConfigSize.S1440P_4_3,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL
-                            .toLong(),
+                        StreamUseCase.PREVIEW_VIDEO_STILL,
                     )
                 )
             },
@@ -653,8 +652,7 @@ public object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.S1440P_4_3,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL
-                            .toLong(),
+                        StreamUseCase.PREVIEW_VIDEO_STILL,
                     )
                 )
             },
@@ -664,7 +662,7 @@ public object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.PRIV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
@@ -674,7 +672,7 @@ public object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
@@ -684,7 +682,7 @@ public object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
@@ -694,117 +692,89 @@ public object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (JPEG, MAXIMUM, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, MAXIMUM, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (PRIV, RECORD, VIDEO_RECORD)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.PRIV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, RECORD, VIDEO_RECORD)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong(),
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, PREVIEW, PREVIEW)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.YUV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (PRIV, RECORD, VIDEO_RECORD) +
             // (JPEG, RECORD, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.PRIV,
                         ConfigSize.RECORD,
-                        CameraMetadata.CONTROL_CAPTURE_INTENT_VIDEO_RECORD.toLong(),
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
@@ -812,48 +782,36 @@ public object GuaranteedConfigurationsUtil {
             // (JPEG, RECORD, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.RECORD,
-                        CameraMetadata.CONTROL_CAPTURE_INTENT_VIDEO_RECORD.toLong(),
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, PREVIEW, PREVIEW) + (JPEG, MAXIMUM, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.YUV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),
-                    )
+                    SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong(),
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },

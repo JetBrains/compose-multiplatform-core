@@ -62,9 +62,9 @@ constructor(
 
     override fun toString(): String {
         return "ViewfinderSurfaceRequest(" +
-            "width=$width" +
-            "height=$height" +
-            "implementationMode=$implementationMode" +
+            "width=$width, " +
+            "height=$height, " +
+            "implementationMode=$implementationMode, " +
             "requestId=$requestId" +
             ")"
     }

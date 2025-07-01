@@ -341,7 +341,6 @@ class CapturePipelineTest {
             UseCaseCameraState(
                 fakeUseCaseGraphConfig,
                 fakeUseCaseThreads,
-                sessionProcessorManager = null,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
 
@@ -1312,7 +1311,6 @@ class CapturePipelineTest {
             useCaseGraphConfig = fakeUseCaseGraphConfig,
             useCaseCameraState = fakeUseCaseCameraState,
             useTorchAsFlash = useTorchAsFlash,
-            sessionProcessorManager = null,
             flashControl = flashControl,
             videoUsageControl = VideoUsageControl(),
         )

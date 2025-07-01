@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.framegraph
 
 import androidx.annotation.GuardedBy
+import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameBuffer
 import androidx.camera.camera2.pipe.FrameReference
 import androidx.camera.camera2.pipe.StreamId
@@ -35,10 +36,18 @@ internal class FrameBufferImpl(
     override val parameters: Map<Any, Any?>,
     override val capacity: Int,
 ) : FrameBuffer, FrameDistributor.FrameStartedListener {
+    // This sealed class is used to model the two possible outcomes of a frame acquisition attempt.
+    // If a frame was successfully acquired, we should close it at an appropriate time.
+    private sealed class BufferEntry(val frameReference: FrameReference) {
+
+        class WithFrame(val frame: Frame) : BufferEntry(frame)
+
+        class WithoutFrame(reference: FrameReference) : BufferEntry(reference)
+    }
 
     private val lock = Any()
 
-    @GuardedBy("lock") private val frameQueue: ArrayDeque<FrameReference> = ArrayDeque(capacity)
+    @GuardedBy("lock") private val frameQueue: ArrayDeque<BufferEntry> = ArrayDeque(capacity)
 
     @GuardedBy("lock") private var closed = false
 
@@ -55,77 +64,101 @@ internal class FrameBufferImpl(
     }
 
     private val _size = MutableStateFlow(0)
-
     override val size: StateFlow<Int> = _size.asStateFlow()
 
     override fun onFrameStarted(frameReference: FrameReference) {
+        val acquiredFrame = frameReference.tryAcquire()
+
+        val entryToAdd: BufferEntry =
+            if (acquiredFrame != null) {
+                BufferEntry.WithFrame(acquiredFrame)
+            } else {
+                BufferEntry.WithoutFrame(frameReference)
+            }
+
+        var frameToClose: Frame? = null
         synchronized(lock) {
             if (closed) {
-                return
+                // If the buffer is closed, close the acquired frame.
+                if (entryToAdd is BufferEntry.WithFrame) {
+                    frameToClose = entryToAdd.frame
+                }
+            } else {
+                if (frameQueue.size == capacity) {
+                    val evictedItem = frameQueue.removeFirst()
+                    if (evictedItem is BufferEntry.WithFrame) {
+                        frameToClose = evictedItem.frame
+                    }
+                }
+
+                frameQueue.add(entryToAdd)
+                _size.value = frameQueue.size
+                _frameFlow.tryEmit(entryToAdd.frameReference)
             }
-            // Add new frame reference to the queue, and remove the oldest one if queue is at its
-            // capacity.
-            // TODO: b/421957369 - add the ability to customize this eviction policy.
-            while (frameQueue.size >= capacity) {
-                frameQueue.removeFirst()
-            }
-            // TODO: b/424797841 - Acquire the ownership of the frame received in FrameBuffer
-            frameQueue.add(frameReference)
-            _size.value = frameQueue.size
-            _frameFlow.tryEmit(frameReference)
         }
+        frameToClose?.close()
     }
 
     override fun removeFirstReference(): FrameReference? =
         synchronized(lock) {
             if (closed) return null
-            return frameQueue.removeFirstOrNull()?.let {
+            frameQueue.removeFirstOrNull()?.let { entry ->
                 _size.value = frameQueue.size
-                it
+                entry.frameReference
             }
         }
 
     override fun removeLastReference(): FrameReference? =
         synchronized(lock) {
             if (closed) return null
-            return frameQueue.removeLastOrNull()?.let {
+            frameQueue.removeLastOrNull()?.let { entry ->
                 _size.value = frameQueue.size
-                it
+                entry.frameReference
             }
         }
 
     override fun removeAllReferences(): List<FrameReference> =
         synchronized(lock) {
             if (closed) return emptyList()
-            val frameReferences = frameQueue.toList()
+            val references = frameQueue.map { it.frameReference }
             frameQueue.clear()
-            _size.value = frameQueue.size
-            return frameReferences
+            _size.value = 0
+            references
         }
 
     override fun peekFirstReference(): FrameReference? =
         synchronized(lock) {
             if (closed) return null
-            frameQueue.firstOrNull()
+            frameQueue.firstOrNull()?.frameReference
         }
 
     override fun peekLastReference(): FrameReference? =
         synchronized(lock) {
             if (closed) return null
-            frameQueue.lastOrNull()
+            frameQueue.lastOrNull()?.frameReference
         }
 
     override fun peekAllReferences(): List<FrameReference> =
         synchronized(lock) {
             if (closed) return emptyList()
-            ArrayList(frameQueue)
+            frameQueue.map { it.frameReference }
         }
 
     override fun close() {
+        val framesToClose: List<Frame>
         synchronized(lock) {
+            if (closed) {
+                return
+            }
             closed = true
+
+            framesToClose =
+                frameQueue.mapNotNull { entry -> (entry as? BufferEntry.WithFrame)?.frame }
             frameQueue.clear()
             _size.value = 0
+        }
+        for (frame in framesToClose) {
+            frame.close()
         }
         frameGraphBuffers.detach(this)
     }

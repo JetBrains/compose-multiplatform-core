@@ -101,7 +101,6 @@ import java.time.Clock
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.guava.await
 
 class SpatialCompose : ComponentActivity() {
 
@@ -364,7 +363,7 @@ class SpatialCompose : ComponentActivity() {
         var gltfModel by remember { mutableStateOf<GltfModel?>(null) }
 
         LaunchedEffect(Unit) {
-            gltfModel = GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb")).await()
+            gltfModel = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
             val pi = 3.14159F
             val timeSource = Clock.systemUTC()
             val startTime = timeSource.millis()

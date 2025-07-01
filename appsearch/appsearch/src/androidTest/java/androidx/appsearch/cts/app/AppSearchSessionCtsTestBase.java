@@ -3003,6 +3003,8 @@ public abstract class AppSearchSessionCtsTestBase {
     public void testQueryRankByDismissActions_useTakenAction() throws Exception {
         assumeTrue(mDb1.getFeatures()
                 .isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
+        assumeTrue(mDb1.getFeatures()
+                .isFeatureSupported(Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION));
 
         // Schema registration
         mDb1.setSchemaAsync(
@@ -3508,6 +3510,8 @@ public abstract class AppSearchSessionCtsTestBase {
     public void testQueryRankByDismissActions_useTakenActionGenericDocument() throws Exception {
         assumeTrue(mDb1.getFeatures()
                 .isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
+        assumeTrue(mDb1.getFeatures()
+                .isFeatureSupported(Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION));
 
         AppSearchSchema searchActionSchema = new AppSearchSchema.Builder("builtin:SearchAction")
                 .addProperty(new LongPropertyConfig.Builder("actionType")

@@ -23,18 +23,18 @@ import androidx.annotation.RestrictTo
 
 /** Utility class for remote objects called by the UI library adapter factories. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-object RemoteCallManager {
+public object RemoteCallManager {
 
-    const val TAG = "PrivacySandboxUiLib"
+    public const val TAG: String = "PrivacySandboxUiLib"
 
-    fun addBinderDeathListener(
+    public fun addBinderDeathListener(
         remoteSessionController: IRemoteSessionController,
         recipient: IBinder.DeathRecipient,
     ) {
         tryToCallRemoteObject(remoteSessionController) { this.asBinder().linkToDeath(recipient, 0) }
     }
 
-    fun addBinderDeathListener(
+    public fun addBinderDeathListener(
         remoteSessionController: IRemoteSharedUiSessionController,
         recipient: IBinder.DeathRecipient,
     ) {
@@ -42,7 +42,7 @@ object RemoteCallManager {
     }
 
     /** Tries to call the remote object and handles exceptions if the remote object has died. */
-    inline fun <RemoteObject> tryToCallRemoteObject(
+    public inline fun <RemoteObject> tryToCallRemoteObject(
         remoteObject: RemoteObject,
         function: RemoteObject.() -> Unit,
     ) {

@@ -53,3 +53,23 @@ class TestFunctions {
 
     @AppFunction(isEnabled = false) fun disabledByDefault(appFunctionContext: AppFunctionContext) {}
 }
+
+class NotesFunctions : CreateNoteAppFunction<NotesFunctions.Parameters, NotesFunctions.Response> {
+
+    @AppFunction
+    override suspend fun createNote(
+        appFunctionContext: AppFunctionContext,
+        parameters: Parameters,
+    ): Response {
+        return Response(MyNote(id = "testId", title = parameters.title))
+    }
+
+    @AppFunctionSerializable
+    class MyNote(override val id: String, override val title: String) : AppFunctionNote
+
+    @AppFunctionSerializable
+    class Parameters(override val title: String) : CreateNoteAppFunction.Parameters
+
+    @AppFunctionSerializable
+    class Response(override val createdNote: MyNote) : CreateNoteAppFunction.Response
+}

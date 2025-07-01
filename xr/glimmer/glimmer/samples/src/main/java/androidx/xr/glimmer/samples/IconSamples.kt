@@ -17,11 +17,14 @@
 package androidx.xr.glimmer.samples
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -31,15 +34,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Icon
+import androidx.xr.glimmer.list.VerticalList
 import androidx.xr.glimmer.surface
 
 @Composable
 fun IconSampleUsage() {
-    LazyColumn(
+    VerticalList(
+        modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        item { Icon(FavoriteIcon, "Localized description") }
+        item { IconSizesSample() }
         item {
             Icon(
                 FavoriteIcon,
@@ -55,6 +61,20 @@ fun IconSampleUsage() {
     }
 }
 
+@Composable
+fun IconSizesSample() {
+    val iconSizes = GlimmerTheme.iconSizes
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(FavoriteIcon, "Localized description", Modifier.size(iconSizes.small))
+        // medium is also the default size, defining explicitly for clarity
+        Icon(FavoriteIcon, "Localized description", Modifier.size(iconSizes.medium))
+        Icon(FavoriteIcon, "Localized description", Modifier.size(iconSizes.large))
+    }
+}
+
 @Preview
 @Composable
 private fun IconPreview() {
@@ -62,7 +82,7 @@ private fun IconPreview() {
 }
 
 /** Icon taken from material-icons-core */
-private val FavoriteIcon: ImageVector =
+internal val FavoriteIcon: ImageVector =
     ImageVector.Builder(
             name = "Favorite",
             defaultWidth = 24.dp,

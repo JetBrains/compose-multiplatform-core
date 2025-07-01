@@ -24,6 +24,8 @@ import android.util.Range
 import android.util.SparseArray
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
+import androidx.pdf.PdfPoint
+import androidx.pdf.PdfRect
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
 import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
@@ -49,6 +51,8 @@ internal class PageMetadataLoader(
     pageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     internal val paginationModel: PaginationModel =
         PaginationModel(pageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
+    internal val pdfFormFillingState: PdfFormFillingState =
+        PdfFormFillingState(pdfDocument.pageCount),
     private val errorFlow: MutableSharedFlow<Throwable>,
     private val isFormFillingEnabled: Boolean = false,
 ) {
@@ -118,7 +122,7 @@ internal class PageMetadataLoader(
                         height = paginationModel.getPageSize(i).y,
                         width = paginationModel.getPageSize(i).x,
                         // TODO: b/410009335 Save and Restore formWidgetInfos across config changes
-                        formWidgetInfos = null,
+                        formWidgetInfos = pdfFormFillingState.getPageFormWidgetInfos(i),
                     )
                 )
             }
@@ -140,6 +144,36 @@ internal class PageMetadataLoader(
     }
 
     /**
+     * Returns the [androidx.pdf.PdfPoint] that exists at ([contentX], [contentY]), or null if no
+     * page content is laid out at that point.
+     *
+     * @param contentX the X content coordinate to check
+     * @param contentY the Y content coordinate to check
+     * @param viewport the current viewport in content coordinates
+     * @param scanAllPages true to scan pages outside the viewport
+     */
+    fun getPdfPointAt(
+        contentX: Float,
+        contentY: Float,
+        viewport: RectF,
+        scanAllPages: Boolean = false,
+    ): PdfPoint? {
+        for (pageIndex in visiblePages.lower..visiblePages.upper) {
+            findPointOnPage(pageIndex, viewport, contentX, contentY)?.let {
+                return it
+            }
+        }
+        if (!scanAllPages) return null
+        for (pageIndex in 0..paginationModel.reach) {
+            if (pageIndex in visiblePages.lower..visiblePages.upper) continue
+            findPointOnPage(pageIndex, viewport, contentX, contentY)?.let {
+                return it
+            }
+        }
+        return null
+    }
+
+    /**
      * Returns the [PdfPoint] that exists at [contentCoordinates], or null if no page content is
      * laid out at [contentCoordinates].
      *
@@ -155,14 +189,14 @@ internal class PageMetadataLoader(
         scanAllPages: Boolean = false,
     ): PdfPoint? {
         for (pageIndex in visiblePages.lower..visiblePages.upper) {
-            findPointOnPage(pageIndex, viewport, contentCoordinates)?.let {
+            findPointOnPage(pageIndex, viewport, contentCoordinates.x, contentCoordinates.y)?.let {
                 return it
             }
         }
         if (!scanAllPages) return null
         for (pageIndex in 0..paginationModel.reach) {
             if (pageIndex in visiblePages.lower..visiblePages.upper) continue
-            findPointOnPage(pageIndex, viewport, contentCoordinates)?.let {
+            findPointOnPage(pageIndex, viewport, contentCoordinates.x, contentCoordinates.y)?.let {
                 return it
             }
         }
@@ -172,29 +206,24 @@ internal class PageMetadataLoader(
     private fun findPointOnPage(
         pageNum: Int,
         viewport: RectF,
-        contentCoordinates: PointF,
+        contentX: Float,
+        contentY: Float,
     ): PdfPoint? {
         val pageBounds = getPageLocation(pageNum, viewport)
-        if (pageBounds.contains(contentCoordinates.x, contentCoordinates.y)) {
-            return PdfPoint(
-                pageNum,
-                PointF(
-                    contentCoordinates.x - pageBounds.left,
-                    contentCoordinates.y - pageBounds.top,
-                ),
-            )
+        if (pageBounds.contains(contentX, contentY)) {
+            return PdfPoint(pageNum, PointF(contentX - pageBounds.left, contentY - pageBounds.top))
         }
         return null
     }
 
     /**
-     * Returns a View-relative [RectF] corresponding to a page-relative [PdfRect], or null if the
-     * page hasn't been laid out
+     * Returns a View-relative [RectF] corresponding to a page-relative [androidx.pdf.PdfRect], or
+     * null if the page hasn't been laid out
      */
     fun getViewRect(pdfRect: PdfRect, viewport: RectF): RectF? {
         if (pdfRect.pageNum > paginationModel.reach) return null
         val pageBounds = getPageLocation(pdfRect.pageNum, viewport)
-        val out = RectF(pdfRect.pageRect)
+        val out = RectF(pdfRect.left, pdfRect.top, pdfRect.right, pdfRect.bottom)
         out.offset(pageBounds.left, pageBounds.top)
         return out
     }
@@ -318,7 +347,13 @@ internal class PageMetadataLoader(
 
                     val size = Point(pageMetadata.width, pageMetadata.height)
                     // Add the value to the model before emitting, and on the main thread
-                    withContext(Dispatchers.Main) { paginationModel.addPage(pageNum, size) }
+                    withContext(Dispatchers.Main) {
+                        paginationModel.addPage(pageNum, size)
+                        pdfFormFillingState.addPageFormWidgetInfos(
+                            pageNum,
+                            pageMetadata.formWidgetInfos,
+                        )
+                    }
                     _pageInfos.emit(pageMetadata)
                 }
                 // TODO(b/409465579): Propagate custom exception from SandboxedPdfDocument to

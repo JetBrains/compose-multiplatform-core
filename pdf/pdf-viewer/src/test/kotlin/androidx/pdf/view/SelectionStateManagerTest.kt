@@ -23,6 +23,8 @@ import android.util.SparseArray
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfPoint
+import androidx.pdf.PdfRect
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
@@ -102,17 +104,18 @@ class SelectionStateManagerTest {
                     PdfRect(
                         selectionPoint.pageNum,
                         RectF(
-                            selectionPoint.pagePoint.x,
-                            selectionPoint.pagePoint.y,
-                            selectionPoint.pagePoint.x,
-                            selectionPoint.pagePoint.y,
+                            selectionPoint.x,
+                            selectionPoint.y,
+                            selectionPoint.x,
+                            selectionPoint.y,
                         ),
                     )
                 )
             )
+        val selectionPointOnPage = PointF(selectionPoint.x, selectionPoint.y)
         assertThat(selection.text)
             .isEqualTo(
-                "This is all the text between ${selectionPoint.pagePoint} and ${selectionPoint.pagePoint}"
+                "This is all the text between $selectionPointOnPage and $selectionPointOnPage"
             )
 
         assertThat(uiSignals.size).isEqualTo(4)
@@ -151,17 +154,18 @@ class SelectionStateManagerTest {
                     PdfRect(
                         selectionPoint2.pageNum,
                         RectF(
-                            selectionPoint2.pagePoint.x,
-                            selectionPoint2.pagePoint.y,
-                            selectionPoint2.pagePoint.x,
-                            selectionPoint2.pagePoint.y,
+                            selectionPoint2.x,
+                            selectionPoint2.y,
+                            selectionPoint2.x,
+                            selectionPoint2.y,
                         ),
                     )
                 )
             )
+        val selectionPointOnPage = PointF(selectionPoint2.x, selectionPoint2.y)
         assertThat(selection.text)
             .isEqualTo(
-                "This is all the text between ${selectionPoint2.pagePoint} and ${selectionPoint2.pagePoint}"
+                "This is all the text between $selectionPointOnPage and $selectionPointOnPage"
             )
     }
 
@@ -224,9 +228,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // Chose a point inside the start handle touch target (below and behind the start position)
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
 
         // "Grab" the start handle and make sure we handle the event
         assertThat(
@@ -244,9 +250,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // Chose a point inside the end handle touch target (below and ahead the end position)
         val insideEndHandle =
-            PointF(initialSelectionForDragging.endBoundary.location.pagePoint).apply {
-                offset(HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.endBoundary.location.x,
+                    initialSelectionForDragging.endBoundary.location.y,
+                )
+                .apply { offset(HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
 
         // "Grab" the end handle and make sure we handle the event
         assertThat(
@@ -264,9 +272,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // "Grab" the start handle
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
         assertThat(
                 selectionStateManager.maybeDragSelectionHandle(
                     MotionEvent.ACTION_DOWN,
@@ -292,11 +302,17 @@ class SelectionStateManagerTest {
         testDispatcher.scheduler.runCurrent()
         val selection = selectionStateManager.selectionModel.value?.documentSelection?.selection
         assertThat(selection).isInstanceOf(TextSelection::class.java)
-        val expectedStartLoc = initialSelectionForDragging.endBoundary.location.pagePoint
+        val expectedStartLoc =
+            PointF(
+                initialSelectionForDragging.endBoundary.location.x,
+                initialSelectionForDragging.endBoundary.location.y,
+            )
         val expectedEndLoc =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(/* dx= */ 5F, /* dy= */ 5F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(/* dx= */ 5F, /* dy= */ 5F) }
         assertThat((selection as TextSelection).text)
             .isEqualTo("This is all the text between $expectedStartLoc and $expectedEndLoc")
     }
@@ -306,9 +322,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // "Grab" the start handle
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
         assertThat(
                 selectionStateManager.maybeDragSelectionHandle(
                     MotionEvent.ACTION_DOWN,
@@ -335,9 +353,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // Chose a point inside the start handle touch target (below and behind the start position)
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
 
         // Make sure we don't handle an ACTION_MOVE without an initial ACTION_DOWN, even when the
         // move event occurs within one of the drag handles
@@ -356,9 +376,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // Chose a point inside the start handle touch target (below and behind the start position)
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
 
         // Make sure we don't handle an ACTION_UP without an initial ACTION_DOWN, even when the
         // up event occurs within one of the drag handles
@@ -377,9 +399,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // Chose a point inside the start handle touch target (below and behind the start position)
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
 
         // "Grab" the start handle
         assertThat(
@@ -417,9 +441,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { initialSelectionForDragging }
         // "Grab" the start handle
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
 
         assertThat(
                 selectionStateManager.maybeDragSelectionHandle(
@@ -433,7 +459,11 @@ class SelectionStateManagerTest {
         val value =
             selectionStateManager.maybeDragSelectionHandle(
                 MotionEvent.ACTION_MOVE,
-                PdfPoint(pageNum = 2, initialSelectionForDragging.endBoundary.location.pagePoint),
+                PdfPoint(
+                    pageNum = 2,
+                    initialSelectionForDragging.endBoundary.location.x,
+                    initialSelectionForDragging.endBoundary.location.y,
+                ),
                 currentZoom = 2.0F,
             )
         assertThat(value).isTrue()
@@ -443,8 +473,16 @@ class SelectionStateManagerTest {
         val selection = selectionStateManager.selectionModel.value?.documentSelection?.selection
 
         assertThat(selection).isInstanceOf(TextSelection::class.java)
-        val expectedStartLoc = initialSelectionForDragging.startBoundary.location.pagePoint
-        val expectedEndLoc = initialSelectionForDragging.endBoundary.location.pagePoint
+        val expectedStartLoc =
+            PointF(
+                initialSelectionForDragging.startBoundary.location.x,
+                initialSelectionForDragging.startBoundary.location.y,
+            )
+        val expectedEndLoc =
+            PointF(
+                initialSelectionForDragging.endBoundary.location.x,
+                initialSelectionForDragging.endBoundary.location.y,
+            )
 
         val expectedText =
             "This is all the text between $expectedStartLoc and PointF(0.0, 0.0) This is all the text between PointF(0.0, 0.0) and $expectedEndLoc"
@@ -457,9 +495,11 @@ class SelectionStateManagerTest {
         selectionStateManager._selectionModel.update { getInitialSelectionForDragging(1) }
         // "Grab" the start handle
         val insideStartHandle =
-            PointF(initialSelectionForDragging.startBoundary.location.pagePoint).apply {
-                offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F)
-            }
+            PointF(
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                )
+                .apply { offset(-HANDLE_TOUCH_TARGET_PX / 4.0F, HANDLE_TOUCH_TARGET_PX / 4.0F) }
 
         assertThat(
                 selectionStateManager.maybeDragSelectionHandle(
@@ -473,7 +513,11 @@ class SelectionStateManagerTest {
         val value =
             selectionStateManager.maybeDragSelectionHandle(
                 MotionEvent.ACTION_MOVE,
-                PdfPoint(pageNum = 0, initialSelectionForDragging.startBoundary.location.pagePoint),
+                PdfPoint(
+                    pageNum = 0,
+                    initialSelectionForDragging.startBoundary.location.x,
+                    initialSelectionForDragging.startBoundary.location.y,
+                ),
                 currentZoom = 2.0F,
             )
         assertThat(value).isTrue()
@@ -483,8 +527,16 @@ class SelectionStateManagerTest {
         val selection = selectionStateManager.selectionModel.value?.documentSelection?.selection
 
         assertThat(selection).isInstanceOf(TextSelection::class.java)
-        val expectedStartLoc = initialSelectionForDragging.startBoundary.location.pagePoint
-        val expectedEndLoc = initialSelectionForDragging.endBoundary.location.pagePoint
+        val expectedStartLoc =
+            PointF(
+                initialSelectionForDragging.startBoundary.location.x,
+                initialSelectionForDragging.startBoundary.location.y,
+            )
+        val expectedEndLoc =
+            PointF(
+                initialSelectionForDragging.endBoundary.location.x,
+                initialSelectionForDragging.endBoundary.location.y,
+            )
 
         val expectedText =
             "This is all the text between $expectedStartLoc and PointF(0.0, 0.0) This is all the text between PointF(0.0, 0.0) and $expectedEndLoc"

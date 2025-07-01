@@ -45,8 +45,7 @@ class SurfaceConfigTest {
         // Assert
         assertThat(surfaceConfig.configType).isEqualTo(type)
         assertThat(surfaceConfig.configSize).isEqualTo(size)
-        assertThat(surfaceConfig.streamUseCase)
-            .isEqualTo(SurfaceConfig.DEFAULT_STREAM_USE_CASE_VALUE)
+        assertThat(surfaceConfig.streamUseCase).isEqualTo(SurfaceConfig.DEFAULT_STREAM_USE_CASE)
     }
 
     @Test
@@ -54,7 +53,7 @@ class SurfaceConfigTest {
         // Arrange
         val type = ConfigType.JPEG
         val size = ConfigSize.MAXIMUM
-        val streamUseCase: Long = 1234
+        val streamUseCase = StreamUseCase.PREVIEW_VIDEO_STILL
 
         // Act
         val surfaceConfig = SurfaceConfig.create(type, size, streamUseCase)

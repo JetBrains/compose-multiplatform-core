@@ -83,32 +83,32 @@ import java.util.concurrent.TimeUnit
     version = 24,
 )
 @TypeConverters(value = [Data::class, WorkTypeConverters::class])
-abstract class WorkDatabase : RoomDatabase() {
+public abstract class WorkDatabase : RoomDatabase() {
     /** @return The Data Access Object for [WorkSpec]s. */
-    abstract fun workSpecDao(): WorkSpecDao
+    public abstract fun workSpecDao(): WorkSpecDao
 
     /** @return The Data Access Object for [Dependency]s. */
-    abstract fun dependencyDao(): DependencyDao
+    public abstract fun dependencyDao(): DependencyDao
 
     /** @return The Data Access Object for [WorkTag]s. */
-    abstract fun workTagDao(): WorkTagDao
+    public abstract fun workTagDao(): WorkTagDao
 
     /** @return The Data Access Object for [SystemIdInfo]s. */
-    abstract fun systemIdInfoDao(): SystemIdInfoDao
+    public abstract fun systemIdInfoDao(): SystemIdInfoDao
 
     /** @return The Data Access Object for [WorkName]s. */
-    abstract fun workNameDao(): WorkNameDao
+    public abstract fun workNameDao(): WorkNameDao
 
     /** @return The Data Access Object for [WorkProgress]. */
-    abstract fun workProgressDao(): WorkProgressDao
+    public abstract fun workProgressDao(): WorkProgressDao
 
     /** @return The Data Access Object for [Preference]. */
-    abstract fun preferenceDao(): PreferenceDao
+    public abstract fun preferenceDao(): PreferenceDao
 
     /** @return The Data Access Object which can be used to execute raw queries. */
-    abstract fun rawWorkInfoDao(): RawWorkInfoDao
+    public abstract fun rawWorkInfoDao(): RawWorkInfoDao
 
-    companion object {
+    public companion object {
         /**
          * Creates an instance of the WorkDatabase.
          *
@@ -120,7 +120,7 @@ abstract class WorkDatabase : RoomDatabase() {
          * @return The created WorkDatabase
          */
         @JvmStatic
-        fun create(
+        public fun create(
             context: Context,
             queryExecutor: Executor,
             clock: Clock,
@@ -182,7 +182,7 @@ private const val PRUNE_SQL_FORMAT_SUFFIX =
         "    work_spec_id NOT IN " +
         "        (SELECT id FROM workspec WHERE state IN $COMPLETED_STATES))"
 
-@JvmField val PRUNE_THRESHOLD_MILLIS: Long = TimeUnit.DAYS.toMillis(1)
+@JvmField public val PRUNE_THRESHOLD_MILLIS: Long = TimeUnit.DAYS.toMillis(1)
 
 internal class CleanupCallback(val clock: Clock) : RoomDatabase.Callback() {
 

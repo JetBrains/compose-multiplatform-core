@@ -419,17 +419,7 @@ internal class ResponsiveTransformationSpecImpl(
         painter: Painter,
         shape: Shape,
         border: BorderStroke?,
-    ): Painter =
-        BackgroundPainter(
-            scale = {
-                val progress = TransitionAreaProgress(scrollProgress)
-                progress.compute(scale, easing)
-            },
-            height = { itemHeight },
-            shape = shape,
-            border = border,
-            backgroundPainter = painter,
-        )
+    ): Painter = BackgroundPainter(shape = shape, border = border, backgroundPainter = painter)
 }
 
 private fun lerp(

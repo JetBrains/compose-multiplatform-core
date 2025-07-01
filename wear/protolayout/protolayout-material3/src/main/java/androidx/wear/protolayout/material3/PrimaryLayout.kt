@@ -290,19 +290,36 @@ public fun MaterialScope.primaryLayoutWithOverrideIcon(
     return mainLayout.build()
 }
 
+/**
+ * [overrideIconColor] means that this is used inside of verify test, so we want to avoid aliasing
+ * by making the icon 2dp smaller.
+ */
 private fun MaterialScope.getIconPlaceholder(
     overrideIcon: Boolean,
     overrideIconColor: LayoutColor? = null,
 ): LayoutElement {
-    val iconSlot = Box.Builder().setWidth(HEADER_ICON_SIZE_DP.dp).setHeight(HEADER_ICON_SIZE_DP.dp)
-    if (overrideIcon) {
-        iconSlot.setModifiers(
-            LayoutModifier.background(overrideIconColor ?: theme.colorScheme.onBackground)
-                .clip(shapes.full)
-                .toProtoLayoutModifiers()
-        )
-    }
-    return iconSlot.build()
+    val overriddenIcon =
+        if (overrideIcon) {
+            val overriddenIconSize = (HEADER_ICON_SIZE_DP + (overrideIconColor?.let { -2 } ?: 0)).dp
+            Box.Builder()
+                .setWidth(overriddenIconSize)
+                .setHeight(overriddenIconSize)
+                .setModifiers(
+                    LayoutModifier.background(overrideIconColor ?: theme.colorScheme.onBackground)
+                        .clip(shapes.full)
+                        .toProtoLayoutModifiers()
+                )
+                .build()
+        } else {
+            null
+        }
+
+    // Icon slot
+    return Box.Builder()
+        .setWidth(HEADER_ICON_SIZE_DP.dp)
+        .setHeight(HEADER_ICON_SIZE_DP.dp)
+        .apply { overriddenIcon?.let { addContent(it) } }
+        .build()
 }
 
 /** Returns header content with the mandatory icon and optional title. */
@@ -324,11 +341,13 @@ private fun MaterialScope.getHeaderContent(
         headerBuilder
             .addContent(
                 horizontalSpacer(
-                    if (deviceConfiguration.screenHeightDp.isBreakpoint()) {
-                        HEADER_ICON_TITLE_SPACER_HEIGHT_LARGE_DP
-                    } else {
-                        HEADER_ICON_TITLE_SPACER_HEIGHT_SMALL_DP
-                    }
+                    heightDp =
+                        if (deviceConfiguration.screenHeightDp.isBreakpoint()) {
+                            HEADER_ICON_TITLE_SPACER_HEIGHT_LARGE_DP
+                        } else {
+                            HEADER_ICON_TITLE_SPACER_HEIGHT_SMALL_DP
+                        },
+                    overrideColor = overrideIconColor,
                 )
             )
             .addContent(titleSlot)

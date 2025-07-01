@@ -36,6 +36,8 @@ import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.adapter.PdfDocumentRendererFactory
 import androidx.pdf.adapter.PdfDocumentRendererFactoryImpl
 import androidx.pdf.adapter.PdfPage
+import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.models.Dimensions
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -135,6 +137,24 @@ internal class PdfDocumentRemoteImpl(
 
     override fun applyEdit(pageNum: Int, editRecord: FormEditRecord): List<Rect>? {
         return withPage(pageNum) { page -> page.applyEdit(editRecord) }
+    }
+
+    override fun write(destination: ParcelFileDescriptor, removePasswordProtection: Boolean) {
+        try {
+            rendererAdapter.write(destination, removePasswordProtection)
+        } catch (exception: Exception) {
+            throw RuntimeException(exception)
+        }
+    }
+
+    override fun addAnnotations(pfd: ParcelFileDescriptor): AnnotationResult? {
+        // TODO: addAnnotations to be implemented in subsequent CL
+        return AnnotationResult(listOf(), listOf())
+    }
+
+    override fun getPageAnnotations(pageNum: Int): List<PdfAnnotation> {
+        // TODO:  getPageAnnotations to be implemented in subsequent CL
+        return mutableListOf()
     }
 
     override fun isPdfLinearized(): Boolean {

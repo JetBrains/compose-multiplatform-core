@@ -89,7 +89,6 @@ class UseCaseCameraStateTest {
         UseCaseCameraState(
             useCaseGraphConfig = fakeUseCaseGraphConfig,
             threads = useCaseThreads,
-            sessionProcessorManager = null,
             templateParamsOverride = NoOpTemplateParamsOverride,
         )
 
@@ -205,7 +204,6 @@ class UseCaseCameraStateTest {
             UseCaseCameraState(
                 useCaseGraphConfig = fakeUseCaseGraphConfig,
                 threads = useCaseThreads,
-                sessionProcessorManager = null,
                 templateParamsOverride =
                     TemplateParamsQuirkOverride(
                         Quirks(listOf(object : CaptureIntentPreviewQuirk {}))

@@ -34,6 +34,7 @@ import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.internal.utils.SizeUtil
 import androidx.camera.extensions.internal.Camera2ExtensionsUtil.convertCameraXModeToCamera2Mode
+import androidx.camera.extensions.internal.compat.workaround.ExtensionCharacteristicsAccessGuard
 import androidx.camera.extensions.internal.sessionprocessor.Camera2ExtensionsSessionProcessor
 import androidx.core.util.Preconditions
 
@@ -45,6 +46,7 @@ public class Camera2ExtensionsVendorExtender(
     private val camera2ExtensionsInfo: Camera2ExtensionsInfo,
 ) : VendorExtender {
 
+    private val extensionCharacteristicsAccessGuard = ExtensionCharacteristicsAccessGuard()
     private val camera2ExtensionMode: Int = convertCameraXModeToCamera2Mode(mode)
     private val lock = Any()
     private lateinit var cameraId: String
@@ -185,9 +187,15 @@ public class Camera2ExtensionsVendorExtender(
         checkInitialized()
         return if (
             isCamera2ExtensionAvailable() &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                extensionCharacteristicsAccessGuard.allowPostviewAvailabilityCheck()
         ) {
-            cameraExtensionCharacteristics.isPostviewAvailable(camera2ExtensionMode)
+            try {
+                cameraExtensionCharacteristics.isPostviewAvailable(camera2ExtensionMode)
+            } catch (e: NoSuchMethodError) {
+                Log.e(TAG, "Failed to retrieve postview availability", e)
+                false
+            }
         } else {
             false
         }
@@ -197,9 +205,17 @@ public class Camera2ExtensionsVendorExtender(
         checkInitialized()
         return if (
             isCamera2ExtensionAvailable() &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                extensionCharacteristicsAccessGuard.allowCaptureProcessProgressAvailabilityCheck()
         ) {
-            cameraExtensionCharacteristics.isCaptureProcessProgressAvailable(camera2ExtensionMode)
+            try {
+                cameraExtensionCharacteristics.isCaptureProcessProgressAvailable(
+                    camera2ExtensionMode
+                )
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Failed to retrieve capture process progress availability", e)
+                false
+            }
         } else {
             false
         }
@@ -228,9 +244,14 @@ public class Camera2ExtensionsVendorExtender(
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            cameraExtensionCharacteristics
-                .getAvailableCaptureRequestKeys(camera2ExtensionMode)
-                .forEach { availableCaptureRequestKeys.add(it) }
+            try {
+                cameraExtensionCharacteristics
+                    .getAvailableCaptureRequestKeys(camera2ExtensionMode)
+                    .forEach { availableCaptureRequestKeys.add(it) }
+            } catch (e: IllegalArgumentException) {
+                Log.e(TAG, "Failed to retrieve available capture request keys", e)
+                return emptyList()
+            }
         }
 
         return availableCaptureRequestKeys

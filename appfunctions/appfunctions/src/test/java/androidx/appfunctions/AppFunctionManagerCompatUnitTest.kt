@@ -17,6 +17,10 @@
 package androidx.appfunctions
 
 import android.content.Context
+import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.testing.FakeAppFunctionManagerApi
 import androidx.appfunctions.testing.FakeAppFunctionReader
@@ -73,9 +77,21 @@ class AppFunctionManagerCompatUnitTest {
         val functionId = "functionId"
         val packageName = "com.pkg"
         fakeAppFunctionReader.addAppFunctionMetadata(
-            functionId,
-            packageName,
-            AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1),
+            AppFunctionMetadata(
+                id = functionId,
+                packageName = packageName,
+                isEnabled = true,
+                schema =
+                    AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1),
+                parameters = emptyList(),
+                response =
+                    AppFunctionResponseMetadata(
+                        AppFunctionPrimitiveTypeMetadata(
+                            AppFunctionDataTypeMetadata.Companion.TYPE_UNIT,
+                            isNullable = false,
+                        )
+                    ),
+            )
         )
         fakeTranslateSelector.setTranslator(fakeTranslator)
         fakeAppFunctionApi.executeAppFunctionResponse =
@@ -97,9 +113,21 @@ class AppFunctionManagerCompatUnitTest {
         val functionId = "functionId"
         val packageName = "com.pkg"
         fakeAppFunctionReader.addAppFunctionMetadata(
-            functionId,
-            packageName,
-            AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 2),
+            AppFunctionMetadata(
+                id = functionId,
+                packageName = packageName,
+                isEnabled = true,
+                schema =
+                    AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 2),
+                parameters = emptyList(),
+                response =
+                    AppFunctionResponseMetadata(
+                        AppFunctionPrimitiveTypeMetadata(
+                            AppFunctionDataTypeMetadata.Companion.TYPE_UNIT,
+                            isNullable = false,
+                        )
+                    ),
+            )
         )
         fakeTranslateSelector.setTranslator(fakeTranslator)
         fakeAppFunctionApi.executeAppFunctionResponse =

@@ -366,6 +366,9 @@ package androidx.wear.protolayout {
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int ARC_ANCHOR_END = 3; // 0x3
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int ARC_ANCHOR_START = 1; // 0x1
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int ARC_ANCHOR_UNDEFINED = 0; // 0x0
+    field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static final int ARC_DIRECTION_CLOCKWISE = 1; // 0x1
+    field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static final int ARC_DIRECTION_COUNTER_CLOCKWISE = 2; // 0x2
+    field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static final int ARC_DIRECTION_NORMAL = 0; // 0x0
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int CONTENT_SCALE_MODE_CROP = 2; // 0x2
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int CONTENT_SCALE_MODE_FILL_BOUNDS = 3; // 0x3
     field @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public static final int CONTENT_SCALE_MODE_FIT = 1; // 0x1

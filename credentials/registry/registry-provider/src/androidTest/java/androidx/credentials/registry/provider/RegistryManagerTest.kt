@@ -59,16 +59,15 @@ class RegistryManagerTest {
     @Test
     fun clearCredentialRegistry_noOptionalModule_throws() =
         runBlocking<Unit> {
-            assertThrows<IllegalArgumentException> {
+            assertThrows<ClearCredentialRegistryConfigurationException> {
                 registryManager.clearCredentialRegistry(
                     ClearCredentialRegistryRequest(
-                        deleteAll = false,
                         deletePerTypeConfig =
                             ClearCredentialRegistryRequest.PerTypeConfig(
-                                deleteAll = false,
+                                isDeleteAll = false,
                                 type = PasswordCredential.TYPE_PASSWORD_CREDENTIAL,
                                 registryIds = listOf("registry-id1", "registry-id2"),
-                            ),
+                            )
                     )
                 )
             }

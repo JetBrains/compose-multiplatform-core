@@ -4,5 +4,7 @@ import androidx.appfunctions.service.AppFunction
 import androidx.appfunctions.AppFunctionContext
 
 class FakeNoArg {
-    @AppFunction fun noArg(appFunctionContext: AppFunctionContext) {}
+    /** A free-form AppFunction without parameters. */
+    @AppFunction(isDescribedByKdoc = true)
+    fun noArg(appFunctionContext: AppFunctionContext) {}
 }

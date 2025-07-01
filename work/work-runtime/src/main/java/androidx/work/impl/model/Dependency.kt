@@ -44,7 +44,7 @@ import androidx.room.Index
     indices = [Index(value = ["work_spec_id"]), Index(value = ["prerequisite_id"])],
 )
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class Dependency(
-    @ColumnInfo(name = "work_spec_id") val workSpecId: String,
-    @ColumnInfo(name = "prerequisite_id") val prerequisiteId: String,
+public class Dependency(
+    @ColumnInfo(name = "work_spec_id") public val workSpecId: String,
+    @ColumnInfo(name = "prerequisite_id") public val prerequisiteId: String,
 )

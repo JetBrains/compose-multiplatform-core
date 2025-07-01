@@ -66,9 +66,12 @@ final class FeaturesImpl implements Features {
             case Features.SEARCH_RESULT_MATCH_INFO_SUBMATCH:
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
 
-            // Android U Features
+            // SDK extension U Base features
             case Features.JOIN_SPEC_AND_QUALIFIED_ID:
-                // fall through
+                return BuildCompat.T_EXTENSION_INT
+                        >= AppSearchVersionUtil.TExtensionVersions.U_BASE;
+
+            // Android U Features
             case Features.LIST_FILTER_QUERY_LANGUAGE:
                 // fall through
             case Features.NUMERIC_SEARCH:

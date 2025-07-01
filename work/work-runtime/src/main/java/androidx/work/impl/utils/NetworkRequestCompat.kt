@@ -34,7 +34,7 @@ internal data class NetworkRequestCompat(val wrapped: Any? = null) {
 }
 
 @get:RequiresApi(28)
-val NetworkRequest.transportTypesCompat: IntArray
+public val NetworkRequest.transportTypesCompat: IntArray
     get() =
         if (Build.VERSION.SDK_INT >= 31) {
             NetworkRequest31.transportTypes(this)
@@ -56,7 +56,7 @@ val NetworkRequest.transportTypesCompat: IntArray
         }
 
 @get:RequiresApi(28)
-val NetworkRequest.capabilitiesCompat: IntArray
+public val NetworkRequest.capabilitiesCompat: IntArray
     get() =
         if (Build.VERSION.SDK_INT >= 31) {
             NetworkRequest31.capabilities(this)
@@ -107,7 +107,7 @@ private val defaultCapabilities =
     )
 
 @RequiresApi(28)
-object NetworkRequest28 {
+public object NetworkRequest28 {
     internal fun hasCapability(request: NetworkRequest, capability: Int) =
         request.hasCapability(capability)
 
@@ -115,7 +115,7 @@ object NetworkRequest28 {
         request.hasTransport(transport)
 
     @JvmStatic
-    fun createNetworkRequest(capabilities: IntArray, transports: IntArray): NetworkRequest {
+    public fun createNetworkRequest(capabilities: IntArray, transports: IntArray): NetworkRequest {
         val networkRequest = NetworkRequest.Builder()
         capabilities.forEach {
             try {

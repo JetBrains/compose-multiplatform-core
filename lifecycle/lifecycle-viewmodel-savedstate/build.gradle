@@ -39,8 +39,6 @@ androidXMultiplatform {
             it.consumerKeepRules.publish = true
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
-        // TODO(b/345531033)
-        experimentalProperties["android.lint.useK2Uast"] = false
     }
     desktop()
     mac()

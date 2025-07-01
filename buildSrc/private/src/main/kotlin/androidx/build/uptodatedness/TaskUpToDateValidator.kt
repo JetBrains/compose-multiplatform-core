@@ -155,6 +155,9 @@ val DONT_TRY_RERUNNING_TASKS =
 
         // https://github.com/spdx/spdx-gradle-plugin/issues/18
         "spdxSbomForRelease",
+
+        // Task not cacheable, will always rerun.
+        "validateIntegrationPatches",
     )
 
 val DONT_TRY_RERUNNING_TASK_TYPES =

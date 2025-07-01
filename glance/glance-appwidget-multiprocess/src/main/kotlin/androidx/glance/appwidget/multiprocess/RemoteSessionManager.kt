@@ -24,8 +24,8 @@ import androidx.concurrent.futures.await
 import androidx.glance.appwidget.AppWidgetId
 import androidx.glance.appwidget.AppWidgetSession
 import androidx.glance.appwidget.SizeMode
-import androidx.glance.session.SessionManager
 import androidx.glance.session.SessionManagerImpl
+import androidx.glance.session.SessionManagerScope
 import androidx.glance.session.SessionWorker
 import androidx.glance.session.WorkManagerProxy
 import androidx.glance.state.ConfigManager
@@ -39,6 +39,8 @@ import androidx.work.multiprocess.RemoteCoroutineWorker
 import androidx.work.multiprocess.RemoteListenableWorker
 import androidx.work.multiprocess.RemoteWorkManager
 import androidx.work.workDataOf
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.withTimeout
 
 ///
 /// Private APIs: these are just versions of the normal session classes (Session, SessionManager,
@@ -73,7 +75,7 @@ internal class RemoteAppWidgetSession(
     RemoteSession
 
 internal object RemoteSessionManager :
-    SessionManager by SessionManagerImpl(
+    SessionManagerImpl(
         workerClass = RemoteSessionWorker::class.java,
         workManagerProxy = RemoteWorkManagerProxy,
         inputDataFactory = { session ->
@@ -85,7 +87,20 @@ internal object RemoteSessionManager :
                 RemoteListenableWorker.ARGUMENT_PACKAGE_NAME to packageName,
             )
         },
-    )
+    ) {
+    override suspend fun <T> runWithLock(block: suspend SessionManagerScope.() -> T): T {
+        return withTimeout(BroadcastReceiverTimeout) { super.runWithLock(block) }
+    }
+}
+
+// Set a timeout on RemoteWorkManager requests that take place during a broadcast. The broadcast
+// (even with goAsync) has a 10 second time limit to finish or the application is ANR'd. Setting a
+// timeout ensures that we will not ANR the application (instead throwing a
+// TimeoutCancellationException that is caught and logged).
+// RemoteWorkManager requests involve binding to a service, potentially in another process, to
+// enqueue work. RemoteWorkManager sets an internal timeout of 60 seconds to connect to the service
+// but that is too long for our purposes.
+private val BroadcastReceiverTimeout = 9.seconds
 
 private object RemoteWorkManagerProxy : WorkManagerProxy {
     override suspend fun enqueueUniqueWork(

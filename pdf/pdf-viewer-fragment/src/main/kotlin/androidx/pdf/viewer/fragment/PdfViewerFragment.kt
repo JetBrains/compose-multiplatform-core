@@ -414,19 +414,29 @@ public open class PdfViewerFragment constructor() : Fragment() {
             when (attr) {
                 androidx.pdf.R.styleable.PdfView_fastScrollVerticalThumbDrawable -> {
                     val thumbDrawable = pdfViewStyledAttrs.getDrawable(attr)
-                    pdfView.fastScrollVerticalThumbDrawable = thumbDrawable
+                    if (thumbDrawable != null) {
+                        pdfView.fastScrollVerticalThumbDrawable = thumbDrawable
+                    }
                 }
                 androidx.pdf.R.styleable.PdfView_fastScrollPageIndicatorBackgroundDrawable -> {
                     val pageIndicatorDrawable = pdfViewStyledAttrs.getDrawable(attr)
-                    pdfView.fastScrollPageIndicatorBackgroundDrawable = pageIndicatorDrawable
+                    if (pageIndicatorDrawable != null) {
+                        pdfView.fastScrollPageIndicatorBackgroundDrawable = pageIndicatorDrawable
+                    }
                 }
                 androidx.pdf.R.styleable.PdfView_fastScrollVerticalThumbMarginEnd -> {
-                    val verticalThumbEndMargin = pdfViewStyledAttrs.getDimensionPixelSize(attr, 0)
-                    pdfView.fastScrollVerticalThumbMarginEnd = verticalThumbEndMargin
+                    val verticalThumbEndMargin =
+                        pdfViewStyledAttrs.getDimensionPixelSize(attr, Int.MIN_VALUE)
+                    if (verticalThumbEndMargin != Int.MIN_VALUE) {
+                        pdfView.fastScrollVerticalThumbMarginEnd = verticalThumbEndMargin
+                    }
                 }
                 androidx.pdf.R.styleable.PdfView_fastScrollPageIndicatorMarginEnd -> {
-                    val pageIndicatorEndMargin = pdfViewStyledAttrs.getDimensionPixelSize(attr, 0)
-                    pdfView.fastScrollPageIndicatorMarginEnd = pageIndicatorEndMargin
+                    val pageIndicatorEndMargin =
+                        pdfViewStyledAttrs.getDimensionPixelSize(attr, Int.MIN_VALUE)
+                    if (pageIndicatorEndMargin != Int.MIN_VALUE) {
+                        pdfView.fastScrollPageIndicatorMarginEnd = pageIndicatorEndMargin
+                    }
                 }
             }
         }
@@ -447,7 +457,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
 
     override fun onDestroyView() {
         // Clean up the listener to avoid potential memory leaks
-        pdfView.linkClickListener = null
+        pdfView.setLinkClickListener(null)
         super.onDestroyView()
     }
 
@@ -493,22 +503,20 @@ public open class PdfViewerFragment constructor() : Fragment() {
          */
         _pdfView.addOnSelectionChangedListener(
             object : PdfView.OnSelectionChangedListener {
-                override fun onSelectionChanged(
-                    previousSelection: Selection?,
-                    newSelection: Selection?,
-                ) {
+                override fun onSelectionChanged(newSelection: Selection?) {
                     newSelection?.let { isTextSearchActive = false }
                 }
             }
         )
 
         // Set the internal LinkClickListener on PdfView
-        pdfView.linkClickListener =
+        val linkClickListener =
             object : PdfView.LinkClickListener {
                 override fun onLinkClicked(externalLink: ExternalLink): Boolean {
                     return this@PdfViewerFragment.onLinkClicked(externalLink)
                 }
             }
+        pdfView.setLinkClickListener(linkClickListener)
     }
 
     private fun setupSearchViewListeners(searchView: PdfSearchView) {
@@ -552,11 +560,11 @@ public open class PdfViewerFragment constructor() : Fragment() {
                 if (uiState !is SearchViewUiState.Closed) {
                     _pdfView.apply {
                         clearSelection()
-                        forcedFastScrollVisibility = false
+                        fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_HIDE
                     }
                 } else {
                     // Let PdfView internally control fast scroller visibility.
-                    _pdfView.forcedFastScrollVisibility = null
+                    _pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.AUTO_HIDE
                 }
             }
         }

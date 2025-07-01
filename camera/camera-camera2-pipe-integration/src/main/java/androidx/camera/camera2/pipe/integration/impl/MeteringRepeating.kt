@@ -39,6 +39,7 @@ import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.CloseableErrorListener
 import androidx.camera.core.impl.StreamSpec
+import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE
 import androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER
@@ -251,6 +252,8 @@ public class MeteringRepeating(
         override fun setHighResolutionDisabled(disabled: Boolean): Builder = this
 
         override fun setCaptureType(captureType: UseCaseConfigFactory.CaptureType): Builder = this
+
+        override fun setStreamUseCase(streamUseCase: StreamUseCase): Builder = this
 
         override fun build(): MeteringRepeating {
             return MeteringRepeating(cameraProperties, useCaseConfig, displayInfoManager)

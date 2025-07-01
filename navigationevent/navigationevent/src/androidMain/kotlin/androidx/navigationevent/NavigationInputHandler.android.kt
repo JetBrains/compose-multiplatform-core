@@ -50,7 +50,7 @@ public class NavigationInputHandler(private val dispatcher: NavigationEventDispa
     @RequiresApi(33)
     public fun setOnBackInvokedDispatcher(invoker: OnBackInvokedDispatcher) {
         this.invoker = invoker
-        dispatcher.updateInput { updateBackInvokedCallbackState() }
+        dispatcher.addOnHasEnabledCallbacksChangedCallback { updateBackInvokedCallbackState() }
         updateBackInvokedCallbackState()
     }
 

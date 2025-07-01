@@ -24,6 +24,7 @@ import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.pdf.PdfPoint
 import androidx.pdf.R
 import androidx.pdf.view.fastscroll.getDimensions
 import androidx.test.core.app.ActivityScenario
@@ -504,8 +505,8 @@ class PdfViewPaginationTest {
 
                         checkEqualityWithTolerance(viewPoint, pointPair.second, tolerance = 0.5F)
                         checkEqualityWithTolerance(
-                            pdfPoint?.pagePoint,
-                            pointPair.first.pagePoint,
+                            pdfPoint?.let { PointF(it.x, it.y) },
+                            PointF(pointPair.first.x, pointPair.first.y),
                             tolerance = 0.5F,
                         )
                         assertThat(pdfPoint?.pageNum).isEqualTo(pointPair.first.pageNum)

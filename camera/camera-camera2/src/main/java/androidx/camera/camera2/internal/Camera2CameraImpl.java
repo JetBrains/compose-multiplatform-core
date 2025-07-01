@@ -1285,7 +1285,8 @@ final class Camera2CameraImpl implements CameraInternal {
             for (DeferrableSurface surface: sessionConfig.getSurfaces()) {
                 SurfaceConfig surfaceConfig =
                         mSupportedSurfaceCombination.transformSurfaceConfig(cameraMode,
-                                useCaseConfig.getInputFormat(), surface.getPrescribedSize());
+                                useCaseConfig.getInputFormat(), surface.getPrescribedSize(),
+                                useCaseConfig.getStreamUseCase());
 
                 AttachedSurfaceInfo attachedSurfaceInfo = AttachedSurfaceInfo.create(surfaceConfig,
                         useCaseConfig.getInputFormat(),

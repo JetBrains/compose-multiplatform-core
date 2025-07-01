@@ -22,11 +22,11 @@ import androidx.annotation.RestrictTo
 import androidx.core.os.BundleCompat
 
 /** A class representing the UI state of a SandboxedSdkView. */
-class SandboxedSdkViewUiInfo(
+public class SandboxedSdkViewUiInfo(
     /** Returns the width of the UI container in pixels. */
-    val uiContainerWidth: Int,
+    public val uiContainerWidth: Int,
     /** Returns the height of the UI container in pixels. */
-    val uiContainerHeight: Int,
+    public val uiContainerHeight: Int,
     /**
      * Returns the portion of the UI container which is not clipped by parent views and is visible
      * on screen. The coordinates of this [Rect] are relative to the UI container and measured in
@@ -34,7 +34,7 @@ class SandboxedSdkViewUiInfo(
      *
      * If none of the UI container is visible on screen, each coordinate in this [Rect] will be -1.
      */
-    val onScreenGeometry: Rect,
+    public val onScreenGeometry: Rect,
     /**
      * Returns the opacity of the UI container, where available.
      *
@@ -45,7 +45,7 @@ class SandboxedSdkViewUiInfo(
      *
      * When the opacity is not available, the value will be -1.
      */
-    val uiContainerOpacityHint: Float,
+    public val uiContainerOpacityHint: Float,
     /**
      * Returns the list of coordinate rectangles, relative to the UI container, that are obstructed.
      *
@@ -61,9 +61,9 @@ class SandboxedSdkViewUiInfo(
      * the [SessionObserverFactory] associated with the UI container's [SandboxedUiAdapter].
      * Otherwise, this will return an empty list irrespective of any obstructions on the container.
      */
-    val obstructedGeometry: List<Rect>,
+    public val obstructedGeometry: List<Rect>,
 ) {
-    companion object {
+    public companion object {
         private const val UI_CONTAINER_WIDTH_KEY = "uiContainerWidth"
         private const val UI_CONTAINER_HEIGHT_KEY = "uiContainerHeight"
         private const val ONSCREEN_GEOMETRY_KEY = "onScreenGeometry"
@@ -71,7 +71,7 @@ class SandboxedSdkViewUiInfo(
         private const val OBSTRUCTED_GEOMETRY_KEY = "obstructedGeometry"
 
         @JvmStatic
-        fun fromBundle(bundle: Bundle): SandboxedSdkViewUiInfo {
+        public fun fromBundle(bundle: Bundle): SandboxedSdkViewUiInfo {
             val uiContainerWidth = bundle.getInt(UI_CONTAINER_WIDTH_KEY)
             val uiContainerHeight = bundle.getInt(UI_CONTAINER_HEIGHT_KEY)
             val onScreenGeometry =
@@ -96,7 +96,7 @@ class SandboxedSdkViewUiInfo(
         }
 
         @JvmStatic
-        fun toBundle(sandboxedSdkViewUiInfo: SandboxedSdkViewUiInfo): Bundle {
+        public fun toBundle(sandboxedSdkViewUiInfo: SandboxedSdkViewUiInfo): Bundle {
             val bundle = Bundle()
             bundle.putInt(UI_CONTAINER_WIDTH_KEY, sandboxedSdkViewUiInfo.uiContainerWidth)
             bundle.putInt(UI_CONTAINER_HEIGHT_KEY, sandboxedSdkViewUiInfo.uiContainerHeight)
@@ -110,7 +110,7 @@ class SandboxedSdkViewUiInfo(
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun pruneBundle(bundle: Bundle, signalOptions: Set<String>) {
+        public fun pruneBundle(bundle: Bundle, signalOptions: Set<String>) {
             if (!signalOptions.contains(SandboxedUiAdapterSignalOptions.GEOMETRY)) {
                 bundle.remove(UI_CONTAINER_HEIGHT_KEY)
                 bundle.remove(UI_CONTAINER_WIDTH_KEY)

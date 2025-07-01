@@ -62,7 +62,7 @@ class AnchorTest {
     @Before
     fun setUp() {
         xrResourcesManager = XrResourcesManager()
-        FakeRuntimeAnchor.anchorsCreated = 0
+        FakeRuntimeAnchor.anchorsCreatedCount = 0
     }
 
     @After

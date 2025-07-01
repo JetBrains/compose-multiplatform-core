@@ -51,7 +51,7 @@ import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialBoxScope
 import androidx.xr.compose.subspace.SubspaceComposable
-import androidx.xr.compose.subspace.layout.CoreContentlessEntity
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.node.SubspaceNodeApplier
 import androidx.xr.compose.unit.IntVolumeSize
@@ -64,8 +64,8 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.ActivitySpace
 import androidx.xr.scenecore.CameraView
 import androidx.xr.scenecore.CameraView.CameraType
-import androidx.xr.scenecore.ContentlessEntity
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.Head
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
@@ -257,14 +257,14 @@ private fun ApplicationSubspace(
     val subspaceRootNode = LocalSubspaceRootNode.current
     val scene by remember {
         session.scene.mainPanelEntity.setEnabled(false)
-        val subspaceRoot = ContentlessEntity.create(session, "SubspaceRoot")
+        val subspaceRoot = GroupEntity.create(session, "SubspaceRoot")
         subspaceRootNode?.let { subspaceRoot.parent = it }
         disposableValueOf(
             SpatialComposeScene(
                 ownerActivity = activity,
                 jxrSession = session,
                 parentCompositionContext = compositionContext,
-                rootEntity = CoreContentlessEntity(subspaceRoot),
+                rootEntity = CoreGroupEntity(subspaceRoot),
             )
         ) {
             it.dispose()
@@ -298,7 +298,7 @@ private fun NestedSubspace(
     // subspace properly.
     val subspaceRootContainer by remember {
         disposableValueOf(
-            ContentlessEntity.create(session, "SubspaceRootContainer").apply {
+            GroupEntity.create(session, "SubspaceRootContainer").apply {
                 parent = coreEntity.entity
                 setEnabled(false)
             }
@@ -308,15 +308,13 @@ private fun NestedSubspace(
     }
     val scene by remember {
         val subspaceRoot =
-            ContentlessEntity.create(session, "SubspaceRoot").apply {
-                parent = subspaceRootContainer
-            }
+            GroupEntity.create(session, "SubspaceRoot").apply { parent = subspaceRootContainer }
         disposableValueOf(
             SpatialComposeScene(
                 ownerActivity = activity,
                 jxrSession = session,
                 parentCompositionContext = compositionContext,
-                rootEntity = CoreContentlessEntity(subspaceRoot),
+                rootEntity = CoreGroupEntity(subspaceRoot),
             )
         ) {
             it.dispose()

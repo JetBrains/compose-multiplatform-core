@@ -59,6 +59,7 @@ androidXMultiplatform {
             compileOnly(project(":compose:ui:ui-android-stubs"))
             implementation(libs.testCore)
             implementation(libs.testRules)
+            implementation(libs.espressoCore)
         }
 
         commonTest {

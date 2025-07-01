@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.testapp.fieldofviewvisibility
 
 import android.widget.Button
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -25,6 +26,7 @@ import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.testapp.R
 import java.nio.file.Paths
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 /** Manages the UI for the GLTF entity. */
 class GltfManager(private val session: Session, activity: FieldOfViewVisibilityActivity) {
@@ -72,16 +74,10 @@ class GltfManager(private val session: Session, activity: FieldOfViewVisibilityA
         }
 
         loadGltfEntityModelButton.setOnClickListener {
-            val dragonModelFuture =
-                GltfModel.createAsync(mSession, Paths.get("models", "Dragon_Evolved.gltf"))
-            dragonModelFuture.addListener(
-                {
-                    mGltfModel = dragonModelFuture.get()
-                    updateButtonStates()
-                },
-                // This will cause the listener to be run on the UI thread
-                Runnable::run,
-            )
+            activity.lifecycleScope.launch {
+                mGltfModel = GltfModel.create(mSession, Paths.get("models", "Dragon_Evolved.gltf"))
+                updateButtonStates()
+            }
         }
 
         createGltfEntityButton.setOnClickListener {

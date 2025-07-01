@@ -30,7 +30,6 @@ import org.gradle.api.Project
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
-@Suppress("UnstableApiUsage") // ApkOutputProviders b/397701480
 internal fun Project.registerCopyPrivacySandboxMainAppApksTask(
     variant: Variant,
     outputProviders: ApkOutputProviders,
@@ -46,7 +45,6 @@ internal fun Project.registerCopyPrivacySandboxMainAppApksTask(
         deviceSpec = mainSandboxDeviceSpec(variant.minSdk.apiLevel),
     )
 
-@Suppress("UnstableApiUsage") // ApkOutputProviders b/397701480
 internal fun Project.registerCopyPrivacySandboxCompatAppApksTask(
     variant: Variant,
     outputProviders: ApkOutputProviders,
@@ -78,7 +76,7 @@ internal fun Project.registerCopyAppApkFromArtifactsTask(
         AffectedModuleDetector.configureTaskGuard(task)
     }
 
-@Suppress("UnstableApiUsage") // ApkOutputProviders b/397701480
+@Suppress("UnstableApiUsage") // DeviceSpec b/397703661
 private fun Project.registerCopyApksFromOutputProviderTask(
     taskName: String,
     variant: Variant,

@@ -34,12 +34,8 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -47,17 +43,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.invalidateDraw
-import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import androidx.xr.glimmer.SurfaceDefaults.Shape
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -106,7 +98,7 @@ import org.intellij.lang.annotations.Language
 @Composable
 public fun Modifier.surface(
     focusable: Boolean = true,
-    shape: Shape = SurfaceDefaults.Shape,
+    shape: Shape = GlimmerTheme.shapes.medium,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
@@ -114,7 +106,8 @@ public fun Modifier.surface(
 ): Modifier {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     return this.clip(shape)
-        .then(SurfaceNodeElement(shape, contentColor, border, interactionSource))
+        .contentColorProvider(contentColor)
+        .then(SurfaceNodeElement(shape, border, interactionSource))
         .background(color = color, shape = shape)
         .focusable(enabled = focusable, interactionSource = interactionSource)
 }
@@ -153,7 +146,7 @@ public fun Modifier.surface(
 @Composable
 public fun Modifier.surface(
     enabled: Boolean = true,
-    shape: Shape = SurfaceDefaults.Shape,
+    shape: Shape = GlimmerTheme.shapes.medium,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
@@ -162,7 +155,8 @@ public fun Modifier.surface(
 ): Modifier {
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
     return this.clip(shape)
-        .then(SurfaceNodeElement(shape, contentColor, border, interactionSource))
+        .contentColorProvider(contentColor)
+        .then(SurfaceNodeElement(shape, border, interactionSource))
         .background(color = color, shape = shape)
         // TODO: b/423573184 align on disabled behavior / state
         .clickable(enabled = enabled, interactionSource = interactionSource, onClick = onClick)
@@ -170,9 +164,6 @@ public fun Modifier.surface(
 
 /** Default values used for [surface]. */
 public object SurfaceDefaults {
-    /** The default [Shape] used for a [surface] */
-    public val Shape: Shape = RoundedCornerShape(40.dp)
-
     /**
      * Create the default [BorderStroke] used for a [surface]. Use the other overload in order to
      * change the width or color.
@@ -208,53 +199,23 @@ public object SurfaceDefaults {
 }
 
 /**
- * Retrieves the preferred content color for text and iconography within a [surface]. Most surfaces
- * should be [Color.Black], so content color is typically [Color.White]. In a few cases where
- * surfaces are filled with a different color, the content color may be [Color.Black] to improve
- * contrast. For cases where higher emphasis is required, content color may be a different color
- * from the theme, such as [Colors.primary].
- *
- * Content color is automatically provided by [surface], and calculated from the provided background
- * color by default. To manually calculate the default content color for a provided background
- * color, use [calculateContentColor].
- */
-internal fun DelegatableNode.currentContentColor(): Color {
-    var contentColor = Color.White
-    traverseAncestors(SurfaceNodeTraverseKey) {
-        if (it is SurfaceNode) {
-            contentColor = it.contentColor
-            // Stop at the nearest descendant surface
-            false
-        } else {
-            // Theoretically someone else could define the same traverse key, so continue just to be
-            // safe
-            true
-        }
-    }
-    return contentColor
-}
-
-/**
- * Surface node responsible for providing content color, drawing the border, and drawing the focused
- * border and highlight.
+ * Surface node responsible for drawing the border, focused border and highlight, and pressed
+ * overlay.
  */
 private class SurfaceNodeElement(
     private val shape: Shape,
-    private val contentColor: Color,
     private val border: BorderStroke?,
     private val interactionSource: InteractionSource?,
 ) : ModifierNodeElement<SurfaceNode>() {
-    override fun create(): SurfaceNode = SurfaceNode(shape, contentColor, border, interactionSource)
+    override fun create(): SurfaceNode = SurfaceNode(shape, border, interactionSource)
 
-    override fun update(node: SurfaceNode) =
-        node.update(shape, contentColor, border, interactionSource)
+    override fun update(node: SurfaceNode) = node.update(shape, border, interactionSource)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is SurfaceNodeElement) return false
 
         if (shape != other.shape) return false
-        if (contentColor != other.contentColor) return false
         if (border != other.border) return false
         if (interactionSource != other.interactionSource) return false
 
@@ -263,7 +224,6 @@ private class SurfaceNodeElement(
 
     override fun hashCode(): Int {
         var result = shape.hashCode()
-        result = 31 * result + contentColor.hashCode()
         result = 31 * result + (border?.hashCode() ?: 0)
         result = 31 * result + (interactionSource?.hashCode() ?: 0)
         return result
@@ -272,7 +232,6 @@ private class SurfaceNodeElement(
     override fun InspectorInfo.inspectableProperties() {
         name = "surface"
         properties["shape"] = shape
-        properties["contentColor"] = contentColor
         properties["border"] = border
         properties["interactionSource"] = interactionSource
     }
@@ -280,15 +239,11 @@ private class SurfaceNodeElement(
 
 private class SurfaceNode(
     private var shape: Shape,
-    contentColor: Color,
     private var border: BorderStroke?,
     private var interactionSource: InteractionSource?,
-) : TraversableNode, DrawModifierNode, Modifier.Node() {
+) : DrawModifierNode, Modifier.Node() {
 
     override val shouldAutoInvalidate = false
-
-    var contentColor by mutableStateOf(contentColor)
-        private set
 
     // Cache borders and highlight for unfocused and focused states. This means we
     // can avoid recreating these for a given surface, if the border and shape never
@@ -329,17 +284,11 @@ private class SurfaceNode(
     private var minimumPressDuration: Job? = null
     private var pressReleaseAnimation: Job? = null
 
-    fun update(
-        shape: Shape,
-        contentColor: Color,
-        border: BorderStroke?,
-        interactionSource: InteractionSource?,
-    ) {
+    fun update(shape: Shape, border: BorderStroke?, interactionSource: InteractionSource?) {
         if (this.shape != shape) {
             this.shape = shape
             invalidateDraw()
         }
-        this.contentColor = contentColor
         if (this.border != border) {
             this.border = border
             invalidateDraw()
@@ -510,8 +459,6 @@ private class SurfaceNode(
         _focusedHighlightRotationProgress = null
         pressedOverlayAlpha = null
     }
-
-    override val traverseKey: String = SurfaceNodeTraverseKey
 }
 
 /** Default border width for a [surface]. */
@@ -602,5 +549,3 @@ half4 main(float2 fragCoord) {
     return color;
 }
 """
-
-private const val SurfaceNodeTraverseKey = "androidx.xr.glimmer.SurfaceNode"

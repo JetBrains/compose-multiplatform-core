@@ -254,6 +254,10 @@ class SessionManagerImplTest {
                 override suspend fun processEvent(context: Context, event: Any) {
                     TODO("Not yet implemented")
                 }
+
+                override suspend fun recreateWithEvents(events: List<Any>): Session {
+                    TODO("Not yet implemented")
+                }
             }
         }
     }

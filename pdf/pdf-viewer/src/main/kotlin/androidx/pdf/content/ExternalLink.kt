@@ -17,7 +17,6 @@
 package androidx.pdf.content
 
 import android.net.Uri
-import androidx.annotation.RestrictTo
 
 /**
  * Represents an external link on a page of the PDF document. External links typically point to web
@@ -26,4 +25,4 @@ import androidx.annotation.RestrictTo
  * @param uri The [Uri] extracted from the PDF document, representing the destination of the
  *   external link.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY) public class ExternalLink(public val uri: Uri)
+public class ExternalLink(public val uri: Uri)

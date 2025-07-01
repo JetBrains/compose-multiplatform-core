@@ -32,6 +32,7 @@ class AppFunctionMetadataTest {
             AppFunctionResponseMetadata(
                 valueType = AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
             )
+        val description = "Test description"
 
         val metadata1 =
             AppFunctionMetadata(
@@ -41,6 +42,7 @@ class AppFunctionMetadataTest {
                 schema = schema,
                 parameters = parameters,
                 response = response,
+                description = description,
             )
         val metadata2 =
             AppFunctionMetadata(
@@ -50,6 +52,7 @@ class AppFunctionMetadataTest {
                 schema = schema,
                 parameters = parameters,
                 response = response,
+                description = description,
             )
         val metadata3 =
             AppFunctionMetadata(
@@ -59,6 +62,7 @@ class AppFunctionMetadataTest {
                 schema = schema,
                 parameters = parameters,
                 response = response,
+                description = description,
             )
 
         assertThat(metadata1).isEqualTo(metadata2)
@@ -98,6 +102,7 @@ class AppFunctionMetadataTest {
             AppFunctionComponentsMetadata(
                 mapOf("dataType1" to primitiveType1, "dataType2" to primitiveType2)
             )
+        val description = "Test description"
         val appFunctionMetadata =
             CompileTimeAppFunctionMetadata(
                 id = id,
@@ -106,6 +111,7 @@ class AppFunctionMetadataTest {
                 parameters = parameters,
                 response = response,
                 components = components,
+                description = description,
             )
 
         val actualAppFunctionMetadataDocument = appFunctionMetadata.toAppFunctionMetadataDocument()
@@ -119,6 +125,7 @@ class AppFunctionMetadataTest {
                 schemaVersion = schemaMetadata.version,
                 parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
                 response = response.toAppFunctionResponseMetadataDocument(),
+                description = description,
             )
         assertThat(actualAppFunctionMetadataDocument).isEqualTo(expectedAppFunctionMetadataDocument)
     }

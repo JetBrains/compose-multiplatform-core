@@ -41,7 +41,7 @@ import java.util.UUID
  * killed.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class TestScheduler(
+public class TestScheduler(
     private val workDatabase: WorkDatabase,
     private val launcher: WorkLauncher,
     private val clock: Clock,
@@ -53,7 +53,7 @@ class TestScheduler(
     private val startStopTokens = StartStopTokens.create()
     private val delayedWorkTracker = DelayedWorkTracker(this, runnableScheduler, clock)
 
-    override fun hasLimitedSchedulingSlots() = true
+    override fun hasLimitedSchedulingSlots(): Boolean = true
 
     override fun schedule(vararg workSpecs: WorkSpec) {
         if (workSpecs.isEmpty()) {

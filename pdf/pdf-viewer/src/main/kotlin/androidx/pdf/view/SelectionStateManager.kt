@@ -26,6 +26,7 @@ import android.view.MotionEvent
 import androidx.annotation.VisibleForTesting
 import androidx.core.util.forEach
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfPoint
 import androidx.pdf.content.PageSelection
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
@@ -138,21 +139,20 @@ internal class SelectionStateManager(
         val touchTargetContentSize = handleTouchTargetSizePx / currentZoom
 
         if (location.pageNum == start.pageNum) {
-            val startPoint = start.pagePoint
             // Touch target is below and behind the start position, like the start handle
             val startTarget =
                 RectF(
-                    startPoint.x - touchTargetContentSize,
-                    startPoint.y,
-                    startPoint.x,
-                    startPoint.y + touchTargetContentSize,
+                    start.x - touchTargetContentSize,
+                    start.y,
+                    start.x,
+                    start.y + touchTargetContentSize,
                 )
-            if (startTarget.contains(location.pagePoint.x, location.pagePoint.y)) {
+            if (startTarget.contains(location.x, location.y)) {
                 draggingState =
                     DraggingState(
                         currentSelection.endBoundary,
                         currentSelection.startBoundary,
-                        location.pagePoint,
+                        PointF(location.x, location.y),
                     )
                 // Play haptic feedback when the user starts dragging the handles
                 _selectionUiSignalBus.tryEmit(
@@ -162,21 +162,15 @@ internal class SelectionStateManager(
             }
         }
         if (location.pageNum == end.pageNum) {
-            val endPoint = end.pagePoint
             // Touch target is below and ahead of the end position, like the end handle
             val endTarget =
-                RectF(
-                    endPoint.x,
-                    endPoint.y,
-                    endPoint.x + touchTargetContentSize,
-                    endPoint.y + touchTargetContentSize,
-                )
-            if (endTarget.contains(location.pagePoint.x, location.pagePoint.y)) {
+                RectF(end.x, end.y, end.x + touchTargetContentSize, end.y + touchTargetContentSize)
+            if (endTarget.contains(location.x, location.y)) {
                 draggingState =
                     DraggingState(
                         currentSelection.startBoundary,
                         currentSelection.endBoundary,
-                        location.pagePoint,
+                        PointF(location.x, location.y),
                     )
                 // Play haptic feedback when the user starts dragging the handles
                 _selectionUiSignalBus.tryEmit(
@@ -199,12 +193,12 @@ internal class SelectionStateManager(
             // See b/385291020
             return draggingState != null
         }
-        val dx = location.pagePoint.x - prevDraggingState.downPoint.x
-        val dy = location.pagePoint.y - prevDraggingState.downPoint.y
+        val dx = location.x - prevDraggingState.downPoint.x
+        val dy = location.y - prevDraggingState.downPoint.y
         val newEndPoint =
             if (location.pageNum == prevDraggingState.dragging.location.pageNum)
                 prevDraggingState.dragging.location.translateBy(dx, dy)
-            else PdfPoint(location.pageNum, PointF(location.pagePoint.x, location.pagePoint.y))
+            else PdfPoint(location.pageNum, PointF(location.x, location.y))
 
         updateRangeSelectionAsync(
             fixedPoint = prevDraggingState.fixed.location,
@@ -231,7 +225,7 @@ internal class SelectionStateManager(
     }
 
     private fun PdfPoint.translateBy(dx: Float, dy: Float): PdfPoint {
-        return PdfPoint(this.pageNum, PointF(this.pagePoint.x + dx, this.pagePoint.y + dy))
+        return PdfPoint(this.pageNum, PointF(this.x + dx, this.y + dy))
     }
 
     private fun updateAllSelectionAsync(pageNum: Int) {
@@ -287,7 +281,7 @@ internal class SelectionStateManager(
             // Find selection bounds of the page where dragged handles starts
             pdfDocument.getSelectionBounds(
                 draggedPoint.pageNum,
-                draggedPoint.pagePoint,
+                PointF(draggedPoint.x, draggedPoint.y),
                 PointF(newPageSize.x.toFloat(), newPageSize.y.toFloat()),
             ),
 
@@ -310,7 +304,7 @@ internal class SelectionStateManager(
             pdfDocument.getSelectionBounds(
                 draggedPoint.pageNum,
                 PointF(0f, 0f),
-                draggedPoint.pagePoint,
+                PointF(draggedPoint.x, draggedPoint.y),
             ),
 
             // Find selection bounds of the page where dragged handle starts
@@ -327,7 +321,7 @@ internal class SelectionStateManager(
             pdfDocument.getSelectionBounds(
                 prevEnd.pageNum,
                 PointF(0f, 0f),
-                PointF(prevEnd.pagePoint.x, prevEnd.pagePoint.y),
+                PointF(prevEnd.x, prevEnd.y),
             )
         } else if (prevStart.pageNum > draggedPoint.pageNum) {
             pdfDocument.getSelectAllSelectionBounds(prevStart.pageNum)
@@ -345,7 +339,7 @@ internal class SelectionStateManager(
             val prevPageSize = pageMetadataLoader?.getPageSize(prevEnd.pageNum) ?: Point(0, 0)
             pdfDocument.getSelectionBounds(
                 prevEnd.pageNum,
-                PointF(prevStart.pagePoint.x, prevStart.pagePoint.y),
+                PointF(prevStart.x, prevStart.y),
                 PointF(prevPageSize.x.toFloat(), prevPageSize.y.toFloat()),
             )
         } else if (prevEnd.pageNum < draggedPoint.pageNum) {
@@ -374,8 +368,8 @@ internal class SelectionStateManager(
             listOf(
                 pdfDocument.getSelectionBounds(
                     endPoint.pageNum,
-                    startPoint.pagePoint,
-                    endPoint.pagePoint,
+                    PointF(startPoint.x, startPoint.y),
+                    PointF(endPoint.x, endPoint.y),
                 )
             )
         }

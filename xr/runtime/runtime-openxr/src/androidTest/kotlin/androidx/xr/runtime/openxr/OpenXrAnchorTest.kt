@@ -16,7 +16,7 @@
 
 package androidx.xr.runtime.openxr
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -47,11 +47,11 @@ class OpenXrAnchorTest {
         }
     }
 
-    @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    lateinit private var openXrManager: OpenXrManager
-    lateinit private var xrResources: XrResources
-    lateinit private var underTest: OpenXrAnchor
+    private lateinit var openXrManager: OpenXrManager
+    private lateinit var xrResources: XrResources
+    private lateinit var underTest: OpenXrAnchor
 
     @Before
     fun setUp() {

@@ -33,6 +33,9 @@ import androidx.xr.runtime.SessionCreatePermissionsNotGranted
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
+import androidx.xr.runtime.manifest.HAND_TRACKING
+import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
+import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE
 
 /**
  * Observer class to manage the lifecycle of the JXR Runtime Session based on the lifecycle owner
@@ -62,7 +65,7 @@ class SessionLifecycleHelper(
                 if (!allPermissionsGranted) {
                     Toast.makeText(
                             activity,
-                            "Required permissions were not granted, closing activity. ",
+                            "Required permissions were not granted, closing activity.",
                             Toast.LENGTH_LONG,
                         )
                         .show()
@@ -73,13 +76,29 @@ class SessionLifecycleHelper(
             }
     }
 
+    private fun getRequiredPermissions(config: Config): List<String> {
+        val permissions = mutableListOf<String>()
+        if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
+            permissions.add(SCENE_UNDERSTANDING_COARSE)
+        }
+        if (config.handTracking != Config.HandTrackingMode.DISABLED) {
+            permissions.add(HAND_TRACKING)
+        }
+        if (config.depthEstimation != Config.DepthEstimationMode.DISABLED) {
+            permissions.add(SCENE_UNDERSTANDING_FINE)
+        }
+        return permissions
+    }
+
     internal fun tryCreateSession() {
         when (val result = Session.create(activity)) {
             is SessionCreateSuccess -> {
                 session = result.session
                 when (val configResult = session.configure(config)) {
                     is SessionConfigurePermissionsNotGranted -> {
-                        requestPermissionLauncher.launch(configResult.permissions.toTypedArray())
+                        requestPermissionLauncher.launch(
+                            getRequiredPermissions(config).toTypedArray()
+                        )
                     }
                     is SessionConfigureConfigurationNotSupported -> {
                         showErrorMessage("Session configuration not supported.")

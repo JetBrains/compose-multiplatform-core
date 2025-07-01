@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.util.fastForEach
 import androidx.glance.EmittableWithChildren
 import androidx.glance.GlanceComposable
 import androidx.glance.LocalContext
@@ -73,8 +74,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public open class AppWidgetSession(
-    private val widget: GlanceAppWidget,
-    private val id: AppWidgetId,
+    internal val widget: GlanceAppWidget,
+    internal val id: AppWidgetId,
     initialOptions: Bundle? = null,
     private val configManager: ConfigManager = GlanceState,
     private val lambdaReceiver: ComponentName? = null,
@@ -101,7 +102,7 @@ public open class AppWidgetSession(
     }
 
     private var glanceState by mutableStateOf(initialGlanceState, neverEqualPolicy())
-    private var options by mutableStateOf(initialOptions, neverEqualPolicy())
+    @VisibleForTesting internal var options by mutableStateOf(initialOptions, neverEqualPolicy())
     private var lambdas = mapOf<String, List<LambdaAction>>()
     private val parentJob = Job()
 
@@ -252,6 +253,19 @@ public open class AppWidgetSession(
         parentJob.cancel()
     }
 
+    override suspend fun recreateWithEvents(events: List<Any>): AppWidgetSession {
+        // We can skip the UpdateGlanceState events because the new session will pull the state
+        // when it starts. We can also skip WaitForReady because any waiters will be cancelled
+        // when this session is closed. We will check for any UpdateAppWidgetOptions and pass
+        // them to the new session as initial options.
+        val eventsToResend = events.filterIsInstance<RunLambda>()
+        val initialOptions =
+            events.filterIsInstance<UpdateAppWidgetOptions>().lastOrNull()?.newOptions
+        return AppWidgetSession(widget, id, initialOptions).also { newSession ->
+            eventsToResend.fastForEach { newSession.sendEvent(it) }
+        }
+    }
+
     public suspend fun updateGlance() {
         sendEvent(UpdateGlanceState)
     }
@@ -296,7 +310,13 @@ public open class AppWidgetSession(
 
     @VisibleForTesting internal class UpdateAppWidgetOptions(val newOptions: Bundle)
 
-    @VisibleForTesting internal class RunLambda(val key: String)
-
     @VisibleForTesting internal class WaitForReady(val job: CompletableJob)
+
+    @VisibleForTesting
+    internal class RunLambda(val key: String) {
+        // Add equals to allow testing structural equality in tests.
+        override fun equals(other: Any?): Boolean {
+            return super.equals(other) || other is RunLambda && other.key == key
+        }
+    }
 }

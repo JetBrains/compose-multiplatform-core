@@ -52,6 +52,7 @@ import static androidx.camera.core.impl.ImageOutputConfig.OPTION_CUSTOM_ORDERED_
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_RESOLUTION_SELECTOR;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_HIGH_RESOLUTION_DISABLED;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_STREAM_USE_CASE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_ZSL_DISABLED;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 import static androidx.camera.core.impl.utils.TransformUtils.is90or270;
@@ -116,6 +117,7 @@ import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.CameraOrientationUtil;
@@ -453,6 +455,10 @@ public final class ImageCapture extends UseCase {
     @Override
     protected @NonNull UseCaseConfig<?> onMergeConfig(@NonNull CameraInfoInternal cameraInfo,
             UseCaseConfig.@NonNull Builder<?, ?, ?> builder) {
+        // Apply config like JPEG_R output format first so that configs like input format, dynamic
+        // range etc. can be set correctly later
+        applyFeatureGroupToConfig(builder);
+
         if (cameraInfo.getCameraQuirks().contains(SoftwareJpegEncodingPreferredQuirk.class)) {
             // Request software JPEG encoder if quirk exists on this device, and the software JPEG
             // option has not already been explicitly set.
@@ -511,8 +517,6 @@ public final class ImageCapture extends UseCase {
             }
         }
 
-        applyFeatureGroupToConfig(builder);
-
         return builder.getUseCaseConfig();
     }
 
@@ -548,12 +552,6 @@ public final class ImageCapture extends UseCase {
                 }
             }
 
-            int inputFormat = ImageFormat.JPEG;
-            if (imageCaptureOutputFormat == ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR) {
-                inputFormat = ImageFormat.JPEG_R;
-            }
-
-            builder.getMutableConfig().insertOption(OPTION_INPUT_FORMAT, inputFormat);
             builder.getMutableConfig().insertOption(OPTION_OUTPUT_FORMAT, imageCaptureOutputFormat);
         }
     }
@@ -2093,6 +2091,7 @@ public final class ImageCapture extends UseCase {
     public static final class Defaults
             implements ConfigProvider<ImageCaptureConfig> {
         private static final int DEFAULT_SURFACE_OCCUPANCY_PRIORITY = 4;
+        private static final StreamUseCase DEFAULT_STREAM_USE_CASE = StreamUseCase.STILL_CAPTURE;
         private static final int DEFAULT_ASPECT_RATIO = AspectRatio.RATIO_4_3;
         private static final int DEFAULT_OUTPUT_FORMAT = OUTPUT_FORMAT_JPEG;
 
@@ -2109,6 +2108,7 @@ public final class ImageCapture extends UseCase {
         static {
             Builder builder = new Builder()
                     .setSurfaceOccupancyPriority(DEFAULT_SURFACE_OCCUPANCY_PRIORITY)
+                    .setStreamUseCase(DEFAULT_STREAM_USE_CASE)
                     .setTargetAspectRatio(DEFAULT_ASPECT_RATIO)
                     .setResolutionSelector(DEFAULT_RESOLUTION_SELECTOR)
                     .setOutputFormat(DEFAULT_OUTPUT_FORMAT)
@@ -3095,6 +3095,13 @@ public final class ImageCapture extends UseCase {
         public @NonNull Builder setCaptureType(
                 UseCaseConfigFactory.@NonNull CaptureType captureType) {
             getMutableConfig().insertOption(OPTION_CAPTURE_TYPE, captureType);
+            return this;
+        }
+
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        @Override
+        public @NonNull Builder setStreamUseCase(@NonNull StreamUseCase streamUseCase) {
+            getMutableConfig().insertOption(OPTION_STREAM_USE_CASE, streamUseCase);
             return this;
         }
 

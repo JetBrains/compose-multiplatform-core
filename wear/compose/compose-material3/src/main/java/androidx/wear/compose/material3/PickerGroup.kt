@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -23,6 +24,7 @@ import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -197,6 +199,7 @@ public class PickerGroupScope {
 /*
  * A row that horizontally aligns the center of the first child that has
  * Modifier.autoCenteringTarget() with the center of this row.
+ * The change of centered child is animated.
  * If no child has that modifier, the whole row is horizontally centered.
  * Vertically, each child is centered.
  */
@@ -206,6 +209,14 @@ private fun AutoCenteringRow(
     propagateMinConstraints: Boolean,
     content: @Composable () -> Unit,
 ) {
+    var targetCenteringOffset by remember { mutableFloatStateOf(0f) }
+
+    val animatedCenteringOffset by
+        animateFloatAsState(
+            targetValue = targetCenteringOffset,
+            animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        )
+
     Layout(modifier = modifier, content = content) { measurables, parentConstraints ->
         // Reset the min width and height of the constraints used to measure child composables
         // if min constraints are not supposed to propagated.
@@ -215,13 +226,16 @@ private fun AutoCenteringRow(
             } else {
                 parentConstraints.copyMaxDimensions()
             }
+
         val placeables = measurables.fastMap { it.measure(constraints) }
-        val centeringOffset = computeCenteringOffset(placeables)
+        targetCenteringOffset = computeCenteringOffset(placeables).toFloat()
+
         val rowWidth =
             if (constraints.hasBoundedWidth) constraints.maxWidth else constraints.minWidth
         val rowHeight = calculateHeight(constraints, placeables)
+
         layout(width = rowWidth, height = rowHeight) {
-            var x = rowWidth / 2f - centeringOffset
+            var x = rowWidth / 2f - animatedCenteringOffset
             placeables.fastForEach {
                 it.placeRelative(x.roundToInt(), ((rowHeight - it.height) / 2f).roundToInt())
                 x += it.width

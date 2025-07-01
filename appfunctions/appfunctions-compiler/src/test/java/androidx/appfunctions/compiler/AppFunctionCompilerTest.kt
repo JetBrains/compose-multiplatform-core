@@ -653,6 +653,21 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testFakeFunction_freeForm_detailedKdocAsDescription_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FakeFreeFormFunctionWithDetailedKdoc.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "fake_freeForm_with_detailed_kdoc_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
     fun testFakeAllPrimitiveParams_genIndexXmlFile_success() {
         val report =
             compilationTestHelper.compileAll(

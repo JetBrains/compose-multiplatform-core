@@ -22,7 +22,6 @@ import androidx.test.shell.Shell
 import androidx.test.shell.internal.TAG
 import androidx.test.shell.internal.waitFor
 import java.io.File
-import java.util.concurrent.TimeoutException
 import kotlin.math.max
 
 /** Allows running the screen record android utility to record the screen. */
@@ -56,13 +55,13 @@ public class RecorderCommands internal constructor(private val shell: Shell) {
                 .let { "screenrecord ${it.joinToString(" ")} ${outputFile.absolutePath}" }
 
         with(shell.command("echo pid:$$ ; exec $cmd")) {
-            val processPid = stdOutStream {
-                bufferedReader()
+            val processPid =
+                stdOutStream
+                    .bufferedReader()
                     .lineSequence()
                     .first { it.startsWith("pid:") }
                     .split("pid:")[1]
                     .toInt()
-            }
 
             // Ensure recording has started
             waitFor(onError = { throwWithCommandOutput() }) {
@@ -95,26 +94,30 @@ public class Recording(
     public override fun close(): Unit = process.killPid(pid, "TERM")
 
     /**
-     * Blocks until the recording is complete. Note that if a time limit was not given this method
-     * throws an [IllegalStateException]. Also if the screen recorder process doesn't end by the
-     * given [timeoutSeconds], a [TimeoutException] is thrown.
+     * Blocks until the recording is complete or up to the [timeoutSeconds]. If a time limit was not
+     * given this method throws an [IllegalStateException].
      *
      * @param timeoutSeconds the timeout in number of seconds.
+     * @return whether the recording completed in the given [timeoutSeconds].
      */
     @JvmOverloads
-    public fun await(timeoutSeconds: Long = max(timeLimitSeconds * 2, 10)) {
+    public fun await(timeoutSeconds: Long = max(timeLimitSeconds * 2, 10)): Boolean {
         if (timeLimitSeconds == 0L) {
             throw IllegalArgumentException(
                 "Cannot await for screen record when no time limit is given."
             )
         }
+        var complete = true
         waitFor(
             onError = {
                 val cmdOutput = commandOutput.stdOutStdErrCommandOutput()
                 cmdOutput.lines().forEach { Log.e(TAG, it) }
-                throw TimeoutException(
-                    "Recorder did not end in the given timeout of $timeoutSeconds seconds.\n$cmdOutput"
+                Log.e(
+                    TAG,
+                    "Recorder did not end in the given timeout of $timeoutSeconds seconds." +
+                        "\n$cmdOutput",
                 )
+                complete = false
             },
             timeoutMs = timeoutSeconds * 1_000L,
         ) {
@@ -123,8 +126,9 @@ public class Recording(
         if (commandOutput.stdErr.isNotBlank()) {
             commandOutput.throwWithCommandOutput()
         }
+        return complete
     }
 
     /** Returns whether the recording is still running. */
-    public fun isRunning(): Boolean = process.processGrep("screenrecord").any { it.pid == pid }
+    public fun isRunning(): Boolean = process.isProcessAlive(pid = pid)
 }

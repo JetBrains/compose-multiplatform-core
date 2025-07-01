@@ -98,9 +98,8 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
         skyboxFuture.addListener(
             {
                 buttonLoadSkybox.setOnClickListener {
-                    session.scene.spatialEnvironment.setSpatialEnvironmentPreference(
+                    session.scene.spatialEnvironment.preferredSpatialEnvironment =
                         SpatialEnvironment.SpatialEnvironmentPreference(skyboxFuture.get(), null)
-                    )
                     skyboxActive = true
                     updateLaunchInFSMWithEnvVisibility(buttonLaunchInFSMWithEnv)
                     Log.i(TAG, "Loading skybox.")
@@ -112,7 +111,7 @@ class FSMAndHSMTransitionActivity : AppCompatActivity() {
         val buttonRemoveSkybox: Button = findViewById(R.id.buttonRemoveSkybox)
         buttonRemoveSkybox.setOnClickListener {
             // set env preference to null to revert to the default skybox.
-            session.scene.spatialEnvironment.setSpatialEnvironmentPreference(null)
+            session.scene.spatialEnvironment.preferredSpatialEnvironment = null
             skyboxActive = false
             updateLaunchInFSMWithEnvVisibility(buttonLaunchInFSMWithEnv)
             Log.i(TAG, "Removing skybox.")

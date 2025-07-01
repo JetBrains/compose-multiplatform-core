@@ -96,11 +96,13 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
 
             val itemsCount = itemProviderLambda().itemCount
 
+            val anchorItemKey: Any
             val anchorItemIndex: Int
             val anchorItemScrollOffset: Int
             val lastMeasuredAnchorItemHeight: Int
             val scrollToBeConsumed: Float
             Snapshot.withoutReadObservation {
+                anchorItemKey = state.anchorItemKey
                 anchorItemIndex =
                     if (itemsCount == 0) 0 else state.anchorItemIndex.coerceIn(0 until itemsCount)
                 anchorItemScrollOffset = state.anchorItemScrollOffset
@@ -117,6 +119,7 @@ internal fun rememberTransformingLazyColumnMeasurePolicy(
                             itemSpacing = verticalArrangement.spacing.roundToPx(),
                             containerConstraints = containerConstraints,
                             scrollToBeConsumed = scrollToBeConsumed,
+                            anchorItemKey = anchorItemKey,
                             anchorItemIndex = anchorItemIndex,
                             anchorItemScrollOffset = anchorItemScrollOffset,
                             lastMeasuredAnchorItemHeight = lastMeasuredAnchorItemHeight,

@@ -24,14 +24,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertContentDescriptionContains
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onChild
-import androidx.compose.ui.test.onChildAt
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
@@ -333,7 +336,6 @@ public class InlineSliderTest {
 
         rule.setContentWithTheme {
             InlineSlider(
-                modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
                 increaseIcon = { Icon(InlineSliderDefaults.Increase, "Increase") },
@@ -344,10 +346,9 @@ public class InlineSliderTest {
 
         rule.waitForIdle()
         rule
-            .onNodeWithTag(TEST_TAG, true)
-            // 0 is the index of decrease button, 1 - increase button
-            .onChildAt(0)
-            .onChild()
+            .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            // The decrease button is first, the increase button is last
+            .onFirst()
             .assertContentDescriptionContains(testContentDescription)
     }
 
@@ -357,7 +358,6 @@ public class InlineSliderTest {
 
         rule.setContentWithTheme {
             InlineSlider(
-                modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
                 increaseIcon = { Icon(InlineSliderDefaults.Increase, testContentDescription) },
@@ -368,10 +368,9 @@ public class InlineSliderTest {
 
         rule.waitForIdle()
         rule
-            .onNodeWithTag(TEST_TAG, true)
-            // 0 is the index of decrease button, 1 - increase button
-            .onChildAt(1)
-            .onChild()
+            .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            // The decrease button is first, the increase button is last
+            .onLast()
             .assertContentDescriptionContains(testContentDescription)
     }
 

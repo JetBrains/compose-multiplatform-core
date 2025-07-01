@@ -174,7 +174,7 @@ constructor(
                             controllerState != ControllerState.STOPPING &&
                             controllerState != ControllerState.STOPPED
                     ) {
-                        Log.debug { "Restarting $this..." }
+                        Log.debug { "Restarting ${this@Camera2CameraController}..." }
                         surfaceTracker.registerAllSurfaces()
                         stopLocked()
                         startLocked()

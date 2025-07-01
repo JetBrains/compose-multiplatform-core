@@ -64,7 +64,7 @@ internal fun checkContentUriTriggerWorkerLimits(
 }
 
 @VisibleForTesting
-fun tryDelegateRemoteListenableWorker(workSpec: WorkSpec): WorkSpec {
+public fun tryDelegateRemoteListenableWorker(workSpec: WorkSpec): WorkSpec {
     // Check for the arguments in the input data over checking for the workerClassName
     // directly. This is because, the workerClassName might get overridden given it could get
     // replaced by a ConstraintTrackingWorker.

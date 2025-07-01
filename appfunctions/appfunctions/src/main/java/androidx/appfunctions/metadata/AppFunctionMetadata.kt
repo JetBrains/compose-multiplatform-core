@@ -58,6 +58,8 @@ constructor(
     public val response: AppFunctionResponseMetadata,
     /** Reusable components that could be shared within the function specification. */
     public val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
+    /** A description of the AppFunction and its intended use. */
+    public val description: String = "",
 ) {
 
     override fun equals(other: Any?): Boolean {
@@ -73,12 +75,22 @@ constructor(
         if (parameters != other.parameters) return false
         if (response != other.response) return false
         if (components != other.components) return false
+        if (description != other.description) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        return Objects.hash(isEnabled, id, packageName, schema, parameters, response, components)
+        return Objects.hash(
+            isEnabled,
+            id,
+            packageName,
+            schema,
+            parameters,
+            response,
+            components,
+            description,
+        )
     }
 
     override fun toString(): String = buildString {
@@ -90,6 +102,7 @@ constructor(
         append("parameters=$parameters, ")
         append("response=$response, ")
         append("components=$components")
+        append("description=$description")
         append(")")
     }
 
@@ -102,6 +115,7 @@ constructor(
         parameters: List<AppFunctionParameterMetadata> = this.parameters,
         response: AppFunctionResponseMetadata = this.response,
         components: AppFunctionComponentsMetadata = this.components,
+        description: String = this.description,
     ): AppFunctionMetadata {
         return AppFunctionMetadata(
             id = id,
@@ -111,6 +125,7 @@ constructor(
             parameters = parameters,
             response = response,
             components = components,
+            description = description,
         )
     }
 }
@@ -146,6 +161,8 @@ public data class CompileTimeAppFunctionMetadata(
     public val response: AppFunctionResponseMetadata,
     /** Reusable components that could be shared within the function specification. */
     public val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
+    /** A description of the AppFunction and its intended use. */
+    public val description: String = "",
 ) {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -156,6 +173,7 @@ public data class CompileTimeAppFunctionMetadata(
         parameters: List<AppFunctionParameterMetadata>? = null,
         response: AppFunctionResponseMetadata? = null,
         components: AppFunctionComponentsMetadata? = null,
+        description: String? = null,
     ): CompileTimeAppFunctionMetadata {
         return CompileTimeAppFunctionMetadata(
             id = id ?: this.id,
@@ -164,6 +182,7 @@ public data class CompileTimeAppFunctionMetadata(
             parameters = parameters ?: this.parameters,
             response = response ?: this.response,
             components = components ?: this.components,
+            description = description ?: this.description,
         )
     }
 
@@ -182,6 +201,7 @@ public data class CompileTimeAppFunctionMetadata(
             schemaVersion = schema?.version,
             parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
             response = response.toAppFunctionResponseMetadataDocument(),
+            description = description,
         )
     }
 }
@@ -212,4 +232,6 @@ public data class AppFunctionMetadataDocument(
     @Document.DocumentProperty public val parameters: List<AppFunctionParameterMetadataDocument>?,
     /** The response of the AppFunction. */
     @Document.DocumentProperty public val response: AppFunctionResponseMetadataDocument?,
+    /** A description of the AppFunction and its intended use. */
+    @Document.StringProperty public val description: String?,
 )

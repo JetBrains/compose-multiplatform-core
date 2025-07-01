@@ -61,8 +61,6 @@ internal data class TransformingLazyColumnMeasuredItem(
     override val contentType: Any?,
 ) : TransformingLazyColumnVisibleItemInfo, LazyLayoutMeasuredItem {
 
-    internal val initialAnimation = animationProvider()
-
     // This is the value of the ScrollProgress, either the one set at the end of the measure pass
     // if there are no animations configured or the one computed by the animation, updated each
     // frame.
@@ -72,7 +70,11 @@ internal data class TransformingLazyColumnMeasuredItem(
             if (isInMeasure) {
                 measureScrollProgress
             } else {
-                initialAnimation?.animatedScrollProgress.let {
+                // We call animationProvider() directly to get the most current animation instance.
+                // - During an active animation, this returns a stable instance.
+                // - After a scroll, this returns the newly re-created instance, which is
+                //   essential for subsequent animations to work correctly.
+                animationProvider()?.animatedScrollProgress.let {
                     if (it == TransformingLazyColumnItemScrollProgress.Unspecified)
                         measureScrollProgress
                     else it

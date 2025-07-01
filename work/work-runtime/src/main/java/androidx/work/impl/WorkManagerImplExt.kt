@@ -30,7 +30,7 @@ import kotlinx.coroutines.runBlocking
 
 @JvmName("createWorkManager")
 @JvmOverloads
-fun WorkManagerImpl(
+public fun WorkManagerImpl(
     context: Context,
     configuration: Configuration,
     workTaskExecutor: TaskExecutor = WorkManagerTaskExecutor(configuration.taskExecutor),
@@ -67,11 +67,11 @@ fun WorkManagerImpl(
 }
 
 @JvmName("createTestWorkManager")
-fun TestWorkManagerImpl(
+public fun TestWorkManagerImpl(
     context: Context,
     configuration: Configuration,
     workTaskExecutor: TaskExecutor,
-) =
+): WorkManagerImpl =
     WorkManagerImpl(
         context,
         configuration,
@@ -79,7 +79,7 @@ fun TestWorkManagerImpl(
         WorkDatabase.create(context, workTaskExecutor.serialTaskExecutor, configuration.clock, true),
     )
 
-typealias SchedulersCreator =
+public typealias SchedulersCreator =
     (
         context: Context,
         configuration: Configuration,
@@ -89,7 +89,7 @@ typealias SchedulersCreator =
         processor: Processor,
     ) -> List<Scheduler>
 
-fun schedulers(vararg schedulers: Scheduler): SchedulersCreator = { _, _, _, _, _, _ ->
+public fun schedulers(vararg schedulers: Scheduler): SchedulersCreator = { _, _, _, _, _, _ ->
     schedulers.toList()
 }
 
@@ -117,7 +117,7 @@ private fun createSchedulers(
 internal fun WorkManagerScope(taskExecutor: TaskExecutor) =
     CoroutineScope(taskExecutor.taskCoroutineDispatcher)
 
-fun WorkManagerImpl.close() {
+public fun WorkManagerImpl.close() {
     runBlocking { workManagerScope.coroutineContext[Job]!!.cancelAndJoin() }
     workDatabase.close()
 }

@@ -16,8 +16,8 @@
 
 import android.graphics.RectF
 import android.util.SparseArray
+import androidx.pdf.PdfRect
 import androidx.pdf.view.DocumentSelection
-import androidx.pdf.view.PdfRect
 import androidx.pdf.view.Selection
 import androidx.pdf.view.TextSelection
 import org.junit.Assert.assertEquals

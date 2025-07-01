@@ -63,7 +63,6 @@ class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
             CameraStateAdapter(),
             cameraGraph,
             streamConfigMap,
-            sessionProcessorManager = null,
         )
 
     override fun config(config: UseCaseCameraConfig): UseCaseCameraComponent.Builder {

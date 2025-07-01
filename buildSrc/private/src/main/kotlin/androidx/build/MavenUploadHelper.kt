@@ -17,7 +17,7 @@
 package androidx.build
 
 import androidx.build.buildInfo.CreateLibraryBuildInfoFileTask
-import androidx.build.sources.sourcesConfigurationName
+import androidx.build.sources.PublishingVariant
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
@@ -29,15 +29,11 @@ import com.google.gson.stream.JsonWriter
 import java.io.File
 import java.io.StringWriter
 import org.dom4j.Element
-import org.dom4j.Namespace
-import org.dom4j.QName
 import org.dom4j.io.XMLWriter
-import org.dom4j.tree.DefaultText
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.XmlProvider
 import org.gradle.api.component.SoftwareComponent
-import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
@@ -52,12 +48,10 @@ import org.gradle.kotlin.dsl.findByType
 import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 
 fun Project.configureMavenArtifactUpload(
     androidXExtension: AndroidXExtension,
     androidXKmpExtension: AndroidXMultiplatformExtension,
-    componentFactory: SoftwareComponentFactory,
     afterConfigure: () -> Unit,
 ) {
     apply(mapOf("plugin" to "maven-publish"))
@@ -68,7 +62,6 @@ fun Project.configureMavenArtifactUpload(
                 androidXExtension,
                 androidXKmpExtension,
                 component,
-                componentFactory,
                 afterConfigure,
             )
             Release.register(this, androidXExtension)
@@ -127,7 +120,6 @@ private fun Project.configureComponentPublishing(
     extension: AndroidXExtension,
     androidxKmpExtension: AndroidXMultiplatformExtension,
     component: SoftwareComponent,
-    componentFactory: SoftwareComponentFactory,
     afterConfigure: () -> Unit,
 ) {
     val androidxGroup = validateCoordinatesAndGetGroup(extension)
@@ -176,7 +168,7 @@ private fun Project.configureComponentPublishing(
                 afterConfigure()
             } else {
                 if (project.isMultiplatformPublicationEnabled()) {
-                    configureMultiplatformPublication(componentFactory, afterConfigure)
+                    afterConfigure()
                 } else {
                     it.create<MavenPublication>("maven") { from(component) }
                     tasks.getByName("publishMavenPublicationToMavenRepository").doFirst {
@@ -282,10 +274,6 @@ private fun Project.configureComponentPublishing(
     }
 }
 
-private val ARTIFACT_ID = QName("artifactId", Namespace("", "http://maven.apache.org/POM/4.0.0"))
-
-private fun Element.textElements() = content().filterIsInstance<DefaultText>()
-
 /** Looks for a dependencies XML element within [pom] and sorts its contents. */
 fun sortPomDependencies(pom: String): String {
     // Workaround for using the default namespace in dom4j.
@@ -297,16 +285,6 @@ fun sortPomDependencies(pom: String): String {
         element ->
         val deps = element.elements()
         val sortedDeps = deps.toSortedSet(compareBy { it.stringValue }).toList()
-        sortedDeps.map { // b/356612738 https://github.com/gradle/gradle/issues/30112
-            val itsArtifactId = it.element(ARTIFACT_ID)
-            if (itsArtifactId.stringValue.endsWith("-debug")) {
-                itsArtifactId.textElements().last().text =
-                    itsArtifactId.textElements().last().text.removeSuffix("-debug")
-            } else if (itsArtifactId.stringValue.endsWith("-release")) {
-                itsArtifactId.textElements().last().text =
-                    itsArtifactId.textElements().last().text.removeSuffix("-release")
-            }
-        }
         // Content contains formatting nodes, so to avoid modifying those we replace
         // each element with the sorted element from its respective index. Note this
         // will not move adjacent elements, so any comments would remain in their
@@ -363,26 +341,15 @@ fun verifyGradleMetadata(metadata: String) {
         variantElement.asJsonObject
             .get("name")
             .asString
-            .contains(other = sourcesConfigurationName, ignoreCase = true)
-    } ?: throw Exception("The $sourcesConfigurationName variant must exist in the module file.")
+            .contains(other = PublishingVariant.SourcesElements.name, ignoreCase = true)
+    }
+        ?: throw Exception(
+            "The ${PublishingVariant.SourcesElements.name} variant must exist in the module file."
+        )
 }
 
 private fun Project.isMultiplatformPublicationEnabled(): Boolean {
     return extensions.findByType<KotlinMultiplatformExtension>() != null
-}
-
-private fun Project.configureMultiplatformPublication(
-    componentFactory: SoftwareComponentFactory,
-    afterConfigure: () -> Unit,
-) {
-    val multiplatformExtension = extensions.findByType<KotlinMultiplatformExtension>()!!
-
-    multiplatformExtension.targets.configureEach { target ->
-        if (target is KotlinAndroidTarget) {
-            target.publishLibraryVariants(Release.DEFAULT_PUBLISH_CONFIG)
-        }
-    }
-    afterConfigure()
 }
 
 private fun Project.isValidReleaseComponent(component: SoftwareComponent) =

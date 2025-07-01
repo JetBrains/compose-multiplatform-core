@@ -17,10 +17,15 @@
 package androidx.xr.runtime.openxr
 
 import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.annotation.RestrictTo
+import androidx.core.content.ContextCompat
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.PermissionNotGrantedException
+import androidx.xr.runtime.manifest.HAND_TRACKING
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
@@ -53,6 +58,7 @@ internal constructor(
     override var config: Config =
         Config(
             Config.PlaneTrackingMode.DISABLED,
+            augmentedObjectCategories = listOf(),
             Config.HandTrackingMode.DISABLED,
             Config.DeviceTrackingMode.DISABLED,
             Config.DepthEstimationMode.DISABLED,
@@ -61,26 +67,58 @@ internal constructor(
         private set
 
     override fun configure(config: Config) {
-        when (
-            // TODO(b/414648065): Reorder the parameters in nativeConfigureSession.
-            nativeConfigureSession(
-                planeTracking = config.planeTracking.mode,
-                handTracking = config.handTracking.mode,
-                deviceTracking = config.deviceTracking.mode,
-                depthEstimation = config.depthEstimation.mode,
-                anchorPersistence = config.anchorPersistence.mode,
+        if (config.depthEstimation == Config.DepthEstimationMode.SMOOTH_AND_RAW) {
+            throw ConfigurationNotSupportedException(
+                "Failed to configure session, runtime does not support raw and smooth depth simultaneously."
             )
+        }
+
+        // TODO(b/422808099): OpenXR does not properly return
+        // XR_ERROR_PERMISSION_INSUFFICIENT when the HAND_TRACKING permission is not
+        // granted, so we manually check it here.
+        if (
+            config.handTracking != Config.HandTrackingMode.DISABLED &&
+                ContextCompat.checkSelfPermission(activity, HAND_TRACKING) !=
+                    PackageManager.PERMISSION_GRANTED
         ) {
-            -2L ->
-                throw RuntimeException(
-                    "There was an unknown runtime error configuring the session."
-                ) // XR_ERROR_RUNTIME_FAILURE
-            -12L ->
-                throw IllegalStateException(
-                    "One or more objects are null. Has the OpenXrManager been created?"
-                ) // XR_ERROR_HANDLE_INVALID
-            -1000710000L ->
-                throw PermissionNotGrantedException() // XR_ERROR_PERMISSION_INSUFFICIENT
+            throw PermissionNotGrantedException()
+        }
+
+        var objectLabels: MutableList<Long> = mutableListOf()
+        var objectMode: Int = 0
+
+        for (category in config.augmentedObjectCategories) {
+            objectLabels.add(nativeValueFromCategory(category))
+            // Set objectMode to 1 to indicate that object tracking is enabled.
+            objectMode = 1
+        }
+
+        // TODO(b/425697141): Remove this when instrumentation tests support HEAD_TRACKING
+        // permission so we can call native functions.
+        if (!Build.FINGERPRINT.contains("robolectric")) {
+            when (
+                nativeConfigureSession(
+                    planeTracking = config.planeTracking.mode,
+                    handTracking = config.handTracking.mode,
+                    deviceTracking = config.deviceTracking.mode,
+                    depthEstimation = config.depthEstimation.mode,
+                    anchorPersistence = config.anchorPersistence.mode,
+                    objectLabels = objectLabels.toLongArray(),
+                    objectTracking = objectMode,
+                )
+            ) {
+                -2L ->
+                    throw RuntimeException(
+                        "There was an unknown runtime error configuring the session."
+                    )
+                // XR_ERROR_RUNTIME_FAILURE
+                -12L ->
+                    throw IllegalStateException(
+                        "One or more objects are null. Has the OpenXrManager been created?"
+                    ) // XR_ERROR_HANDLE_INVALID
+                -1000710000L ->
+                    throw PermissionNotGrantedException() // XR_ERROR_PERMISSION_INSUFFICIENT
+            }
         }
 
         if (config.handTracking != this.config.handTracking) {
@@ -107,6 +145,16 @@ internal constructor(
             }
         }
 
+        if (config.depthEstimation != this.config.depthEstimation) {
+            perceptionManager.xrResources.leftDepthMap.updateDepthEstimationMode(
+                config.depthEstimation
+            )
+            perceptionManager.xrResources.rightDepthMap.updateDepthEstimationMode(
+                config.depthEstimation
+            )
+            perceptionManager.depthEstimationMode = config.depthEstimation
+        }
+
         this.config = config
     }
 
@@ -126,6 +174,10 @@ internal constructor(
 
         if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
             perceptionManager.updatePlanes(xrTime)
+        }
+
+        if (!config.augmentedObjectCategories.isEmpty()) {
+            perceptionManager.updateAugmentedObjects(xrTime)
         }
 
         perceptionManager.update(xrTime)
@@ -163,5 +215,7 @@ internal constructor(
         depthEstimation: Int,
         anchorPersistence: Int,
         faceTracking: Int = 0,
+        objectTracking: Int,
+        objectLabels: LongArray,
     ): Long
 }

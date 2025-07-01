@@ -51,6 +51,7 @@ import androidx.wear.protolayout.material3.PrimaryLayoutDefaults.percentageWidth
 import androidx.wear.protolayout.material3.Versions.hasExpandWithWeightSupport
 import androidx.wear.protolayout.materialcore.fontscaling.FontScaleConverterFactory
 import androidx.wear.protolayout.modifiers.LayoutModifier
+import androidx.wear.protolayout.modifiers.background
 import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.modifiers.padding
 import androidx.wear.protolayout.modifiers.semanticsRole
@@ -103,9 +104,23 @@ internal fun Float.dpToSp(fontScale: Float): Float {
 
 internal fun Int.toDp() = this.toFloat().dp
 
-/** Builds a horizontal Spacer, with width set to expand and height set to the given value. */
-internal fun horizontalSpacer(@Dimension(unit = DP) heightDp: Int): Spacer =
-    Spacer.Builder().setWidth(expand()).setHeight(heightDp.toDp()).build()
+/**
+ * Builds a horizontal Spacer, with width set to expand and height set to the given value and
+ * optional background color.
+ */
+internal fun horizontalSpacer(
+    @Dimension(unit = DP) heightDp: Int,
+    overrideColor: LayoutColor? = null,
+): Spacer =
+    Spacer.Builder()
+        .setWidth(expand())
+        .setHeight(heightDp.toDp())
+        .apply {
+            overrideColor?.let {
+                setModifiers(LayoutModifier.background(it).toProtoLayoutModifiers())
+            }
+        }
+        .build()
 
 /** Builds a vertical Spacer, with height set to expand and width set to the given value. */
 internal fun verticalSpacer(@Dimension(unit = DP) widthDp: Int): Spacer =

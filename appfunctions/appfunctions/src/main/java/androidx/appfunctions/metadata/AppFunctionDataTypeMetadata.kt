@@ -283,6 +283,46 @@ public class AppFunctionAllOfTypeMetadata(
         )
     }
 
+    /** Gets a pseudo [AppFunctionObjectTypeMetadata] by merging the [matchAll] data types. */
+    internal fun getPseudoObjectTypeMetadata(
+        componentsMetadata: AppFunctionComponentsMetadata
+    ): AppFunctionObjectTypeMetadata {
+        val allProperties = mutableMapOf<String, AppFunctionDataTypeMetadata>()
+        val allRequired = mutableSetOf<String>()
+        for (type in matchAll) {
+            when (type) {
+                is AppFunctionReferenceTypeMetadata -> {
+                    val resolvedType = componentsMetadata.dataTypes[type.referenceDataType]
+                    if (resolvedType == null) {
+                        throw IllegalStateException(
+                            "Unable to resolve the ${type.referenceDataType}"
+                        )
+                    }
+                    if (resolvedType !is AppFunctionObjectTypeMetadata) {
+                        continue
+                    }
+                    allProperties.putAll(resolvedType.properties)
+                    allRequired.addAll(resolvedType.required)
+                }
+                is AppFunctionObjectTypeMetadata -> {
+                    allProperties.putAll(type.properties)
+                    allRequired.addAll(type.required)
+                }
+                is AppFunctionAllOfTypeMetadata -> {
+                    val pseudoObjectType = type.getPseudoObjectTypeMetadata(componentsMetadata)
+                    allProperties.putAll(pseudoObjectType.properties)
+                    allRequired.addAll(pseudoObjectType.required)
+                }
+            }
+        }
+        return AppFunctionObjectTypeMetadata(
+            properties = allProperties,
+            required = allRequired.toList(),
+            qualifiedName = null,
+            isNullable = false,
+        )
+    }
+
     public companion object {
         /**
          * All Of type.

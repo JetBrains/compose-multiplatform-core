@@ -163,7 +163,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
         @SuppressLint("NewApi")
         public suspend fun createFromZip(session: Session, path: Path): ExrImage {
             require(!path.isAbsolute) {
-                "ExrImage.createFromZipAsync() expects a path relative to `assets/`, received absolute path $path."
+                "ExrImage.createFromZip() expects a path relative to `assets/`, received absolute path $path."
             }
             return createFromZip(session.platformAdapter, path.toString(), session)
         }

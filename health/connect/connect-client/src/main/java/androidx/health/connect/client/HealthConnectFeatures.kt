@@ -119,7 +119,10 @@ interface HealthConnectFeatures {
                 FEATURE_PLANNED_EXERCISE to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_13_PLATFORM_VERSION),
                 FEATURE_MINDFULNESS_SESSION to
-                    HealthConnectVersionInfo(platformVersion = SDK_EXT_15_PLATFORM_VERSION),
+                    HealthConnectVersionInfo(
+                        apkVersionCode = 194767,
+                        platformVersion = SDK_EXT_15_PLATFORM_VERSION,
+                    ),
                 FEATURE_PERSONAL_HEALTH_RECORD to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
                 FEATURE_ACTIVITY_INTENSITY to

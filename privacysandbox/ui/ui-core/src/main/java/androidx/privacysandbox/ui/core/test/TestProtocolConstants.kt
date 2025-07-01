@@ -20,6 +20,6 @@ import androidx.annotation.RestrictTo
 
 /** Constants used for testing of UI library artifacts. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-object TestProtocolConstants {
-    const val testOnlyUseRemoteAdapterKey = "testOnlyUseRemoteAdapter"
+public object TestProtocolConstants {
+    public const val testOnlyUseRemoteAdapterKey: String = "testOnlyUseRemoteAdapter"
 }

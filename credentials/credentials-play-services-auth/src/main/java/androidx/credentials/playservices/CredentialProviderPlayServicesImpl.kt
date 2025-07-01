@@ -66,6 +66,8 @@ import com.google.android.gms.auth.blockstore.restorecredential.RestoreCredentia
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.identitycredentials.ClearCredentialStateRequest as GmsClearCredentialStateRequest
+import com.google.android.gms.identitycredentials.IdentityCredentialManager
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import java.util.concurrent.Executor
 
@@ -278,9 +280,9 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                         executor.execute { callback.onError(clearException) }
                     }
                 }
-        } else {
-            Identity.getSignInClient(context)
-                .signOut()
+        } else if (isAvailableOnDevice(PRE_U_MIN_GMS_APK_VERSION)) {
+            IdentityCredentialManager.getClient(context)
+                .clearCredentialState(GmsClearCredentialStateRequest())
                 .addOnSuccessListener {
                     cancellationReviewerWithCallback(
                         cancellationSignal,
@@ -290,19 +292,12 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
                         },
                     )
                 }
-                .addOnFailureListener { e ->
-                    run {
-                        cancellationReviewerWithCallback(
-                            cancellationSignal,
-                            {
-                                Log.w(TAG, "During clear credential sign out failed with $e")
-                                executor.execute {
-                                    callback.onError(ClearCredentialUnknownException(e.message))
-                                }
-                            },
-                        )
-                    }
+                .addOnFailureListener {
+                    Log.e(TAG, "GMS Clear credential flow failed, calling fallback")
+                    runFallbackClearCredFlow(request, cancellationSignal, executor, callback)
                 }
+        } else {
+            runFallbackClearCredFlow(request, cancellationSignal, executor, callback)
         }
     }
 
@@ -316,13 +311,45 @@ class CredentialProviderPlayServicesImpl(private val context: Context) : Credent
             .invokePlayServices(request, callback, executor)
     }
 
+    private fun runFallbackClearCredFlow(
+        request: ClearCredentialStateRequest,
+        cancellationSignal: CancellationSignal?,
+        executor: Executor,
+        callback: CredentialManagerCallback<Void?, ClearCredentialException>,
+    ) {
+        Identity.getSignInClient(context)
+            .signOut()
+            .addOnSuccessListener {
+                cancellationReviewerWithCallback(
+                    cancellationSignal,
+                    {
+                        Log.i(TAG, "During clear credential, signed out successfully!")
+                        executor.execute { callback.onResult(null) }
+                    },
+                )
+            }
+            .addOnFailureListener { e ->
+                run {
+                    cancellationReviewerWithCallback(
+                        cancellationSignal,
+                        {
+                            Log.w(TAG, "During clear credential sign out failed with $e")
+                            executor.execute {
+                                callback.onError(ClearCredentialUnknownException(e.message))
+                            }
+                        },
+                    )
+                }
+            }
+    }
+
     companion object {
         private const val TAG = "PlayServicesImpl"
 
         // This points to the min APK version of GMS that contains required changes
         // to make passkeys work well
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) const val MIN_GMS_APK_VERSION = 230815045
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) const val PRE_U_MIN_GMS_APK_VERSION = 252200000
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) const val PRE_U_MIN_GMS_APK_VERSION = 252400000
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         const val MIN_GMS_APK_VERSION_RESTORE_CRED = 242200000
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

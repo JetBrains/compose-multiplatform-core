@@ -19,7 +19,10 @@ package androidx.xr.glimmer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ProvidableCompositionLocal
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.CacheDrawModifierNode
 import androidx.compose.ui.draw.paint
@@ -42,16 +45,19 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 
 /**
- * An icon component that draws [imageVector], with a default size, and applies a content color
- * tint. Icon is an opinionated component designed to be used with single-color icons so that they
- * can be tinted correctly for the component they are placed in. The content color used to tint this
- * icon is provided by [surface]. To set a custom tint color, use the Icon overload with a tint
- * parameter. For multicolored icons and icons that should not be tinted, use the overload and set
- * [Color.Unspecified] as the tint color. For generic images that should not be tinted, and should
- * not use the default icon size, use the generic [androidx.compose.foundation.Image] instead.
+ * An icon component that draws [imageVector], with a default size of [LocalIconSize], and applies a
+ * content color tint. Icon is an opinionated component designed to be used with single-color icons
+ * so that they can be tinted correctly for the component they are placed in. The recommended icon
+ * sizes can be retrieved using [GlimmerTheme.Companion.iconSizes]. A size can be set explicitly
+ * using [size], and components can use [LocalIconSize] to set the preferred size for any Icons
+ * inside the component. The content color used to tint this icon is provided by [surface]. To set a
+ * custom tint color, use the Icon overload with a tint parameter. For multicolored icons and icons
+ * that should not be tinted, use the overload and set [Color.Unspecified] as the tint color. For
+ * generic images that should not be tinted, and should not use the provided icon size, use the
+ * generic [androidx.compose.foundation.Image] instead.
  *
  * @param imageVector [ImageVector] to draw inside this icon
  * @param contentDescription text used by accessibility services to describe what this icon
@@ -59,6 +65,8 @@ import androidx.compose.ui.unit.dp
  *   and does not represent a meaningful action that a user can take. This text should be localized,
  *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
+ * @see LocalIconSize
+ * @see GlimmerTheme.Companion.iconSizes
  */
 @Composable
 public fun Icon(
@@ -74,13 +82,16 @@ public fun Icon(
 }
 
 /**
- * An icon component that draws [imageVector], with a default size, and applies a tint of [tint].
- * Icon is an opinionated component designed to be used with single-color icons so that they can be
- * tinted correctly for the component they are placed in. Use the other overload of Icon without a
- * [tint] parameter to apply the recommended content color provided by a [surface]. For multicolored
- * icons and icons that should not be tinted, set [tint] to [Color.Unspecified]. For generic images
- * that should not be tinted, and should not use the default icon size, use the generic
- * [androidx.compose.foundation.Image] instead.
+ * An icon component that draws [imageVector], with a default size of [LocalIconSize], and applies a
+ * tint of [tint]. Icon is an opinionated component designed to be used with single-color icons so
+ * that they can be tinted correctly for the component they are placed in. The recommended icon
+ * sizes can be retrieved using [GlimmerTheme.Companion.iconSizes]. A size can be set explicitly
+ * using [size], and components can use [LocalIconSize] to set the preferred size for any Icons
+ * inside the component. Use the other overload of Icon without a [tint] parameter to apply the
+ * recommended content color provided by a [surface]. For multicolored icons and icons that should
+ * not be tinted, set [tint] to [Color.Unspecified]. For generic images that should not be tinted,
+ * and should not use the provided icon size, use the generic [androidx.compose.foundation.Image]
+ * instead.
  *
  * @param imageVector [ImageVector] to draw inside this icon
  * @param tint tint to be applied to [imageVector]. If [Color.Unspecified] is provided, then no tint
@@ -90,6 +101,8 @@ public fun Icon(
  *   and does not represent a meaningful action that a user can take. This text should be localized,
  *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
+ * @see LocalIconSize
+ * @see GlimmerTheme.Companion.iconSizes
  */
 @Composable
 public fun Icon(
@@ -110,13 +123,16 @@ public fun Icon(
 }
 
 /**
- * An icon component that draws [bitmap], with a default size, and applies a content color tint.
- * Icon is an opinionated component designed to be used with single-color icons so that they can be
- * tinted correctly for the component they are placed in. The content color used to tint this icon
- * is provided by [surface]. To set a custom tint color, use the Icon overload with a tint
- * parameter. For multicolored icons and icons that should not be tinted, use the overload and set
- * [Color.Unspecified] as the tint color. For generic images that should not be tinted, and should
- * not use the default icon size, use the generic [androidx.compose.foundation.Image] instead.
+ * An icon component that draws [bitmap], with a default size of [LocalIconSize], and applies a
+ * content color tint. Icon is an opinionated component designed to be used with single-color icons
+ * so that they can be tinted correctly for the component they are placed in. The recommended icon
+ * sizes can be retrieved using [GlimmerTheme.Companion.iconSizes]. A size can be set explicitly
+ * using [size], and components can use [LocalIconSize] to set the preferred size for any Icons
+ * inside the component. The content color used to tint this icon is provided by [surface]. To set a
+ * custom tint color, use the Icon overload with a tint parameter. For multicolored icons and icons
+ * that should not be tinted, use the overload and set [Color.Unspecified] as the tint color. For
+ * generic images that should not be tinted, and should not use the provided icon size, use the
+ * generic [androidx.compose.foundation.Image] instead.
  *
  * @param bitmap [ImageBitmap] to draw inside this icon
  * @param contentDescription text used by accessibility services to describe what this icon
@@ -124,6 +140,8 @@ public fun Icon(
  *   and does not represent a meaningful action that a user can take. This text should be localized,
  *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
+ * @see LocalIconSize
+ * @see GlimmerTheme.Companion.iconSizes
  */
 @Composable
 public fun Icon(bitmap: ImageBitmap, contentDescription: String?, modifier: Modifier = Modifier) {
@@ -132,13 +150,16 @@ public fun Icon(bitmap: ImageBitmap, contentDescription: String?, modifier: Modi
 }
 
 /**
- * An icon component that draws [bitmap], with a default size, and applies a tint of [tint]. Icon is
- * an opinionated component designed to be used with single-color icons so that they can be tinted
- * correctly for the component they are placed in. Use the other overload of Icon without a [tint]
- * parameter to apply the recommended content color provided by a [surface]. For multicolored icons
- * and icons that should not be tinted, set [tint] to [Color.Unspecified]. For generic images that
- * should not be tinted, and should not use the default icon size, use the generic
- * [androidx.compose.foundation.Image] instead.
+ * An icon component that draws [bitmap], with a default size of [LocalIconSize], and applies a tint
+ * of [tint]. Icon is an opinionated component designed to be used with single-color icons so that
+ * they can be tinted correctly for the component they are placed in. The recommended icon sizes can
+ * be retrieved using [GlimmerTheme.Companion.iconSizes]. A size can be set explicitly using [size],
+ * and components can use [LocalIconSize] to set the preferred size for any Icons inside the
+ * component. Use the other overload of Icon without a [tint] parameter to apply the recommended
+ * content color provided by a [surface]. For multicolored icons and icons that should not be
+ * tinted, set [tint] to [Color.Unspecified]. For generic images that should not be tinted, and
+ * should not use the provided icon size, use the generic [androidx.compose.foundation.Image]
+ * instead.
  *
  * @param bitmap [ImageBitmap] to draw inside this icon
  * @param tint tint to be applied to [bitmap]. If [Color.Unspecified] is provided, then no tint is
@@ -148,6 +169,8 @@ public fun Icon(bitmap: ImageBitmap, contentDescription: String?, modifier: Modi
  *   and does not represent a meaningful action that a user can take. This text should be localized,
  *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
+ * @see LocalIconSize
+ * @see GlimmerTheme.Companion.iconSizes
  */
 @Composable
 public fun Icon(
@@ -169,13 +192,16 @@ public fun Icon(
 }
 
 /**
- * An icon component that draws [painter], with a default size, and applies a content color tint.
- * Icon is an opinionated component designed to be used with single-color icons so that they can be
- * tinted correctly for the component they are placed in. The content color used to tint this icon
- * is provided by [surface]. To set a custom tint color, use the Icon overload with a tint
- * parameter. For multicolored icons and icons that should not be tinted, use the overload and set
- * `null` for the tint parameter. For generic images that should not be tinted, and should not use
- * the default icon size, use the generic [androidx.compose.foundation.Image] instead.
+ * An icon component that draws [painter], with a default size of [LocalIconSize], and applies a
+ * content color tint. Icon is an opinionated component designed to be used with single-color icons
+ * so that they can be tinted correctly for the component they are placed in. The recommended icon
+ * sizes can be retrieved using [GlimmerTheme.Companion.iconSizes]. A size can be set explicitly
+ * using [size], and components can use [LocalIconSize] to set the preferred size for any Icons
+ * inside the component. The content color used to tint this icon is provided by [surface]. To set a
+ * custom tint color, use the Icon overload with a tint parameter. For multicolored icons and icons
+ * that should not be tinted, use the overload and set `null` for the tint parameter. For generic
+ * images that should not be tinted, and should not use the provided icon size, use the generic
+ * [androidx.compose.foundation.Image] instead.
  *
  * @param painter [Painter] to draw inside this icon
  * @param contentDescription text used by accessibility services to describe what this icon
@@ -183,6 +209,8 @@ public fun Icon(
  *   and does not represent a meaningful action that a user can take. This text should be localized,
  *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
+ * @see LocalIconSize
+ * @see GlimmerTheme.Companion.iconSizes
  */
 @Composable
 public fun Icon(painter: Painter, contentDescription: String?, modifier: Modifier = Modifier) {
@@ -196,13 +224,15 @@ public fun Icon(painter: Painter, contentDescription: String?, modifier: Modifie
 }
 
 /**
- * An icon component that draws [painter], with a default size, and applies a tint of [tint]. Icon
- * is an opinionated component designed to be used with single-color icons so that they can be
- * tinted correctly for the component they are placed in. Use the other overload of Icon without a
- * [tint] parameter to apply the recommended content color provided by a [surface]. For multicolored
- * icons and icons that should not be tinted, set [tint] to `null`. For generic images that should
- * not be tinted, and should not use the default icon size, use the generic
- * [androidx.compose.foundation.Image] instead.
+ * An icon component that draws [painter], with a default size of [LocalIconSize], and applies a
+ * tint of [tint]. Icon is an opinionated component designed to be used with single-color icons so
+ * that they can be tinted correctly for the component they are placed in. The recommended icon
+ * sizes can be retrieved using [GlimmerTheme.Companion.iconSizes]. A size can be set explicitly
+ * using [size], and components can use [LocalIconSize] to set the preferred size for any Icons
+ * inside the component. Use the other overload of Icon without a [tint] parameter to apply the
+ * recommended content color provided by a [surface]. For multicolored icons and icons that should
+ * not be tinted, set [tint] to `null`. For generic images that should not be tinted, and should not
+ * use the provided icon size, use the generic [androidx.compose.foundation.Image] instead.
  *
  * @param painter [Painter] to draw inside this icon
  * @param tint tint to be applied to [painter]. If null, then no tint is applied.
@@ -211,6 +241,8 @@ public fun Icon(painter: Painter, contentDescription: String?, modifier: Modifie
  *   and does not represent a meaningful action that a user can take. This text should be localized,
  *   such as by using [androidx.compose.ui.res.stringResource] or similar
  * @param modifier the [Modifier] to be applied to this icon
+ * @see LocalIconSize
+ * @see GlimmerTheme.Companion.iconSizes
  */
 @Composable
 public fun Icon(
@@ -227,6 +259,13 @@ public fun Icon(
         modifier = modifier,
     )
 }
+
+/**
+ * CompositionLocal containing the preferred size of an icon. This value will be used by [Icon] by
+ * default - it can be overridden with a [size] modifier.
+ */
+public val LocalIconSize: ProvidableCompositionLocal<Dp> =
+    compositionLocalOf(structuralEqualityPolicy()) { GlimmerTheme._iconSizes.medium }
 
 @Composable
 private fun Icon(
@@ -254,7 +293,7 @@ private fun Icon(
     Box(
         modifier
             .toolingGraphicsLayer()
-            .size(DefaultIconSize)
+            .size(LocalIconSize.current)
             .then(colorFilter)
             .paint(painter, contentScale = ContentScale.Fit)
             .then(semantics)
@@ -326,6 +365,3 @@ private class IconColorFilterNode(
         }
     }
 }
-
-// Default icon size
-private val DefaultIconSize = 40.dp

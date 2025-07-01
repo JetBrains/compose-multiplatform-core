@@ -30,6 +30,8 @@ import kotlinx.coroutines.CoroutineScope
 internal class TransformingLazyColumnMeasureResult(
     /** MeasureResult defining the layout. */
     measureResult: MeasureResult,
+    /** The key of the item that should be considered as an anchor during scrolling. */
+    val anchorItemKey: Any,
     /** The index of the item that should be considered as an anchor during scrolling. */
     val anchorItemIndex: Int,
     /** The offset of the anchor item from the top of screen. */

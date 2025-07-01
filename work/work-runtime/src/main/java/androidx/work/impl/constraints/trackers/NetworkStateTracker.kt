@@ -52,7 +52,7 @@ import androidx.work.impl.utils.unregisterNetworkCallbackCompat
  * https://android.googlesource.com/platform/frameworks/base/+/oreo-release/services/core/java/com/android/server/job/controllers/ConnectivityController.java}
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun NetworkStateTracker(
+public fun NetworkStateTracker(
     context: Context,
     taskExecutor: TaskExecutor,
 ): ConstraintTracker<NetworkState> {

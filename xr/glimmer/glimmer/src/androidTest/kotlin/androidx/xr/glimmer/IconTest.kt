@@ -16,6 +16,7 @@
 package androidx.xr.glimmer
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -52,6 +53,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import org.junit.Rule
 import org.junit.Test
@@ -63,6 +65,17 @@ class IconTest {
     @get:Rule val rule = createComposeRule()
 
     private val iconTag = "Icon"
+
+    @Test
+    fun localIconSize_defaultSize() {
+        var localIconSize: Dp? = null
+        var mediumIconSize: Dp? = null
+        rule.setGlimmerThemeContent {
+            localIconSize = LocalIconSize.current
+            mediumIconSize = GlimmerTheme.iconSizes.medium
+        }
+        assertThat(localIconSize!!).isEqualTo(mediumIconSize!!)
+    }
 
     @Test
     fun vector_defaultSize() {
@@ -86,6 +99,32 @@ class IconTest {
 
         // Intrinsic size should be ignored, the actual size should be 40
         rule.onNodeWithTag(iconTag).assertWidthIsEqualTo(40.dp).assertHeightIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun vector_localIconSize() {
+        val width = 35.dp
+        val height = 83.dp
+        val vector =
+            ImageVector.Builder(
+                    defaultWidth = width,
+                    defaultHeight = height,
+                    viewportWidth = width.value,
+                    viewportHeight = height.value,
+                )
+                .build()
+        rule.setGlimmerThemeContent {
+            CompositionLocalProvider(LocalIconSize provides 50.dp) {
+                Icon(
+                    imageVector = vector,
+                    contentDescription = null,
+                    modifier = Modifier.testTag(iconTag),
+                )
+            }
+        }
+
+        // Intrinsic size should be ignored, the actual size should be 50
+        rule.onNodeWithTag(iconTag).assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(50.dp)
     }
 
     @Test
@@ -159,6 +198,28 @@ class IconTest {
     }
 
     @Test
+    fun image_localIconSize() {
+        val width = 35.dp
+        val height = 83.dp
+        rule.setGlimmerThemeContent {
+            CompositionLocalProvider(LocalIconSize provides 50.dp) {
+                val image =
+                    with(LocalDensity.current) {
+                        ImageBitmap(width.roundToPx(), height.roundToPx())
+                    }
+                Icon(
+                    bitmap = image,
+                    contentDescription = null,
+                    modifier = Modifier.testTag(iconTag),
+                )
+            }
+        }
+
+        // Intrinsic size should be ignored, the actual size should be 50
+        rule.onNodeWithTag(iconTag).assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(50.dp)
+    }
+
+    @Test
     fun image_smallerSize() {
         val width = 35.dp
         val height = 83.dp
@@ -213,6 +274,22 @@ class IconTest {
     }
 
     @Test
+    fun painter_noIntrinsicSize_localIconSize() {
+        val painter = ColorPainter(Color.Red)
+        rule.setGlimmerThemeContent {
+            CompositionLocalProvider(LocalIconSize provides 50.dp) {
+                Icon(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier.testTag(iconTag),
+                )
+            }
+        }
+
+        rule.onNodeWithTag(iconTag).assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(50.dp)
+    }
+
+    @Test
     fun painter_noIntrinsicSize_smallerSize() {
         val painter = ColorPainter(Color.Red)
         val expectedSize = 30.dp
@@ -262,6 +339,30 @@ class IconTest {
 
         // Intrinsic size should be ignored, the actual size should be 40
         rule.onNodeWithTag(iconTag).assertWidthIsEqualTo(40.dp).assertHeightIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun painter_intrinsicSize_localIconSize() {
+        val width = 35.dp
+        val height = 83.dp
+        rule.setGlimmerThemeContent {
+            CompositionLocalProvider(LocalIconSize provides 50.dp) {
+                val image =
+                    with(LocalDensity.current) {
+                        ImageBitmap(width.roundToPx(), height.roundToPx())
+                    }
+
+                val painter = BitmapPainter(image)
+                Icon(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier.testTag(iconTag),
+                )
+            }
+        }
+
+        // Intrinsic size should be ignored, the actual size should be 50
+        rule.onNodeWithTag(iconTag).assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(50.dp)
     }
 
     @Test

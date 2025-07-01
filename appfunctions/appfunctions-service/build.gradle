@@ -56,8 +56,8 @@ dependencies {
     testImplementation(libs.kotlinTest)
 
     androidTestCompileOnly(project(":appfunctions:appfunctions-stubs"))
-    androidTestImplementation("androidx.appsearch:appsearch:1.1.0-beta01")
-    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-beta01")
+    androidTestImplementation("androidx.appsearch:appsearch:1.1.0-rc01")
+    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinCoroutinesTest)

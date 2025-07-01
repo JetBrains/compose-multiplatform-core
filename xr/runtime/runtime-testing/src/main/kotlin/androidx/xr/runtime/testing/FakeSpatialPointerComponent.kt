@@ -21,15 +21,17 @@ import androidx.xr.runtime.internal.SpatialPointerComponent
 import androidx.xr.runtime.internal.SpatialPointerIcon
 import androidx.xr.runtime.internal.SpatialPointerIconType
 
-/** Test-only implementation of [SpatialPointerComponent] */
+/** Test-only implementation of [FakeSpatialPointerComponent] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeSpatialPointerComponent : SpatialPointerComponent, FakeComponent() {
+public class FakeSpatialPointerComponent : FakeComponent(), SpatialPointerComponent {
 
-    @SpatialPointerIconType private var spatialPointerIcon: Int = SpatialPointerIcon.TYPE_DEFAULT
+    @SpatialPointerIconType private var spatialPointerIcon: Int = SpatialPointerIcon.TYPE_NONE
 
-    override public fun setSpatialPointerIcon(@SpatialPointerIconType iconType: Int) {
+    /** Sets the [SpatialPointerIconType]. */
+    override fun setSpatialPointerIcon(@SpatialPointerIconType iconType: Int) {
         spatialPointerIcon = iconType
     }
 
-    @SpatialPointerIconType override public fun getSpatialPointerIcon(): Int = spatialPointerIcon
+    /** Returns the [SpatialPointerIconType] set from [setSpatialPointerIcon] on this component. */
+    @SpatialPointerIconType override fun getSpatialPointerIcon(): Int = spatialPointerIcon
 }

@@ -37,7 +37,7 @@ import androidx.room.Index
     indices = [Index(value = ["work_spec_id"])],
 )
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class WorkTag(
-    @ColumnInfo(name = "tag") val tag: String,
-    @ColumnInfo(name = "work_spec_id") val workSpecId: String,
+public class WorkTag(
+    @ColumnInfo(name = "tag") public val tag: String,
+    @ColumnInfo(name = "work_spec_id") public val workSpecId: String,
 )

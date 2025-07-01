@@ -16,7 +16,7 @@
 
 package androidx.xr.runtime.openxr
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -28,13 +28,13 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 // TODO - b/382119583: Remove the @SdkSuppress annotation once "androidx.xr.runtime.openxr.test"
-// supports a
-// lower SDK version.
+// supports a lower SDK version.
 @SdkSuppress(minSdkVersion = 29)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
@@ -46,16 +46,19 @@ class OpenXrHandTest {
         }
     }
 
-    @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    lateinit private var openXrManager: OpenXrManager
-    lateinit private var underTest: OpenXrHand
+    private lateinit var openXrManager: OpenXrManager
+    private lateinit var underTest: OpenXrHand
 
     @Before
     fun setUp() {
         underTest = OpenXrHand(isLeftHand = true)
     }
 
+    @Ignore(
+        "b/425697141 - Requires HEAD_TRACKING permission which is not available on Android test runners."
+    )
     @Test
     fun update_updatesActiveStatus() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
@@ -64,11 +67,13 @@ class OpenXrHandTest {
         underTest.update(xrTime)
 
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
-        // they
-        // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
+        // they come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
         assertThat(underTest.trackingState).isEqualTo(TrackingState.TRACKING)
     }
 
+    @Ignore(
+        "b/425697141 - Requires HEAD_TRACKING permission which is not available on Android test runners."
+    )
     @Test
     fun update_updateHandJoints() = initOpenXrManagerAndRunTest {
         val xrTime = 50L * 1_000_000 // 50 milliseconds in nanoseconds.
@@ -77,11 +82,10 @@ class OpenXrHandTest {
         underTest.update(xrTime)
 
         // TODO - b/346615429: Define values here using the stub's Kotlin API. For the time being
-        // they
-        // come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
+        // they come from `kPose` defined in //third_party/jetpack_xr_natives/openxr/openxr_stub.cc
         val fetchedHandJoints = underTest.handJoints
-        assertThat(fetchedHandJoints.size).isEqualTo(HandJointType.values().size)
-        for (jointType in HandJointType.values()) {
+        assertThat(fetchedHandJoints.size).isEqualTo(HandJointType.entries.size)
+        for (jointType in HandJointType.entries) {
             val jointTypeIndex = jointType.ordinal.toFloat()
             assertThat(underTest.handJoints[jointType]!!.rotation)
                 .isEqualTo(

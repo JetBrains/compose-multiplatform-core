@@ -54,6 +54,38 @@ package androidx.xr.runtime.openxr {
     property @GuardedBy("lock") public java.util.UUID? uuid;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrAugmentedObject implements androidx.xr.runtime.internal.AugmentedObject {
+    method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
+    method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
+    method public androidx.xr.runtime.math.Pose getCenterPose();
+    method public androidx.xr.runtime.math.Vector3 getExtents();
+    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method public void update(long xrTime);
+    property public androidx.xr.runtime.AugmentedObjectCategory category;
+    property public androidx.xr.runtime.math.Pose centerPose;
+    property public androidx.xr.runtime.math.Vector3 extents;
+    property public androidx.xr.runtime.TrackingState trackingState;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrDepthMap implements androidx.xr.runtime.internal.DepthMap {
+    method public int getHeight();
+    method public java.nio.ByteBuffer? getRawConfidenceMap();
+    method public java.nio.FloatBuffer? getRawDepthMap();
+    method public java.nio.ByteBuffer? getSmoothConfidenceMap();
+    method public java.nio.FloatBuffer? getSmoothDepthMap();
+    method public int getWidth();
+    property public int height;
+    property public java.nio.ByteBuffer? rawConfidenceMap;
+    property public java.nio.FloatBuffer? rawDepthMap;
+    property public java.nio.ByteBuffer? smoothConfidenceMap;
+    property public java.nio.FloatBuffer? smoothDepthMap;
+    property public int width;
+    field public static final int CONFIDENCE_INDEX = 2; // 0x2
+    field public static final int DEPTH_INDEX = 0; // 0x0
+    field public static final int EXPECTED_RAW_BUFFER_COUNT = 4; // 0x4
+    field public static final int EXPECTED_SMOOTH_BUFFER_COUNT = 4; // 0x4
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrDevice implements androidx.xr.runtime.internal.ArDevice {
     method public androidx.xr.runtime.math.Pose getDevicePose();
     method public void update(long xrTime);
@@ -93,6 +125,7 @@ package androidx.xr.runtime.openxr {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPerceptionManager implements androidx.xr.runtime.internal.PerceptionManager {
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.openxr.OpenXrDevice getArDevice();
+    method public java.util.List<androidx.xr.runtime.internal.DepthMap> getDepthMaps();
     method public androidx.xr.runtime.openxr.OpenXrEarth getEarth();
     method public androidx.xr.runtime.internal.Hand getLeftHand();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
@@ -105,6 +138,7 @@ package androidx.xr.runtime.openxr {
     method public void unpersistAnchor(java.util.UUID uuid);
     method public void update(long xrTime);
     property public androidx.xr.runtime.openxr.OpenXrDevice arDevice;
+    property public java.util.List<androidx.xr.runtime.internal.DepthMap> depthMaps;
     property public androidx.xr.runtime.openxr.OpenXrEarth earth;
     property public androidx.xr.runtime.internal.Hand leftHand;
     property public androidx.xr.runtime.internal.Hand rightHand;

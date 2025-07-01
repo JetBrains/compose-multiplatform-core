@@ -22,6 +22,7 @@ import androidx.paging.LoadState.NotLoading
 import androidx.paging.LoadType.PREPEND
 import androidx.paging.PageEvent.Drop
 import androidx.paging.PagingSource.LoadResult
+import androidx.paging.internal.IgnoreWebTarget
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.test.Test
@@ -56,6 +57,7 @@ import kotlinx.coroutines.test.runTest
  * run some tests with cached-in to ensure caching does not change behavior in the single consumer
  * cases.
  */
+@IgnoreWebTarget // b/395933428
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalPagingApi::class)
 class PagingDataPresenterTest {
     private val testScope = TestScope(UnconfinedTestDispatcher())
@@ -1354,7 +1356,7 @@ class PagingDataPresenterTest {
             val combinedLoadStateCapture = CombinedLoadStatesCapture()
 
             // Adding a new listener without a real value should not trigger it.
-            presenter.addLoadStateListener(combinedLoadStateCapture)
+            presenter.addLoadStateListener(combinedLoadStateCapture::invoke)
             assertThat(combinedLoadStateCapture.newEvents()).isEmpty()
 
             // Add a real value and now the listener should trigger.
@@ -1374,7 +1376,7 @@ class PagingDataPresenterTest {
 
             // Should emit real values to new listeners immediately
             val newCombinedLoadStateCapture = CombinedLoadStatesCapture()
-            presenter.addLoadStateListener(newCombinedLoadStateCapture)
+            presenter.addLoadStateListener(newCombinedLoadStateCapture::invoke)
             assertThat(newCombinedLoadStateCapture.newEvents())
                 .containsExactly(
                     localLoadStatesOf(

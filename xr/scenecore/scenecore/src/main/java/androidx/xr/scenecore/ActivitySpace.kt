@@ -21,6 +21,7 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
@@ -155,6 +156,16 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
     public fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor? = null) {
         rtEntity.setOnSpaceUpdatedListener(listener, executor)
     }
+
+    /**
+     * A recommended box for content to be placed in when in Full Space Mode.
+     *
+     * The box is relative to the ActivitySpace's coordinate system. It is not scaled by the
+     * ActivitySpace's transform. The dimensions are always in meters. This provides a
+     * device-specific default volume that developers can use to size their content appropriately.
+     */
+    public val recommendedContentBoxInFullSpace: BoundingBox =
+        rtEntity.recommendedContentBoxInFullSpace
 }
 
 // TODO: b/370538244 - remove with deprecated spatial state callbacks

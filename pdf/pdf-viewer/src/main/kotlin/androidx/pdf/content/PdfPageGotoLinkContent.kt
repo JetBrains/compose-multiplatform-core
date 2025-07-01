@@ -17,7 +17,6 @@
 package androidx.pdf.content
 
 import android.graphics.RectF
-import androidx.annotation.RestrictTo
 
 /**
  * Represents the content associated with a goto link on a page in the PDF document. Goto Link is an
@@ -27,7 +26,6 @@ import androidx.annotation.RestrictTo
  * @param bounds: Bounds which envelop the goto link
  * @param destination: Destination where the goto link is directing
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PdfPageGotoLinkContent(
     public val bounds: List<RectF>,
     public val destination: Destination,

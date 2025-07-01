@@ -17,11 +17,11 @@
 package androidx.xr.scenecore.samples.activitypanel
 
 import android.content.Intent
-import android.graphics.Rect
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
@@ -39,7 +39,7 @@ class ActivityPanelHostActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         activityPanelEntity =
-            ActivityPanelEntity.create(session, Rect(0, 0, 1280, 800), "test_activity_panel")
+            ActivityPanelEntity.create(session, IntSize2d(1280, 800), "test_activity_panel")
         if (
             session.scene.spatialCapabilities.hasCapability(
                 SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY

@@ -35,4 +35,4 @@ package androidx.work
     AnnotationTarget.CLASS,
 )
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
-annotation class ExperimentalConfigurationApi
+public annotation class ExperimentalConfigurationApi

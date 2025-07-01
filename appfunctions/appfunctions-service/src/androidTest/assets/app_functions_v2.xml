@@ -4,6 +4,7 @@
         <id>androidx.appfunctions.test#noSchema_enabledByDefault</id>
         <function_id>androidx.appfunctions.test#noSchema_enabledByDefault</function_id>
         <enabled_by_default>true</enabled_by_default>
+        <description>Test function without schema, enabled by default.</description>
         <response>
             <id>unused</id>
             <valueType>
@@ -17,6 +18,7 @@
         <id>androidx.appfunctions.test#noSchema_disabledByDefault</id>
         <function_id>androidx.appfunctions.test#noSchema_disabledByDefault</function_id>
         <enabled_by_default>false</enabled_by_default>
+        <description>Test function without schema, disabled by default.</description>
         <response>
             <id>unused</id>
             <valueType>
@@ -30,6 +32,7 @@
         <id>androidx.appfunctions.test#noSchema_executionSucceed</id>
         <function_id>androidx.appfunctions.test#noSchema_executionSucceed</function_id>
         <enabled_by_default>true</enabled_by_default>
+        <description>Test function without schema, successful execution expected.</description>
         <response>
             <id>unused</id>
             <valueType>
@@ -43,6 +46,7 @@
         <id>androidx.appfunctions.test#noSchema_executionFail</id>
         <function_id>androidx.appfunctions.test#noSchema_executionFail</function_id>
         <enabled_by_default>true</enabled_by_default>
+        <description>Test function without schema, failed execution expected.</description>
         <response>
             <id>unused</id>
             <valueType>

@@ -22,6 +22,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
+import androidx.glance.state.GlanceStateDefinition
+import androidx.glance.state.PreferencesGlanceStateDefinition
 
 class TestGlanceAppWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = TestGlanceAppWidget
@@ -46,6 +48,7 @@ class TestGlanceAppWidgetReceiver : GlanceAppWidgetReceiver() {
 object TestGlanceAppWidget : GlanceAppWidget() {
     public override var errorUiLayout: Int = 0
 
+    override var stateDefinition: GlanceStateDefinition<*>? = PreferencesGlanceStateDefinition
     override var sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -121,5 +124,15 @@ object TestGlanceAppWidget : GlanceAppWidget() {
     ): AppWidgetSession {
         return if (shouldThrowErrorWhenCreatingSession) error("Error creating app widget session")
         else super.createAppWidgetSession(context, id, options)
+    }
+
+    inline fun withStateDefinition(stateDefinition: GlanceStateDefinition<*>?, block: () -> Unit) {
+        val previousStateDefinition = this.stateDefinition
+        this.stateDefinition = stateDefinition
+        try {
+            block()
+        } finally {
+            this.stateDefinition = previousStateDefinition
+        }
     }
 }

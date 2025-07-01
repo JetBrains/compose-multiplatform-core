@@ -19,7 +19,6 @@ package androidx.appfunctions.internal
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.metadata.AppFunctionMetadata
-import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import kotlinx.coroutines.flow.Flow
 
 /** Searches AppFunctions. */
@@ -39,14 +38,13 @@ public interface AppFunctionReader {
     ): Flow<List<AppFunctionMetadata>>
 
     /**
-     * Returns the [AppFunctionSchemaMetadata] of the given app function. Returns null if the
-     * function is not implementing a predefined schema.
+     * Returns the [AppFunctionMetadata] of the given app function.
      *
      * @throws androidx.appfunctions.AppFunctionFunctionNotFoundException if the function does not
      *   exist.
      */
-    public suspend fun getAppFunctionSchemaMetadata(
+    public suspend fun getAppFunctionMetadata(
         functionId: String,
         packageName: String,
-    ): AppFunctionSchemaMetadata?
+    ): AppFunctionMetadata?
 }

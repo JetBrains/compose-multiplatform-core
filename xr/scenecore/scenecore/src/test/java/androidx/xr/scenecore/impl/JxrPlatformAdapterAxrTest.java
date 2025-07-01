@@ -312,12 +312,12 @@ public final class JxrPlatformAdapterAxrTest {
                 mRuntime.getActivitySpaceRootImpl());
     }
 
-    private Entity createContentlessEntity() {
-        return createContentlessEntity(new Pose());
+    private Entity createGroupEntity() {
+        return createGroupEntity(new Pose());
     }
 
-    private Entity createContentlessEntity(Pose pose) {
-        return mRuntime.createEntity(pose, "test", mRuntime.getActivitySpaceRootImpl());
+    private Entity createGroupEntity(Pose pose) {
+        return mRuntime.createGroupEntity(pose, "test", mRuntime.getActivitySpaceRootImpl());
     }
 
     private void sendVisibilityState(ShadowXrExtensions shadowXrExtensions, int visibilityState) {
@@ -445,7 +445,7 @@ public final class JxrPlatformAdapterAxrTest {
     @Test
     public void onSpatialStateChanged_setsEnvironmentVisibility() {
         SpatialEnvironment environment = mRuntime.getSpatialEnvironment();
-        assertThat(environment.isSpatialEnvironmentPreferenceActive()).isFalse();
+        assertThat(environment.isPreferredSpatialEnvironmentActive()).isFalse();
 
         SpatialState state = ShadowSpatialState.create();
         ShadowSpatialState.extract(state)
@@ -453,7 +453,7 @@ public final class JxrPlatformAdapterAxrTest {
                         ShadowEnvironmentVisibilityState.create(
                                 EnvironmentVisibilityState.APP_VISIBLE));
         ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, state);
-        assertThat(environment.isSpatialEnvironmentPreferenceActive()).isTrue();
+        assertThat(environment.isPreferredSpatialEnvironmentActive()).isTrue();
 
         state = ShadowSpatialState.create();
         ShadowSpatialState.extract(state)
@@ -461,7 +461,7 @@ public final class JxrPlatformAdapterAxrTest {
                         ShadowEnvironmentVisibilityState.create(
                                 EnvironmentVisibilityState.INVISIBLE));
         ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, state);
-        assertThat(environment.isSpatialEnvironmentPreferenceActive()).isFalse();
+        assertThat(environment.isPreferredSpatialEnvironmentActive()).isFalse();
 
         state = ShadowSpatialState.create();
         ShadowSpatialState.extract(state)
@@ -469,7 +469,7 @@ public final class JxrPlatformAdapterAxrTest {
                         ShadowEnvironmentVisibilityState.create(
                                 EnvironmentVisibilityState.HOME_VISIBLE));
         ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, state);
-        assertThat(environment.isSpatialEnvironmentPreferenceActive()).isFalse();
+        assertThat(environment.isPreferredSpatialEnvironmentActive()).isFalse();
     }
 
     @Test
@@ -478,9 +478,9 @@ public final class JxrPlatformAdapterAxrTest {
         @SuppressWarnings(value = "unchecked")
         Consumer<Boolean> listener = (Consumer<Boolean>) mock(Consumer.class);
 
-        environment.addOnSpatialEnvironmentChangedListener(listener);
+        environment.addOnSpatialEnvironmentChangedListener(directExecutor(), listener);
 
-        assertThat(environment.isSpatialEnvironmentPreferenceActive()).isFalse();
+        assertThat(environment.isPreferredSpatialEnvironmentActive()).isFalse();
 
         // The first spatial state should always fire the listener
         SpatialState state = ShadowSpatialState.create();
@@ -498,7 +498,7 @@ public final class JxrPlatformAdapterAxrTest {
                         ShadowEnvironmentVisibilityState.create(
                                 EnvironmentVisibilityState.INVISIBLE));
         ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, state);
-        assertThat(environment.isSpatialEnvironmentPreferenceActive()).isFalse();
+        assertThat(environment.isPreferredSpatialEnvironmentActive()).isFalse();
         verify(listener).accept(false);
 
         // The third spatial state should not fire the listener since it is the same as the last
@@ -509,7 +509,7 @@ public final class JxrPlatformAdapterAxrTest {
                         ShadowEnvironmentVisibilityState.create(
                                 EnvironmentVisibilityState.INVISIBLE));
         ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, state);
-        assertThat(environment.isSpatialEnvironmentPreferenceActive()).isFalse();
+        assertThat(environment.isPreferredSpatialEnvironmentActive()).isFalse();
         verify(listener, times(2))
                 .accept(any()); // Verify the listener was not called a third time.
     }
@@ -558,7 +558,7 @@ public final class JxrPlatformAdapterAxrTest {
         @SuppressWarnings(value = "unchecked")
         Consumer<Float> listener = (Consumer<Float>) mock(Consumer.class);
 
-        environment.addOnPassthroughOpacityChangedListener(listener);
+        environment.addOnPassthroughOpacityChangedListener(directExecutor(), listener);
 
         assertThat(environment.getCurrentPassthroughOpacity()).isZero();
 
@@ -708,22 +708,22 @@ public final class JxrPlatformAdapterAxrTest {
         PanelEntity panelEntity = createPanelEntity();
         GltfEntity gltfEntity = createGltfEntity();
         LoggingEntity loggingEntity = mRuntime.createLoggingEntity(identityPose);
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
 
         assertPose(panelEntity.getPose(), identityPose);
         assertPose(gltfEntity.getPose(), identityPose);
         assertPose(loggingEntity.getPose(), identityPose);
-        assertPose(contentlessEntity.getPose(), identityPose);
+        assertPose(groupEntity.getPose(), identityPose);
 
         panelEntity.setPose(pose);
         gltfEntity.setPose(pose);
         loggingEntity.setPose(pose);
-        contentlessEntity.setPose(pose);
+        groupEntity.setPose(pose);
 
         assertPose(panelEntity.getPose(), pose);
         assertPose(gltfEntity.getPose(), pose);
         assertPose(loggingEntity.getPose(), pose);
-        assertPose(contentlessEntity.getPose(), pose);
+        assertPose(groupEntity.getPose(), pose);
     }
 
     @Test
@@ -732,12 +732,12 @@ public final class JxrPlatformAdapterAxrTest {
         PanelEntity panelEntity = createPanelEntity(pose);
         GltfEntity gltfEntity = createGltfEntity(pose);
         LoggingEntity loggingEntity = mRuntime.createLoggingEntity(pose);
-        Entity contentlessEntity = createContentlessEntity(pose);
+        Entity groupEntity = createGroupEntity(pose);
 
         assertPose(panelEntity.getPose(), pose);
         assertPose(gltfEntity.getPose(), pose);
         assertPose(loggingEntity.getPose(), pose);
-        assertPose(contentlessEntity.getPose(), pose);
+        assertPose(groupEntity.getPose(), pose);
     }
 
     @Test
@@ -749,11 +749,11 @@ public final class JxrPlatformAdapterAxrTest {
         // Set the activity space as the root of this entity hierarchy..
         AndroidXrEntity parentEntity =
                 (AndroidXrEntity)
-                        mRuntime.createEntity(pose, "parent", mRuntime.getActivitySpace());
+                        mRuntime.createGroupEntity(pose, "parent", mRuntime.getActivitySpace());
         AndroidXrEntity childEntity1 =
-                (AndroidXrEntity) mRuntime.createEntity(pose, "child1", parentEntity);
+                (AndroidXrEntity) mRuntime.createGroupEntity(pose, "child1", parentEntity);
         AndroidXrEntity childEntity2 =
-                (AndroidXrEntity) mRuntime.createEntity(pose, "child2", childEntity1);
+                (AndroidXrEntity) mRuntime.createGroupEntity(pose, "child2", childEntity1);
 
         assertVector3(
                 parentEntity.getPoseInActivitySpace().getTranslation(), new Vector3(1f, 2f, 3f));
@@ -775,14 +775,14 @@ public final class JxrPlatformAdapterAxrTest {
         // The parent has a translation and no rotation.
         AndroidXrEntity parentEntity =
                 (AndroidXrEntity)
-                        mRuntime.createEntity(
+                        mRuntime.createGroupEntity(
                                 translatedPose, "parent", mRuntime.getActivitySpace());
 
         // Each child adds a rotation, but no translation.
         AndroidXrEntity childEntity1 =
-                (AndroidXrEntity) mRuntime.createEntity(rotatedPose, "child1", parentEntity);
+                (AndroidXrEntity) mRuntime.createGroupEntity(rotatedPose, "child1", parentEntity);
         AndroidXrEntity childEntity2 =
-                (AndroidXrEntity) mRuntime.createEntity(rotatedPose, "child2", childEntity1);
+                (AndroidXrEntity) mRuntime.createGroupEntity(rotatedPose, "child2", childEntity1);
 
         // There should be no translation offset from the root, only changes in rotation.
         assertPose(parentEntity.getPoseInActivitySpace(), translatedPose);
@@ -805,11 +805,11 @@ public final class JxrPlatformAdapterAxrTest {
         // Each entity adds a translation and a rotation.
         AndroidXrEntity parentEntity =
                 (AndroidXrEntity)
-                        mRuntime.createEntity(pose, "parent", mRuntime.getActivitySpace());
+                        mRuntime.createGroupEntity(pose, "parent", mRuntime.getActivitySpace());
         AndroidXrEntity childEntity1 =
-                (AndroidXrEntity) mRuntime.createEntity(pose, "child1", parentEntity);
+                (AndroidXrEntity) mRuntime.createGroupEntity(pose, "child1", parentEntity);
         AndroidXrEntity childEntity2 =
-                (AndroidXrEntity) mRuntime.createEntity(pose, "child2", childEntity1);
+                (AndroidXrEntity) mRuntime.createGroupEntity(pose, "child2", childEntity1);
 
         // Local pose of ActivitySpace's direct child must be the same as child's ActivitySpace
         // pose.
@@ -843,7 +843,7 @@ public final class JxrPlatformAdapterAxrTest {
         // scale/position/rotation.
         PanelEntityImpl panelEntity = (PanelEntityImpl) createPanelEntity(pose);
         GltfEntityImpl gltfEntity = (GltfEntityImpl) createGltfEntity(pose);
-        AndroidXrEntity contentlessEntity = (AndroidXrEntity) createContentlessEntity(pose);
+        AndroidXrEntity groupEntity = (AndroidXrEntity) createGroupEntity(pose);
         ActivitySpace activitySpace = mRuntime.getActivitySpace();
         ((ActivitySpaceImpl) activitySpace)
                 .setOpenXrReferenceSpacePose(
@@ -853,11 +853,11 @@ public final class JxrPlatformAdapterAxrTest {
                                 new Vector3(2f, 2f, 2f)));
         panelEntity.setParent(activitySpace);
         gltfEntity.setParent(activitySpace);
-        contentlessEntity.setParent(activitySpace);
+        groupEntity.setParent(activitySpace);
 
         assertPose(panelEntity.getPoseInActivitySpace(), pose);
         assertPose(gltfEntity.getPoseInActivitySpace(), pose);
-        assertPose(contentlessEntity.getPoseInActivitySpace(), pose);
+        assertPose(groupEntity.getPoseInActivitySpace(), pose);
     }
 
     @Test
@@ -922,9 +922,9 @@ public final class JxrPlatformAdapterAxrTest {
 
         // Set the ActivitySpace as the root of this entity hierarchy.
         Entity parentEntity =
-                mRuntime.createEntity(pose, "parent", mRuntime.getActivitySpaceRootImpl());
-        Entity childEntity1 = mRuntime.createEntity(pose, "child1", parentEntity);
-        Entity childEntity2 = mRuntime.createEntity(pose, "child2", childEntity1);
+                mRuntime.createGroupEntity(pose, "parent", mRuntime.getActivitySpaceRootImpl());
+        Entity childEntity1 = mRuntime.createGroupEntity(pose, "child1", parentEntity);
+        Entity childEntity2 = mRuntime.createGroupEntity(pose, "child2", childEntity1);
 
         // The translations should accumulate with each child, but there should be no rotation.
         assertVector3(
@@ -947,10 +947,10 @@ public final class JxrPlatformAdapterAxrTest {
 
         // The parent has a translation and no rotation and each child adds a rotation.
         Entity parentEntity =
-                mRuntime.createEntity(
+                mRuntime.createGroupEntity(
                         translatedPose, "parent", mRuntime.getActivitySpaceRootImpl());
-        Entity childEntity1 = mRuntime.createEntity(rotatedPose, "child1", parentEntity);
-        Entity childEntity2 = mRuntime.createEntity(rotatedPose, "child2", childEntity1);
+        Entity childEntity1 = mRuntime.createGroupEntity(rotatedPose, "child1", parentEntity);
+        Entity childEntity2 = mRuntime.createGroupEntity(rotatedPose, "child2", childEntity1);
 
         // There should be no translation offset from the parent, but rotations should accumulate.
         assertPose(parentEntity.getActivitySpacePose(), translatedPose);
@@ -972,9 +972,9 @@ public final class JxrPlatformAdapterAxrTest {
 
         // Each entity adds a translation and a rotation.
         Entity parentEntity =
-                mRuntime.createEntity(pose, "parent", mRuntime.getActivitySpaceRootImpl());
-        Entity childEntity1 = mRuntime.createEntity(pose, "child1", parentEntity);
-        Entity childEntity2 = mRuntime.createEntity(pose, "child2", childEntity1);
+                mRuntime.createGroupEntity(pose, "parent", mRuntime.getActivitySpaceRootImpl());
+        Entity childEntity1 = mRuntime.createGroupEntity(pose, "child1", parentEntity);
+        Entity childEntity2 = mRuntime.createGroupEntity(pose, "child2", childEntity1);
 
         // Local pose of ActivitySpace's direct child must be the same as child's ActivitySpace
         // pose.
@@ -1004,11 +1004,11 @@ public final class JxrPlatformAdapterAxrTest {
         // All these entities should have the ActivitySpaceRootImpl as their parent by default.
         PanelEntity panelEntity = createPanelEntity(pose);
         GltfEntity gltfEntity = createGltfEntity(pose);
-        Entity contentlessEntity = createContentlessEntity(pose);
+        Entity groupEntity = createGroupEntity(pose);
 
         assertPose(panelEntity.getActivitySpacePose(), pose);
         assertPose(gltfEntity.getActivitySpacePose(), pose);
-        assertPose(contentlessEntity.getActivitySpacePose(), pose);
+        assertPose(groupEntity.getActivitySpacePose(), pose);
     }
 
     @Test
@@ -1054,14 +1054,14 @@ public final class JxrPlatformAdapterAxrTest {
 
         PanelEntity panelEntity = createPanelEntity(pose);
         GltfEntity gltfEntity = createGltfEntity(pose);
-        Entity contentlessEntity = createContentlessEntity(pose);
+        Entity groupEntity = createGroupEntity(pose);
         assertPose(panelEntity.transformPoseTo(pose, panelEntity), pose);
         assertPose(gltfEntity.transformPoseTo(pose, gltfEntity), pose);
-        assertPose(contentlessEntity.transformPoseTo(pose, contentlessEntity), pose);
+        assertPose(groupEntity.transformPoseTo(pose, groupEntity), pose);
 
         assertPose(panelEntity.transformPoseTo(identity, panelEntity), identity);
         assertPose(gltfEntity.transformPoseTo(identity, gltfEntity), identity);
-        assertPose(contentlessEntity.transformPoseTo(identity, contentlessEntity), identity);
+        assertPose(groupEntity.transformPoseTo(identity, groupEntity), identity);
     }
 
     @Test
@@ -1121,10 +1121,10 @@ public final class JxrPlatformAdapterAxrTest {
         Pose identity = new Pose();
 
         AndroidXrEntity sourceEntity =
-                (AndroidXrEntity) createContentlessEntity(new Pose(sourceVector, sourceQuaternion));
+                (AndroidXrEntity) createGroupEntity(new Pose(sourceVector, sourceQuaternion));
         AndroidXrEntity destinationEntity =
                 (AndroidXrEntity)
-                        createContentlessEntity(new Pose(destinationVector, destinationQuaternion));
+                        createGroupEntity(new Pose(destinationVector, destinationQuaternion));
 
         //// Transform an identity pose from the source to the destination space. ////
         Pose sourceToDestinationPose = sourceEntity.transformPoseTo(identity, destinationEntity);
@@ -1178,19 +1178,19 @@ public final class JxrPlatformAdapterAxrTest {
     public void getAlpha_returnsSetAlpha() throws Exception {
         PanelEntity panelEntity = createPanelEntity();
         GltfEntity gltfEntity = createGltfEntity();
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
 
         assertThat(panelEntity.getAlpha()).isEqualTo(1.0f);
         assertThat(gltfEntity.getAlpha()).isEqualTo(1.0f);
-        assertThat(contentlessEntity.getAlpha()).isEqualTo(1.0f);
+        assertThat(groupEntity.getAlpha()).isEqualTo(1.0f);
 
         panelEntity.setAlpha(0.5f);
         gltfEntity.setAlpha(0.5f);
-        contentlessEntity.setAlpha(0.5f);
+        groupEntity.setAlpha(0.5f);
 
         assertThat(panelEntity.getAlpha()).isEqualTo(0.5f);
         assertThat(gltfEntity.getAlpha()).isEqualTo(0.5f);
-        assertThat(contentlessEntity.getAlpha()).isEqualTo(0.5f);
+        assertThat(groupEntity.getAlpha()).isEqualTo(0.5f);
         assertThat(mNodeRepository.map((metadata) -> metadata.getAlpha()))
                 .containsAtLeast(0.5f, 0.5f, 0.5f);
     }
@@ -1199,7 +1199,7 @@ public final class JxrPlatformAdapterAxrTest {
     public void getActivitySpaceAlpha_returnsTotalAncestorAlpha() throws Exception {
         PanelEntity grandparent = createPanelEntity();
         GltfEntity parent = createGltfEntity();
-        Entity entity = createContentlessEntity();
+        Entity entity = createGroupEntity();
 
         assertThat(grandparent.getAlpha(Space.ACTIVITY)).isEqualTo(1.0f);
         assertThat(parent.getAlpha(Space.ACTIVITY)).isEqualTo(1.0f);
@@ -1936,21 +1936,21 @@ public final class JxrPlatformAdapterAxrTest {
     }
 
     @Test
-    public void createContentlessEntity_returnsEntity() throws Exception {
-        assertThat(createContentlessEntity()).isNotNull();
+    public void createGroupEntity_returnsEntity() throws Exception {
+        assertThat(createGroupEntity()).isNotNull();
     }
 
     @Test
-    public void contentlessEntity_hasActivitySpaceRootImplAsParentByDefault() throws Exception {
-        Entity entity = createContentlessEntity();
+    public void groupEntity_hasActivitySpaceRootImplAsParentByDefault() throws Exception {
+        Entity entity = createGroupEntity();
         assertThat(entity.getParent()).isEqualTo(mRuntime.getActivitySpaceRootImpl());
     }
 
     @Test
-    public void contentlessEntityAddChildren_addsChildren() throws Exception {
-        Entity childEntity1 = createContentlessEntity();
-        Entity childEntity2 = createContentlessEntity();
-        Entity parentEntity = createContentlessEntity();
+    public void groupEntityAddChildren_addsChildren() throws Exception {
+        Entity childEntity1 = createGroupEntity();
+        Entity childEntity2 = createGroupEntity();
+        Entity parentEntity = createGroupEntity();
 
         parentEntity.addChild(childEntity1);
 
@@ -2262,7 +2262,7 @@ public final class JxrPlatformAdapterAxrTest {
 
     @Test
     public void dispose_clearsReformOptions() {
-        AndroidXrEntity entity = (AndroidXrEntity) createContentlessEntity();
+        AndroidXrEntity entity = (AndroidXrEntity) createGroupEntity();
         ReformOptions reformOptions = entity.getReformOptions();
         assertThat(reformOptions).isNotNull();
         ReformOptions unused = reformOptions.setEnabledReform(ALLOW_MOVE | ALLOW_RESIZE);
@@ -2272,7 +2272,7 @@ public final class JxrPlatformAdapterAxrTest {
 
     @Test
     public void dispose_clearsParents() {
-        AndroidXrEntity entity = (AndroidXrEntity) createContentlessEntity();
+        AndroidXrEntity entity = (AndroidXrEntity) createGroupEntity();
         entity.setParent(mRuntime.getActivitySpaceRootImpl());
         assertThat(entity.getParent()).isNotNull();
 
@@ -2455,7 +2455,7 @@ public final class JxrPlatformAdapterAxrTest {
 
     @Test
     public void dispose_clearsResources() {
-        AndroidXrEntity entity = (AndroidXrEntity) createContentlessEntity();
+        AndroidXrEntity entity = (AndroidXrEntity) createGroupEntity();
         assertThat(entity.getNode()).isNotNull();
         assertThat(mNodeRepository.getParent(entity.getNode())).isNotNull();
 

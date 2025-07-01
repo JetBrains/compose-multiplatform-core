@@ -395,15 +395,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     // TODO(b/3300859): remove once all non-fullscreen fragments are supported for native.
-    private fun supportsNativeAd(fragment: BaseFragment): Boolean = fragment is ResizeFragment
+    private fun supportsNativeAd(fragment: BaseFragment): Boolean =
+        fragment is ResizeFragment || fragment is PoolingContainerFragment
 
     private fun updateDrawerOptions() {
         setAllControlsEnabled(true)
         if (adFormat == SdkApiConstants.Companion.AdFormat.Companion.NATIVE_AD) {
-            runOnUiThread {
-                navigationView.menu.findItem(R.id.item_scroll).isEnabled = false
-                navigationView.menu.findItem(R.id.item_pooling_container).isEnabled = false
-            }
+            runOnUiThread { navigationView.menu.findItem(R.id.item_scroll).isEnabled = false }
             viewabilityToggleButton.isEnabled = false
             composeToggleButton.isEnabled = false
         }

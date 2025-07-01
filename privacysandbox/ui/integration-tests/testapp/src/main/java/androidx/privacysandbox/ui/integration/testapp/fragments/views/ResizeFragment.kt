@@ -17,7 +17,6 @@
 package androidx.privacysandbox.ui.integration.testapp.fragments.views
 
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -77,7 +76,7 @@ class ResizeFragment : BaseFragment() {
             inflatedView.findViewById<AdHolder>(R.id.resizable_ad_view).apply {
                 adViewLayoutParams =
                     ViewGroup.MarginLayoutParams(adViewLayoutParams).apply {
-                        setMargins(convertFromDpToPixels(MARGIN_DP))
+                        setMargins(convertFromDpToPixels(DEFAULT_MARGIN_DP))
                     }
                 adViewBackgroundColor =
                     ContextCompat.getColor(context, R.color.ad_view_background_color)
@@ -140,17 +139,5 @@ class ResizeFragment : BaseFragment() {
                 (10..halfHeight).random(),
             )
         }
-    }
-
-    private fun convertFromDpToPixels(dpValue: Float): Int =
-        TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                dpValue,
-                context?.resources?.displayMetrics,
-            )
-            .toInt()
-
-    private companion object {
-        const val MARGIN_DP = 16.0f
     }
 }

@@ -38,7 +38,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
@@ -200,12 +200,12 @@ class LivePagedListTest {
     @OptIn(ExperimentalStdlibApi::class)
     @Test
     fun initialLoad_loadResultInvalid() =
-        testScope.runBlockingTest {
+        testScope.runTest {
             val dispatcher = coroutineContext[CoroutineDispatcher.Key]!!
             val pagingSources = mutableListOf<TestPagingSource>()
             val factory = {
                 TestPagingSource().also {
-                    if (pagingSources.size == 0)
+                    if (pagingSources.isEmpty())
                         it.nextLoadResult = PagingSource.LoadResult.Invalid()
                     pagingSources.add(it)
                 }

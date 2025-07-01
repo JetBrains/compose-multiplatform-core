@@ -108,6 +108,13 @@ internal class Page(
         }
 
     internal var formWidgetInfos: List<FormWidgetInfo>? = formWidgetInfos
+        private set(value) {
+            field = value
+            formWidgetIndexToInfoMap = value?.associateBy { it.widgetIndex }
+        }
+
+    internal var formWidgetIndexToInfoMap: Map<Int, FormWidgetInfo>? =
+        formWidgetInfos?.associateBy { it.widgetIndex }
         private set
 
     //  Checks if the content of this page within the specified visible area is fully rendered.
@@ -251,16 +258,20 @@ internal class Page(
         for (highlight in highlights) {
             // Highlight locations are defined in content coordinates, compute their location
             // in View coordinates using locationInView
-            highlightRect.set(highlight.area.pageRect)
+            highlightRect.set(
+                highlight.area.left,
+                highlight.area.top,
+                highlight.area.right,
+                highlight.area.bottom,
+            )
             highlightRect.offset(locationInView.left, locationInView.top)
             highlightPaint.color = highlight.color
             canvas.drawRect(highlightRect, highlightPaint)
         }
 
         if (pdfFormFillingConfig.isFormFillingEnabled()) {
-            // TODO (b/420905226): Add handling for other widget types as well
             formWidgetInfos
-                ?.filter { it.widgetType == FormWidgetInfo.WIDGET_TYPE_TEXTFIELD }
+                ?.filter { !it.readOnly }
                 ?.forEach {
                     formWidgetHighlightRect.set(it.widgetRect)
                     formWidgetHighlightRect.offset(locationInView.left, locationInView.top)

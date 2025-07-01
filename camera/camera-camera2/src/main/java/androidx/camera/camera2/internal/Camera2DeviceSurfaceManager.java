@@ -31,6 +31,7 @@ import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult;
 import androidx.camera.core.impl.UseCaseConfig;
@@ -131,6 +132,7 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
      * @param cameraId    the camera id of the camera device to transform the object
      * @param imageFormat the image format info for the surface configuration object
      * @param size        the size info for the surface configuration object
+     * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
      * @throws IllegalStateException if not initialized
      */
@@ -139,7 +141,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
-            @NonNull Size size) {
+            @NonNull Size size,
+            @NonNull StreamUseCase streamUseCase) {
         SupportedSurfaceCombination supportedSurfaceCombination =
                 mCameraSupportedSurfaceCombinationMap.get(cameraId);
 
@@ -149,7 +152,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
                     supportedSurfaceCombination.transformSurfaceConfig(
                             cameraMode,
                             imageFormat,
-                            size);
+                            size,
+                            streamUseCase);
         }
 
         return surfaceConfig;

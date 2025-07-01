@@ -19,6 +19,7 @@ package androidx.glance.appwidget
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.glance.appwidget.proto.LayoutProto.AsyncRequest
 
 /**
  * Broadcast receiver handling updates after a package update. Useful to know if classes appeared or
@@ -28,9 +29,15 @@ public open class MyPackageReplacedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         checkNotNull(context) { "onReceive context is null" }
         checkNotNull(intent) { "onReceive intent is null" }
-        goAsync {
-            val manager = GlanceAppWidgetManager(context)
-            manager.cleanReceivers()
+        val handled =
+            maybeLaunchAsyncRequestWorker(context) {
+                myPackageReplaced = AsyncRequest.MyPackageReplaced.newBuilder().build()
+            }
+        if (!handled) {
+            goAsync {
+                val manager = GlanceAppWidgetManager(context)
+                manager.cleanReceivers()
+            }
         }
     }
 }

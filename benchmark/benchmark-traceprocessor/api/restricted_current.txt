@@ -90,6 +90,10 @@ package androidx.benchmark.traceprocessor {
     method @BytecodeOnly public int size();
     method public String string(String columnName);
     method @BytecodeOnly public java.util.Collection<java.lang.Object!>! values();
+    property public java.util.Set<java.util.Map.Entry<java.lang.String,java.lang.Object?>> entries;
+    property public java.util.Set<java.lang.String> keys;
+    property public int size;
+    property public java.util.Collection<java.lang.Object?> values;
   }
 
   public final class RowKt {

@@ -81,6 +81,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinTest)
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
+                implementation(libs.espressoCore)
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(project(":compose:foundation:foundation"))

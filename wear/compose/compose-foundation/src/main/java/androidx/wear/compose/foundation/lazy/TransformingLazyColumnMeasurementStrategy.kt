@@ -50,6 +50,7 @@ internal interface TransformingLazyColumnMeasurementStrategy {
         keyIndexMap: LazyLayoutKeyIndexMap,
         itemSpacing: Int,
         containerConstraints: Constraints,
+        anchorItemKey: Any,
         anchorItemIndex: Int,
         anchorItemScrollOffset: Int,
         lastMeasuredAnchorItemHeight: Int,
@@ -63,7 +64,11 @@ internal interface TransformingLazyColumnMeasurementStrategy {
     val rightContentPadding: Int
 }
 
-internal fun MeasuredItemProvider.downwardMeasuredItem(index: Int, offset: Int, maxHeight: Int) =
+internal fun MeasuredItemProvider.downwardMeasuredItem(
+    index: Int,
+    offset: Int,
+    maxHeight: Int,
+): TransformingLazyColumnMeasuredItem =
     measuredItem(index, offset, MeasurementDirection.DOWNWARD) { height ->
         downwardMeasuredItemScrollProgress(
             offset = offset,
@@ -72,7 +77,11 @@ internal fun MeasuredItemProvider.downwardMeasuredItem(index: Int, offset: Int, 
         )
     }
 
-internal fun MeasuredItemProvider.upwardMeasuredItem(index: Int, offset: Int, maxHeight: Int) =
+internal fun MeasuredItemProvider.upwardMeasuredItem(
+    index: Int,
+    offset: Int,
+    maxHeight: Int,
+): TransformingLazyColumnMeasuredItem =
     measuredItem(index, offset, MeasurementDirection.UPWARD) { height ->
             upwardMeasuredItemScrollProgress(
                 offset = offset,
@@ -89,6 +98,7 @@ internal fun emptyMeasureResult(
     layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
 ): TransformingLazyColumnMeasureResult =
     TransformingLazyColumnMeasureResult(
+        anchorItemKey = EmptyAnchorKey,
         anchorItemIndex = 0,
         anchorItemScrollOffset = 0,
         visibleItems = emptyList(),
@@ -104,3 +114,6 @@ internal fun emptyMeasureResult(
         childConstraints = Constraints(),
         measureResult = layout(containerConstraints.maxWidth, containerConstraints.maxHeight) {},
     )
+
+/** A default value used to indicate that the anchor item is not specified. */
+internal object EmptyAnchorKey

@@ -16,23 +16,22 @@ package androidx.test.shell {
   public static final class Shell.CommandOutput {
     ctor public Shell.CommandOutput(String command, androidx.test.shell.ShellProcess shellProcess);
     method public String getStdErr();
+    method public java.io.InputStream getStdErrStream();
     method public String getStdOut();
-    method public kotlin.sequences.Sequence<java.lang.String> stdErrLines();
-    method public <T> T stdErrStream(kotlin.jvm.functions.Function1<? super java.io.InputStream,? extends T> block);
-    method public kotlin.sequences.Sequence<java.lang.String> stdOutLines();
-    method public <T> T stdOutStream(kotlin.jvm.functions.Function1<? super java.io.InputStream,? extends T> block);
+    method public java.io.InputStream getStdOutStream();
+    method public boolean isRunning();
     property public String stdErr;
+    property public java.io.InputStream stdErrStream;
     property public String stdOut;
+    property public java.io.InputStream stdOutStream;
   }
 
   public final class ShellProcess implements java.lang.AutoCloseable {
     method public void close();
     method public static androidx.test.shell.ShellProcess create();
     method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort);
-    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize);
-    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize);
-    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs);
-    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
+    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs);
+    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
     method public java.io.InputStream getStdErr();
     method public java.io.OutputStream getStdIn();
     method public java.io.InputStream getStdOut();
@@ -47,10 +46,8 @@ package androidx.test.shell {
   public static final class ShellProcess.Companion {
     method public androidx.test.shell.ShellProcess create();
     method public androidx.test.shell.ShellProcess create(optional int baseTcpPort);
-    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize);
-    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize);
-    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs);
-    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int stdOutBufferSize, optional int stdErrBufferSize, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
+    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs);
+    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
   }
 
 }
@@ -93,8 +90,8 @@ package androidx.test.shell.command {
 
   public final class Recording implements java.lang.AutoCloseable {
     ctor public Recording(androidx.test.shell.command.ProcessCommands process, androidx.test.shell.Shell.CommandOutput commandOutput, long timeLimitSeconds, int pid);
-    method public void await();
-    method public void await(optional long timeoutSeconds);
+    method public boolean await();
+    method public boolean await(optional long timeoutSeconds);
     method public void close();
     method public int getPid();
     method public boolean isRunning();

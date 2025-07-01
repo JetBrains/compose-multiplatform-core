@@ -50,11 +50,13 @@ public fun GlimmerTheme(
     typography: Typography = GlimmerTheme.typography,
     content: @Composable () -> Unit,
 ) {
+    val theme = GlimmerTheme(colors, typography)
     CompositionLocalProvider(
-        _localGlimmerTheme provides GlimmerTheme(colors, typography),
+        _localGlimmerTheme provides theme,
         // TODO: b/413429405
         LocalIndication provides NoIndication,
         LocalTextStyle provides typography.bodySmall,
+        LocalIconSize provides theme.iconSizes.medium,
         content = content,
     )
 }
@@ -66,12 +68,17 @@ public fun GlimmerTheme(
  *
  * @property colors [Colors] used by Glimmer components
  * @property typography [Typography] used by Glimmer components
+ * @property shapes [Shapes] used by Glimmer components
+ * @property iconSizes [IconSizes] used by icons
  */
 @Immutable
 public class GlimmerTheme(
     public val colors: Colors = Colors(),
     public val typography: Typography = Typography(),
 ) {
+    public val shapes: Shapes = _shapes
+    public val iconSizes: IconSizes = _iconSizes
+
     public companion object {
         /** Retrieves the current [Colors] at the call site's position in the hierarchy. */
         public val colors: Colors
@@ -80,6 +87,14 @@ public class GlimmerTheme(
         /** Retrieves the current [Typography] at the call site's position in the hierarchy. */
         public val typography: Typography
             @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.typography
+
+        /** Retrieves the current [Shapes] at the call site's position in the hierarchy. */
+        public val shapes: Shapes
+            @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.shapes
+
+        /** Retrieves the current [IconSizes] at the call site's position in the hierarchy. */
+        public val iconSizes: IconSizes
+            @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.iconSizes
 
         /**
          * [CompositionLocal] providing [GlimmerTheme] throughout the hierarchy. You can use
@@ -90,6 +105,18 @@ public class GlimmerTheme(
          */
         public val LocalGlimmerTheme: CompositionLocal<GlimmerTheme>
             get() = _localGlimmerTheme
+
+        /**
+         * Cached Shapes instance to be used across [GlimmerTheme] instances - currently shapes are
+         * not user-configurable.
+         */
+        private val _shapes = Shapes()
+
+        /**
+         * Cached IconSizes instance to be used across [GlimmerTheme] instances - currently icon
+         * sizes are not user-configurable.
+         */
+        internal val _iconSizes = IconSizes()
     }
 
     internal var defaultSurfaceBorderCached: BorderStroke? = null

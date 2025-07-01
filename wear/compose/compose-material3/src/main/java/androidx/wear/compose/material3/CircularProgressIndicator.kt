@@ -526,9 +526,8 @@ internal val circularIndeterminateGlobalRotationAnimationSpec =
     infiniteRepeatable<Float>(
         animation =
             keyframes {
-                durationMillis = 7500 // 5000ms duration + 2500ms pause
+                durationMillis = 5000
                 CircularGlobalRotationDegreesTarget at 5000 using LinearEasing
-                CircularGlobalRotationDegreesTarget at 7500 // Pause for 2500ms
             }
     )
 
@@ -540,12 +539,11 @@ internal val circularIndeterminateRotationAnimationSpec =
     infiniteRepeatable(
         animation =
             keyframes {
-                durationMillis = 7500 // 5000ms duration + 2500ms pause
+                durationMillis = 5000
                 0f at 1250 using CircularProgressEasing // hold for 1250ms
                 360f at 2500 using CircularProgressEasing // animate to 360 degrees for 1250ms
                 360f at 3750 using CircularProgressEasing // hold for 1250ms
                 720f at 5000 using CircularProgressEasing // animate to 720 degrees for 1250ms
-                720f at 7500 // Pause at 720% for 2500ms
             }
     )
 
@@ -554,12 +552,11 @@ internal val circularIndeterminateProgressAnimationSpec =
     infiniteRepeatable(
         animation =
             keyframes {
-                durationMillis = 7500 // 5000ms duration + 2500ms pause
+                durationMillis = 5000
                 0.8f at 1250 using CircularProgressEasing // animate from 0% to 80%
                 0.2f at 2500 using CircularProgressEasing // animate from 80% to 20%
                 0.8f at 3750 using CircularProgressEasing // animate from 20% to 80%
                 0.0f at 5000 using CircularProgressEasing // animate to 0%
-                0.0f at 7500 // pause at 0% for 2500ms
             }
     )
 

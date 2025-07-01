@@ -74,7 +74,7 @@ package androidx.xr.runtime.testing {
 
   public final class FakeRuntimeAnchor {
     method public void detach();
-    method public static int getAnchorsCreated();
+    method public static int getAnchorsCreatedCount();
     method public androidx.xr.runtime.internal.Anchor.PersistenceState getPersistenceState();
     method public androidx.xr.runtime.math.Pose getPose();
     method public androidx.xr.runtime.TrackingState getTrackingState();
@@ -82,7 +82,7 @@ package androidx.xr.runtime.testing {
     method public boolean isAttached();
     method public boolean isTrackingAvailable();
     method public void persist();
-    method public static void setAnchorsCreated(int);
+    method public static void setAnchorsCreatedCount(int);
     method public void setPersistenceState(androidx.xr.runtime.internal.Anchor.PersistenceState);
     method public void setPose(androidx.xr.runtime.math.Pose);
     method public void setTrackingState(androidx.xr.runtime.TrackingState);
@@ -98,10 +98,10 @@ package androidx.xr.runtime.testing {
   }
 
   public static final class FakeRuntimeAnchor.Companion {
-    method public int getAnchorsCreated();
-    method public void setAnchorsCreated(int);
+    method public int getAnchorsCreatedCount();
+    method public void setAnchorsCreatedCount(int);
     property public static int ANCHOR_RESOURCE_LIMIT;
-    property public static int anchorsCreated;
+    property public static int anchorsCreatedCount;
   }
 
   public final class FakeRuntimeHand {

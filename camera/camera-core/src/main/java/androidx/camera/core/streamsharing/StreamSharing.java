@@ -25,6 +25,7 @@ import static androidx.camera.core.impl.ImageInputConfig.OPTION_INPUT_FORMAT;
 import static androidx.camera.core.impl.ImageOutputConfig.OPTION_MIRROR_MODE;
 import static androidx.camera.core.impl.SessionConfig.getHigherPriorityTemplateType;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_STREAM_USE_CASE;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
 import static androidx.camera.core.impl.utils.TransformUtils.getRotatedSize;
 import static androidx.camera.core.impl.utils.TransformUtils.sizeToRect;
@@ -59,6 +60,7 @@ import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.futures.Futures;
@@ -130,6 +132,7 @@ public class StreamSharing extends UseCase {
         }
         mutableConfig.insertOption(StreamSharingConfig.OPTION_CAPTURE_TYPES, captureTypes);
         mutableConfig.insertOption(OPTION_MIRROR_MODE, MIRROR_MODE_ON_FRONT_ONLY);
+        mutableConfig.insertOption(OPTION_STREAM_USE_CASE, StreamUseCase.PREVIEW_VIDEO_STILL);
         return new StreamSharingConfig(OptionsBundle.from(mutableConfig));
     }
 

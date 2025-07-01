@@ -32,6 +32,7 @@ import androidx.camera.camera2.pipe.integration.config.CameraModule
 import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraDeviceSurfaceManager
+import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult
 import androidx.camera.core.impl.UseCaseConfig
@@ -100,6 +101,7 @@ public class CameraSurfaceAdapter(
      * @param cameraId the camera id of the camera device to transform the object
      * @param imageFormat the image format info for the surface configuration object
      * @param size the size info for the surface configuration object
+     * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
      */
     override fun transformSurfaceConfig(
@@ -107,6 +109,7 @@ public class CameraSurfaceAdapter(
         cameraId: String,
         imageFormat: Int,
         size: Size,
+        streamUseCase: StreamUseCase,
     ): SurfaceConfig {
         checkIfSupportedCombinationExist(cameraId)
 
@@ -114,6 +117,7 @@ public class CameraSurfaceAdapter(
             cameraMode,
             imageFormat,
             size,
+            streamUseCase,
         )
     }
 

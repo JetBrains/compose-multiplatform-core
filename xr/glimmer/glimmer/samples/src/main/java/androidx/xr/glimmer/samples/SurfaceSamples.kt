@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,11 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.SurfaceDefaults
 import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.list.VerticalList
 import androidx.xr.glimmer.surface
 
 @Composable
 fun SurfaceSampleUsage() {
-    LazyColumn(
+    VerticalList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {

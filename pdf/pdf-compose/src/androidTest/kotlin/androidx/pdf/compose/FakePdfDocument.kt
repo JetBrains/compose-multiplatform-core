@@ -24,6 +24,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
@@ -179,6 +180,10 @@ internal open class FakePdfDocument(
 
     override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
         return listOf()
+    }
+
+    override suspend fun write(destination: ParcelFileDescriptor) {
+        return
     }
 
     override fun close() {

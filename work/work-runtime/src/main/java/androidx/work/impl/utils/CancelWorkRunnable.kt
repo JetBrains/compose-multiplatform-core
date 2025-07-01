@@ -66,7 +66,7 @@ private fun iterativelyCancelWorkAndDependents(workDatabase: WorkDatabase, workS
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation]
  */
-fun forId(id: UUID, workManagerImpl: WorkManagerImpl): Operation =
+public fun forId(id: UUID, workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelWorkById",
@@ -84,7 +84,7 @@ fun forId(id: UUID, workManagerImpl: WorkManagerImpl): Operation =
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation]
  */
-fun forTag(tag: String, workManagerImpl: WorkManagerImpl): Operation =
+public fun forTag(tag: String, workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelWorkByTag_$tag",
@@ -108,7 +108,7 @@ fun forTag(tag: String, workManagerImpl: WorkManagerImpl): Operation =
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation]
  */
-fun forName(name: String, workManagerImpl: WorkManagerImpl): Operation =
+public fun forName(name: String, workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelWorkByName_$name",
@@ -118,7 +118,7 @@ fun forName(name: String, workManagerImpl: WorkManagerImpl): Operation =
         reschedulePendingWorkers(workManagerImpl)
     }
 
-fun forNameInline(name: String, workManagerImpl: WorkManagerImpl) {
+public fun forNameInline(name: String, workManagerImpl: WorkManagerImpl) {
     val workDatabase = workManagerImpl.workDatabase
     workDatabase.runInTransaction {
         val workSpecDao = workDatabase.workSpecDao()
@@ -135,7 +135,7 @@ fun forNameInline(name: String, workManagerImpl: WorkManagerImpl) {
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation] that cancels all work
  */
-fun forAll(workManagerImpl: WorkManagerImpl): Operation =
+public fun forAll(workManagerImpl: WorkManagerImpl): Operation =
     launchOperation(
         tracer = workManagerImpl.configuration.tracer,
         label = "CancelAllWork",

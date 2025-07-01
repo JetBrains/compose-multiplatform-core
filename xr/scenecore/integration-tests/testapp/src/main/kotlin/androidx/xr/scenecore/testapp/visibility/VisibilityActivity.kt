@@ -46,7 +46,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
@@ -172,7 +171,7 @@ class VisibilityActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             // Async get gltf model
-            model = GltfModel.createAsync(session!!, MODEL_PATH).await()
+            model = GltfModel.create(session!!, MODEL_PATH)
 
             // create gltf entities
             createGltfEntities()

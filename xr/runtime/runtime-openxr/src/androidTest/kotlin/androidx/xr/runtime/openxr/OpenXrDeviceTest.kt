@@ -16,12 +16,11 @@
 
 package androidx.xr.runtime.openxr
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -45,10 +44,10 @@ class OpenXrDeviceTest {
         }
     }
 
-    @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
 
-    lateinit private var openXrManager: OpenXrManager
-    lateinit private var underTest: OpenXrDevice
+    private lateinit var openXrManager: OpenXrManager
+    private lateinit var underTest: OpenXrDevice
 
     @Before
     fun setUp() {
@@ -75,7 +74,6 @@ class OpenXrDeviceTest {
             openXrManager = OpenXrManager(it, perceptionManager, timeSource)
             openXrManager.create()
             openXrManager.resume()
-            openXrManager.configure(Config(handTracking = Config.HandTrackingMode.BOTH))
 
             testBody()
 

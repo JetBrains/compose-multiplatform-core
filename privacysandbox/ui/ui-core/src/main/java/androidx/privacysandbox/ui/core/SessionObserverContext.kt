@@ -24,18 +24,18 @@ import android.view.View
  * When [SessionObserver.onSessionClosed] is called for the associated session observers, the
  * resources of the [SessionObserverContext] will be freed.
  */
-class SessionObserverContext(
+public class SessionObserverContext(
     /**
      * Returns the view that is presenting content for the associated [SandboxedUiAdapter.Session].
      *
      * This value will be non-null if the [SandboxedUiAdapter.Session] and the [SessionObserver] are
      * created from the same process. Otherwise, it will be null.
      */
-    val view: View?,
+    public val view: View?,
     /** Returns the signal options which are supported by the container hosting the UI session. */
-    val supportedSignalOptions: Set<String>,
+    public val supportedSignalOptions: Set<String>,
 ) {
-    override fun toString() =
+    override fun toString(): String =
         "SessionObserverContext(view=$view, supportedSignalOptions=$supportedSignalOptions)"
 
     override fun equals(other: Any?): Boolean {

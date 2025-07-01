@@ -46,7 +46,6 @@ androidXMultiplatform {
                     new File("src/jvmMain/resources/META-INF/proguard/androidx.datastore_datastore-preferences-core.pro")
             )
         }
-        experimentalProperties["android.lint.useK2Uast"] = false
     }
 
     defaultPlatform(PlatformIdentifier.JVM)

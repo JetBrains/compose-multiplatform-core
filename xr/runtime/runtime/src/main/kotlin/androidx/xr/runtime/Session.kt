@@ -35,6 +35,7 @@ import androidx.xr.runtime.internal.RuntimeFactory
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -67,8 +68,7 @@ public constructor(
     public val sessionConnectors: List<SessionConnector> =
         loadProviders(SessionConnector::class.java, SESSION_CONNECTOR_PROVIDERS),
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public val coroutineScope: CoroutineScope =
-        CoroutineScope(context = CoroutineContexts.Lightweight),
+    public val coroutineScope: CoroutineScope = CoroutineScope(context = EmptyCoroutineContext),
 ) {
     init {
         check(!activitySessionMap.containsKey(activity)) {
@@ -103,9 +103,10 @@ public constructor(
          */
         @JvmOverloads
         @JvmStatic
+        @Suppress("deprecation")
         public fun create(
             activity: Activity,
-            coroutineContext: CoroutineContext = CoroutineContexts.Lightweight,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
         ): SessionCreateResult = create(activity, coroutineContext, false)
 
         /**
@@ -118,17 +119,18 @@ public constructor(
          *   activity space for the session. When true, causes ActivitySpace for this Session to
          *   always be gravity aligned and to have a scale of [1 unit = 1 Meter]. Note that this
          *   might result in visual inconsistencies between HOME_SPACE and FULL_SPACE_MANAGED modes.
-         *   Defaults to False.
+         *   Defaults to True.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
          *   newly created session, or [SessionCreatePermissionsNotGranted] if the required
          *   permissions haven't been granted.
          */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+        @Deprecated("Will be deleted in a future release.")
         public fun create(
             activity: Activity,
-            coroutineContext: CoroutineContext = CoroutineContexts.Lightweight,
-            unscaledGravityAlignedActivitySpace: Boolean = false,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
+            unscaledGravityAlignedActivitySpace: Boolean = true,
         ): SessionCreateResult {
 
             check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }

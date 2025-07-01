@@ -84,6 +84,7 @@ constructor(
     public val flow: Flow<PagingData<Value>> =
         PageFetcher(
                 pagingSourceFactory =
+                    @Suppress("USELESS_IS_CHECK")
                     if (pagingSourceFactory is SuspendingPagingSourceFactory<Key, Value>) {
                         pagingSourceFactory::create
                     } else {

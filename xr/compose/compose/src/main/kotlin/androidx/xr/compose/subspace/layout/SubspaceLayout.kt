@@ -29,8 +29,8 @@ import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCompos
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetCoreEntity
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetMeasurePolicy
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode.Companion.SetModifier
-import androidx.xr.compose.subspace.rememberCoreContentlessEntity
-import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.compose.subspace.rememberCoreGroupEntity
+import androidx.xr.scenecore.GroupEntity
 
 /**
  * [SubspaceLayout] is the main component for laying out leaf nodes with zero children.
@@ -112,8 +112,8 @@ public inline fun SubspaceLayout(
             "Subspace composition. Please ensure that this component is in a Subspace or " +
             " is a child of another SubspaceComposable."
     }
-    val coreEntity = rememberCoreContentlessEntity {
-        ContentlessEntity.create(session = this, name = entityName("Entity"))
+    val coreEntity = rememberCoreGroupEntity {
+        GroupEntity.create(session = this, name = entityName("Entity"))
     }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
     ComposeNode<ComposeSubspaceNode, Applier<Any>>(
@@ -192,8 +192,8 @@ internal inline fun SubspaceLayout(
 internal inline fun SubspaceLayout(
     crossinline content: @Composable @SubspaceComposable () -> Unit,
     modifier: SubspaceModifier = SubspaceModifier,
-    coreEntity: CoreEntity = rememberCoreContentlessEntity {
-        ContentlessEntity.create(session = this, name = entityName("Entity"))
+    coreEntity: CoreEntity = rememberCoreGroupEntity {
+        GroupEntity.create(session = this, name = entityName("Entity"))
     },
     measurePolicy: SubspaceMeasurePolicy,
 ) {

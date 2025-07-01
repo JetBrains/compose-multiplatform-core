@@ -49,10 +49,8 @@ class SpatialEnvironmentManager(private val session: Session) {
 
     private fun setGeoAndSkybox(skybox: ExrImage?, geometry: GltfModel?) {
         mSpatialEnvironmentPreference = SpatialEnvironmentPreference(skybox, geometry)
-        val unused =
-            mSession.scene.spatialEnvironment.setSpatialEnvironmentPreference(
-                mSpatialEnvironmentPreference
-            )
+        mSession.scene.spatialEnvironment.preferredSpatialEnvironment =
+            mSpatialEnvironmentPreference
     }
 
     @Composable
@@ -61,8 +59,7 @@ class SpatialEnvironmentManager(private val session: Session) {
         var blueSkybox by remember { mutableStateOf<ExrImage?>(null) }
 
         LaunchedEffect(Unit) {
-            groundGeo =
-                GltfModel.createAsync(session, Paths.get("models", "GroundGeometry.glb")).await()
+            groundGeo = GltfModel.create(session, Paths.get("models", "GroundGeometry.glb"))
         }
         LaunchedEffect(Unit) {
             blueSkybox =
@@ -77,7 +74,7 @@ class SpatialEnvironmentManager(private val session: Session) {
             Button(
                 onClick = {
                     mSpatialEnvironmentPreference = null
-                    mSession.scene.spatialEnvironment.setSpatialEnvironmentPreference(null)
+                    mSession.scene.spatialEnvironment.preferredSpatialEnvironment = null
                 }
             ) {
                 Text(text = "Revert to System Default Environment", fontSize = 15.sp)

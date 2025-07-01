@@ -35,13 +35,13 @@ import java.time.Instant
  * For more information about each field refer to [CustomAudience].
  */
 @ExperimentalFeatures.Ext14OptIn
-class PartialCustomAudience
+public class PartialCustomAudience
 @JvmOverloads
 constructor(
-    val name: String,
-    val activationTime: Instant? = null,
-    val expirationTime: Instant? = null,
-    val userBiddingSignals: AdSelectionSignals? = null,
+    public val name: String,
+    public val activationTime: Instant? = null,
+    public val expirationTime: Instant? = null,
+    public val userBiddingSignals: AdSelectionSignals? = null,
 ) {
     /** Checks whether two PartialCustomAudience objects contain the same information. */
     override fun equals(other: Any?): Boolean {

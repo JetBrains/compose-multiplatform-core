@@ -33,6 +33,7 @@ object IntrospectionHelper {
     object AppFunctionAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_SERVICE_PACKAGE_NAME, "AppFunction")
         const val PROPERTY_IS_ENABLED = "isEnabled"
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
     }
 
     object AppFunctionSchemaDefinitionAnnotation {

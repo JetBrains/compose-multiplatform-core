@@ -749,7 +749,6 @@ public class WebViewFeature {
      * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
      * {@link Profile#clearOriginMatchedHeader(String)}, and {@link Profile#clearAllOriginMatchedHeaders()}.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
 
     /**

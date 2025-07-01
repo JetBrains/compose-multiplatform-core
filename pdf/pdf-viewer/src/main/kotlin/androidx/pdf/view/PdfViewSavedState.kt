@@ -28,8 +28,11 @@ internal class PdfViewSavedState : AbsSavedState {
     var contentCenterX: Float = 0F
     var contentCenterY: Float = 0F
     var zoom: Float = 1F
+    var isFormFillingEnabled: Boolean = false
     var documentUri: Uri? = null
     var paginationModel: PaginationModel? = null
+    var pdfFormFillingState: PdfFormFillingState? = null
+
     /**
      * The width of the PdfView before the last layout change (e.g., before rotation). Used to
      * preserve the zoom level when the device is rotated.
@@ -59,8 +62,11 @@ internal class PdfViewSavedState : AbsSavedState {
         contentCenterY = parcel.readFloat()
         zoom = parcel.readFloat()
         viewWidth = parcel.readInt()
+        isFormFillingEnabled = parcel.readBoolean()
         documentUri = ParcelCompat.readParcelable(parcel, loader, Uri::class.java)
         paginationModel = ParcelCompat.readParcelable(parcel, loader, PaginationModel::class.java)
+        pdfFormFillingState =
+            ParcelCompat.readParcelable(parcel, loader, PdfFormFillingState::class.java)
         selectionModel = ParcelCompat.readParcelable(parcel, loader, SelectionModel::class.java)
     }
 
@@ -70,8 +76,10 @@ internal class PdfViewSavedState : AbsSavedState {
         dest.writeFloat(contentCenterY)
         dest.writeFloat(zoom)
         dest.writeInt(viewWidth)
+        dest.writeBoolean(isFormFillingEnabled)
         dest.writeParcelable(documentUri, flags)
         dest.writeParcelable(paginationModel, flags)
+        dest.writeParcelable(pdfFormFillingState, flags)
         dest.writeParcelable(selectionModel, flags)
     }
 

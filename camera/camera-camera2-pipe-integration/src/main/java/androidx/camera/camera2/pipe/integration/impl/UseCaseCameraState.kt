@@ -36,10 +36,7 @@ import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
-import androidx.camera.core.Preview
 import androidx.camera.core.impl.SessionConfig
-import androidx.camera.core.impl.TagBundle
-import androidx.camera.core.streamsharing.StreamSharing
 import javax.inject.Inject
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.atomicfu.atomic
@@ -64,7 +61,6 @@ public class UseCaseCameraState
 constructor(
     useCaseGraphConfig: UseCaseGraphConfig,
     private val threads: UseCaseThreads,
-    private val sessionProcessorManager: SessionProcessorManager?,
     private val templateParamsOverride: TemplateParamsOverride,
 ) {
     private val lock = Any()
@@ -248,11 +244,6 @@ constructor(
     public fun tryStartRepeating(): Unit = submitLatest()
 
     private fun submitLatest() {
-        if (sessionProcessorManager != null) {
-            submitLatestWithSessionProcessor()
-            return
-        }
-
         // Update the cameraGraph with the most recent set of values.
         // Since acquireSession is a suspending function, it's possible that subsequent updates
         // can occur while waiting for the acquireSession call to complete. If this happens,
@@ -323,66 +314,6 @@ constructor(
                 // calls.
                 result?.complete(Unit)
             }
-        }
-    }
-
-    private fun submitLatestWithSessionProcessor() {
-        checkNotNull(sessionProcessorManager)
-        synchronized(lock) {
-            updating = false
-            val signal = updateSignal
-            updateSignal = null
-
-            if (currentSessionConfig == null) {
-                signal?.complete(Unit)
-                return
-            }
-
-            // Here we're intentionally building a new SessionConfig. Various request parameters,
-            // such as zoom or 3A are directly translated to corresponding CameraPipe types and
-            // APIs. As such, we need to build a new, "combined" SessionConfig that has these
-            // updated request parameters set. Otherwise, certain settings like zoom would be
-            // disregarded.
-            SessionConfig.Builder()
-                .apply {
-                    currentTemplate?.let { setTemplateType(it.value) }
-                    setImplementationOptions(
-                        Camera2ImplConfig.Builder()
-                            .apply {
-                                for ((key, value) in currentParameters) {
-                                    setCaptureRequestOptionWithType(key, value)
-                                }
-                            }
-                            .build()
-                    )
-                    currentInternalParameters[CAMERAX_TAG_BUNDLE]?.let {
-                        val tagBundleMap = (it as TagBundle).toMap()
-                        for ((tag, value) in tagBundleMap) {
-                            addTag(tag, value)
-                        }
-                    }
-                    currentSessionConfig?.let {
-                        addAllCameraCaptureCallbacks(
-                            it.repeatingCaptureConfig.cameraCaptureCallbacks
-                        )
-                    }
-                }
-                .build()
-                .also { sessionConfig -> sessionProcessorManager.sessionConfig = sessionConfig }
-
-            if (
-                currentSessionConfig!!.repeatingCaptureConfig.surfaces.any {
-                    it.containerClass == Preview::class.java ||
-                        it.containerClass == StreamSharing::class.java
-                }
-            ) {
-                sessionProcessorManager.startRepeating(
-                    currentSessionConfig!!.repeatingCaptureConfig.tagBundle
-                )
-            } else {
-                sessionProcessorManager.stopRepeating()
-            }
-            signal?.complete(Unit)
         }
     }
 

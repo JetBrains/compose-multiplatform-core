@@ -36,7 +36,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 5)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
-open class MeasurementManagerImplCommon(
+public open class MeasurementManagerImplCommon(
     protected val mMeasurementManager: android.adservices.measurement.MeasurementManager
 ) : MeasurementManager() {
     @DoNotInline

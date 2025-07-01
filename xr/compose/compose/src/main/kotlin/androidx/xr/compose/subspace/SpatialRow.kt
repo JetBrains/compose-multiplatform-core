@@ -25,7 +25,7 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.scenecore.GroupEntity
 
 /**
  * A layout composable that arranges its children in a horizontal sequence. For arranging children
@@ -93,12 +93,8 @@ private fun SpatialRow(
         modifier = modifier,
         content = { SpatialRowScopeInstance.content() },
         coreEntity =
-            rememberCoreContentlessEntity {
-                ContentlessEntity.create(
-                    this,
-                    name = entityName("SpatialRow"),
-                    pose = Pose.Identity,
-                )
+            rememberCoreGroupEntity {
+                GroupEntity.create(this, name = entityName("SpatialRow"), pose = Pose.Identity)
             },
         measurePolicy =
             RowColumnMeasurePolicy(

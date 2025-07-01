@@ -33,7 +33,7 @@ import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.pdf.view.PdfPoint
+import androidx.pdf.PdfPoint
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.Selection
 import androidx.pdf.view.TextSelection

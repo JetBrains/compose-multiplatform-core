@@ -17,25 +17,25 @@
 package androidx.privacysandbox.ui.core
 
 /** Contains UI Lib experimental feature opt-in annotations. */
-sealed interface ExperimentalFeatures {
+public sealed interface ExperimentalFeatures {
     @RequiresOptIn(
         "This API is experimental. It may be changed in the future without notice.",
         RequiresOptIn.Level.WARNING,
     )
     @Retention(AnnotationRetention.BINARY)
-    annotation class DelegatingAdapterApi
+    public annotation class DelegatingAdapterApi
 
     @RequiresOptIn(
         "This API is experimental. It may be changed in the future without notice.",
         RequiresOptIn.Level.WARNING,
     )
     @Retention(AnnotationRetention.BINARY)
-    annotation class SharedUiPresentationApi
+    public annotation class SharedUiPresentationApi
 
     @RequiresOptIn(
         "This API is experimental. It may be changed in the future without notice.",
         RequiresOptIn.Level.WARNING,
     )
     @Retention(AnnotationRetention.BINARY)
-    annotation class ChangingContentUiZOrderApi
+    public annotation class ChangingContentUiZOrderApi
 }

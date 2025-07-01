@@ -55,7 +55,11 @@ public interface RegistryManagerProvider {
     public fun onClearCredentialRegistry(
         request: ClearCredentialRegistryRequest,
         executor: Executor,
-        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>,
+        callback:
+            CredentialManagerCallback<
+                ClearCredentialRegistryResponse,
+                ClearCredentialRegistryException,
+            >,
     )
 
     /** Returns true if the provider is available on this device, or otherwise false. */

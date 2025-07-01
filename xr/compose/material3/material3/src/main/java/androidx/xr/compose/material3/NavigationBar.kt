@@ -108,7 +108,7 @@ public fun NavigationBar(
     }
 }
 
-private object XrNavigationBarTokens {
+internal object XrNavigationBarTokens {
     /** The [OrbiterOffset] for NavigationBar Orbiters in Full Space Mode (FSM). */
     val OrbiterOffset = 24.dp
 

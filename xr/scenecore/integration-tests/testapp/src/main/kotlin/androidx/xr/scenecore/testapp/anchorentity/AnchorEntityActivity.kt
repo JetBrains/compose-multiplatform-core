@@ -38,7 +38,6 @@ import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 class AnchorEntityActivity : AppCompatActivity() {
@@ -89,7 +88,7 @@ class AnchorEntityActivity : AppCompatActivity() {
                 Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
             )
 
-            xyzModel = GltfModel.createAsync(session!!, XYZ_ARROWS_MODEL).await()
+            xyzModel = GltfModel.create(session!!, XYZ_ARROWS_MODEL)
 
             // Create anchored gltf entity
             anchorEntity =

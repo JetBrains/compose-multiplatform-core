@@ -24,6 +24,10 @@
         <attr name="fastScrollVerticalThumbMarginEnd" format="dimension" />
         <!-- Flag dictating whether the form filling feature is enabled. -->
         <attr name="isFormFillingEnabled" format="boolean"/>
+        <!-- Floating point value that represents the minimum scaling factor of the PDF content -->
+        <attr name="minZoom" format="float"/>
+        <!-- Floating point value that represents the maximum scaling factor of the PDF content -->
+        <attr name="maxZoom" format="float"/>
     </declare-styleable>
 
     <declare-styleable name="FastScrollView">
@@ -32,8 +36,8 @@
     </declare-styleable>
 
     <declare-styleable name="ZoomView">
-        <attr name="minZoom" format="float" />
-        <attr name="maxZoom" format="float" />
+        <attr name="minimumZoom" format="float" />
+        <attr name="maximumZoom" format="float" />
         <attr name="saveState" format="boolean" />
     </declare-styleable>
 

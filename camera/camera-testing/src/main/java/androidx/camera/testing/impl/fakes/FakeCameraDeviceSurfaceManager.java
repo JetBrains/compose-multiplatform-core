@@ -33,6 +33,7 @@ import androidx.camera.core.impl.ImageAnalysisConfig;
 import androidx.camera.core.impl.ImageCaptureConfig;
 import androidx.camera.core.impl.PreviewConfig;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult;
 import androidx.camera.core.impl.UseCaseConfig;
@@ -83,11 +84,12 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
-            @NonNull Size size) {
+            @NonNull Size size,
+            @NonNull StreamUseCase streamUseCase) {
 
         //returns a placeholder SurfaceConfig
         return SurfaceConfig.create(SurfaceConfig.ConfigType.PRIV,
-                SurfaceConfig.ConfigSize.PREVIEW);
+                SurfaceConfig.ConfigSize.PREVIEW, streamUseCase);
     }
 
     @Override

@@ -35,7 +35,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class OpenXrViewCameraTest {
-    lateinit private var underTest: OpenXrViewCamera
+    private lateinit var underTest: OpenXrViewCamera
 
     @Before
     fun setUp() {

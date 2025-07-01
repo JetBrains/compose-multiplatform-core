@@ -34,7 +34,7 @@ import androidx.privacysandbox.sdkruntime.core.SandboxedSdkInfo
 import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
 import androidx.privacysandbox.sdkruntime.core.internal.ClientApiVersion
 import androidx.privacysandbox.sdkruntime.core.internal.ClientFeature
 import androidx.test.core.app.ActivityScenario
@@ -398,7 +398,7 @@ internal class LocalSdkProviderTest(
         }
     }
 
-    internal class TestStubController : SdkSandboxControllerCompat.SandboxControllerImpl {
+    internal class TestStubController : SdkSandboxControllerBackend {
 
         var sandboxedSdksResult: List<SandboxedSdkCompat> = emptyList()
         var appOwnedSdksResult: List<AppOwnedSdkSandboxInterfaceCompat> = emptyList()

@@ -25,6 +25,7 @@ import androidx.core.util.isEmpty
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfPoint
 import androidx.pdf.models.FormWidgetInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -198,6 +199,14 @@ internal class PageManager(
                     }
                 }
         pages.put(pageNum, page)
+    }
+
+    fun maybeLoadFormWidgetMetadata() {
+        pages.valueIterator().forEach {
+            if (it.formWidgetInfos == null) {
+                it.maybeUpdateFormWidgetInfos()
+            }
+        }
     }
 
     /** Updates the form widget information in the given [pageNum] when a edit is applied. */

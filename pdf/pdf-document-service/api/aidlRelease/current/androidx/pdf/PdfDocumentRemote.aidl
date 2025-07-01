@@ -52,4 +52,7 @@ interface PdfDocumentRemote {
   List<android.graphics.pdf.models.FormWidgetInfo> getFormWidgetInfos(int pageNum);
   List<android.graphics.pdf.models.FormWidgetInfo> getFormWidgetInfosOfType(int pageNum, in int[] types);
   List<android.graphics.Rect> applyEdit(int pageNum, in android.graphics.pdf.models.FormEditRecord editRecord);
+  void write(in ParcelFileDescriptor destination, boolean removePasswordProtection);
+  androidx.pdf.annotation.models.AnnotationResult addAnnotations(in ParcelFileDescriptor pfd);
+  List<androidx.pdf.annotation.models.PdfAnnotation> getPageAnnotations(int pageNum);
 }

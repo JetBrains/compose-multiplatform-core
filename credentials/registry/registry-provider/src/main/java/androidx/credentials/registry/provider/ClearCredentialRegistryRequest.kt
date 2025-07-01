@@ -16,27 +16,45 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * A request to clear the credential registries stored for your app, which were registered using the
  * [RegistryManager.registerCredentials] API.
  *
- * @param deleteAll whether to delete all registries for your app
- * @param deletePerTypeConfig an option to clear the registries for a given type matching the
+ * @property isDeleteAll whether to delete all registries for your app
+ * @property deletePerTypeConfig an option to clear the registries for a given type matching the
  *   [RegisterCredentialsRequest.type] provided during the [RegistryManager.registerCredentials]
  *   call
  * @constructor
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-public class ClearCredentialRegistryRequest(
-    public val deleteAll: Boolean,
+public class ClearCredentialRegistryRequest
+private constructor(
+    public val isDeleteAll: Boolean,
     public val deletePerTypeConfig: PerTypeConfig?,
 ) {
     /**
+     * Constructs a [ClearCredentialRegistryRequest]
+     *
+     * @param isDeleteAll whether to delete all registries for your app
+     */
+    public constructor(
+        isDeleteAll: Boolean
+    ) : this(isDeleteAll = isDeleteAll, deletePerTypeConfig = null)
+
+    /**
+     * Constructs a [ClearCredentialRegistryRequest]
+     *
+     * @param deletePerTypeConfig an option to clear the registries for a given type matching the
+     *   [RegisterCredentialsRequest.type] provided during the [RegistryManager.registerCredentials]
+     *   call
+     */
+    public constructor(
+        deletePerTypeConfig: PerTypeConfig
+    ) : this(isDeleteAll = false, deletePerTypeConfig = deletePerTypeConfig)
+
+    /**
      * Configures how to clear the registries for a given type.
      *
-     * @param deleteAll whether to delete all registries for the given type
+     * @param isDeleteAll whether to delete all registries for the given type
      * @param type the type of registry to clear, matching the [RegisterCredentialsRequest.type]
      *   provided provided during the [RegistryManager.registerCredentials] call
      * @param registryIds the IDs of the registries for the given type to delete, matching one or
@@ -44,7 +62,7 @@ public class ClearCredentialRegistryRequest(
      * @constructor constructs an instance of [PerTypeConfig]
      */
     public class PerTypeConfig(
-        public val deleteAll: Boolean,
+        public val isDeleteAll: Boolean,
         public val type: String,
         public val registryIds: List<String>,
     )

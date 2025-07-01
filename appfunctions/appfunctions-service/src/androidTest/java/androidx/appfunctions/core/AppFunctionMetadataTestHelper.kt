@@ -170,6 +170,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 id = FunctionIds.NO_SCHEMA_EXECUTION_SUCCEED,
                 packageName = "androidx.appfunctions.service.test",
                 isEnabled = true,
+                description = "Test function without schema, successful execution expected.",
                 schema = null,
                 parameters = emptyList(),
                 response =
@@ -188,6 +189,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 id = FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
                 packageName = "androidx.appfunctions.service.test",
                 isEnabled = true,
+                description = "Test function without schema, enabled by default.",
                 schema = null,
                 parameters = emptyList(),
                 response =
@@ -206,6 +208,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 id = FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
                 packageName = "androidx.appfunctions.service.test",
                 isEnabled = false,
+                description = "Test function without schema, disabled by default.",
                 schema = null,
                 parameters = emptyList(),
                 response =
@@ -278,6 +281,7 @@ internal class AppFunctionMetadataTestHelper(private val context: Context) {
                 id = FunctionIds.NO_SCHEMA_EXECUTION_FAIL,
                 packageName = "androidx.appfunctions.service.test",
                 isEnabled = true,
+                description = "Test function without schema, failed execution expected.",
                 schema = null,
                 parameters = emptyList(),
                 response =

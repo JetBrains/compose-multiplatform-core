@@ -43,12 +43,14 @@ package androidx.xr.runtime {
     field public static final androidx.xr.runtime.Config.DepthEstimationMode DISABLED;
     field public static final androidx.xr.runtime.Config.DepthEstimationMode RAW_ONLY;
     field public static final androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_AND_RAW;
+    field public static final androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_ONLY;
   }
 
   public static final class Config.DepthEstimationMode.Companion {
     property public androidx.xr.runtime.Config.DepthEstimationMode DISABLED;
     property public androidx.xr.runtime.Config.DepthEstimationMode RAW_ONLY;
     property public androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_AND_RAW;
+    property public androidx.xr.runtime.Config.DepthEstimationMode SMOOTH_ONLY;
   }
 
   public static final class Config.HandTrackingMode {

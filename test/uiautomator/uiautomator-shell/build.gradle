@@ -28,7 +28,7 @@ plugins {
 android {
     namespace = "androidx.test.shell"
     defaultConfig {
-        minSdk 23
+        minSdk 21
     }
 }
 

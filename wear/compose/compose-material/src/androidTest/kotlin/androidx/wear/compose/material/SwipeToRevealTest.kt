@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -52,7 +53,9 @@ import androidx.wear.compose.foundation.BasicSwipeToDismissBox
 import androidx.wear.compose.material.SwipeToRevealDefaults.createRevealAnchors
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 
@@ -730,6 +733,8 @@ class SwipeToRevealTest {
             }
         }
 
+        rule.waitForIdle()
+
         // assert that state resets when it is partial swiped then another S2R is swiped
         rule.runOnIdle { assertEquals(RevealValue.Covered, revealStateOne.currentValue) }
     }
@@ -747,17 +752,23 @@ class SwipeToRevealTest {
                 rememberRevealState(
                     anchors = createRevealAnchors(revealDirection = RevealDirection.Both)
                 )
-            swipeToRevealWithDefaults(state = revealStateOne)
-            swipeToRevealWithDefaults(state = revealStateTwo)
+            ScreenConfiguration(SCREEN_SIZE_LARGE) {
+                // Make sure S2R does not overlap
+                Column {
+                    swipeToRevealWithDefaults(state = revealStateOne)
+                    swipeToRevealWithDefaults(state = revealStateTwo)
+                }
+            }
 
-            val coroutineScope = rememberCoroutineScope()
-            coroutineScope.launch {
+            LaunchedEffect(Unit) {
                 // First change
                 revealStateOne.snapTo(RevealValue.LeftRevealing)
                 // Second change, in a different state
                 revealStateTwo.snapTo(RevealValue.LeftRevealing)
             }
         }
+
+        rule.waitForIdle()
 
         // assert that state resets when it is partial swiped then another S2R is swiped
         rule.runOnIdle { assertEquals(RevealValue.Covered, revealStateOne.currentValue) }
@@ -780,6 +791,8 @@ class SwipeToRevealTest {
                 revealStateOne.snapTo(lastValue) // Second change, same state
             }
         }
+
+        rule.waitForIdle()
 
         rule.runOnIdle { assertEquals(lastValue, revealStateOne.currentValue) }
     }
@@ -807,6 +820,8 @@ class SwipeToRevealTest {
                 revealStateOne.snapTo(lastValue) // Second change, same state
             }
         }
+
+        rule.waitForIdle()
 
         rule.runOnIdle { assertEquals(lastValue, revealStateOne.currentValue) }
     }
@@ -883,6 +898,30 @@ class SwipeToRevealTest {
         rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeLeft() }
 
         assert(onPreScrollDispatch < 0) // Swiping left means the dispatch will be negative
+    }
+
+    @Test()
+    fun onRtl_animateToLeftRevealing() {
+        verifyIllegalAnimateTo(RevealValue.LeftRevealing)
+    }
+
+    @Test()
+    fun onRtl_animateToLeftRevealed() {
+        verifyIllegalAnimateTo(RevealValue.LeftRevealed)
+    }
+
+    private fun verifyIllegalAnimateTo(targetValue: RevealValue) {
+        lateinit var revealState: RevealState
+        rule.setContent {
+            revealState = rememberRevealState()
+            swipeToRevealWithDefaults(state = revealState)
+        }
+
+        assertThrows(IllegalStateException::class.java) {
+            // If use coroutineScope.launch, below block will run in parallel with test code, and we
+            // won't able to catch exception.
+            runBlocking { revealState.animateTo(targetValue) }
+        }
     }
 
     private fun verifyLastClickAction(
@@ -1007,12 +1046,17 @@ class SwipeToRevealTest {
 
     @Composable
     private fun getBoxContent(onClick: () -> Unit = {}, modifier: Modifier = Modifier) {
-        Box(modifier = modifier.size(width = 200.dp, height = 50.dp).clickable { onClick() }) {}
+        Box(
+            modifier =
+                modifier.background(Color.Red).size(width = 200.dp, height = 50.dp).clickable {
+                    onClick()
+                }
+        ) {}
     }
 
     @Composable
     private fun actionContent(modifier: Modifier = Modifier) {
-        Box(modifier = modifier.size(50.dp)) {}
+        Box(modifier = modifier.background(Color.Green).size(50.dp)) {}
     }
 
     @Composable

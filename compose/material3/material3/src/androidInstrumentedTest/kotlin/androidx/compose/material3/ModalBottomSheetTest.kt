@@ -1253,12 +1253,13 @@ class ModalBottomSheetTest {
                 onDismissRequest = { /*TODO*/ },
                 dragHandle = {},
                 contentWindowInsets = { WindowInsets(bottom = sheetHeight) },
+                modifier = Modifier.testTag(sheetTag),
             ) {
-                Box(Modifier.testTag(sheetTag))
+                Box {}
             }
         }
         // Size entirely filled by padding provided by WindowInsetPadding
-        rule.onNodeWithTag(sheetTag).onParent().assertHeightIsEqualTo(sheetHeight)
+        rule.onNodeWithTag(sheetTag).assertHeightIsEqualTo(sheetHeight)
     }
 
     @Test

@@ -2,7 +2,9 @@
 package androidx.appfunctions.service {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface AppFunction {
+    method public abstract boolean isDescribedByKdoc() default false;
     method public abstract boolean isEnabled() default true;
+    property public abstract boolean isDescribedByKdoc;
     property public abstract boolean isEnabled;
   }
 

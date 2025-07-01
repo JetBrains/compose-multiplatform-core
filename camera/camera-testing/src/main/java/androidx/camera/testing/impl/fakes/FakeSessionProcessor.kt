@@ -216,8 +216,12 @@ public class FakeSessionProcessor(
 
     override fun deInitSession() {
         deInitSessionCalled.complete(SystemClock.elapsedRealtimeNanos())
-        previewProcessorSurface.close()
-        captureProcessorSurface.close()
+        if (::previewProcessorSurface.isInitialized) {
+            previewProcessorSurface.close()
+        }
+        if (::captureProcessorSurface.isInitialized) {
+            captureProcessorSurface.close()
+        }
         imageAnalysisProcessorSurface?.close()
     }
 

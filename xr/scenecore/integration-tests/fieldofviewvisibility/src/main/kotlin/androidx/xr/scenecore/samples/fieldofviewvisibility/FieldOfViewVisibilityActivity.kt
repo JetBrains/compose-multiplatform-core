@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
@@ -92,7 +93,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         // Create the UI component managers.
         mSpatialEnvironmentManager = SpatialEnvironmentManager(mSession)
         mSurfaceEntityManager = SurfaceEntityManager(mSession)
-        mGltfManager = GltfManager(mSession)
+        mGltfManager = GltfManager(mSession, this.lifecycleScope)
         mPanelEntityManager = PanelEntityManager(mSession)
         mPerceivedResolutionManager =
             PerceivedResolutionManager(mSession, mSurfaceEntityManager, mPanelEntityManager)

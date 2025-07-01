@@ -124,7 +124,6 @@ class TestUseCaseCamera(
                     CameraStateAdapter(),
                     cameraGraph,
                     streamConfigMap,
-                    sessionProcessorManager = null,
                 )
                 .provideUseCaseGraphConfig(
                     useCaseSurfaceManager = useCaseSurfaceManager,
@@ -159,7 +158,6 @@ class TestUseCaseCamera(
                     UseCaseCameraState(
                         useCaseCameraGraphConfig,
                         threads,
-                        sessionProcessorManager = null,
                         templateParamsOverride = NoOpTemplateParamsOverride,
                     ),
                 useCaseGraphConfig = useCaseCameraGraphConfig,

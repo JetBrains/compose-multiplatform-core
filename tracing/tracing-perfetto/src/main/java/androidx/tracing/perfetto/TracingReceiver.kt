@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit
 
 /** Allows for enabling tracing in an app using a broadcast. @see [ACTION_ENABLE_TRACING] */
 @RestrictTo(LIBRARY)
-class TracingReceiver : BroadcastReceiver() {
+public class TracingReceiver : BroadcastReceiver() {
     private val executor by lazy {
         ThreadPoolExecutor(
             /* corePoolSize = */ 0,

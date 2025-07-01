@@ -35,14 +35,14 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  * @param adRenderId ad render id for server auctions
  */
 @OptIn(ExperimentalFeatures.Ext8OptIn::class, ExperimentalFeatures.Ext10OptIn::class)
-class AdData
+public class AdData
 @ExperimentalFeatures.Ext10OptIn
 public constructor(
-    val renderUri: Uri,
-    val metadata: String,
-    val adCounterKeys: Set<Int> = setOf(),
-    val adFilters: AdFilters? = null,
-    val adRenderId: String? = null,
+    public val renderUri: Uri,
+    public val metadata: String,
+    public val adCounterKeys: Set<Int> = setOf(),
+    public val adFilters: AdFilters? = null,
+    public val adRenderId: String? = null,
 ) {
     /**
      * Represents data specific to an ad that is necessary for ad selection and rendering.
@@ -53,7 +53,7 @@ public constructor(
      * @param adFilters all [AdFilters] associated with the ad
      */
     @ExperimentalFeatures.Ext8OptIn
-    constructor(
+    public constructor(
         renderUri: Uri,
         metadata: String,
         adCounterKeys: Set<Int> = setOf(),
@@ -66,7 +66,7 @@ public constructor(
      * @param renderUri a URI pointing to the ad's rendering assets
      * @param metadata buyer ad metadata represented as a JSON string
      */
-    constructor(renderUri: Uri, metadata: String) : this(renderUri, metadata, setOf(), null)
+    public constructor(renderUri: Uri, metadata: String) : this(renderUri, metadata, setOf(), null)
 
     /** Checks whether two [AdData] objects contain the same information. */
     override fun equals(other: Any?): Boolean {

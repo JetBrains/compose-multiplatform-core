@@ -47,7 +47,7 @@ import java.lang.reflect.Method
  *
  * For information see [Overview of system tracing]({@docRoot}studio/profile/systrace/).
  */
-actual object Trace {
+public actual object Trace {
     private const val TAG: String = "Trace"
     internal const val MAX_TRACE_LABEL_LENGTH: Int = 127
 
@@ -69,7 +69,7 @@ actual object Trace {
      * @return `true` if tracing is currently enabled, `false` otherwise.
      */
     @JvmStatic // A function (not a property) for source compatibility with Kotlin callers
-    fun isEnabled(): Boolean =
+    public fun isEnabled(): Boolean =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.isEnabled
         } else {
@@ -91,7 +91,7 @@ actual object Trace {
      * API 31.
      */
     @JvmStatic
-    fun forceEnableAppTracing() {
+    public fun forceEnableAppTracing() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             try {
                 if (!hasAppTracingEnabled) {
@@ -120,7 +120,7 @@ actual object Trace {
      * @param label The name of the code section to appear in the trace.
      */
     @JvmStatic
-    actual fun beginSection(label: String) {
+    public actual fun beginSection(label: String) {
         Trace.beginSection(label.truncatedTraceSectionLabel())
     }
 
@@ -132,7 +132,7 @@ actual object Trace {
      * that beginSection / endSection pairs are properly nested and called from the same thread.
      */
     @JvmStatic
-    actual fun endSection() {
+    public actual fun endSection() {
         Trace.endSection()
     }
 
@@ -166,7 +166,7 @@ actual object Trace {
      * @see endAsyncSection
      */
     @JvmStatic
-    fun beginAsyncSection(methodName: String, cookie: Int) {
+    public fun beginAsyncSection(methodName: String, cookie: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.beginAsyncSection(methodName.truncatedTraceSectionLabel(), cookie)
         } else {
@@ -186,7 +186,7 @@ actual object Trace {
      * @see beginAsyncSection
      */
     @JvmStatic
-    fun endAsyncSection(methodName: String, cookie: Int) {
+    public fun endAsyncSection(methodName: String, cookie: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.endAsyncSection(methodName.truncatedTraceSectionLabel(), cookie)
         } else {
@@ -201,7 +201,7 @@ actual object Trace {
      * @param counterValue The counter value.
      */
     @JvmStatic
-    fun setCounter(counterName: String, counterValue: Int) {
+    public fun setCounter(counterName: String, counterValue: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.setCounter(counterName.truncatedTraceSectionLabel(), counterValue)
         } else {

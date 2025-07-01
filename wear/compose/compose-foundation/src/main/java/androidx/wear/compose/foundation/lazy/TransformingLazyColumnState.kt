@@ -211,6 +211,17 @@ internal constructor(
     public var anchorItemScrollOffset: Int by mutableIntStateOf(initialAnchorItemScrollOffset)
         private set
 
+    /**
+     * The key of the item that is currently considered the anchor for scrolling purposes.
+     *
+     * This property is closely related to [anchorItemIndex], which provides the numerical index of
+     * the anchor item. `anchorItemKey` provides a more stable way to identify the anchor item
+     * across data changes, assuming unique keys are provided for the items in the
+     * [TransformingLazyColumn].
+     */
+    internal var anchorItemKey: Any = EmptyAnchorKey
+        private set
+
     internal var nearestRange: IntRange by
         mutableStateOf(
             calculateNearestItemsRange(initialAnchorItemIndex),
@@ -275,6 +286,7 @@ internal constructor(
     internal fun applyMeasureResult(measureResult: TransformingLazyColumnMeasureResult) {
         // TODO(b/416503918): The scroll shouldn't be fully consumed during the first touch.
         scrollToBeConsumed = 0f
+        anchorItemKey = measureResult.anchorItemKey
         anchorItemIndex = measureResult.anchorItemIndex
         anchorItemScrollOffset = measureResult.anchorItemScrollOffset
         lastMeasuredAnchorItemHeight = measureResult.lastMeasuredItemHeight
@@ -408,6 +420,7 @@ internal constructor(
         forceRemeasure: Boolean = true,
     ) {
         anchorItemIndex = index
+        anchorItemKey = EmptyAnchorKey // reset anchorItemKey as anchorItemIndex changed
         anchorItemScrollOffset = scrollOffset
         lastMeasuredAnchorItemHeight = Int.MIN_VALUE
         if (forceRemeasure) {
@@ -451,6 +464,7 @@ internal constructor(
 
 private val EmptyTransformingLazyColumnMeasureResult =
     TransformingLazyColumnMeasureResult(
+        anchorItemKey = EmptyAnchorKey,
         anchorItemIndex = 0,
         anchorItemScrollOffset = 0,
         visibleItems = emptyList(),

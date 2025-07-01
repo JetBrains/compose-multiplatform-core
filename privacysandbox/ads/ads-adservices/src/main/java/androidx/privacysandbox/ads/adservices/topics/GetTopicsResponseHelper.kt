@@ -24,7 +24,7 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 
 /** Helper class to consolidate conversion logic for GetTopicsResponse. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-object GetTopicsResponseHelper {
+public object GetTopicsResponseHelper {
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
     internal fun convertResponse(

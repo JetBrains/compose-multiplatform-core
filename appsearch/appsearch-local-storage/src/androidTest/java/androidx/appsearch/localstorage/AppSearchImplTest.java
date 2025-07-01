@@ -1289,6 +1289,11 @@ public class AppSearchImplTest {
                 IcingSearchEngineOptions.newBuilder(mUnlimitedConfig.toIcingSearchEngineOptions(
                                 mAppSearchDir.getAbsolutePath(),  /* isVMEnabled= */ false))
                         .setEnableStrictPageByteSizeLimit(true)
+                        // We need to enable schema database as by passing in a custom Icing
+                        // instance, AppSearch assumes that the VM is enabled and will use
+                        // database-scoped schema operations. We need Icing's options to match
+                        // this in order for setSchema to work properly.
+                        .setEnableSchemaDatabase(true)
                         .build();
         IcingSearchEngine icingSearchEngine = new IcingSearchEngine(icingOptions);
         AppSearchConfig appSearchConfig = new AppSearchConfigImpl(

@@ -72,16 +72,17 @@ class ShellTest {
         with(Shell.process()) {
             val pid =
                 with(Shell.command("echo pid:$$ ; exec sleep 10")) {
-                    stdOutStream {
-                        bufferedReader()
-                            .lineSequence()
-                            .first { it.startsWith("pid:") }
-                            .split("pid:")[1]
-                            .toInt()
-                    }
+                    stdOutStream
+                        .bufferedReader()
+                        .lineSequence()
+                        .first { it.startsWith("pid:") }
+                        .split("pid:")[1]
+                        .toInt()
                 }
-            killPid(pid)
-            assertThat(getPid("sleep")).isEqualTo(-1)
+
+            assertThat(isProcessAlive(pid)).isTrue()
+            killPid(pid = pid, signal = "SIGKILL")
+            assertThat(isProcessAlive(pid)).isFalse()
         }
 
     @SuppressLint("BanThreadSleep")
@@ -93,4 +94,30 @@ class ShellTest {
             recording.await()
             assertThat(file.length()).isGreaterThan(0L)
         }
+
+    @Test
+    fun longOutputCommand() {
+        val min = 100000
+        val max = 999999
+        val commandOutput =
+            Shell.command(
+                command = "i=$min; while [ ${"$"}i -le $max ]; do echo ${"$"}i; i=$((i+1)); done"
+            )
+
+        var i = min
+        commandOutput.stdOutStream.bufferedReader().use {
+            while (true) {
+                val line = it.readLine()
+                if (line == null) break
+                assertThat(line.trim().toInt()).isEqualTo(i)
+                i++
+            }
+        }
+    }
+
+    @Test
+    fun shortOutputCommand() {
+        val out = Shell.command("echo abc").stdOut.trim()
+        assertThat(out).isEqualTo("abc")
+    }
 }

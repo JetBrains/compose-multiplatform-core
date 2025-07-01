@@ -28,8 +28,8 @@ import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Component
-import androidx.xr.scenecore.ContentlessEntity
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
@@ -149,12 +149,12 @@ internal sealed class CoreEntity(public val entity: Entity) : OpaqueEntity {
     }
 }
 
-/** Wrapper class for contentless entities from SceneCore. */
+/** Wrapper class for group entities from SceneCore. */
 @PublishedApi
-internal class CoreContentlessEntity(entity: Entity) : CoreEntity(entity) {
+internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity) {
     init {
-        require(entity is ContentlessEntity) {
-            "Entity passed to CoreContentlessEntity should be a ContentlessEntity."
+        require(entity is GroupEntity) {
+            "Entity passed to CoreGroupEntity should be a GroupEntity."
         }
     }
 }

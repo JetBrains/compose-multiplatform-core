@@ -17,8 +17,10 @@
 package androidx.test.shell
 
 import android.annotation.SuppressLint
-import androidx.test.shell.internal.CircularBuffer
+import android.os.ParcelFileDescriptor
+import android.util.Log
 import androidx.test.shell.internal.ShellInstaller
+import androidx.test.shell.internal.TAG
 import androidx.test.shell.internal.uiAutomation
 import java.io.DataOutputStream
 import java.io.File
@@ -31,6 +33,8 @@ import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import kotlin.random.Random
+
+private const val LOCALHOST = "localhost"
 
 /**
  * Represents a process that is running sh as a shell user.
@@ -71,14 +75,9 @@ internal constructor(
     private val stdErrSocketPort: Int,
     private val connectToNativeProcessTimeoutMs: Int,
     private val shellProcessVerboseLogs: Boolean,
-    stdOutBufferSize: Int,
-    stdErrBufferSize: Int,
 ) : AutoCloseable {
 
     public companion object {
-        private const val DEFAULT_STDOUT_BUFFER_SIZE = 32 * 1024
-        private const val DEFAULT_STDERR_BUFFER_SIZE = 32 * 1024
-        private const val LOCALHOST = "localhost"
 
         /**
          * Creates a new [ShellProcess].
@@ -88,10 +87,6 @@ internal constructor(
          *
          * @param baseTcpPort a base tcp port to use to communicate with the native utility. Note
          *   that the given port and the 2 following ones are used.
-         * @param stdOutBufferSize the size of the circular buffer where to store the stdout of the
-         *   running shell process.
-         * @param stdErrBufferSize the size of the circular buffer where to store the stderr of the
-         *   running shell process.
          * @param connectToNativeProcessTimeoutMs timeout in ms to connect to the native process.
          * @param nativeLogs whether the native cli process should print Android logs. The tag used
          *   on logcat is `NativeShellProcess`.
@@ -102,8 +97,6 @@ internal constructor(
         @JvmOverloads
         public fun create(
             baseTcpPort: Int = Random.nextInt(from = 10240, until = 65536 - 3),
-            stdOutBufferSize: Int = DEFAULT_STDOUT_BUFFER_SIZE,
-            stdErrBufferSize: Int = DEFAULT_STDERR_BUFFER_SIZE,
             connectToNativeProcessTimeoutMs: Int = 1000,
             nativeLogs: Boolean = false,
         ): ShellProcess {
@@ -113,8 +106,6 @@ internal constructor(
                     stdErrSocketPort = baseTcpPort + 2,
                     shellExecFile = ShellInstaller.shellExecutableFile,
                     command = "sh",
-                    stdOutBufferSize = stdOutBufferSize,
-                    stdErrBufferSize = stdErrBufferSize,
                     connectToNativeProcessTimeoutMs = connectToNativeProcessTimeoutMs,
                     shellProcessVerboseLogs = nativeLogs,
                 )
@@ -126,22 +117,28 @@ internal constructor(
     private lateinit var stdInSocketClient: Socket
     private lateinit var stdInOutputStream: DataOutputStream
 
-    // Whether the process is still active
-    private val closedRef = AtomicBoolean()
+    // This repeater reads from the socket on stdOutSocketPort and copies into this instance object
+    // pipe. The data stream can be read accessing the associated input stream.
+    private val stdOutSocketToPipeRepeater =
+        SocketToPipeRepeater(
+            streamName = "stdout",
+            port = stdOutSocketPort,
+            onClose = ::cleanUpStreams,
+        )
 
-    // Reader thread for stdout and stderr
-    private lateinit var stdOutReadThread: Thread
-    private lateinit var stdErrReadThread: Thread
-
-    private val stdOutCircularBuffer = CircularBuffer(size = stdOutBufferSize)
-    private val stdErrCircularBuffer = CircularBuffer(size = stdErrBufferSize)
+    // This repeater reads from the socket on stdErrSocketPort and copies into this instance object
+    // pipe. The data stream can be read accessing the associated input stream.
+    private val stdErrSocketToPipeRepeater =
+        SocketToPipeRepeater(
+            streamName = "stderr",
+            port = stdErrSocketPort,
+            onClose = ::cleanUpStreams,
+        )
 
     /**
-     * An [InputStream] for the process standard output. Note that this is a circular buffer and is
-     * capped by the given [stdOutBufferSize]. When the buffer is full, the kernel has an an
-     * additional 64Kb of buffer. When also that is full, the shell process may stop until some
-     * buffer becomes a available. If a large output is expected but it's not important to capture
-     * it, a shell command may be launched piping in /dev/null.
+     * An [InputStream] for the process standard output. Note that this is backed by a tcp
+     * connection to the native cli utility. If a large output is expected but it's not important to
+     * capture it, a shell command may be launched piping in /dev/null.
      *
      * For example:
      * ```
@@ -149,13 +146,11 @@ internal constructor(
      * ```
      */
     public val stdOut: InputStream
-        get() = stdOutCircularBuffer.inputStream
+        get() = stdOutSocketToPipeRepeater.inputStream
 
     /**
-     * An [InputStream] for the process standard error. Note that this is a circular buffer and is
-     * capped by the given [stdOutBufferSize]. When the buffer is full, the kernel has an an
-     * additional 64Kb of buffer. When also that is full, the shell process may stop until some
-     * buffer becomes a available. If a large output is expected but it's not important to capture
+     * An [InputStream] for the process standard error. Note that this is backed by a tcp connection
+     * to the native cli utility. If a large output is expected but it's not important to capture
      * it, a shell command may be launched piping in /dev/null.
      *
      * For example:
@@ -164,14 +159,14 @@ internal constructor(
      * ```
      */
     public val stdErr: InputStream
-        get() = stdErrCircularBuffer.inputStream
+        get() = stdErrSocketToPipeRepeater.inputStream
 
     /** An [OutputStream] for the process standard output. */
     public val stdIn: OutputStream
         get() = stdInOutputStream
 
     /** Returns whether the process is closed. */
-    public fun isClosed(): Boolean = closedRef.get()
+    public fun isClosed(): Boolean = stdOutSocketToPipeRepeater.isClosed()
 
     /**
      * Writes a string in the process standard input.
@@ -187,11 +182,22 @@ internal constructor(
      * Closes the current process. Internally this simply sends the shell process the exit command.
      * This means that the process is not immediately terminated, but gracefully shutdown finishing
      * prior commands execution. Once a shell process is closed, further calls to close don't have
-     * any effect, as the [androidx.test.shell.ShellProcess.stdIn] will be closed after the first
-     * one.
+     * any effect, as the [stdIn] will be closed after the first one.
      */
     override fun close() {
-        if (!isClosed()) writeLine("exit")
+        if (!isClosed()) {
+            try {
+                stdInOutputStream.write(
+                    "exit ${System.lineSeparator()}".toByteArray(Charsets.UTF_8)
+                )
+            } catch (_: IOException) {
+                // This may throw when there are multiple rapid calls to close() so that
+                // `isClosed` returns false but right before writing in the stream, the socket
+                // actually closes.
+                // Nothing do do here anyway, the socket was already closing and the fact the
+                // IOException is throws means the stream is no more accessible.
+            }
+        }
     }
 
     private fun start() {
@@ -226,45 +232,88 @@ internal constructor(
         }
         stdInSocketClient = socket
         stdInOutputStream = DataOutputStream(socket.outputStream)
-        closedRef.set(false)
 
         // Initializes stdout and stderr sockets and threads to read from those.
-        stdOutReadThread =
-            asyncReadFromSocket(
-                socketPort = stdOutSocketPort,
-                circularBuffer = stdOutCircularBuffer,
-            )
-        stdErrReadThread =
-            asyncReadFromSocket(
-                socketPort = stdErrSocketPort,
-                circularBuffer = stdErrCircularBuffer,
-            )
+        stdOutSocketToPipeRepeater.start()
+        stdErrSocketToPipeRepeater.start()
     }
 
-    private fun asyncReadFromSocket(socketPort: Int, circularBuffer: CircularBuffer) = thread {
-        val socketAddress = InetSocketAddress(LOCALHOST, socketPort)
-        val socket = Socket()
+    private fun cleanUpStreams() {
+        stdInOutputStream.close()
+        stdOutSocketToPipeRepeater.close()
+        stdErrSocketToPipeRepeater.close()
+    }
+}
 
-        try {
-            socket.connect(socketAddress)
-            val dis = socket.inputStream
-            val buffer = ByteArray(4096)
-            while (socket.isConnected && !closedRef.get()) {
-                val read = dis.read(buffer, 0, buffer.size)
-                if (read == -1) break
-                circularBuffer.outputStream.write(buffer, 0, read)
+/**
+ * Internal implementation that reads from a tcp socket on localhost:[port] and writes into a pipe
+ * created with [ParcelFileDescriptor.createPipe]. The pipe read side is exposed as [inputStream]
+ * for consumption. This adds a layer on top of the socket tcp stream that allows gracefully handle
+ * cases where the tcp socket would throw an exception, like in the case of an IO exception.
+ * Additionally it allows to finish reading the process output even after the socket is closed (as
+ * that's copied into the pipe).
+ */
+private class SocketToPipeRepeater(
+    private val streamName: String,
+    private val port: Int,
+    private val onClose: () -> (Unit),
+) {
+
+    val inputStream: InputStream
+
+    private val runningRef: AtomicBoolean = AtomicBoolean(false)
+    private val readFd: ParcelFileDescriptor
+    private val writeFd: ParcelFileDescriptor
+    private val outputStream: OutputStream
+
+    init {
+        val (readFd, writeFd) = ParcelFileDescriptor.createPipe()
+
+        this.readFd = readFd
+        this.inputStream = ParcelFileDescriptor.AutoCloseInputStream(readFd)
+
+        this.writeFd = writeFd
+        this.outputStream = ParcelFileDescriptor.AutoCloseOutputStream(writeFd)
+    }
+
+    /**
+     * Sets the running flag to off signaling the copy thread to stop. This doesn't happen
+     * immediately and it's async to the method call.
+     */
+    fun close() = runningRef.set(false)
+
+    /**
+     * Connects to a localhost socket and starts copying from it into a pipe. The pipe can be read
+     * from [inputStream].
+     */
+    fun start() {
+
+        // Ensure this has been called only once.
+        if (runningRef.getAndSet(true)) return
+
+        val socketAddress = InetSocketAddress(LOCALHOST, port)
+        val socket = Socket().apply { connect(socketAddress) }
+        thread(name = "${streamName}SocketToPipeRepeaterThread") {
+            try {
+                val socketInputStream = socket.inputStream
+                val buffer = ByteArray(8192)
+                while (socket.isConnected && runningRef.get()) {
+                    val read = socketInputStream.read(buffer, 0, buffer.size)
+                    if (read == -1) break
+                    outputStream.write(buffer, 0, read)
+                }
+            } catch (e: IOException) {
+                // Can happen if the socket closes abruptly or there is a connection error
+                Log.e(TAG, "$streamName Error reading $streamName", e)
+            } finally {
+                socket.close()
+                outputStream.close()
+                runningRef.set(false)
+                onClose()
             }
-        } finally {
-            socket.close()
-
-            circularBuffer.markClosed()
-
-            // Close also the input stream
-            stdInSocketClient.close()
-            stdInOutputStream.close()
-
-            // Mark this shell process as closed
-            closedRef.set(true)
         }
     }
+
+    /** Returns the state of the running flag. */
+    fun isClosed(): Boolean = !runningRef.get()
 }

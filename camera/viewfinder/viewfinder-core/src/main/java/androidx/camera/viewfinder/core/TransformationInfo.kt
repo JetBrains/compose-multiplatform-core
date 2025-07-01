@@ -121,6 +121,18 @@ constructor(
         return result
     }
 
+    override fun toString(): String {
+        return "TransformationInfo(" +
+            "sourceRotation=$sourceRotation, " +
+            "isSourceMirroredHorizontally=$isSourceMirroredHorizontally, " +
+            "isSourceMirroredVertically=$isSourceMirroredVertically, " +
+            "cropRectLeft=$cropRectLeft, " +
+            "cropRectTop=$cropRectTop, " +
+            "cropRectRight=$cropRectRight, " +
+            "cropRectBottom=$cropRectBottom" +
+            ")"
+    }
+
     companion object {
         /**
          * A crop value specifying no crop should be applied.

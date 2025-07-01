@@ -38,6 +38,8 @@ dependencies {
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
+    testImplementation(libs.mockitoCore4)
+    testImplementation(libs.mockitoKotlin4)
 }
 
 android {

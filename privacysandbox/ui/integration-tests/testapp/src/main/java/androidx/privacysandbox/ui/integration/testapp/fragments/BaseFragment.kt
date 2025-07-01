@@ -20,6 +20,7 @@ import android.app.Activity
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -139,7 +140,7 @@ abstract class BaseFragment : Fragment() {
                     waitInsideOnDraw,
                     drawViewabilityLayer,
                 )
-            adHolder.populateAd(sdkBundle, adFormat)
+            adHolder.populateAd(sdkBundle, adFormat, providerUiOnTop)
         }
     }
 
@@ -170,6 +171,14 @@ abstract class BaseFragment : Fragment() {
         getSandboxedSdkViews().forEach { it.orderProviderUiAboveClientUi(providerUiOnTop) }
     }
 
+    internal fun convertFromDpToPixels(dpValue: Float): Int =
+        TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                dpValue,
+                context?.resources?.displayMetrics,
+            )
+            .toInt()
+
     private inner class TestEventListener(val view: SandboxedSdkView) :
         SandboxedSdkViewEventListener {
         override fun onUiDisplayed() {}
@@ -194,6 +203,7 @@ abstract class BaseFragment : Fragment() {
         private const val SDK_NAME = "androidx.privacysandbox.ui.integration.testsdkproviderwrapper"
         private const val MEDIATEE_SDK_NAME =
             "androidx.privacysandbox.ui.integration.mediateesdkproviderwrapper"
+        const val DEFAULT_MARGIN_DP = 16.0f
         const val TAG = "TestSandboxClient"
         var isZOrderAboveToggleChecked = false
         @AdFormat var currentAdFormat = AdFormat.BANNER_AD

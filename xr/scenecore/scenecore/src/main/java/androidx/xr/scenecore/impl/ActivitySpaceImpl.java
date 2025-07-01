@@ -27,12 +27,14 @@ import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.SpaceValue;
 import androidx.xr.runtime.internal.SpatialModeChangeListener;
+import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
+import com.android.extensions.xr.node.Box3;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Vec3;
@@ -73,6 +75,8 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     // Spatial mode change handler will be invoked on every update to activity space origin we
     // receive from the node transform listener.
     private SpatialModeChangeListener mSpatialModeChangeListener;
+    private final AtomicReference<BoundingBox> mCachedRecommendedContentBox =
+            new AtomicReference<>(null);
 
     ActivitySpaceImpl(
             Node taskNode,
@@ -356,5 +360,36 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
                 },
                 mExecutor);
         return updatedHitTestFuture;
+    }
+
+    /**
+     * Return a recommended box for content to be placed in when in Full Space Mode.
+     *
+     * The box is relative to the ActivitySpace's coordinate system. It is not scaled by the
+     * ActivitySpace's transform. The dimensions are always in meters. This provides a
+     * device-specific default volume that developers can use to size their content appropriately.
+     *
+     * @return a [BoundingBox] sized to place content in.
+     */
+    @Override
+    @NonNull
+    public BoundingBox getRecommendedContentBoxInFullSpace() {
+        return mCachedRecommendedContentBox.updateAndGet(
+                currentBox -> {
+                    if (currentBox != null) {
+                        return currentBox;
+                    }
+
+                    Box3 recommendedBox = mExtensions.getRecommendedContentBoxInFullSpace();
+                    return new BoundingBox(
+                            new Vector3(
+                                    recommendedBox.getMin().x,
+                                    recommendedBox.getMin().y,
+                                    recommendedBox.getMin().z),
+                            new Vector3(
+                                    recommendedBox.getMax().x,
+                                    recommendedBox.getMax().y,
+                                    recommendedBox.getMax().z));
+                });
     }
 }

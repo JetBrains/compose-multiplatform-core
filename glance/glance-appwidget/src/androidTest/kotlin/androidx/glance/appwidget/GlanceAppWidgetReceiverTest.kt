@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.datastore.core.DataStore
 import androidx.datastore.dataStoreFile
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -88,6 +89,8 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.width
 import androidx.glance.layout.wrapContentHeight
+import androidx.glance.session.GlanceSessionManager
+import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontStyle
 import androidx.glance.text.FontWeight
@@ -101,20 +104,25 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.INFINITE
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -133,7 +141,7 @@ const val RECEIVER_TEST_TAG = "GAWRT" // shorten to avoid long tag lint
 
 @SdkSuppress(minSdkVersion = 29)
 @MediumTest
-class GlanceAppWidgetReceiverTest {
+open class GlanceAppWidgetReceiverTest {
     @get:Rule val mHostRule = AppWidgetHostRule()
 
     @get:Rule val mViewDumpRule = ViewHierarchyFailureWatcher()
@@ -1244,6 +1252,94 @@ class GlanceAppWidgetReceiverTest {
                 isInstanceOf(IllegalArgumentException::class.java)
                 hasMessageThat().contains("Timeout before getting RemoteViews")
             }
+        }
+    }
+
+    @Test
+    fun sessionRestartsToHandlePendingLambdas() = runBlocking {
+        val blockableStateDefinition =
+            object : GlanceStateDefinition<Any?> {
+                var dataStoreBlocksForever = false
+
+                override fun getLocation(context: Context, fileKey: String): File = TODO()
+
+                override suspend fun getDataStore(
+                    context: Context,
+                    fileKey: String,
+                ): DataStore<Any?> =
+                    object : DataStore<Any?> {
+                        override val data = flow {
+                            if (dataStoreBlocksForever) {
+                                // Block forever, and reset the flag so the next time we don't block
+                                // forever.
+                                try {
+                                    delay(INFINITE)
+                                } finally {
+                                    dataStoreBlocksForever = false
+                                }
+                            }
+                            emit(Any())
+                        }
+
+                        override suspend fun updateData(
+                            transform: suspend (t: Any?) -> Any?
+                        ): Any? = Any()
+                    }
+            }
+
+        val results = Channel<String>(Channel.UNLIMITED)
+        TestGlanceAppWidget.uiDefinition = {
+            Column {
+                Button("First", onClick = { results.trySend("First") })
+                Button(
+                    "Second",
+                    onClick = {
+                        results.trySend("Second")
+                        results.close()
+                    },
+                )
+            }
+        }
+
+        TestGlanceAppWidget.withStateDefinition(blockableStateDefinition) {
+            mHostRule.startHost()
+
+            // Get session and send updateGlance event, which will trigger the session to pull the
+            // current state value which blocks forever. The session will timeout while still
+            // handling this event.
+            blockableStateDefinition.dataStoreBlocksForever = true
+            val sessionKey = AppWidgetId(mHostRule.appWidgetId).toSessionKey()
+            val originalSession =
+                GlanceSessionManager.runWithLock {
+                    val session = getSession(sessionKey) as AppWidgetSession
+                    session.updateGlance()
+                    session
+                }
+
+            // Send two lambda events. The first session will timeout before it can handle them, but
+            // it should start a new session to handle the clicks.
+            mHostRule.onUnboxedHostView<ViewGroup> { root ->
+                var viewToClick: View =
+                    assertNotNull(root.findChild<TextView> { it.text.toString() == "First" })
+                if (Build.VERSION.SDK_INT <= 30) {
+                    viewToClick = viewToClick.parent as View
+                }
+                viewToClick.performClick()
+
+                viewToClick =
+                    assertNotNull(root.findChild<TextView> { it.text.toString() == "Second" })
+                if (Build.VERSION.SDK_INT <= 30) {
+                    viewToClick = viewToClick.parent as View
+                }
+                viewToClick.performClick()
+            }
+
+            // Verify that the lambdas are handled in the order they were sent.
+            assertThat(results.toList()).containsExactly("First", "Second").inOrder()
+
+            // Verify that a new session was started to handle them.
+            val currentSession = GlanceSessionManager.runWithLock { getSession(sessionKey) }
+            assertThat(currentSession).isNotSameInstanceAs(originalSession)
         }
     }
 

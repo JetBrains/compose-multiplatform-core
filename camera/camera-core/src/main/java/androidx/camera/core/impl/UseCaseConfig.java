@@ -131,6 +131,12 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
             Option.create("camerax.core.useCase.takePictureManagerProvider",
                     TakePictureManager.Provider.class);
 
+    /**
+     * Option: camerax.core.useCase.streamUseCase
+     */
+    Option<StreamUseCase> OPTION_STREAM_USE_CASE =
+            Option.create("camerax.core.useCase.streamUseCase", StreamUseCase.class);
+
     // *********************************************************************************************
 
     /**
@@ -383,6 +389,14 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
     }
 
     /**
+     * @return The stream use case of this UseCaseConfig.
+     */
+    @NonNull
+    default StreamUseCase getStreamUseCase() {
+        return requireNonNull(retrieveOption(OPTION_STREAM_USE_CASE, StreamUseCase.DEFAULT));
+    }
+
+    /**
      * Builder for a {@link UseCase}.
      *
      * @param <T> The type of the object which will be built by {@link #build()}.
@@ -478,6 +492,13 @@ public interface UseCaseConfig<T extends UseCase> extends TargetConfig<T>, Image
          * @param captureType The capture type for this use case.
          */
         @NonNull B setCaptureType(UseCaseConfigFactory.@NonNull CaptureType captureType);
+
+        /**
+         * Sets the stream use case for this configuration.
+         *
+         * @param streamUseCase The stream use case for this use case.
+         */
+        @NonNull B setStreamUseCase(@NonNull StreamUseCase streamUseCase);
 
         /**
          * Retrieves the configuration used by this builder.

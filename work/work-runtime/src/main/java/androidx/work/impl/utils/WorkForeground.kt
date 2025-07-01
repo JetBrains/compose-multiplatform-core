@@ -28,7 +28,7 @@ import androidx.work.logd
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-suspend fun workForeground(
+public suspend fun workForeground(
     context: Context,
     spec: WorkSpec,
     worker: ListenableWorker,

@@ -62,8 +62,8 @@ import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.internal.CameraViewActivityPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.ContentlessEntity
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -3233,7 +3233,7 @@ class SubspaceTest {
 
         composeTestRule.setContent {
             TestSetup {
-                testNode = ContentlessEntity.create(LocalSession.current!!, "TestRoot")
+                testNode = GroupEntity.create(LocalSession.current!!, "TestRoot")
                 CompositionLocalProvider(LocalSubspaceRootNode provides testNode) {
                     assertThat(LocalSession.current!!.scene.keyEntity).isNull()
                     ApplicationSubspace {

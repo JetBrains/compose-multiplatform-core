@@ -40,7 +40,7 @@ dependencies {
     testImplementation(libs.junit)
 
     api(project(":privacysandbox:databridge:databridge-core"))
-    api(project(":privacysandbox:sdkruntime:sdkruntime-core"))
+    api(project(":privacysandbox:sdkruntime:sdkruntime-provider"))
 }
 
 android {

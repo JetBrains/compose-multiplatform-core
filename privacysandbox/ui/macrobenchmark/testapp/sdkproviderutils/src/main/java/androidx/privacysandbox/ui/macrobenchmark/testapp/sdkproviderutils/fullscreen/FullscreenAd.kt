@@ -24,7 +24,7 @@ import androidx.core.view.updatePadding
 import androidx.privacysandbox.activity.provider.SdkActivityLauncherFactory
 import androidx.privacysandbox.sdkruntime.core.activity.ActivityHolder
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat
 import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.BackNavigation
 import androidx.privacysandbox.ui.macrobenchmark.testapp.sdkproviderutils.SdkApiConstants.Companion.ScreenOrientation
 

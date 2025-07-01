@@ -94,7 +94,6 @@ import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
-import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPlugin
@@ -141,9 +140,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
  * A plugin which enables all of the Gradle customizations for AndroidX. This plugin reacts to other
  * plugins being added and adds required and optional functionality.
  */
-abstract class AndroidXImplPlugin
-@Inject
-constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Project> {
+abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     @get:Inject abstract val registry: BuildEventsListenerRegistry
     @get:Inject abstract val buildFeatures: BuildFeatures
 
@@ -162,8 +159,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         // Perform different actions based on which plugins have been applied to the project.
         // Many of the actions overlap, ex. API tracking.
         project.plugins.configureEach { plugin ->
-            // PrivacySandboxSdkPlugin b/397703898, KotlinMultiplatformAndroidPlugin b/393137152
-            @Suppress("UnstableApiUsage")
             when (plugin) {
                 is JavaGradlePluginPlugin -> configureGradlePluginPlugin(project)
                 is JavaPlugin -> configureWithJavaPlugin(project, androidXExtension)
@@ -184,7 +179,8 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                         plugin,
                         androidXKmpExtension,
                     )
-                is PrivacySandboxSdkPlugin -> configureWithPrivacySandboxSdkPlugin(project)
+                is @Suppress("UnstableApiUsage") PrivacySandboxSdkPlugin -> // b/397703898
+                configureWithPrivacySandboxSdkPlugin(project)
                 is ProtobufPlugin -> configureProtobufPlugin(project)
             }
         }
@@ -208,11 +204,7 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
         }
 
         project.configureTaskTimeouts()
-        project.configureMavenArtifactUpload(
-            androidXExtension,
-            androidXKmpExtension,
-            componentFactory,
-        ) {
+        project.configureMavenArtifactUpload(androidXExtension, androidXKmpExtension) {
             if (buildFeatures.isIsolatedProjectsEnabled()) return@configureMavenArtifactUpload
             project.addCreateLibraryBuildInfoFileTasks(androidXExtension, androidXKmpExtension)
         }
@@ -436,7 +428,6 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
                 project.plugins.hasPlugin(LibraryPlugin::class.java) ||
                     project.plugins.hasPlugin(AppPlugin::class.java) ||
                     project.plugins.hasPlugin(TestPlugin::class.java) ||
-                    @Suppress("UnstableApiUsage")
                     project.plugins.hasPlugin(KotlinMultiplatformAndroidPlugin::class.java)
             }
         val defaultJavaTargetVersion =
@@ -747,12 +738,8 @@ constructor(private val componentFactory: SoftwareComponentFactory) : Plugin<Pro
 
         project.configureProjectForApiTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
         project.configureProjectForKzipTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
-        kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
-            project.configureMultiplatformSourcesForAndroid(
-                variant.name,
-                kotlinMultiplatformAndroidTarget,
-                androidXExtension.samplesProjects,
-            )
+        kotlinMultiplatformAndroidComponentsExtension.onVariants {
+            project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
         }
 
         project.configurePublicResourcesStub(project.multiplatformExtension!!)

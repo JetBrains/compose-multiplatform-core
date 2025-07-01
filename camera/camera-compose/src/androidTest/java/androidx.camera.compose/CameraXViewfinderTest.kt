@@ -17,7 +17,11 @@
 package androidx.camera.compose
 
 import android.content.Context
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.TotalCaptureResult
 import androidx.camera.camera2.Camera2Config
+import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraXConfig
@@ -29,9 +33,12 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.viewfinder.core.ImplementationMode
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -48,6 +55,7 @@ import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -107,6 +115,8 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
             .onNodeWithTag(CAMERAX_VIEWFINDER_TEST_TAG)
             .assertIsDisplayed()
             .assert(SemanticsMatcher.hasChild())
+
+        ensureCameraIsStreaming()
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -178,9 +188,10 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
     }
 
     @Test
-    fun removeViewfinder_andAddWithSameSurfaceRequest_invalidatesRequest() = runViewfinderTest {
-        var showContent by mutableStateOf(true)
+    fun removingViewfinder_andAddingWithSameSurfaceRequest_recovers() = runViewfinderTest {
+        val showViewfinderContent = mutableStateOf(true)
         composeTest.setContent {
+            var showContent by remember { showViewfinderContent }
             val currentSurfaceRequest: SurfaceRequest? by surfaceRequests.collectAsState()
             if (showContent) {
                 currentSurfaceRequest?.let { surfaceRequest ->
@@ -206,15 +217,17 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
             .assertIsDisplayed()
             .assert(SemanticsMatcher.hasChild())
 
+        ensureCameraIsStreaming()
+
         // Remove the Viewfinder from the composition
-        showContent = false
+        showViewfinderContent.value = false
 
         composeTest.waitUntil(timeoutMillis = 5000) {
             composeTest.onNodeWithTag(CAMERAX_VIEWFINDER_TEST_TAG).isNotDisplayed()
         }
 
         // Add the Viewfinder back to the composition
-        showContent = true
+        showViewfinderContent.value = true
 
         composeTest.awaitIdle()
 
@@ -229,8 +242,69 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
                 surfaceRequests.filterNotNull().first { it != firstSurfaceRequest }
             }
 
+        ensureCameraIsStreaming()
+
         // A new surface request should have been created since the old one was invalidated
         assertThat(newSurfaceRequest).isNotNull()
+    }
+
+    @Test
+    fun movableContentOf_recoversAfterMove() = runViewfinderTest {
+        val moveViewfinderContent = mutableStateOf(false)
+        composeTest.setContent {
+            val currentSurfaceRequest: SurfaceRequest? by surfaceRequests.collectAsState()
+
+            Column {
+                val content = remember {
+                    movableContentOf {
+                        currentSurfaceRequest?.let { surfaceRequest ->
+                            CameraXViewfinder(
+                                surfaceRequest = surfaceRequest,
+                                implementationMode = ImplementationMode.EXTERNAL,
+                                modifier = Modifier.testTag(CAMERAX_VIEWFINDER_TEST_TAG),
+                            )
+                        }
+                    }
+                }
+
+                var moveContent by remember { moveViewfinderContent }
+
+                if (moveContent) {
+                    content()
+                } else {
+                    content()
+                }
+            }
+        }
+
+        // Start the camera
+        startCamera()
+
+        // Wait for first SurfaceRequest
+        surfaceRequests.filterNotNull().first()
+
+        composeTest.awaitIdle()
+
+        // CameraXViewfinder should now have a child Viewfinder
+        composeTest
+            .onNodeWithTag(CAMERAX_VIEWFINDER_TEST_TAG)
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.hasChild())
+
+        ensureCameraIsStreaming()
+
+        // Move the content
+        moveViewfinderContent.value = true
+
+        composeTest.awaitIdle()
+
+        // CameraXViewfinder should still have a child Viewfinder
+        composeTest
+            .onNodeWithTag(CAMERAX_VIEWFINDER_TEST_TAG)
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.hasChild())
+
+        ensureCameraIsStreaming()
     }
 
     companion object {
@@ -256,7 +330,26 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
 
             var fakeLifecycleOwner: FakeLifecycleOwner? = null
             try {
-                val preview = Preview.Builder().build()
+                val latestDeliveredFrameNumber = MutableStateFlow(-1L)
+                val preview =
+                    Preview.Builder()
+                        .also {
+                            Camera2Interop.Extender(it)
+                                .setSessionCaptureCallback(
+                                    object : CameraCaptureSession.CaptureCallback() {
+                                        override fun onCaptureCompleted(
+                                            session: CameraCaptureSession,
+                                            request: CaptureRequest,
+                                            result: TotalCaptureResult,
+                                        ) {
+                                            super.onCaptureCompleted(session, request, result)
+                                            latestDeliveredFrameNumber.value = result.frameNumber
+                                        }
+                                    }
+                                )
+                        }
+                        .build()
+
                 val surfaceRequests = MutableStateFlow<SurfaceRequest?>(null)
                 val resetPreviewSurfaceProvider =
                     suspend {
@@ -297,6 +390,7 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
                         resetPreviewSurfaceProvider = resetPreviewSurfaceProvider,
                         startCamera = startCamera,
                         coroutineContext = coroutineContext,
+                        lastFrames = latestDeliveredFrameNumber.asStateFlow(),
                     )
                 ) {
                     block()
@@ -317,7 +411,16 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
         val resetPreviewSurfaceProvider: suspend () -> Unit,
         val startCamera: suspend () -> Camera,
         override val coroutineContext: CoroutineContext,
-    ) : CoroutineScope
+        private val lastFrames: StateFlow<Long>,
+    ) : CoroutineScope {
+        suspend fun ensureCameraIsStreaming(timeout: Duration = 5.seconds) {
+            withTimeout(timeout) { lastFrames.take(NUM_FRAMES_TO_WAIT_FOR).collect {} }
+        }
+
+        companion object {
+            private const val NUM_FRAMES_TO_WAIT_FOR = 10
+        }
+    }
 }
 
 private fun ImplementationMode.swapMode(): ImplementationMode {

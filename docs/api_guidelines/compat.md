@@ -343,12 +343,6 @@ WARNING While Protobuf is capable of maintaining inter-process compatibility,
 AndroidX does not currently provide compatibility tracking or enforcement.
 Library owners must perform their own validation.
 
-NOTE We are currently investigating the suitability of Square's
-[`wire` library](https://github.com/square/wire) for handling protocol buffers
-in Android libraries. If adopted, it will replace `proto` library dependencies.
-Libraries that expose their serialization mechanism in their API surface *will
-not be able to migrate*.
-
 #### Bundle <a name="ipc-bundle"></a>
 
 `Bundle` is used by the Android platform and AndroidX as a lightweight IPC

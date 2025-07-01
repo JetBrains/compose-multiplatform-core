@@ -21,7 +21,7 @@ import androidx.privacysandbox.sdkruntime.client.loader.impl.SandboxControllerIn
 import androidx.privacysandbox.sdkruntime.client.loader.impl.SdkProviderV1
 import androidx.privacysandbox.sdkruntime.client.loader.storage.CachedLocalSdkStorage
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
 import androidx.privacysandbox.sdkruntime.core.internal.ClientApiVersion
 
 /** Load SDK bundled with App. */
@@ -37,9 +37,7 @@ internal constructor(
     }
 
     internal interface ControllerFactory {
-        fun createControllerFor(
-            sdkConfig: LocalSdkConfig
-        ): SdkSandboxControllerCompat.SandboxControllerImpl
+        fun createControllerFor(sdkConfig: LocalSdkConfig): SdkSandboxControllerBackend
     }
 
     /**

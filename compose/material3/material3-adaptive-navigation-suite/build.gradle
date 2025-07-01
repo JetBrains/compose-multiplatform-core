@@ -91,6 +91,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.testRunner)
+                implementation(libs.espressoCore)
                 implementation(libs.truth)
                 implementation(project(":compose:ui:ui"))
                 implementation(project(":window:window-core"))

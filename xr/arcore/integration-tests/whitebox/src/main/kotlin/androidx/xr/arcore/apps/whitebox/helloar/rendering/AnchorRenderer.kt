@@ -41,7 +41,6 @@ import java.nio.file.Paths
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 /** Class that keeps track of anchors rendered as GLTF models in a SceneCore session. */
@@ -63,7 +62,7 @@ internal class AnchorRenderer(
             SupervisorJob(
                 coroutineScope.launch() {
                     gltfAnchorModel =
-                        GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb")).await()
+                        GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
                     planeRenderer.renderedPlanes.collect { attachInteractableComponents(it) }
                 }
             )

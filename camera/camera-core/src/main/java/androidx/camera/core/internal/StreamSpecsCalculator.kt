@@ -201,6 +201,7 @@ public class StreamSpecsCalculatorImpl(
                         requireNotNull(useCase.attachedSurfaceResolution) {
                             "Attached surface resolution cannot be null for already attached use cases."
                         },
+                        useCase.currentConfig.streamUseCase,
                     )
 
             val attachedSurfaceInfo =

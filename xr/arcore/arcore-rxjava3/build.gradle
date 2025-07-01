@@ -27,14 +27,28 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.kotlinStdlib)
+    api(project(":xr:arcore:arcore"))
+    implementation(libs.kotlinCoroutinesRx3)
 
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testExtTruth)
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
 }
 
 android {
     compileSdk 35
+
+    defaultConfig {
+        minSdkVersion 23
+    }
 
     namespace = "androidx.xr.arcore.rxjava3"
 }

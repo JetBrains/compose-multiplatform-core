@@ -47,6 +47,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:$compose_version")
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
 }
@@ -64,7 +65,7 @@ android {
 
 androidx {
     name = "androidx.pdf:pdf-compose"
-    type = SoftwareType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2025"
     description = "Present PDF content using Jetpack Compose"
 }

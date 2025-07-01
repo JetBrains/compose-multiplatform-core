@@ -31,7 +31,6 @@ import androidx.camera.camera2.pipe.CameraPipe.CameraMetadataConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.compat.AndroidDevicePolicyManagerWrapper
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
-import androidx.camera.camera2.pipe.compat.AudioRestrictionControllerImpl
 import androidx.camera.camera2.pipe.compat.DevicePolicyManagerWrapper
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.SystemTimeSource
@@ -187,9 +186,5 @@ internal abstract class CameraPipeModule {
         }
 
         @Singleton @Provides fun provideCameraSurfaceManager() = CameraSurfaceManager()
-
-        @Singleton
-        @Provides
-        fun provideAudioRestrictionController() = AudioRestrictionControllerImpl()
     }
 }

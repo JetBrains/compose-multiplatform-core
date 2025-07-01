@@ -20,7 +20,7 @@ package androidx.work
  * return [ListenableWorker.Result.retry] from a worker to determine the correct backoff time.
  * Backoff policies are set in [WorkRequest.Builder.setBackoffCriteria] or one of its variants.
  */
-enum class BackoffPolicy {
+public enum class BackoffPolicy {
     /** Used to indicate that [WorkManager] should increase the backoff time exponentially */
     EXPONENTIAL,
 

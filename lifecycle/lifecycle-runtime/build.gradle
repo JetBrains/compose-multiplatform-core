@@ -23,8 +23,6 @@ androidXMultiplatform {
             it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
         }
         androidResources.enable = true
-        // TODO(b/345531033)
-        experimentalProperties["android.lint.useK2Uast"] = false
         // Needed for api tasks and docs generation
         sourceSets {
             androidMain {

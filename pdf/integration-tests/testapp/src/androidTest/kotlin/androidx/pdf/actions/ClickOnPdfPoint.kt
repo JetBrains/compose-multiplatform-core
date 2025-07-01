@@ -19,7 +19,7 @@ package androidx.pdf.actions
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
-import androidx.pdf.view.PdfPoint
+import androidx.pdf.PdfPoint
 import androidx.pdf.view.PdfView
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.action.CoordinatesProvider

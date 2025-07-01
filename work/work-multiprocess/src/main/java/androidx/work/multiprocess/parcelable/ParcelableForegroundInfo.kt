@@ -26,9 +26,9 @@ import androidx.work.ForegroundInfo
 /** [androidx.work.ForegroundInfo] but [android.os.Parcelable]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @SuppressLint("BanParcelableUsage")
-data class ParcelableForegroundInfo(val foregroundInfo: ForegroundInfo) : Parcelable {
+public data class ParcelableForegroundInfo(val foregroundInfo: ForegroundInfo) : Parcelable {
 
-    constructor(
+    public constructor(
         parcel: Parcel
     ) : this(
         foregroundInfo =
@@ -49,9 +49,9 @@ data class ParcelableForegroundInfo(val foregroundInfo: ForegroundInfo) : Parcel
         parcel.writeInt(foregroundInfo.foregroundServiceType)
     }
 
-    companion object {
+    public companion object {
         @JvmField
-        val CREATOR: Parcelable.Creator<ParcelableForegroundInfo> =
+        public val CREATOR: Parcelable.Creator<ParcelableForegroundInfo> =
             object : Parcelable.Creator<ParcelableForegroundInfo> {
                 override fun createFromParcel(parcel: Parcel): ParcelableForegroundInfo {
                     return ParcelableForegroundInfo(parcel)

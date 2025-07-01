@@ -43,8 +43,8 @@ import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
 import java.util.concurrent.TimeoutException
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -67,7 +67,9 @@ import kotlinx.coroutines.withContext
  * @param uri The URI of the PDF document.
  * @param fileDescriptor The [ParcelFileDescriptor] associated with the document.
  * @param connection The [PdfServiceConnection] used to interact with the service.
- * @param dispatcher The [CoroutineDispatcher] used for asynchronous operations.
+ * @param coroutineContext The [CoroutineContext] used for asynchronous operations, particularly for
+ *   I/O-bound tasks such as interacting with the PDF service. It is recommended to use a dispatcher
+ *   appropriate for blocking I/O operations, such as `Dispatchers.IO`.
  * @param pageCount The total number of pages in the document.
  * @param isLinearized Indicates whether the document is linearized.
  * @param formType The type of form present in the document.
@@ -79,14 +81,14 @@ public class SandboxedPdfDocument(
     public val connection: PdfServiceConnection,
     private val password: String?,
     private val fileDescriptor: ParcelFileDescriptor,
-    private val dispatcher: CoroutineDispatcher,
+    private val coroutineContext: CoroutineContext,
     override val pageCount: Int,
     override val isLinearized: Boolean,
     override val formType: Int,
 ) : PdfDocument {
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
-    private val closeScope = CoroutineScope(dispatcher + SupervisorJob())
+    private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
 
     /**
      * Indicates whether this [androidx.pdf.SandboxedPdfDocument] is closed explicitly by calling
@@ -221,6 +223,12 @@ public class SandboxedPdfDocument(
         return withDocument { document -> document.applyEdit(pageNum, record.toAndroidClass()) }
     }
 
+    override suspend fun write(destination: ParcelFileDescriptor) {
+        return withDocument { document ->
+            document.write(destination, /* removePasswordProtection= */ false)
+        }
+    }
+
     @WorkerThread
     override fun close() {
         isDocumentClosedExplicitly = true
@@ -322,7 +330,7 @@ public class SandboxedPdfDocument(
                 job.invokeOnCompletion { connection.pendingJobs.remove(job) }
             }
 
-        return withContext(dispatcher + taskJob) {
+        return withContext(coroutineContext + taskJob) {
             // Binder object will be null if the service is disconnected. Let's try reconnecting
             // explicitly
             if (connection.documentBinder == null) {

@@ -74,7 +74,9 @@ class SurfaceViewImplementationTest {
 
     @After
     fun tearDown() {
-        mSurfaceRequest.deferrableSurface.close()
+        if (::mSurfaceRequest.isInitialized) {
+            mSurfaceRequest.deferrableSurface.close()
+        }
     }
 
     @Test

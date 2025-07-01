@@ -16,7 +16,7 @@
 
 package androidx.tracing
 
-expect object Trace {
+public expect object Trace {
     /**
      * Writes a trace message to indicate that a given section of code has begun.
      *
@@ -28,7 +28,7 @@ expect object Trace {
      *
      * @param label The name of the code section to appear in the trace.
      */
-    fun beginSection(label: String)
+    public fun beginSection(label: String)
 
     /**
      * Writes a trace message to indicate that a given section of code has ended.
@@ -37,5 +37,5 @@ expect object Trace {
      * will mark the end of the most recently begun section of code, so care must be taken to ensure
      * that beginSection / endSection pairs are properly nested and called from the same thread.
      */
-    fun endSection()
+    public fun endSection()
 }

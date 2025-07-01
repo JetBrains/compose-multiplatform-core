@@ -36,15 +36,15 @@ dependencies {
     api(libs.kotlinStdlib)
     // Public dependencies
     implementation(libs.kotlinCoroutinesAndroid)
-    implementation("androidx.appsearch:appsearch:1.1.0-beta01")
-    implementation("androidx.appsearch:appsearch-platform-storage:1.1.0-beta01")
+    implementation("androidx.appsearch:appsearch:1.1.0-rc01")
+    implementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
     implementation(libs.kotlinCoroutinesGuava) {
         exclude group: "com.google.guava", module: "guava"
     }
     // Manually specify the dependency on kotlinMetadataJvm due to missing prebuilt for appsearch
     // compiler.
     kapt(libs.kotlinMetadataJvm)
-    kapt("androidx.appsearch:appsearch-compiler:1.1.0-beta01")
+    kapt("androidx.appsearch:appsearch-compiler:1.1.0-rc01")
 
     // Compiler dependencies
     // TODO(b/413622177): Enable KSP on appfunctions module to generate proxy factory.

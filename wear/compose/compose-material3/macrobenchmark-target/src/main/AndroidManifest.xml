@@ -76,16 +76,6 @@
         </activity>
 
         <activity
-            android:name=".BlankScreenActivity"
-            android:theme="@style/AppTheme"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="androidx.wear.compose.material3.macrobenchmark.target.BLANK_SCREEN_ACTIVITY" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <activity
             android:name=".ButtonActivity"
             android:theme="@style/AppTheme"
             android:exported="true">
@@ -256,6 +246,18 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".PickerGroupActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.PICKER_GROUP_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
 
         <activity
             android:name=".ScrollIndicatorActivity"

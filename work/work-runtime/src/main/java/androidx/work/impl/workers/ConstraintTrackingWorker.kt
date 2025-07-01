@@ -48,7 +48,7 @@ import kotlinx.coroutines.withContext
  * [androidx.work.Worker] when the constraints are met.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class ConstraintTrackingWorker(
+public class ConstraintTrackingWorker(
     appContext: Context,
     private val workerParameters: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParameters) {

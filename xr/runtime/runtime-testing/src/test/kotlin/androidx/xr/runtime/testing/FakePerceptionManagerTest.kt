@@ -40,7 +40,7 @@ class FakePerceptionManagerTest {
     @Before
     fun setUp() {
         underTest = FakePerceptionManager()
-        FakeRuntimeAnchor.anchorsCreated = 0
+        FakeRuntimeAnchor.anchorsCreatedCount = 0
     }
 
     @Test

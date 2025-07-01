@@ -140,12 +140,12 @@ public final class SchemaToPlatformConverter {
             // Check joinable value type.
             if (stringProperty.getJoinableValueType()
                     == AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                     throw new UnsupportedOperationException(
                         "StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID is not supported"
                                 + " on this AppSearch implementation.");
                 }
-                ApiHelperForU.setJoinableValueType(platformBuilder,
+                ApiHelperForSdkExtensionUBase.setJoinableValueType(platformBuilder,
                         stringProperty.getJoinableValueType());
             }
 
@@ -272,9 +272,9 @@ public final class SchemaToPlatformConverter {
                             .setCardinality(stringProperty.getCardinality())
                             .setIndexingType(stringProperty.getIndexingType())
                             .setTokenizerType(stringProperty.getTokenizerType());
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                 jetpackBuilder.setJoinableValueType(
-                        ApiHelperForU.getJoinableValueType(stringProperty));
+                        ApiHelperForSdkExtensionUBase.getJoinableValueType(stringProperty));
             }
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             // available in platform.
@@ -350,9 +350,11 @@ public final class SchemaToPlatformConverter {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private static class ApiHelperForU {
-        private ApiHelperForU() {
+    @SuppressLint("NewApi")
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.U_BASE)
+    private static class ApiHelperForSdkExtensionUBase {
+        private ApiHelperForSdkExtensionUBase() {
             // This class is not instantiable.
         }
 
@@ -371,6 +373,13 @@ public final class SchemaToPlatformConverter {
         static int getJoinableValueType(
                 android.app.appsearch.AppSearchSchema.StringPropertyConfig stringPropertyConfig) {
             return stringPropertyConfig.getJoinableValueType();
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private static class ApiHelperForU {
+        private ApiHelperForU() {
+            // This class is not instantiable.
         }
 
         @DoNotInline

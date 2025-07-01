@@ -23,10 +23,12 @@ import android.widget.TextView
 import androidx.compose.runtime.Recomposer
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.core.os.bundleOf
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.ActionModifier
 import androidx.glance.action.LambdaAction
+import androidx.glance.appwidget.AppWidgetSession.RunLambda
 import androidx.glance.layout.EmittableBox
 import androidx.glance.state.ConfigManager
 import androidx.glance.state.GlanceStateDefinition
@@ -170,7 +172,7 @@ class AppWidgetSessionTest {
         assertFalse(didRunSecond)
 
         didRunFirst = false
-        session.processEvent(context, AppWidgetSession.RunLambda("123+1"))
+        session.processEvent(context, RunLambda("123+1"))
         assertTrue(didRunSecond)
         assertFalse(didRunFirst)
     }
@@ -252,6 +254,30 @@ class AppWidgetSessionTest {
         // Advance until waitForReady suspends.
         this.testScheduler.advanceUntilIdle()
         session.close()
+    }
+
+    @Test
+    fun recreateWithEvents() = runTest {
+        session.runLambda("1")
+        session.runLambda("2")
+        val options = bundleOf("key" to "value")
+        session.updateAppWidgetOptions(options)
+        session.updateGlance()
+        session.waitForReady()
+        session.close()
+
+        val pendingEvents = session.receiveAllPendingEvents()
+        assertThat(pendingEvents).hasSize(5)
+
+        val newSession = session.recreateWithEvents(pendingEvents)
+        assertThat(newSession).isNotSameInstanceAs(session)
+        assertThat(newSession.widget).isEqualTo(session.widget)
+        assertThat(newSession.id).isEqualTo(id)
+        assertThat(newSession.options).isEqualTo(options)
+
+        val newPendingEvents = newSession.receiveAllPendingEvents()
+        assertThat(newPendingEvents).hasSize(2)
+        assertThat(newPendingEvents).containsExactly(RunLambda("1"), RunLambda("2"))
     }
 
     private class TestGlanceState : ConfigManager {

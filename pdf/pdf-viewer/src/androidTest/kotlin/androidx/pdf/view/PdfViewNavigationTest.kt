@@ -165,7 +165,7 @@ class PdfViewNavigationTest {
     fun testExternalLinkNavigation_withValidUri() = runTest {
         val fakePdfDocument =
             FakePdfDocument(
-                pages = List(10) { Point(100, 200) },
+                pages = List(10) { Point(200, 200) },
                 pageLinks =
                     mapOf(
                         0 to
@@ -181,7 +181,7 @@ class PdfViewNavigationTest {
                             )
                     ),
             )
-        setupPdfView(100, 1000, fakePdfDocument)
+        setupPdfView(200, 1000, fakePdfDocument)
 
         Intents.init()
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {

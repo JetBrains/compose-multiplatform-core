@@ -21,7 +21,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,14 +35,15 @@ import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.list.VerticalList
 import kotlinx.coroutines.delay
 
 internal val FocusDemos =
     listOf(
         ComposableDemo("List") { FocusableListSample() },
         ComposableDemo("List + Initial Focus") { FocusableListInitialFocusSample() },
-        ComposableDemo("LazyList") { LazyListFocusSample() },
-        ComposableDemo("LazyList + Initial Focus") { ListFocusInitialFocusSample() },
+        ComposableDemo("VerticalList") { VerticalListFocusSample() },
+        ComposableDemo("VerticalList + Initial Focus") { ListFocusInitialFocusSample() },
         ComposableDemo("Show/Hide + Focus Restoration") { ShowHideFocusRestorationSample() },
     )
 
@@ -76,8 +76,8 @@ private fun FocusableListInitialFocusSample() {
 }
 
 @Composable
-private fun LazyListFocusSample() {
-    LazyColumn { items(20) { ListItem { Text("Button ${it+1}") } } }
+private fun VerticalListFocusSample() {
+    VerticalList { items(20) { ListItem { Text("Button ${it + 1}") } } }
 }
 
 @Composable
@@ -85,7 +85,7 @@ private fun ListFocusInitialFocusSample() {
     Column {
         Text("Initial Focus on Button 3")
         val initialFocus = remember { FocusRequester() }
-        LazyColumn(
+        VerticalList(
             Modifier.focusProperties {
                 onEnter = {
                     initialFocus.requestFocus()
@@ -129,5 +129,5 @@ private fun FocusableList() {
 @Preview
 @Composable
 private fun LazyList() {
-    GlimmerTheme { LazyListFocusSample() }
+    GlimmerTheme { VerticalListFocusSample() }
 }

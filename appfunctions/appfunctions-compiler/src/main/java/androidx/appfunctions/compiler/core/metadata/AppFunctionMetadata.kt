@@ -36,6 +36,7 @@ data class CompileTimeAppFunctionMetadata(
     val parameters: List<AppFunctionParameterMetadata>,
     val response: AppFunctionResponseMetadata,
     val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
+    val description: String = "",
 ) {
     fun toAppFunctionMetadataDocument(): AppFunctionMetadataDocument {
         return AppFunctionMetadataDocument(
@@ -46,6 +47,7 @@ data class CompileTimeAppFunctionMetadata(
             schemaVersion = schema?.version,
             parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
             response = response.toAppFunctionResponseMetadataDocument(),
+            description = description,
         )
     }
 }
@@ -59,4 +61,5 @@ data class AppFunctionMetadataDocument(
     val schemaVersion: Long?,
     val parameters: List<AppFunctionParameterMetadataDocument>?,
     val response: AppFunctionResponseMetadataDocument?,
+    val description: String = "",
 )

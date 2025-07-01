@@ -18,6 +18,7 @@ package androidx.xr.scenecore.samples.anchortest
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
@@ -30,6 +31,7 @@ import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType
 import java.nio.file.Paths
+import kotlinx.coroutines.launch
 
 class AnchorTestActivity : AppCompatActivity() {
     private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
@@ -39,16 +41,11 @@ class AnchorTestActivity : AppCompatActivity() {
         setContentView(R.layout.anchortest_activity)
         session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         // Create a transform widget model and assign it to an Anchor
-        val transformWidgetModelFuture =
-            GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
-        transformWidgetModelFuture.addListener(
-            {
-                val transformWidgetModel = transformWidgetModelFuture.get()
-                setupAnchorUi(transformWidgetModel)
-            },
-            // This will cause the listener to be run on the UI thread
-            Runnable::run,
-        )
+        lifecycleScope.launch {
+            val transformWidgetModel =
+                GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
+            setupAnchorUi(transformWidgetModel)
+        }
     }
 
     @Suppress("UNUSED_VARIABLE")

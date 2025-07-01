@@ -37,13 +37,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-// TODO: b/418017070 - Implement
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal class FakeAppFunctionManagerApi(
     private val context: Context,
     private val appFunctionReader: FakeAppFunctionReader,
 ) : AppFunctionManagerApi {
     @OptIn(ExperimentalCoroutinesApi::class)
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override suspend fun executeAppFunction(
         request: ExecuteAppFunctionRequest
     ): ExecuteAppFunctionResponse = suspendCancellableCoroutine { continuation ->
@@ -75,14 +74,12 @@ internal class FakeAppFunctionManagerApi(
             )
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     override suspend fun isAppFunctionEnabled(packageName: String, functionId: String): Boolean =
-        appFunctionReader.getAppFunctionMetadata(packageName, functionId)?.isEnabled
+        appFunctionReader.getAppFunctionMetadata(functionId, packageName)?.isEnabled
             ?: throw AppFunctionFunctionNotFoundException(
                 "No function found with id: $functionId under package: $packageName"
             )
 
-    @RequiresApi(Build.VERSION_CODES.S)
     override suspend fun setAppFunctionEnabled(functionId: String, newEnabledState: Int) {
         val appFunctionStaticAndRuntimeMetadata =
             appFunctionReader.getAppFunctionStaticAndRuntimeMetadata(

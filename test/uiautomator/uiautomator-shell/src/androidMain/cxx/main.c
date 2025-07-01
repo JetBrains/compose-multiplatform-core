@@ -47,7 +47,7 @@ int createSocket(uint16_t port) {
     addr.sin_addr.s_addr = INADDR_ANY;
 
     // Create socket
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
     if (fd == -1) {
         LOGE("socket(AF_INET, SOCK_STREAM) failed: %s", strerror(errno));
         return -1;
@@ -252,14 +252,19 @@ int main(int argc, char *argv[]) {
     // This execution branch is for the parent process
     if (childPid > 0) {
 
+        // Wait for the child process to finish (ignore status like original)
+        LOGI("Waiting for child process [%d] to exit", childPid);
+        waitpid(childPid, NULL, 0);
+
+        // Clean up all the server sockets
+        shutdown(clientStdinFd, SHUT_RDWR);
+        shutdown(clientStdoutFd, SHUT_RDWR);
+        shutdown(clientStderrFd, SHUT_RDWR);
+
         // Parent closes its copy of the client sockets immediately after fork
         close(clientStdinFd);
         close(clientStdoutFd);
         close(clientStderrFd);
-
-        // Wait for the child process to finish (ignore status like original)
-        LOGI("Waiting for child process [%d] to exit", childPid);
-        waitpid(childPid, NULL, 0);
 
         // Clean up all the server sockets
         shutdown(stdinSocketFd, SHUT_RDWR);

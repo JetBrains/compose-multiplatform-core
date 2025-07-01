@@ -26,7 +26,7 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 11)
-class TopicsManagerApi31Ext11Impl(context: Context) :
+public class TopicsManagerApi31Ext11Impl(context: Context) :
     TopicsManagerImplCommon(android.adservices.topics.TopicsManager.get(context)) {
     override fun convertRequest(
         request: GetTopicsRequest

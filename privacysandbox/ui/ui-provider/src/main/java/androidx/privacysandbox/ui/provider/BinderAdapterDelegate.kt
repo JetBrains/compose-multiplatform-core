@@ -61,7 +61,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * shuttled to the host app in order for the [SandboxedUiAdapter] to be used to retrieve content.
  */
 @OptIn(ExperimentalFeatures.DelegatingAdapterApi::class)
-fun SandboxedUiAdapter.toCoreLibInfo(@Suppress("ContextFirst") context: Context): Bundle {
+public fun SandboxedUiAdapter.toCoreLibInfo(@Suppress("ContextFirst") context: Context): Bundle {
     // If the ui adapter has already been wrapped as a client SandboxedUiAdapter
     // at some point it needs no further wrapping
     if (this is ClientAdapterWrapper) {

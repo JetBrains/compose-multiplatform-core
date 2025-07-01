@@ -779,6 +779,8 @@ private val hiddenAnnotations: List<String> =
         "java.lang.Override",
         // This annotation is used by the room processor and isn't useful for developers
         "androidx.room.Ignore",
+        // This is an internal annotation only used by the kotlin compiler.
+        "kotlin.ExtensionFunctionType",
     )
 
 val validNullabilityAnnotations =
@@ -794,7 +796,7 @@ val validNullabilityAnnotations =
     )
 
 // Annotations which should not be displayed in the Kotlin docs, in addition to hiddenAnnotations
-private val hiddenAnnotationsKotlin: List<String> = listOf("kotlin.ExtensionFunctionType")
+private val hiddenAnnotationsKotlin: List<String> = emptyList()
 
 // Annotations which should not be displayed in the Java docs, in addition to hiddenAnnotations
 private val hiddenAnnotationsJava: List<String> = emptyList()

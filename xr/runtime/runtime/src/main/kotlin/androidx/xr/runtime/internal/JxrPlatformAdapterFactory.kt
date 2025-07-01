@@ -25,6 +25,6 @@ public interface JxrPlatformAdapterFactory : Service {
     /** Creates a [JxrPlatformAdapter] instance */
     public fun createPlatformAdapter(
         activity: Activity,
-        unscaledGravityAlignedActivitySpace: Boolean = false,
+        unscaledGravityAlignedActivitySpace: Boolean = true,
     ): JxrPlatformAdapter
 }

@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.foundation
 
-import android.os.Build
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,7 +56,6 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeWithVelocity
-import androidx.test.filters.SdkSuppress
 import java.lang.Math.sin
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -65,7 +63,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-@SdkSuppress(maxSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class BasicSwipeToDismissBoxTest {
     @get:Rule val rule = createComposeRule()
 

@@ -17,7 +17,6 @@
 package androidx.pdf.content
 
 import android.graphics.Point
-import androidx.annotation.RestrictTo
 
 /**
  * Represents one edge of the selected content.
@@ -26,7 +25,6 @@ import androidx.annotation.RestrictTo
  * @param point: The point of selection boundary.
  * @param isRtl: Determines whether the direction of selection is right-to-left (rtl) or reverse
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SelectionBoundary(
     public val index: Int = 0,
     public val point: Point? = null,

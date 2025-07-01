@@ -43,6 +43,7 @@ package androidx.xr.arcore.playservices {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCorePerceptionManager implements androidx.xr.runtime.internal.PerceptionManager {
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.internal.ArDevice getArDevice();
+    method public java.util.List<androidx.xr.runtime.internal.DepthMap> getDepthMaps();
     method public androidx.xr.arcore.playservices.ArCoreEarth getEarth();
     method public androidx.xr.runtime.internal.Hand? getLeftHand();
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
@@ -56,6 +57,7 @@ package androidx.xr.arcore.playservices {
     method public void setDisplayRotation(int rotation, int width, int height);
     method public void unpersistAnchor(java.util.UUID uuid);
     property public androidx.xr.runtime.internal.ArDevice arDevice;
+    property public java.util.List<androidx.xr.runtime.internal.DepthMap> depthMaps;
     property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public androidx.xr.arcore.playservices.ArCoreEarth earth;
     property public androidx.xr.runtime.internal.Hand? leftHand;
     property public androidx.xr.runtime.internal.Hand? rightHand;

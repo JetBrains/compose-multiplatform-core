@@ -55,6 +55,7 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinCoroutinesCore)
     androidTestImplementation(libs.testExtJunit)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":compose:foundation:foundation"))
     androidTestImplementation(project(":compose:runtime:runtime"))
     androidTestImplementation(project(":compose:ui:ui"))

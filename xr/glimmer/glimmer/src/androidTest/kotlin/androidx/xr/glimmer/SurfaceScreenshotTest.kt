@@ -16,16 +16,11 @@
 package androidx.xr.glimmer
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.interaction.FocusInteraction
-import androidx.compose.foundation.interaction.Interaction
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -41,8 +36,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.xr.glimmer.samples.SurfaceSample
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,7 +59,7 @@ class SurfaceScreenshotTest() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.surface(interactionSource = alwaysFocusedInteractionSource)
+                Modifier.surface(interactionSource = AlwaysFocusedInteractionSource)
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
                 Text("This is a surface")
@@ -82,7 +75,7 @@ class SurfaceScreenshotTest() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.surface(interactionSource = alwaysFocusedInteractionSource)
+                Modifier.surface(interactionSource = AlwaysFocusedInteractionSource)
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
                 Text("This is a surface")
@@ -99,7 +92,7 @@ class SurfaceScreenshotTest() {
             Box(
                 Modifier.surface(
                         shape = RectangleShape,
-                        interactionSource = alwaysFocusedInteractionSource,
+                        interactionSource = AlwaysFocusedInteractionSource,
                     )
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
@@ -118,7 +111,7 @@ class SurfaceScreenshotTest() {
             Box(
                 Modifier.surface(
                         shape = RectangleShape,
-                        interactionSource = alwaysFocusedInteractionSource,
+                        interactionSource = AlwaysFocusedInteractionSource,
                     )
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
@@ -137,7 +130,7 @@ class SurfaceScreenshotTest() {
                 Modifier.size(100.dp)
                     .surface(
                         shape = DoubleTriangleShape,
-                        interactionSource = alwaysFocusedInteractionSource,
+                        interactionSource = AlwaysFocusedInteractionSource,
                     )
                     .padding(horizontal = 24.dp, vertical = 20.dp),
                 contentAlignment = Alignment.Center,
@@ -156,7 +149,7 @@ class SurfaceScreenshotTest() {
                 Modifier.size(100.dp)
                     .surface(
                         shape = DoubleTriangleShape,
-                        interactionSource = alwaysFocusedInteractionSource,
+                        interactionSource = AlwaysFocusedInteractionSource,
                     )
                     .padding(horizontal = 24.dp, vertical = 20.dp),
                 contentAlignment = Alignment.Center,
@@ -176,7 +169,7 @@ class SurfaceScreenshotTest() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.surface(interactionSource = alwaysPressedInteractionSource, onClick = {})
+                Modifier.surface(interactionSource = AlwaysPressedInteractionSource, onClick = {})
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
                 Text("This is a surface")
@@ -197,7 +190,7 @@ class SurfaceScreenshotTest() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
             Box(
-                Modifier.surface(interactionSource = alwaysPressedInteractionSource, onClick = {})
+                Modifier.surface(interactionSource = AlwaysPressedInteractionSource, onClick = {})
                     .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
                 Text("This is a surface")
@@ -214,7 +207,7 @@ class SurfaceScreenshotTest() {
         rule.setGlimmerThemeContent {
             Box(
                 Modifier.surface(
-                        interactionSource = alwaysFocusedAndPressedInteractionSource,
+                        interactionSource = AlwaysFocusedAndPressedInteractionSource,
                         onClick = {},
                     )
                     .padding(horizontal = 24.dp, vertical = 20.dp)
@@ -262,26 +255,5 @@ class SurfaceScreenshotTest() {
                     close()
                 }
             )
-    }
-
-    private val alwaysFocusedInteractionSource =
-        StaticMutableInteractionSource(FocusInteraction.Focus())
-
-    private val alwaysPressedInteractionSource =
-        StaticMutableInteractionSource(PressInteraction.Press(Offset.Zero))
-
-    private val alwaysFocusedAndPressedInteractionSource =
-        StaticMutableInteractionSource(
-            FocusInteraction.Focus(),
-            PressInteraction.Press(Offset.Zero),
-        )
-
-    private class StaticMutableInteractionSource(vararg interactionsToShow: Interaction) :
-        MutableInteractionSource {
-        override val interactions: Flow<Interaction> = interactionsToShow.asFlow()
-
-        override suspend fun emit(interaction: Interaction) {}
-
-        override fun tryEmit(interaction: Interaction): Boolean = true
     }
 }

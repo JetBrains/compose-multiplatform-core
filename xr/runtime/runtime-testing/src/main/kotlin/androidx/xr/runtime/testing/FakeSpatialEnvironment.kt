@@ -18,6 +18,7 @@ package androidx.xr.runtime.testing
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.SpatialEnvironment
+import java.util.concurrent.Executor
 import java.util.function.Consumer
 
 // TODO: b/405218432 - Implement this correctly instead of stubbing it out.
@@ -27,28 +28,25 @@ public class FakeSpatialEnvironment : SpatialEnvironment {
 
     override val currentPassthroughOpacity: Float = 0.0f
 
-    override val spatialEnvironmentPreference: SpatialEnvironment.SpatialEnvironmentPreference? =
+    override var preferredSpatialEnvironment: SpatialEnvironment.SpatialEnvironmentPreference? =
         null
 
-    @get:Suppress("AutoBoxing") override val passthroughOpacityPreference: Float? = null
+    override var preferredPassthroughOpacity: Float =
+        SpatialEnvironment.NO_PASSTHROUGH_OPACITY_PREFERENCE
 
-    override fun addOnPassthroughOpacityChangedListener(listener: Consumer<Float>) {}
+    override fun addOnPassthroughOpacityChangedListener(
+        executor: Executor,
+        listener: Consumer<Float>,
+    ) {}
 
     override fun removeOnPassthroughOpacityChangedListener(listener: Consumer<Float>) {}
 
-    override fun isSpatialEnvironmentPreferenceActive(): Boolean = false
+    override val isPreferredSpatialEnvironmentActive: Boolean = false
 
-    override fun setSpatialEnvironmentPreference(
-        preference: SpatialEnvironment.SpatialEnvironmentPreference?
-    ): @SpatialEnvironment.SetSpatialEnvironmentPreferenceResult Int =
-        SpatialEnvironment.SetSpatialEnvironmentPreferenceResult.CHANGE_PENDING
-
-    override fun setPassthroughOpacityPreference(
-        @Suppress("AutoBoxing") passthroughOpacityPreference: Float?
-    ): @SpatialEnvironment.SetPassthroughOpacityPreferenceResult Int =
-        SpatialEnvironment.SetPassthroughOpacityPreferenceResult.CHANGE_PENDING
-
-    override fun addOnSpatialEnvironmentChangedListener(listener: Consumer<Boolean>) {}
+    override fun addOnSpatialEnvironmentChangedListener(
+        executor: Executor,
+        listener: Consumer<Boolean>,
+    ) {}
 
     override fun removeOnSpatialEnvironmentChangedListener(listener: Consumer<Boolean>) {}
 }

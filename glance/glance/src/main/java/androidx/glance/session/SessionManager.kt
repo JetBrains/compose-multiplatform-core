@@ -75,6 +75,13 @@ public interface SessionManagerScope {
 
     /** Gets the session corresponding to [key] if it exists */
     public fun getSession(key: String): Session?
+
+    /**
+     * If the session still has pending events, and has not been closed (widget deleted) or failed
+     * due to error, recreate it to handle those events, without starting a new worker. Returns the
+     * new session if it was recreated.
+     */
+    public suspend fun recreateOrClose(session: Session): Session?
 }
 
 @get:RestrictTo(LIBRARY_GROUP)
@@ -83,7 +90,7 @@ public val GlanceSessionManager: SessionManager = SessionManagerImpl(SessionWork
 public typealias InputDataFactory = SessionManagerImpl.(Session) -> Data
 
 @RestrictTo(LIBRARY_GROUP)
-public class SessionManagerImpl(
+public open class SessionManagerImpl(
     private val workerClass: Class<out ListenableWorker>,
     private val inputDataFactory: InputDataFactory = { session ->
         workDataOf(keyParam to session.key)
@@ -107,9 +114,7 @@ public class SessionManagerImpl(
 
             override suspend fun startSession(context: Context, session: Session) {
                 if (DEBUG) Log.d(TAG, "startSession(${session.key})")
-                sessions.put(session.key, session)?.let { previousSession ->
-                    previousSession.close()
-                }
+                addSessionCloseExisting(session)
                 val workRequest =
                     OneTimeWorkRequest.Builder(workerClass)
                         .setInputData(inputDataFactory(session))
@@ -138,6 +143,26 @@ public class SessionManagerImpl(
             override suspend fun closeSession(key: String) {
                 if (DEBUG) Log.d(TAG, "closeSession($key)")
                 sessions.remove(key)?.close()
+            }
+
+            override suspend fun recreateOrClose(session: Session): Session? {
+                val events = session.receiveAllPendingEvents()
+                if (!session.isOpen || session.hasError || events.isEmpty()) {
+                    Log.d(
+                        TAG,
+                        "Closing session ${session.key} wasOpen=${!session.isOpen}" +
+                            " hasError=${session.hasError} events=$events",
+                    )
+                    closeSession(session.key)
+                    return null
+                }
+                return session.recreateWithEvents(events).also { addSessionCloseExisting(it) }
+            }
+
+            private fun addSessionCloseExisting(session: Session) {
+                sessions.put(session.key, session)?.let { previousSession ->
+                    previousSession.close()
+                }
             }
         }
 

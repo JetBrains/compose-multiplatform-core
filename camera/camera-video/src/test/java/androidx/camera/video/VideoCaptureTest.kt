@@ -25,6 +25,12 @@ import android.media.CamcorderProfile.QUALITY_2160P
 import android.media.CamcorderProfile.QUALITY_480P
 import android.media.CamcorderProfile.QUALITY_720P
 import android.media.CamcorderProfile.QUALITY_HIGH
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_1080P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_2160P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_480P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_720P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_HIGH
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_LOW
 import android.media.CamcorderProfile.QUALITY_LOW
 import android.media.EncoderProfiles
 import android.media.MediaFormat.MIMETYPE_VIDEO_AV1
@@ -91,6 +97,10 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_480P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_720P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_1080P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_2160P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_480P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_720P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_480P
@@ -100,6 +110,10 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_QVGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_VGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeAudioProfileProxy
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeVideoProfileProxy
+import androidx.camera.testing.impl.FrameRateUtil.FPS_120_120
+import androidx.camera.testing.impl.FrameRateUtil.FPS_240_240
+import androidx.camera.testing.impl.FrameRateUtil.FPS_30_120
+import androidx.camera.testing.impl.FrameRateUtil.FPS_30_240
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
 import androidx.camera.testing.impl.fakes.FakeCameraFactory
 import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
@@ -112,6 +126,7 @@ import androidx.camera.video.Quality.HD
 import androidx.camera.video.Quality.HIGHEST
 import androidx.camera.video.Quality.LOWEST
 import androidx.camera.video.Quality.NONE
+import androidx.camera.video.Quality.QUALITY_SOURCE_HIGH_SPEED
 import androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR
 import androidx.camera.video.Quality.SD
 import androidx.camera.video.Quality.UHD
@@ -125,6 +140,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import java.util.Collections
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlin.text.get
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -596,6 +612,86 @@ class VideoCaptureTest {
                 videoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES,
             )
         val videoCapture = createVideoCapture(videoOutput)
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert.
+        assertCustomOrderedResolutions(
+            videoCapture,
+            // UHD
+            RESOLUTION_2160P,
+            // FHD
+            RESOLUTION_1080P,
+            // HD
+            RESOLUTION_720P,
+            // SD
+            Size(736, 412),
+            Size(864, 480),
+            Size(640, 360),
+        )
+    }
+
+    @Test
+    fun setAspectRatio_highSpeed4by3() {
+        // Arrange.
+        setupCamera(profiles = HIGH_SPEED_FULL_QUALITY_PROFILES_MAP)
+        createCameraUseCaseAdapter()
+
+        val videoOutput =
+            createVideoOutput(
+                mediaSpec =
+                    MediaSpec.builder()
+                        .configureVideo {
+                            it.setQualitySelector(
+                                QualitySelector.fromOrderedList(listOf(UHD, FHD, HD, SD))
+                            )
+                            it.setAspectRatio(RATIO_4_3)
+                        }
+                        .build(),
+                videoCapabilities = HIGH_SPEED_FULL_QUALITY_VIDEO_CAPABILITIES,
+            )
+        val videoCapture = createVideoCapture(videoOutput, sessionType = SESSION_TYPE_HIGH_SPEED)
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert.
+        assertCustomOrderedResolutions(
+            videoCapture,
+            // UHD
+            Size(3120, 2340),
+            Size(4000, 3000),
+            // FHD
+            Size(1440, 1080),
+            // HD
+            Size(960, 720),
+            Size(1280, 960),
+            // SD
+            RESOLUTION_VGA,
+        )
+    }
+
+    @Test
+    fun setAspectRatio_highSpeed16by9() {
+        // Arrange.
+        setupCamera(profiles = HIGH_SPEED_FULL_QUALITY_PROFILES_MAP)
+        createCameraUseCaseAdapter()
+
+        val videoOutput =
+            createVideoOutput(
+                mediaSpec =
+                    MediaSpec.builder()
+                        .configureVideo {
+                            it.setQualitySelector(
+                                QualitySelector.fromOrderedList(listOf(UHD, FHD, HD, SD))
+                            )
+                            it.setAspectRatio(RATIO_16_9)
+                        }
+                        .build(),
+                videoCapabilities = HIGH_SPEED_FULL_QUALITY_VIDEO_CAPABILITIES,
+            )
+        val videoCapture = createVideoCapture(videoOutput, sessionType = SESSION_TYPE_HIGH_SPEED)
 
         // Act.
         addAndAttachUseCases(videoCapture)
@@ -2281,6 +2377,9 @@ class VideoCaptureTest {
         sensorRotation: Int = 0,
         hasTransform: Boolean = true,
         supportedResolutions: Map<Int, List<Size>> = SUPPORTED_RESOLUTION_MAP,
+        isHighSpeedSupported: Boolean = true,
+        supportedHighSpeedResolutions: Map<Range<Int>, List<Size>> =
+            HIGH_SPEED_SUPPORTED_RESOLUTION_MAP,
         profiles: Map<Int, EncoderProfilesProxy> = CAMERA_0_PROFILES,
         timebase: Timebase = Timebase.UPTIME,
         cameraQuirks: List<Quirk>? = null,
@@ -2289,6 +2388,10 @@ class VideoCaptureTest {
             FakeCameraInfoInternal(cameraId, sensorRotation, lensFacing).apply {
                 supportedResolutions.forEach { (format, resolutions) ->
                     setSupportedResolutions(format, resolutions)
+                }
+                this.isHighSpeedSupported = isHighSpeedSupported
+                supportedHighSpeedResolutions.forEach {
+                    setSupportedHighSpeedResolutions(it.key, it.value)
                 }
                 encoderProfilesProvider =
                     FakeEncoderProfilesProvider.Builder().addAll(profiles).build()
@@ -2382,6 +2485,16 @@ class VideoCaptureTest {
                         }
             )
 
+        private val HIGH_SPEED_SUPPORTED_RESOLUTION_MAP = run {
+            val resolutions = SUPPORTED_RESOLUTION_MAP[INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE]!!
+            mapOf(
+                FPS_30_120 to resolutions,
+                FPS_120_120 to resolutions,
+                FPS_30_240 to resolutions,
+                FPS_240_240 to resolutions,
+            )
+        }
+
         private val FULL_QUALITY_PROFILES_MAP =
             mapOf(
                 QUALITY_HIGH to PROFILES_2160P,
@@ -2391,6 +2504,17 @@ class VideoCaptureTest {
                 QUALITY_480P to PROFILES_480P,
                 QUALITY_LOW to PROFILES_480P,
             )
+
+        private val HIGH_SPEED_FULL_QUALITY_PROFILES_MAP: Map<Int, EncoderProfilesProxy>
+            get() =
+                mapOf(
+                    QUALITY_HIGH_SPEED_HIGH to PROFILES_HIGH_SPEED_2160P,
+                    QUALITY_HIGH_SPEED_2160P to PROFILES_HIGH_SPEED_2160P,
+                    QUALITY_HIGH_SPEED_1080P to PROFILES_HIGH_SPEED_1080P,
+                    QUALITY_HIGH_SPEED_720P to PROFILES_HIGH_SPEED_720P,
+                    QUALITY_HIGH_SPEED_480P to PROFILES_HIGH_SPEED_480P,
+                    QUALITY_HIGH_SPEED_LOW to PROFILES_HIGH_SPEED_480P,
+                )
 
         private val CAMERA_0_PROFILES =
             mapOf(
@@ -2403,17 +2527,24 @@ class VideoCaptureTest {
         private val FULL_QUALITY_VIDEO_CAPABILITIES =
             createFakeVideoCapabilities(mapOf(DynamicRange.SDR to FULL_QUALITY_PROFILES_MAP))
 
+        private val HIGH_SPEED_FULL_QUALITY_VIDEO_CAPABILITIES =
+            createFakeVideoCapabilities(
+                mapOf(DynamicRange.SDR to HIGH_SPEED_FULL_QUALITY_PROFILES_MAP),
+                qualitySource = QUALITY_SOURCE_HIGH_SPEED,
+            )
+
         private val CAMERA_0_VIDEO_CAPABILITIES =
             createFakeVideoCapabilities(mapOf(DynamicRange.SDR to CAMERA_0_PROFILES))
 
         /** Create a fake VideoCapabilities. */
         private fun createFakeVideoCapabilities(
-            profilesMap: Map<DynamicRange, Map<Int, EncoderProfilesProxy>>
+            profilesMap: Map<DynamicRange, Map<Int, EncoderProfilesProxy>>,
+            qualitySource: Int = QUALITY_SOURCE_REGULAR,
         ): VideoCapabilities {
             val videoCapabilitiesMap =
                 profilesMap.mapValues {
                     val provider = FakeEncoderProfilesProvider.Builder().addAll(it.value).build()
-                    CapabilitiesByQuality(provider, QUALITY_SOURCE_REGULAR)
+                    CapabilitiesByQuality(provider, qualitySource)
                 }
 
             return object : VideoCapabilities {

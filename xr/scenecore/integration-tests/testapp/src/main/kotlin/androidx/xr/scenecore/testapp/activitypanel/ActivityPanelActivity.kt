@@ -17,7 +17,6 @@
 package androidx.xr.scenecore.testapp.activitypanel
 
 import android.content.Intent
-import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -29,6 +28,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
@@ -73,7 +73,7 @@ class ActivityPanelActivity : AppCompatActivity() {
 
         // Create activity panel entity
         activityPanelEntity =
-            ActivityPanelEntity.create(session!!, Rect(0, 0, 640, 480), ACTIVITY_NAME)
+            ActivityPanelEntity.create(session!!, IntSize2d(640, 480), ACTIVITY_NAME)
 
         // Set button listener
         val button: Button = findViewById(R.id.spawn_activity_panel_button)

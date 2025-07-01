@@ -24,6 +24,7 @@ import android.os.Build
 import android.util.Size
 import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
+import androidx.camera.core.Logger
 
 /**
  * Provides Camera2Extensions related info.
@@ -84,15 +85,28 @@ public class Camera2ExtensionsInfo(private val cameraManager: CameraManager) {
                 return it
             }
 
-        return if (format == ImageFormat.PRIVATE) {
-                getExtensionCharacteristics(cameraId)
-                    .getExtensionSupportedSizes(mode, SurfaceTexture::class.java)
-            } else {
-                getExtensionCharacteristics(cameraId).getExtensionSupportedSizes(mode, format)
-            }
-            .also { synchronized(lock) { cachedSupportedOutputSizes[key] = it } }
+        return try {
+            if (format == ImageFormat.PRIVATE) {
+                    getExtensionCharacteristics(cameraId)
+                        .getExtensionSupportedSizes(mode, SurfaceTexture::class.java)
+                } else {
+                    getExtensionCharacteristics(cameraId).getExtensionSupportedSizes(mode, format)
+                }
+                .also { synchronized(lock) { cachedSupportedOutputSizes[key] = it } }
+        } catch (e: IllegalArgumentException) {
+            Logger.e(
+                TAG,
+                "Failed to retrieve supported output sizes for camera $cameraId, mode $mode, format $format",
+                e,
+            )
+            emptyList()
+        }
     }
 
     private fun getCachedOutputSizesKey(cameraId: String, mode: Int, format: Int): String =
         "$cameraId-$mode-$format"
+
+    private companion object {
+        private const val TAG = "Camera2ExtensionsInfo"
+    }
 }

@@ -20,7 +20,6 @@ import android.app.sdksandbox.LoadSdkException
 import android.content.Context
 import android.os.Binder
 import android.os.Bundle
-import android.view.View
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
@@ -115,21 +114,16 @@ class SandboxedSdkProviderAdapterTest {
     }
 
     @Test
-    fun getView_shouldDelegateToCompatProviderAndReturnResult() {
+    fun getView_shouldThrowException() {
         val adapter = createAdapterFor(TestGetViewSdkProvider::class)
         val windowContext = mock(Context::class.java)
         val params = Bundle()
         val width = 1
         val height = 2
 
-        val result = adapter.getView(windowContext, params, width, height)
-
-        val delegate = adapter.extractDelegate<TestGetViewSdkProvider>()
-        assertThat(result).isSameInstanceAs(delegate.mView)
-        assertThat(delegate.mLastWindowContext).isSameInstanceAs(windowContext)
-        assertThat(delegate.mLastParams).isSameInstanceAs(params)
-        assertThat(delegate.mLastWidth).isSameInstanceAs(width)
-        assertThat(delegate.mLastHeigh).isSameInstanceAs(height)
+        assertThrows(UnsupportedOperationException::class.java) {
+            adapter.getView(windowContext, params, width, height)
+        }
     }
 
     private fun createAdapterFor(
@@ -184,30 +178,8 @@ class SandboxedSdkProviderAdapterTest {
     }
 
     class TestGetViewSdkProvider : SandboxedSdkProviderCompat() {
-        val mView: View = mock(View::class.java)
-
-        var mLastWindowContext: Context? = null
-        var mLastParams: Bundle? = null
-        var mLastWidth = 0
-        var mLastHeigh = 0
-
         override fun onLoadSdk(params: Bundle): SandboxedSdkCompat {
             throw RuntimeException("Not implemented")
-        }
-
-        @Deprecated("Will be removed later - temporary keeping for tests")
-        override fun getView(
-            windowContext: Context,
-            params: Bundle,
-            width: Int,
-            height: Int,
-        ): View {
-            mLastWindowContext = windowContext
-            mLastParams = params
-            mLastWidth = width
-            mLastHeigh = height
-
-            return mView
         }
     }
 }

@@ -68,6 +68,15 @@ constructor(
                 }
             }
 
+            /**
+             * Only remove the audio restriction when CameraDeviceWrapper is present. When
+             * closeCamera is called without a CameraDeviceWrapper, that means a wrapper hadn't been
+             * created for the opened camera.
+             */
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                audioRestrictionController.removeListener(cameraDeviceWrapper)
+            }
+
             val currentCameras =
                 handleQuirksBeforeClosing(
                     cameraDeviceWrapper,
@@ -99,15 +108,6 @@ constructor(
             // If the camera was reopened, make sure to finalize the camera state to finish closing.
             if (shouldReopenCamera) {
                 androidCameraState.onFinalized(unwrappedCameraDevice)
-            }
-
-            /**
-             * Only remove the audio restriction when CameraDeviceWrapper is present. When
-             * closeCamera is called without a CameraDeviceWrapper, that means a wrapper hadn't been
-             * created for the opened camera.
-             */
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                audioRestrictionController.removeListener(cameraDeviceWrapper)
             }
 
             // We only need to close the device once (don't want to create another capture session).

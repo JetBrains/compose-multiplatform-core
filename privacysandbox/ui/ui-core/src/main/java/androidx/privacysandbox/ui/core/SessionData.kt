@@ -27,7 +27,7 @@ import androidx.annotation.RestrictTo
  * A class containing values that will be constant for the lifetime of a
  * [SandboxedUiAdapter.Session].
  */
-class SessionData
+public class SessionData
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 constructor(
     /**
@@ -36,7 +36,7 @@ constructor(
      * This value will be used when [Build.VERSION.SDK_INT] is equal to
      * [Build.VERSION_CODES.UPSIDE_DOWN_CAKE].
      */
-    val windowInputToken: IBinder?,
+    public val windowInputToken: IBinder?,
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     /**
      * The input transfer token of the window hosting this session.
@@ -44,17 +44,17 @@ constructor(
      * This will be non-null when [Build.VERSION.SDK_INT] is greater than
      * [Build.VERSION_CODES.UPSIDE_DOWN_CAKE].
      */
-    val inputTransferToken: InputTransferToken?,
+    public val inputTransferToken: InputTransferToken?,
 ) {
-    constructor() : this(null, null)
+    public constructor() : this(null, null)
 
-    companion object {
+    public companion object {
         private const val KEY_WINDOW_INPUT_TOKEN = "windowInputToken"
         private const val KEY_INPUT_TRANSFER_TOKEN = "inputTransferToken"
 
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun toBundle(sessionData: SessionData): Bundle {
+        public fun toBundle(sessionData: SessionData): Bundle {
             val bundle = Bundle()
             sessionData.windowInputToken?.let { bundle.putBinder(KEY_WINDOW_INPUT_TOKEN, it) }
             CompatImpl.addInputTransferTokenToBundle(sessionData, bundle)
@@ -63,14 +63,14 @@ constructor(
 
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun fromBundle(bundle: Bundle): SessionData {
+        public fun fromBundle(bundle: Bundle): SessionData {
             val windowInputToken = bundle.getBinder(KEY_WINDOW_INPUT_TOKEN)
             val inputTransferToken = CompatImpl.deriveInputTransferToken(bundle)
             return SessionData(windowInputToken, inputTransferToken)
         }
     }
 
-    override fun toString() =
+    override fun toString(): String =
         "SessionData(windowInputToken=$windowInputToken, inputTransferToken=$inputTransferToken)"
 
     override fun hashCode(): Int {

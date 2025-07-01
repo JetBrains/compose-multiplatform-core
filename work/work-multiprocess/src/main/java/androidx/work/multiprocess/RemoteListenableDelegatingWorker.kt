@@ -40,7 +40,7 @@ import com.google.common.util.concurrent.ListenableFuture
  * A worker which can delegate to an instance of RemoteListenableWorker but importantly only
  * constructs an instance of the RemoteListenableWorker in the remote process.
  */
-class RemoteListenableDelegatingWorker(
+public class RemoteListenableDelegatingWorker(
     private val context: Context,
     private val workerParameters: WorkerParameters,
 ) : ListenableWorker(context, workerParameters) {
@@ -135,12 +135,12 @@ class RemoteListenableDelegatingWorker(
         }
     }
 
-    companion object {
+    public companion object {
         private const val TAG = "RemoteListenableDelegatingWorker"
 
         // The RemoteListenableWorker class to delegate to.
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        const val ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME =
+        public const val ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME: String =
             "androidx.work.multiprocess.RemoteListenableDelegatingWorker.ARGUMENT_REMOTE_LISTENABLE_WORKER_NAME"
     }
 }

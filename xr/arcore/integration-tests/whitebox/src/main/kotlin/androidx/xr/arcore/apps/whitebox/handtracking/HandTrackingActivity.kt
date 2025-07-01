@@ -48,7 +48,6 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
 import java.nio.file.Paths
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 /** Sample that demonstrates Hand Tracking API usage. */
@@ -152,22 +151,21 @@ class HandTrackingActivity : ComponentActivity() {
                         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                             setContent { MainPanel(session) }
                             val xyzModel =
-                                GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
-                                    .await()
+                                GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
 
                             val leftHandJointEntityMap =
                                 HandJointType.entries.associateWith {
-                                    GltfModelEntity.create(session, xyzModel).also {
-                                        it.setScale(0.015f)
-                                        it.setEnabled(false)
+                                    GltfModelEntity.create(session, xyzModel).apply {
+                                        setScale(0.015f)
+                                        setEnabled(false)
                                     }
                                 }
 
                             val rightHandJointEntityMap =
                                 HandJointType.entries.associateWith {
-                                    GltfModelEntity.create(session, xyzModel).also {
-                                        it.setScale(0.015f)
-                                        it.setEnabled(false)
+                                    GltfModelEntity.create(session, xyzModel).apply {
+                                        setScale(0.015f)
+                                        setEnabled(false)
                                     }
                                 }
 

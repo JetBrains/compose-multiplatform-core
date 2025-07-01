@@ -70,6 +70,32 @@ public class Colors(
             outlineVariant = outlineVariant,
         )
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Colors) return false
+
+        if (primary != other.primary) return false
+        if (secondary != other.secondary) return false
+        if (positive != other.positive) return false
+        if (negative != other.negative) return false
+        if (surface != other.surface) return false
+        if (outline != other.outline) return false
+        if (outlineVariant != other.outlineVariant) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = primary.hashCode()
+        result = 31 * result + secondary.hashCode()
+        result = 31 * result + positive.hashCode()
+        result = 31 * result + negative.hashCode()
+        result = 31 * result + surface.hashCode()
+        result = 31 * result + outline.hashCode()
+        result = 31 * result + outlineVariant.hashCode()
+        return result
+    }
+
     override fun toString(): String {
         return "Colors(primary=$primary, secondary=$secondary, positive=$positive, negative=$negative, surface=$surface, outline=$outline, outlineVariant=$outlineVariant)"
     }

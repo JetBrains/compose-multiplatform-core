@@ -31,7 +31,8 @@ import androidx.annotation.RestrictTo
  * @param adRenderId ad render id for server auctions
  */
 @ExperimentalFeatures.Ext16OptIn
-class ComponentAdData public constructor(val renderUri: Uri, val adRenderId: String) {
+public class ComponentAdData
+public constructor(public val renderUri: Uri, public val adRenderId: String) {
 
     /** Checks whether two [ComponentAdData] objects contain the same information. */
     override fun equals(other: Any?): Boolean {

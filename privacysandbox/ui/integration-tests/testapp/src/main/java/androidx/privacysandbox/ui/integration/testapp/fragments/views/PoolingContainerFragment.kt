@@ -16,35 +16,30 @@
 
 package androidx.privacysandbox.ui.integration.testapp.fragments.views
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.setMargins
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
-import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
 import androidx.privacysandbox.ui.integration.testapp.R
 import androidx.privacysandbox.ui.integration.testapp.fragments.BaseFragment
+import androidx.privacysandbox.ui.integration.testapp.util.AdHolder
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
-// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
-@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class PoolingContainerFragment : BaseFragment() {
     private lateinit var inflatedView: View
     private lateinit var recyclerView: RecyclerView
 
     override fun getSandboxedSdkViews(): List<SandboxedSdkView> {
-        return (recyclerView.adapter as CustomAdapter).sandboxedSdkViewSet.toList()
-    }
-
-    override fun handleDrawerStateChange(isDrawerOpen: Boolean) {
-        super.handleDrawerStateChange(isDrawerOpen)
-        (recyclerView.adapter as CustomAdapter).zOrderOnTop = providerUiOnTop
+        return (recyclerView.adapter as CustomAdapter).sandboxedSdkViews
     }
 
     override fun handleLoadAdFromDrawer(
@@ -57,10 +52,8 @@ class PoolingContainerFragment : BaseFragment() {
         currentAdType = adType
         currentMediationOption = mediationOption
         shouldDrawViewabilityLayer = drawViewabilityLayer
-        if (adFormat == AdFormat.Companion.BANNER_AD) {
-            val recyclerViewAdapter = CustomAdapter(adType, mediationOption, zOrderOnTop = false)
-            recyclerView.adapter = recyclerViewAdapter
-        }
+        val recyclerViewAdapter = CustomAdapter()
+        recyclerView.adapter = recyclerViewAdapter
     }
 
     override fun onCreateView(
@@ -70,29 +63,33 @@ class PoolingContainerFragment : BaseFragment() {
     ): View {
         inflatedView = inflater.inflate(R.layout.fragment_poolingcontainer, container, false)
         recyclerView = inflatedView.findViewById(R.id.recycler_view)
-        if (currentAdFormat == AdFormat.Companion.BANNER_AD) {
-            setRecyclerViewAdapter()
-        }
+        setRecyclerViewAdapter()
         return inflatedView
     }
 
     private fun setRecyclerViewAdapter() {
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.itemAnimator = DefaultItemAnimator()
-        recyclerView.adapter = CustomAdapter(currentAdType, currentMediationOption)
+        recyclerView.adapter = CustomAdapter()
     }
 
-    private inner class CustomAdapter(
-        @AdType val adType: Int,
-        @MediationOption val mediationOption: Int,
-        var zOrderOnTop: Boolean = true,
-    ) : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
+    private inner class CustomAdapter() : RecyclerView.Adapter<CustomAdapter.ViewHolder>() {
 
-        val sandboxedSdkViewSet = mutableSetOf<SandboxedSdkView>()
+        val adHoldersSet = mutableSetOf<AdHolder>()
+        val sandboxedSdkViews: List<SandboxedSdkView>
+            get() = adHoldersSet.map { it.sandboxedSdkViews }.flatten()
+
         private val childCount = 3
 
         inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val sandboxedSdkView: SandboxedSdkView = view.findViewById(R.id.recyclerview_ad_view)
+            val adHolder: AdHolder =
+                view.findViewById<AdHolder>(R.id.recyclerview_ad_view_holder).apply {
+                    adViewLayoutParams =
+                        ViewGroup.MarginLayoutParams(adViewLayoutParams).apply {
+                            setMargins(convertFromDpToPixels(DEFAULT_MARGIN_DP))
+                        }
+                    adViewBackgroundColor = Color.RED
+                }
         }
 
         override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
@@ -103,21 +100,21 @@ class PoolingContainerFragment : BaseFragment() {
         }
 
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-            val childSandboxedSdkView = viewHolder.sandboxedSdkView
-            childSandboxedSdkView.orderProviderUiAboveClientUi(zOrderOnTop)
-            if (!sandboxedSdkViewSet.contains(childSandboxedSdkView)) {
+            val childAdHolder = viewHolder.adHolder
+            if (!adHoldersSet.contains(childAdHolder)) {
                 try {
-                    loadBannerAd(
-                        adType,
-                        mediationOption,
-                        childSandboxedSdkView,
+                    loadAd(
+                        childAdHolder,
+                        currentAdFormat,
+                        currentAdType,
+                        currentMediationOption,
                         shouldDrawViewabilityLayer,
                     )
                 } catch (e: Exception) {
                     Log.w(TAG, "Ad not loaded $e")
                 }
-                childSandboxedSdkView.setEventListener()
-                sandboxedSdkViewSet.add(childSandboxedSdkView)
+                childAdHolder.sandboxedSdkViews.forEach { it.setEventListener() }
+                adHoldersSet.add(childAdHolder)
             }
         }
 

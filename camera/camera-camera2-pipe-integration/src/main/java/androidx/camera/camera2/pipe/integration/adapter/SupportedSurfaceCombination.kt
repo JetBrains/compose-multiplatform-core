@@ -59,6 +59,7 @@ import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize
@@ -331,6 +332,7 @@ public class SupportedSurfaceCombination(
         cameraMode: Int,
         imageFormat: Int,
         size: Size,
+        streamUseCase: StreamUseCase,
     ): SurfaceConfig {
         return SurfaceConfig.transformSurfaceConfig(
             imageFormat = imageFormat,
@@ -339,6 +341,7 @@ public class SupportedSurfaceCombination(
             cameraMode = cameraMode,
             // FEATURE_COMBINATION_TABLE N/A for the code flows leading to this call
             configSource = CAPTURE_SESSION_TABLES,
+            streamUseCase = streamUseCase,
         )
     }
 
@@ -644,6 +647,9 @@ public class SupportedSurfaceCombination(
                     surfaceConfigIndexAttachedSurfaceInfoMap,
                     surfaceConfigIndexUseCaseConfigMap,
                 )
+            debug {
+                "orderedSurfaceConfigListForStreamUseCase = $orderedSurfaceConfigListForStreamUseCase"
+            }
         }
 
         val maxSupportedFps =
@@ -844,6 +850,7 @@ public class SupportedSurfaceCombination(
             }
             val minSize = Collections.min(outputSizes, compareSizesByArea)
             val imageFormat = useCaseConfig.inputFormat
+            val streamUseCase = useCaseConfig.streamUseCase
             surfaceConfigs.add(
                 SurfaceConfig.transformSurfaceConfig(
                     imageFormat = imageFormat,
@@ -852,6 +859,7 @@ public class SupportedSurfaceCombination(
                     cameraMode = featureSettings.cameraMode,
                     // FEATURE_COMBINATION_TABLE not needed for the code flows leading to this call
                     configSource = CAPTURE_SESSION_TABLES,
+                    streamUseCase = streamUseCase,
                 )
             )
         }
@@ -1078,10 +1086,12 @@ public class SupportedSurfaceCombination(
             val configSizeUniqueMaxFpsMap = mutableMapOf<ConfigSize, MutableSet<Int>>()
             for (size in newUseCaseConfigsSupportedSizeMap[useCaseConfig]!!) {
                 val imageFormat = useCaseConfig.inputFormat
+                val streamUseCase = useCaseConfig.streamUseCase
                 populateReducedSizeListAndUniqueMaxFpsMap(
                     featureSettings,
                     size,
                     imageFormat,
+                    streamUseCase,
                     forceUniqueMaxFpsFiltering,
                     configSizeUniqueMaxFpsMap,
                     reducedSizeList,
@@ -1096,6 +1106,7 @@ public class SupportedSurfaceCombination(
         featureSettings: FeatureSettings,
         size: Size,
         imageFormat: Int,
+        streamUseCase: StreamUseCase,
         forceUniqueMaxFpsFiltering: Boolean,
         configSizeUniqueMaxFpsMap: MutableMap<ConfigSize, MutableSet<Int>>,
         reducedSizeList: MutableList<Size>,
@@ -1112,6 +1123,7 @@ public class SupportedSurfaceCombination(
                         } else {
                             CAPTURE_SESSION_TABLES
                         },
+                    streamUseCase = streamUseCase,
                 )
                 .configSize
 
@@ -1461,6 +1473,7 @@ public class SupportedSurfaceCombination(
         for ((i, size) in possibleSizeList.withIndex()) {
             val newUseCase = newUseCaseConfigs[useCasesPriorityOrder[i]]
             val imageFormat = newUseCase.inputFormat
+            val streamUseCase = newUseCase.streamUseCase
             // add new use case/size config to list of surfaces
             val surfaceConfig =
                 SurfaceConfig.transformSurfaceConfig(
@@ -1474,6 +1487,7 @@ public class SupportedSurfaceCombination(
                         } else {
                             CAPTURE_SESSION_TABLES
                         },
+                    streamUseCase = streamUseCase,
                 )
             surfaceConfigList.add(surfaceConfig)
             if (surfaceConfigIndexUseCaseConfigMap != null) {

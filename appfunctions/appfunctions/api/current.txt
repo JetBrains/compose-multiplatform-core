@@ -267,7 +267,9 @@ package androidx.appfunctions.metadata {
   public final class AppFunctionMetadata {
     ctor public AppFunctionMetadata(String id, String packageName, boolean isEnabled, androidx.appfunctions.metadata.AppFunctionSchemaMetadata? schema, java.util.List<androidx.appfunctions.metadata.AppFunctionParameterMetadata> parameters, androidx.appfunctions.metadata.AppFunctionResponseMetadata response);
     ctor public AppFunctionMetadata(String id, String packageName, boolean isEnabled, androidx.appfunctions.metadata.AppFunctionSchemaMetadata? schema, java.util.List<androidx.appfunctions.metadata.AppFunctionParameterMetadata> parameters, androidx.appfunctions.metadata.AppFunctionResponseMetadata response, optional androidx.appfunctions.metadata.AppFunctionComponentsMetadata components);
+    ctor public AppFunctionMetadata(String id, String packageName, boolean isEnabled, androidx.appfunctions.metadata.AppFunctionSchemaMetadata? schema, java.util.List<androidx.appfunctions.metadata.AppFunctionParameterMetadata> parameters, androidx.appfunctions.metadata.AppFunctionResponseMetadata response, optional androidx.appfunctions.metadata.AppFunctionComponentsMetadata components, optional String description);
     method public androidx.appfunctions.metadata.AppFunctionComponentsMetadata getComponents();
+    method public String getDescription();
     method public String getId();
     method public String getPackageName();
     method public java.util.List<androidx.appfunctions.metadata.AppFunctionParameterMetadata> getParameters();
@@ -275,6 +277,7 @@ package androidx.appfunctions.metadata {
     method public androidx.appfunctions.metadata.AppFunctionSchemaMetadata? getSchema();
     method public boolean isEnabled();
     property public androidx.appfunctions.metadata.AppFunctionComponentsMetadata components;
+    property public String description;
     property public String id;
     property public boolean isEnabled;
     property public String packageName;

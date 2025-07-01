@@ -28,8 +28,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfLoader
+import androidx.pdf.PdfPasswordException
 import androidx.pdf.SandboxedPdfLoader
-import androidx.pdf.exceptions.PdfPasswordException
 import androidx.pdf.search.SearchRepository
 import androidx.pdf.search.model.NoQuery
 import androidx.pdf.search.model.QueryResults

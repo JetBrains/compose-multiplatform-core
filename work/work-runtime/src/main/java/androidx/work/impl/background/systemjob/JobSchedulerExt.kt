@@ -57,7 +57,7 @@ private object JobScheduler21 {
 }
 
 @get:RequiresApi(21)
-val JobScheduler.safePendingJobs: List<JobInfo>?
+public val JobScheduler.safePendingJobs: List<JobInfo>?
     get() {
         return try {
             // Note: despite what the word "pending" and the associated Javadoc might imply, this is

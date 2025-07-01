@@ -20,7 +20,7 @@ import androidx.tracing.apple.OSLogger
 import kotlinx.cinterop.ExperimentalForeignApi
 
 @OptIn(ExperimentalForeignApi::class)
-actual object Trace {
+public actual object Trace {
     private val logger = OSLogger()
 
     /**
@@ -34,7 +34,7 @@ actual object Trace {
      *
      * @param label The name of the code section to appear in the trace.
      */
-    actual fun beginSection(label: String) {
+    public actual fun beginSection(label: String) {
         logger.beginSection(label)
     }
 
@@ -45,7 +45,7 @@ actual object Trace {
      * will mark the end of the most recently begun section of code, so care must be taken to ensure
      * that beginSection / endSection pairs are properly nested and called from the same thread.
      */
-    actual fun endSection() {
+    public actual fun endSection() {
         logger.endSection()
     }
 }

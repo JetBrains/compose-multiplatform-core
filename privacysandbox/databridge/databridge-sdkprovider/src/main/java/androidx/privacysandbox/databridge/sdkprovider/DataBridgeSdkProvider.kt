@@ -26,7 +26,7 @@ import androidx.privacysandbox.databridge.core.aidl.ISetValuesResultCallback
 import androidx.privacysandbox.databridge.core.aidl.ResultInternal
 import androidx.privacysandbox.databridge.core.aidl.ValueInternal
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 

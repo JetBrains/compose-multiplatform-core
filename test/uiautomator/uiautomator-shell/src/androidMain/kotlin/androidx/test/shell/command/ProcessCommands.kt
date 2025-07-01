@@ -69,16 +69,14 @@ public class ProcessCommands internal constructor(private val shell: Shell) {
 
     /**
      * Gets the pid of a given process name. Note that underlying this api utilizes pgrep and
-     * returns the pid associated to the first process with the name starting with the given
+     * returns the pid associated to the first process with the name matching with the given
      * [processName], or -1 if not found.
      *
      * @param processName the name of the process to get the pid of.
      * @return the pid of the process if found or -1.
      */
     public fun getPid(processName: String): Int =
-        processGrep(processName)
-            .firstOrNull { it.processName.startsWith(processName) }
-            .let { it?.pid ?: -1 }
+        processGrep(processName).firstOrNull { it.processName == processName }.let { it?.pid ?: -1 }
 
     /** Returns whether the given process id is associated with a process that is alive. */
     public fun isProcessAlive(pid: Int): Boolean =

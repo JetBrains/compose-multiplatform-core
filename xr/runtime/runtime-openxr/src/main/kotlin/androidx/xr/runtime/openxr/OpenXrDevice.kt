@@ -25,7 +25,7 @@ import androidx.xr.runtime.math.Pose
 public class OpenXrDevice internal constructor() : ArDevice, Updatable {
 
     override var devicePose: Pose = Pose()
-        private set // Return a default Pose if buffer is null
+        private set
 
     override fun update(xrTime: Long) {
         // Keep the device pose as the previous one if native returns null.

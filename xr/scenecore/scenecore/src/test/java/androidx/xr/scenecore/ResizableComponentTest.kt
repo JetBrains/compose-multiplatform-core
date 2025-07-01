@@ -57,7 +57,7 @@ class ResizableComponentTest {
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val mockRuntime = mock<JxrPlatformAdapter>()
     private lateinit var session: Session
-    private val mockContentlessEntity = mock<RtEntity>()
+    private val mockGroupEntity = mock<RtEntity>()
     private val mockActivitySpace = mock<RtActivitySpace>()
 
     object MockitoHelper {
@@ -75,31 +75,31 @@ class ResizableComponentTest {
         whenever(mockRuntime.headActivityPose).thenReturn(mock())
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
-        whenever(mockRuntime.createEntity(any(), any(), any())).thenReturn(mockContentlessEntity)
+        whenever(mockRuntime.createGroupEntity(any(), any(), any())).thenReturn(mockGroupEntity)
         whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
     }
 
     @Test
     fun addResizableComponent_addsRuntimeResizableComponent() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createResizableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent =
             ResizableComponent.create(mockRuntime, FloatSize3d(), FloatSize3d())
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()
         verify(mockRuntime).createResizableComponent(any(), any())
-        verify(mockContentlessEntity).addComponent(any())
+        verify(mockGroupEntity).addComponent(any())
     }
 
     @Test
     fun addResizableComponentDefaultArguments_addsRuntimeResizableComponentWithDefaults() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createResizableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()
@@ -114,29 +114,29 @@ class ResizableComponentTest {
         assertThat(rtMaxDimensions.width).isEqualTo(10f)
         assertThat(rtMaxDimensions.height).isEqualTo(10f)
         assertThat(rtMaxDimensions.depth).isEqualTo(10f)
-        verify(mockContentlessEntity).addComponent(any())
+        verify(mockGroupEntity).addComponent(any())
     }
 
     @Test
     fun removeResizableComponent_removesRuntimeResizableComponent() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createResizableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
         entity.removeComponent(resizableComponent)
-        verify(mockContentlessEntity).removeComponent(any())
+        verify(mockGroupEntity).removeComponent(any())
     }
 
     @Test
     fun resizableComponent_canAttachOnlyOnce() {
-        val entity = ContentlessEntity.create(session, "test")
-        val entity2 = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
+        val entity2 = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createResizableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()
@@ -145,13 +145,13 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_setSizeInvokesRuntimeResizableComponentSetSize() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
@@ -164,13 +164,13 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_setMinimumSizeInvokesRuntimeResizableComponentSetMinimumSize() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
@@ -183,13 +183,13 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_setMaximumSizeInvokesRuntimeResizableComponentSetMaximumSize() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
@@ -202,13 +202,13 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_setFixedAspectRatioInvokesRuntimeResizableComponentSetFixedAspectRatio() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
@@ -223,13 +223,13 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_setAutoHideContentInvokesRuntimeResizableComponentSetAutoHideContent() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
@@ -243,13 +243,13 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_setAutoUpdateSizeInvokesRuntimeResizableComponentSetAutoUpdateSize() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
@@ -263,13 +263,13 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_setForceShowResizeOverlayInvokesRuntimeResizableComponentSetForceShowResizeOverlay() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
 
@@ -283,12 +283,12 @@ class ResizableComponentTest {
 
     @Test
     fun addResizeListener_invokesRuntimeAddResizeEventListener() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
         val mockResizeListener = mock<ResizeListener>()
@@ -317,12 +317,12 @@ class ResizableComponentTest {
 
     @Test
     fun addMultipleResizeEventListeners_invokesAllListeners() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
         val mockResizeListener = mock<ResizeListener>()
@@ -349,12 +349,12 @@ class ResizableComponentTest {
 
     @Test
     fun removeResizeEventListener_invokesRuntimeRemoveResizeEventListener() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
         assertThat(entity.addComponent(resizableComponent)).isTrue()
         val mockResizeListener = mock<ResizeListener>()
@@ -386,10 +386,10 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_canAttachAgainAfterDetach() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         whenever(mockRuntime.createResizableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()
@@ -399,12 +399,12 @@ class ResizableComponentTest {
 
     @Test
     fun resizableComponent_attachAfterDetachPreservesListeners() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val mockRtResizableComponent = mock<RtResizableComponent>()
         whenever(mockRuntime.createResizableComponent(any(), any()))
             .thenReturn(mockRtResizableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val resizableComponent = ResizableComponent.create(mockRuntime)
 
         assertThat(entity.addComponent(resizableComponent)).isTrue()

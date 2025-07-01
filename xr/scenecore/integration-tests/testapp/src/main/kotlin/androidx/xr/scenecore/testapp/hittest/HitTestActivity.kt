@@ -23,6 +23,7 @@ import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
@@ -40,6 +41,7 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.nio.file.Paths
+import kotlinx.coroutines.launch
 
 class HitTestActivity : AppCompatActivity() {
 
@@ -82,12 +84,10 @@ class HitTestActivity : AppCompatActivity() {
             Log.e("HitTestActivity", "Error adding MovableComponent to panelEntity")
         }
 
-        val transformWidgetModelFuture =
-            GltfModel.createAsync(session!!, Paths.get("models", "xyzArrows.glb"))
-        transformWidgetModelFuture.addListener(
-            { transformWidgetModel = transformWidgetModelFuture.get() },
-            Runnable::run,
-        )
+        var transformWidgetModel: GltfModel? = null
+        lifecycleScope.launch {
+            transformWidgetModel = GltfModel.create(session!!, Paths.get("models", "xyzArrows.glb"))
+        }
 
         val buttonHitTest: Button = panelContentView.findViewById(R.id.buttonHitTest)
         buttonHitTest.text = "Hit Test"
@@ -132,20 +132,16 @@ class HitTestActivity : AppCompatActivity() {
             }
         }
 
-        val dragonModelFuture =
-            GltfModel.createAsync(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
-        dragonModelFuture.addListener(
-            {
-                val dragonModel = dragonModelFuture.get()
-                val gltfEntity =
-                    GltfModelEntity.create(session!!, dragonModel, Pose(Vector3(1f, 0f, 0f)))
-                gltfEntity.parent = session!!.scene.activitySpace
-                val interactableComponent = InteractableComponent.create(session!!, mainExecutor) {}
-                if (!gltfEntity.addComponent(interactableComponent)) {
-                    Log.e("HitTestActivity", "Error adding InteractableComponent to gltfEntity")
-                }
-            },
-            Runnable::run,
-        )
+        lifecycleScope.launch {
+            val dragonModel =
+                GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
+            val gltfEntity =
+                GltfModelEntity.create(session!!, dragonModel, Pose(Vector3(1f, 0f, 0f)))
+            gltfEntity.parent = session!!.scene.activitySpace
+            val interactableComponent = InteractableComponent.create(session!!, mainExecutor) {}
+            if (!gltfEntity.addComponent(interactableComponent)) {
+                Log.e("HitTestActivity", "Error adding InteractableComponent to gltfEntity")
+            }
+        }
     }
 }

@@ -19,11 +19,11 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 
 /** See [FragmentStrictMode.Policy.Builder.detectWrongFragmentContainer]. */
-class WrongFragmentContainerViolation
+public class WrongFragmentContainerViolation
 internal constructor(
     fragment: Fragment,
     /** Gets the container that the [Fragment] causing the Violation was being added to. */
-    val container: ViewGroup,
+    public val container: ViewGroup,
 ) :
     Violation(
         fragment,

@@ -104,7 +104,6 @@ import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlinx.coroutines.guava.await
 
 class SubspaceComposableApp : ComponentActivity() {
 
@@ -335,7 +334,7 @@ class SubspaceComposableApp : ComponentActivity() {
         val gltfEntity = arrows?.let { remember { GltfModelEntity.create(session, it) } }
 
         LaunchedEffect(Unit) {
-            arrows = GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb")).await()
+            arrows = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
         }
 
         if (gltfEntity != null) {

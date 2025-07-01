@@ -203,6 +203,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         keyIndexMap: LazyLayoutKeyIndexMap,
         itemSpacing: Int,
         containerConstraints: Constraints,
+        anchorItemKey: Any,
         anchorItemIndex: Int,
         anchorItemScrollOffset: Int,
         lastMeasuredAnchorItemHeight: Int,
@@ -211,6 +212,15 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         scrollToBeConsumed: Float,
         layout: (Int, Int, Placeable.PlacementScope.() -> Unit) -> MeasureResult,
     ): TransformingLazyColumnMeasureResult {
+
+        val (anchorItemIndex, previousAnchorPresent) =
+            keyIndexMap.getIndex(anchorItemKey).let {
+                // If no item for this key was found, getIndex returns -1. In this case we use
+                // anchorItemIndex as an anchor. We can also assume that as there is no anchor with
+                // this
+                // key, it is not present and was probably deleted or was not yet initialised.
+                if (it == -1) anchorItemIndex to false else it to true
+            }
 
         if (itemsCount == 0) {
             return emptyMeasureResult(
@@ -224,10 +234,19 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         // Restore the position of anchor item from the previous measurement.
         val previousAnchorItem =
             if (lastMeasuredAnchorItemHeight > 0) {
+                val offset =
+                    anchorItemScrollOffset - lastMeasuredAnchorItemHeight / 2 +
+                        containerConstraints.maxHeight / 2
+
                 measuredItemProvider.downwardMeasuredItem(
                     anchorItemIndex,
-                    anchorItemScrollOffset - lastMeasuredAnchorItemHeight / 2 +
-                        containerConstraints.maxHeight / 2,
+                    // If the previous anchor item is deleted, the item at the same index
+                    // becomes the new anchor and inherits the offset of the deleted item.
+                    // If the original anchor's top was off-screen, this inherited offset
+                    // could also place the new anchor off-screen.
+                    // To prevent this, we coerce the new anchor's top offset to be at least 0,
+                    // ensuring it remains visible on screen.
+                    if (previousAnchorPresent) offset else offset.coerceAtLeast(0),
                     maxHeight = containerConstraints.maxHeight,
                 )
             } else {
@@ -300,7 +319,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                         layout = layout,
                     )
 
-            if (anchorItem.index != anchorItemIndex) {
+            if (anchorItem.key != anchorItemKey) {
                 // Anchor item was updated.
                 correctLayout(anchorItem)
 
@@ -344,6 +363,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         actuallyVisibleItems.fastForEach { it.markMeasured() }
 
         return TransformingLazyColumnMeasureResult(
+                anchorItemKey = anchorItem.key,
                 anchorItemIndex = anchorItem.index,
                 anchorItemScrollOffset =
                     anchorItem.let {

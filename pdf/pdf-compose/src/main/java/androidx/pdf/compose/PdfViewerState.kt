@@ -35,8 +35,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.core.util.keyIterator
+import androidx.pdf.PdfPoint
 import androidx.pdf.view.Highlight
-import androidx.pdf.view.PdfPoint
 import androidx.pdf.view.PdfView
 import androidx.pdf.view.Selection
 import kotlin.math.roundToInt
@@ -168,11 +168,11 @@ public class PdfViewerState(
      * Returns the View coordinate location of [pdfPoint], or null if that PDF content has not been
      * laid out yet.
      *
-     * Returns null if this [PdfViewerState] is not yet associated with a [PdfViewer], or if the
-     * [PdfViewer] is not associated with a [androidx.pdf.PdfDocument]
+     * Returns [Offset.Unspecified] if this [PdfViewerState] is not yet associated with a
+     * [PdfViewer], or if the [PdfViewer] is not associated with a [androidx.pdf.PdfDocument]
      */
     public fun toOffset(pdfPoint: PdfPoint): Offset? {
-        return pdfView?.pdfToViewPoint(pdfPoint)?.toOffset()
+        return pdfView?.pdfToViewPoint(pdfPoint)?.toOffset() ?: Offset.Unspecified
     }
 
     /** Centers the page at [pageNum] in the viewport. */
@@ -268,7 +268,7 @@ public class PdfViewerState(
             }
         }
 
-        override fun onSelectionChanged(previousSelection: Selection?, newSelection: Selection?) {
+        override fun onSelectionChanged(newSelection: Selection?) {
             currentSelection = newSelection
         }
     }

@@ -21,8 +21,10 @@ import android.os.CancellationSignal
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.credentials.CredentialManagerCallback
+import androidx.credentials.registry.provider.ClearCredentialRegistryException
 import androidx.credentials.registry.provider.ClearCredentialRegistryRequest
 import androidx.credentials.registry.provider.ClearCredentialRegistryResponse
+import androidx.credentials.registry.provider.ClearCredentialRegistryUnknownException
 import androidx.credentials.registry.provider.RegisterCredentialsException
 import androidx.credentials.registry.provider.RegisterCredentialsRequest
 import androidx.credentials.registry.provider.RegisterCredentialsResponse
@@ -30,6 +32,7 @@ import androidx.credentials.registry.provider.RegisterCredentialsUnknownExceptio
 import androidx.credentials.registry.provider.RegistryManagerProvider
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.identitycredentials.ClearRegistryRequest
 import com.google.android.gms.identitycredentials.IdentityCredentialManager
 import com.google.android.gms.identitycredentials.RegistrationRequest
 import java.util.concurrent.Executor
@@ -73,9 +76,33 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
     override fun onClearCredentialRegistry(
         request: ClearCredentialRegistryRequest,
         executor: Executor,
-        callback: CredentialManagerCallback<ClearCredentialRegistryResponse, Exception>,
+        callback:
+            CredentialManagerCallback<
+                ClearCredentialRegistryResponse,
+                ClearCredentialRegistryException,
+            >,
     ) {
-        TODO("b/368092001 - Not yet implemented")
+        val gmsRequest =
+            ClearRegistryRequest(
+                deleteAll = request.isDeleteAll,
+                clearTypedRegistryOption =
+                    request.deletePerTypeConfig?.let {
+                        ClearRegistryRequest.ClearTypedRegistryOption(
+                            deleteAllForType = it.isDeleteAll,
+                            type = it.type,
+                            deleteIdlessRegistry = false,
+                            registryIds = it.registryIds,
+                        )
+                    },
+            )
+        client
+            .clearRegistry(gmsRequest)
+            .addOnSuccessListener {
+                callback.onResult(ClearCredentialRegistryResponse(it.isDeleted))
+            }
+            .addOnFailureListener {
+                callback.onError(ClearCredentialRegistryUnknownException(it.message))
+            }
     }
 
     override fun isAvailable(): Boolean {

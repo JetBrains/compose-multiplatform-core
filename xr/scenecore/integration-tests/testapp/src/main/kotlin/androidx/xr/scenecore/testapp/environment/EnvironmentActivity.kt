@@ -117,9 +117,9 @@ class EnvironmentActivity : AppCompatActivity() {
         manageOpacity()
 
         // Set initial environment preference
-        session!!.scene.spatialEnvironment.setSpatialEnvironmentPreference(null)
+        session!!.scene.spatialEnvironment.preferredSpatialEnvironment = null
         spatialEnvironmentPreference =
-            session!!.scene.spatialEnvironment.getSpatialEnvironmentPreference()
+            session!!.scene.spatialEnvironment.preferredSpatialEnvironment
 
         // handle Log capabilities
         findViewById<Button>(R.id.environment_log_spatial_capabilities).setOnClickListener {
@@ -194,7 +194,7 @@ class EnvironmentActivity : AppCompatActivity() {
 
         // handle unset geometry and skybox
         findViewById<Button>(R.id.environment_button4_2).setOnClickListener {
-            session!!.scene.spatialEnvironment.setSpatialEnvironmentPreference(null)
+            session!!.scene.spatialEnvironment.preferredSpatialEnvironment = null
             addEvent(EventType.SKYBOX_AND_GEOMETRY_CHANGED, "Skybox and geometry unset")
         }
     }
@@ -221,19 +221,15 @@ class EnvironmentActivity : AppCompatActivity() {
             ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "GreySkybox.zip")).await()
         this.blueSkybox =
             ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "BlueSkybox.zip")).await()
-        this.groundGeometry =
-            GltfModel.createAsync(session!!, Paths.get("models", "GroundGeometry.glb")).await()
-        this.rockGeometry =
-            GltfModel.createAsync(session!!, Paths.get("models", "RocksGeometry.glb")).await()
+        this.groundGeometry = GltfModel.create(session!!, Paths.get("models", "GroundGeometry.glb"))
+        this.rockGeometry = GltfModel.create(session!!, Paths.get("models", "RocksGeometry.glb"))
     }
 
     private fun setGeoAndSkybox(skybox: ExrImage?, geometry: GltfModel?) {
         spatialEnvironmentPreference =
             SpatialEnvironment.SpatialEnvironmentPreference(skybox, geometry)
-        session!!
-            .scene
-            .spatialEnvironment
-            .setSpatialEnvironmentPreference(spatialEnvironmentPreference)
+        session!!.scene.spatialEnvironment.preferredSpatialEnvironment =
+            spatialEnvironmentPreference
     }
 
     private fun toggleMode(): String {
@@ -258,12 +254,12 @@ class EnvironmentActivity : AppCompatActivity() {
         val opacityTextView = findViewById<TextView>(R.id.sliderValueTextView)
         val opacitySlider = findViewById<Slider>(R.id.environment_mySlider)
         opacitySlider.addOnChangeListener { _, value, _ ->
-            session!!.scene.spatialEnvironment.setPassthroughOpacityPreference(value)
+            session!!.scene.spatialEnvironment.preferredPassthroughOpacity = value
             passthroughOpacityPreference.value = value
             opacityTextView.text = opacityValueText(value, currentPassthroughOpacity.value)
         }
 
-        session!!.scene.spatialEnvironment.setPassthroughOpacityPreference(0f)
+        session!!.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
         session!!.scene.spatialEnvironment.addOnPassthroughOpacityChangedListener { newOpacity ->
             currentPassthroughOpacity.value = newOpacity
             opacityTextView.text =
@@ -280,7 +276,7 @@ class EnvironmentActivity : AppCompatActivity() {
         // Unset opacity preference
         val unsetOpacityPrefButton = findViewById<Button>(R.id.environment_sliderButton)
         unsetOpacityPrefButton.setOnClickListener {
-            session!!.scene.spatialEnvironment.setPassthroughOpacityPreference(0f)
+            session!!.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
             opacitySlider.value = 0f
             opacityTextView.text = opacityValueText(0f, 0f)
         }
@@ -304,25 +300,13 @@ class EnvironmentActivity : AppCompatActivity() {
         addNewSpatialLogEvent(SpatialEventLog(currentTimestamp(), eventType.text, text))
     }
 
-    @Suppress("DEPRECATION")
     private fun togglePassthrough() {
         val lastApiCall = "togglePassthrough"
-        val passthroughMode: SpatialEnvironment.PassthroughMode =
-            session!!.scene.spatialEnvironment.getPassthroughMode()
         Log.i(TAG, lastApiCall)
-        when (passthroughMode) {
-            SpatialEnvironment.PassthroughMode.UNINITIALIZED -> return
-            //  Do Nothing. We're still waiting
-            SpatialEnvironment.PassthroughMode.DISABLED ->
-                session!!
-                    .scene
-                    .spatialEnvironment
-                    .setPassthrough(SpatialEnvironment.PassthroughMode.ENABLED)
-            SpatialEnvironment.PassthroughMode.ENABLED ->
-                session!!
-                    .scene
-                    .spatialEnvironment
-                    .setPassthrough(SpatialEnvironment.PassthroughMode.DISABLED)
+        if (session!!.scene.spatialEnvironment.currentPassthroughOpacity > 0) {
+            session!!.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
+        } else {
+            session!!.scene.spatialEnvironment.preferredPassthroughOpacity = 1.0f
         }
     }
 

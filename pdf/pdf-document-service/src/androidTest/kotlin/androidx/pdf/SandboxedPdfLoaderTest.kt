@@ -18,7 +18,6 @@ package androidx.pdf
 
 import android.content.Context
 import android.os.Build
-import androidx.pdf.exceptions.PdfPasswordException
 import androidx.pdf.service.connect.FakePdfServiceConnection
 import androidx.pdf.utils.TestUtils
 import androidx.test.core.app.ApplicationProvider

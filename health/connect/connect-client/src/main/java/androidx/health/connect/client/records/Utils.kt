@@ -35,7 +35,8 @@ internal fun isAtLeastSdkExtension15(): Boolean {
 
 @RequiresApi(Build.VERSION_CODES.R)
 internal fun isAtLeastSdkExtension16(): Boolean {
-    return SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 16
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA ||
+        SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 16
 }
 
 internal fun <T : Comparable<T>> T.requireNotLess(other: T, name: String) {

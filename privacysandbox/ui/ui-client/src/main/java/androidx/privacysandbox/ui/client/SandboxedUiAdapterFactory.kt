@@ -46,7 +46,7 @@ import java.util.concurrent.Executor
  * Provides an adapter created from a supplied Bundle which acts as a proxy between the host app and
  * the Binder provided by the provider of content.
  */
-object SandboxedUiAdapterFactory {
+public object SandboxedUiAdapterFactory {
 
     private val uiAdapterFactoryDelegate =
         object : UiAdapterFactoryDelegate() {
@@ -58,7 +58,7 @@ object SandboxedUiAdapterFactory {
      * @throws IllegalArgumentException if {@code coreLibInfo} does not contain a Binder with the
      *   key UI_ADAPTER_BINDER
      */
-    fun createFromCoreLibInfo(coreLibInfo: Bundle): SandboxedUiAdapter {
+    public fun createFromCoreLibInfo(coreLibInfo: Bundle): SandboxedUiAdapter {
         val uiAdapterBinder = uiAdapterFactoryDelegate.requireNotNullAdapterBinder(coreLibInfo)
         // the following check for DelegatingAdapter check must happen before the checks for
         // remote/local binder as the checks below have fallback to a RemoteAdapter if it's not

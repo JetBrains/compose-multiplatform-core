@@ -1771,14 +1771,14 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     }
 
     @Override
-    public @NonNull Entity createEntity(@NonNull Pose pose, @NonNull String name,
-            @NonNull Entity parent) {
+    public @NonNull Entity createGroupEntity(
+            @NonNull Pose pose, @NonNull String name, @NonNull Entity parent) {
         Node node = mExtensions.createNode();
         try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
             transaction.setName(node, name).apply();
         }
 
-        // This entity is used to back JXR Core's ContentlessEntity.
+        // This entity is used to back JXR Core's GroupEntity.
         Entity entity = new AndroidXrEntity(node, mExtensions, mEntityManager, mExecutor) {};
         entity.setParent(parent);
         entity.setPose(pose, Space.PARENT);

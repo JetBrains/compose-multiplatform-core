@@ -310,6 +310,49 @@ public final class OpenXrActivityPoseTest {
         assertPose(mTestActivityPose.getPoseInActivitySpace(), expectedPose);
     }
 
+    @Test
+    public void
+            getPoseInActivitySpace_withCustomScaledAndRotatedActivitySpace_returnsDifferencePose() {
+        mTestActivityPose = createTestActivityPose();
+        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Pose pose = new Pose(new Vector3(1, 1, 1), Quaternion.Identity);
+        setPerceptionPose(pose);
+        mActivitySpace.setOpenXrReferenceSpacePose(
+                Matrix4.fromTrs(
+                        new Vector3(2f, 3f, 4f),
+                        activitySpaceQuaternion,
+                        /* scale= */ new Vector3(1f, 2f, 3f)));
+        // A 90 degree rotation around the z axis is a clockwise rotation of the XY plane.
+        Pose expectedPose =
+                new Pose(
+                        new Vector3(-2.5f, 0f, -1f),
+                        Quaternion.fromEulerAngles(new Vector3(0f, 0f, -90f)));
+
+        assertPose(mTestActivityPose.getPoseInActivitySpace(), expectedPose);
+    }
+
+    @Test
+    public void
+            getPoseInActivitySpace_withMinusScaledAndRotatedActivitySpace_returnsDifferencePose() {
+        mTestActivityPose = createTestActivityPose();
+        Quaternion activitySpaceQuaternion = Quaternion.fromEulerAngles(new Vector3(0f, 0f, 90f));
+        Pose pose = new Pose(new Vector3(1, 1, 1), Quaternion.Identity);
+        setPerceptionPose(pose);
+        mActivitySpace.setOpenXrReferenceSpacePose(
+                Matrix4.fromTrs(
+                        new Vector3(2f, 3f, 4f),
+                        activitySpaceQuaternion,
+                        /* scale= */ new Vector3(-1f, -2f, -3f)));
+        // A 90 degree rotation around the z axis is a clockwise rotation of the XY plane.
+        Pose expectedPose =
+                new Pose(
+                        // We keep the scale positive for now, hence the negative translation.
+                        new Vector3(-2.5f, 0f, -1f),
+                        Quaternion.fromEulerAngles(new Vector3(0f, 0f, -90f)));
+
+        assertPose(mTestActivityPose.getPoseInActivitySpace(), expectedPose);
+    }
+
     // TODO: Add tests with children of these entities
 
     @Test

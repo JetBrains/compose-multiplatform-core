@@ -43,7 +43,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
-open class CustomAudienceManagerImplCommon(
+public open class CustomAudienceManagerImplCommon(
     protected val customAudienceManager: android.adservices.customaudience.CustomAudienceManager
 ) : CustomAudienceManager() {
     @DoNotInline

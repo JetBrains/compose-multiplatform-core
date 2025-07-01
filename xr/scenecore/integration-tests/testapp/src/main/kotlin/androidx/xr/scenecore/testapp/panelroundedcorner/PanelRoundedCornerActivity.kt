@@ -19,7 +19,6 @@ package androidx.xr.scenecore.testapp.panelroundedcorner
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Resources
-import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -168,7 +167,7 @@ class PanelRoundedCornerActivity : AppCompatActivity() {
                 !activityPanelCreated
         ) {
             activityPanelEntity =
-                ActivityPanelEntity.create(session!!, Rect(0, 0, 640, 480), "activity_panel")
+                ActivityPanelEntity.create(session!!, IntSize2d(640, 480), "activity_panel")
             val intent = Intent(this, ActivityPanel::class.java)
             intent.putExtra("NAV_ICON", false)
             activityPanelEntity!!.launchActivity(intent)

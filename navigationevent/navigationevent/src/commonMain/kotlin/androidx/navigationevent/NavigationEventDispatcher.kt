@@ -33,32 +33,38 @@ public class NavigationEventDispatcher(
     /** Standard or default callbacks for navigation events. */
     private val normalCallbacks = ArrayDeque<NavigationEventCallback>()
 
+    /**
+     * Returns `true` if there is at least one enabled callback registered with this dispatcher. The
+     * dispatcher itself is excluded.
+     */
     private var hasEnabledCallbacks: Boolean = false
+        set(value) {
+            val oldValue = field
+            field = value
+            if (oldValue != value) {
+                for (callback in onHasEnabledCallbacksChangedCallbacks) {
+                    callback.invoke(value)
+                }
+            }
+        }
 
-    private var updateInputHandler: () -> Unit = {}
+    private val onHasEnabledCallbacksChangedCallbacks: MutableList<((Boolean) -> Unit)> =
+        if (onHasEnabledCallbacksChanged != null) {
+            mutableListOf(onHasEnabledCallbacksChanged)
+        } else {
+            mutableListOf()
+        }
+
+    internal fun addOnHasEnabledCallbacksChangedCallback(callback: (Boolean) -> Unit) {
+        onHasEnabledCallbacksChangedCallbacks += callback
+    }
 
     /**
      * Recomputes and updates the current [hasEnabledCallbacks] state based on the enabled status of
      * all registered callbacks.
-     *
-     * If the enabled state changes, this method invokes [onHasEnabledCallbacksChanged] (when set)
-     * and triggers [updateInputHandler] to update the active callbacks that should participate in
-     * navigation handling.
      */
     internal fun updateEnabledCallbacks() {
-        val hasEnabledCallbacks = (overlayCallbacks + normalCallbacks).any { it.isEnabled }
-        if (hasEnabledCallbacks != this.hasEnabledCallbacks) {
-            // Update `hasEnabledCallbacks` before notifying, since callbacks may access it directly
-            // and would otherwise see a stale value.
-            this.hasEnabledCallbacks = hasEnabledCallbacks
-
-            onHasEnabledCallbacksChanged?.invoke(hasEnabledCallbacks)
-            updateInputHandler.invoke()
-        }
-    }
-
-    internal fun updateInput(update: () -> Unit) {
-        updateInputHandler = update
+        this.hasEnabledCallbacks = (overlayCallbacks + normalCallbacks).any { it.isEnabled }
     }
 
     /**

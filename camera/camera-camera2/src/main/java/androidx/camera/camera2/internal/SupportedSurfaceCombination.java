@@ -75,6 +75,7 @@ import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.ImageFormatConstants;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.SurfaceCombination;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize;
@@ -409,19 +410,22 @@ public final class SupportedSurfaceCombination {
      * @param cameraMode  the working camera mode.
      * @param imageFormat the image format info for the surface configuration object
      * @param size        the size info for the surface configuration object
+     * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
      */
     SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             int imageFormat,
-            Size size) {
+            @NonNull Size size,
+            @NonNull StreamUseCase streamUseCase) {
         return SurfaceConfig.transformSurfaceConfig(
                 imageFormat,
                 size,
                 getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
                 cameraMode,
                 // FEATURE_COMBINATION_TABLE N/A for the code flows leading to this call
-                CAPTURE_SESSION_TABLES);
+                CAPTURE_SESSION_TABLES,
+                streamUseCase);
     }
 
     private int getMaxFrameRate(int imageFormat, @NonNull Size size, boolean isHighSpeedOn) {
@@ -998,6 +1002,8 @@ public final class SupportedSurfaceCombination {
                 surfaceConfigIndexAttachedSurfaceInfoMap.clear();
                 surfaceConfigIndexUseCaseConfigMap.clear();
             }
+            Logger.d(TAG, "orderedSurfaceConfigListForStreamUseCase = "
+                    + orderedSurfaceConfigListForStreamUseCase);
         }
 
         BestSizesAndMaxFpsForConfigs bestSizesAndFps = findBestSizesAndFps(
@@ -1418,7 +1424,8 @@ public final class SupportedSurfaceCombination {
                             getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
                             featureSettings.getCameraMode(),
                             // Feature combo src not needed for the code flows leading to this call
-                            CAPTURE_SESSION_TABLES));
+                            CAPTURE_SESSION_TABLES,
+                            useCaseConfig.getStreamUseCase()));
         }
 
         // This method doesn't use feature combo resolutions since feature combo API doesn't
@@ -1504,8 +1511,9 @@ public final class SupportedSurfaceCombination {
             for (Size size : requireNonNull(
                     newUseCaseConfigsSupportedSizeMap.get(useCaseConfig))) {
                 int imageFormat = useCaseConfig.getInputFormat();
+                StreamUseCase streamUseCase = useCaseConfig.getStreamUseCase();
                 populateReducedSizeListAndUniqueMaxFpsMap(featureSettings,
-                        featureSettings.getTargetFpsRange(), size, imageFormat,
+                        featureSettings.getTargetFpsRange(), size, imageFormat, streamUseCase,
                         forceUniqueMaxFpsFiltering, configSizeUniqueMaxFpsMap, reducedSizeList);
             }
             filteredUseCaseConfigToSupportedSizesMap.put(useCaseConfig, reducedSizeList);
@@ -1515,14 +1523,15 @@ public final class SupportedSurfaceCombination {
 
     private void populateReducedSizeListAndUniqueMaxFpsMap(@NonNull FeatureSettings featureSettings,
             @NonNull Range<Integer> targetFpsRange, @NonNull Size size, int imageFormat,
-            boolean forceUniqueMaxFpsFiltering,
+            @NonNull StreamUseCase streamUseCase, boolean forceUniqueMaxFpsFiltering,
             @NonNull Map<ConfigSize, Set<Integer>> configSizeToUniqueMaxFpsMap,
             @NonNull List<Size> reducedSizeList) {
         ConfigSize configSize = SurfaceConfig.transformSurfaceConfig(
                 imageFormat, size, getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
                 featureSettings.getCameraMode(),
                 featureSettings.requiresFeatureComboQuery() ? FEATURE_COMBINATION_TABLE
-                        : CAPTURE_SESSION_TABLES).getConfigSize();
+                        : CAPTURE_SESSION_TABLES,
+                streamUseCase).getConfigSize();
 
         int maxFrameRate = FRAME_RATE_UNLIMITED;
         // Filters the sizes with frame rate only if there is target FPS setting or force enabled.
@@ -1604,6 +1613,7 @@ public final class SupportedSurfaceCombination {
             UseCaseConfig<?> newUseCase =
                     newUseCaseConfigs.get(useCasesPriorityOrder.get(i));
             int imageFormat = newUseCase.getInputFormat();
+            StreamUseCase streamUseCase = newUseCase.getStreamUseCase();
             // add new use case/size config to list of surfaces
             ConfigSource configSource =
                     featureSettings.requiresFeatureComboQuery() ? FEATURE_COMBINATION_TABLE
@@ -1613,7 +1623,8 @@ public final class SupportedSurfaceCombination {
                     size,
                     getUpdatedSurfaceSizeDefinitionByFormat(imageFormat),
                     featureSettings.getCameraMode(),
-                    configSource);
+                    configSource,
+                    streamUseCase);
             surfaceConfigList.add(surfaceConfig);
             if (surfaceConfigIndexUseCaseConfigMap != null) {
                 surfaceConfigIndexUseCaseConfigMap.put(surfaceConfigList.size() - 1, newUseCase);

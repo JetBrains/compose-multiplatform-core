@@ -150,6 +150,25 @@ public class HealthPermission internal constructor() {
         const val PERMISSION_WRITE_EXERCISE_ROUTE = PERMISSION_PREFIX + "WRITE_EXERCISE_ROUTE"
 
         /**
+         * A permission to read exercise routes. The string value for this permission is
+         * `android.permission.health.READ_EXERCISE_ROUTES`.
+         *
+         * This permission can't be granted via the standard permission request mechanism, and can
+         * only be granted by a user in Settings, or via the dialog launched by
+         * [androidx.health.connect.client.contracts.ExerciseRouteRequestContract].
+         *
+         * When this permission is granted, the app can read exercise routes without user
+         * interaction, however reading apps must be in the foreground unless
+         * `android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND` is also granted.
+         *
+         * When this permission is revoked, exercise routes can only be obtained by launching the
+         * [androidx.health.connect.client.contracts.ExerciseRouteRequestContract] intent.
+         *
+         * @sample androidx.health.connect.client.samples.ReadExerciseRoute
+         */
+        const val PERMISSION_READ_EXERCISE_ROUTES = PERMISSION_PREFIX + "READ_EXERCISE_ROUTES"
+
+        /**
          * A permission to read data in background.
          *
          * An attempt to read data in background without this permission may result in an error.
@@ -624,6 +643,7 @@ public class HealthPermission internal constructor() {
             add(PERMISSION_WRITE_EXERCISE_ROUTE)
             add(PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND)
             add(PERMISSION_READ_HEALTH_DATA_HISTORY)
+            add(PERMISSION_READ_EXERCISE_ROUTES)
         }
     }
 }

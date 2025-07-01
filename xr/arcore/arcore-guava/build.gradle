@@ -27,11 +27,28 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
-dependencies {}
+dependencies {
+    api(libs.kotlinStdlib)
+    api(libs.guavaListenableFuture)
+    api(project(":xr:runtime:runtime"))
+    api(project(":xr:arcore:arcore"))
+
+    testImplementation(libs.kotlinCoroutinesTest)
+    testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(libs.junit)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.testExtTruth)
+    testImplementation("androidx.appcompat:appcompat:1.2.0")
+}
 
 android {
+    defaultConfig {
+        minSdkVersion 23
+    }
+
     namespace = "androidx.xr.arcore.guava"
 }
 
@@ -40,4 +57,6 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "XR ARCore compatibility APIs for Java/Guava developers."
+
+    enableRobolectric()
 }

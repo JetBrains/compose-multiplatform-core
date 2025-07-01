@@ -135,6 +135,13 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public FakeCameraInfoInternal(@NonNull String cameraId,
+            @NonNull StreamSpecsCalculator streamSpecsCalculator) {
+        this(cameraId, /*sensorRotation=*/ 0, CameraSelector.LENS_FACING_BACK,
+                ApplicationProvider.getApplicationContext(), streamSpecsCalculator);
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public FakeCameraInfoInternal(@NonNull String cameraId,
             @NonNull Context context) {
         this(cameraId, 0, CameraSelector.LENS_FACING_BACK, context);
     }

@@ -414,8 +414,6 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
     namespace = "androidx.compose.ui"
     // namespace has to be unique, but default androidx.compose.ui.test package is taken by
     // the androidx.compose.ui:ui-test library

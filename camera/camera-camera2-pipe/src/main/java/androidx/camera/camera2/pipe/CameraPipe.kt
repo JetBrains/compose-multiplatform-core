@@ -96,6 +96,20 @@ public interface CameraPipe {
     public fun cameraSurfaceManager(): CameraSurfaceManager
 
     /**
+     * Checks if a [CameraGraph.Config] is supported by the device before opening it.
+     *
+     * This returns a [ConfigQueryResult] based on the underlying
+     * [CameraDeviceSetupCompat#isSessionConfigurationSupported](https://developer.android.com/reference/androidx/camera/featurecombinationquery/CameraDeviceSetupCompat#isSessionConfigurationSupported(android.hardware.camera2.params.SessionConfiguration)
+     * method. Only configurations which can be queried through this API should be passed, otherwise
+     * might lead to unexpected result (i.e. [ConfigQueryResult.UNKNOWN]). Check the
+     * [CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION] API documentation to verify
+     * which configurations are queryable.
+     *
+     * @param graphConfig The configuration to check for support.
+     */
+    public fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult
+
+    /**
      * This gets and sets the global [AudioRestrictionMode] tracked by [AudioRestrictionController].
      */
     public var globalAudioRestrictionMode: AudioRestrictionMode
@@ -293,6 +307,15 @@ internal class CameraPipeImpl(private val component: CameraPipeComponent) : Came
             check(!shutdown)
             component.cameraSurfaceManager()
         }
+
+    /**
+     * This checks if the given [CameraGraph.Config] is supported by the device.
+     *
+     * @param graphConfig The configuration to check for support.
+     */
+    // TODO: b/425425744 - Return default unknown until complete implementation
+    override fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult =
+        ConfigQueryResult.UNKNOWN
 
     /**
      * This gets and sets the global [AudioRestrictionMode] tracked by [AudioRestrictionController].

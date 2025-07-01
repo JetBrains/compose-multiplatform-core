@@ -25,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.pdf.PdfDocument
+import androidx.pdf.R
 import androidx.pdf.content.ExternalLink
 import androidx.pdf.view.PdfView
 import kotlin.random.Random
@@ -37,18 +38,19 @@ import kotlin.random.Random
  * @param minZoom the minimum zoom / scaling factor that can be applied to the PDF viewer
  * @param maxZoom the maximum zoom / scaling factor that can be applied to the PDF viewer
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun PdfViewer(
-    modifier: Modifier = Modifier,
-    state: PdfViewerState,
     pdfDocument: PdfDocument?,
+    state: PdfViewerState,
+    modifier: Modifier = Modifier,
     minZoom: Float = PdfView.DEFAULT_MIN_ZOOM,
     maxZoom: Float = PdfView.DEFAULT_MAX_ZOOM,
-    @DrawableRes fastScrollVerticalThumbDrawable: Int? = null,
-    @DrawableRes fastScrollPageIndicatorBackgroundDrawable: Int? = null,
-    @DimenRes fastScrollPageIndicatorMarginEnd: Int? = null,
-    @DimenRes fastScrollVerticalThumbMarginEnd: Int? = null,
+    @DrawableRes fastScrollVerticalThumbDrawable: Int = R.drawable.fast_scroll_thumb_drawable,
+    @DrawableRes
+    fastScrollPageIndicatorBackgroundDrawable: Int = R.drawable.page_indicator_background,
+    @DimenRes fastScrollPageIndicatorMarginEnd: Int = R.dimen.page_indicator_right_margin,
+    @DimenRes fastScrollVerticalThumbMarginEnd: Int = R.dimen.scroll_thumb_margin_end,
     onUrlLinkClicked: ((Uri) -> Boolean)? = null,
 ) {
     // Create and remember an ID for PdfView so that it retains state across compositions and
@@ -64,26 +66,28 @@ public fun PdfViewer(
         },
         onRelease = { view ->
             state.pdfView = null
-            view.linkClickListener = null
+            view.setLinkClickListener(null)
         },
         // Factory will execute exactly once; update is the correct place to supply mutable states
         update = { view ->
             view.pdfDocument = pdfDocument
             view.minZoom = minZoom
             view.maxZoom = maxZoom
-            fastScrollVerticalThumbDrawable?.let {
-                view.fastScrollVerticalThumbDrawable = view.context.getDrawable(it)
-            }
-            fastScrollPageIndicatorBackgroundDrawable?.let {
-                view.fastScrollVerticalThumbDrawable = view.context.getDrawable(it)
-            }
-            fastScrollPageIndicatorMarginEnd?.let {
-                view.fastScrollVerticalThumbMarginEnd = view.resources.getDimensionPixelSize(it)
-            }
-            fastScrollVerticalThumbMarginEnd?.let {
-                view.fastScrollVerticalThumbMarginEnd = view.resources.getDimensionPixelSize(it)
-            }
-            view.linkClickListener = PdfViewerLinkClickListener(onUrlLinkClicked)
+            view.fastScrollVerticalThumbDrawable =
+                requireNotNull(view.context.getDrawable(fastScrollVerticalThumbDrawable)) {
+                    "Invalid fastScrollVerticalThumbDrawable"
+                }
+            view.fastScrollPageIndicatorBackgroundDrawable =
+                requireNotNull(
+                    view.context.getDrawable(fastScrollPageIndicatorBackgroundDrawable)
+                ) {
+                    "Invalid fastScrollVerticalThumbDrawable"
+                }
+            view.fastScrollPageIndicatorMarginEnd =
+                view.resources.getDimensionPixelSize(fastScrollPageIndicatorMarginEnd)
+            view.fastScrollVerticalThumbMarginEnd =
+                view.resources.getDimensionPixelSize(fastScrollVerticalThumbMarginEnd)
+            view.setLinkClickListener(PdfViewerLinkClickListener(onUrlLinkClicked))
         },
     )
 }

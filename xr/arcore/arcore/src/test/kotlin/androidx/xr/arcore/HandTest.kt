@@ -86,7 +86,7 @@ class HandTest {
         }
 
         FakeRuntimeFactory.hasCreatePermission = true
-        FakeRuntimeAnchor.anchorsCreated = 0
+        FakeRuntimeAnchor.anchorsCreatedCount = 0
 
         activityController.create()
 

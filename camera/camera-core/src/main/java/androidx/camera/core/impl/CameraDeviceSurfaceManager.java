@@ -60,13 +60,15 @@ public interface CameraDeviceSurfaceManager {
      * @param cameraId    the camera id of the camera device to transform the object
      * @param imageFormat the image format info for the surface configuration object
      * @param size        the size info for the surface configuration object
+     * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
      */
     @Nullable SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
-            @NonNull Size size);
+            @NonNull Size size,
+            @NonNull StreamUseCase streamUseCase);
 
     /**
      * Retrieves a map of suggested stream specifications for the given list of use cases.

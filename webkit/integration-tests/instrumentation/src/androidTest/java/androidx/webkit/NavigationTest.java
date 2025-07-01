@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(AndroidJUnit4.class)
 public class NavigationTest {
     private static final String START_URL = "about:blank";
-    private static final String FINAL_URL = "https://www.google.com";
+    private static final String FINAL_URL = "https://www.google.com/";
     private static final String SAME_DOCUMENT_URL = "about:blank#fragment";
     private static final String RELOAD_URL = "https://www.example.com/";
     private static final String HISTORY_URL_1 = "https://www.example1.com/";
@@ -195,6 +195,7 @@ public class NavigationTest {
         Assert.assertTrue(navigation.didCommit());
         Assert.assertFalse(navigation.didCommitErrorPage());
         Assert.assertEquals(HTTP_OK, navigation.getStatusCode());
+        Assert.assertEquals(FINAL_URL, navigation.getUrl());
     }
 
     @Test

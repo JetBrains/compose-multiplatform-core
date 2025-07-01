@@ -68,6 +68,11 @@ class AppFunctionMetadataCreatorHelper {
                 AppFunctionAnnotation.PROPERTY_IS_ENABLED,
                 Boolean::class,
             )
+        val isDescribedByKdoc =
+            appFunctionAnnotation?.requirePropertyValueOfType(
+                AppFunctionAnnotation.PROPERTY_IS_DESCRIBED_BY_KDOC,
+                Boolean::class,
+            )
         val schemaCategory =
             schemaDefinitionAnnotation?.requirePropertyValueOfType(
                 AppFunctionSchemaDefinitionAnnotation.PROPERTY_CATEGORY,
@@ -86,7 +91,13 @@ class AppFunctionMetadataCreatorHelper {
                 )
                 ?.toLong()
 
-        return AppFunctionAnnotationProperties(enabled, schemaName, schemaVersion, schemaCategory)
+        return AppFunctionAnnotationProperties(
+            enabled,
+            isDescribedByKdoc,
+            schemaName,
+            schemaVersion,
+            schemaCategory,
+        )
     }
 
     /**
@@ -355,6 +366,7 @@ class AppFunctionMetadataCreatorHelper {
         }
         seenDataTypeQualifiers.add(serializableTypeQualifiedName)
 
+        val serializableDescription = appFunctionSerializableType.description
         val superTypesWithSerializableAnnotation =
             appFunctionSerializableType.findSuperTypesWithSerializableAnnotation()
         val superTypesWithCapabilityAnnotation =
@@ -374,6 +386,7 @@ class AppFunctionMetadataCreatorHelper {
                     seenDataTypeQualifiers,
                     resolvedAnnotatedSerializableProxies,
                     allowSerializableInterfaceTypes,
+                    serializableDescription,
                 ),
             )
         } else {
@@ -414,6 +427,7 @@ class AppFunctionMetadataCreatorHelper {
                             seenDataTypeQualifiers,
                             resolvedAnnotatedSerializableProxies,
                             allowSerializableInterfaceTypes,
+                            serializableDescription,
                         )
                     )
                 }
@@ -430,6 +444,7 @@ class AppFunctionMetadataCreatorHelper {
                             seenDataTypeQualifiers,
                             resolvedAnnotatedSerializableProxies,
                             allowSerializableInterfaceTypes,
+                            serializableDescription,
                         )
                     )
                 }
@@ -446,6 +461,7 @@ class AppFunctionMetadataCreatorHelper {
                     // default. This is because the outer ReferenceType to this shared type
                     // can add further constraint (i.e. non-null) if required.
                     isNullable = true,
+                    description = serializableDescription,
                 ),
             )
         }
@@ -484,6 +500,7 @@ class AppFunctionMetadataCreatorHelper {
         seenDataTypeQualifiers: MutableSet<String>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
         allowSerializableInterfaceTypes: Boolean,
+        serializableDescription: String,
     ): AppFunctionObjectTypeMetadata {
         val currentSerializableProperties: List<AppFunctionPropertyDeclaration> = buildList {
             for (property in currentPropertiesList) {
@@ -503,6 +520,7 @@ class AppFunctionMetadataCreatorHelper {
             seenDataTypeQualifiers,
             resolvedAnnotatedSerializableProxies,
             allowSerializableInterfaceTypes,
+            serializableDescription,
         )
     }
 
@@ -513,6 +531,7 @@ class AppFunctionMetadataCreatorHelper {
         seenDataTypeQualifiers: MutableSet<String>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
         allowSerializableInterfaceTypes: Boolean,
+        serializableDescription: String,
     ): AppFunctionObjectTypeMetadata {
         val requiredPropertiesList: MutableList<String> = mutableListOf()
         val appFunctionSerializablePropertiesMap: Map<String, AppFunctionDataTypeMetadata> =
@@ -538,6 +557,7 @@ class AppFunctionMetadataCreatorHelper {
             // This is because the outer ReferenceType to this shared type can add further
             // constraint (i.e. non-null) if required.
             isNullable = true,
+            description = serializableDescription,
         )
     }
 
@@ -612,6 +632,7 @@ class AppFunctionMetadataCreatorHelper {
      */
     data class AppFunctionAnnotationProperties(
         val isEnabledByDefault: Boolean?,
+        val isDescribedByKdoc: Boolean?,
         val schemaName: String?,
         val schemaVersion: Long?,
         val schemaCategory: String?,

@@ -56,8 +56,8 @@ class InteractableComponentTest {
     private val mockRuntime = mock<JxrPlatformAdapter>()
     private val mockActivitySpace = mock<RtActivitySpace>()
     private lateinit var session: Session
-    private val mockContentlessEntity = mock<RtEntity>()
-    private val entity by lazy { ContentlessEntity.create(session, "test") }
+    private val mockGroupEntity = mock<RtEntity>()
+    private val entity by lazy { GroupEntity.create(session, "test") }
 
     @Before
     fun setUp() {
@@ -69,7 +69,7 @@ class InteractableComponentTest {
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
         whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockRuntime.createEntity(any(), any(), any())).thenReturn(mockContentlessEntity)
+        whenever(mockRuntime.createGroupEntity(any(), any(), any())).thenReturn(mockGroupEntity)
         session = Session(activity, fakeRuntimeFactory.createRuntime(activity), mockRuntime)
     }
 
@@ -78,14 +78,14 @@ class InteractableComponentTest {
         assertThat(entity).isNotNull()
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockListener = mock<InputEventListener>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
 
         assertThat(entity.addComponent(interactableComponent)).isTrue()
         verify(mockRuntime).createInteractableComponent(any(), anyOrNull())
-        verify(mockContentlessEntity).addComponent(any())
+        verify(mockGroupEntity).addComponent(any())
     }
 
     @Test
@@ -93,7 +93,7 @@ class InteractableComponentTest {
         assertThat(entity).isNotNull()
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockListener = mock<InputEventListener>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
@@ -101,16 +101,16 @@ class InteractableComponentTest {
         assertThat(entity.addComponent(interactableComponent)).isTrue()
 
         entity.removeComponent(interactableComponent)
-        verify(mockContentlessEntity).removeComponent(any())
+        verify(mockGroupEntity).removeComponent(any())
     }
 
     @Test
     fun interactableComponent_canAttachOnlyOnce() {
-        val entity2 = ContentlessEntity.create(session, "test")
+        val entity2 = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockListener = mock<InputEventListener>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
@@ -124,7 +124,7 @@ class InteractableComponentTest {
         assertThat(entity).isNotNull()
 
         whenever(mockRuntime.createInteractableComponent(any(), any())).thenReturn(mock())
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockListener = mock<InputEventListener>()
         val executor = directExecutor()
         val interactableComponent = InteractableComponent.create(session, executor, mockListener)
@@ -139,7 +139,7 @@ class InteractableComponentTest {
         val mockRtInteractableComponent = mock<RtInteractableComponent>()
         whenever(mockRuntime.createInteractableComponent(any(), any()))
             .thenReturn(mockRtInteractableComponent)
-        whenever(mockContentlessEntity.addComponent(any())).thenReturn(true)
+        whenever(mockGroupEntity.addComponent(any())).thenReturn(true)
         val mockListener = mock<InputEventListener>()
         val interactableComponent =
             InteractableComponent.create(session, directExecutor(), mockListener)
@@ -155,11 +155,7 @@ class InteractableComponentTest {
                 Vector3.Zero,
                 Vector3.One,
                 RtInputEvent.ACTION_DOWN,
-                RtInputEvent.Companion.HitInfo(
-                    mockContentlessEntity,
-                    Vector3.One,
-                    Matrix4.Identity,
-                ),
+                RtInputEvent.Companion.HitInfo(mockGroupEntity, Vector3.One, Matrix4.Identity),
                 null,
             )
         rtInputEventListener.onInputEvent(rtInputEvent)

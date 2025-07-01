@@ -127,7 +127,7 @@ internal constructor(
         } catch (e: ARCore1xGooglePlayServicesLocationLibraryNotLinkedException) {
             throw GooglePlayServicesLocationLibraryNotLinkedException(e)
         } catch (e: UnsupportedConfigurationException) {
-            throw ConfigurationNotSupportedException(e)
+            throw ConfigurationNotSupportedException(cause = e)
         }
 
         this.config = config

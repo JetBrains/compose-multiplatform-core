@@ -36,6 +36,7 @@ import androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW
 import androidx.camera.core.ImageCapture.OUTPUT_FORMAT_RAW_JPEG
 import androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 import androidx.camera.core.MirrorMode.MIRROR_MODE_UNSPECIFIED
+import androidx.camera.core.featuregroup.GroupableFeature.Companion.IMAGE_ULTRA_HDR
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraConfig
 import androidx.camera.core.impl.CameraFactory
@@ -1057,6 +1058,47 @@ class ImageCaptureTest {
         assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
             cameraUseCaseAdapter.addUseCases(listOf(imageCapture))
         }
+    }
+
+    @Test
+    fun dynamicRange_isSetToSdrByDefault_whenImageCaptureBoundWithDefaultConfig() {
+        val imageCapture = ImageCapture.Builder().build()
+
+        imageCapture.bindToCamera(
+            FakeCamera(),
+            null,
+            null,
+            imageCapture.getDefaultConfig(true, FakeUseCaseConfigFactory()),
+        )
+
+        assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.SDR)
+    }
+
+    @OptIn(ExperimentalSessionConfig::class)
+    @Test
+    fun dynamicRange_isSetToUnspecified_whenUltraHdrFeatureIsSetButImageCaptureNotBoundYet() {
+        val imageCapture = ImageCapture.Builder().build()
+
+        imageCapture.featureGroup = setOf(IMAGE_ULTRA_HDR)
+
+        assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.UNSPECIFIED)
+    }
+
+    @OptIn(ExperimentalSessionConfig::class)
+    @Test
+    fun dynamicRange_isSetToUnspecified_whenUltraHdrFeatureIsSetAndImageCaptureBoundWithDefaults() {
+        val imageCapture = ImageCapture.Builder().build()
+
+        imageCapture.featureGroup = setOf(IMAGE_ULTRA_HDR)
+
+        imageCapture.bindToCamera(
+            FakeCamera(),
+            null,
+            null,
+            imageCapture.getDefaultConfig(true, FakeUseCaseConfigFactory()),
+        )
+
+        assertThat(imageCapture.currentConfig.dynamicRange).isEqualTo(DynamicRange.UNSPECIFIED)
     }
 
     private fun bindImageCapture(

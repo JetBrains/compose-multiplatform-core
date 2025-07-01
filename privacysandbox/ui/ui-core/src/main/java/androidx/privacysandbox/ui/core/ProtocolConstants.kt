@@ -24,9 +24,9 @@ import androidx.annotation.RestrictTo
  * you'll break binary compatibility between UI library versions.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-object ProtocolConstants {
-    const val delegateKey = "delegate"
-    const val uiAdapterBinderKey = "uiAdapterBinder"
-    const val uiProviderVersionKey = "uiProviderVersion"
-    const val sharedUiAdapterBinderKey = "sharedUiAdapterBinder"
+public object ProtocolConstants {
+    public const val delegateKey: String = "delegate"
+    public const val uiAdapterBinderKey: String = "uiAdapterBinder"
+    public const val uiProviderVersionKey: String = "uiProviderVersion"
+    public const val sharedUiAdapterBinderKey: String = "sharedUiAdapterBinder"
 }

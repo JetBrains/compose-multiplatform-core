@@ -36,8 +36,8 @@ dependencies {
     api(project(":glance:glance"))
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.compose.runtime:runtime:1.7.8")
-    api("androidx.compose.ui:ui-graphics:1.1.1")
-    api("androidx.compose.ui:ui-unit:1.1.1")
+    api("androidx.compose.ui:ui-graphics:1.6.0")
+    api("androidx.compose.ui:ui-unit:1.6.0")
     api("androidx.collection:collection-ktx:1.4.3")
 
     implementation("androidx.core:core-ktx:1.7.0")
@@ -48,6 +48,8 @@ dependencies {
     implementation("androidx.core:core-remoteviews:1.1.0")
     implementation(project(":glance:glance-appwidget-proto"))
     implementation(libs.kotlinStdlib)
+    implementation("androidx.compose.ui:ui-util:1.6.5")
+    implementation("androidx.work:work-runtime-ktx:2.7.1")
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesTest)
@@ -95,9 +97,6 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
-    // TODO(b/313699418): need to update compose.runtime version to 1.6.0+
-    experimentalProperties["android.lint.useK2Uast"] = false
-
     compileSdk = 35
 }
 

@@ -24,6 +24,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
@@ -37,6 +38,7 @@ import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormEditRecord
 import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.models.ListItem
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -68,7 +70,7 @@ import kotlinx.coroutines.withTimeout
 @OpenForTesting
 internal open class FakePdfDocument(
     /** A list of (x, y) page dimensions in content coordinates */
-    private val pages: List<Point?> = listOf(),
+    internal val pages: List<Point?> = listOf(),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val isLinearized: Boolean = false,
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
@@ -90,6 +92,14 @@ internal open class FakePdfDocument(
         _bitmapRequests.clear()
     }
 
+    private val _formWidgetRequests = mutableSetOf<Int>()
+    internal val formWidgetRequests: Set<Int>
+        get() = _formWidgetRequests.toSet()
+
+    internal fun clearFormWidgetRequests() {
+        _formWidgetRequests.clear()
+    }
+
     internal var editHistory: MutableList<FormEditRecord> = mutableListOf()
 
     override fun getPageBitmapSource(pageNumber: Int): PdfDocument.BitmapSource {
@@ -97,7 +107,12 @@ internal open class FakePdfDocument(
     }
 
     override suspend fun getFormWidgetInfos(pageNum: Int): List<FormWidgetInfo> {
+        logFormWidgetRequest(pageNum)
         return pageFormWidgetInfos[pageNum] ?: emptyList()
+    }
+
+    private fun logFormWidgetRequest(pageNum: Int) {
+        _formWidgetRequests.add(pageNum)
     }
 
     override suspend fun getFormWidgetInfos(pageNum: Int, types: IntArray): List<FormWidgetInfo> {
@@ -107,6 +122,10 @@ internal open class FakePdfDocument(
     override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
         editHistory.add(record)
         return listOf()
+    }
+
+    override suspend fun write(destination: ParcelFileDescriptor) {
+        return
     }
 
     override suspend fun getPageLinks(pageNumber: Int): PdfDocument.PdfPageLinks {
@@ -134,7 +153,12 @@ internal open class FakePdfDocument(
         stop: PointF,
     ): PageSelection {
         // TODO(b/376136631) provide a useful implementation when it's needed for testing
-        return PageSelection(0, SelectionBoundary(0), SelectionBoundary(0), listOf())
+        return PageSelection(
+            0,
+            SelectionBoundary(0),
+            SelectionBoundary(0),
+            listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test")),
+        )
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
@@ -182,7 +206,7 @@ internal open class FakePdfDocument(
                 pageNum = pageNumber,
                 height = size.y,
                 width = size.x,
-                formWidgetInfos = pageFormWidgetInfos[pageNumber],
+                formWidgetInfos = getFormWidgetInfos(pageNumber),
             )
         }
         return PdfDocument.PageInfo(pageNumber, size.y, size.x)
@@ -251,6 +275,7 @@ internal open class FakePdfDocument(
         fun newInstance(): FakePdfDocument =
             FakePdfDocument(
                 pages = List(10) { Point(100, 200) },
+                formType = PdfDocument.PDF_FORM_TYPE_ACRO_FORM,
                 textContents =
                     List(10) { index ->
                         PdfPageTextContent(
@@ -283,6 +308,33 @@ internal open class FakePdfDocument(
                                         )
                                     ),
                             )
+                    ),
+                pageFormWidgetInfos =
+                    mapOf(
+                        0 to
+                            listOf(
+                                FormWidgetInfo(
+                                    widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
+                                    widgetIndex = 0,
+                                    widgetRect = Rect(50, 500, 100, 600),
+                                    textValue = "false",
+                                    accessibilityLabel = "Radio",
+                                )
+                            ),
+                        1 to
+                            listOf(
+                                FormWidgetInfo(
+                                    widgetType = FormWidgetInfo.WIDGET_TYPE_LISTBOX,
+                                    widgetIndex = 0,
+                                    widgetRect = Rect(50, 400, 100, 550),
+                                    textValue = "Banana",
+                                    accessibilityLabel = "ListBox",
+                                    listItems =
+                                        listOf(ListItem("Apple", false), ListItem("Banana", false)),
+                                    multiSelect = true,
+                                    readOnly = true,
+                                )
+                            ),
                     ),
             )
     }
@@ -342,6 +394,20 @@ internal suspend fun FakePdfDocument.waitForRender(untilPage: Int, timeoutMillis
     withContext(Dispatchers.Default.limitedParallelism(1)) {
         withTimeout(timeoutMillis) {
             while (!bitmapRequests.containsKeys(0..untilPage)) {
+                delay(100)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal suspend fun FakePdfDocument.waitForFormDataFetch(
+    untilPage: Int,
+    timeoutMillis: Long = 1000,
+) {
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        withTimeout(timeoutMillis) {
+            while (!(0..untilPage).all { pageNum -> formWidgetRequests.contains(pageNum) }) {
                 delay(100)
             }
         }

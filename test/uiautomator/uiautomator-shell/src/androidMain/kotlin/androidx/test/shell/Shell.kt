@@ -80,31 +80,22 @@ public object Shell {
 
         /** Awaits the process termination and returns the full stdout of the launched command. */
         public val stdOut: String by lazy {
-            shellProcess.stdOut.use { it.bufferedReader().readText().trim() }
+            shellProcess.stdOut.use { it.bufferedReader().readText() }
         }
 
         /** Awaits the process termination and returns the full stderr of the launched command. */
         public val stdErr: String by lazy {
-            shellProcess.stdErr.use { it.bufferedReader().readText().trim() }
+            shellProcess.stdErr.use { it.bufferedReader().readText() }
         }
 
         /** Allows incrementally consuming the stdout of a single command as an [InputStream]. */
-        public fun <T> stdOutStream(block: InputStream.() -> (T)): T =
-            shellProcess.stdOut.use(block)
+        public val stdOutStream: InputStream = shellProcess.stdOut
 
         /** Allows incrementally consuming the stderr of a single command as an [InputStream]. */
-        public fun <T> stdErrStream(block: InputStream.() -> (T)): T =
-            shellProcess.stdErr.use(block)
+        public val stdErrStream: InputStream = shellProcess.stdErr
 
-        /** Allows incrementally consuming the stdout of the launched command as lines. */
-        public fun stdOutLines(): Sequence<String> = stdOutStream {
-            bufferedReader().lineSequence()
-        }
-
-        /** Allows incrementally consuming the stderr of the launched command as lines. */
-        public fun stdErrLines(): Sequence<String> = stdErrStream {
-            bufferedReader().lineSequence()
-        }
+        /** Returns whether the launched shell command is still running. */
+        public fun isRunning(): Boolean = !shellProcess.isClosed()
 
         internal fun String.assertEmpty() {
             if (isNotBlank()) throwWithCommandOutput()
@@ -126,8 +117,8 @@ public object Shell {
             val errorMsgLines =
                 listOfNotNull(
                     "Fatal exception, command failed: `$command`",
-                    *(if (stdOut.isNotBlank()) arrayOf("Stdout:", stdOut) else emptyArray()),
-                    *(if (stdErr.isNotBlank()) arrayOf("StdErr:", stdErr) else emptyArray()),
+                    *(if (stdOut.isNotBlank()) arrayOf("Stdout:", stdOut.trim()) else emptyArray()),
+                    *(if (stdErr.isNotBlank()) arrayOf("StdErr:", stdErr.trim()) else emptyArray()),
                 )
             return errorMsgLines.joinToString(separator = System.lineSeparator())
         }

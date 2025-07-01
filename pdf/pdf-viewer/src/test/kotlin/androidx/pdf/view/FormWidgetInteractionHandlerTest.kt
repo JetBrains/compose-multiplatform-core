@@ -24,6 +24,7 @@ import android.graphics.RectF
 import android.os.DeadObjectException
 import androidx.core.graphics.toRect
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfPoint
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.models.FormEditRecord
 import androidx.pdf.models.FormWidgetInfo

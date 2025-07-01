@@ -16,8 +16,10 @@
 
 package androidx.xr.compose.integration.layout.spatialcomposeapp
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color.BLACK
 import android.graphics.Color.LTGRAY
 import android.os.Bundle
@@ -101,7 +103,6 @@ import java.time.Clock
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.guava.await
 
 /**
  * Main activity for the Spatial Compose App.
@@ -110,6 +111,8 @@ import kotlinx.coroutines.guava.await
  * examples of rendering 2D content to the MainPanel and 3D content within a Subspace.
  */
 class SpatialComposeAppActivity : ComponentActivity() {
+
+    private val REQUEST_READ_MEDIA_VIDEO: Int = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -130,6 +133,7 @@ class SpatialComposeAppActivity : ComponentActivity() {
             }
         }
 
+        checkExternalStoragePermission()
         isDebugInspectorInfoEnabled = true
     }
 
@@ -156,6 +160,9 @@ class SpatialComposeAppActivity : ComponentActivity() {
                 }
                 Button(onClick = { startActivity<VideoPlayerActivity>() }) {
                     Text("Launch Video Player")
+                }
+                Button(onClick = { startActivity<NonCustomizableVideoPlayerActivity>() }) {
+                    Text("Launch Non Customizable Video Player")
                 }
                 Button(onClick = { startActivity<WindowManagerJxrTestActivity>() }) {
                     Text("Launch Window Manager JXR Test")
@@ -339,7 +346,7 @@ class SpatialComposeAppActivity : ComponentActivity() {
         var gltfModel by remember { mutableStateOf<GltfModel?>(null) }
 
         LaunchedEffect(Unit) {
-            gltfModel = GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb")).await()
+            gltfModel = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
 
             val pi = 3.14159F
             val timeSource = Clock.systemUTC()
@@ -385,6 +392,18 @@ class SpatialComposeAppActivity : ComponentActivity() {
                 Button(onClick = { aspectRatioValue = 16f / 11f }) { Text("16 : 11") }
                 Button(onClick = { aspectRatioValue = 9f / 14f }) { Text("9 : 14") }
             }
+        }
+    }
+
+    private fun checkExternalStoragePermission() {
+        if (
+            checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.READ_MEDIA_VIDEO),
+                REQUEST_READ_MEDIA_VIDEO,
+            )
         }
     }
 }

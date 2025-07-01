@@ -79,20 +79,21 @@ private class ViewfinderEmbeddedExternalSurfaceState(scope: CoroutineScope) :
     var surfaceSize = IntSize.Zero
     val matrix = android.graphics.Matrix()
 
-    lateinit var viewfinderSurfaceHolder: ViewfinderEmbeddedExternalSurfaceHolder
+    var viewfinderSurfaceHolder: ViewfinderEmbeddedExternalSurfaceHolder? = null
 
     override fun onSurfaceTextureAvailable(
         surfaceTexture: SurfaceTexture,
         width: Int,
         height: Int,
     ) {
-        viewfinderSurfaceHolder = ViewfinderEmbeddedExternalSurfaceHolder(surfaceTexture)
+        val newViewfinderSurfaceHolder = ViewfinderEmbeddedExternalSurfaceHolder(surfaceTexture)
+        viewfinderSurfaceHolder = newViewfinderSurfaceHolder
 
         if (surfaceSize != IntSize.Zero) {
             surfaceTexture.setDefaultBufferSize(surfaceSize.width, surfaceSize.height)
         }
 
-        dispatchSurfaceCreated(viewfinderSurfaceHolder)
+        dispatchSurfaceCreated(newViewfinderSurfaceHolder)
     }
 
     override fun onSurfaceTextureSizeChanged(
@@ -106,7 +107,7 @@ private class ViewfinderEmbeddedExternalSurfaceState(scope: CoroutineScope) :
     }
 
     override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean {
-        viewfinderSurfaceHolder.detach()
+        viewfinderSurfaceHolder?.detach()
         // If the composable hasn't yet been disposed, this surface could be reattached, so we won't
         // stop the surface job here.
 
@@ -121,9 +122,7 @@ private class ViewfinderEmbeddedExternalSurfaceState(scope: CoroutineScope) :
     }
 
     fun tryReattachViewfinderSurfaceHolder(textureView: TextureView) {
-        if (::viewfinderSurfaceHolder.isInitialized) {
-            viewfinderSurfaceHolder.tryAttach(textureView)
-        }
+        viewfinderSurfaceHolder?.tryAttach(textureView)
     }
 }
 
@@ -161,12 +160,20 @@ internal fun ViewfinderEmbeddedExternalSurface(
             object : TextureView(it) {
                 override fun onAttachedToWindow() {
                     super.onAttachedToWindow()
-                    state.tryReattachViewfinderSurfaceHolder(this)
+                    (surfaceTextureListener as? ViewfinderEmbeddedExternalSurfaceState)
+                        ?.tryReattachViewfinderSurfaceHolder(this)
                 }
             }
         },
         modifier = modifier,
-        onReset = {},
+        onReset = { view ->
+            (view.surfaceTextureListener as? ViewfinderEmbeddedExternalSurfaceState)?.let { oldState
+                ->
+                // Ensure the old surface is detached
+                state.viewfinderSurfaceHolder?.detach()
+            }
+            view.surfaceTextureListener = null
+        },
         update = { view ->
             if (surfaceSize != IntSize.Zero) {
                 view.surfaceTexture?.setDefaultBufferSize(surfaceSize.width, surfaceSize.height)
@@ -176,6 +183,7 @@ internal fun ViewfinderEmbeddedExternalSurface(
                 state.onInit()
                 view.surfaceTextureListener = state
             }
+
             view.isOpaque = isOpaque
             // If transform is null, we'll call setTransform(null) which sets the
             // identity transform on the TextureView

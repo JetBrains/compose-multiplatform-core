@@ -515,9 +515,9 @@ index 0495ea8244d..a933575e679 100644
  
  plugins {
 @@ -66,4 +68,5 @@ androidx {
+     type = SoftwareType.PUBLISHED_LIBRARY
      inceptionYear = "2022"
      description = "show UI from a Runtime-aware SDK"
-     legacyDisableKotlinStrictApiMode = true
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/room/room-compiler-processing-testing/build.gradle b/room/room-compiler-processing-testing/build.gradle
@@ -594,9 +594,9 @@ index 81c257c6b5c..6085ce6d9c9 100644
  
  plugins {
 @@ -39,6 +41,7 @@ androidx {
+     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
      inceptionYear = "2020"
      description = "Android Tracing"
-     legacyDisableKotlinStrictApiMode = true
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
  

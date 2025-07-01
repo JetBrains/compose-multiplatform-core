@@ -50,7 +50,7 @@ class SpatialPointerComponentTest {
     private val mockActivitySpace = mock<RtActivitySpace>()
     private lateinit var session: Session
     private val entityManager = EntityManager()
-    private val mockContentlessEntity = mock<RtEntity>()
+    private val mockGroupEntity = mock<RtEntity>()
     private val mockPanelEntity = mock<RtPanelEntity>()
 
     @Before
@@ -62,7 +62,7 @@ class SpatialPointerComponentTest {
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
         whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockRuntime.createEntity(any(), any(), any())).thenReturn(mockContentlessEntity)
+        whenever(mockRuntime.createGroupEntity(any(), any(), any())).thenReturn(mockGroupEntity)
 
         whenever(
                 mockRuntime.createPanelEntity(
@@ -94,7 +94,7 @@ class SpatialPointerComponentTest {
 
     @Test
     fun addSpatialPointerComponent_failsForNonPanelEntity() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
         val pointerComponent = SpatialPointerComponent.create(session)
 
@@ -112,12 +112,12 @@ class SpatialPointerComponentTest {
         val pointerComponent = SpatialPointerComponent.create(session)
         assertThat(entity.addComponent(pointerComponent)).isTrue()
 
-        pointerComponent.spatialPointerIcon = SpatialPointerIconCircle
-        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIconCircle)
-        pointerComponent.spatialPointerIcon = SpatialPointerIconNone
-        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIconNone)
-        pointerComponent.spatialPointerIcon = null
-        assertThat(pointerComponent.spatialPointerIcon).isNull()
+        pointerComponent.spatialPointerIcon = SpatialPointerIcon.CIRCLE
+        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIcon.CIRCLE)
+        pointerComponent.spatialPointerIcon = SpatialPointerIcon.NONE
+        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIcon.NONE)
+        pointerComponent.spatialPointerIcon = SpatialPointerIcon.DEFAULT
+        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIcon.DEFAULT)
     }
 
     @Test
@@ -131,10 +131,10 @@ class SpatialPointerComponentTest {
         val pointerComponent = SpatialPointerComponent.create(session)
         assertThat(entity.addComponent(pointerComponent)).isTrue()
 
-        assertThat(pointerComponent.spatialPointerIcon).isNull()
-        pointerComponent.spatialPointerIcon = SpatialPointerIconNone
-        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIconNone)
+        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIcon.DEFAULT)
+        pointerComponent.spatialPointerIcon = SpatialPointerIcon.NONE
+        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIcon.NONE)
         entity.removeComponent(pointerComponent)
-        assertThat(pointerComponent.spatialPointerIcon).isNull()
+        assertThat(pointerComponent.spatialPointerIcon).isEqualTo(SpatialPointerIcon.DEFAULT)
     }
 }

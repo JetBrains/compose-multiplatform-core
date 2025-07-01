@@ -207,7 +207,6 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
     extensions.findByType(ApplicationAndroidComponentsExtension::class.java)?.apply {
         onVariants(selector().withBuildType("debug")) { variant ->
             if (isPrivacySandboxEnabled()) {
-                @Suppress("UnstableApiUsage") // variant.outputProviders b/397701480
                 addAppApksToPrivacySandboxTestConfigsGeneration(
                     testVariantName = "${variant.name}AndroidTest",
                     variant,
@@ -236,7 +235,6 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
     extensions.findByType(TestAndroidComponentsExtension::class.java)?.apply {
         onVariants(selector().all()) { variant ->
             if (isPrivacySandboxEnabled()) {
-                @Suppress("UnstableApiUsage") // variant.outputProviders b/397701480
                 addAppApksToPrivacySandboxTestConfigsGeneration(
                     testVariantName = variant.name,
                     variant,
@@ -291,7 +289,9 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
 
             // Recreate the same configuration existing for test modules to pull the artifact
             // from the application module specified in the deviceTests extension.
-            @Suppress("UnstableApiUsage") // Incubating dependencyFactory APIs
+            @Suppress(
+                "UnstableApiUsage"
+            ) // Incubating dependencyFactory APIs https://github.com/gradle/gradle/issues/33923
             val configuration =
                 configurations.create("${variant.name}TestedApks") { config ->
                     config.isCanBeResolved = true

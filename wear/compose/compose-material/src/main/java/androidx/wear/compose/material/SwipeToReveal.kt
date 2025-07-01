@@ -931,8 +931,15 @@ internal constructor(
      * Animates to the [targetValue] with the animation spec provided.
      *
      * @param targetValue The target [RevealValue] where the [currentValue] will animate to.
+     * @throws IllegalStateException if the target [RevealValue] is not valid for current
+     *   [RevealState] instance.
      */
     public suspend fun animateTo(targetValue: RevealValue) {
+        checkNotNull(anchors[targetValue]) {
+            "The RevealValue you're targeting isn't supported by current RevealState instance. " +
+                "Ensure the RevealState was created with an anchor map that contains " +
+                "the target RevealValue."
+        }
         // Cover the previously open component if revealing a different one
         if (targetValue != RevealValue.Covered) {
             resetLastState(this)

@@ -41,7 +41,6 @@ androidx {
     kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2018"
     description = "Android WorkManager Kotlin Extensions"
-    legacyDisableKotlinStrictApiMode = true
 }
 
 android {

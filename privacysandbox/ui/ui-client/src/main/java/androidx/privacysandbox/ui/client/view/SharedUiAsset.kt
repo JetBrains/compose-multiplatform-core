@@ -33,12 +33,12 @@ import androidx.privacysandbox.ui.core.SandboxedUiAdapter
  */
 @SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
-class SharedUiAsset
+public class SharedUiAsset
 @JvmOverloads
 constructor(
-    val view: View,
-    val assetId: String,
-    val sandboxedUiAdapter: SandboxedUiAdapter? = null,
+    public val view: View,
+    public val assetId: String,
+    public val sandboxedUiAdapter: SandboxedUiAdapter? = null,
 ) {
     init {
         if (sandboxedUiAdapter != null)

@@ -32,15 +32,18 @@ public class PermissionNotGrantedException(
 
 /** A [Feature] attempting to be enabled is not supported by the current runtime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ConfigurationNotSupportedException(cause: Throwable? = null) :
-    LifecycleException("Failed to configure session, requested configuration is not supported.")
+public class ConfigurationNotSupportedException(
+    message: String = "Failed to configure session, requested configuration is not supported.",
+    cause: Throwable? = null,
+) : LifecycleException(message, cause)
 
 /** The Google Play Services Location Library is not linked. */
 @Suppress("MentionsGoogle")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class GooglePlayServicesLocationLibraryNotLinkedException(cause: Throwable? = null) :
     LifecycleException(
-        "Failed to configure session, Google Play Services Location Library is not linked."
+        "Failed to configure session, Google Play Services Location Library is not linked.",
+        cause,
     )
 
 /**

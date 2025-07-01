@@ -41,7 +41,7 @@ public class WifiCommands internal constructor(private val shell: Shell) {
     public fun isEnabled(): Boolean {
         with(shell.command("settings get global wifi_on")) {
             stdErr.assertEmpty()
-            return when (stdOut) {
+            return when (stdOut.trim()) {
                 "1",
                 "2" -> true
                 "0",

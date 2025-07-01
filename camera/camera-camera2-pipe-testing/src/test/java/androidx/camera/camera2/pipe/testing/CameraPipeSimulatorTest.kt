@@ -22,6 +22,7 @@ import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
+import androidx.camera.camera2.pipe.ConfigQueryResult
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -178,5 +179,13 @@ class CameraPipeSimulatorTest {
         val config1Stream1 = cameraGraphs[0].streams[streamConfig]
         val config2Stream1 = cameraGraphs[1].streams[streamConfig]
         assertThat(config1Stream1).isNotEqualTo(config2Stream1)
+    }
+
+    @Test
+    fun cameraPipeSimulatorSupportIsConfigureSupportedApi() {
+        val config =
+            CameraGraph.Config(camera = frontCameraMetadata.camera, streams = listOf(streamConfig))
+        val result = cameraPipe.isConfigSupported(config)
+        assertThat(result).isEqualTo(ConfigQueryResult.UNKNOWN)
     }
 }

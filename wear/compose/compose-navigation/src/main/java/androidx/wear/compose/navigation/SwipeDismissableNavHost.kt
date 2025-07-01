@@ -107,7 +107,9 @@ public fun SwipeDismissableNavHost(
  * [BasicSwipeToDismissBox] to detect swipe back gestures.
  *
  * API level 36 onwards, [SwipeDismissableNavHost] listens to platform predictive back events for
- * navigation, and [BasicSwipeToDismissBox] is not used for swipe gesture detection.
+ * navigation, and [BasicSwipeToDismissBox] is not used for swipe gesture detection. Therefore,
+ * [Modifier.edgeSwipeToDismiss] is not compatible with [SwipeDismissableNavHost] for API level 36
+ * onwards.
  *
  * Example of a [SwipeDismissableNavHost] alternating between 2 screens:
  *

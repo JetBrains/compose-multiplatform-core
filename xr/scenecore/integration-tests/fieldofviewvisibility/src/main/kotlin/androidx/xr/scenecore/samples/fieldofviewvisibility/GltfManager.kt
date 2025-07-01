@@ -33,11 +33,13 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import java.nio.file.Paths
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /** Manages the UI for the GLTF entity. */
 @Suppress("Deprecation")
 // TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
-class GltfManager(private val session: Session) {
+class GltfManager(private val session: Session, private val coroutineScope: CoroutineScope) {
     private val mSession: Session
     private var mGltfModel: GltfModel? by mutableStateOf(null)
     private var mGltfModelEntity: GltfModelEntity? by mutableStateOf(null)
@@ -73,16 +75,13 @@ class GltfManager(private val session: Session) {
                 Button(
                     enabled = (mGltfModel == null),
                     onClick = {
-                        val dragonModelFuture =
-                            GltfModel.createAsync(
-                                session,
-                                Paths.get("models", "Dragon_Evolved.gltf"),
-                            )
-                        dragonModelFuture.addListener(
-                            { mGltfModel = dragonModelFuture.get() },
-                            // This will cause the listener to be run on the UI thread
-                            Runnable::run,
-                        )
+                        coroutineScope.launch {
+                            mGltfModel =
+                                GltfModel.create(
+                                    session,
+                                    Paths.get("models", "Dragon_Evolved.gltf"),
+                                )
+                        }
                     },
                 ) {
                     Text(text = "Load GLTF Entity Model", fontSize = 20.sp)

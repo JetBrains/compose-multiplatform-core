@@ -69,14 +69,12 @@ class CoreEntityTest {
     }
 
     @Test
-    fun coreEntity_coreContentlessEntity_shouldThrowIfNotContentless() {
+    fun coreEntity_coreGroupEntity_shouldThrowIfNotGroupEntity() {
         composeTestRule.setContent { TestSetup {} }
 
         val session = composeTestRule.activity.session
         assertNotNull(session)
-        assertFailsWith<IllegalArgumentException> {
-            CoreContentlessEntity(session.scene.activitySpace)
-        }
+        assertFailsWith<IllegalArgumentException> { CoreGroupEntity(session.scene.activitySpace) }
     }
 
     @Test

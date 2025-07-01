@@ -16,8 +16,6 @@
 
 package androidx.credentials.registry.provider
 
-import androidx.annotation.RestrictTo
-
 /**
  * A result of clearing credential registries.
  *
@@ -25,5 +23,4 @@ import androidx.annotation.RestrictTo
  *   was no data to delete; unexpected failures will be thrown as exceptions
  * @constructor
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ClearCredentialRegistryResponse(public val isDeleted: Boolean)

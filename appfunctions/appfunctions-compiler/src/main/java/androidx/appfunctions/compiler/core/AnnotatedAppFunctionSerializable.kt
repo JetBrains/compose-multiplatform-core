@@ -97,6 +97,9 @@ open class AnnotatedAppFunctionSerializable(
         }
     }
 
+    /** A description of the AppFunctionSerializable class and its intended use. */
+    val description: String by lazy { appFunctionSerializableClass.docString ?: "" }
+
     /** All the [KSDeclaration] from the AppFunctionSerializable. */
     val declarations: Sequence<KSDeclaration> by lazy { appFunctionSerializableClass.declarations }
 

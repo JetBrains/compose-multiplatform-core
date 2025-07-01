@@ -83,6 +83,31 @@ package androidx.xr.arcore {
     property public androidx.xr.runtime.math.Pose devicePose;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class AugmentedObject implements androidx.xr.arcore.Trackable<androidx.xr.arcore.AugmentedObject.State> {
+    method public androidx.xr.arcore.AnchorCreateResult createAnchor(androidx.xr.runtime.math.Pose pose);
+    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> getState();
+    method public static kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.AugmentedObject>> subscribe(androidx.xr.runtime.Session session);
+    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.AugmentedObject.State> state;
+    field public static final androidx.xr.arcore.AugmentedObject.Companion Companion;
+  }
+
+  public static final class AugmentedObject.Companion {
+    method public kotlinx.coroutines.flow.StateFlow<java.util.Collection<androidx.xr.arcore.AugmentedObject>> subscribe(androidx.xr.runtime.Session session);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class AugmentedObject.State implements androidx.xr.arcore.Trackable.State {
+    ctor public AugmentedObject.State(androidx.xr.runtime.TrackingState trackingState, androidx.xr.runtime.AugmentedObjectCategory category, androidx.xr.runtime.math.Pose centerPose, androidx.xr.runtime.math.Vector3 extents);
+    method public androidx.xr.runtime.AugmentedObjectCategory getCategory();
+    method public androidx.xr.runtime.math.Pose getCenterPose();
+    method public androidx.xr.runtime.math.Vector3 getExtents();
+    method public androidx.xr.runtime.TrackingState getTrackingState();
+    property public androidx.xr.runtime.AugmentedObjectCategory category;
+    property public androidx.xr.runtime.math.Pose centerPose;
+    property public androidx.xr.runtime.math.Vector3 extents;
+    property public androidx.xr.runtime.TrackingState trackingState;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class CreateGeospatialPoseFromPoseIllegalState extends androidx.xr.arcore.CreateGeospatialPoseFromPoseResult {
     ctor public CreateGeospatialPoseFromPoseIllegalState();
   }
@@ -121,6 +146,28 @@ package androidx.xr.arcore {
     ctor public CreatePoseFromGeospatialPoseSuccess(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.math.Pose getPose();
     property public androidx.xr.runtime.math.Pose pose;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class DepthMap {
+    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.DepthMap.State> getState();
+    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.DepthMap.State> state;
+  }
+
+  public static final class DepthMap.State {
+    ctor public DepthMap.State(int width, int height, java.nio.FloatBuffer? rawDepthMap, java.nio.ByteBuffer? rawConfidenceMap, java.nio.FloatBuffer? smoothDepthMap, java.nio.ByteBuffer? smoothConfidenceMap);
+    method public int getHeight();
+    method public java.nio.ByteBuffer? getRawConfidenceMap();
+    method public java.nio.FloatBuffer? getRawDepthMap();
+    method public java.nio.ByteBuffer? getSmoothConfidenceMap();
+    method public java.nio.FloatBuffer? getSmoothDepthMap();
+    method public int getWidth();
+    property public int height;
+    property public java.nio.ByteBuffer? rawConfidenceMap;
+    property public java.nio.FloatBuffer? rawDepthMap;
+    property public java.nio.ByteBuffer? smoothConfidenceMap;
+    property public java.nio.FloatBuffer? smoothDepthMap;
+    property public int width;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Earth {
@@ -218,12 +265,14 @@ package androidx.xr.arcore {
 
   public final class PerceptionState {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.ArDevice getArDevice();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.DepthMap> getDepthMaps();
     method public androidx.xr.arcore.Hand? getLeftHand();
     method public androidx.xr.arcore.Hand? getRightHand();
     method public kotlin.time.ComparableTimeMark getTimeMark();
     method public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> getTrackables();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.ViewCamera> getViewCameras();
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.ArDevice arDevice;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.DepthMap> depthMaps;
     property public androidx.xr.arcore.Hand? leftHand;
     property public androidx.xr.arcore.Hand? rightHand;
     property public kotlin.time.ComparableTimeMark timeMark;
@@ -319,10 +368,12 @@ package androidx.xr.arcore {
   }
 
   public static final class ViewCamera.State {
-    ctor public ViewCamera.State(androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.FieldOfView fieldOfView);
+    ctor public ViewCamera.State(androidx.xr.runtime.math.Pose pose, androidx.xr.runtime.math.Pose localPose, androidx.xr.runtime.FieldOfView fieldOfView);
     method public androidx.xr.runtime.FieldOfView getFieldOfView();
+    method public androidx.xr.runtime.math.Pose getLocalPose();
     method public androidx.xr.runtime.math.Pose getPose();
     property public androidx.xr.runtime.FieldOfView fieldOfView;
+    property public androidx.xr.runtime.math.Pose localPose;
     property public androidx.xr.runtime.math.Pose pose;
   }
 

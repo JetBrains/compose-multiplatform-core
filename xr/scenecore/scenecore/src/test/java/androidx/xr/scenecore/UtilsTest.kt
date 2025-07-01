@@ -719,11 +719,18 @@ class UtilsTest {
     @Test
     fun spatialPointerIconToRtSpatialPointerIcon_convertsCorrectly() {
         assertThat(
-                listOf(SpatialPointerIconNone, SpatialPointerIconCircle).map {
-                    it.toRtSpatialPointerIcon()
-                }
+                listOf(
+                        SpatialPointerIcon.DEFAULT,
+                        SpatialPointerIcon.NONE,
+                        SpatialPointerIcon.CIRCLE,
+                    )
+                    .map { it.toRtSpatialPointerIcon() }
             )
-            .containsExactly(RtSpatialPointerIcon.TYPE_NONE, RtSpatialPointerIcon.TYPE_CIRCLE)
+            .containsExactly(
+                RtSpatialPointerIcon.TYPE_DEFAULT,
+                RtSpatialPointerIcon.TYPE_NONE,
+                RtSpatialPointerIcon.TYPE_CIRCLE,
+            )
             .inOrder()
     }
 
@@ -737,7 +744,11 @@ class UtilsTest {
                     )
                     .map { it.toSpatialPointerIcon() }
             )
-            .containsExactly(null, SpatialPointerIconNone, SpatialPointerIconCircle)
+            .containsExactly(
+                SpatialPointerIcon.DEFAULT,
+                SpatialPointerIcon.NONE,
+                SpatialPointerIcon.CIRCLE,
+            )
             .inOrder()
     }
 

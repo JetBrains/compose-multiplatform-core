@@ -333,17 +333,14 @@ public final class LayoutElementBuilders {
      * RTL.
      */
     @RequiresSchemaVersion(major = 1, minor = 300)
-    @RestrictTo(Scope.LIBRARY_GROUP)
     public static final int ARC_DIRECTION_NORMAL = 0;
 
     /** Draws an element in Clockwise direction, independently of layout direction. */
     @RequiresSchemaVersion(major = 1, minor = 300)
-    @RestrictTo(Scope.LIBRARY_GROUP)
     public static final int ARC_DIRECTION_CLOCKWISE = 1;
 
     /** Draws an element in Counter Clockwise direction, independently of layout direction. */
     @RequiresSchemaVersion(major = 1, minor = 300)
-    @RestrictTo(Scope.LIBRARY_GROUP)
     public static final int ARC_DIRECTION_COUNTER_CLOCKWISE = 2;
 
     /** An extensible {@code FontWeight} property. */

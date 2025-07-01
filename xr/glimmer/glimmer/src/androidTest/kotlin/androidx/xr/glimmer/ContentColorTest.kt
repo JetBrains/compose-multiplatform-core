@@ -17,8 +17,12 @@
 package androidx.xr.glimmer
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -47,6 +51,42 @@ class ContentColorTest {
         }
 
         rule.runOnIdle { assertThat(color).isEqualTo(Color.White) }
+    }
+
+    @Test
+    fun contentColorProvider() {
+        var color: Color = Color.Unspecified
+        rule.setGlimmerThemeContent {
+            Box(
+                Modifier.contentColorProvider(Color.White)
+                    .then(
+                        DelegatableNodeProviderElement {
+                            color = it?.currentContentColor() ?: Color.Unspecified
+                        }
+                    )
+            )
+        }
+
+        rule.runOnIdle { assertThat(color).isEqualTo(Color.White) }
+    }
+
+    @Test
+    fun contentColorProvider_updates() {
+        var expectedColor by mutableStateOf(Color.White)
+        var node: DelegatableNode? = null
+        rule.setGlimmerThemeContent {
+            Box(
+                Modifier.contentColorProvider(contentColor = expectedColor)
+                    .then(DelegatableNodeProviderElement { node = it })
+            )
+        }
+
+        rule.runOnIdle {
+            assertThat(node!!.currentContentColor()).isEqualTo(Color.White)
+            expectedColor = Color.Blue
+        }
+
+        rule.runOnIdle { assertThat(node!!.currentContentColor()).isEqualTo(Color.Blue) }
     }
 
     @Test

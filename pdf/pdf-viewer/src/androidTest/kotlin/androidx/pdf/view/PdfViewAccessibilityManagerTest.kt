@@ -21,6 +21,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.pdf.R
+import androidx.pdf.view.PdfViewAccessibilityManager.Companion.FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET
 import androidx.pdf.view.fastscroll.getDimensions
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
@@ -53,6 +54,7 @@ class PdfViewAccessibilityManagerTest {
                 FrameLayout(activity).apply {
                     addView(
                         PdfView(activity).apply {
+                            isFormFillingEnabled = true
                             this.pdfDocument = pdfDocument
                             id = PDF_VIEW_ID
                         },
@@ -76,12 +78,12 @@ class PdfViewAccessibilityManagerTest {
         activityScenario.close()
 
         // Reset the fast scroller visibility
-        pdfView.forcedFastScrollVisibility = true
+        pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_SHOW
         pdfView.lastFastScrollerVisibility = false
     }
 
     @Test
-    fun getVirtualViewAt_returnsCorrectPageAndLink() = runTest {
+    fun getVirtualViewAt_returnsCorrectPageLinkAndFormWidgets() = runTest {
         val pdfViewAccessibilityManager =
             requireNotNull(pdfView.pdfViewAccessibilityManager) {
                 "PdfViewAccessibilityManager must not be null."
@@ -105,19 +107,21 @@ class PdfViewAccessibilityManagerTest {
                 Triple(-10f, -10f, -1), // Outside viewport
                 Triple(50f, 40f, 10), // Goto Link
                 Triple(50f, 70f, 11), // External Link
+                Triple(75f, 550f, FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET),
+                Triple(75f, 475f, FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET + 1),
             )
 
-        testCases.forEach { (x, y, expectedPage) ->
+        testCases.forEach { (x, y, expectedVirtualViewId) ->
             val adjustedX = PdfView.toViewCoord(x, pdfView.zoom, pdfView.scrollX)
             val adjustedY = PdfView.toViewCoord(y, pdfView.zoom, pdfView.scrollY)
 
             assertThat(pdfViewAccessibilityManager.getVirtualViewAt(adjustedX, adjustedY))
-                .isEqualTo(expectedPage)
+                .isEqualTo(expectedVirtualViewId)
         }
     }
 
     @Test
-    fun getVisibleVirtualViews_returnsCorrectPagesAndLinks() = runTest {
+    fun getVisibleVirtualViews_returnsCorrectPagesLinksAndFormWidgets() = runTest {
         val pdfViewAccessibilityManager =
             requireNotNull(pdfView.pdfViewAccessibilityManager) {
                 "PdfViewAccessibilityManager must not be null."
@@ -129,12 +133,27 @@ class PdfViewAccessibilityManagerTest {
             .checkPagesAreVisible(firstVisiblePage = 0, visiblePages = 5)
 
         // Enabling Fast Scroller Visibility
-        pdfView.forcedFastScrollVisibility = true
+        pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_SHOW
         pdfView.lastFastScrollerVisibility = true
 
         val visiblePagesAndLinks = mutableListOf<Int>()
         pdfViewAccessibilityManager.getVisibleVirtualViews(visiblePagesAndLinks)
-        assertThat(visiblePagesAndLinks).isEqualTo(listOf(0, 1, 2, 3, 4, 10, 11, 1000002, 1000003))
+        assertThat(visiblePagesAndLinks)
+            .isEqualTo(
+                listOf(
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    10,
+                    11,
+                    FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET,
+                    FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET + 1,
+                    1000002,
+                    1000003,
+                )
+            )
     }
 
     @Test
@@ -154,6 +173,10 @@ class PdfViewAccessibilityManagerTest {
                 1 to "Page 2: Sample text for page 2",
                 10 to "Go to page 5",
                 11 to "Link: www.example.com",
+                FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET to
+                    "Form widget Type: Radio Button. Title: Radio. Current value: false. Click will toggle value.",
+                FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET + 1 to
+                    "Form widget Type: Multi select List Box. Title: ListBox. Value: Banana. Widget is read only and cannot be changed.",
             )
         testCases.forEach { (virtualViewId, expectedDescription) ->
             val node = mock(AccessibilityNodeInfoCompat::class.java)
@@ -172,6 +195,7 @@ class PdfViewAccessibilityManagerTest {
             }
 
         val topPageMargin = pdfView.context.getDimensions(R.dimen.top_page_margin)
+        val pageSpacing = pdfView.context.getDimensions(R.dimen.page_spacing)
 
         // Wait until layout completes for the required pages
         pdfDocument.waitForLayout(untilPage = 0)
@@ -181,6 +205,15 @@ class PdfViewAccessibilityManagerTest {
                 0 to RectF(0f, topPageMargin, 100f, 200f + topPageMargin),
                 10 to RectF(25f, 30f + topPageMargin, 75f, 50f + topPageMargin),
                 11 to RectF(25f, 60f + topPageMargin, 75f, 80f + topPageMargin),
+                FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET to
+                    RectF(50f, 500f + topPageMargin, 100f, 600f + topPageMargin),
+                FORM_WIDGET_VIRTUAL_VIEW_ID_OFFSET + 1 to
+                    RectF(
+                        50f,
+                        400f + topPageMargin + (pdfDocument.pages[0]?.y ?: 0) + pageSpacing,
+                        100f,
+                        550f + topPageMargin + (pdfDocument.pages[0]?.y ?: 0) + pageSpacing,
+                    ),
             )
 
         testCases.forEach { (virtualViewId, boundsInParent) ->
@@ -234,7 +267,7 @@ class PdfViewAccessibilityManagerTest {
         pdfDocument.waitForLayout(untilPage = 0)
 
         // Enabling Fast Scroller Visibility
-        pdfView.forcedFastScrollVisibility = true
+        pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_SHOW
         pdfView.lastFastScrollerVisibility = true
 
         val node = mock(AccessibilityNodeInfoCompat::class.java)
@@ -255,7 +288,7 @@ class PdfViewAccessibilityManagerTest {
         pdfDocument.waitForLayout(untilPage = 0)
 
         // Enabling Fast Scroller Visibility
-        pdfView.forcedFastScrollVisibility = true
+        pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_SHOW
         pdfView.lastFastScrollerVisibility = true
 
         val node = mock(AccessibilityNodeInfoCompat::class.java)
@@ -277,7 +310,7 @@ class PdfViewAccessibilityManagerTest {
             .checkPagesAreVisible(firstVisiblePage = 0, visiblePages = 5)
 
         // Enabling Fast Scroller Visibility
-        pdfView.forcedFastScrollVisibility = true
+        pdfView.fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_SHOW
         pdfView.lastFastScrollerVisibility = true
 
         val visibleViews = mutableListOf<Int>()

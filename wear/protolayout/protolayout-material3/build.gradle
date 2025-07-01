@@ -49,6 +49,7 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
     testImplementation(libs.truth)
+    androidTestImplementation(libs.testUiautomator)
     testImplementation(project(":wear:protolayout:protolayout-proto"))
     testImplementation(project(":wear:protolayout:protolayout-testing"))
     testImplementation(project(":wear:protolayout:protolayout"))

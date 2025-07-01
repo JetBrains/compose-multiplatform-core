@@ -41,13 +41,14 @@ import java.time.Duration
  *   [ScheduleCustomAudienceUpdateRequest] will fail.
  */
 @ExperimentalFeatures.Ext14OptIn
-class ScheduleCustomAudienceUpdateRequest
+public class ScheduleCustomAudienceUpdateRequest
 @JvmOverloads
 constructor(
-    val updateUri: Uri,
-    val minDelay: Duration,
-    val partialCustomAudienceList: List<PartialCustomAudience>,
-    @get:JvmName("shouldReplacePendingUpdates") val shouldReplacePendingUpdates: Boolean = false,
+    public val updateUri: Uri,
+    public val minDelay: Duration,
+    public val partialCustomAudienceList: List<PartialCustomAudience>,
+    @get:JvmName("shouldReplacePendingUpdates")
+    public val shouldReplacePendingUpdates: Boolean = false,
 ) {
     /**
      * Checks whether two ScheduleCustomAudienceUpdateRequest objects contain the same information.

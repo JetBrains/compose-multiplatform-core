@@ -702,6 +702,25 @@ internal constructor(
     }
 
     /**
+     * Creates a new [AppFunctionData] instance with a new [AppFunctionDataSpec] based on the
+     * provided [responseMetadata] and [componentMetadata].
+     *
+     * This should only used by the AppFunction infrastructure when recreating the [AppFunctionData]
+     * from remote response. So that the [AppFunctionData] exposed in the public API surface will
+     * have the same read validation.
+     */
+    internal fun replaceSpecWith(
+        responseMetadata: AppFunctionResponseMetadata,
+        componentMetadata: AppFunctionComponentsMetadata,
+    ): AppFunctionData {
+        return AppFunctionData(
+            AppFunctionDataSpec.create(responseMetadata, componentMetadata),
+            genericDocument,
+            extras,
+        )
+    }
+
+    /**
      * Builder for constructing [AppFunctionData]
      *
      * For example, to write an [AppFunctionData] for calling an AppFunction

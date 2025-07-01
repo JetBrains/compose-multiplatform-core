@@ -65,9 +65,7 @@ internal class DocumentSelection(val selectedContents: SparseArray<List<Selectio
                 // TODO: Add unparcel logic for other types of selections
                 val selections = mutableListOf<Selection>()
                 for (j in 0 until selectionSize) {
-                    selections.add(
-                        textSelectionFromParcel(parcel, TextSelection::class.java.classLoader)
-                    )
+                    selections.add(textSelectionFromParcel(parcel))
                 }
                 selectionMap[pageNum] = selections
             }

@@ -21,7 +21,7 @@ import androidx.privacysandbox.sdkruntime.client.TestSdkConfigs
 import androidx.privacysandbox.sdkruntime.client.config.LocalSdkConfig
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.Versions
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
 import androidx.privacysandbox.sdkruntime.core.internal.ClientApiVersion
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -189,7 +189,7 @@ class SdkLoaderTest {
 
     private object NoOpFactory : SdkLoader.ControllerFactory {
 
-        val controllerImplClass = SdkSandboxControllerCompat.SandboxControllerImpl::class.java
+        val controllerImplClass = SdkSandboxControllerBackend::class.java
 
         val noOpProxy =
             Proxy.newProxyInstance(controllerImplClass.classLoader, arrayOf(controllerImplClass)) {
@@ -199,7 +199,7 @@ class SdkLoaderTest {
                 throw UnsupportedOperationException(
                     "Unexpected method call (NoOp) object:$proxy, method: $method, args: $args"
                 )
-            } as SdkSandboxControllerCompat.SandboxControllerImpl
+            } as SdkSandboxControllerBackend
 
         override fun createControllerFor(sdkConfig: LocalSdkConfig) = noOpProxy
     }

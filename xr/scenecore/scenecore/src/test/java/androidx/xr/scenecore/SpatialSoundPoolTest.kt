@@ -51,7 +51,7 @@ class SpatialSoundPoolTest {
     private var mockRuntime: JxrPlatformAdapter = mock()
     private var mockRtSoundPoolExtensions: RtSoundPoolExtensionsWrapper = mock()
 
-    private val mockContentlessEntity = mock<RtEntity>()
+    private val mockGroupEntity = mock<RtEntity>()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val mockActivitySpace = mock<RtActivitySpace>()
 
@@ -66,7 +66,7 @@ class SpatialSoundPoolTest {
             on { headActivityPose } doReturn mock()
             on { perceptionSpaceActivityPose } doReturn mock()
             on { mainPanelEntity } doReturn mock()
-            on { createEntity(any(), any(), any()) } doReturn mockContentlessEntity
+            on { createGroupEntity(any(), any(), any()) } doReturn mockGroupEntity
             on { spatialCapabilities } doReturn RtSpatialCapabilities(0)
         }
 
@@ -80,7 +80,7 @@ class SpatialSoundPoolTest {
         val expectedStreamId = 1234
 
         val soundPool = SoundPool.Builder().build()
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         val pointSourceAttributes = PointSourceParams(entity)
         whenever(
                 mockRtSoundPoolExtensions.play(
@@ -110,7 +110,7 @@ class SpatialSoundPoolTest {
             .play(
                 eq(soundPool),
                 eq(TEST_SOUND_ID),
-                argWhere<RtPointSourceParams> { it.entity == mockContentlessEntity },
+                argWhere<RtPointSourceParams> { it.entity == mockGroupEntity },
                 eq(TEST_VOLUME),
                 eq(TEST_PRIORITY),
                 eq(TEST_LOOP),

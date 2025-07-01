@@ -41,6 +41,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test:1.8.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.8.1")
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.truth)
 }
 

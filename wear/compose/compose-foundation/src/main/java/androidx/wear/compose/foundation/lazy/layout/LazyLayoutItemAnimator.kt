@@ -29,6 +29,7 @@ import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import kotlinx.coroutines.CoroutineScope
 
@@ -72,8 +73,35 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
         coroutineScope: CoroutineScope,
         graphicsContext: GraphicsContext,
     ) {
+        val previousKeyToIndexMap = this.keyIndexMap
+        this.keyIndexMap = keyIndexMap
+
+        val previousFirstVisibleIndex = firstVisibleIndex
+        firstVisibleIndex = positionedItems.firstOrNull()?.index ?: 0
+
         if (!shouldAnimate) {
             releaseAnimations()
+            // After clearing all state for a non-animating pass (like a scroll), we must
+            // re-create an ItemInfo for every visible item. This is critical because creating an
+            // ItemInfo also prepares an underlying GraphicsLayer. For a disappearance animation
+            // to work, the item's content must be placed into this layer *before* it is removed.
+            // This block ensures the layer is created and ready for a potential animation in the
+            // next frame.
+            positionedItems.fastForEach { item ->
+                // TODO(b/423012476): Investigate if we could avoid unnecessary allocations.
+                val newItemInfo = ItemInfo()
+                newItemInfo.updateAnimation(
+                    item,
+                    coroutineScope,
+                    graphicsContext,
+                    layoutMinOffset,
+                    layoutMaxOffset,
+                )
+                keyToItemInfoMap[item.key] = newItemInfo
+
+                initializeAnimation(item, item.getOffset().y, newItemInfo)
+                newItemInfo.animation?.apply { finalOffset = rawOffset }
+            }
             return
         }
 
@@ -85,18 +113,12 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
             }
         }
 
-        val previousKeyToIndexMap = this.keyIndexMap
-        this.keyIndexMap = keyIndexMap
-
         val hasAnimations = positionedItems.fastAny { it.hasAnimations() }
         if (!hasAnimations && keyToItemInfoMap.isEmpty()) {
             // no animations specified - no work needed - clear animation info
             releaseAnimations()
             return
         }
-
-        val previousFirstVisibleIndex = firstVisibleIndex
-        firstVisibleIndex = positionedItems.firstOrNull()?.index ?: 0
 
         // first add all items we had in the previous run
         keyToItemInfoMap.forEachKey { movingAwayKeys.add(it) }
@@ -166,7 +188,7 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                 movingInFromStartBound.sortByDescending { previousKeyToIndexMap.getIndex(it.key) }
                 val startOffset =
                     positionedItems
-                        .firstOrNull {
+                        .fastFirstOrNull {
                             // Find the item right below the first moving in item in previous order
                             // as the anchor item.
                             previousKeyToIndexMap.getIndex(it.key) ==
@@ -187,7 +209,7 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                 movingInFromEndBound.sortBy { previousKeyToIndexMap.getIndex(it.key) }
                 val startOffset =
                     positionedItems
-                        .firstOrNull {
+                        .fastFirstOrNull {
                             // Find the item right above the first moving in item in previous order
                             // as the anchor item.
                             previousKeyToIndexMap.getIndex(it.key) ==

@@ -193,6 +193,7 @@ package androidx.health.connect.client.permission {
     method public static String getReadPermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
     method public static String getWritePermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
     field public static final androidx.health.connect.client.permission.HealthPermission.Companion Companion;
+    field public static final String PERMISSION_READ_EXERCISE_ROUTES = "android.permission.health.READ_EXERCISE_ROUTES";
     field public static final String PERMISSION_READ_HEALTH_DATA_HISTORY = "android.permission.health.READ_HEALTH_DATA_HISTORY";
     field public static final String PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND";
     field @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final String PERMISSION_READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES = "android.permission.health.READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES";
@@ -216,6 +217,7 @@ package androidx.health.connect.client.permission {
     method public String getReadPermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
     method public inline <reified T extends androidx.health.connect.client.records.Record> String getWritePermission();
     method public String getWritePermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
+    property public static String PERMISSION_READ_EXERCISE_ROUTES;
     property public static String PERMISSION_READ_HEALTH_DATA_HISTORY;
     property public static String PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND;
     property @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static String PERMISSION_READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES;

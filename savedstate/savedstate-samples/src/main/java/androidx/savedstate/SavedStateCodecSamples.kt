@@ -168,13 +168,15 @@ fun serializableSerializer() {
     )
 }
 
+// The class is only used to demonstrate that Parcelables can be used with SavedState Serialization.
+@Suppress("BanParcelableUsage", "ParcelCreator")
 private class MyParcelable : Parcelable {
     override fun describeContents(): Int {
-        TODO("Not yet implemented")
+        error("Should not be called")
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
-        TODO("Not yet implemented")
+        error("Should not be called")
     }
 }
 

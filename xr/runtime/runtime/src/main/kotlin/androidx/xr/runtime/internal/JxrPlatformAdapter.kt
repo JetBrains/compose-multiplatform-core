@@ -670,14 +670,14 @@ public interface JxrPlatformAdapter {
     public fun createAnchorEntity(anchor: Anchor): AnchorEntity
 
     /**
-     * A factory function to create a content-less entity. This entity is used as a connection point
-     * for attaching children entities and managing them (i.e. setPose()) as a group.
+     * A factory function to create a group entity. This entity is used as a connection point for
+     * attaching children entities and managing them (i.e. setPose()) as a group.
      *
      * @param pose Initial pose of the entity.
      * @param name Name of the entity.
      * @param parent Parent entity.
      */
-    public fun createEntity(pose: Pose, name: String, parent: Entity): Entity
+    public fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity
 
     /**
      * A factory function to create a SubspaceNodeEntity.

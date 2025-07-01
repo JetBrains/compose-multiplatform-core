@@ -37,6 +37,7 @@
          <trust group="com.google.mlkit" reason="b/223907608"/>
          <trust group="com.google.prefab" reason="https://github.com/google/prefab/issues/157"/>
          <trust group="com.google.testing.platform" reason="b/215430394"/>
+         <trust group="org.jetbrains.kotlin" name="kotlin-compose-compiler-plugin-embeddable" version="[\d.]+-custom-branch-[\d]+" regex="true" reason="Internal Compose compiler build"/>
          <trust group="gradle" name="gradle"/>
          <trust file=".*-javadoc[.]jar" regex="true"/>
          <trust file=".*-sources[.]jar" regex="true"/>
@@ -194,7 +195,10 @@
          <trusted-key id="313A77FE5D9A16573F433D74E3706F202E9D239F" group="co.touchlab"/>
          <trusted-key id="31BAE2E51D95E0F8AD9B7BCC40A3C4432BD7308C" group="com.googlecode.juniversalchardet"/>
          <trusted-key id="31FAE244A81D64507B47182E1B2718089CE964B8" group="com.thoughtworks.qdox"/>
-         <trusted-key id="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA" group="org.codehaus.mojo"/>
+         <trusted-key id="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA">
+            <trusting group="org.codehaus.mojo"/>
+            <trusting group="org.codehaus.plexus"/>
+         </trusted-key>
          <trusted-key id="3288B8BE8512D6C0CA185268C51E6CBC7FF46F0B">
             <trusting group="com.google.auto"/>
             <trusting group="com.google.auto.service"/>

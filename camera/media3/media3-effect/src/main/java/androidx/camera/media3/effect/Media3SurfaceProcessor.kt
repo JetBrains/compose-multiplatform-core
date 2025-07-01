@@ -231,15 +231,9 @@ internal class Media3SurfaceProcessor(
                     }
                 }
 
-                override fun onOutputSizeChanged(width: Int, height: Int) {}
-
-                override fun onOutputFrameAvailableForRendering(presentationTimeUs: Long) {}
-
                 override fun onError(exception: VideoFrameProcessingException) {
                     listenerExecutor.execute { errorListener.accept(exception) }
                 }
-
-                override fun onEnded() {}
             }
         val newProcessor =
             DefaultVideoFrameProcessor.Factory.Builder()

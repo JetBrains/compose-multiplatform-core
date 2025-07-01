@@ -33,7 +33,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 internal fun configureRobolectric(project: Project) {
     project.plugins.configureEach { plugin ->
-        @Suppress("UnstableApiUsage") // usage of KotlinMultiplatformAndroidPlugin
         when (plugin) {
             is LibraryPlugin -> {
                 configureNonKmpProjects(project)

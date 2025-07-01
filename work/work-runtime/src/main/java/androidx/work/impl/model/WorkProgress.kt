@@ -36,7 +36,7 @@ import androidx.work.Data
         ]
 )
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class WorkProgress(
-    @ColumnInfo(name = "work_spec_id") @PrimaryKey val workSpecId: String,
-    @ColumnInfo(name = "progress") val progress: Data,
+public class WorkProgress(
+    @ColumnInfo(name = "work_spec_id") @PrimaryKey public val workSpecId: String,
+    @ColumnInfo(name = "progress") public val progress: Data,
 )

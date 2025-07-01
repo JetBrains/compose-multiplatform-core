@@ -41,7 +41,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
@@ -93,7 +92,7 @@ class StandaloneActivity : AppCompatActivity() {
     }
 
     private suspend fun load3DModel(): GltfModel {
-        return GltfModel.createAsync(session!!, Paths.get("models", "Dragon_Evolved.gltf")).await()
+        return GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {

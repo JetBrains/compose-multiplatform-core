@@ -16,45 +16,37 @@
 
 package androidx.xr.scenecore
 
-import android.util.Log
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.SpatialPointerIcon as RtSpatialPointerIcon
 
 /**
- * Component that modifies the pointer icon. Adding or removing this component sets the entity's
- * pointer to use the default, system-determined icon.
+ * [Component] that modifies the pointer icon that is rendered on the component's [Entity]. If this
+ * Component is not present on an Entity the default, system-determined icon is used. Removing this
+ * Component will set the Entity's pointer back to the default icon.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class SpatialPointerComponent
 private constructor(private val platformAdapter: JxrPlatformAdapter) : Component {
-    private val TAG = "SpatialPointerComponent"
 
     private val rtComponent by lazy { platformAdapter.createSpatialPointerComponent() }
 
     private var entity: Entity? = null
 
     /**
-     * The [SpatialPointerIcon] that will be rendered on the component's entity. A `null` value
-     * indicates the default pointer icon should be used.
+     * The [SpatialPointerIcon] that will be rendered on the component's [Entity] when the pointer
+     * is located on the entity. A [SpatialPointerIcon.DEFAULT] value indicates the default pointer
+     * icon should be used.
      */
-    public var spatialPointerIcon: SpatialPointerIcon?
+    public var spatialPointerIcon: SpatialPointerIcon
         get() = rtComponent.getSpatialPointerIcon().toSpatialPointerIcon()
-        set(value) =
-            rtComponent.setSpatialPointerIcon(
-                if (value == null) RtSpatialPointerIcon.TYPE_DEFAULT
-                else value.toRtSpatialPointerIcon()
-            )
+        set(value) = rtComponent.setSpatialPointerIcon(value.toRtSpatialPointerIcon())
 
     override fun onAttach(entity: Entity): Boolean {
         if (this.entity != null) {
-            Log.e(TAG, "Already attached to entity ${this.entity}")
             return false
         }
         if ((entity as BaseEntity<*>).rtEntity.addComponent(rtComponent)) {
             this.entity = entity
-            spatialPointerIcon = null
+            spatialPointerIcon = SpatialPointerIcon.DEFAULT
             return true
         } else {
             return false
@@ -62,7 +54,7 @@ private constructor(private val platformAdapter: JxrPlatformAdapter) : Component
     }
 
     override fun onDetach(entity: Entity) {
-        spatialPointerIcon = null
+        spatialPointerIcon = SpatialPointerIcon.DEFAULT
         (entity as BaseEntity<*>).rtEntity.removeComponent(rtComponent)
         this.entity = null
     }
@@ -72,7 +64,7 @@ private constructor(private val platformAdapter: JxrPlatformAdapter) : Component
         /**
          * Creates a new [SpatialPointerComponent].
          *
-         * @param session The session to use for creating the component.
+         * @param session The [Session] to use for creating the component.
          * @return A new [SpatialPointerComponent].
          */
         @JvmStatic

@@ -70,27 +70,16 @@ class TransformationTestsActivity : AppCompatActivity() {
         setupMovableMainPanel()
 
         // Create a transform widget model and assign it to an Anchor
-        val axesModelFuture = GltfModel.createAsync(session, Paths.get("models", "xyzArrows.glb"))
-        axesModelFuture.addListener(
-            {
-                val transformWidgetModel = axesModelFuture.get()
-                setupAnchorAndDebugPanelUi(transformWidgetModel)
-            },
-            // This will cause the listener to be run on the UI thread
-            Runnable::run,
-        )
+        lifecycleScope.launch {
+            val axesModel = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
+            setupAnchorAndDebugPanelUi(axesModel)
+        }
 
         // Create multiple orbiting dragon models
-        val dragonModelFuture =
-            GltfModel.createAsync(session, Paths.get("models", "Dragon_Evolved.gltf"))
-        dragonModelFuture.addListener(
-            {
-                val dragonModel = dragonModelFuture.get()
-                createModelSolarSystem(session, dragonModel)
-            },
-            // This will cause the listener to be run on the UI thread
-            Runnable::run,
-        )
+        lifecycleScope.launch {
+            val dragonModel = GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
+            createModelSolarSystem(session, dragonModel)
+        }
     }
 
     // Called once the transformWidgetModel is ready

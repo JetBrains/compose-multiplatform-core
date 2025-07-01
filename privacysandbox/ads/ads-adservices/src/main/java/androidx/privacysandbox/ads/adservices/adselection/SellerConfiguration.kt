@@ -36,10 +36,10 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
  */
 @OptIn(ExperimentalFeatures.Ext14OptIn::class)
 @ExperimentalFeatures.Ext14OptIn
-class SellerConfiguration
+public class SellerConfiguration
 public constructor(
-    val maximumPayloadSizeBytes: Int,
-    val perBuyerConfigurations: Set<PerBuyerConfiguration>,
+    public val maximumPayloadSizeBytes: Int,
+    public val perBuyerConfigurations: Set<PerBuyerConfiguration>,
 ) {
     /** Overrides the toString method. */
     override fun toString(): String {

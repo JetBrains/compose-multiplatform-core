@@ -72,8 +72,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
@@ -106,7 +104,6 @@ import androidx.wear.compose.foundation.GestureInclusion
 import androidx.wear.compose.material3.ButtonDefaults.buttonColors
 import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
 import androidx.wear.compose.material3.RevealDirection.Companion.RightToLeft
-import androidx.wear.compose.material3.RevealState.Companion.Saver
 import androidx.wear.compose.material3.RevealValue.Companion.Covered
 import androidx.wear.compose.material3.RevealValue.Companion.LeftRevealed
 import androidx.wear.compose.material3.RevealValue.Companion.LeftRevealing
@@ -1144,8 +1141,17 @@ public class RevealState(initialValue: RevealValue) {
      * Animates to the [targetValue] with the animation spec provided.
      *
      * @param targetValue The target [RevealValue] where the [currentValue] will animate to.
+     * @throws IllegalStateException if the target [RevealValue] is not valid for current
+     *   [RevealState] instance.
      */
     public suspend fun animateTo(targetValue: RevealValue) {
+        check(
+            targetValue == Covered || anchoredDraggableState.anchors.hasPositionFor(targetValue)
+        ) {
+            "The RevealValue you're targeting isn't supported by current RevealState instance. " +
+                "Please ensure the RevealState was created with appropriate revealDirection or " +
+                "hasPartiallyRevealedState that supports the target RevealValue."
+        }
         // Cover the previously open component if revealing a different one
         if (targetValue != Covered) {
             resetLastState(this)
@@ -1172,8 +1178,6 @@ public class RevealState(initialValue: RevealValue) {
     /* @FloatRange(from = 0.0) */
     internal var revealThreshold: Float by mutableFloatStateOf(0.0f)
 
-    internal var isLastStateEngaged = false
-
     /**
      * Require the current offset.
      *
@@ -1187,11 +1191,9 @@ public class RevealState(initialValue: RevealValue) {
      * [RightRevealed], the action has been performed and it will not be reset.
      */
     internal suspend fun resetLastState(currentState: RevealState) {
-        currentState.isLastStateEngaged = true
         val oldState = SingleSwipeCoordinator.lastUpdatedState.getAndSet(currentState)
         if (currentState != oldState) {
             oldState?.let {
-                it.isLastStateEngaged = false
                 if (it.currentValue == RightRevealing || it.currentValue == LeftRevealing) {
                     it.animateTo(Covered)
                 }
@@ -1203,71 +1205,6 @@ public class RevealState(initialValue: RevealValue) {
     internal object SingleSwipeCoordinator {
         var lastUpdatedState: AtomicReference<RevealState?> = AtomicReference(null)
     }
-
-    internal companion object {
-        /**
-         * The default [Saver] implementation for [RevealState].
-         *
-         * It stores the [currentValue] and [lastActionType]. Other values like [offset] are
-         * re-calculated.
-         */
-        public val Saver: Saver<RevealState, Int> =
-            Saver(
-                save = { value ->
-                    buildSingleIntFrom(
-                        value.currentValue,
-                        value.lastActionType,
-                        value.isLastStateEngaged,
-                    )
-                },
-                restore = { value ->
-                    RevealState(
-                            initialValue =
-                                RevealValue(
-                                    getValue(value, CURRENT_VALUE_OFFSET, CURRENT_VALUE_MASK)
-                                )
-                        )
-                        .also {
-                            it.lastActionType =
-                                RevealActionType(
-                                    getValue(
-                                        value,
-                                        REVEAL_ACTION_TYPE_OFFSET,
-                                        REVEAL_ACTION_TYPE_MASK,
-                                    )
-                                )
-                            if (
-                                getValue(
-                                    value,
-                                    IS_LAST_STATE_ENGAGED_OFFSET,
-                                    IS_LAST_STATE_ENGAGED_MASK,
-                                ) == 1
-                            ) {
-                                it.isLastStateEngaged = true
-                                SingleSwipeCoordinator.lastUpdatedState.set(it)
-                            }
-                        }
-                },
-            )
-
-        private fun buildSingleIntFrom(
-            revealValue: RevealValue,
-            revealActionType: RevealActionType,
-            isLastStateEngaged: Boolean,
-        ): Int =
-            (revealValue.value shl CURRENT_VALUE_OFFSET) or
-                (revealActionType.value shl REVEAL_ACTION_TYPE_OFFSET) or
-                ((if (isLastStateEngaged) 1 else 0) shl IS_LAST_STATE_ENGAGED_OFFSET)
-
-        private fun getValue(value: Int, offset: Int, mask: Int) = ((value and mask) shr offset)
-
-        private const val CURRENT_VALUE_OFFSET = 0
-        private const val CURRENT_VALUE_MASK = 0x000F
-        private const val REVEAL_ACTION_TYPE_OFFSET = 4
-        private const val REVEAL_ACTION_TYPE_MASK = 0x00F0
-        private const val IS_LAST_STATE_ENGAGED_OFFSET = 8
-        private const val IS_LAST_STATE_ENGAGED_MASK = 0x0100
-    }
 }
 
 /**
@@ -1277,7 +1214,7 @@ public class RevealState(initialValue: RevealValue) {
  */
 @Composable
 public fun rememberRevealState(initialValue: RevealValue = Covered): RevealState =
-    rememberSaveable(saver = RevealState.Saver) { RevealState(initialValue = initialValue) }
+    remember(initialValue) { RevealState(initialValue = initialValue) }
 
 /**
  * Different values which can trigger the state change from one [RevealValue] to another. These are

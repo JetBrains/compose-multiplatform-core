@@ -25,5 +25,5 @@ import android.adservices.ondevicepersonalization.SurfacePackageToken
  *   [android.view.SurfaceView]. This may be `null` if the Isolated Service has not generated any
  *   content to be displayed within the calling app.
  */
-class ExecuteInIsolatedServiceResponse
-internal constructor(val surfacePackageToken: SurfacePackageToken?)
+public class ExecuteInIsolatedServiceResponse
+internal constructor(public val surfacePackageToken: SurfacePackageToken?)

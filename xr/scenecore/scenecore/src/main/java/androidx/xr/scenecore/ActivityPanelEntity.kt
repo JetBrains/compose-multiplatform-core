@@ -18,9 +18,7 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Rect
 import android.os.Bundle
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.runtime.internal.JxrPlatformAdapter
@@ -29,11 +27,11 @@ import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 
 /**
- * ActivityPanelEntity creates a spatial panel for embedding an Activity in Android XR. Users can
- * either use an intent to launch an activity in the given panel or provide an instance of activity
- * to move into this panel. Calling dispose() on this entity will destroy the underlying activity.
+ * ActivityPanelEntity creates a spatial panel for embedding an [Activity] in Android XR. Users can
+ * either use an [Intent] to launch an Activity in the given panel or provide an instance of
+ * Activity to move into this panel. Calling [Entity.dispose] on this Entity will destroy the
+ * underlying Activity.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ActivityPanelEntity
 private constructor(
     private val lifecycleManager: LifecycleManager,
@@ -42,11 +40,10 @@ private constructor(
 ) : PanelEntity(lifecycleManager, rtActivityPanelEntity, entityManager) {
 
     /**
-     * Launches an activity in the given panel. Subsequent calls to this method will replace the
-     * already existing activity in the panel with the new one. If the intent fails to launch the
-     * activity, the panel will not be visible. Note this will not update the dimensions of the
-     * surface underlying the panel. The Activity will be letterboxed as required to fit the size of
-     * the panel. The underlying surface can be resized by calling setSizeInPixels().
+     * Launches an [Activity] in the given panel. Subsequent calls to this method will replace the
+     * already existing Activity in the panel with the new one. The panel will not be visible until
+     * an Activity is successfully launched. This method will not provide any information about when
+     * the Activity successfully launches.
      *
      * @param intent Intent to launch the activity.
      * @param bundle Bundle to pass to the activity, can be null.
@@ -57,9 +54,7 @@ private constructor(
     }
 
     /**
-     * Moves the given activity into this panel. Note this will not update the dimensions of the
-     * surface underlying the panel. The Activity will be letterboxed as required to fit the size of
-     * the panel. The underlying surface can be resized by calling setSizeInPixels().
+     * Moves the given [Activity] into this panel.
      *
      * @param activity Activity to move into this panel.
      */
@@ -68,20 +63,11 @@ private constructor(
     }
 
     public companion object {
-        /**
-         * Factory method for ActivityPanelEntity.
-         *
-         * @param adapter JxrPlatformAdapter to use.
-         * @param windowBoundsPx Bounds for the underlying surface for the given view.
-         * @param name Name of this panel.
-         * @param hostActivity Activity which created this panel.
-         * @param pose Pose for this panel, relative to its parent.
-         */
         internal fun create(
             lifecycleManager: LifecycleManager,
             adapter: JxrPlatformAdapter,
             entityManager: EntityManager,
-            windowBoundsPx: IntSize2d,
+            pixelDimensions: IntSize2d,
             name: String,
             hostActivity: Activity,
             pose: Pose = Pose.Identity,
@@ -90,7 +76,7 @@ private constructor(
                 lifecycleManager,
                 adapter.createActivityPanelEntity(
                     pose,
-                    windowBoundsPx.toRtPixelDimensions(),
+                    pixelDimensions.toRtPixelDimensions(),
                     name,
                     hostActivity,
                     adapter.activitySpaceRootImpl,
@@ -98,21 +84,21 @@ private constructor(
                 entityManager,
             )
 
-        // TODO(b/352629832): Update windowBoundsPx to be a PixelDimensions
         /**
          * Public factory function for a spatial ActivityPanelEntity.
          *
-         * @param session Session to create the ActivityPanelEntity in.
-         * @param windowBoundsPx Bounds for the panel window in pixels.
+         * @param session XR [Session] to create the ActivityPanelEntity.
+         * @param pixelDimensions Bounds for the panel surface in pixels.
          * @param name Name of the panel.
-         * @param pose Pose of this entity relative to its parent, default value is Identity.
+         * @param pose [Pose] of this entity relative to its parent, the default value is
+         *   [Pose.Identity].
          * @return an ActivityPanelEntity instance.
          */
         @JvmOverloads
         @JvmStatic
         public fun create(
             session: Session,
-            windowBoundsPx: Rect,
+            pixelDimensions: IntSize2d,
             name: String,
             pose: Pose = Pose.Identity,
         ): ActivityPanelEntity =
@@ -120,7 +106,7 @@ private constructor(
                 session.runtime.lifecycleManager,
                 session.platformAdapter,
                 session.scene.entityManager,
-                IntSize2d(windowBoundsPx.width(), windowBoundsPx.height()),
+                pixelDimensions,
                 name,
                 session.activity,
                 pose,

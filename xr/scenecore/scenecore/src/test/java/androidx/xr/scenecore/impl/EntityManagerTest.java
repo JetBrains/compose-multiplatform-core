@@ -88,7 +88,7 @@ public class EntityManagerTest {
             Mockito.mock(SplitEngineSubspaceManager.class);
     private final ImpSplitEngineRenderer mSplitEngineRenderer =
             Mockito.mock(ImpSplitEngineRenderer.class);
-    private Node mContentLessEntityNode;
+    private Node mGroupEntityNode;
     private Node mGltfEntityNode;
     private Activity mActivity;
     private JxrPlatformAdapterAxr mPlatformAdapterAxr;
@@ -142,7 +142,7 @@ public class EntityManagerTest {
     public void creatingEntity_addsEntityToEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
@@ -152,25 +152,20 @@ public class EntityManagerTest {
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity,
-                        panelEntity,
-                        contentlessEntity,
-                        anchorEntity,
-                        activityPanelEntity);
+                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
     }
 
     @Test
     public void getEntityForNode_returnsEntity() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         Node testNode = mXrExtensions.createNode();
 
         assertThat(mEntityManager.getEntityForNode(mGltfEntityNode)).isEqualTo(gltfEntity);
         assertThat(mEntityManager.getEntityForNode(mPanelEntityNode)).isEqualTo(panelEntity);
-        assertThat(mEntityManager.getEntityForNode(mContentLessEntityNode))
-                .isEqualTo(contentlessEntity);
+        assertThat(mEntityManager.getEntityForNode(mGroupEntityNode)).isEqualTo(groupEntity);
         assertThat(mEntityManager.getEntityForNode(mAnchorEntityNode)).isEqualTo(anchorEntity);
         assertThat(mEntityManager.getEntityForNode(testNode)).isNull();
     }
@@ -179,7 +174,7 @@ public class EntityManagerTest {
     public void getEntityByType_returnsEntityOfType() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
@@ -187,7 +182,7 @@ public class EntityManagerTest {
         // MainPanel is also a PanelEntity.
         assertThat(mEntityManager.getEntitiesOfType(PanelEntity.class)).contains(panelEntity);
         // Base class of all entities.
-        assertThat(mEntityManager.getEntitiesOfType(Entity.class)).contains(contentlessEntity);
+        assertThat(mEntityManager.getEntitiesOfType(Entity.class)).contains(groupEntity);
         assertThat(mEntityManager.getEntitiesOfType(AnchorEntity.class))
                 .containsExactly(anchorEntity);
         assertThat(mEntityManager.getEntitiesOfType(ActivityPanelEntity.class))
@@ -198,46 +193,38 @@ public class EntityManagerTest {
     public void removeEntity_removesFromEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity,
-                        panelEntity,
-                        contentlessEntity,
-                        anchorEntity,
-                        activityPanelEntity);
+                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
 
-        mEntityManager.removeEntityForNode(mContentLessEntityNode);
+        mEntityManager.removeEntityForNode(mGroupEntityNode);
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(4);
-        assertThat(mEntityManager.getAllEntities()).doesNotContain(contentlessEntity);
+        assertThat(mEntityManager.getAllEntities()).doesNotContain(groupEntity);
     }
 
     @Test
     public void disposeEntity_removesFromEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity,
-                        panelEntity,
-                        contentlessEntity,
-                        anchorEntity,
-                        activityPanelEntity);
+                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
 
-        contentlessEntity.dispose();
+        groupEntity.dispose();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(4);
-        assertThat(mEntityManager.getAllEntities()).doesNotContain(contentlessEntity);
+        assertThat(mEntityManager.getAllEntities()).doesNotContain(groupEntity);
     }
 
     @Test
@@ -273,18 +260,14 @@ public class EntityManagerTest {
     public void clearEntityManager_removesAllEntityFromEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity contentlessEntity = createContentlessEntity();
+        Entity groupEntity = createGroupEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity,
-                        panelEntity,
-                        contentlessEntity,
-                        anchorEntity,
-                        activityPanelEntity);
+                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
 
         mEntityManager.clear();
 
@@ -342,13 +325,13 @@ public class EntityManagerTest {
         return panelEntity;
     }
 
-    private Entity createContentlessEntity() {
-        Entity contentlessEntity =
-                mPlatformAdapterAxr.createEntity(
-                        new Pose(), "testContentLess", mPlatformAdapterAxr.getActivitySpace());
-        mContentLessEntityNode = ((AndroidXrEntity) contentlessEntity).getNode();
-        mEntityManager.setEntityForNode(mContentLessEntityNode, contentlessEntity);
-        return contentlessEntity;
+    private Entity createGroupEntity() {
+        Entity groupEntity =
+                mPlatformAdapterAxr.createGroupEntity(
+                        new Pose(), "testGroup", mPlatformAdapterAxr.getActivitySpace());
+        mGroupEntityNode = ((AndroidXrEntity) groupEntity).getNode();
+        mEntityManager.setEntityForNode(mGroupEntityNode, groupEntity);
+        return groupEntity;
     }
 
     private AnchorEntity createAnchorEntity() {

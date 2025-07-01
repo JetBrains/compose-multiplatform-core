@@ -39,6 +39,12 @@ public abstract class Session(public val key: String) {
     internal val isOpen: Boolean
         get() = _isOpen.get()
 
+    // This is set to indicate if this session has an error, i.e. reportCompositionError has been
+    // called at least once.
+    private val _hasError = AtomicBoolean(false)
+    internal val hasError: Boolean
+        get() = _hasError.get()
+
     private val eventChannel = Channel<Any>(Channel.UNLIMITED)
 
     /**
@@ -69,6 +75,9 @@ public abstract class Session(public val key: String) {
      *
      * These requests may be processed by calling [receiveEvents]. Session implementations should
      * wrap sendEvent with public methods to send the event types that their Session supports.
+     *
+     * If this session is managed by [SessionManager], [sendEvent] should only be called while
+     * holding the SessionManager lock.
      */
     protected suspend fun sendEvent(event: Any) {
         eventChannel.send(event)
@@ -91,6 +100,9 @@ public abstract class Session(public val key: String) {
     /**
      * Close the session. Any events sent before [close] will be processed unless the Worker for
      * this session is cancelled.
+     *
+     * If this session is managed by [SessionManager], [close] should only be called while holding
+     * the SessionManager lock.
      */
     public fun close() {
         eventChannel.close()
@@ -110,4 +122,31 @@ public abstract class Session(public val key: String) {
     public open suspend fun onCompositionError(context: Context, throwable: Throwable) {
         Log.e("GlanceSession", "Error running composition", throwable)
     }
+
+    /** Called to report an error while running the composition. */
+    public suspend fun reportCompositionError(context: Context, throwable: Throwable) {
+        _hasError.set(true)
+        onCompositionError(context, throwable)
+    }
+
+    /*
+     * Returns any pending events.
+     */
+    public fun receiveAllPendingEvents(): List<Any> {
+        return eventChannel.receiveAllNonBlocking()
+    }
+
+    /** Create a new Session with [events]. */
+    public abstract suspend fun recreateWithEvents(events: List<Any>): Session
+}
+
+private fun <T> Channel<T>.receiveAllNonBlocking(): List<T> {
+    val items = mutableListOf<T>()
+    do {
+        val result = tryReceive()
+        result.getOrNull()?.let { items.add(it) }
+        // If result is not successful, then the channel is either empty or we've received the
+        // close token.
+    } while (result.isSuccess)
+    return items
 }

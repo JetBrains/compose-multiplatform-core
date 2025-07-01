@@ -242,8 +242,8 @@ package androidx.xr.compose.subspace {
 
   public final class RememberCoreEntityKt {
     method @kotlin.PublishedApi internal static String entityName(String name);
-    method @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.CoreContentlessEntity rememberCoreContentlessEntity(kotlin.jvm.functions.Function1<? super androidx.xr.runtime.Session,? extends androidx.xr.scenecore.Entity> entityFactory);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.CoreContentlessEntity rememberCoreContentlessEntity(kotlin.jvm.functions.Function1<? super androidx.xr.runtime.Session!,? extends androidx.xr.scenecore.Entity!>, androidx.compose.runtime.Composer?, int);
+    method @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.CoreGroupEntity rememberCoreGroupEntity(kotlin.jvm.functions.Function1<? super androidx.xr.runtime.Session,? extends androidx.xr.scenecore.Entity> entityFactory);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.xr.compose.subspace.layout.CoreGroupEntity rememberCoreGroupEntity(kotlin.jvm.functions.Function1<? super androidx.xr.runtime.Session!,? extends androidx.xr.scenecore.Entity!>, androidx.compose.runtime.Composer?, int);
   }
 
   public final class SceneCoreEntityKt {
@@ -403,10 +403,6 @@ package androidx.xr.compose.subspace.layout {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier aspectRatio(androidx.xr.compose.subspace.layout.SubspaceModifier, @FloatRange(from=0.0, fromInclusive=false) float ratio, optional boolean matchHeightConstraintsFirst);
   }
 
-  @kotlin.PublishedApi internal final class CoreContentlessEntity extends androidx.xr.compose.subspace.layout.CoreEntity {
-    ctor public CoreContentlessEntity(androidx.xr.scenecore.Entity entity);
-  }
-
   @kotlin.PublishedApi internal abstract sealed class CoreEntity implements androidx.xr.compose.subspace.layout.OpaqueEntity {
     method public final boolean addComponent(androidx.xr.scenecore.Component component);
     method public void dispose();
@@ -421,6 +417,10 @@ package androidx.xr.compose.subspace.layout {
     property protected final androidx.compose.runtime.MutableState<androidx.xr.compose.unit.IntVolumeSize> mutableSize;
     property public androidx.xr.compose.subspace.layout.CoreEntity? parent;
     property public androidx.xr.compose.unit.IntVolumeSize size;
+  }
+
+  @kotlin.PublishedApi internal final class CoreGroupEntity extends androidx.xr.compose.subspace.layout.CoreEntity {
+    ctor public CoreGroupEntity(androidx.xr.scenecore.Entity entity);
   }
 
   public final class MovableKt {
@@ -927,7 +927,6 @@ package androidx.xr.compose.unit {
     property public inline boolean isSpecified;
     property public float value;
     field public static final androidx.xr.compose.unit.Meter.Companion Companion;
-    field @kotlin.PublishedApi internal static final float DP_PER_METER;
   }
 
   public static final class Meter.Companion {

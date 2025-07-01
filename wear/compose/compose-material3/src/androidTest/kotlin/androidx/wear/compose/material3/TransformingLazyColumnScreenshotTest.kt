@@ -18,6 +18,8 @@ package androidx.wear.compose.material3
 
 import android.os.Build
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
@@ -25,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
@@ -66,6 +69,19 @@ class TransformingLazyColumnScreenshotTest(
         verifyTransformingLazyColumnScreenshot(itemsCount = 1)
 
     @Test
+    fun transforming_lazy_column_single_item_with_padding() =
+        verifyTransformingLazyColumnScreenshot(
+            itemsCount = 1,
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 48.dp),
+        )
+
+    @Test
+    fun transforming_lazy_column_multiple_items_with_padding() =
+        verifyTransformingLazyColumnScreenshot(
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 48.dp)
+        )
+
+    @Test
     fun transforming_lazy_column_scrollBy() = verifyTransformingLazyColumnScreenshot {
         scrollBy(100f)
     }
@@ -85,6 +101,7 @@ class TransformingLazyColumnScreenshotTest(
         BUTTON,
         CARD,
         BORDERED_BUTTON,
+        FULL_WIDTH_BUTTON,
     }
 
     enum class IsAnimated {
@@ -102,16 +119,18 @@ class TransformingLazyColumnScreenshotTest(
                 ComponentType.BUTTON -> Buttons(scope)
                 ComponentType.CARD -> Cards(scope)
                 ComponentType.BORDERED_BUTTON -> BorderedButtons(scope)
+                ComponentType.FULL_WIDTH_BUTTON -> Buttons(scope, Modifier.fillMaxWidth())
             }
         }
 
-        private fun Buttons(scope: TransformingLazyColumnScope) =
+        private fun Buttons(scope: TransformingLazyColumnScope, modifier: Modifier = Modifier) =
             with(scope) {
                 items(count = itemsCount) {
                     Button(
                         onClick = {},
                         modifier =
-                            Modifier.transformedHeight(this, transformationSpec)
+                            modifier
+                                .transformedHeight(this, transformationSpec)
                                 .then(if (isAnimated) Modifier.animateItem() else Modifier),
                         transformation = SurfaceTransformation(transformationSpec),
                     ) {
@@ -153,6 +172,7 @@ class TransformingLazyColumnScreenshotTest(
 
     private fun verifyTransformingLazyColumnScreenshot(
         itemsCount: Int = 100,
+        contentPadding: PaddingValues = PaddingValues(),
         onIdle: suspend TransformingLazyColumnState.() -> Unit = {},
     ) {
         lateinit var state: TransformingLazyColumnState
@@ -163,7 +183,11 @@ class TransformingLazyColumnScreenshotTest(
                 state = rememberTransformingLazyColumnState()
                 coroutineScope = rememberCoroutineScope()
 
-                TransformingLazyColumn(state = state, modifier = Modifier.testTag(TEST_TAG)) {
+                TransformingLazyColumn(
+                    state = state,
+                    contentPadding = contentPadding,
+                    modifier = Modifier.testTag(TEST_TAG),
+                ) {
                     with(
                         TestContext(
                             transformationSpec,

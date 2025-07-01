@@ -98,7 +98,7 @@ public class InteractableComponentImplTest {
     }
 
     private Entity createTestEntity() {
-        return mFakeRuntime.createEntity(new Pose(), "test", mFakeRuntime.getActivitySpace());
+        return mFakeRuntime.createGroupEntity(new Pose(), "test", mFakeRuntime.getActivitySpace());
     }
 
     private void sendInputEvent(ShadowNode node, InputEvent inputEvent) {

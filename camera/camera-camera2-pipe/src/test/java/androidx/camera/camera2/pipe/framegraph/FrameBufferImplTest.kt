@@ -26,6 +26,7 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame
 import androidx.camera.camera2.pipe.FrameBuffers.tryPeekAll
 import androidx.camera.camera2.pipe.FrameBuffers.tryPeekFirst
@@ -33,7 +34,11 @@ import androidx.camera.camera2.pipe.FrameBuffers.tryPeekLast
 import androidx.camera.camera2.pipe.FrameBuffers.tryRemoveAll
 import androidx.camera.camera2.pipe.FrameBuffers.tryRemoveFirst
 import androidx.camera.camera2.pipe.FrameBuffers.tryRemoveLast
+import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.FrameReference
+import androidx.camera.camera2.pipe.OutputId
+import androidx.camera.camera2.pipe.OutputStatus
+import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.graph.CameraGraphImpl
@@ -47,13 +52,22 @@ import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
 import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
+import androidx.camera.camera2.pipe.internal.FrameImpl
+import androidx.camera.camera2.pipe.internal.FrameState
 import androidx.camera.camera2.pipe.internal.ImageSourceMap
+import androidx.camera.camera2.pipe.internal.OutputResult
 import androidx.camera.camera2.pipe.media.ImageReaderImageSources
+import androidx.camera.camera2.pipe.media.OutputImage
 import androidx.camera.camera2.pipe.testing.CameraControllerSimulator
 import androidx.camera.camera2.pipe.testing.FakeAudioRestrictionController
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.FakeFrameInfo
+import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
+import androidx.camera.camera2.pipe.testing.FakeImage
+import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
+import androidx.camera.camera2.pipe.testing.FakeSurfaces
 import androidx.camera.camera2.pipe.testing.FakeThreads
 import androidx.camera.camera2.pipe.testing.RobolectricCameraPipeTestRunner
 import androidx.test.core.app.ApplicationProvider
@@ -66,12 +80,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -80,6 +92,7 @@ import org.robolectric.annotation.Config
 class FrameBufferImplTest {
     private val testScope = TestScope()
     private val context = ApplicationProvider.getApplicationContext() as Context
+    private val fakeSurfaces = FakeSurfaces()
     private val metadata =
         FakeCameraMetadata(
             mapOf(INFO_SUPPORTED_HARDWARE_LEVEL to INFO_SUPPORTED_HARDWARE_LEVEL_FULL)
@@ -87,10 +100,8 @@ class FrameBufferImplTest {
     private val fakeGraphProcessor = FakeGraphProcessor()
     private val cameraSurfaceManager = CameraSurfaceManager()
 
-    private val stream1Config =
-        CameraStream.Config.create(Size(1280, 720), StreamFormat.YUV_420_888)
-    private val stream2Config =
-        CameraStream.Config.create(Size(1920, 1080), StreamFormat.YUV_420_888)
+    private val stream1Config = CameraStream.Config.create(Size(200, 100), StreamFormat.YUV_420_888)
+    private val stream2Config = CameraStream.Config.create(Size(200, 100), StreamFormat.YUV_420_888)
 
     private val graphId = CameraGraphId.nextId()
     private val graphConfig =
@@ -141,10 +152,10 @@ class FrameBufferImplTest {
             sessionLock,
         )
     private val frameGraphBuffers = FrameGraphBuffers(cameraGraph, testScope)
-    private val streamId1: StreamId = StreamId(1)
-    private val streamId2: StreamId = StreamId(2)
+    private val stream1Id: StreamId = StreamId(1)
+    private val stream2Id: StreamId = StreamId(2)
 
-    private val defaultStreams = setOf(streamId1, streamId2)
+    private val defaultStreams = setOf(stream1Id, stream2Id)
     private val defaultParameters = mapOf<Any, Any?>("paramKey" to "paramValue")
     private val defaultCapacity = 3
 
@@ -163,13 +174,68 @@ class FrameBufferImplTest {
         frameBuffer = createFrameBuffer()
     }
 
-    private fun mockFrameReference(id: Int): FrameReference {
-        val mockFrame: Frame = mock()
-        return mock {
-            on { tryAcquire() }.thenReturn(mockFrame)
-            on { frameNumber }.thenReturn(androidx.camera.camera2.pipe.FrameNumber(id.toLong()))
-            on { toString() }.thenReturn("MockFrameReference-$id")
-        }
+    private fun createTestFrame(frameNumberValue: Long): Frame {
+        val frameNumber = FrameNumber(frameNumberValue)
+        val frameTimestamp = CameraTimestamp(101L)
+        val frameState =
+            FrameState(
+                requestMetadata =
+                    FakeRequestMetadata.from(
+                        request = Request(streams = listOf(stream1Id, stream2Id)),
+                        streamToSurfaces =
+                            mapOf(
+                                stream1Id to fakeSurfaces.createFakeSurface(Size(200, 100)),
+                                stream2Id to fakeSurfaces.createFakeSurface(Size(200, 100)),
+                            ),
+                    ),
+                frameNumber = frameNumber,
+                frameTimestamp = frameTimestamp,
+                imageStreams = setOf(stream1Id, stream2Id),
+            )
+
+        val frame = FrameImpl(frameState)
+
+        frameState.imageOutputs
+            .first { it.streamId == stream1Id }
+            .onOutputComplete(
+                frameNumber,
+                frameTimestamp,
+                42,
+                frameTimestamp.value,
+                OutputResult.from(
+                    OutputImage.from(
+                        stream1Id,
+                        OutputId(10),
+                        FakeImage(200, 100, StreamFormat.YUV_420_888.value, frameTimestamp.value),
+                    )
+                ),
+            )
+        frameState.imageOutputs
+            .first { it.streamId == stream2Id }
+            .onOutputComplete(
+                frameNumber,
+                frameTimestamp,
+                42,
+                frameTimestamp.value,
+                OutputResult.from(
+                    OutputImage.from(
+                        stream2Id,
+                        OutputId(12),
+                        FakeImage(200, 100, StreamFormat.YUV_420_888.value, frameTimestamp.value),
+                    )
+                ),
+            )
+        frameState.frameInfoOutput.onOutputComplete(
+            frameNumber,
+            frameTimestamp,
+            42,
+            frameNumber.value,
+            OutputResult.from(
+                FakeFrameInfo(metadata = FakeFrameMetadata(frameNumber = frameNumber))
+            ),
+        )
+
+        return frame
     }
 
     @Test
@@ -193,55 +259,43 @@ class FrameBufferImplTest {
     @Test
     fun onFrameStarted_addsFrame_updatesSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
 
             assertThat(frameBuffer.size.value).isEqualTo(1)
-            assertThat(frameBuffer.peekFirstReference()).isSameInstanceAs(frameRef1)
-            assertThat(frameBuffer.peekLastReference()).isSameInstanceAs(frameRef1)
-            assertThat(frameBuffer.peekAllReferences()).containsExactly(frameRef1)
+            assertThat(frameBuffer.peekFirstReference()!!.frameNumber)
+                .isEqualTo(frameRef1.frameNumber)
         }
 
     @Test
-    fun onFrameStarted_exceedsCapacity_evictsOldestFrame() =
-        testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
-            val frameRef3 = mockFrameReference(3)
-            val frameRef4 = mockFrameReference(4)
-
-            frameBuffer.onFrameStarted(frameRef1)
-            frameBuffer.onFrameStarted(frameRef2)
-            frameBuffer.onFrameStarted(frameRef3)
-            advanceUntilIdle()
-            assertThat(frameBuffer.size.value).isEqualTo(3)
-            assertThat(frameBuffer.peekAllReferences())
-                .containsExactly(frameRef1, frameRef2, frameRef3)
-                .inOrder()
-
-            frameBuffer.onFrameStarted(frameRef4)
-            advanceUntilIdle()
-
-            assertThat(frameBuffer.size.value).isEqualTo(defaultCapacity)
-            assertThat(frameBuffer.peekAllReferences())
-                .containsExactly(frameRef2, frameRef3, frameRef4)
-                .inOrder()
-        }
-
-    @Test
-    fun onFrameStarted_whenClosed_doesNothing() =
+    fun onFrameStarted_whenBufferIsClosed_doesNothing() =
         testScope.runTest {
             frameBuffer.close()
             advanceUntilIdle()
 
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
 
             assertThat(frameBuffer.size.value).isEqualTo(0)
             assertThat(frameBuffer.peekFirstReference()).isNull()
         }
+
+    @Test
+    fun onFrameStarted_whenFrameIsNotAcquired_addsAValidEntry() {
+        testScope.runTest {
+            val frameReference = createTestFrame(1)
+            frameReference.close()
+
+            frameBuffer.onFrameStarted(frameReference)
+
+            val peeked = frameBuffer.peekFirstReference()
+            val peekedFrame = frameBuffer.tryPeekFirst()
+            assertThat(peeked!!.frameNumber.value).isEqualTo(1)
+            assertThat(peekedFrame).isNull()
+        }
+    }
 
     @Test
     fun removeFirstReference_emptyBuffer_returnsNull() =
@@ -253,26 +307,25 @@ class FrameBufferImplTest {
     @Test
     fun removeFirstReference_removesCorrectFrame_updatesSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
             frameBuffer.onFrameStarted(frameRef1)
             frameBuffer.onFrameStarted(frameRef2)
             advanceUntilIdle()
 
             val removed = frameBuffer.removeFirstReference()
-            assertThat(removed).isSameInstanceAs(frameRef1)
+            assertThat(removed!!.frameNumber).isEqualTo(frameRef1.frameNumber)
             assertThat(frameBuffer.size.value).isEqualTo(1)
-            assertThat(frameBuffer.peekFirstReference()).isSameInstanceAs(frameRef2)
 
             val removedNext = frameBuffer.removeFirstReference()
-            assertThat(removedNext).isSameInstanceAs(frameRef2)
+            assertThat(removedNext!!.frameNumber).isEqualTo(frameRef2.frameNumber)
             assertThat(frameBuffer.size.value).isEqualTo(0)
         }
 
     @Test
-    fun removeFirstReference_whenClosed_returnsNull() =
+    fun removeFirstReference_whenBufferIsClosed_returnsNull() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
             frameBuffer.close()
@@ -291,26 +344,25 @@ class FrameBufferImplTest {
     @Test
     fun removeLastReference_removesCorrectFrame_updatesSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
             frameBuffer.onFrameStarted(frameRef1)
             frameBuffer.onFrameStarted(frameRef2)
             advanceUntilIdle()
 
             val removed = frameBuffer.removeLastReference()
-            assertThat(removed).isSameInstanceAs(frameRef2)
+            assertThat(removed!!.frameNumber).isEqualTo(frameRef2.frameNumber)
             assertThat(frameBuffer.size.value).isEqualTo(1)
-            assertThat(frameBuffer.peekFirstReference()).isSameInstanceAs(frameRef1)
 
             val removedNext = frameBuffer.removeLastReference()
-            assertThat(removedNext).isSameInstanceAs(frameRef1)
+            assertThat(removedNext!!.frameNumber).isEqualTo(frameRef1.frameNumber)
             assertThat(frameBuffer.size.value).isEqualTo(0)
         }
 
     @Test
     fun removeLastReference_whenClosed_returnsNull() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
             frameBuffer.close()
@@ -329,22 +381,23 @@ class FrameBufferImplTest {
     @Test
     fun removeAllReferences_returnsAllFramesInOrder_updatesSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
             frameBuffer.onFrameStarted(frameRef1)
             frameBuffer.onFrameStarted(frameRef2)
             advanceUntilIdle()
 
             val removed = frameBuffer.removeAllReferences()
-            assertThat(removed).containsExactly(frameRef1, frameRef2).inOrder()
+            assertThat(removed.map { it.frameNumber })
+                .containsExactly(frameRef1.frameNumber, frameRef2.frameNumber)
+                .inOrder()
             assertThat(frameBuffer.size.value).isEqualTo(0)
-            assertThat(frameBuffer.peekFirstReference()).isNull()
         }
 
     @Test
     fun removeAllReferences_whenClosed_returnsEmptyList() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
             frameBuffer.close()
@@ -360,19 +413,19 @@ class FrameBufferImplTest {
     @Test
     fun peekFirstReference_returnsFrame_doesNotChangeSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
 
             val peeked = frameBuffer.peekFirstReference()
-            assertThat(peeked).isSameInstanceAs(frameRef1)
+            assertThat(peeked!!.frameNumber).isEqualTo(frameRef1.frameNumber)
             assertThat(frameBuffer.size.value).isEqualTo(1)
         }
 
     @Test
     fun peekFirstReference_whenClosed_returnsNull() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
             frameBuffer.close()
@@ -388,21 +441,21 @@ class FrameBufferImplTest {
     @Test
     fun peekLastReference_returnsFrame_doesNotChangeSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
             frameBuffer.onFrameStarted(frameRef1)
             frameBuffer.onFrameStarted(frameRef2)
             advanceUntilIdle()
 
             val peeked = frameBuffer.peekLastReference()
-            assertThat(peeked).isSameInstanceAs(frameRef2)
+            assertThat(peeked!!.frameNumber).isEqualTo(frameRef2.frameNumber)
             assertThat(frameBuffer.size.value).isEqualTo(2)
         }
 
     @Test
     fun peekLastReference_whenClosed_returnsNull() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
             frameBuffer.close()
@@ -418,21 +471,23 @@ class FrameBufferImplTest {
     @Test
     fun peekAllReferences_returnsAllFramesInOrder_doesNotChangeSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
             frameBuffer.onFrameStarted(frameRef1)
             frameBuffer.onFrameStarted(frameRef2)
             advanceUntilIdle()
 
             val peeked = frameBuffer.peekAllReferences()
-            assertThat(peeked).containsExactly(frameRef1, frameRef2).inOrder()
+            assertThat(peeked.map { it.frameNumber })
+                .containsExactly(frameRef1.frameNumber, frameRef2.frameNumber)
+                .inOrder()
             assertThat(frameBuffer.size.value).isEqualTo(2)
         }
 
     @Test
     fun peekAllReferences_whenClosed_returnsEmptyList() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
             frameBuffer.close()
@@ -444,7 +499,7 @@ class FrameBufferImplTest {
     @Test
     fun onFrameAvailable_flowEmitted() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             val ready = CompletableDeferred<Unit>()
             val resultsChannel = Channel<FrameReference>(Channel.UNLIMITED)
 
@@ -459,15 +514,15 @@ class FrameBufferImplTest {
             frameBuffer.onFrameStarted(frameRef1)
 
             val receivedFrame = resultsChannel.receive()
-            assertThat(receivedFrame).isEqualTo(frameRef1)
+            assertThat(receivedFrame.frameNumber).isEqualTo(frameRef1.frameNumber)
             job.cancel()
         }
 
     @Test
     fun onFrameAvailableCalls_multipleCalls_multipleEmitted() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
             val ready = CompletableDeferred<Unit>()
             val resultsChannel = Channel<FrameReference>(Channel.UNLIMITED)
             val job =
@@ -481,19 +536,19 @@ class FrameBufferImplTest {
             frameBuffer.onFrameStarted(frameRef1)
             frameBuffer.onFrameStarted(frameRef2)
 
-            assertThat(resultsChannel.receive()).isEqualTo(frameRef1)
-            assertThat(resultsChannel.receive()).isEqualTo(frameRef2)
+            assertThat(resultsChannel.receive().frameNumber).isEqualTo(frameRef1.frameNumber)
+            assertThat(resultsChannel.receive().frameNumber).isEqualTo(frameRef2.frameNumber)
             job.cancel()
         }
 
     @Test
     fun onFrameAvailable_exceedsExtraCapacity_oldestDropped() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
-            val frameRef3 = mockFrameReference(3)
-            val frameRef4 = mockFrameReference(4)
-            val frameRef5 = mockFrameReference(5)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
+            val frameRef3 = createTestFrame(3)
+            val frameRef4 = createTestFrame(4)
+            val frameRef5 = createTestFrame(5)
             val ready = CompletableDeferred<Unit>()
             val resultsChannel = Channel<FrameReference>(Channel.UNLIMITED)
             val job =
@@ -511,18 +566,18 @@ class FrameBufferImplTest {
             frameBuffer.onFrameStarted(frameRef5)
 
             // frameRef1 will drop because the extraBufferCapacity of the flow is 4
-            assertThat(resultsChannel.receive()).isEqualTo(frameRef2)
-            assertThat(resultsChannel.receive()).isEqualTo(frameRef3)
-            assertThat(resultsChannel.receive()).isEqualTo(frameRef4)
-            assertThat(resultsChannel.receive()).isEqualTo(frameRef5)
+            assertThat(resultsChannel.receive().frameNumber).isEqualTo(frameRef2.frameNumber)
+            assertThat(resultsChannel.receive().frameNumber).isEqualTo(frameRef3.frameNumber)
+            assertThat(resultsChannel.receive().frameNumber).isEqualTo(frameRef4.frameNumber)
+            assertThat(resultsChannel.receive().frameNumber).isEqualTo(frameRef5.frameNumber)
             job.cancel()
         }
 
     @Test
     fun onFrameAvailable_multipleConsumers_allReceiveFrames() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
             val ready1 = CompletableDeferred<Unit>()
             val ready2 = CompletableDeferred<Unit>()
             val resultsChannel1 = Channel<FrameReference>(Channel.UNLIMITED)
@@ -545,10 +600,10 @@ class FrameBufferImplTest {
             frameBuffer.onFrameStarted(frameRef1)
             frameBuffer.onFrameStarted(frameRef2)
 
-            assertThat(resultsChannel1.receive()).isEqualTo(frameRef1)
-            assertThat(resultsChannel1.receive()).isEqualTo(frameRef2)
-            assertThat(resultsChannel2.receive()).isEqualTo(frameRef1)
-            assertThat(resultsChannel2.receive()).isEqualTo(frameRef2)
+            assertThat(resultsChannel1.receive().frameNumber).isEqualTo(frameRef1.frameNumber)
+            assertThat(resultsChannel1.receive().frameNumber).isEqualTo(frameRef2.frameNumber)
+            assertThat(resultsChannel2.receive().frameNumber).isEqualTo(frameRef1.frameNumber)
+            assertThat(resultsChannel2.receive().frameNumber).isEqualTo(frameRef2.frameNumber)
             job1.cancel()
             job2.cancel()
         }
@@ -556,9 +611,9 @@ class FrameBufferImplTest {
     @Test
     fun onFrameAvailable_slowAndFastConsumers_fastConsumerDoesNotDropFrames() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
-            val frameRef3 = mockFrameReference(3)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
+            val frameRef3 = createTestFrame(3)
             val ready1 = CompletableDeferred<Unit>()
             val ready2 = CompletableDeferred<Unit>()
             val resultsChannel1 = Channel<FrameReference>(capacity = 1)
@@ -583,10 +638,10 @@ class FrameBufferImplTest {
             frameBuffer.onFrameStarted(frameRef3)
 
             // Channel 1 is full, so the next frame will be dropped for this consumer.
-            assertThat(resultsChannel1.receive()).isEqualTo(frameRef1)
-            assertThat(resultsChannel2.receive()).isEqualTo(frameRef1)
-            assertThat(resultsChannel2.receive()).isEqualTo(frameRef2)
-            assertThat(resultsChannel2.receive()).isEqualTo(frameRef3)
+            assertThat(resultsChannel1.receive().frameNumber).isEqualTo(frameRef1.frameNumber)
+            assertThat(resultsChannel2.receive().frameNumber).isEqualTo(frameRef1.frameNumber)
+            assertThat(resultsChannel2.receive().frameNumber).isEqualTo(frameRef2.frameNumber)
+            assertThat(resultsChannel2.receive().frameNumber).isEqualTo(frameRef3.frameNumber)
             job1.cancel()
             job2.cancel()
         }
@@ -594,7 +649,7 @@ class FrameBufferImplTest {
     @Test
     fun close_clearsQueue_updatesSize() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
+            val frameRef1 = createTestFrame(1)
             frameBuffer.onFrameStarted(frameRef1)
             advanceUntilIdle()
             frameBuffer.close()
@@ -605,18 +660,19 @@ class FrameBufferImplTest {
         }
 
     @Test
-    fun peekFirst_callsPeekFirstReferenceAndAcquires() =
+    fun peekFirst_peeksFirstReferenceAndAcquires() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val mockFrame: Frame = mock()
-            whenever(frameRef1.tryAcquire()).thenReturn(mockFrame)
+            val frameRef1 = createTestFrame(1)
 
             frameBuffer.onFrameStarted(frameRef1)
+            frameRef1.close()
             advanceUntilIdle()
 
             val frame = frameBuffer.tryPeekFirst()
-            assertThat(frame).isSameInstanceAs(mockFrame)
-            verify(frameRef1).tryAcquire()
+            frameBuffer.close()
+
+            assertThat(frame!!.isClosed()).isFalse()
+            assertThat(frame.frameNumber).isEqualTo(frameRef1.frameNumber)
         }
 
     @Test
@@ -624,88 +680,194 @@ class FrameBufferImplTest {
         testScope.runTest { assertThat(frameBuffer.tryPeekFirst()).isNull() }
 
     @Test
-    fun peekLast_callsPeekLastReferenceAndAcquires() =
+    fun peekLast_peeksLastReferenceAndAcquires() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val mockFrame1: Frame = mock()
-            whenever(frameRef1.tryAcquire()).thenReturn(mockFrame1)
+            val frameRef1 = createTestFrame(1)
 
             frameBuffer.onFrameStarted(frameRef1)
+            frameRef1.close()
             advanceUntilIdle()
 
             val frame = frameBuffer.tryPeekLast()
-            assertThat(frame).isSameInstanceAs(mockFrame1)
-            verify(frameRef1).tryAcquire()
+            frameBuffer.close()
+
+            assertThat(frame!!.isClosed()).isFalse()
+            assertThat(frame.frameNumber).isEqualTo(frameRef1.frameNumber)
         }
 
     @Test
-    fun peekAll_callsPeekAllReferencesAndAcquires() =
+    fun peekAll_peeksAllReferencesAndAcquires() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
-            val mockFrame1: Frame = mock()
-            val mockFrame2: Frame = mock()
-            whenever(frameRef1.tryAcquire()).thenReturn(mockFrame1)
-            whenever(frameRef2.tryAcquire()).thenReturn(mockFrame2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
 
             frameBuffer.onFrameStarted(frameRef1)
+            frameRef1.close()
             frameBuffer.onFrameStarted(frameRef2)
+            frameRef2.close()
             advanceUntilIdle()
 
             val frames = frameBuffer.tryPeekAll()
-            assertThat(frames).containsExactly(mockFrame1, mockFrame2).inOrder()
-            verify(frameRef1).tryAcquire()
-            verify(frameRef2).tryAcquire()
+            frameBuffer.close()
+
+            assertThat(frames.map { it.frameNumber })
+                .containsExactly(frameRef1.frameNumber, frameRef2.frameNumber)
+                .inOrder()
+            assertThat(frames[0].isClosed()).isFalse()
+            assertThat(frames[1].isClosed()).isFalse()
         }
 
     @Test
-    fun removeFirst_callsRemoveFirstReferenceAndAcquires() =
+    fun removeFirst_removesFirstReferenceAndAcquires() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val mockFrame: Frame = mock()
-            whenever(frameRef1.tryAcquire()).thenReturn(mockFrame)
+            val frameRef1 = createTestFrame(1)
 
             frameBuffer.onFrameStarted(frameRef1)
+            frameRef1.close()
             advanceUntilIdle()
 
             val frame = frameBuffer.tryRemoveFirst()
-            assertThat(frame).isSameInstanceAs(mockFrame)
+            assertThat(frameBuffer.size.value).isEqualTo(0)
 
-            verify(frameRef1).tryAcquire()
+            assertThat(frame!!.isClosed()).isFalse()
+            assertThat(frame.frameNumber).isEqualTo(frameRef1.frameNumber)
         }
 
     @Test
-    fun removeLast_callsRemoveLastReferenceAndAcquires() =
+    fun removeLast_removesLastReferenceAndAcquires() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val mockFrame: Frame = mock()
-            whenever(frameRef1.tryAcquire()).thenReturn(mockFrame)
+            val frameRef1 = createTestFrame(1)
 
             frameBuffer.onFrameStarted(frameRef1)
+            frameRef1.close()
             advanceUntilIdle()
 
             val frame = frameBuffer.tryRemoveLast()
-            assertThat(frame).isSameInstanceAs(mockFrame)
-            verify(frameRef1).tryAcquire()
+            frameBuffer.close()
+
+            assertThat(frame!!.isClosed()).isFalse()
+            assertThat(frame.frameNumber).isEqualTo(frameRef1.frameNumber)
         }
 
     @Test
-    fun removeAll_callsRemoveAllReferencesAndAcquires() =
+    fun removeAll_removesAllReferencesAndAcquires() =
         testScope.runTest {
-            val frameRef1 = mockFrameReference(1)
-            val frameRef2 = mockFrameReference(2)
-            val mockFrame1: Frame = mock()
-            val mockFrame2: Frame = mock()
-            whenever(frameRef1.tryAcquire()).thenReturn(mockFrame1)
-            whenever(frameRef2.tryAcquire()).thenReturn(mockFrame2)
+            val frameRef1 = createTestFrame(1)
+            val frameRef2 = createTestFrame(2)
 
             frameBuffer.onFrameStarted(frameRef1)
+            frameRef1.close()
             frameBuffer.onFrameStarted(frameRef2)
+            frameRef2.close()
             advanceUntilIdle()
 
             val frames = frameBuffer.tryRemoveAll()
-            assertThat(frames).containsExactly(mockFrame1, mockFrame2).inOrder()
-            verify(frameRef1).tryAcquire()
-            verify(frameRef2).tryAcquire()
+
+            assertThat(frames.map { it.frameNumber })
+                .containsExactly(frameRef1.frameNumber, frameRef2.frameNumber)
+                .inOrder()
+            assertThat(frames[0].isClosed()).isFalse()
+            assertThat(frames[1].isClosed()).isFalse()
         }
+
+    @Test
+    fun onFrameStarted_acquiresFrameAndAddsItToQueue() =
+        testScope.runTest {
+            val frame1 = createTestFrame(1L)
+
+            frameBuffer.onFrameStarted(frame1)
+            frame1.close()
+            advanceUntilIdle()
+
+            val frameInQueue = frameBuffer.peekFirstReference()!!
+            val frame = frameInQueue.tryAcquire()!!
+            assertThat(frameBuffer.size.value).isEqualTo(1)
+            assertThat(frameInQueue).isNotSameInstanceAs(frame1)
+            assertThat(frameInQueue.frameNumber).isEqualTo(frame1.frameNumber)
+            assertThat(frame.isClosed()).isFalse()
+        }
+
+    @Test
+    fun onFrameStarted_exceedsCapacity_closesEvictedFrame() =
+        testScope.runTest {
+            val buffer = createFrameBuffer(capacity = 2)
+            val frame1 = createTestFrame(1L)
+            val frame2 = createTestFrame(2L)
+            val frame3 = createTestFrame(3L)
+
+            buffer.onFrameStarted(frame1)
+            frame1.close()
+            buffer.onFrameStarted(frame2)
+            frame2.close()
+            advanceUntilIdle()
+
+            val peekedFrame1 = buffer.peekFirstReference()
+
+            buffer.onFrameStarted(frame3)
+            frame2.close()
+            advanceUntilIdle()
+
+            assertThat(buffer.size.value).isEqualTo(2)
+            assertThat(peekedFrame1!!.tryAcquire()).isNull()
+            val remainingFrames = buffer.peekAllReferences()
+            assertThat(remainingFrames.map { it.frameNumber })
+                .containsExactly(frame2.frameNumber, frame3.frameNumber)
+                .inOrder()
+        }
+
+    @Test
+    fun close_closesAllHeldFrames() =
+        testScope.runTest {
+            val frame1 = createTestFrame(1L)
+            val frame2 = createTestFrame(2L)
+            frameBuffer.onFrameStarted(frame1)
+            frame1.close()
+            frameBuffer.onFrameStarted(frame2)
+            frame2.close()
+            advanceUntilIdle()
+
+            val firstPeekedFrame = frameBuffer.peekFirstReference()!!
+            val lastPeekedFrame = frameBuffer.peekLastReference()!!
+
+            frameBuffer.close()
+            advanceUntilIdle()
+
+            assertThat(frameBuffer.size.value).isEqualTo(0)
+            assertThat(firstPeekedFrame.tryAcquire()).isNull()
+            assertThat(lastPeekedFrame.tryAcquire()).isNull()
+        }
+
+    @Test
+    fun close_keepsAcquiredFrameOpen() =
+        testScope.runTest {
+            val frame1 = createTestFrame(1L)
+            val frame2 = createTestFrame(2L)
+            frameBuffer.onFrameStarted(frame1)
+            frame1.close()
+            frameBuffer.onFrameStarted(frame2)
+            frame2.close()
+            advanceUntilIdle()
+
+            val peekedFrame = frameBuffer.peekFirstReference()!!
+            val acquiredFrame = peekedFrame.tryAcquire()!!
+
+            frameBuffer.close()
+            advanceUntilIdle()
+
+            assertThat(frameBuffer.size.value).isEqualTo(0)
+            assertThat(acquiredFrame.isClosed()).isFalse()
+        }
+
+    @After
+    fun cleanup() {
+        fakeSurfaces.close()
+    }
+
+    private fun Frame.isClosed(): Boolean {
+        return !(this.frameInfoStatus == OutputStatus.AVAILABLE &&
+            this.imageStatus(stream1Id) == OutputStatus.AVAILABLE &&
+            this.imageStatus(stream2Id) == OutputStatus.AVAILABLE &&
+            this.getImage(stream1Id) != null &&
+            this.getImage(stream2Id) != null)
+    }
 }

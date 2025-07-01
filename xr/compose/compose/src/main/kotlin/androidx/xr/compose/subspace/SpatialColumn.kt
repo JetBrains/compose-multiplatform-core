@@ -24,7 +24,7 @@ import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.ContentlessEntity
+import androidx.xr.scenecore.GroupEntity
 
 /**
  * A layout composable that arranges its children in a vertical sequence.
@@ -46,12 +46,8 @@ public fun SpatialColumn(
         modifier = modifier,
         content = { SpatialColumnScopeInstance.content() },
         coreEntity =
-            rememberCoreContentlessEntity {
-                ContentlessEntity.create(
-                    this,
-                    name = entityName("SpatialColumn"),
-                    pose = Pose.Identity,
-                )
+            rememberCoreGroupEntity {
+                GroupEntity.create(this, name = entityName("SpatialColumn"), pose = Pose.Identity)
             },
         measurePolicy =
             RowColumnMeasurePolicy(

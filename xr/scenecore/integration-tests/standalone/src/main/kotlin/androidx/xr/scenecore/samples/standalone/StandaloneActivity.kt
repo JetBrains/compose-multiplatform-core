@@ -58,16 +58,11 @@ class StandaloneActivity : AppCompatActivity() {
             )
         panelEntity.parent = session.scene.activitySpace
 
-        // Create multiple orbiting dragon models
-        val dragonModelFuture =
-            GltfModel.createAsync(session, Paths.get("models", "Dragon_Evolved.gltf"))
-        dragonModelFuture.addListener(
-            {
-                val dragonModel = dragonModelFuture.get()
-                createModelSolarSystem(session, dragonModel)
-            },
-            Runnable::run,
-        )
+        lifecycleScope.launch {
+            // Create multiple orbiting dragon models
+            val dragonModel = GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
+            createModelSolarSystem(session, dragonModel)
+        }
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {

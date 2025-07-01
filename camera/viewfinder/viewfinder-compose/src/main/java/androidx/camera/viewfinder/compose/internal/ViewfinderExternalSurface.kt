@@ -101,7 +101,7 @@ private class ViewfinderExternalSurfaceState(scope: CoroutineScope) :
     var lastWidth = -1
     var lastHeight = -1
     lateinit var surfaceView: SurfaceView
-    lateinit var viewfinderSurfaceHolder: ViewfinderExternalSurfaceHolder
+    var viewfinderSurfaceHolder: ViewfinderExternalSurfaceHolder? = null
 
     fun initInternal(surfaceView: SurfaceView) {
         this.surfaceView = surfaceView
@@ -113,13 +113,12 @@ private class ViewfinderExternalSurfaceState(scope: CoroutineScope) :
         lastHeight = frame.height()
 
         val parent = SurfaceControlCompat.wrap(surfaceView)
-        if (
-            !::viewfinderSurfaceHolder.isInitialized || !viewfinderSurfaceHolder.tryAttach(parent)
-        ) {
-            viewfinderSurfaceHolder =
+        val oldSurfaceHolder = viewfinderSurfaceHolder
+        if (oldSurfaceHolder == null || !oldSurfaceHolder.tryAttach(parent)) {
+            val newSurfaceHolder =
                 ViewfinderExternalSurfaceHolder(holder.surface, lastWidth, lastHeight, parent)
-
-            dispatchSurfaceCreated(viewfinderSurfaceHolder)
+            viewfinderSurfaceHolder = newSurfaceHolder
+            dispatchSurfaceCreated(newSurfaceHolder)
         }
     }
 
@@ -129,7 +128,7 @@ private class ViewfinderExternalSurfaceState(scope: CoroutineScope) :
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        viewfinderSurfaceHolder.detach()
+        viewfinderSurfaceHolder?.detach()
     }
 }
 
@@ -164,15 +163,33 @@ internal fun ViewfinderExternalSurface(
 
     AndroidView(
         factory = { context ->
-            SurfaceView(context).apply {
-                state.initInternal(this)
-                state.onInit()
-                holder.addCallback(state)
+            object : SurfaceView(context) {
+                var attachedState: ViewfinderExternalSurfaceState? = null
+                    set(value) {
+                        if (value == null) {
+                            field?.let { holder.removeCallback(it) }
+                        } else {
+                            holder.addCallback(value)
+                        }
+                        field = value
+                    }
             }
         },
         modifier = modifier,
-        onReset = {},
+        onReset = {
+            it.attachedState?.let { oldState ->
+                // Ensure the old surface is detached
+                oldState.viewfinderSurfaceHolder?.detach()
+            }
+            it.attachedState = null
+        },
         update = { view ->
+            if (view.attachedState !== state) {
+                state.initInternal(view)
+                view.attachedState = state
+                state.onInit()
+            }
+
             if (surfaceSize != IntSize.Zero) {
                 view.holder.setFixedSize(surfaceSize.width, surfaceSize.height)
             } else {

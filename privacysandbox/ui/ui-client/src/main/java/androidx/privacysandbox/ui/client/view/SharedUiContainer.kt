@@ -60,8 +60,9 @@ import kotlin.math.max
 @OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 @SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
-class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
-    ViewGroup(context, attrs) {
+public class SharedUiContainer
+@JvmOverloads
+constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs) {
 
     @VisibleForTesting internal val registeredAssets: MutableMap<View, SharedUiAsset> = HashMap()
     private val onAttachStateChangeListener =
@@ -89,7 +90,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * Passing 'null' value for [sharedUiAdapter] will release all resources and unregister all
      * children, without setting a new adapter.
      */
-    fun setAdapter(sharedUiAdapter: SharedUiAdapter?) {
+    public fun setAdapter(sharedUiAdapter: SharedUiAdapter?) {
         if (sharedUiAdapter === sessionManager?.sharedUiAdapter) return
 
         sessionManager?.closeClient()
@@ -128,7 +129,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * @throws [IllegalArgumentException] if a [View] is not a child (direct or indirect) of the
      *   container.
      */
-    fun registerSharedUiAsset(sharedUiAsset: SharedUiAsset): Boolean {
+    public fun registerSharedUiAsset(sharedUiAsset: SharedUiAsset): Boolean {
         val view = sharedUiAsset.view
         if (!containsView(view)) {
             throw IllegalArgumentException(
@@ -160,7 +161,7 @@ class SharedUiContainer @JvmOverloads constructor(context: Context, attrs: Attri
      * @return 'true' if the asset was unregistered successfully, 'false' otherwise (if there wasn't
      *   a [SharedUiAsset] associated with [view])
      */
-    fun unregisterSharedUiAsset(view: View): Boolean {
+    public fun unregisterSharedUiAsset(view: View): Boolean {
         if (!registeredAssets.containsKey(view)) return false
 
         if (view is SandboxedSdkView) {

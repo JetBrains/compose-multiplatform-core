@@ -23,7 +23,6 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.State
@@ -38,10 +37,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.xr.glimmer.Text
+import androidx.xr.glimmer.list.VerticalList
 
 @Composable
 internal fun DemoSettings() {
-    LazyColumn(
+    VerticalList(
         horizontalAlignment = Alignment.CenterHorizontally,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),

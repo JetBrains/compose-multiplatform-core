@@ -55,7 +55,6 @@ import kotlin.math.sqrt
 import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
@@ -265,9 +264,8 @@ class TransformationActivity : AppCompatActivity() {
 
     private suspend fun loadModels() {
         solarSystemEntityModel =
-            GltfModel.createAsync(session!!, Paths.get("models", "Dragon_Evolved.gltf")).await()
-        staticEntityModel =
-            GltfModel.createAsync(session!!, Paths.get("models", "xyzArrows.glb")).await()
+            GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
+        staticEntityModel = GltfModel.create(session!!, Paths.get("models", "xyzArrows.glb"))
     }
 
     private fun entitySolarSystem() {

@@ -32,7 +32,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 12)
 @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 12)
-open class OnDevicePersonalizationManagerImplCommon(
+public open class OnDevicePersonalizationManagerImplCommon(
     private val mOdpManager:
         android.adservices.ondevicepersonalization.OnDevicePersonalizationManager
 ) : OnDevicePersonalizationManager() {

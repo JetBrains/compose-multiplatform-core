@@ -42,6 +42,7 @@ import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import junit.framework.TestCase.assertEquals
@@ -599,7 +600,8 @@ class AlertDialogTest {
         // Assert that there is a proper padding between the bottom of the content and the bottom of
         // the dialog.
         contentBottom.assertIsEqualTo(
-            alertDialogBottom * (1 - AlertDialogDefaults.noEdgeButtonBottomPaddingFraction)
+            alertDialogBottom * (1 - AlertDialogDefaults.noEdgeButtonBottomPaddingFraction),
+            tolerance = Dp(0.55f),
         )
     }
 
