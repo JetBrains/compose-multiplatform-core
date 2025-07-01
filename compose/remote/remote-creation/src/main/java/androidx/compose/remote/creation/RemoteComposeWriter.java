@@ -80,13 +80,13 @@ import org.jspecify.annotations.Nullable;
 import java.util.HashMap;
 
 public class RemoteComposeWriter {
-    protected RemoteComposeBuffer mBuffer;
-    protected RemoteComposeState mState = new RemoteComposeState();
-    protected Platform mPlatform;
-    protected Painter mPainter = new Painter(this);
+    protected @NonNull RemoteComposeBuffer mBuffer;
+    protected @NonNull RemoteComposeState mState = new RemoteComposeState();
+    protected @NonNull Platform mPlatform;
+    protected @NonNull Painter mPainter = new Painter(this);
     private int mOriginalWidth = 0;
     private int mOriginalHeight = 0;
-    private String mContentDescription = "";
+    private @NonNull String mContentDescription = "";
     private boolean mHasForceSendingNewPaint = false;
 
     public static final float TIME_IN_CONTINUOUS_SEC = RemoteContext.FLOAT_CONTINUOUS_SEC;
@@ -104,7 +104,7 @@ public class RemoteComposeWriter {
      * @param profile the profile used for writing the document
      * @return a RemoteComposeWriter instance
      */
-    public static RemoteComposeWriter obtain(
+    public static @NonNull RemoteComposeWriter obtain(
             int width, int height, @NonNull String contentDescription, @NonNull Profile profile) {
         return profile.create(width, height, contentDescription);
     }
@@ -117,7 +117,8 @@ public class RemoteComposeWriter {
      * @param profile the profile used for writing the document
      * @return a RemoteComposeWriter instance
      */
-    public static RemoteComposeWriter obtain(int width, int height, @NonNull Profile profile) {
+    public static @NonNull RemoteComposeWriter obtain(
+            int width, int height, @NonNull Profile profile) {
         return profile.create(width, height, "");
     }
 
@@ -130,7 +131,7 @@ public class RemoteComposeWriter {
      * @param platform the platform to use
      */
     public RemoteComposeWriter(
-            int width, int height, String contentDescription, Platform platform) {
+            int width, int height, @NonNull String contentDescription, @NonNull Platform platform) {
         this.mPlatform = platform;
         mBuffer = new RemoteComposeBuffer();
         header(width, height, contentDescription, 1f, 0);
@@ -152,10 +153,10 @@ public class RemoteComposeWriter {
     public RemoteComposeWriter(
             int width,
             int height,
-            String contentDescription,
+            @NonNull String contentDescription,
             int apilLevel,
             int profiles,
-            Platform platform) {
+            @NonNull Platform platform) {
         this(
                 platform,
                 apilLevel,
@@ -172,7 +173,7 @@ public class RemoteComposeWriter {
      * @param apiLevel document api level
      * @param tags properties of the document
      */
-    public RemoteComposeWriter(Platform platform, int apiLevel, HTag... tags) {
+    public RemoteComposeWriter(@NonNull Platform platform, int apiLevel, HTag @NonNull ... tags) {
         this.mPlatform = platform;
         mBuffer = new RemoteComposeBuffer(apiLevel);
 
@@ -209,7 +210,7 @@ public class RemoteComposeWriter {
      * @param platform the platform to use
      * @param tags properties of the document
      */
-    public RemoteComposeWriter(Platform platform, HTag... tags) {
+    public RemoteComposeWriter(@NonNull Platform platform, HTag @NonNull ... tags) {
         this(platform, CoreDocument.DOCUMENT_API_LEVEL, tags);
     }
 
@@ -275,7 +276,7 @@ public class RemoteComposeWriter {
      * @param value the value to use
      * @return a tag
      */
-    public static HTag hTag(short tag, Object value) {
+    public static @NonNull HTag hTag(short tag, @NonNull Object value) {
         return new HTag(tag, value);
     }
 
@@ -325,7 +326,7 @@ public class RemoteComposeWriter {
      * @return
      */
     public float getColorAttribute(int baseColor, short type) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.getColorAttribute(id, baseColor, type);
         return Utils.asNan(id);
     }
@@ -335,7 +336,7 @@ public class RemoteComposeWriter {
      *
      * @param actions
      */
-    public void addAction(Action... actions) {
+    public void addAction(Action @NonNull ... actions) {
         for (int i = 0; i < actions.length; i++) {
             Action action = actions[i];
             action.write(this);
@@ -351,7 +352,7 @@ public class RemoteComposeWriter {
      * @return
      */
     public int textSubtext(int txtId, float start, float len) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.textSubtext(id, txtId, start, len);
         return id;
     }
@@ -365,7 +366,7 @@ public class RemoteComposeWriter {
      * @return float id of the property
      */
     public float bitmapTextMeasure(int textId, int bmFontId, int measureWidth) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.bitmapTextMeasure(id, textId, bmFontId, measureWidth);
         return Utils.asNan(id);
     }
@@ -376,10 +377,10 @@ public class RemoteComposeWriter {
      * @param m matrix
      * @return float id of the property
      */
-    public float addMatrixConst(android.graphics.Matrix m) {
+    public float addMatrixConst(android.graphics.@NonNull Matrix m) {
         float[] values = new float[9];
         m.getValues(values);
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addMatrixConst(id, values);
         return Utils.asNan(id);
     }
@@ -391,7 +392,7 @@ public class RemoteComposeWriter {
      * @param from input vector
      * @param out output vector
      */
-    public void addMatrixMultiply(float matrixId, float[] from, float[] out) {
+    public void addMatrixMultiply(float matrixId, float @Nullable [] from, float @Nullable [] out) {
         addMatrixMultiply(matrixId, (short) 0, from, out);
     }
 
@@ -404,10 +405,11 @@ public class RemoteComposeWriter {
      * @param from input vector
      * @param out output vector
      */
-    public void addMatrixMultiply(float matrixId, short type, float[] from, float[] out) {
+    public void addMatrixMultiply(
+            float matrixId, short type, float @Nullable [] from, float @NonNull [] out) {
         int[] outId = new int[out.length];
         for (int i = 0; i < out.length; i++) {
-            outId[i] = mState.getNextAvailableId();
+            outId[i] = mState.createNextAvailableId();
             out[i] = Utils.asNan(outId[i]);
         }
         mBuffer.addMatrixVectorMath(matrixId, type, from, outId);
@@ -426,8 +428,8 @@ public class RemoteComposeWriter {
 
     /** Used to create the tag values in the header */
     public static class HTag {
-        Short mTag;
-        Object mValue;
+        @NonNull Short mTag;
+        @NonNull Object mValue;
 
         /**
          * Create a tag
@@ -435,7 +437,7 @@ public class RemoteComposeWriter {
          * @param tag the tag to use
          * @param value the value to use
          */
-        public HTag(Short tag, Object value) {
+        public HTag(@NonNull Short tag, @NonNull Object value) {
             mTag = tag;
             mValue = value;
         }
@@ -446,7 +448,7 @@ public class RemoteComposeWriter {
          * @param tags list of tags
          * @return profiles bitmask
          */
-        static int getProfiles(HTag[] tags) {
+        static int getProfiles(HTag @NonNull [] tags) {
             int profiles = 0;
             for (int i = 0; i < tags.length; i++) {
                 if (tags[i].mTag == Header.DOC_PROFILES) {
@@ -463,7 +465,7 @@ public class RemoteComposeWriter {
          * @param tag the specific tag to look for
          * @return found value, null if not
          */
-        static Object getValue(HTag[] tags, int tag) {
+        static @Nullable Object getValue(HTag @NonNull [] tags, int tag) {
             for (int i = 0; i < tags.length; i++) {
                 if (tags[i].mTag == tag) {
                     return tags[i].mValue;
@@ -472,7 +474,7 @@ public class RemoteComposeWriter {
             return null;
         }
 
-        static short[] getTags(HTag[] tags) {
+        static short @NonNull [] getTags(HTag @NonNull [] tags) {
             short[] ret = new short[tags.length];
             for (int i = 0; i < ret.length; i++) {
                 ret[i] = tags[i].mTag;
@@ -480,7 +482,7 @@ public class RemoteComposeWriter {
             return ret;
         }
 
-        static Object[] getValues(HTag[] tags) {
+        static Object @NonNull [] getValues(HTag @NonNull [] tags) {
             Object[] ret = new Object[tags.length];
             for (int i = 0; i < ret.length; i++) {
                 ret[i] = tags[i].mValue;
@@ -494,12 +496,12 @@ public class RemoteComposeWriter {
      *
      * @return
      */
-    public Painter getPainter() {
+    public @NonNull Painter getPainter() {
         return mPainter;
     }
 
     /** Returns the internal byte buffer. This should be used along with bufferSize(). */
-    public byte[] buffer() {
+    public byte @NonNull [] buffer() {
         return mBuffer.getBuffer().getBuffer();
     }
 
@@ -508,7 +510,7 @@ public class RemoteComposeWriter {
         return mBuffer.getBuffer().getSize();
     }
 
-    public RemoteComposeBuffer getBuffer() {
+    public @NonNull RemoteComposeBuffer getBuffer() {
         return mBuffer;
     }
 
@@ -518,7 +520,7 @@ public class RemoteComposeWriter {
      * @param shaderString the text representation of the shader
      * @return a RemoteComposeShader
      */
-    public RemoteComposeShader createShader(String shaderString) {
+    public @NonNull RemoteComposeShader createShader(@NonNull String shaderString) {
         return new RemoteComposeShader(shaderString, this);
     }
 
@@ -539,7 +541,7 @@ public class RemoteComposeWriter {
      * @param image an android Bitmap
      * @param contentDescription a description for the image
      */
-    public void drawBitmap(Bitmap image, String contentDescription) {
+    public void drawBitmap(@NonNull Bitmap image, @Nullable String contentDescription) {
         int imageId = storeBitmap(image);
         int contentDescriptionId = 0;
         if (contentDescription != null) {
@@ -662,7 +664,7 @@ public class RemoteComposeWriter {
      * @param contentDescription content description of the image
      */
     public void drawBitmap(
-            Object image,
+            @NonNull Object image,
             float left,
             float top,
             float right,
@@ -704,7 +706,8 @@ public class RemoteComposeWriter {
      * @param top top coordinate of rectangle that the bitmap will be to fit into
      * @param contentDescription content description of the image
      */
-    public void drawBitmap(int imageId, float left, float top, String contentDescription) {
+    public void drawBitmap(
+            int imageId, float left, float top, @Nullable String contentDescription) {
         int imageWidth = mPlatform.getImageWidth(imageId);
         int imageHeight = mPlatform.getImageHeight(imageId);
         drawBitmap(imageId, left, top, imageWidth, imageHeight, contentDescription);
@@ -751,7 +754,7 @@ public class RemoteComposeWriter {
      * @param contentDescription content description of the image
      */
     public void drawScaledBitmap(
-            Bitmap image,
+            @NonNull Bitmap image,
             float srcLeft,
             float srcTop,
             float srcRight,
@@ -762,7 +765,7 @@ public class RemoteComposeWriter {
             float dstBottom,
             int scaleType,
             float scaleFactor,
-            String contentDescription) {
+            @Nullable String contentDescription) {
         int imageId = storeBitmap(image);
         int contentDescriptionId = 0;
         if (contentDescription != null) {
@@ -923,7 +926,7 @@ public class RemoteComposeWriter {
      * @param text string
      * @return id
      */
-    public int textCreateId(String text) {
+    public int textCreateId(@NonNull String text) {
         return addText(text);
     }
 
@@ -947,7 +950,8 @@ public class RemoteComposeWriter {
      * @param hOffset The distance along the path to add to the text's starting position
      * @param vOffset The distance above(-) or below(+) the path to position the text
      */
-    public void drawTextOnPath(String text, Object path, float hOffset, float vOffset) {
+    public void drawTextOnPath(
+            @NonNull String text, @NonNull Object path, float hOffset, float vOffset) {
         int textId = addText(text);
         drawTextOnPath(textId, path, hOffset, vOffset);
     }
@@ -960,7 +964,7 @@ public class RemoteComposeWriter {
      * @param hOffset The distance along the path to add to the text's starting position
      * @param vOffset The distance above(-) or below(+) the path to position the text
      */
-    public void drawTextOnPath(int textId, Object path, float hOffset, float vOffset) {
+    public void drawTextOnPath(int textId, @NonNull Object path, float hOffset, float vOffset) {
         int pathId = mState.dataGetId(path);
         if (pathId == -1) { // never been seen before
             pathId = addPathData(path);
@@ -989,7 +993,7 @@ public class RemoteComposeWriter {
             int contextEnd,
             float x,
             float y,
-            Boolean rtl) {
+            @NonNull Boolean rtl) {
         int textId = addText(text);
         mBuffer.addDrawTextRun(textId, start, end, contextStart, contextEnd, x, y, rtl);
     }
@@ -1015,7 +1019,7 @@ public class RemoteComposeWriter {
             int contextEnd,
             float x,
             float y,
-            Boolean rtl) {
+            @NonNull Boolean rtl) {
         mBuffer.addDrawTextRun(textId, start, end, contextStart, contextEnd, x, y, rtl);
     }
 
@@ -1052,7 +1056,8 @@ public class RemoteComposeWriter {
      * @param panY position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
      * @param flags 1 = RTL
      */
-    public void drawTextAnchored(String str, float x, float y, float panX, float panY, int flags) {
+    public void drawTextAnchored(
+            @NonNull String str, float x, float y, float panX, float panY, int flags) {
         int textId = addText(str);
         mBuffer.drawTextAnchored(textId, x, y, panX, panY, flags);
     }
@@ -1089,7 +1094,8 @@ public class RemoteComposeWriter {
      * @param start The start of the subrange of paths to draw 0 = start form start 0.5 is half way
      * @param stop The end of the subrange of paths to draw 1 = end at the end 0.5 is end half way
      */
-    public void drawTweenPath(Object path1, Object path2, float tween, float start, float stop) {
+    public void drawTweenPath(
+            @NonNull Object path1, @NonNull Object path2, float tween, float start, float stop) {
         int path1Id = mState.dataGetId(path1);
         if (path1Id == -1) { // never been seen before
             path1Id = addPathData(path1);
@@ -1189,7 +1195,7 @@ public class RemoteComposeWriter {
      * @param path Android Path object
      * @return id of the path object to be used by drawPath, etc.
      */
-    public int addPathData(Object path) {
+    public int addPathData(@NonNull Object path) {
         float[] pathData = mPlatform.pathToFloatArray(path);
         int id = mState.cacheData(path);
         return mBuffer.addPathData(id, pathData);
@@ -1204,7 +1210,7 @@ public class RemoteComposeWriter {
      * @return id of the tweened path
      */
     public int pathTween(int pid1, int pid2, float tween) {
-        int out = mState.getNextAvailableId();
+        int out = mState.createNextAvailableId();
         return mBuffer.pathTween(out, pid1, pid2, tween);
     }
 
@@ -1216,7 +1222,7 @@ public class RemoteComposeWriter {
      * @return
      */
     public int pathCreate(float x, float y) {
-        int out = mState.getNextAvailableId();
+        int out = mState.createNextAvailableId();
         return mBuffer.pathCreate(out, x, y);
     }
 
@@ -1226,7 +1232,7 @@ public class RemoteComposeWriter {
      * @param pathId
      * @param path
      */
-    public void pathAppend(int pathId, float... path) {
+    public void pathAppend(int pathId, float @NonNull ... path) {
         mBuffer.pathAppend(pathId, path);
     }
 
@@ -1286,7 +1292,7 @@ public class RemoteComposeWriter {
      * @param path SVG style Path String
      * @return id of the path object to be used by drawPath, etc.
      */
-    public int addPathString(String path) {
+    public int addPathString(@NonNull String path) {
         return addPathData(parsePath(path));
     }
 
@@ -1296,7 +1302,7 @@ public class RemoteComposeWriter {
      * @param pathData string representation of a path
      * @return Path object
      */
-    public static Path parsePath(String pathData) {
+    public static @NonNull Path parsePath(@NonNull String pathData) {
         Path path = new Path();
         float[] cords = new float[6];
 
@@ -1483,7 +1489,7 @@ public class RemoteComposeWriter {
      * @param value the value of the float
      * @return the id of a float as a Nan
      */
-    public Float addFloatConstant(float value) {
+    public @NonNull Float addFloatConstant(float value) {
         int id = mState.cacheFloat(value);
         return mBuffer.addFloat(id, value);
     }
@@ -1494,19 +1500,21 @@ public class RemoteComposeWriter {
      * @return the nan id of float
      */
     public float reserveFloatVariable() {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         return Utils.asNan(id);
     }
 
-    HashMap<Integer, Float> mCacheComponentWidthValues = new HashMap<Integer, Float>();
-    HashMap<Integer, Float> mCacheComponentHeightValues = new HashMap<Integer, Float>();
+    @NonNull HashMap<@NonNull Integer, @NonNull Float> mCacheComponentWidthValues =
+            new HashMap<Integer, Float>();
+    @NonNull HashMap<@NonNull Integer, @NonNull Float> mCacheComponentHeightValues =
+            new HashMap<Integer, Float>();
 
     /**
      * Add a float constant representing the current component width
      *
      * @return float NaN containing the id
      */
-    public Float addComponentWidthValue() {
+    public @NonNull Float addComponentWidthValue() {
         if (mCacheComponentWidthValues.containsKey(mBuffer.getLastComponentId())) {
             return mCacheComponentWidthValues.get(mBuffer.getLastComponentId());
         }
@@ -1521,7 +1529,7 @@ public class RemoteComposeWriter {
      *
      * @return float NaN containing the id
      */
-    public Float addComponentHeightValue() {
+    public @NonNull Float addComponentHeightValue() {
         if (mCacheComponentHeightValues.containsKey(mBuffer.getLastComponentId())) {
             return mCacheComponentHeightValues.get(mBuffer.getLastComponentId());
         }
@@ -1539,7 +1547,7 @@ public class RemoteComposeWriter {
      * @return the id of the color
      */
     public int addColor(int color) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColor(id, color);
         return id;
     }
@@ -1549,7 +1557,7 @@ public class RemoteComposeWriter {
      * @param color the ARGB int of the color
      * @return the id of the Color
      */
-    public int addNamedColor(String name, int color) {
+    public int addNamedColor(@NonNull String name, int color) {
         int id = addColor(color);
         mBuffer.setNamedVariable(id, name, NamedVariable.COLOR_TYPE);
         return id;
@@ -1561,7 +1569,7 @@ public class RemoteComposeWriter {
      * @param id the id to name
      * @param name the name of the color
      */
-    public void setColorName(int id, String name) {
+    public void setColorName(int id, @NonNull String name) {
         mBuffer.setNamedVariable(id, name, NamedVariable.COLOR_TYPE);
     }
 
@@ -1571,7 +1579,7 @@ public class RemoteComposeWriter {
      * @param id of the string
      * @param name name of the string
      */
-    public void setStringName(int id, String name) {
+    public void setStringName(int id, @NonNull String name) {
         mBuffer.setNamedVariable(id, name, NamedVariable.STRING_TYPE);
     }
 
@@ -1582,8 +1590,8 @@ public class RemoteComposeWriter {
      * @param initialValue The initial value of the String
      * @return a float encoding the id
      */
-    public int addNamedString(String name, String initialValue) {
-        int id = mState.getNextAvailableId();
+    public int addNamedString(@NonNull String name, @NonNull String initialValue) {
+        int id = mState.createNextAvailableId();
         mBuffer.setNamedVariable(id, name, NamedVariable.STRING_TYPE);
         TextData.apply(mBuffer.getBuffer(), id, initialValue);
         return id;
@@ -1596,8 +1604,8 @@ public class RemoteComposeWriter {
      * @param initialValue The initial value of the float
      * @return a float encoding the id
      */
-    public long addNamedInt(String name, int initialValue) {
-        int id = mState.getNextAvailableId();
+    public long addNamedInt(@NonNull String name, int initialValue) {
+        int id = mState.createNextAvailableId();
         mBuffer.setNamedVariable(id, name, NamedVariable.INT_TYPE);
         IntegerConstant.apply(mBuffer.getBuffer(), id, initialValue);
         mState.updateInteger(id, initialValue);
@@ -1611,8 +1619,8 @@ public class RemoteComposeWriter {
      * @param initialValue The initial value of the float
      * @return a float encoding the id
      */
-    public float addNamedFloat(String name, float initialValue) {
-        int id = mState.getNextAvailableId();
+    public float addNamedFloat(@NonNull String name, float initialValue) {
+        int id = mState.createNextAvailableId();
         mBuffer.setNamedVariable(id, name, NamedVariable.FLOAT_TYPE);
         FloatConstant.apply(mBuffer.getBuffer(), id, initialValue);
         mState.updateFloat(id, initialValue);
@@ -1624,7 +1632,7 @@ public class RemoteComposeWriter {
      * @param initialValue the initial {@link Bitmap}
      * @return the id of the {@link Bitmap}
      */
-    public int addNamedBitmap(String name, Bitmap initialValue) {
+    public int addNamedBitmap(@NonNull String name, @NonNull Bitmap initialValue) {
         int id = storeBitmap(initialValue);
         mBuffer.setNamedVariable(id, name, NamedVariable.IMAGE_TYPE);
         mState.updateObject(id, initialValue);
@@ -1638,8 +1646,8 @@ public class RemoteComposeWriter {
      * @param initialValue The initial value of the named long
      * @return the id of the named long
      */
-    public int addNamedLong(String name, long initialValue) {
-        int id = mState.getNextAvailableId();
+    public int addNamedLong(@NonNull String name, long initialValue) {
+        int id = mState.createNextAvailableId();
         mBuffer.setNamedVariable(id, name, NamedVariable.LONG_TYPE);
         LongConstant.apply(mBuffer.getBuffer(), id, initialValue);
         return id;
@@ -1654,7 +1662,7 @@ public class RemoteComposeWriter {
      * @return id of a color
      */
     public short addColorExpression(int color1, int color2, float tween) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, color1, color2, tween);
         return (short) id;
     }
@@ -1668,7 +1676,7 @@ public class RemoteComposeWriter {
      * @return id of a color
      */
     public short addColorExpression(short colorId1, int color2, float tween) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, colorId1, color2, tween);
         return (short) id;
     }
@@ -1682,7 +1690,7 @@ public class RemoteComposeWriter {
      * @return The id of the color
      */
     public short addColorExpression(int color1, short colorId2, float tween) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, color1, colorId2, tween);
         return (short) id;
     }
@@ -1696,7 +1704,7 @@ public class RemoteComposeWriter {
      * @return the id of the color
      */
     public short addColorExpression(short colorId1, short colorId2, float tween) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, colorId1, colorId2, tween);
         return (short) id;
     }
@@ -1710,7 +1718,7 @@ public class RemoteComposeWriter {
      * @return the id of the color
      */
     public short addColorExpression(float hue, float sat, float value) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, hue, sat, value);
         return (short) id;
     }
@@ -1725,7 +1733,7 @@ public class RemoteComposeWriter {
      * @return the id of the color
      */
     public short addColorExpression(int alpha, float hue, float sat, float value) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, alpha, hue, sat, value);
         return (short) id;
     }
@@ -1740,7 +1748,7 @@ public class RemoteComposeWriter {
      * @return the id of the color
      */
     public short addColorExpression(float alpha, float red, float green, float blue) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addColorExpression(id, alpha, red, green, blue);
         return (short) id;
     }
@@ -1751,7 +1759,7 @@ public class RemoteComposeWriter {
      * @param value Combination
      * @return the id of the expression as a Nan float
      */
-    public Float floatExpression(float... value) {
+    public @NonNull Float floatExpression(float @NonNull ... value) {
         int id = mState.cacheData(value);
         mBuffer.addAnimatedFloat(id, value);
         return Utils.asNan(id);
@@ -1789,7 +1797,7 @@ public class RemoteComposeWriter {
      * @return the id of the command representing long
      */
     public int addLong(long value) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addLong(id, value);
         return id;
     }
@@ -1801,7 +1809,7 @@ public class RemoteComposeWriter {
      * @return the id
      */
     public int addBoolean(boolean value) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.addBoolean(id, value);
         return id;
     }
@@ -1813,7 +1821,7 @@ public class RemoteComposeWriter {
      * @param str the string to lookup
      * @return id containing the result of the lookup
      */
-    public int mapLookup(int mapId, String str) {
+    public int mapLookup(int mapId, @NonNull String str) {
         int strId = addText(str);
         return mapLookup(mapId, strId);
     }
@@ -1893,7 +1901,7 @@ public class RemoteComposeWriter {
      * @param maxVelocity
      * @return
      */
-    public float[] easing(float maxTime, float maxAcceleration, float maxVelocity) {
+    public float @NonNull [] easing(float maxTime, float maxAcceleration, float maxVelocity) {
         return new float[] {Float.intBitsToFloat(0), maxTime, maxAcceleration, maxVelocity};
     }
 
@@ -1920,10 +1928,10 @@ public class RemoteComposeWriter {
             int touchMode,
             float velocityId,
             int touchEffects,
-            float[] touchSpec,
-            float[] easingSpec,
-            float... exp) {
-        int id = mState.getNextAvailableId();
+            float @Nullable [] touchSpec,
+            float @Nullable [] easingSpec,
+            float @NonNull ... exp) {
+        int id = mState.createNextAvailableId();
         mBuffer.addTouchExpression(
                 id,
                 defValue,
@@ -1947,7 +1955,8 @@ public class RemoteComposeWriter {
      * @param boundaryMode
      * @return
      */
-    public float[] spring(float stiffness, float damping, float stopThreshold, int boundaryMode) {
+    public float @NonNull [] spring(
+            float stiffness, float damping, float stopThreshold, int boundaryMode) {
         return new float[] {
             0, stiffness, damping, stopThreshold, Float.intBitsToFloat(boundaryMode)
         };
@@ -1961,7 +1970,7 @@ public class RemoteComposeWriter {
      * @return the value of the attribute as a NaN float
      */
     public float bitmapAttribute(int bitmapId, short attribute) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.bitmapAttribute(id, bitmapId, attribute);
         return Utils.asNan(id);
     }
@@ -1974,13 +1983,13 @@ public class RemoteComposeWriter {
      * @return the value of the attribute as a NaN float
      */
     public float textAttribute(int textId, short attribute) {
-        int id = mState.getNextAvailableId();
+        int id = mState.createNextAvailableId();
         mBuffer.textAttribute(id, textId, attribute);
         return Utils.asNan(id);
     }
 
     public static class DataMap {
-        String mName;
+        @NonNull String mName;
 
         enum Types {
             STRING(DataMapIds.TYPE_STRING),
@@ -2000,38 +2009,38 @@ public class RemoteComposeWriter {
             }
         }
 
-        Types mType;
-        String mTextValue;
+        @NonNull Types mType;
+        @NonNull String mTextValue;
         float mFloatValue;
         boolean mBooleanValue;
         long mLongValue;
         int mIntValue;
 
-        DataMap(String name, String value) {
+        DataMap(@NonNull String name, @NonNull String value) {
             mName = name;
             mType = Types.STRING;
             mTextValue = value;
         }
 
-        DataMap(String name, float value) {
+        DataMap(@NonNull String name, float value) {
             mName = name;
             mType = Types.FLOAT;
             mFloatValue = value;
         }
 
-        DataMap(String name, long value) {
+        DataMap(@NonNull String name, long value) {
             mName = name;
             mType = Types.LONG;
             mLongValue = value;
         }
 
-        DataMap(String name, int value) {
+        DataMap(@NonNull String name, int value) {
             mName = name;
             mType = Types.INT;
             mIntValue = value;
         }
 
-        DataMap(String name, boolean value) {
+        DataMap(@NonNull String name, boolean value) {
             mName = name;
             mType = Types.BOOLEAN;
             mBooleanValue = value;
@@ -2045,7 +2054,7 @@ public class RemoteComposeWriter {
      * @param value
      * @return
      */
-    public static DataMap map(String name, float value) {
+    public static @NonNull DataMap map(@NonNull String name, float value) {
         return new DataMap(name, value);
     }
 
@@ -2056,7 +2065,7 @@ public class RemoteComposeWriter {
      * @param value
      * @return
      */
-    public static DataMap map(String name, int value) {
+    public static @NonNull DataMap map(@NonNull String name, int value) {
         return new DataMap(name, value);
     }
 
@@ -2067,7 +2076,7 @@ public class RemoteComposeWriter {
      * @param value
      * @return
      */
-    public static DataMap map(String name, long value) {
+    public static @NonNull DataMap map(@NonNull String name, long value) {
         return new DataMap(name, value);
     }
 
@@ -2078,7 +2087,7 @@ public class RemoteComposeWriter {
      * @param value
      * @return
      */
-    public static DataMap map(String name, String value) {
+    public static @NonNull DataMap map(@NonNull String name, @NonNull String value) {
         return new DataMap(name, value);
     }
 
@@ -2089,11 +2098,11 @@ public class RemoteComposeWriter {
      * @param value
      * @return
      */
-    public static DataMap map(String name, boolean value) {
+    public static @NonNull DataMap map(@NonNull String name, boolean value) {
         return new DataMap(name, value);
     }
 
-    private int encodeData(DataMap... data) {
+    private int encodeData(DataMap @NonNull ... data) {
         String[] names = new String[data.length];
         int[] ids = new int[data.length];
         byte[] types = new byte[data.length];
@@ -2133,7 +2142,7 @@ public class RemoteComposeWriter {
      * @param data
      * @return
      */
-    public int addDataMap(DataMap... data) {
+    public int addDataMap(DataMap @NonNull ... data) {
         return encodeData(data);
     }
 
@@ -2144,7 +2153,7 @@ public class RemoteComposeWriter {
      * @param ids
      * @return
      */
-    public float addDataMap(String[] keys, int[] ids) {
+    public float addDataMap(String @NonNull [] keys, int @NonNull [] ids) {
         int id = mState.cacheData(ids, NanMap.TYPE_ARRAY);
         mBuffer.addMap(id, keys, null, ids);
         return id;
@@ -2157,7 +2166,7 @@ public class RemoteComposeWriter {
      * @param value values in the expression maximum 32
      * @return
      */
-    public long integerExpression(int mask, int... value) {
+    public long integerExpression(int mask, int @NonNull ... value) {
         int id = mState.cacheData(value);
         mBuffer.addIntegerExpression(id, mask, value);
         return id + 0x100000000L;
@@ -2169,7 +2178,7 @@ public class RemoteComposeWriter {
      * @param v values in the expression as long ids
      * @return
      */
-    public long integerExpression(long... v) {
+    public long integerExpression(long @NonNull ... v) {
         int mask = 0;
         for (int i = 0; i < v.length; i++) {
             if (v[i] > Integer.MAX_VALUE) {
@@ -2202,8 +2211,8 @@ public class RemoteComposeWriter {
      * @param args the additional arguments for the comparison
      * @return float value
      */
-    public float timeAttribute(int longID, short type, int... args) {
-        int id = mState.getNextAvailableId();
+    public float timeAttribute(int longID, short type, int @NonNull ... args) {
+        int id = mState.createNextAvailableId();
         mBuffer.timeAttribute(id, longID, type, args);
         return Utils.asNan(id);
     }
@@ -2214,7 +2223,7 @@ public class RemoteComposeWriter {
      * @param value Series of floats that represents the expression
      * @return the series of floats that represent the expression
      */
-    public float[] exp(float... value) {
+    public float @NonNull [] exp(float @NonNull ... value) {
         return value;
     }
 
@@ -2237,7 +2246,8 @@ public class RemoteComposeWriter {
      * @param wrap The value about witch it wraps e.g. 360 and rotation
      * @return Float array representing the animation
      */
-    public float[] anim(float duration, int type, float[] spec, float initialValue, float wrap) {
+    public float @NonNull [] anim(
+            float duration, int type, float @Nullable [] spec, float initialValue, float wrap) {
         return RemoteComposeBuffer.packAnimation(duration, type, spec, initialValue, wrap);
     }
 
@@ -2250,7 +2260,8 @@ public class RemoteComposeWriter {
      * @param initialValue the initial value if animation is on first use
      * @return Float array representing the animation
      */
-    public float[] anim(float duration, int type, float[] spec, float initialValue) {
+    public float @NonNull [] anim(
+            float duration, int type, float @Nullable [] spec, float initialValue) {
         return RemoteComposeBuffer.packAnimation(duration, type, spec, initialValue, Float.NaN);
     }
 
@@ -2262,7 +2273,7 @@ public class RemoteComposeWriter {
      * @param spec The parameters of the animation if it is custom spec
      * @return Float array representing the animation
      */
-    public float[] anim(float duration, int type, float[] spec) {
+    public float @NonNull [] anim(float duration, int type, float @Nullable [] spec) {
         return RemoteComposeBuffer.packAnimation(duration, type, spec, Float.NaN, Float.NaN);
     }
 
@@ -2273,7 +2284,7 @@ public class RemoteComposeWriter {
      * @param type The type of the animation
      * @return Float array representing the animation
      */
-    public float[] anim(float duration, int type) {
+    public float @NonNull [] anim(float duration, int type) {
         return RemoteComposeBuffer.packAnimation(duration, type, null, Float.NaN, Float.NaN);
     }
 
@@ -2283,7 +2294,7 @@ public class RemoteComposeWriter {
      * @param duration The duration of the animation
      * @return Float array representing the animation
      */
-    public float[] anim(float duration) {
+    public float @NonNull [] anim(float duration) {
         return RemoteComposeBuffer.packAnimation(
                 duration, RemoteComposeBuffer.EASING_CUBIC_STANDARD, null, Float.NaN, Float.NaN);
     }
@@ -2348,7 +2359,7 @@ public class RemoteComposeWriter {
      * @return a unique id
      */
     public int createID(int type) {
-        return mState.getNextAvailableId(type);
+        return mState.createNextAvailableId(type);
     }
 
     /**
@@ -2357,7 +2368,7 @@ public class RemoteComposeWriter {
      * @return a unique id
      */
     public int nextId() {
-        return mState.getNextAvailableId();
+        return mState.createNextAvailableId();
     }
 
     public static final long L_ADD = 0x100000000L + I_ADD;
@@ -2394,7 +2405,7 @@ public class RemoteComposeWriter {
      *
      * @param content content of the layout
      */
-    public void root(RemoteComposeWriterInterface content) {
+    public void root(@NonNull RemoteComposeWriterInterface content) {
         mBuffer.addRootStart();
         content.run();
         mBuffer.addContainerEnd();
@@ -2456,7 +2467,7 @@ public class RemoteComposeWriter {
             float from,
             float step,
             float until,
-            RemoteComposeWriterInterface content) {
+            @NonNull RemoteComposeWriterInterface content) {
         startLoop(indexId, from, step, until);
         content.run();
         endLoop();
@@ -2472,7 +2483,11 @@ public class RemoteComposeWriter {
      * @param content the content to loop
      */
     public void loop(
-            int indexId, int from, int step, int until, RemoteComposeWriterInterface content) {
+            int indexId,
+            int from,
+            int step,
+            int until,
+            @NonNull RemoteComposeWriterInterface content) {
         startLoop(indexId, from, step, until);
         content.run();
         endLoop();
@@ -2487,7 +2502,7 @@ public class RemoteComposeWriter {
      * @param content content of the conditional block
      */
     public void conditionalOperations(
-            byte type, float a, float b, RemoteComposeWriterInterface content) {
+            byte type, float a, float b, @NonNull RemoteComposeWriterInterface content) {
         mBuffer.addConditionalOperations(type, a, b);
         content.run();
         endConditionalOperations();
@@ -2524,10 +2539,10 @@ public class RemoteComposeWriter {
      * @param content content of the layout
      */
     public void column(
-            RecordingModifier modifier,
+            @NonNull RecordingModifier modifier,
             int horizontal,
             int vertical,
-            RemoteComposeWriterInterface content) {
+            @NonNull RemoteComposeWriterInterface content) {
         startColumn(modifier, horizontal, vertical);
         content.run();
         endColumn();
@@ -2540,7 +2555,7 @@ public class RemoteComposeWriter {
      * @param horizontal
      * @param vertical
      */
-    public void startColumn(RecordingModifier modifier, int horizontal, int vertical) {
+    public void startColumn(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         int componentId = modifier.getComponentId();
         float spacedBy = modifier.getSpacedBy();
         mBuffer.addColumnStart(componentId, -1, horizontal, vertical, spacedBy);
@@ -2565,10 +2580,10 @@ public class RemoteComposeWriter {
      * @param content content of the layout
      */
     public void collapsibleColumn(
-            RecordingModifier modifier,
+            @NonNull RecordingModifier modifier,
             int horizontal,
             int vertical,
-            RemoteComposeWriterInterface content) {
+            @NonNull RemoteComposeWriterInterface content) {
         startCollapsibleColumn(modifier, horizontal, vertical);
         content.run();
         endCollapsibleColumn();
@@ -2581,7 +2596,8 @@ public class RemoteComposeWriter {
      * @param horizontal
      * @param vertical
      */
-    public void startCollapsibleColumn(RecordingModifier modifier, int horizontal, int vertical) {
+    public void startCollapsibleColumn(
+            @NonNull RecordingModifier modifier, int horizontal, int vertical) {
         int componentId = modifier.getComponentId();
         float spacedBy = modifier.getSpacedBy();
         mBuffer.addCollapsibleColumnStart(componentId, -1, horizontal, vertical, spacedBy);
@@ -2606,10 +2622,10 @@ public class RemoteComposeWriter {
      * @param content content of the layout
      */
     public void row(
-            RecordingModifier modifier,
+            @NonNull RecordingModifier modifier,
             int horizontal,
             int vertical,
-            RemoteComposeWriterInterface content) {
+            @NonNull RemoteComposeWriterInterface content) {
         startRow(modifier, horizontal, vertical);
         content.run();
         endRow();
@@ -2622,7 +2638,7 @@ public class RemoteComposeWriter {
      * @param horizontal
      * @param vertical
      */
-    public void startRow(RecordingModifier modifier, int horizontal, int vertical) {
+    public void startRow(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         int componentId = modifier.getComponentId();
         float spacedBy = modifier.getSpacedBy();
         mBuffer.addRowStart(componentId, -1, horizontal, vertical, spacedBy);
@@ -2647,10 +2663,10 @@ public class RemoteComposeWriter {
      * @param content content of the layout
      */
     public void collapsibleRow(
-            RecordingModifier modifier,
+            @NonNull RecordingModifier modifier,
             int horizontal,
             int vertical,
-            RemoteComposeWriterInterface content) {
+            @NonNull RemoteComposeWriterInterface content) {
         startCollapsibleRow(modifier, horizontal, vertical);
         content.run();
         endCollapsibleRow();
@@ -2663,7 +2679,8 @@ public class RemoteComposeWriter {
      * @param horizontal
      * @param vertical
      */
-    public void startCollapsibleRow(RecordingModifier modifier, int horizontal, int vertical) {
+    public void startCollapsibleRow(
+            @NonNull RecordingModifier modifier, int horizontal, int vertical) {
         int componentId = modifier.getComponentId();
         float spacedBy = modifier.getSpacedBy();
         mBuffer.addCollapsibleRowStart(componentId, -1, horizontal, vertical, spacedBy);
@@ -2685,7 +2702,8 @@ public class RemoteComposeWriter {
      * @param modifier list of modifiers for the layout
      * @param content content of the layout
      */
-    public void canvas(RecordingModifier modifier, RemoteComposeWriterInterface content) {
+    public void canvas(
+            @NonNull RecordingModifier modifier, @NonNull RemoteComposeWriterInterface content) {
         startCanvas(modifier);
         content.run();
         endCanvas();
@@ -2701,7 +2719,7 @@ public class RemoteComposeWriter {
      *
      * @param modifier
      */
-    public void startCanvas(RecordingModifier modifier) {
+    public void startCanvas(@NonNull RecordingModifier modifier) {
         mBuffer.addCanvasStart(modifier.getComponentId(), -1);
         for (RecordingModifier.Element m : modifier.getList()) {
             m.write(this);
@@ -2746,10 +2764,10 @@ public class RemoteComposeWriter {
      * @param content content of the layout
      */
     public void box(
-            RecordingModifier modifier,
+            @NonNull RecordingModifier modifier,
             int horizontal,
             int vertical,
-            RemoteComposeWriterInterface content) {
+            @NonNull RemoteComposeWriterInterface content) {
         startBox(modifier, horizontal, vertical);
         content.run();
         endBox();
@@ -2762,7 +2780,7 @@ public class RemoteComposeWriter {
      * @param horizontal
      * @param vertical
      */
-    public void startBox(RecordingModifier modifier, int horizontal, int vertical) {
+    public void startBox(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         mBuffer.addBoxStart(modifier.getComponentId(), -1, horizontal, vertical);
         for (RecordingModifier.Element m : modifier.getList()) {
             m.write(this);
@@ -2775,7 +2793,7 @@ public class RemoteComposeWriter {
      *
      * @param modifier
      */
-    public void startBox(RecordingModifier modifier) {
+    public void startBox(@NonNull RecordingModifier modifier) {
         startBox(modifier, BoxLayout.START, BoxLayout.TOP);
     }
 
@@ -2792,7 +2810,7 @@ public class RemoteComposeWriter {
      * @param horizontal
      * @param vertical
      */
-    public void startFitBox(RecordingModifier modifier, int horizontal, int vertical) {
+    public void startFitBox(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         mBuffer.addFitBoxStart(modifier.getComponentId(), -1, horizontal, vertical);
         for (RecordingModifier.Element m : modifier.getList()) {
             m.write(this);
@@ -2807,7 +2825,8 @@ public class RemoteComposeWriter {
     }
 
     /** Add an image component */
-    public void image(RecordingModifier modifier, int imageId, int scaleType, float alpha) {
+    public void image(
+            @NonNull RecordingModifier modifier, int imageId, int scaleType, float alpha) {
         mBuffer.addImage(modifier.getComponentId(), -1, imageId, scaleType, alpha);
         for (RecordingModifier.Element m : modifier.getList()) {
             m.write(this);
@@ -2817,7 +2836,9 @@ public class RemoteComposeWriter {
 
     /** Add a state layout */
     public void stateLayout(
-            RecordingModifier modifier, int indexId, RemoteComposeWriterInterface content) {
+            @NonNull RecordingModifier modifier,
+            int indexId,
+            @NonNull RemoteComposeWriterInterface content) {
         startStateLayout(modifier, indexId);
         content.run();
         endStateLayout();
@@ -2829,7 +2850,7 @@ public class RemoteComposeWriter {
      * @param modifier
      * @param indexId
      */
-    public void startStateLayout(RecordingModifier modifier, int indexId) {
+    public void startStateLayout(@NonNull RecordingModifier modifier, int indexId) {
         mBuffer.addStateLayout(modifier.getComponentId(), -1, 0, 0, indexId);
         for (RecordingModifier.Element m : modifier.getList()) {
             m.write(this);
@@ -2917,17 +2938,17 @@ public class RemoteComposeWriter {
 
     /** Add a text component */
     public void textComponent(
-            RecordingModifier modifier,
+            @NonNull RecordingModifier modifier,
             int textId,
             int color,
             float fontSize,
             int fontStyle,
             float fontWeight,
-            String fontFamily,
+            @Nullable String fontFamily,
             int textAlign,
             int overflow,
             int maxLines,
-            RemoteComposeWriterInterface content) {
+            @NonNull RemoteComposeWriterInterface content) {
         startTextComponent(
                 modifier,
                 textId,
@@ -2958,7 +2979,7 @@ public class RemoteComposeWriter {
      * @param maxLines
      */
     public void startTextComponent(
-            RecordingModifier modifier,
+            @NonNull RecordingModifier modifier,
             int textId,
             int color,
             float fontSize,
@@ -3003,7 +3024,7 @@ public class RemoteComposeWriter {
      * @param horizontal horizontal positioning
      * @param vertical vertical positioning
      */
-    public void box(RecordingModifier modifier, int horizontal, int vertical) {
+    public void box(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         mBuffer.addBoxStart(modifier.getComponentId(), -1, horizontal, vertical);
         for (RecordingModifier.Element m : modifier.getList()) {
             m.write(this);
@@ -3016,7 +3037,7 @@ public class RemoteComposeWriter {
      *
      * @param modifier list of modifiers for the layout
      */
-    public void box(RecordingModifier modifier) {
+    public void box(@NonNull RecordingModifier modifier) {
         box(modifier, BoxLayout.CENTER, BoxLayout.CENTER);
     }
 
@@ -3026,7 +3047,7 @@ public class RemoteComposeWriter {
      * @param strs varargs of strings
      * @return
      */
-    public float addStringList(String... strs) {
+    public float addStringList(String @NonNull ... strs) {
         int[] ids = new int[strs.length];
         for (int i = 0; i < strs.length; i++) {
             ids[i] = textCreateId(strs[i]);
@@ -3040,7 +3061,7 @@ public class RemoteComposeWriter {
      * @param strIds id's of the strings
      * @return
      */
-    public float addStringList(int... strIds) {
+    public float addStringList(int @NonNull ... strIds) {
         int id = mState.cacheData(strIds, NanMap.TYPE_ARRAY);
         mBuffer.addList(id, strIds);
         return Utils.asNan(id);
@@ -3063,7 +3084,7 @@ public class RemoteComposeWriter {
      * @param values
      * @return
      */
-    public float addFloatArray(float[] values) {
+    public float addFloatArray(float @NonNull [] values) {
         int id = mState.cacheData(values, NanMap.TYPE_ARRAY);
         mBuffer.addFloatArray(id, values);
         return Utils.asNan(id);
@@ -3075,7 +3096,7 @@ public class RemoteComposeWriter {
      * @param values
      * @return
      */
-    public float addFloatList(float[] values) {
+    public float addFloatList(float @NonNull [] values) {
         // return mBuffer.addFloatList(values);
         int[] listId = new int[values.length];
         for (int i = 0; i < listId.length; i++) {
@@ -3092,7 +3113,7 @@ public class RemoteComposeWriter {
      * @param values
      * @return
      */
-    public float addFloatMap(String[] keys, float[] values) {
+    public float addFloatMap(String @NonNull [] keys, float @NonNull [] values) {
         int[] listId = new int[values.length];
         byte[] type = new byte[values.length];
         for (int i = 0; i < listId.length; i++) {
@@ -3111,7 +3132,7 @@ public class RemoteComposeWriter {
      * @param image the bitbap to store
      * @return the id of the bitmap
      */
-    public int storeBitmap(Object image) {
+    public int storeBitmap(@NonNull Object image) {
         int imageId = mState.dataGetId(image);
         if (imageId == -1) {
             imageId = mState.cacheData(image);
@@ -3133,7 +3154,7 @@ public class RemoteComposeWriter {
      * @param image the bitmap
      * @return
      */
-    public int addBitmap(Bitmap image) {
+    public int addBitmap(@NonNull Bitmap image) {
         return storeBitmap(image);
     }
 
@@ -3144,7 +3165,7 @@ public class RemoteComposeWriter {
      * @param name the bitmap name
      * @return
      */
-    public int addBitmap(Bitmap image, String name) {
+    public int addBitmap(@NonNull Bitmap image, @NonNull String name) {
         int id = storeBitmap(image);
         nameBitmapId(id, name);
         return id;
@@ -3156,8 +3177,8 @@ public class RemoteComposeWriter {
      * @param glyphs array of glyphs
      * @return
      */
-    public int addBitmapFont(BitmapFontData.Glyph[] glyphs) {
-        int id = mState.getNextAvailableId();
+    public int addBitmapFont(BitmapFontData.Glyph @NonNull [] glyphs) {
+        int id = mState.createNextAvailableId();
         return mBuffer.addBitmapFont(id, glyphs);
     }
 
@@ -3167,7 +3188,7 @@ public class RemoteComposeWriter {
      * @param id the bitmap id
      * @param omicron the bitmap name
      */
-    public void nameBitmapId(int id, String omicron) {
+    public void nameBitmapId(int id, @NonNull String omicron) {
         mBuffer.setBitmapName(id, omicron);
     }
 
@@ -3198,7 +3219,7 @@ public class RemoteComposeWriter {
      * @param start
      * @param run
      */
-    public void impulse(float duration, float start, Runnable run) {
+    public void impulse(float duration, float start, @NonNull Runnable run) {
         mBuffer.addImpulse(duration, start);
         run.run();
         mBuffer.addImpulseEnd();
@@ -3209,7 +3230,7 @@ public class RemoteComposeWriter {
      *
      * @param run
      */
-    public void impulseProcess(Runnable run) {
+    public void impulseProcess(@NonNull Runnable run) {
         mBuffer.addImpulseProcess();
         run.run();
         mBuffer.addImpulseEnd();
@@ -3233,7 +3254,9 @@ public class RemoteComposeWriter {
      * @return
      */
     public float createParticles(
-            float[] variables, float[][] initialExpressions, int particleCount) {
+            float @NonNull [] variables,
+            float @Nullable [] @NonNull [] initialExpressions,
+            int particleCount) {
         int id = createID(0);
         float index = asFloatId(id);
         int[] varId = new int[variables.length];
@@ -3253,7 +3276,11 @@ public class RemoteComposeWriter {
      * @param expressions
      * @param r
      */
-    public void particlesLoop(float id, float[] restart, float[][] expressions, Runnable r) {
+    public void particlesLoop(
+            float id,
+            float @Nullable [] restart,
+            float @NonNull [] @NonNull [] expressions,
+            @NonNull Runnable r) {
         mBuffer.addParticlesLoop(Utils.idFromNan(id), restart, expressions);
         r.run();
         mBuffer.addParticleLoopEnd();
@@ -3265,8 +3292,8 @@ public class RemoteComposeWriter {
      * @param args the arguments of the function to be filled in
      * @return the id of the function
      */
-    public int createFloatFunction(float[] args) {
-        int fid = mState.getNextAvailableId();
+    public int createFloatFunction(float @NonNull [] args) {
+        int fid = mState.createNextAvailableId();
         int[] intArgs = new int[args.length];
         for (int i = 0; i < args.length; i++) {
             intArgs[i] = createID(0);
@@ -3287,7 +3314,7 @@ public class RemoteComposeWriter {
      * @param id The id of the function to call
      * @param args The arguments of the function
      */
-    public void callFloatFunction(int id, float... args) {
+    public void callFloatFunction(int id, float @NonNull ... args) {
         mBuffer.callFloatFunction(id, args);
     }
 
@@ -3306,7 +3333,7 @@ public class RemoteComposeWriter {
      *
      * @param message the message to add
      */
-    public void addDebugMessage(String message) {
+    public void addDebugMessage(@NonNull String message) {
         int textId = addText(message);
         mBuffer.addDebugMessage(textId, 0f, 0);
     }
@@ -3317,7 +3344,7 @@ public class RemoteComposeWriter {
      * @param message the message to add
      * @param value the value to add
      */
-    public void addDebugMessage(String message, float value) {
+    public void addDebugMessage(@NonNull String message, float value) {
         int textId = addText(message);
         mBuffer.addDebugMessage(textId, value, 0);
     }
@@ -3329,7 +3356,7 @@ public class RemoteComposeWriter {
      * @param value the value to add
      * @param flag the flag to add
      */
-    public void addDebugMessage(String message, float value, int flag) {
+    public void addDebugMessage(@NonNull String message, float value, int flag) {
         int textId = addText(message);
         mBuffer.addDebugMessage(textId, value, flag);
     }
@@ -3351,8 +3378,8 @@ public class RemoteComposeWriter {
      * @param exp the matrix expression
      * @return the id of the matrix expression
      */
-    public float matrixExpression(float... exp) {
-        int id = mState.getNextAvailableId();
+    public float matrixExpression(float @NonNull ... exp) {
+        int id = mState.createNextAvailableId();
         mBuffer.addMatrixExpression(id, exp);
         return Utils.asNan(id);
     }
@@ -3365,9 +3392,41 @@ public class RemoteComposeWriter {
      * @param data the font data
      * @return the id of the font use in painter.setTypeface(id)
      */
-    public int addFont(byte[] data) {
-        int id = mState.getNextAvailableId();
+    public int addFont(byte @NonNull [] data) {
+        int id = mState.createNextAvailableId();
         mBuffer.addFont(id, 0, data);
         return id;
+    }
+
+    /**
+     * Create a bitmap
+     *
+     * @param width the width of the bitmap
+     * @param height the height of the bitmap
+     * @return id of bitmap
+     */
+    public int createBitmap(int width, int height) {
+        int id = mState.createNextAvailableId();
+        return mBuffer.createBitmap(id, (short) width, (short) height);
+    }
+
+    /**
+     * Draw on a bitmap, all subsequent operations will be applied to the bitmap
+     *
+     * @param bitmapId if 0 draw on main canvas
+     * @param mode to support various mode if 1 do not erase the bitmap
+     * @param color the color to fill the bitmap
+     */
+    public void drawOnBitmap(int bitmapId, int mode, int color) {
+        mBuffer.drawOnBitmap(bitmapId, mode, color);
+    }
+
+    /**
+     * Draw on a bitmap, all subsequent operations will be applied to the bitmap
+     *
+     * @param bitmapId if 0 draw on main canvas
+     */
+    public void drawOnBitmap(int bitmapId) {
+        mBuffer.drawOnBitmap(bitmapId, 0, 0);
     }
 }

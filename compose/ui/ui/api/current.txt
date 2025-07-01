@@ -135,15 +135,21 @@ package androidx.compose.ui {
   }
 
   @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public final class ComposeUiFlags {
+    method @Deprecated public boolean isClearFocusOnResetEnabled();
+    method @Deprecated public boolean isFocusActionExitsTouchModeEnabled();
+    method @Deprecated public boolean isNoPinningInFocusRestorationEnabled();
     method @Deprecated public boolean isRemoveFocusedViewFixEnabled();
+    method @Deprecated public void setClearFocusOnResetEnabled(boolean);
+    method @Deprecated public void setFocusActionExitsTouchModeEnabled(boolean);
+    method @Deprecated public void setNoPinningInFocusRestorationEnabled(boolean);
     method @Deprecated public void setRemoveFocusedViewFixEnabled(boolean);
     property public boolean areWindowInsetsRulersEnabled;
     property public boolean isAdaptiveRefreshRateEnabled;
-    property public boolean isClearFocusOnResetEnabled;
-    property public boolean isFocusActionExitsTouchModeEnabled;
+    property @Deprecated public boolean isClearFocusOnResetEnabled;
+    property @Deprecated public boolean isFocusActionExitsTouchModeEnabled;
     property public boolean isNestedScrollDispatcherNodeFixEnabled;
     property public boolean isNestedScrollInteropPostFlingFixEnabled;
-    property public boolean isNoPinningInFocusRestorationEnabled;
+    property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
     property public boolean isOutOfFrameDeactivationEnabled;
     property public boolean isPointerInteropFilterDispatchingFixEnabled;
     property public boolean isRectTrackingEnabled;
@@ -153,11 +159,11 @@ package androidx.compose.ui {
     field public static final androidx.compose.ui.ComposeUiFlags INSTANCE;
     field public static boolean areWindowInsetsRulersEnabled;
     field public static boolean isAdaptiveRefreshRateEnabled;
-    field public static boolean isClearFocusOnResetEnabled;
-    field public static boolean isFocusActionExitsTouchModeEnabled;
+    field @Deprecated public static boolean isClearFocusOnResetEnabled;
+    field @Deprecated public static boolean isFocusActionExitsTouchModeEnabled;
     field public static boolean isNestedScrollDispatcherNodeFixEnabled;
     field public static boolean isNestedScrollInteropPostFlingFixEnabled;
-    field public static boolean isNoPinningInFocusRestorationEnabled;
+    field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;
     field public static boolean isOutOfFrameDeactivationEnabled;
     field public static boolean isPointerInteropFilterDispatchingFixEnabled;
     field public static boolean isRectTrackingEnabled;

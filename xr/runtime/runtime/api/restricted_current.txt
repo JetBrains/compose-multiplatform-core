@@ -26,11 +26,11 @@ package androidx.xr.runtime {
     ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking);
     ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation);
     ctor public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence);
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional java.util.List<androidx.xr.runtime.AugmentedObjectCategory> augmentedObjectCategories, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.Config.GeospatialMode geospatial);
+    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Config(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional java.util.List<androidx.xr.runtime.AugmentedObjectCategory> augmentedObjectCategories, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.Config.FaceTrackingMode faceTracking, optional androidx.xr.runtime.Config.GeospatialMode geospatial);
     method public androidx.xr.runtime.Config copy();
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.Config.GeospatialMode geospatial, optional java.util.List<androidx.xr.runtime.AugmentedObjectCategory> augmentedObjectCategories);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence, optional androidx.xr.runtime.Config.FaceTrackingMode faceTracking, optional androidx.xr.runtime.Config.GeospatialMode geospatial, optional java.util.List<androidx.xr.runtime.AugmentedObjectCategory> augmentedObjectCategories);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation);
     method public androidx.xr.runtime.Config copy(optional androidx.xr.runtime.Config.PlaneTrackingMode planeTracking, optional androidx.xr.runtime.Config.HandTrackingMode handTracking, optional androidx.xr.runtime.Config.HeadTrackingMode headTracking, optional androidx.xr.runtime.Config.DepthEstimationMode depthEstimation, optional androidx.xr.runtime.Config.AnchorPersistenceMode anchorPersistence);
@@ -38,6 +38,7 @@ package androidx.xr.runtime {
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.runtime.AugmentedObjectCategory> getAugmentedObjectCategories();
     method public androidx.xr.runtime.Config.DepthEstimationMode getDepthEstimation();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config.DeviceTrackingMode getDeviceTracking();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config.FaceTrackingMode getFaceTracking();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config.GeospatialMode getGeospatial();
     method public androidx.xr.runtime.Config.HandTrackingMode getHandTracking();
     method public androidx.xr.runtime.Config.HeadTrackingMode getHeadTracking();
@@ -46,6 +47,7 @@ package androidx.xr.runtime {
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.runtime.AugmentedObjectCategory> augmentedObjectCategories;
     property public androidx.xr.runtime.Config.DepthEstimationMode depthEstimation;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config.DeviceTrackingMode deviceTracking;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config.FaceTrackingMode faceTracking;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.Config.GeospatialMode geospatial;
     property public androidx.xr.runtime.Config.HandTrackingMode handTracking;
     property public androidx.xr.runtime.Config.HeadTrackingMode headTracking;
@@ -94,6 +96,19 @@ package androidx.xr.runtime {
   public static final class Config.DeviceTrackingMode.Companion {
     property public androidx.xr.runtime.Config.DeviceTrackingMode DISABLED;
     property public androidx.xr.runtime.Config.DeviceTrackingMode LAST_KNOWN;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class Config.FaceTrackingMode {
+    method public int getMode();
+    property public int mode;
+    field public static final androidx.xr.runtime.Config.FaceTrackingMode.Companion Companion;
+    field public static final androidx.xr.runtime.Config.FaceTrackingMode DISABLED;
+    field public static final androidx.xr.runtime.Config.FaceTrackingMode USER;
+  }
+
+  public static final class Config.FaceTrackingMode.Companion {
+    property public androidx.xr.runtime.Config.FaceTrackingMode DISABLED;
+    property public androidx.xr.runtime.Config.FaceTrackingMode USER;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class Config.GeospatialMode {
@@ -155,6 +170,83 @@ package androidx.xr.runtime {
     property public kotlin.time.ComparableTimeMark timeMark;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public enum FaceBlendShapeType {
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType BROW_LOWERER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType BROW_LOWERER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHEEK_PUFF_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHEEK_PUFF_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHEEK_RAISER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHEEK_RAISER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHEEK_SUCK_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHEEK_SUCK_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHIN_RAISER_B;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType CHIN_RAISER_T;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType DIMPLER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType DIMPLER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_CLOSED_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_CLOSED_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_DOWN_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_DOWN_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_LEFT_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_LEFT_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_RIGHT_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_RIGHT_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_UP_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType EYES_LOOK_UP_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType INNER_BROW_RAISER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType INNER_BROW_RAISER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType JAW_DROP;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType JAW_SIDEWAYS_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType JAW_SIDEWAYS_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType JAW_THRUST;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LID_TIGHTENER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LID_TIGHTENER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIPS_TOWARD;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_CORNER_DEPRESSOR_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_CORNER_DEPRESSOR_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_CORNER_PULLER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_CORNER_PULLER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_FUNNELER_LB;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_FUNNELER_LT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_FUNNELER_RB;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_FUNNELER_RT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_PRESSOR_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_PRESSOR_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_PUCKER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_PUCKER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_STRETCHER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_STRETCHER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_SUCK_LB;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_SUCK_LT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_SUCK_RB;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_SUCK_RT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_TIGHTENER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LIP_TIGHTENER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LOWER_LIP_DEPRESSOR_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType LOWER_LIP_DEPRESSOR_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType MOUTH_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType MOUTH_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType NOSE_WRINKLER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType NOSE_WRINKLER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType OUTER_BROW_RAISER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType OUTER_BROW_RAISER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType TONGUE_DOWN;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType TONGUE_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType TONGUE_OUT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType TONGUE_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType TONGUE_UP;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType UPPER_LID_RAISER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType UPPER_LID_RAISER_RIGHT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType UPPER_LIP_RAISER_LEFT;
+    enum_constant public static final androidx.xr.runtime.FaceBlendShapeType UPPER_LIP_RAISER_RIGHT;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public enum FaceConfidenceRegionType {
+    enum_constant public static final androidx.xr.runtime.FaceConfidenceRegionType LEFT_UPPER;
+    enum_constant public static final androidx.xr.runtime.FaceConfidenceRegionType LOWER;
+    enum_constant public static final androidx.xr.runtime.FaceConfidenceRegionType RIGHT_UPPER;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FieldOfView {
     ctor public FieldOfView(float angleLeft, float angleRight, float angleUp, float angleDown);
     method public androidx.xr.runtime.FieldOfView copy();
@@ -201,6 +293,15 @@ package androidx.xr.runtime {
     enum_constant public static final androidx.xr.runtime.HandJointType WRIST;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class RequiredCalibrationType {
+    field public static final androidx.xr.runtime.RequiredCalibrationType.Companion Companion;
+    field public static final androidx.xr.runtime.RequiredCalibrationType FACE_TRACKING;
+  }
+
+  public static final class RequiredCalibrationType.Companion {
+    property public androidx.xr.runtime.RequiredCalibrationType FACE_TRACKING;
+  }
+
   public final class Session {
     ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Session(android.app.Activity activity, androidx.xr.runtime.internal.Runtime? _runtime, androidx.xr.runtime.internal.JxrPlatformAdapter? _platformAdapter);
     ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Session(android.app.Activity activity, androidx.xr.runtime.internal.Runtime? _runtime, androidx.xr.runtime.internal.JxrPlatformAdapter? _platformAdapter, optional java.util.List<? extends androidx.xr.runtime.StateExtender> stateExtenders);
@@ -233,6 +334,12 @@ package androidx.xr.runtime {
     method public androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity);
     method public androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, optional kotlin.coroutines.CoroutineContext coroutineContext);
     method @Deprecated @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.SessionCreateResult create(android.app.Activity activity, optional kotlin.coroutines.CoroutineContext coroutineContext, optional boolean unscaledGravityAlignedActivitySpace);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SessionConfigureCalibrationRequired extends androidx.xr.runtime.SessionConfigureResult {
+    ctor public SessionConfigureCalibrationRequired(androidx.xr.runtime.RequiredCalibrationType calibrationType);
+    method public androidx.xr.runtime.RequiredCalibrationType getCalibrationType();
+    property public androidx.xr.runtime.RequiredCalibrationType calibrationType;
   }
 
   public final class SessionConfigureConfigurationNotSupported extends androidx.xr.runtime.SessionConfigureResult {
@@ -683,6 +790,21 @@ package androidx.xr.runtime.internal {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface ExrImageResource extends androidx.xr.runtime.internal.Resource {
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Face {
+    method public float[] getBlendShapeValues();
+    method public float[] getConfidenceValues();
+    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method public boolean isValid();
+    property public abstract float[] blendShapeValues;
+    property public abstract float[] confidenceValues;
+    property public abstract boolean isValid;
+    property public abstract androidx.xr.runtime.TrackingState trackingState;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FaceTrackingNotCalibratedException extends androidx.xr.runtime.internal.LifecycleException {
+    ctor public FaceTrackingNotCalibratedException();
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Feature {
     field public static final androidx.xr.runtime.internal.Feature.Companion Companion;
     field public static final androidx.xr.runtime.internal.Feature FULLSTACK;
@@ -710,20 +832,18 @@ package androidx.xr.runtime.internal {
     method public void setMaterialOverride(androidx.xr.runtime.internal.MaterialResource material, String meshName);
     method public void startAnimation(boolean loop, String? animationName);
     method public void stopAnimation();
-    property @androidx.xr.runtime.internal.GltfEntity.AnimationState public abstract int animationState;
+    property @androidx.xr.runtime.internal.GltfEntity.AnimationStateValue public abstract int animationState;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static @interface GltfEntity.AnimationState {
-    field public static final androidx.xr.runtime.internal.GltfEntity.AnimationState.Companion Companion;
-    field public static final int PLAYING = 0; // 0x0
-    field public static final int STOPPED = 1; // 0x1
-  }
-
-  public static final class GltfEntity.AnimationState.Companion {
+  public static final class GltfEntity.AnimationState {
     property public static int PLAYING;
     property public static int STOPPED;
+    field public static final androidx.xr.runtime.internal.GltfEntity.AnimationState INSTANCE;
     field public static final int PLAYING = 0; // 0x0
     field public static final int STOPPED = 1; // 0x1
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) public static @interface GltfEntity.AnimationStateValue {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface GltfModelResource extends androidx.xr.runtime.internal.Resource {
@@ -1161,6 +1281,7 @@ package androidx.xr.runtime.internal {
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.runtime.internal.Hand? getRightHand();
     method public java.util.Collection<androidx.xr.runtime.internal.Trackable> getTrackables();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.internal.Face? getUserFace();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.runtime.internal.ViewCamera> getViewCameras();
     method public java.util.List<androidx.xr.runtime.internal.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method public androidx.xr.runtime.internal.Anchor loadAnchor(java.util.UUID uuid);
@@ -1172,6 +1293,7 @@ package androidx.xr.runtime.internal {
     property public abstract androidx.xr.runtime.internal.Hand? leftHand;
     property public abstract androidx.xr.runtime.internal.Hand? rightHand;
     property public abstract java.util.Collection<androidx.xr.runtime.internal.Trackable> trackables;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract androidx.xr.runtime.internal.Face? userFace;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract java.util.List<androidx.xr.runtime.internal.ViewCamera> viewCameras;
   }
 
@@ -1902,18 +2024,6 @@ package androidx.xr.runtime.internal {
     method public androidx.xr.runtime.math.Pose getPose();
     property public abstract androidx.xr.runtime.FieldOfView fieldOfView;
     property public abstract androidx.xr.runtime.math.Pose pose;
-  }
-
-}
-
-package androidx.xr.runtime.java {
-
-  public final class Coroutines {
-    method public static <T> com.google.common.util.concurrent.ListenableFuture<T> toFuture(androidx.xr.runtime.Session session, kotlin.jvm.functions.Function2<? super kotlinx.coroutines.CoroutineScope,? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> coroutine);
-  }
-
-  public final class Flows {
-    method public static <T> io.reactivex.rxjava3.core.Observable<T> toObservable(androidx.xr.runtime.Session session, kotlinx.coroutines.flow.Flow<? extends T> flow);
   }
 
 }

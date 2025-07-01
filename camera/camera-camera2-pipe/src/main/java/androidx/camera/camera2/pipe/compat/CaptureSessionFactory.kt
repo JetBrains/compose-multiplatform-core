@@ -25,6 +25,7 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.compat.OutputConfigurationWrapper.Companion.SURFACE_GROUP_ID_NONE
 import androidx.camera.camera2.pipe.config.Camera2ControllerScope
+import androidx.camera.camera2.pipe.core.HandlerExecutor
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
@@ -281,6 +282,7 @@ constructor(
                 captureSessionState,
                 graphConfig.sessionTemplate.value,
                 graphConfig.sessionParameters,
+                graphConfig.sessionColorSpace,
             )
 
         if (!cameraDevice.createCaptureSession(sessionConfig)) {
@@ -469,7 +471,10 @@ constructor(
             ExtensionSessionConfigData(
                 operatingMode,
                 outputs.all,
-                threads.camera2Executor,
+                // This is a workaround to ensure extensions callbacks are handled in order.
+                // camera2Handler is a HandlerThread and is single-threaded. This ensures callbacks
+                // are executed one at a time on extension sessions. See b/425453656 for details.
+                HandlerExecutor(threads.camera2Handler),
                 captureSessionState,
                 graphConfig.sessionTemplate.value,
                 graphConfig.sessionParameters,

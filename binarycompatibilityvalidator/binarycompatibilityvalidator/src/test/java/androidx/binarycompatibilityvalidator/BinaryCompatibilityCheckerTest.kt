@@ -370,6 +370,61 @@ class BinaryCompatibilityCheckerTest {
     }
 
     @Test
+    fun addingOverrideOfOpenParentMethod() {
+        val beforeText =
+            """
+        final class my.lib/Child : my.lib/Parent { // my.lib/Child|null[0]
+            constructor <init>() // my.lib/Child.<init>|<init>(){}[0]
+        }
+        open class my.lib/Parent { // my.lib/Parent|null[0]
+            constructor <init>() // my.lib/Parent.<init>|<init>(){}[0]
+            open fun overrideMe(): kotlin/Int // my.lib/Parent.overrideMe|overrideMe(){}[0]
+        }
+        """
+        val afterText =
+            """
+        final class my.lib/Child : my.lib/Parent { // my.lib/Child|null[0]
+            constructor <init>() // my.lib/Child.<init>|<init>(){}[0]
+            final fun overrideMe(): kotlin/Int // my.lib/Child.overrideMe|overrideMe(){}[0]
+        }
+        open class my.lib/Parent { // my.lib/Parent|null[0]
+            constructor <init>() // my.lib/Parent.<init>|<init>(){}[0]
+            open fun overrideMe(): kotlin/Int // my.lib/Parent.overrideMe|overrideMe(){}[0]
+        }
+        """
+        testBeforeAndAfterIsCompatible(beforeText, afterText)
+    }
+
+    @Test
+    fun addingOverrideOfOpenParentProperty() {
+        val beforeText =
+            """
+        final class my.lib/Child : my.lib/Parent { // my.lib/Child|null[0]
+            constructor <init>() // my.lib/Child.<init>|<init>(){}[0]
+        }
+        open class my.lib/Parent { // my.lib/Parent|null[0]
+            constructor <init>() // my.lib/Parent.<init>|<init>(){}[0]
+            open val myVal // my.lib/Parent.myVal|{}myVal[0]
+                open fun <get-myVal>(): kotlin/Int // my.lib/Parent.myVal.<get-myVal>|<get-myVal>(){}[0]
+        }
+        """
+        val afterText =
+            """
+        final class my.lib/Child : my.lib/Parent { // my.lib/Child|null[0]
+            constructor <init>() // my.lib/Child.<init>|<init>(){}[0]
+            final val myVal // my.lib/Child.myVal|{}myVal[0]
+                final fun <get-myVal>(): kotlin/Int // my.lib/Child.myVal.<get-myVal>|<get-myVal>(){}[0]
+        }
+        open class my.lib/Parent { // my.lib/Parent|null[0]
+            constructor <init>() // my.lib/Parent.<init>|<init>(){}[0]
+            open val myVal // my.lib/Parent.myVal|{}myVal[0]
+                open fun <get-myVal>(): kotlin/Int // my.lib/Parent.myVal.<get-myVal>|<get-myVal>(){}[0]
+        }
+        """
+        testBeforeAndAfterIsCompatible(beforeText, afterText)
+    }
+
+    @Test
     fun changeToAnnotationClass() {
         val beforeText =
             """

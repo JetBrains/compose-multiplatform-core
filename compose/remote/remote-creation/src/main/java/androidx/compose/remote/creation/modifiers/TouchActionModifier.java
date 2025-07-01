@@ -22,12 +22,14 @@ import androidx.compose.remote.core.operations.layout.TouchUpModifierOperation;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 import androidx.compose.remote.creation.actions.Action;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /** Encapsulate actions */
 public class TouchActionModifier implements RecordingModifier.Element {
-    ArrayList<Action> mList = new ArrayList<>();
+    @NonNull ArrayList<Action> mList = new ArrayList<>();
 
     public static final int DOWN = 0;
     public static final int UP = 1;
@@ -35,13 +37,13 @@ public class TouchActionModifier implements RecordingModifier.Element {
 
     int mType = DOWN;
 
-    public TouchActionModifier(int type, List<Action> actions) {
+    public TouchActionModifier(int type, @NonNull List<Action> actions) {
         mList.addAll(actions);
         mType = type;
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         if (mType == DOWN) {
             TouchDownModifierOperation.apply(writer.getBuffer().getBuffer());
         } else if (mType == UP) {
@@ -55,7 +57,7 @@ public class TouchActionModifier implements RecordingModifier.Element {
         ContainerEnd.apply(writer.getBuffer().getBuffer());
     }
 
-    public List<Action> getActions() {
+    public @NonNull List<Action> getActions() {
         return mList;
     }
 }

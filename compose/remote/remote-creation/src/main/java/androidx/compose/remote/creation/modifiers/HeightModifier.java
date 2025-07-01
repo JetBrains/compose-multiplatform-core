@@ -19,17 +19,19 @@ import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifie
 import androidx.compose.remote.core.operations.layout.modifiers.HeightModifierOperation;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Height modifier */
 public class HeightModifier implements RecordingModifier.Element {
-    DimensionModifierOperation.Type mType;
+    DimensionModifierOperation.@NonNull Type mType;
     float mValue;
 
-    public HeightModifier(DimensionModifierOperation.Type type, float value) {
+    public HeightModifier(DimensionModifierOperation.@NonNull Type type, float value) {
         mType = type;
         mValue = value;
     }
 
-    public HeightModifier(DimensionModifierOperation.Type type) {
+    public HeightModifier(DimensionModifierOperation.@NonNull Type type) {
         this(type, Float.NaN);
     }
 
@@ -38,7 +40,7 @@ public class HeightModifier implements RecordingModifier.Element {
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         HeightModifierOperation.apply(writer.getBuffer().getBuffer(), mType.ordinal(), mValue);
     }
 
@@ -48,12 +50,12 @@ public class HeightModifier implements RecordingModifier.Element {
      * @param type
      * @param value
      */
-    public void update(DimensionModifierOperation.Type type, float value) {
+    public void update(DimensionModifierOperation.@NonNull Type type, float value) {
         mType = type;
         mValue = value;
     }
 
-    public DimensionModifierOperation.Type getType() {
+    public DimensionModifierOperation.@NonNull Type getType() {
         return mType;
     }
 

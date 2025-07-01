@@ -27,7 +27,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertIs
-import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,7 +35,6 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,9 +54,8 @@ class AppFunctionTestRuleTest {
     @get:Rule val timeoutRule = TimeoutRule(10, TimeUnit.SECONDS)
 
     private val appFunctionManagerCompat: AppFunctionManagerCompat =
-        assertNotNull(AppFunctionManagerCompat.getInstance(context))
+        appFunctionTestRule.getAppFunctionManagerCompat()
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_observeApiNoFilter_returnsAllAppFunctions() =
         runBlocking<Unit> {
@@ -71,7 +68,6 @@ class AppFunctionTestRuleTest {
             assertThat(results.single()).hasSize(8)
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_observeApi_returnsNewValueOnUpdate() =
         runBlocking<Unit> {
@@ -105,7 +101,6 @@ class AppFunctionTestRuleTest {
                 .isTrue()
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterBySchemaName_success() =
         runBlocking<Unit> {
@@ -124,7 +119,6 @@ class AppFunctionTestRuleTest {
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterByPackageName_success() =
         runBlocking<Unit> {
@@ -139,7 +133,6 @@ class AppFunctionTestRuleTest {
             assertThat(results.single()).hasSize(8)
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterBySchemaCategory_success() =
         runBlocking<Unit> {
@@ -158,7 +151,6 @@ class AppFunctionTestRuleTest {
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterByMinSchemaVersion_success() =
         runBlocking<Unit> {
@@ -177,7 +169,6 @@ class AppFunctionTestRuleTest {
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_currentPackage_enabledByDefault_modified_success() =
         runBlocking<Unit> {
@@ -192,7 +183,6 @@ class AppFunctionTestRuleTest {
             assertThat(appFunctionManagerCompat.isAppFunctionEnabled(functionId)).isFalse()
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modified_success() =
         runBlocking<Unit> {
@@ -207,7 +197,6 @@ class AppFunctionTestRuleTest {
             assertThat(appFunctionManagerCompat.isAppFunctionEnabled(functionId)).isTrue()
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun executeAppFunction_success() =
         runBlocking<Unit> {
@@ -233,7 +222,6 @@ class AppFunctionTestRuleTest {
                 .isEqualTo(3)
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modifiedAndRestoredToDefault_success() =
         runBlocking<Unit> {

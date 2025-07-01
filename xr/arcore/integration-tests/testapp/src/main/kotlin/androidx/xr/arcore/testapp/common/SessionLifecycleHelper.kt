@@ -112,6 +112,9 @@ class SessionLifecycleHelper(
                     is SessionConfigureSuccess -> {
                         onSessionAvailable(session)
                     }
+                    else -> {
+                        showErrorMessage("Unexpected ${configResult::class.simpleName}")
+                    }
                 }
             }
             is SessionCreatePermissionsNotGranted -> {

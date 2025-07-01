@@ -56,7 +56,7 @@ public class FontData extends Operation implements SerializableToString, Seriali
      *
      * @param from the fontData to copy
      */
-    public void update(FontData from) {
+    public void update(@NonNull FontData from) {
         this.mFontData = from.mFontData;
     }
 

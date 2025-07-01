@@ -46,6 +46,8 @@ constructor(
     public val depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
     public val anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val faceTracking: FaceTrackingMode = FaceTrackingMode.DISABLED,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val geospatial: GeospatialMode = GeospatialMode.DISABLED,
 ) {
 
@@ -81,7 +83,8 @@ constructor(
         headTracking.toDeviceTrackingMode(),
         depthEstimation,
         anchorPersistence,
-        GeospatialMode.DISABLED,
+        faceTracking = FaceTrackingMode.DISABLED,
+        geospatial = GeospatialMode.DISABLED,
     )
 
     /** Feature that allows tracking of the user's head position. See [Config.HeadTrackingMode]. */
@@ -96,6 +99,7 @@ constructor(
         if (deviceTracking != other.deviceTracking) return false
         if (depthEstimation != other.depthEstimation) return false
         if (anchorPersistence != other.anchorPersistence) return false
+        if (faceTracking != other.faceTracking) return false
         if (geospatial != other.geospatial) return false
         if (augmentedObjectCategories != other.augmentedObjectCategories) return false
 
@@ -108,6 +112,7 @@ constructor(
         result = 31 * result + deviceTracking.hashCode()
         result = 31 * result + depthEstimation.hashCode()
         result = 31 * result + anchorPersistence.hashCode()
+        result = 31 * result + faceTracking.hashCode()
         result = 31 * result + geospatial.hashCode()
         result = 31 * result + augmentedObjectCategories.hashCode()
         return result
@@ -128,6 +133,7 @@ constructor(
             deviceTracking = headTracking.toDeviceTrackingMode(),
             depthEstimation = depthEstimation,
             anchorPersistence = anchorPersistence,
+            faceTracking = this.faceTracking,
             geospatial = this.geospatial,
         )
     }
@@ -140,6 +146,7 @@ constructor(
         deviceTracking: DeviceTrackingMode = this.deviceTracking,
         depthEstimation: DepthEstimationMode = this.depthEstimation,
         anchorPersistence: AnchorPersistenceMode = this.anchorPersistence,
+        faceTracking: FaceTrackingMode = this.faceTracking,
         geospatial: GeospatialMode = this.geospatial,
         augmentedObjectCategories: List<AugmentedObjectCategory> = this.augmentedObjectCategories,
     ): Config {
@@ -150,6 +157,7 @@ constructor(
             deviceTracking = deviceTracking,
             depthEstimation = depthEstimation,
             anchorPersistence = anchorPersistence,
+            faceTracking = faceTracking,
             geospatial = geospatial,
         )
     }
@@ -326,6 +334,22 @@ constructor(
 
         override fun toString(): String {
             return "AnchorPersistence_" + if (mode == 0) "DISABLED" else "LOCAL"
+        }
+    }
+
+    /**
+     * Feature that allows tracking of human faces.
+     *
+     * Setting this feature to [FaceTrackingMode.USER] requires that the `FACE_TRACKING` Android
+     * permission is granted by the calling application.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public class FaceTrackingMode private constructor(public val mode: Int) {
+        public companion object {
+            /** Faces will not be tracked. */
+            @JvmField public val DISABLED: FaceTrackingMode = FaceTrackingMode(0)
+            /** The user's face will be tracked. */
+            @JvmField public val USER: FaceTrackingMode = FaceTrackingMode(1)
         }
     }
 

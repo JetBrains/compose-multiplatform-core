@@ -19,9 +19,25 @@
 package androidx.xr.arcore.rxjava3
 
 import androidx.xr.arcore.Plane
+import androidx.xr.runtime.Session
 import io.reactivex.rxjava3.core.Flowable
 import kotlinx.coroutines.rx3.asFlowable
 
 /** The current state of the [Plane]. */
 public val Plane.stateAsFlowable: Flowable<Plane.State>
     get() = state.asFlowable()
+
+/**
+ * Emits the planes that are currently being tracked in the [session].
+ *
+ * Only [Plane]s that are [TrackingState.TRACKING] will be emitted in the [Collection]. Instances of
+ * the same [Plane] will remain between subsequent emits to the [StateFlow] as long as they remain
+ * tracking.
+ *
+ * @param session The active ARCore [Session] from which to track plane updates.
+ * @return a Flowable<Collection<Plane>>. That emits collections of [Plane] objects representing
+ *   currently tracked planes.
+ * @throws [IllegalStateException] if [Session.config] is set to [Config.PlaneTrackingMode.DISABLED]
+ */
+public fun subscribeAsFlowable(session: Session): Flowable<Collection<Plane>> =
+    Plane.subscribe(session).asFlowable()

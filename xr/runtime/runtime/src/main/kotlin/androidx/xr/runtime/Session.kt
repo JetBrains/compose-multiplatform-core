@@ -27,6 +27,7 @@ import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
+import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.JxrPlatformAdapterFactory
 import androidx.xr.runtime.internal.PermissionNotGrantedException
@@ -278,6 +279,8 @@ public constructor(
             return SessionConfigurePermissionsNotGranted(e.permissions)
         } catch (e: ConfigurationNotSupportedException) {
             return SessionConfigureConfigurationNotSupported()
+        } catch (e: FaceTrackingNotCalibratedException) {
+            return SessionConfigureCalibrationRequired(RequiredCalibrationType.FACE_TRACKING)
         }
         return SessionConfigureSuccess()
     }

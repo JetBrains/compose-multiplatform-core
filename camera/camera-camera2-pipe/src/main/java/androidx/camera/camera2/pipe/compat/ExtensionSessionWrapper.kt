@@ -28,8 +28,7 @@ import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
-import java.util.LinkedList
-import java.util.Queue
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executor
 import kotlin.reflect.KClass
 import kotlinx.atomicfu.AtomicLong
@@ -163,8 +162,7 @@ internal open class AndroidCameraExtensionSession(
                     request,
                     callbackExecutor,
                     Camera2CaptureSessionCallbackToExtensionCaptureCallback(
-                        listener as Camera2CaptureCallback,
-                        LinkedList(),
+                        listener as Camera2CaptureCallback
                     ),
                 )
             } else {
@@ -189,8 +187,7 @@ internal open class AndroidCameraExtensionSession(
                     request,
                     callbackExecutor,
                     Camera2CaptureSessionCallbackToExtensionCaptureCallback(
-                        listener as Camera2CaptureCallback,
-                        LinkedList(),
+                        listener as Camera2CaptureCallback
                     ),
                 )
             } else {
@@ -263,9 +260,9 @@ internal open class AndroidCameraExtensionSession(
     }
 
     inner class Camera2CaptureSessionCallbackToExtensionCaptureCallback(
-        private val captureCallback: Camera2CaptureCallback,
-        private val frameQueue: Queue<Long>,
+        private val captureCallback: Camera2CaptureCallback
     ) : CameraExtensionSession.ExtensionCaptureCallback() {
+        private val frameQueue = ConcurrentLinkedQueue<Long>()
 
         override fun onCaptureStarted(
             session: CameraExtensionSession,

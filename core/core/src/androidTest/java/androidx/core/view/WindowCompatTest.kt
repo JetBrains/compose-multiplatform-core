@@ -44,6 +44,7 @@ class WindowCompatTest :
         assertViewFillWindow(view, window)
     }
 
+    @Suppress("DEPRECATION")
     @Test
     fun tests_enableEdgeToEdge() {
         val window = mActivityTestRule.activity.window

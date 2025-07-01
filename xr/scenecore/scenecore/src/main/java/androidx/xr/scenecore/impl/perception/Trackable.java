@@ -38,8 +38,8 @@ public interface Trackable {
      *     uptimeNanos() at which to get the pose, in nanoseconds. If time is null or negative, the
      *     current time will be used.
      */
-    @Nullable Anchor createAnchor(@NonNull Pose pose,
-            @SuppressWarnings("AutoBoxing") @Nullable Long timeNs);
+    @Nullable Anchor createAnchor(
+            @NonNull Pose pose, @SuppressWarnings("AutoBoxing") @Nullable Long timeNs);
 
     /** Returns all anchors attached to this trackable. */
     @NonNull List<Anchor> getAnchors();

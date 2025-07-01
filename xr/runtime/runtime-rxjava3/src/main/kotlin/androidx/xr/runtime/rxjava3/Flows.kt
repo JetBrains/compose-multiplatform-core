@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 @file:JvmName("Flows")
 
-package androidx.xr.runtime.java
+package androidx.xr.runtime.rxjava3
 
 import androidx.xr.runtime.Session
 import io.reactivex.rxjava3.core.Observable
@@ -24,12 +24,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.rx3.asObservable
 
 /**
- * Converts a [flow] created within the [session] to an [Observable].
+ * Converts a [flow] created within the [session] to an [io.reactivex.rxjava3.core.Observable].
  *
- * The returned [Observable] will be given the session's [CoroutineContext].
+ * The returned [io.reactivex.rxjava3.core.Observable] will be given the session's
+ * [CoroutineContext].
  *
- * @param session the [Session] that originated the [flow].
- * @param flow the [Flow] to convert to an [Observable].
+ * @param session the [androidx.xr.runtime.Session] that originated the [flow].
+ * @param flow the [kotlinx.coroutines.flow.Flow] to convert to an
+ *   [io.reactivex.rxjava3.core.Observable].
  */
 public fun <T : Any> toObservable(session: Session, flow: Flow<T>): Observable<T> =
     flow.asObservable(session.coroutineScope.coroutineContext)

@@ -18,6 +18,8 @@ package androidx.compose.remote.creation.modifiers;
 import androidx.compose.remote.core.operations.layout.modifiers.WidthInModifierOperation;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Width modifier */
 public class WidthInModifier implements RecordingModifier.Element {
 
@@ -30,7 +32,7 @@ public class WidthInModifier implements RecordingModifier.Element {
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         WidthInModifierOperation.apply(writer.getBuffer().getBuffer(), mMin, mMax);
     }
 

@@ -20,12 +20,15 @@ import androidx.compose.remote.core.operations.layout.modifiers.HostActionOperat
 import androidx.compose.remote.core.operations.layout.modifiers.HostNamedActionOperation;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 public class HostAction implements Action {
     int mActionId = -1;
     int mValueId = -1;
     int mType = -1;
 
-    String mActionName = null;
+    @Nullable String mActionName = null;
 
     public HostAction(int id) {
         mActionId = id;
@@ -36,23 +39,23 @@ public class HostAction implements Action {
         mValueId = metadataId;
     }
 
-    public HostAction(String name, int type, int valueId) {
+    public HostAction(@NonNull String name, int type, int valueId) {
         mActionName = name;
         mType = type;
         mValueId = valueId;
     }
 
-    public HostAction(String name) {
+    public HostAction(@NonNull String name) {
         mActionName = name;
         mValueId = -1;
     }
 
-    public String getActionName() {
+    public @Nullable String getActionName() {
         return mActionName;
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         if (mActionName == null) {
             if (mValueId != -1) {
                 HostActionMetadataOperation.apply(
@@ -67,7 +70,7 @@ public class HostAction implements Action {
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "HostAction{"
                 + "mActionId="
                 + mActionId

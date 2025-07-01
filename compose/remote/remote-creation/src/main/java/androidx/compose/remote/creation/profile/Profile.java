@@ -43,15 +43,15 @@ import org.jspecify.annotations.NonNull;
 public class Profile {
     int mApiLevel;
     int mOperationsProfiles;
-    Platform mPlatform;
-    ProfileFactory mFactory;
+    @NonNull Platform mPlatform;
+    @NonNull ProfileFactory mFactory;
 
     // Platform profile
-    public static Profile WIDGETS_V6 =
+    public static @NonNull Profile WIDGETS_V6 =
             new Profile(6, 0, new AndroidxPlatformServices(), WidgetsProfileWriterV6::new);
 
     // Default AndroidX profile
-    public static Profile ANDROIDX =
+    public static @NonNull Profile ANDROIDX =
             new Profile(
                     CoreDocument.DOCUMENT_API_LEVEL,
                     Operations.PROFILE_ANDROIDX,
@@ -85,7 +85,7 @@ public class Profile {
      * @param description content description
      * @return a valid RemoteComposeWriter
      */
-    public RemoteComposeWriter create(int width, int height, @NonNull String description) {
+    public @NonNull RemoteComposeWriter create(int width, int height, @NonNull String description) {
         return mFactory.create(
                 width, height, description, mApiLevel, mOperationsProfiles, mPlatform);
     }

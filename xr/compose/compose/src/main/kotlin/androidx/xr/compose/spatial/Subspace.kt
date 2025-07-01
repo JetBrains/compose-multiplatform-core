@@ -17,7 +17,6 @@
 package androidx.xr.compose.spatial
 
 import androidx.activity.ComponentActivity
-import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.CompositionLocalProvider
@@ -38,7 +37,6 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalCoreEntity
@@ -57,30 +55,14 @@ import androidx.xr.compose.subspace.node.SubspaceNodeApplier
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
-import androidx.xr.runtime.Config.HeadTrackingMode
-import androidx.xr.runtime.FieldOfView
-import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
-import androidx.xr.scenecore.ActivitySpace
-import androidx.xr.scenecore.CameraView
-import androidx.xr.scenecore.CameraView.CameraType
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
-import androidx.xr.scenecore.Head
-import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
-import kotlin.coroutines.resume
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.tan
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.android.awaitFrame
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
-import org.jetbrains.annotations.TestOnly
 
 private val LocalIsInApplicationSubspace: ProvidableCompositionLocal<Boolean> =
     compositionLocalWithComputedDefaultOf {
@@ -92,26 +74,14 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
         LocalComposeXrOwners.currentValue?.subspaceRootNode
     }
 
-/** Defines default values used by the Subspace composables, primarily [ApplicationSubspace]. */
-public object SubspaceDefaults {
-    /**
-     * Default [VolumeConstraints] used as a fallback value.
-     *
-     * This value is primarily used as the default `constraints` parameter when
-     * [ConstraintsBehavior.FieldOfView] is used.
-     */
-    public val fallbackFieldOfViewConstraints: VolumeConstraints =
-        VolumeConstraints(minWidth = 0, maxWidth = 2775, minHeight = 0, maxHeight = 2576)
-}
-
 /**
  * Create a 3D area that the app can render spatial content into.
  *
- * If this is the topmost [Subspace] in the compose hierarchy then this will expand to fill all of
- * the available space bounded by the SpatialUser's field of view in width and height and will not
- * be bound by its containing window. In case the field of view width and height cannot be
- * determined, the default field of view width and height values will be used. See
- * [ApplicationSubspace] for more detailed information about top-level [Subspace] behavior.
+ * If this is the topmost [Subspace] in the compose hierarchy, its size will be determined by the
+ * system's recommended content box. This provides a device-specific volume that represents a
+ * comfortable, human-scale viewing area, making it the recommended way to create responsive spatial
+ * layouts. See [ApplicationSubspace] for more detailed information and customization options for
+ * this top-level behavior.
  *
  * If this is nested within another [Subspace] then it will lay out its content in the X and Y
  * directions according to the layout logic of its parent in 2D space. It will be constrained in the
@@ -124,11 +94,7 @@ public object SubspaceDefaults {
  * state is maintained consistently in the spatial scene and to allow preparation for the support of
  * rendering spatial UI. State should be maintained by the compose runtime and events that cause the
  * compose runtime to lose state (app process killed or configuration change) will also cause the
- * ApplicationSubspace to lose its state.
- *
- * [Subspace] attempts to use the SpatialUser's field of view as width/height constraints for the
- * subspace being created. If the calculation fails or if the `HEAD_TRACKING` Android permission is
- * not granted, the default field of view width/height values will be used.
+ * Subspace to lose its state.
  *
  * @param content The 3D content to render within this Subspace.
  */
@@ -147,32 +113,7 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
     } else if (LocalIsInApplicationSubspace.current) {
         NestedSubspace(activity, content)
     } else {
-        ApplicationSubspace(
-            activity = activity,
-            constraints = SubspaceDefaults.fallbackFieldOfViewConstraints,
-            constraintsBehavior = ConstraintsBehavior.FieldOfView,
-            content = content,
-        )
-    }
-}
-
-/** Defines the behavior for applying [VolumeConstraints] to an ApplicationSubspace. */
-@JvmInline
-public value class ConstraintsBehavior private constructor(private val value: Int) {
-    public companion object {
-        /**
-         * Use the passed-in [VolumeConstraints] directly, without attempting to calculate field of
-         * view constraints.
-         */
-        public val Specified: ConstraintsBehavior = ConstraintsBehavior(0)
-
-        /**
-         * Attempt to calculate the [ApplicationSubspace]'s [VolumeConstraints] based on the
-         * SpatialUser's field of view. If the field of view cannot be determined (e.g., due to the
-         * perception stack not being ready), the [VolumeConstraints] provided to the
-         * [ApplicationSubspace] will be used as a fallback.
-         */
-        public val FieldOfView: ConstraintsBehavior = ConstraintsBehavior(1)
+        ApplicationSubspace(activity = activity, constraints = null, content = content)
     }
 }
 
@@ -185,6 +126,11 @@ public value class ConstraintsBehavior private constructor(private val value: In
  * 3D content areas, use the [Subspace] composable. The [ApplicationSubspace] will inherit its
  * position and scale from the system's recommended position and scale.
  *
+ * By default, with no `constraints` provided, this Subspace is bounded by a recommended content
+ * box. This box represents a comfortable, human-scale area in front of the user, sized to occupy a
+ * significant portion of their view on any given device. Using this default is the suggested way to
+ * create responsive spatial layouts that look great without hardcoding dimensions.
+ *
  * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
  * Tablet).
  *
@@ -195,22 +141,16 @@ public value class ConstraintsBehavior private constructor(private val value: In
  * events that cause the compose runtime to lose state (app process killed or configuration change)
  * will also cause the ApplicationSubspace to lose its state.
  *
- * @param constraints The volume constraints to apply to this [ApplicationSubspace]. The behavior of
- *   these constraints depends on the [constraintsBehavior]. By default, this is set to the default
- *   field of view constraints.
- * @param constraintsBehavior Specifies how the provided [constraints] should be applied. Use
- *   [ConstraintsBehavior.Specified] to directly use the provided constraints, or
- *   [ConstraintsBehavior.FieldOfView] to attempt to use calculated field of view constraints,
- *   falling back to the provided constraints if calculation fails or if the `HEAD_TRACKING` Android
- *   permission is not granted.
- * @param content The 3D content to render within this Subspace
+ * @param constraints The volume constraints to apply to this [ApplicationSubspace]. If `null` (the
+ *   default), the Subspace will be sized based on the system's recommended content box. This
+ *   default provides a device-specific volume appropriate for comfortable viewing and interaction.
+ * @param content The 3D content to render within this Subspace.
  */
 @Composable
 @ComposableOpenTarget(index = -1)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
 public fun ApplicationSubspace(
-    constraints: VolumeConstraints = SubspaceDefaults.fallbackFieldOfViewConstraints,
-    constraintsBehavior: ConstraintsBehavior = ConstraintsBehavior.FieldOfView,
+    constraints: VolumeConstraints? = null,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     val activity = LocalContext.current.getActivity() as? ComponentActivity ?: return
@@ -224,12 +164,7 @@ public fun ApplicationSubspace(
     } else if (LocalIsInApplicationSubspace.current) {
         throw IllegalStateException("ApplicationSubspace cannot be nested within another Subspace.")
     } else {
-        ApplicationSubspace(
-            activity = activity,
-            constraints = constraints,
-            constraintsBehavior = constraintsBehavior,
-            content = content,
-        )
+        ApplicationSubspace(activity = activity, constraints = constraints, content = content)
     }
 }
 
@@ -248,8 +183,7 @@ public fun ApplicationSubspace(
 @Composable
 private fun ApplicationSubspace(
     activity: ComponentActivity,
-    constraints: VolumeConstraints,
-    constraintsBehavior: ConstraintsBehavior,
+    constraints: VolumeConstraints?,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
@@ -273,11 +207,28 @@ private fun ApplicationSubspace(
         }
     }
 
+    val density = LocalDensity.current
     scene.rootVolumeConstraints =
-        when (constraintsBehavior) {
-            ConstraintsBehavior.Specified -> constraints
-            else -> rememberCalculatedFovConstraints(constraints) ?: return
+        remember(constraints, density) {
+            constraints
+                ?: run {
+                    val box: BoundingBox =
+                        session.scene.activitySpace.recommendedContentBoxInFullSpace
+                    val widthMeters = Meter(box.max.x - box.min.x)
+                    val heightMeters = Meter(box.max.y - box.min.y)
+                    val depthMeters = Meter(box.max.z - box.min.z)
+
+                    VolumeConstraints(
+                        minWidth = 0,
+                        maxWidth = widthMeters.roundToPx(density),
+                        minHeight = 0,
+                        maxHeight = heightMeters.roundToPx(density),
+                        minDepth = 0,
+                        maxDepth = depthMeters.roundToPx(density),
+                    )
+                }
         }
+
     scene.setContent {
         CompositionLocalProvider(LocalIsInApplicationSubspace provides true) {
             SpatialBox(content = content)
@@ -385,256 +336,4 @@ private fun NestedSubspace(
 
         layout(measuredSize.width, measuredSize.height) {}
     }
-}
-
-@VisibleForTesting
-internal object PerceptionStackRetrySettings {
-    /** Total maximum time to wait for perception stack data in milliseconds. */
-    internal const val MAX_WAIT_TIME_MILLIS = 500L
-    /** Interval between checks within the timeout period. */
-    internal const val RETRY_INTERVAL_MILLIS = 17L
-    /** Allows overriding the dispatcher used for FOV polling/calculations in tests. */
-    @TestOnly var FovPollingDispatcherOverride: CoroutineDispatcher? = null
-}
-
-/**
- * Calculates [VolumeConstraints] based on the user's field of view relative to the ActivitySpace.
- *
- * Used internally by [ApplicationSubspace] when [ConstraintsBehavior.FieldOfView] is specified.
- *
- * Calculates the FOV width/height in pixels at the user's distance from the origin. Uses the
- * provided [fallbackFovConstraints] if the calculation times out, fails, or the distance is zero,
- * or the `HEAD_TRACKING` Android permission is not granted.
- *
- * If the perception stack components (Head, Cameras) are not yet available, it retries periodically
- * ([PerceptionStackRetrySettings.RETRY_INTERVAL_MILLIS]) up to the maximum wait time
- * ([PerceptionStackRetrySettings.MAX_WAIT_TIME_MILLIS]).
- *
- * If the perception stack is ready but the ActivitySpace scale is zero, it registers a listener to
- * trigger potential re-evaluation and continues retrying with delays. The listener is removed after
- * use.
- *
- * @param fallbackFovConstraints The [VolumeConstraints] to return if the FOV-based calculation
- *   fails (e.g., perception stack unavailable after retries), times out, or results in zero
- *   distance.
- * @return Initially `null` while calculating or waiting. Once the calculation finishes or times
- *   out, it returns either the dynamically calculated FOV-based [VolumeConstraints] or the
- *   [fallbackFovConstraints]. Callers relying on this function must handle the initial `null` state
- *   and subsequent recomposition when the non-null value becomes available.
- */
-@Composable
-private fun rememberCalculatedFovConstraints(
-    fallbackFovConstraints: VolumeConstraints
-): VolumeConstraints? {
-    val session = LocalSession.current ?: return null
-    val activitySpace = session.scene.activitySpace
-    val density = LocalDensity.current
-
-    val calculatedFovConstraints = remember {
-        mutableStateOf<VolumeConstraints?>(
-            if (session.config.headTracking == HeadTrackingMode.DISABLED) {
-                fallbackFovConstraints
-            } else {
-                val head: Head? = session.scene.spatialUser.head
-                val leftCamera: CameraView? =
-                    session.scene.spatialUser.cameraViews[CameraType.LEFT_EYE]
-                val rightCamera: CameraView? =
-                    session.scene.spatialUser.cameraViews[CameraType.RIGHT_EYE]
-                val scale = activitySpace.getScale(Space.REAL_WORLD)
-
-                if (head == null || leftCamera == null || rightCamera == null || scale == 0f) {
-                    null
-                } else {
-                    calculateFovConstraints(
-                        head,
-                        leftCamera,
-                        rightCamera,
-                        scale,
-                        density,
-                        fallbackFovConstraints,
-                        activitySpace,
-                    )
-                }
-            }
-        )
-    }
-
-    if (calculatedFovConstraints.value != null) {
-        return calculatedFovConstraints.value
-    }
-
-    LaunchedEffect(Unit) {
-        calculatedFovConstraints.value =
-            withContext(
-                PerceptionStackRetrySettings.FovPollingDispatcherOverride ?: Dispatchers.Default
-            ) {
-                val timeoutResult: VolumeConstraints? =
-                    withTimeoutOrNull(PerceptionStackRetrySettings.MAX_WAIT_TIME_MILLIS) {
-                        pollUntilReadyAndCalculateFovConstraints(
-                            session,
-                            density,
-                            fallbackFovConstraints,
-                            activitySpace,
-                        )
-                    }
-
-                return@withContext timeoutResult ?: fallbackFovConstraints
-            }
-    }
-
-    return calculatedFovConstraints.value
-}
-
-/**
- * Polls until the perception stack is ready and ActivitySpace scale is valid, then calculates FOV
- * constraints.
- */
-private suspend fun pollUntilReadyAndCalculateFovConstraints(
-    session: Session,
-    density: Density,
-    fallbackConstraints: VolumeConstraints,
-    activitySpace: ActivitySpace,
-): VolumeConstraints {
-    while (true) {
-        val head: Head? = session.scene.spatialUser.head
-        val leftCamera: CameraView? = session.scene.spatialUser.cameraViews[CameraType.LEFT_EYE]
-        val rightCamera: CameraView? = session.scene.spatialUser.cameraViews[CameraType.RIGHT_EYE]
-
-        if (head == null || leftCamera == null || rightCamera == null) {
-            delay(PerceptionStackRetrySettings.RETRY_INTERVAL_MILLIS)
-
-            continue
-        }
-
-        val currentScale = activitySpace.getScale(Space.REAL_WORLD)
-        if (currentScale == 0f) {
-            activitySpace.awaitUpdate()
-
-            continue
-        }
-
-        return calculateFovConstraints(
-            head,
-            leftCamera,
-            rightCamera,
-            currentScale,
-            density,
-            fallbackConstraints,
-            activitySpace,
-        )
-    }
-}
-
-/**
- * Suspends until the ActivitySpace provides an update via its listener. Ensures the listener is
- * removed on cancellation or successful resumption.
- */
-private suspend fun ActivitySpace.awaitUpdate(): Unit =
-    suspendCancellableCoroutine { continuation ->
-        this.setOnSpaceUpdatedListener({ continuation.resume(Unit) })
-
-        continuation.invokeOnCancellation { setOnSpaceUpdatedListener(null) }
-    }
-
-private fun calculateFovConstraints(
-    head: Head,
-    leftCamera: CameraView,
-    rightCamera: CameraView,
-    scale: Float,
-    density: Density,
-    fallbackConstraints: VolumeConstraints,
-    activitySpace: ActivitySpace,
-): VolumeConstraints {
-    val distance: Meter =
-        getDistanceBetweenUserAndActivitySpaceOrigin(
-            head.activitySpacePose,
-            activitySpace.activitySpacePose,
-            scale,
-        )
-    val fov = getSpatialUserFov(leftCamera.fov, rightCamera.fov)
-
-    return if (distance.value == 0.0f) {
-        fallbackConstraints
-    } else {
-        VolumeConstraints(
-            minWidth = 0,
-            maxWidth = getFovWidthAtDistance(distance, fov, density),
-            minHeight = 0,
-            maxHeight = getFovHeightAtDistance(distance, fov, density),
-            minDepth = 0,
-            maxDepth = VolumeConstraints.INFINITY,
-        )
-    }
-}
-
-/**
- * Calculates the distance between the SpatialUser's Head and the origin of Activity Space.
- *
- * The distance is calculated in physical reality meters, taking into account the Activity Space
- * scale.
- *
- * @param headActivitySpacePose The pose of the SpatialUser's head in Activity Space.
- * @param activitySpacePose The pose of the Activity Space origin in Activity Space
- * @param scale The scale factor of the Activity Space to real-world space.
- * @return The distance in [Meter].
- */
-private fun getDistanceBetweenUserAndActivitySpaceOrigin(
-    headActivitySpacePose: Pose,
-    activitySpacePose: Pose,
-    scale: Float,
-): Meter {
-    val distanceInActivitySpaceUnit: Float = Pose.distance(headActivitySpacePose, activitySpacePose)
-
-    return Meter(distanceInActivitySpaceUnit / scale)
-}
-
-/**
- * Returns the combined field of view of the SpatialUser.
- *
- * Returns a [FieldOfView] representing the maximum extent of the left and right cameras' fields of
- * view.
- *
- * @param leftFov The field of view of the left camera.
- * @param rightFov The field of view of the right camera.
- * @return The combined field of view [FieldOfView].
- */
-private fun getSpatialUserFov(leftFov: FieldOfView, rightFov: FieldOfView): FieldOfView {
-    val combinedLeft: Float = min(leftFov.angleLeft, rightFov.angleLeft)
-    val combinedRight: Float = max(leftFov.angleRight, rightFov.angleRight)
-    val combinedUp: Float = max(leftFov.angleUp, rightFov.angleUp)
-    val combinedDown: Float = min(leftFov.angleDown, rightFov.angleDown)
-
-    return FieldOfView(combinedLeft, combinedRight, combinedUp, combinedDown)
-}
-
-/**
- * Calculates the width in pixels corresponding to a field of view at a given distance.
- *
- * Takes into account the density to convert the width from meters to pixels.
- *
- * @param distance The distance to the object in [Meter].
- * @param fov The field of view [FieldOfView].
- * @param density The current [Density].
- * @return The width in pixels.
- */
-private fun getFovWidthAtDistance(distance: Meter, fov: FieldOfView, density: Density): Int {
-    val width: Meter = distance * (tan(fov.angleRight) - tan(fov.angleLeft))
-
-    return width.roundToPx(density)
-}
-
-/**
- * Calculates the height in pixels corresponding to a field of view at a given distance.
- *
- * Takes into account the density to convert the height from meters to pixels.
- *
- * @param distance The distance to the object in [Meter].
- * @param fov The field of view [FieldOfView].
- * @param density The current [Density].
- * @return The height in pixels.
- */
-private fun getFovHeightAtDistance(distance: Meter, fov: FieldOfView, density: Density): Int {
-    val height: Meter = distance * (tan(fov.angleUp) - tan(fov.angleDown))
-
-    return height.roundToPx(density)
 }

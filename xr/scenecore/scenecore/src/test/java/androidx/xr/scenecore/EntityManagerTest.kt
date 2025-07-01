@@ -31,7 +31,7 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
 import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.testing.FakeRuntimeFactory
@@ -270,7 +270,7 @@ class EntityManagerTest {
             AnchorEntity.create(
                 mockPlatformAdapter,
                 entityManager,
-                FloatSize3d(),
+                FloatSize2d(),
                 PlaneOrientation.ANY,
                 PlaneSemanticType.ANY,
                 10.seconds.toJavaDuration(),

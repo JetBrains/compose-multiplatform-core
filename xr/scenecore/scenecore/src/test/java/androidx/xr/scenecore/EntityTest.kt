@@ -47,6 +47,7 @@ import androidx.xr.runtime.internal.Space as RtSpace
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.internal.SurfaceEntity as RtSurfaceEntity
 import androidx.xr.runtime.math.BoundingBox
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -327,7 +328,7 @@ class EntityTest {
             AnchorEntity.create(
                 mockPlatformAdapter,
                 entityManager,
-                FloatSize3d(),
+                FloatSize2d(),
                 PlaneOrientation.ANY,
                 PlaneSemanticType.ANY,
                 10.seconds.toJavaDuration(),
@@ -361,7 +362,7 @@ class EntityTest {
             AnchorEntity.create(
                 mockPlatformAdapter,
                 entityManager,
-                FloatSize3d(),
+                FloatSize2d(),
                 PlaneOrientation.ANY,
                 PlaneSemanticType.ANY,
             )
@@ -374,7 +375,7 @@ class EntityTest {
         session.configure(Config(planeTracking = PlaneTrackingMode.DISABLED))
 
         assertFailsWith<IllegalStateException> {
-            AnchorEntity.create(session, FloatSize3d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
         }
     }
 
@@ -833,7 +834,7 @@ class EntityTest {
 
     @Test
     fun setOnSpaceUpdatedListener_anchorEntity_withNullParams_callsRuntimeSetOnSpaceUpdatedListener() {
-        anchorEntity.setOnSpaceUpdatedListener(null, null)
+        anchorEntity.setOnSpaceUpdatedListener(null)
         verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(eq(null), eq(null))
     }
 
@@ -841,7 +842,7 @@ class EntityTest {
     fun setOnSpaceUpdatedListener_anchorEntity_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
         var listenerCalled = false
         val captor = argumentCaptor<Runnable>()
-        anchorEntity.setOnSpaceUpdatedListener({ listenerCalled = true }, directExecutor())
+        anchorEntity.setOnSpaceUpdatedListener(directExecutor()) { listenerCalled = true }
 
         verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(captor.capture(), any())
         assertThat(listenerCalled).isFalse()
@@ -1322,7 +1323,7 @@ class EntityTest {
         val unused =
             AnchorEntity.create(
                 entitySession,
-                FloatSize3d(),
+                FloatSize2d(),
                 PlaneOrientation.ANY,
                 PlaneSemanticType.ANY,
             )
@@ -1347,5 +1348,11 @@ class EntityTest {
 
         verify(mockEntityPlatformAdapter)
             .createActivityPanelEntity(any(), any(), any(), any(), any())
+    }
+
+    @Test
+    fun surfaceEntity_useAferDisposeRaisesIllegalStateException() {
+        surfaceEntity.dispose()
+        verify(mockSurfaceEntity).dispose()
     }
 }

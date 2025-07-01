@@ -17,25 +17,28 @@ package androidx.compose.remote.creation;
 
 import androidx.compose.remote.core.operations.ShaderData;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.HashMap;
 
 /** Provides an API to create Shaders, setUniforms which is inserted into doc */
 public class RemoteComposeShader {
     int mShaderID = 0; // allows shaders to be referenced by number
     int mShaderTextID = 0; // allows shaders to be referenced by number
-    HashMap<String, float[]> mUniformFloatMap = null;
-    HashMap<String, int[]> mUniformIntMap = null;
-    HashMap<String, Integer> mUniformBitmapMap = null;
-    String mShader;
-    RemoteComposeWriter mWriter;
+    @Nullable HashMap<@NonNull String, float @NonNull []> mUniformFloatMap = null;
+    @Nullable HashMap<@NonNull String, int @NonNull []> mUniformIntMap = null;
+    @Nullable HashMap<@NonNull String, @NonNull Integer> mUniformBitmapMap = null;
+    @NonNull String mShader;
+    @NonNull RemoteComposeWriter mWriter;
 
-    public RemoteComposeShader(String shader, RemoteComposeWriter writer) {
+    public RemoteComposeShader(@NonNull String shader, @NonNull RemoteComposeWriter writer) {
         this.mShader = shader;
         this.mWriter = writer;
         mShaderTextID = writer.addText(shader);
     }
 
-    public String getShader() {
+    public @NonNull String getShader() {
         return mShader;
     }
 
@@ -63,7 +66,8 @@ public class RemoteComposeShader {
      * @param v4 The Third Variable (Typically W or B)
      * @return this
      */
-    public RemoteComposeShader setIntUniform(String name, int v1, int v2, int v3, int v4) {
+    public @NonNull RemoteComposeShader setIntUniform(
+            @NonNull String name, int v1, int v2, int v3, int v4) {
         return mySetIntUniform(name, v1, v2, v3, v4);
     }
 
@@ -76,7 +80,8 @@ public class RemoteComposeShader {
      * @param v3 The Third Variable (Typically Z or G)
      * @return this
      */
-    public RemoteComposeShader setIntUniform(String name, int v1, int v2, int v3) {
+    public @NonNull RemoteComposeShader setIntUniform(
+            @NonNull String name, int v1, int v2, int v3) {
         return mySetIntUniform(name, v1, v2, v3);
     }
 
@@ -88,7 +93,7 @@ public class RemoteComposeShader {
      * @param v2 The second Variable (typically Y or R )
      * @return this
      */
-    public RemoteComposeShader setIntUniform(String name, int v1, int v2) {
+    public @NonNull RemoteComposeShader setIntUniform(@NonNull String name, int v1, int v2) {
         return mySetIntUniform(name, v1, v2);
     }
 
@@ -99,12 +104,13 @@ public class RemoteComposeShader {
      * @param v1 The first Variable (typically X, or A in Vector)
      * @return this
      */
-    public RemoteComposeShader setIntUniform(String name, int v1) {
+    public @NonNull RemoteComposeShader setIntUniform(@NonNull String name, int v1) {
         return mySetIntUniform(name, v1);
     }
 
-    private RemoteComposeShader mySetIntUniform(String name, int... value) {
-        HashMap<String, int[]> map =
+    private @NonNull RemoteComposeShader mySetIntUniform(
+            @NonNull String name, int @NonNull ... value) {
+        HashMap<@NonNull String, int @NonNull []> map =
                 mUniformIntMap == null ? new HashMap<String, int[]>() : mUniformIntMap;
         mUniformIntMap = map;
         map.put(name, value);
@@ -123,8 +129,8 @@ public class RemoteComposeShader {
      * @param v4 The Third Variable (Typically W or B)
      * @return this
      */
-    public RemoteComposeShader setFloatUniform(
-            String name, float v1, float v2, float v3, float v4) {
+    public @NonNull RemoteComposeShader setFloatUniform(
+            @NonNull String name, float v1, float v2, float v3, float v4) {
         return mySetFloatUniform(name, v1, v2, v3, v4);
     }
 
@@ -137,7 +143,8 @@ public class RemoteComposeShader {
      * @param v3 The Third Variable (Typically Z or G)
      * @return this
      */
-    public RemoteComposeShader setFloatUniform(String name, float v1, float v2, float v3) {
+    public @NonNull RemoteComposeShader setFloatUniform(
+            @NonNull String name, float v1, float v2, float v3) {
         return mySetFloatUniform(name, v1, v2, v3);
     }
 
@@ -149,7 +156,7 @@ public class RemoteComposeShader {
      * @param v2 The second Variable (typically Y)
      * @return this
      */
-    public RemoteComposeShader setFloatUniform(String name, float v1, float v2) {
+    public @NonNull RemoteComposeShader setFloatUniform(@NonNull String name, float v1, float v2) {
         return mySetFloatUniform(name, v1, v2);
     }
 
@@ -160,12 +167,13 @@ public class RemoteComposeShader {
      * @param v1 The Variable
      * @return this
      */
-    public RemoteComposeShader setFloatUniform(String name, float v1) {
+    public @NonNull RemoteComposeShader setFloatUniform(@NonNull String name, float v1) {
         return mySetFloatUniform(name, v1);
     }
 
-    private RemoteComposeShader mySetFloatUniform(String name, float... value) {
-        HashMap<String, float[]> map =
+    private @NonNull RemoteComposeShader mySetFloatUniform(
+            @NonNull String name, float @NonNull ... value) {
+        HashMap<@NonNull String, float @NonNull []> map =
                 mUniformFloatMap == null ? new HashMap<String, float[]>() : mUniformFloatMap;
         mUniformFloatMap = map;
         map.put(name, value);
@@ -179,8 +187,8 @@ public class RemoteComposeShader {
      * @param id The id of the bitmap
      * @return this
      */
-    public RemoteComposeShader setBitmapUniform(String name, int id) {
-        HashMap<String, Integer> map =
+    public @NonNull RemoteComposeShader setBitmapUniform(@NonNull String name, int id) {
+        HashMap<@NonNull String, @NonNull Integer> map =
                 mUniformBitmapMap == null ? new HashMap<String, Integer>() : mUniformBitmapMap;
         mUniformBitmapMap = map;
         map.put(name, id);

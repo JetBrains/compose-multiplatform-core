@@ -18,6 +18,8 @@ package androidx.compose.remote.creation.actions;
 import androidx.compose.remote.core.operations.layout.modifiers.ValueFloatChangeActionOperation;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 public class ValueFloatChange implements Action {
 
     int mValueId = -1;
@@ -29,7 +31,7 @@ public class ValueFloatChange implements Action {
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         ValueFloatChangeActionOperation.apply(writer.getBuffer().getBuffer(), mValueId, mValue);
     }
 }

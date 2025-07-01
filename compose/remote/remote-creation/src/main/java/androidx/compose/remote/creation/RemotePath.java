@@ -357,7 +357,7 @@ public class RemotePath {
      * @param startAngle Starting angle (in degrees) where the arc begins
      * @param sweepAngle Sweep angle (in degrees) measured clockwise, treated mod 360.
      */
-    public void addArc(RectF oval, float startAngle, float sweepAngle) {
+    public void addArc(@NonNull RectF oval, float startAngle, float sweepAngle) {
         addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
     }
 
@@ -371,7 +371,7 @@ public class RemotePath {
      * @param startAngle
      * @param sweepAngle
      */
-    public void arcTo(RectF oval, float startAngle, float sweepAngle) {
+    public void arcTo(@NonNull RectF oval, float startAngle, float sweepAngle) {
         addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle, false);
     }
 
@@ -386,7 +386,8 @@ public class RemotePath {
      * @param sweepAngle
      * @param forceMoveTo If true, always begin a new contour with the arc
      */
-    public void arcTo(RectF oval, float startAngle, float sweepAngle, boolean forceMoveTo) {
+    public void arcTo(
+            @NonNull RectF oval, float startAngle, float sweepAngle, boolean forceMoveTo) {
         addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle, forceMoveTo);
     }
 
@@ -440,7 +441,7 @@ public class RemotePath {
      *
      * @return the RemotePath data as a Android path
      */
-    public Path getPath() {
+    public @NonNull Path getPath() {
         Path path = new Path();
         genPath(path, mPath, mSize, Float.NaN, Float.NaN);
         return path;
@@ -536,7 +537,7 @@ public class RemotePath {
         retPath.addPath(mCachePath);
     }
 
-    public RemotePath(String pathData) {
+    public RemotePath(@NonNull String pathData) {
 
         float[] cords = new float[6];
 
@@ -596,7 +597,7 @@ public class RemotePath {
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         StringBuilder builder = new StringBuilder();
         int i = 0;
         float[] floatPath = mPath;
@@ -693,7 +694,7 @@ public class RemotePath {
      *
      * @param matrix matrix to transform the array by
      */
-    public void transform(Matrix matrix) {
+    public void transform(@NonNull Matrix matrix) {
         float[] floatPath = mPath;
         int i = 0;
         while (i < mSize) {
@@ -792,7 +793,8 @@ public class RemotePath {
          float rx, float ry, Path.Direction dir) {
     */
     /** This is useful to create an approximate circle using remote float */
-    public static RemotePath createCirclePath(RemoteComposeWriter rc, float x, float y, float rad) {
+    public static @NonNull RemotePath createCirclePath(
+            @NonNull RemoteComposeWriter rc, float x, float y, float rad) {
         float k = 0.5522847498f;
         boolean clockwise = true;
         float c = rc.floatExpression(rad, k, AnimatedFloatExpression.MUL);

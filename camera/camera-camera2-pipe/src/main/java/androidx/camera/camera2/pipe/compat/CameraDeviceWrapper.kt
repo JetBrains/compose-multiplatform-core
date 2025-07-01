@@ -421,6 +421,24 @@ internal class AndroidCameraDevice(
                     }
                 }
 
+                // set color space if using supported API levels and color space is provided
+                val sessionColorSpace = config.sessionColorSpace
+                if (Build.VERSION.SDK_INT >= 34 && sessionColorSpace != null) {
+                    val colorSpaceNamed = sessionColorSpace.toColorSpaceNamed()
+                    if (colorSpaceNamed != null) {
+                        Api34Compat.setColorSpace(sessionConfig, colorSpaceNamed)
+                    } else {
+                        // case that sessionColorSpace is UNKNOWN
+                        Log.warn {
+                            "Provided session color space ${sessionColorSpace.colorSpaceName} is not supported"
+                        }
+                    }
+                } else if (sessionColorSpace != null) {
+                    Log.warn {
+                        "Failed to set session color space to ${sessionColorSpace.colorSpaceName}, at least API level 34 is required"
+                    }
+                }
+
                 val requestBuilder =
                     Debug.trace("createCaptureRequest") {
                         cameraDevice.createCaptureRequest(config.sessionTemplateId)

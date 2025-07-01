@@ -48,6 +48,7 @@ import androidx.compose.remote.core.operations.DrawSector;
 import androidx.compose.remote.core.operations.DrawText;
 import androidx.compose.remote.core.operations.DrawTextAnchored;
 import androidx.compose.remote.core.operations.DrawTextOnPath;
+import androidx.compose.remote.core.operations.DrawToBitmap;
 import androidx.compose.remote.core.operations.DrawTweenPath;
 import androidx.compose.remote.core.operations.FloatConstant;
 import androidx.compose.remote.core.operations.FloatExpression;
@@ -1896,6 +1897,36 @@ public class RemoteComposeBuffer {
     public int storeBitmap(int imageId, int imageWidth, int imageHeight, byte @NonNull [] data) {
         BitmapData.apply(mBuffer, imageId, imageWidth, imageHeight, data); // todo: potential npe
         return imageId;
+    }
+
+    /**
+     * Create a bitmap of given id, width and height Bitmap contains no data, It's only use is to
+     * draw to
+     *
+     * @param imageId
+     * @param imageWidth
+     * @param imageHeight
+     * @return
+     */
+    public int createBitmap(int imageId, short imageWidth, short imageHeight) {
+        BitmapData.apply(
+                mBuffer,
+                imageId,
+                BitmapData.TYPE_RAW8888,
+                imageWidth,
+                BitmapData.ENCODING_EMPTY,
+                imageHeight,
+                new byte[0]);
+        return imageId;
+    }
+
+    /**
+     * @param imageId
+     * @param mode
+     * @param color
+     */
+    public void drawOnBitmap(int imageId, int mode, int color) {
+        DrawToBitmap.apply(mBuffer, imageId, mode, color);
     }
 
     /**

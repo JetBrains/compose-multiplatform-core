@@ -38,7 +38,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 
 /** Sample that demonstrates fundamental ARCore for Android XR usage. */
-class HelloArActivity : ComponentActivity() {
+class HelloArPlaneActivity : ComponentActivity() {
 
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
@@ -65,7 +65,7 @@ class HelloArActivity : ComponentActivity() {
                     lifecycle.addObserver(planeRenderer)
                     lifecycle.addObserver(anchorRenderer)
 
-                    setContent { HelloWorld(session) }
+                    setContent { HelloPlanes(session) }
                 },
             )
         sessionHelper.tryCreateSession()
@@ -73,7 +73,7 @@ class HelloArActivity : ComponentActivity() {
 }
 
 @Composable
-fun HelloWorld(session: Session) {
+fun HelloPlanes(session: Session) {
     val state by session.state.collectAsStateWithLifecycle()
     val perceptionState = state.perceptionState
 

@@ -17,23 +17,25 @@ package androidx.compose.remote.creation.modifiers;
 
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /**
  * Unsupported modifier.
  *
  * <p>Indicates that a RemoteModifier was used without support in RemoteCompose.
  */
 public class UnsupportedModifier implements RecordingModifier.Element {
-    private final String mName;
+    private final @NonNull String mName;
 
-    public UnsupportedModifier(String name) {
+    public UnsupportedModifier(@NonNull String name) {
         this.mName = name;
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "UnsupportedModifier{" + "name='" + mName + '\'' + '}';
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {}
+    public void write(@NonNull RemoteComposeWriter writer) {}
 }

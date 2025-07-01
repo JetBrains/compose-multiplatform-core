@@ -21,8 +21,11 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.os.Build;
 
 import androidx.compose.remote.core.operations.BitmapFontData;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +40,9 @@ public class FontUtils {
      * @param paint
      * @param fontId
      */
-    public static void setFontOnPaint(Activity activity, Paint paint, int fontId) {
+    @androidx.annotation.RequiresApi(api = Build.VERSION_CODES.O)
+    public static void setFontOnPaint(
+            @NonNull Activity activity, @NonNull Paint paint, int fontId) {
         Typeface typeface = activity.getResources().getFont(fontId);
         paint.setTypeface(typeface);
     }
@@ -50,8 +55,8 @@ public class FontUtils {
      * @param paint
      * @return
      */
-    public static BitmapFontData.Glyph[] createGlyphs(
-            RemoteComposeWriter rc, String str, Paint paint) {
+    public static BitmapFontData.Glyph @NonNull [] createGlyphs(
+            @NonNull RemoteComposeWriter rc, @NonNull String str, @NonNull Paint paint) {
         char[] chars = str.toCharArray();
 
         Arrays.sort(chars);
@@ -69,8 +74,8 @@ public class FontUtils {
         return glyphs.toArray(new BitmapFontData.Glyph[0]);
     }
 
-    private static BitmapFontData.Glyph createFont(
-            RemoteComposeWriter rc, String str, Paint paint) {
+    private static BitmapFontData.@NonNull Glyph createFont(
+            @NonNull RemoteComposeWriter rc, @NonNull String str, @NonNull Paint paint) {
 
         Rect rect = new Rect();
         paint.setStrokeWidth(2);

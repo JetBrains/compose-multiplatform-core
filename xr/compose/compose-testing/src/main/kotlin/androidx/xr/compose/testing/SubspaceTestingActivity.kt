@@ -32,6 +32,7 @@ import androidx.xr.scenecore.impl.JxrPlatformAdapterAxr
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService
+import com.android.extensions.xr.ShadowConfig
 import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.ar.imp.apibindings.FakeImpressApiImpl
@@ -52,6 +53,9 @@ public class SubspaceTestingActivity : ComponentActivity() {
     override fun onStart() {
         SceneManager.start()
         super.onStart()
+
+        ShadowConfig.extract(XrExtensionsProvider.getXrExtensions()!!.config!!)
+            .setDefaultDpPerMeter(1151.856f)
     }
 
     override fun onDestroy() {

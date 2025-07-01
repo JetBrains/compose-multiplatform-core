@@ -39,436 +39,450 @@ class CameraStateTest {
 
     @Test
     fun equals_sameObject_returnsTrue() {
-        val cameraState1 =
-            CameraState(
-                timeMark = timeSource.markNow(),
-                trackingState = TrackingState.TRACKING,
-                cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
-                displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
-                projectionMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                viewMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
-                transformCoordinates2D = { inputVertices: FloatBuffer ->
-                    val outputVertices =
-                        ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
-                            .order(ByteOrder.nativeOrder())
-                            .asFloatBuffer()
-                    inputVertices.put(outputVertices)
-                    outputVertices
-                },
-            )
+        HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+            val cameraState1 =
+                CameraState(
+                    timeMark = timeSource.markNow(),
+                    trackingState = TrackingState.TRACKING,
+                    cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
+                    displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
+                    projectionMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    viewMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    hardwareBuffer = hardwareBuffer,
+                    transformCoordinates2D = { inputVertices: FloatBuffer ->
+                        val outputVertices =
+                            ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
+                                .order(ByteOrder.nativeOrder())
+                                .asFloatBuffer()
+                        inputVertices.put(outputVertices)
+                        outputVertices
+                    },
+                )
 
-        assertThat(cameraState1).isEqualTo(cameraState1)
+            assertThat(cameraState1).isEqualTo(cameraState1)
+        }
     }
 
     @Test
     fun equals_sameValues_returnsTrue() {
-        val cameraState1 =
-            CameraState(
-                timeMark = timeSource.markNow(),
-                trackingState = TrackingState.TRACKING,
-                cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
-                displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
-                projectionMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                viewMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
-                transformCoordinates2D = { inputVertices: FloatBuffer ->
-                    val outputVertices =
-                        ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
-                            .order(ByteOrder.nativeOrder())
-                            .asFloatBuffer()
-                    inputVertices.put(outputVertices)
-                    outputVertices
-                },
-            )
-        val cameraState1Copy =
-            CameraState(
-                timeMark = cameraState1.timeMark,
-                trackingState = cameraState1.trackingState,
-                cameraPose = cameraState1.cameraPose,
-                displayOrientedPose = cameraState1.displayOrientedPose,
-                projectionMatrix = cameraState1.projectionMatrix,
-                viewMatrix = cameraState1.viewMatrix,
-                hardwareBuffer = cameraState1.hardwareBuffer,
-                transformCoordinates2D = cameraState1.transformCoordinates2D,
-            )
+        HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+            val cameraState1 =
+                CameraState(
+                    timeMark = timeSource.markNow(),
+                    trackingState = TrackingState.TRACKING,
+                    cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
+                    displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
+                    projectionMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    viewMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    hardwareBuffer = hardwareBuffer,
+                    transformCoordinates2D = { inputVertices: FloatBuffer ->
+                        val outputVertices =
+                            ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
+                                .order(ByteOrder.nativeOrder())
+                                .asFloatBuffer()
+                        inputVertices.put(outputVertices)
+                        outputVertices
+                    },
+                )
+            val cameraState1Copy =
+                CameraState(
+                    timeMark = cameraState1.timeMark,
+                    trackingState = cameraState1.trackingState,
+                    cameraPose = cameraState1.cameraPose,
+                    displayOrientedPose = cameraState1.displayOrientedPose,
+                    projectionMatrix = cameraState1.projectionMatrix,
+                    viewMatrix = cameraState1.viewMatrix,
+                    hardwareBuffer = cameraState1.hardwareBuffer,
+                    transformCoordinates2D = cameraState1.transformCoordinates2D,
+                )
 
-        assertThat(cameraState1).isEqualTo(cameraState1Copy)
+            assertThat(cameraState1).isEqualTo(cameraState1Copy)
+        }
     }
 
     @Test
     fun equals_differentValues_returnsFalse() {
-        val cameraState1 =
-            CameraState(
-                timeMark = timeSource.markNow(),
-                trackingState = TrackingState.TRACKING,
-                cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
-                displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
-                projectionMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                viewMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
-                transformCoordinates2D = { inputVertices: FloatBuffer ->
-                    val outputVertices =
-                        ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
-                            .order(ByteOrder.nativeOrder())
-                            .asFloatBuffer()
-                    inputVertices.put(outputVertices)
-                    outputVertices
-                },
-            )
-        val cameraState2 =
-            CameraState(
-                timeMark = cameraState1.timeMark + 1.seconds,
-                trackingState = TrackingState.PAUSED,
-                cameraPose = cameraState1.cameraPose?.translate(Vector3(1f, 1f, 1f)),
-                displayOrientedPose =
-                    cameraState1.displayOrientedPose?.rotate(
-                        Quaternion.fromEulerAngles(90f, 0f, 0f)
-                    ),
-                projectionMatrix = cameraState1.projectionMatrix?.times(cameraState1.viewMatrix!!),
-                viewMatrix = cameraState1.viewMatrix?.times(cameraState1.projectionMatrix!!),
-                hardwareBuffer = null,
-                transformCoordinates2D = null,
-            )
+        HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+            val cameraState1 =
+                CameraState(
+                    timeMark = timeSource.markNow(),
+                    trackingState = TrackingState.TRACKING,
+                    cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
+                    displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
+                    projectionMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    viewMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    hardwareBuffer = hardwareBuffer,
+                    transformCoordinates2D = { inputVertices: FloatBuffer ->
+                        val outputVertices =
+                            ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
+                                .order(ByteOrder.nativeOrder())
+                                .asFloatBuffer()
+                        inputVertices.put(outputVertices)
+                        outputVertices
+                    },
+                )
+            val cameraState2 =
+                CameraState(
+                    timeMark = cameraState1.timeMark + 1.seconds,
+                    trackingState = TrackingState.PAUSED,
+                    cameraPose = cameraState1.cameraPose?.translate(Vector3(1f, 1f, 1f)),
+                    displayOrientedPose =
+                        cameraState1.displayOrientedPose?.rotate(
+                            Quaternion.fromEulerAngles(90f, 0f, 0f)
+                        ),
+                    projectionMatrix =
+                        cameraState1.projectionMatrix?.times(cameraState1.viewMatrix!!),
+                    viewMatrix = cameraState1.viewMatrix?.times(cameraState1.projectionMatrix!!),
+                    hardwareBuffer = null,
+                    transformCoordinates2D = null,
+                )
 
-        assertThat(cameraState1).isNotEqualTo(cameraState2)
+            assertThat(cameraState1).isNotEqualTo(cameraState2)
+        }
     }
 
     @Test
     fun equals_differentObjectType_returnsFalse() {
-        val cameraState1 =
-            CameraState(
-                timeMark = timeSource.markNow(),
-                trackingState = TrackingState.TRACKING,
-                cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
-                displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
-                projectionMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                viewMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
-                transformCoordinates2D = { inputVertices: FloatBuffer ->
-                    val outputVertices =
-                        ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
-                            .order(ByteOrder.nativeOrder())
-                            .asFloatBuffer()
-                    inputVertices.put(outputVertices)
-                    outputVertices
-                },
-            )
-        val other = Object()
+        HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+            val cameraState1 =
+                CameraState(
+                    timeMark = timeSource.markNow(),
+                    trackingState = TrackingState.TRACKING,
+                    cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
+                    displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
+                    projectionMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    viewMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    hardwareBuffer = hardwareBuffer,
+                    transformCoordinates2D = { inputVertices: FloatBuffer ->
+                        val outputVertices =
+                            ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
+                                .order(ByteOrder.nativeOrder())
+                                .asFloatBuffer()
+                        inputVertices.put(outputVertices)
+                        outputVertices
+                    },
+                )
+            val other = Object()
 
-        assertThat(cameraState1).isNotEqualTo(other)
+            assertThat(cameraState1).isNotEqualTo(other)
+        }
     }
 
     @Test
     fun hashCode_sameValues_returnsSameHashCode() {
-        val cameraState1 =
-            CameraState(
-                timeMark = timeSource.markNow(),
-                trackingState = TrackingState.TRACKING,
-                cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
-                displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
-                projectionMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                viewMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
-                transformCoordinates2D = { inputVertices: FloatBuffer ->
-                    val outputVertices =
-                        ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
-                            .order(ByteOrder.nativeOrder())
-                            .asFloatBuffer()
-                    inputVertices.put(outputVertices)
-                    outputVertices
-                },
-            )
-        val cameraState1Copy =
-            CameraState(
-                timeMark = cameraState1.timeMark,
-                trackingState = cameraState1.trackingState,
-                cameraPose = cameraState1.cameraPose,
-                displayOrientedPose = cameraState1.displayOrientedPose,
-                projectionMatrix = cameraState1.projectionMatrix,
-                viewMatrix = cameraState1.viewMatrix,
-                hardwareBuffer = cameraState1.hardwareBuffer,
-                transformCoordinates2D = cameraState1.transformCoordinates2D,
-            )
+        HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+            val cameraState1 =
+                CameraState(
+                    timeMark = timeSource.markNow(),
+                    trackingState = TrackingState.TRACKING,
+                    cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
+                    displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
+                    projectionMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    viewMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    hardwareBuffer = hardwareBuffer,
+                    transformCoordinates2D = { inputVertices: FloatBuffer ->
+                        val outputVertices =
+                            ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
+                                .order(ByteOrder.nativeOrder())
+                                .asFloatBuffer()
+                        inputVertices.put(outputVertices)
+                        outputVertices
+                    },
+                )
+            val cameraState1Copy =
+                CameraState(
+                    timeMark = cameraState1.timeMark,
+                    trackingState = cameraState1.trackingState,
+                    cameraPose = cameraState1.cameraPose,
+                    displayOrientedPose = cameraState1.displayOrientedPose,
+                    projectionMatrix = cameraState1.projectionMatrix,
+                    viewMatrix = cameraState1.viewMatrix,
+                    hardwareBuffer = cameraState1.hardwareBuffer,
+                    transformCoordinates2D = cameraState1.transformCoordinates2D,
+                )
 
-        assertThat(cameraState1.hashCode()).isEqualTo(cameraState1Copy.hashCode())
+            assertThat(cameraState1.hashCode()).isEqualTo(cameraState1Copy.hashCode())
+        }
     }
 
     @Test
     fun hashCode_differentValues_returnsDifferentHashCode() {
-        val cameraState1 =
-            CameraState(
-                timeMark = timeSource.markNow(),
-                trackingState = TrackingState.TRACKING,
-                cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
-                displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
-                projectionMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                viewMatrix =
-                    Matrix4(
-                        floatArrayOf(
-                            1f,
-                            2f,
-                            3f,
-                            4f,
-                            5f,
-                            6f,
-                            7f,
-                            8f,
-                            9f,
-                            10f,
-                            11f,
-                            12f,
-                            13f,
-                            14f,
-                            15f,
-                            16f,
-                        )
-                    ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
-                transformCoordinates2D = { inputVertices: FloatBuffer ->
-                    val outputVertices =
-                        ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
-                            .order(ByteOrder.nativeOrder())
-                            .asFloatBuffer()
-                    inputVertices.put(outputVertices)
-                    outputVertices
-                },
-            )
-        val cameraState2 =
-            CameraState(
-                timeMark = cameraState1.timeMark + 1.seconds,
-                trackingState = TrackingState.PAUSED,
-                cameraPose = cameraState1.cameraPose?.translate(Vector3(1f, 1f, 1f)),
-                displayOrientedPose =
-                    cameraState1.displayOrientedPose?.rotate(
-                        Quaternion.fromEulerAngles(90f, 0f, 0f)
-                    ),
-                projectionMatrix = cameraState1.projectionMatrix?.times(cameraState1.viewMatrix!!),
-                viewMatrix = cameraState1.viewMatrix?.times(cameraState1.projectionMatrix!!),
-                hardwareBuffer = null,
-                transformCoordinates2D = null,
-            )
+        HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1).use { hardwareBuffer ->
+            val cameraState1 =
+                CameraState(
+                    timeMark = timeSource.markNow(),
+                    trackingState = TrackingState.TRACKING,
+                    cameraPose = Pose(Vector3(1f, 2f, 3f), Quaternion(0f, 0f, 0f, 1f)),
+                    displayOrientedPose = Pose(Vector3(4f, 5f, 6f), Quaternion(0f, 0f, 0f, 1f)),
+                    projectionMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    viewMatrix =
+                        Matrix4(
+                            floatArrayOf(
+                                1f,
+                                2f,
+                                3f,
+                                4f,
+                                5f,
+                                6f,
+                                7f,
+                                8f,
+                                9f,
+                                10f,
+                                11f,
+                                12f,
+                                13f,
+                                14f,
+                                15f,
+                                16f,
+                            )
+                        ),
+                    hardwareBuffer = hardwareBuffer,
+                    transformCoordinates2D = { inputVertices: FloatBuffer ->
+                        val outputVertices =
+                            ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
+                                .order(ByteOrder.nativeOrder())
+                                .asFloatBuffer()
+                        inputVertices.put(outputVertices)
+                        outputVertices
+                    },
+                )
+            val cameraState2 =
+                CameraState(
+                    timeMark = cameraState1.timeMark + 1.seconds,
+                    trackingState = TrackingState.PAUSED,
+                    cameraPose = cameraState1.cameraPose?.translate(Vector3(1f, 1f, 1f)),
+                    displayOrientedPose =
+                        cameraState1.displayOrientedPose?.rotate(
+                            Quaternion.fromEulerAngles(90f, 0f, 0f)
+                        ),
+                    projectionMatrix =
+                        cameraState1.projectionMatrix?.times(cameraState1.viewMatrix!!),
+                    viewMatrix = cameraState1.viewMatrix?.times(cameraState1.projectionMatrix!!),
+                    hardwareBuffer = null,
+                    transformCoordinates2D = null,
+                )
 
-        assertThat(cameraState1.hashCode()).isNotEqualTo(cameraState2.hashCode())
+            assertThat(cameraState1.hashCode()).isNotEqualTo(cameraState2.hashCode())
+        }
     }
 }

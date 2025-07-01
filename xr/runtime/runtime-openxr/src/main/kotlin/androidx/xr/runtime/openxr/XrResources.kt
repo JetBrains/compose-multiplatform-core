@@ -41,6 +41,9 @@ internal class XrResources {
     /** The view camera data */
     val viewCameras: List<OpenXrViewCamera>
 
+    /** The data of face */
+    val userFace: OpenXrFace
+
     /** The data of the Earth */
     val earth: OpenXrEarth = OpenXrEarth(this)
 
@@ -54,6 +57,7 @@ internal class XrResources {
         this.viewCameras = listOf(OpenXrViewCamera(), OpenXrViewCamera())
         this.leftDepthMap = OpenXrDepthMap(/* viewIndex= */ 0)
         this.rightDepthMap = OpenXrDepthMap(/* viewIndex= */ 1)
+        this.userFace = OpenXrFace()
     }
 
     internal fun addTrackable(trackableId: Long, trackable: Trackable) {

@@ -17,6 +17,8 @@ package androidx.compose.remote.creation.modifiers;
 
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Background modifier, takes a color and a shape */
 public class ScrollModifier implements RecordingModifier.Element {
 
@@ -34,7 +36,7 @@ public class ScrollModifier implements RecordingModifier.Element {
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         if (mPositionId <= 0f) {
             // direct scrolling, no touch expression
             writer.addModifierScroll(mDirection);

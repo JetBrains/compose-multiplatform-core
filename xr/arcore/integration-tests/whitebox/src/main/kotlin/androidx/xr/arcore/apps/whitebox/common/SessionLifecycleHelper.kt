@@ -23,7 +23,9 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionConfigureCalibrationRequired
 import androidx.xr.runtime.SessionConfigureConfigurationNotSupported
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigurePermissionsNotGranted
@@ -46,6 +48,7 @@ class SessionLifecycleHelper(
     val config: Config = Config(),
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
+    val onSessionCalibrationRequired: (RequiredCalibrationType) -> Unit = {},
 ) {
 
     /** Accessed through the [onSessionAvailable] callback. */
@@ -109,6 +112,9 @@ class SessionLifecycleHelper(
                             TAG,
                             "Google Play Services Location Library is not linked, this should not happen.",
                         )
+                    }
+                    is SessionConfigureCalibrationRequired -> {
+                        onSessionCalibrationRequired(configResult.calibrationType)
                     }
                     is SessionConfigureSuccess -> {
                         onSessionAvailable(session)

@@ -19,7 +19,7 @@
 package androidx.xr.scenecore.guava
 
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.java.toFuture
+import androidx.xr.runtime.guava.toFuture
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.HitTestResult
 import androidx.xr.scenecore.ScenePose

@@ -103,6 +103,20 @@ package androidx.xr.runtime.openxr {
     property public androidx.xr.runtime.internal.Earth.State state;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrFace implements androidx.xr.runtime.internal.Face {
+    ctor public OpenXrFace();
+    method public float[] getBlendShapeValues();
+    method public float[] getConfidenceValues();
+    method public androidx.xr.runtime.TrackingState getTrackingState();
+    method public boolean isValid();
+    method public void setValid(boolean);
+    method public void update(long xrTime);
+    property public float[] blendShapeValues;
+    property public float[] confidenceValues;
+    property public boolean isValid;
+    property public androidx.xr.runtime.TrackingState trackingState;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrHand implements androidx.xr.runtime.internal.Hand {
     method public java.nio.FloatBuffer getHandJointsBuffer();
     method public androidx.xr.runtime.TrackingState getTrackingState();
@@ -131,6 +145,7 @@ package androidx.xr.runtime.openxr {
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.runtime.internal.Hand getRightHand();
     method public java.util.Collection<androidx.xr.runtime.internal.Trackable> getTrackables();
+    method public androidx.xr.runtime.internal.Face? getUserFace();
     method public java.util.List<androidx.xr.runtime.internal.ViewCamera> getViewCameras();
     method public java.util.List<androidx.xr.runtime.internal.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method public androidx.xr.runtime.internal.Anchor loadAnchor(java.util.UUID uuid);
@@ -143,6 +158,7 @@ package androidx.xr.runtime.openxr {
     property public androidx.xr.runtime.internal.Hand leftHand;
     property public androidx.xr.runtime.internal.Hand rightHand;
     property public java.util.Collection<androidx.xr.runtime.internal.Trackable> trackables;
+    property public androidx.xr.runtime.internal.Face? userFace;
     property public java.util.List<androidx.xr.runtime.internal.ViewCamera> viewCameras;
   }
 

@@ -17,14 +17,16 @@ package androidx.compose.remote.creation.modifiers;
 
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.HashMap;
 
 /** GraphicsLayer modifier */
 public class GraphicsLayerModifier implements RecordingModifier.Element {
-    HashMap<Integer, Object> mAttributes = new HashMap<>();
+    @NonNull HashMap<Integer, Object> mAttributes = new HashMap<>();
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         writer.getBuffer().addModifierGraphicsLayer(mAttributes);
     }
 

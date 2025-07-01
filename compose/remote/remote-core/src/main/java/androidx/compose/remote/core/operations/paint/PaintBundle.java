@@ -834,7 +834,7 @@ public class PaintBundle implements Serializable {
      * @param tags id of axis strings
      * @param values values for the axis
      */
-    public void setTextAxis(int[] tags, float[] values) {
+    public void setTextAxis(int @NonNull [] tags, float @NonNull [] values) {
         if (tags.length != values.length) {
             throw new RuntimeException(
                     " tags.length " + tags.length + " not value.length" + values.length);

@@ -23,7 +23,7 @@ import androidx.annotation.RestrictTo
 public interface GltfEntity : Entity {
 
     /** Returns the current animation state of the glTF entity. */
-    @AnimationState public val animationState: Int
+    @AnimationStateValue public val animationState: Int
 
     /**
      * Starts the animation with the given name.
@@ -49,11 +49,11 @@ public interface GltfEntity : Entity {
     //                     Add a getAnimationTimeRemaining() interface
 
     /** Specifies the current animation state of the [GltfEntity]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public annotation class AnimationState {
-        public companion object {
-            public const val PLAYING: Int = 0
-            public const val STOPPED: Int = 1
-        }
+    public annotation class AnimationStateValue
+
+    /** Specifies the current animation state of the [GltfEntity]. */
+    public object AnimationState {
+        public const val PLAYING: Int = 0
+        public const val STOPPED: Int = 1
     }
 }

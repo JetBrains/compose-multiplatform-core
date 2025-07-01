@@ -34,6 +34,7 @@ dependencies {
     api(libs.kotlinStdlib)
     api(libs.guavaListenableFuture)
     api(project(":xr:runtime:runtime"))
+    api(project(":xr:runtime:runtime-guava"))
     api(project(":xr:arcore:arcore"))
 
     testImplementation(libs.kotlinCoroutinesTest)

@@ -17,6 +17,8 @@ package androidx.compose.remote.creation.actions;
 
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Encapsulate document actions */
 public interface Action {
     /**
@@ -24,5 +26,5 @@ public interface Action {
      *
      * @param writer
      */
-    void write(RemoteComposeWriter writer);
+    void write(@NonNull RemoteComposeWriter writer);
 }

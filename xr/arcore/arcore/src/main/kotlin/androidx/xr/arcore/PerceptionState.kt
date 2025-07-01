@@ -39,6 +39,7 @@ internal constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val arDevice: ArDevice,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val viewCameras: List<ViewCamera>,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val depthMaps: List<DepthMap>,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val userFace: Face?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,6 +51,7 @@ internal constructor(
         if (arDevice != other.arDevice) return false
         if (viewCameras != other.viewCameras) return false
         if (depthMaps != other.depthMaps) return false
+        if (userFace != other.userFace) return false
         return true
     }
 
@@ -61,6 +63,7 @@ internal constructor(
         result = 31 * result + arDevice.hashCode()
         result = 31 * result + viewCameras.hashCode()
         result = 31 * result + depthMaps.hashCode()
+        result = 31 * result + userFace.hashCode()
         return result
     }
 }

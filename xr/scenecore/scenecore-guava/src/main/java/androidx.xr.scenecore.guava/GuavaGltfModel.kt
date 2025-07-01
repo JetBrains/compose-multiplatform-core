@@ -22,7 +22,7 @@ import android.net.Uri
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.java.toFuture
+import androidx.xr.runtime.guava.toFuture
 import androidx.xr.scenecore.GltfModel
 import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path

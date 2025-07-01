@@ -23,6 +23,7 @@ package androidx.xr.arcore.rxjava3 {
 
   public final class RxJava3Plane {
     method public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.Plane.State> getStateAsFlowable(androidx.xr.arcore.Plane);
+    method public static io.reactivex.rxjava3.core.Flowable<java.util.Collection<androidx.xr.arcore.Plane>> subscribeAsFlowable(androidx.xr.runtime.Session session);
     property public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.Plane.State> androidx.xr.arcore.Plane.stateAsFlowable;
   }
 

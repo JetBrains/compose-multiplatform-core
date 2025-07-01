@@ -17,6 +17,7 @@
 package androidx.xr.runtime
 
 import android.Manifest
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -47,8 +48,10 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
+import org.robolectric.annotation.LooperMode
 
 @RunWith(AndroidJUnit4::class)
+@LooperMode(LooperMode.Mode.PAUSED)
 class SessionTest {
     private lateinit var underTest: Session
     private lateinit var activityController: ActivityController<ComponentActivity>
@@ -225,7 +228,10 @@ class SessionTest {
 
         val result =
             underTest.configure(
-                underTest.config.copy(depthEstimation = Config.DepthEstimationMode.DISABLED)
+                underTest.config.copy(
+                    depthEstimation = Config.DepthEstimationMode.DISABLED,
+                    faceTracking = Config.FaceTrackingMode.DISABLED,
+                )
             )
 
         assertThat(result).isInstanceOf(SessionConfigurePermissionsNotGranted::class.java)
@@ -285,15 +291,18 @@ class SessionTest {
 
             // First resume and update
             activityController.resume()
+            shadowOf(Looper.getMainLooper()).idle()
             advanceUntilIdle()
             val beforeTimeMark = underTest.state.value.timeMark
             check(beforeTimeMark != initialTimeMark)
             activityController.pause()
+            shadowOf(Looper.getMainLooper()).idle()
             advanceUntilIdle()
             timeSource += expectedDuration
 
             lifecycleManager.allowOneMoreCallToUpdate()
             activityController.resume()
+            shadowOf(Looper.getMainLooper()).idle()
             advanceUntilIdle()
 
             val afterTimeMark = underTest.state.value.timeMark

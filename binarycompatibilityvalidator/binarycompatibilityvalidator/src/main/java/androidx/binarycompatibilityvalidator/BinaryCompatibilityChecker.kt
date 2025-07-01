@@ -93,16 +93,26 @@ class BinaryCompatibilityChecker(
             { other, /* parentQualifiedName */ _, errs ->
                 isBinaryCompatibleWith(other, errs)
             }
-        declarations.isBinaryCompatibleWith(
-            oldContainer.declarations,
-            entityName = "declaration",
-            uniqueId = AbiDeclaration::asTypeString,
-            isBinaryCompatibleWith = isBinaryCompatibleWith,
-            parentQualifiedName = parentQualifiedName,
-            errors = errors,
-            isAllowedAddition = { !shouldFreeze },
-        )
+        decoratedDeclarations()
+            .isBinaryCompatibleWith(
+                oldContainer.decoratedDeclarations(),
+                entityName = "declaration",
+                uniqueId = AbiDeclaration::asTypeString,
+                isBinaryCompatibleWith = isBinaryCompatibleWith,
+                parentQualifiedName = parentQualifiedName,
+                errors = errors,
+                isAllowedAddition = { !shouldFreeze },
+            )
     }
+
+    private fun AbiDeclarationContainer.decoratedDeclarations() =
+        declarations.map {
+            when (it) {
+                is AbiFunction -> DecoratedAbiFunction(it, null)
+                is AbiProperty -> DecoratedAbiProperty(it, null)
+                else -> it
+            }
+        }
 
     private fun AbiDeclaration.isBinaryCompatibleWith(
         oldDeclaration: AbiDeclaration,
@@ -126,9 +136,15 @@ class BinaryCompatibilityChecker(
         }
         when (this) {
             is AbiClass -> isBinaryCompatibleWith(oldDeclaration as AbiClass, errors)
-            is AbiFunction -> isBinaryCompatibleWith(oldDeclaration as AbiFunction, errors)
-            is AbiProperty -> isBinaryCompatibleWith(oldDeclaration as AbiProperty, errors)
+            is DecoratedAbiFunction ->
+                isBinaryCompatibleWith(oldDeclaration as DecoratedAbiFunction, errors)
+            is DecoratedAbiProperty ->
+                isBinaryCompatibleWith(oldDeclaration as DecoratedAbiProperty, errors)
             is AbiEnumEntry -> Unit
+            else ->
+                throw IllegalStateException(
+                    "All AbiFunctions and AbiProperties should be decorated"
+                )
         }
     }
 
@@ -220,17 +236,19 @@ class BinaryCompatibilityChecker(
         // Collect all the declarations directly on the class (without functions) +
         // + all functions, (including inherited). The filterNot is to avoid listing
         // functions directly on the class twice.
-        return declarations.filterNot { it is AbiFunction } +
-            allMethodsIncludingInherited(oldLibraryDeclarations)
+        return declarations.filterNot { it is AbiFunction }.filterNot { it is AbiProperty } +
+            allMethodsIncludingInherited(oldLibraryDeclarations) +
+            allPropertiesIncludingInherited(oldLibraryDeclarations)
     }
 
-    private fun AbiClass.allMethodsIncludingInherited(
-        oldLibraryDeclarations: Map<String, AbiDeclaration>
-    ): List<AbiFunction> {
-        val functionMap =
+    private fun AbiClass.allPropertiesIncludingInherited(
+        oldLibraryDeclarations: Map<String, AbiDeclaration>,
+        baseClass: AbiClass = this,
+    ): List<DecoratedAbiProperty> {
+        val propertyMap =
             declarations
-                .filterIsInstance<AbiFunction>()
-                .associateBy { it.asUnqualifiedTypeString() }
+                .filterIsInstance<AbiProperty>()
+                .associate { it.asUnqualifiedTypeString() to DecoratedAbiProperty(it, baseClass) }
                 .toMutableMap()
         superTypes
             .map {
@@ -238,14 +256,35 @@ class BinaryCompatibilityChecker(
                 oldLibraryDeclarations[it.asString()]
             }
             .filterIsInstance<AbiClass>()
-            .flatMap { it.allMethodsIncludingInherited(oldLibraryDeclarations) }
+            .flatMap { it.allPropertiesIncludingInherited(oldLibraryDeclarations, baseClass) }
+            .associateBy { it.asUnqualifiedTypeString() }
+            .forEach { (key, prop) -> propertyMap.putIfAbsent(key, prop) }
+        return propertyMap.values.toList()
+    }
+
+    private fun AbiClass.allMethodsIncludingInherited(
+        oldLibraryDeclarations: Map<String, AbiDeclaration>,
+        baseClass: AbiClass = this,
+    ): List<DecoratedAbiFunction> {
+        val functionMap =
+            declarations
+                .filterIsInstance<AbiFunction>()
+                .associate { it.asUnqualifiedTypeString() to DecoratedAbiFunction(it, baseClass) }
+                .toMutableMap()
+        superTypes
+            .map {
+                // we should throw here if we can't find the class in the package/dependencies
+                oldLibraryDeclarations[it.asString()]
+            }
+            .filterIsInstance<AbiClass>()
+            .flatMap { it.allMethodsIncludingInherited(oldLibraryDeclarations, baseClass) }
             .associateBy { it.asUnqualifiedTypeString() }
             .forEach { (key, func) -> functionMap.putIfAbsent(key, func) }
         return functionMap.values.toList()
     }
 
-    private fun AbiFunction.isBinaryCompatibleWith(
-        otherFunction: AbiFunction,
+    private fun DecoratedAbiFunction.isBinaryCompatibleWith(
+        otherFunction: DecoratedAbiFunction,
         errors: CompatibilityErrors,
     ) {
         if (isConstructor != otherFunction.isConstructor) {
@@ -254,14 +293,14 @@ class BinaryCompatibilityChecker(
                     "$isConstructor for $qualifiedName"
             )
         }
-        if (modality != otherFunction.modality) {
+        if (effectiveModality != otherFunction.effectiveModality) {
             when {
-                modality == AbiModality.OPEN && otherFunction.modality == AbiModality.ABSTRACT ->
-                    Unit
+                effectiveModality == AbiModality.OPEN &&
+                    otherFunction.effectiveModality == AbiModality.ABSTRACT -> Unit
                 else ->
                     errors.add(
-                        "modality changed from ${otherFunction.modality} to " +
-                            "$modality for $qualifiedName"
+                        "modality changed from ${otherFunction.effectiveModality} to " +
+                            "$effectiveModality for $qualifiedName"
                     )
             }
         }
@@ -337,14 +376,14 @@ class BinaryCompatibilityChecker(
         )
     }
 
-    private fun AbiProperty.isBinaryCompatibleWith(
-        oldProperty: AbiProperty,
+    private fun DecoratedAbiProperty.isBinaryCompatibleWith(
+        oldProperty: DecoratedAbiProperty,
         errors: CompatibilityErrors,
     ) {
         if (kind != oldProperty.kind) {
             when {
                 kind == AbiPropertyKind.CONST_VAL && oldProperty.kind == AbiPropertyKind.VAL -> Unit
-                modality == AbiModality.FINAL &&
+                effectiveModality == AbiModality.FINAL &&
                     kind == AbiPropertyKind.VAR &&
                     oldProperty.kind == AbiPropertyKind.VAL -> Unit
                 // changing var to val is allowed as long as the setter was private / internal (null
@@ -358,16 +397,18 @@ class BinaryCompatibilityChecker(
                     )
             }
         }
-        val newGetter = getter
-        val oldGetter = oldProperty.getter
+        val newGetter = getter?.let { DecoratedAbiFunction(it, parentClass) }
+        val oldGetter =
+            oldProperty.getter?.let { DecoratedAbiFunction(it, oldProperty.parentClass) }
         if (oldGetter != null && newGetter == null) {
             errors.add("removed getter from $qualifiedName")
         } else if (oldGetter != null && newGetter != null) {
             newGetter.isBinaryCompatibleWith(oldGetter, errors)
         }
 
-        val newSetter = setter
-        val oldSetter = oldProperty.setter
+        val newSetter = setter?.let { DecoratedAbiFunction(it, parentClass) }
+        val oldSetter =
+            oldProperty.setter?.let { DecoratedAbiFunction(it, oldProperty.parentClass) }
         if (oldSetter != null && newSetter == null) {
             errors.add("removed setter from $qualifiedName")
         } else if (oldSetter != null && newSetter != null) {
@@ -755,6 +796,26 @@ private fun File.asBaselineErrors(): Set<String> =
             else -> throw RuntimeException("Unrecognized baseline format: '$formatVersion'")
         }
     }
+
+private class DecoratedAbiFunction(abiFunction: AbiFunction, val parentClass: AbiClass?) :
+    AbiFunction by abiFunction {
+    val effectiveModality
+        get() =
+            when (parentClass?.modality) {
+                AbiModality.FINAL -> AbiModality.FINAL
+                else -> modality
+            }
+}
+
+private class DecoratedAbiProperty(abiProperty: AbiProperty, val parentClass: AbiClass?) :
+    AbiProperty by abiProperty {
+    val effectiveModality
+        get() =
+            when (parentClass?.modality) {
+                AbiModality.FINAL -> AbiModality.FINAL
+                else -> modality
+            }
+}
 
 private class DecoratedAbiValueParameter(val index: Int, param: AbiValueParameter) :
     AbiValueParameter by param

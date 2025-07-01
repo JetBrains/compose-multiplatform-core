@@ -17,20 +17,22 @@ package androidx.compose.remote.creation.modifiers;
 
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Clip modifier */
 public class ClipModifier implements RecordingModifier.Element {
-    Shape mShape;
+    @NonNull Shape mShape;
 
-    public ClipModifier(Shape shape) {
+    public ClipModifier(@NonNull Shape shape) {
         mShape = shape;
     }
 
-    public Shape getShape() {
+    public @NonNull Shape getShape() {
         return mShape;
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         if (mShape instanceof RectShape) {
             writer.getBuffer().addClipRectModifier();
         } else if (mShape instanceof RoundedRectShape) {

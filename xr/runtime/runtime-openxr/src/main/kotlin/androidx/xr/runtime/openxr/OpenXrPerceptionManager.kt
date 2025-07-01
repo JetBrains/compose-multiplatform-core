@@ -22,6 +22,7 @@ import androidx.xr.runtime.internal.Anchor
 import androidx.xr.runtime.internal.AnchorInvalidUuidException
 import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
 import androidx.xr.runtime.internal.DepthMap
+import androidx.xr.runtime.internal.Face
 import androidx.xr.runtime.internal.Hand
 import androidx.xr.runtime.internal.HitResult
 import androidx.xr.runtime.internal.PerceptionManager
@@ -110,6 +111,9 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
 
     override val viewCameras: List<ViewCamera>
         get() = xrResources.viewCameras
+
+    override val userFace: Face?
+        get() = xrResources.userFace
 
     override val earth: OpenXrEarth = xrResources.earth
 

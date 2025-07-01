@@ -44,6 +44,7 @@ dependencies {
     testImplementation(libs.mockitoKotlin)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRunner)
+    testImplementation(libs.testParameterInjector)
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
     testImplementation(project(":xr:runtime:runtime-testing"))

@@ -33,10 +33,10 @@ public interface ProfileFactory {
      * @param platform a valid platform services implementation
      * @return a valid RemoteComposeWriter
      */
-    RemoteComposeWriter create(
+    @NonNull RemoteComposeWriter create(
             int width,
             int height,
-            String contentDescription,
+            @NonNull String contentDescription,
             int apiLevel,
             int profiles,
             @NonNull Platform platform);

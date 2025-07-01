@@ -28,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.xr.glimmer.indirectTouchScrollable
 
 /**
  * This is a scrolling list component that only composes and lays out the currently visible items.
@@ -161,18 +160,6 @@ internal fun List(
                 .then(beyondBoundsModifier)
                 .clipScrollableContainer(orientation)
                 .scrollable(
-                    state = state,
-                    orientation = orientation,
-                    enabled = userScrollEnabled,
-                    reverseDirection =
-                        ScrollableDefaults.reverseDirection(
-                            layoutDirection = LocalLayoutDirection.current,
-                            orientation = orientation,
-                            reverseScrolling = reverseLayout,
-                        ),
-                    interactionSource = state.internalInteractionSource,
-                )
-                .indirectTouchScrollable(
                     state = state,
                     orientation = orientation,
                     enabled = userScrollEnabled,

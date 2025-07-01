@@ -211,7 +211,7 @@ public class RemoteComposeContext {
         return mRemoteWriter.bufferSize()
     }
 
-    public fun createShader(shaderString: String?): RemoteComposeShader {
+    public fun createShader(shaderString: String): RemoteComposeShader {
         return mRemoteWriter.createShader(shaderString)
     }
 
@@ -219,7 +219,7 @@ public class RemoteComposeContext {
         mRemoteWriter.setTheme(theme)
     }
 
-    public fun drawBitmap(image: Bitmap?, contentDescription: String?) {
+    public fun drawBitmap(image: Bitmap, contentDescription: String) {
         mRemoteWriter.drawBitmap(image, contentDescription)
     }
 
@@ -262,7 +262,7 @@ public class RemoteComposeContext {
     }
 
     public fun drawBitmap(
-        image: Any?,
+        image: Any,
         left: Float,
         top: Float,
         right: Float,
@@ -288,7 +288,7 @@ public class RemoteComposeContext {
     }
 
     public fun drawScaledBitmap(
-        image: Bitmap?,
+        image: Bitmap,
         srcLeft: Float,
         srcTop: Float,
         srcRight: Float,
@@ -382,7 +382,7 @@ public class RemoteComposeContext {
         mRemoteWriter.drawRoundRect(left, top, right, bottom, radiusX, radiusY)
     }
 
-    public fun textCreateId(text: String?): Int {
+    public fun textCreateId(text: String): Int {
         return mRemoteWriter.textCreateId(text)
     }
 
@@ -390,11 +390,11 @@ public class RemoteComposeContext {
         return mRemoteWriter.textMerge(id1, id2)
     }
 
-    public fun drawTextOnPath(text: String?, path: Any?, hOffset: Float, vOffset: Float) {
+    public fun drawTextOnPath(text: String, path: Any, hOffset: Float, vOffset: Float) {
         mRemoteWriter.drawTextOnPath(text, path, hOffset, vOffset)
     }
 
-    public fun drawTextOnPath(textId: Int, path: Any?, hOffset: Float, vOffset: Float) {
+    public fun drawTextOnPath(textId: Int, path: Any, hOffset: Float, vOffset: Float) {
         mRemoteWriter.drawTextOnPath(textId, path, hOffset, vOffset)
     }
 
@@ -406,7 +406,7 @@ public class RemoteComposeContext {
         contextEnd: Int,
         x: Float,
         y: Float,
-        rtl: Boolean?,
+        rtl: Boolean,
     ) {
         mRemoteWriter.drawTextRun(text, start, end, contextStart, contextEnd, x, y, rtl)
     }
@@ -419,7 +419,7 @@ public class RemoteComposeContext {
         contextEnd: Int,
         x: Float,
         y: Float,
-        rtl: Boolean?,
+        rtl: Boolean,
     ) {
         mRemoteWriter.drawTextRun(textId, start, end, contextStart, contextEnd, x, y, rtl)
     }
@@ -436,7 +436,7 @@ public class RemoteComposeContext {
     }
 
     public fun drawTextAnchored(
-        str: String?,
+        str: String,
         x: Float,
         y: Float,
         panX: Float,
@@ -457,7 +457,7 @@ public class RemoteComposeContext {
         mRemoteWriter.drawTextAnchored(strId, x, y, panX, panY, flags)
     }
 
-    public fun drawTweenPath(path1: Any?, path2: Any?, tween: Float, start: Float, stop: Float) {
+    public fun drawTweenPath(path1: Any, path2: Any, tween: Float, start: Float, stop: Float) {
         mRemoteWriter.drawTweenPath(path1, path2, tween, start, stop)
     }
 
@@ -491,7 +491,7 @@ public class RemoteComposeContext {
         mRemoteWriter.drawTweenPath(path1Id, path2Id, tween, start, stop)
     }
 
-    public fun addPathData(path: Any?): Int {
+    public fun addPathData(path: Any): Int {
         return mRemoteWriter.addPathData(path)
     }
 
@@ -527,7 +527,7 @@ public class RemoteComposeContext {
         mRemoteWriter.pathAppendReset(pathId)
     }
 
-    public fun addPathString(path: String?): Int {
+    public fun addPathString(path: String): Int {
         return mRemoteWriter.addPathString(path)
     }
 
@@ -599,35 +599,35 @@ public class RemoteComposeContext {
         return mRemoteWriter.addColor(color)
     }
 
-    public fun addNamedColor(name: String?, color: Int): Int {
+    public fun addNamedColor(name: String, color: Int): Int {
         return mRemoteWriter.addNamedColor(name, color)
     }
 
-    public fun setColorName(id: Int, name: String?) {
+    public fun setColorName(id: Int, name: String) {
         mRemoteWriter.setColorName(id, name)
     }
 
-    public fun setStringName(id: Int, name: String?) {
+    public fun setStringName(id: Int, name: String) {
         mRemoteWriter.setStringName(id, name)
     }
 
-    public fun addNamedString(name: String?, initialValue: String?): Int {
+    public fun addNamedString(name: String, initialValue: String): Int {
         return mRemoteWriter.addNamedString(name, initialValue)
     }
 
-    public fun addNamedInt(name: String?, initialValue: Int): Long {
+    public fun addNamedInt(name: String, initialValue: Int): Long {
         return mRemoteWriter.addNamedInt(name, initialValue)
     }
 
-    public fun addNamedFloat(name: String?, initialValue: Float): Float {
+    public fun addNamedFloat(name: String, initialValue: Float): Float {
         return mRemoteWriter.addNamedFloat(name, initialValue)
     }
 
-    public fun addNamedBitmap(name: String?, initialValue: Bitmap?): Int {
+    public fun addNamedBitmap(name: String, initialValue: Bitmap): Int {
         return mRemoteWriter.addNamedBitmap(name, initialValue)
     }
 
-    public fun addNamedLong(name: String?, initialValue: Long): Int {
+    public fun addNamedLong(name: String, initialValue: Long): Int {
         return mRemoteWriter.addNamedLong(name, initialValue)
     }
 
@@ -679,7 +679,7 @@ public class RemoteComposeContext {
         return mRemoteWriter.addBoolean(value)
     }
 
-    public fun mapLookup(mapId: Int, str: String?): Int {
+    public fun mapLookup(mapId: Int, str: String): Int {
         return mRemoteWriter.mapLookup(mapId, str)
     }
 
@@ -768,7 +768,7 @@ public class RemoteComposeContext {
         return mRemoteWriter.addDataMap(*data)
     }
 
-    public fun addDataMap(keys: Array<String?>?, ids: IntArray?): Float {
+    public fun addDataMap(keys: Array<String>, ids: IntArray): Float {
         return mRemoteWriter.addDataMap(keys, ids)
     }
 
@@ -901,7 +901,7 @@ public class RemoteComposeContext {
     }
 
     public fun column(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         horizontal: Int,
         vertical: Int,
         content: RemoteComposeWriterInterface,
@@ -918,7 +918,7 @@ public class RemoteComposeContext {
     }
 
     public fun collapsibleColumn(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         horizontal: Int,
         vertical: Int,
         content: RemoteComposeWriterInterface,
@@ -935,7 +935,7 @@ public class RemoteComposeContext {
     }
 
     public fun row(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         horizontal: Int,
         vertical: Int,
         content: RemoteComposeWriterInterface,
@@ -952,7 +952,7 @@ public class RemoteComposeContext {
     }
 
     public fun collapsibleRow(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         horizontal: Int,
         vertical: Int,
         content: RemoteComposeWriterInterface,
@@ -968,7 +968,7 @@ public class RemoteComposeContext {
         mRemoteWriter.endCollapsibleRow()
     }
 
-    public fun canvas(modifier: RecordingModifier?, content: RemoteComposeWriterInterface) {
+    public fun canvas(modifier: RecordingModifier, content: RemoteComposeWriterInterface) {
         mRemoteWriter.canvas(modifier, content)
     }
 
@@ -1001,7 +1001,7 @@ public class RemoteComposeContext {
     }
 
     public fun box(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         horizontal: Int,
         vertical: Int,
         content: RemoteComposeWriterInterface,
@@ -1013,7 +1013,7 @@ public class RemoteComposeContext {
         mRemoteWriter.startBox(modifier, horizontal, vertical)
     }
 
-    public fun startBox(modifier: RecordingModifier?) {
+    public fun startBox(modifier: RecordingModifier) {
         mRemoteWriter.startBox(modifier)
     }
 
@@ -1034,7 +1034,7 @@ public class RemoteComposeContext {
     }
 
     public fun stateLayout(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         indexId: Int,
         content: RemoteComposeWriterInterface,
     ) {
@@ -1062,7 +1062,7 @@ public class RemoteComposeContext {
     }
 
     public fun textComponent(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         textId: Int,
         color: Int,
         fontSize: Float,
@@ -1090,7 +1090,7 @@ public class RemoteComposeContext {
     }
 
     public fun startTextComponent(
-        modifier: RecordingModifier?,
+        modifier: RecordingModifier,
         textId: Int,
         color: Int,
         fontSize: Float,
@@ -1123,7 +1123,7 @@ public class RemoteComposeContext {
         mRemoteWriter.box(modifier, horizontal, vertical)
     }
 
-    public fun box(modifier: RecordingModifier?) {
+    public fun box(modifier: RecordingModifier) {
         mRemoteWriter.box(modifier)
     }
 
@@ -1139,7 +1139,7 @@ public class RemoteComposeContext {
         return mRemoteWriter.addList(listId)
     }
 
-    public fun addFloatArray(values: FloatArray?): Float {
+    public fun addFloatArray(values: FloatArray): Float {
         return mRemoteWriter.addFloatArray(values)
     }
 
@@ -1147,27 +1147,27 @@ public class RemoteComposeContext {
         return mRemoteWriter.addFloatList(values)
     }
 
-    public fun addFloatMap(keys: Array<String?>?, values: FloatArray): Float {
+    public fun addFloatMap(keys: Array<String>, values: FloatArray): Float {
         return mRemoteWriter.addFloatMap(keys, values)
     }
 
-    public fun storeBitmap(image: Any?): Int {
+    public fun storeBitmap(image: Any): Int {
         return mRemoteWriter.storeBitmap(image)
     }
 
-    public fun addBitmap(image: Bitmap?): Int {
+    public fun addBitmap(image: Bitmap): Int {
         return mRemoteWriter.addBitmap(image)
     }
 
-    public fun addBitmap(image: Bitmap?, name: String?): Int {
+    public fun addBitmap(image: Bitmap, name: String): Int {
         return mRemoteWriter.addBitmap(image, name)
     }
 
-    public fun addBitmapFont(glyphs: Array<BitmapFontData.Glyph?>?): Int {
+    public fun addBitmapFont(glyphs: Array<BitmapFontData.Glyph>): Int {
         return mRemoteWriter.addBitmapFont(glyphs)
     }
 
-    public fun nameBitmapId(id: Int, omicron: String?) {
+    public fun nameBitmapId(id: Int, omicron: String) {
         mRemoteWriter.nameBitmapId(id, omicron)
     }
 
@@ -1197,7 +1197,7 @@ public class RemoteComposeContext {
 
     public fun createParticles(
         variables: FloatArray,
-        initialExpressions: Array<FloatArray?>?,
+        initialExpressions: Array<FloatArray>,
         particleCount: Int,
     ): Float {
         return mRemoteWriter.createParticles(variables, initialExpressions, particleCount)
@@ -1206,7 +1206,7 @@ public class RemoteComposeContext {
     public fun particlesLoop(
         id: Float,
         restart: FloatArray?,
-        expressions: Array<FloatArray?>?,
+        expressions: Array<FloatArray>,
         r: Runnable,
     ) {
         mRemoteWriter.particlesLoop(id, restart, expressions, r)
@@ -1228,15 +1228,15 @@ public class RemoteComposeContext {
         return mRemoteWriter.addTimeLong(time)
     }
 
-    public fun addDebugMessage(message: String?) {
+    public fun addDebugMessage(message: String) {
         mRemoteWriter.addDebugMessage(message)
     }
 
-    public fun addDebugMessage(message: String?, value: Float) {
+    public fun addDebugMessage(message: String, value: Float) {
         mRemoteWriter.addDebugMessage(message, value)
     }
 
-    public fun addDebugMessage(message: String?, value: Float, flag: Int) {
+    public fun addDebugMessage(message: String, value: Float, flag: Int) {
         mRemoteWriter.addDebugMessage(message, value, flag)
     }
 
@@ -1248,7 +1248,7 @@ public class RemoteComposeContext {
         return mRemoteWriter.matrixExpression(*exp)
     }
 
-    public fun addFont(data: ByteArray?): Int {
+    public fun addFont(data: ByteArray): Int {
         return mRemoteWriter.addFont(data)
     }
 

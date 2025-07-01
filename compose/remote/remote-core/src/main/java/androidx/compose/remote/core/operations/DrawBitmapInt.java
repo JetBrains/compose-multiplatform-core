@@ -109,7 +109,7 @@ public class DrawBitmapInt extends PaintOperation implements AccessibleComponent
     }
 
     @Override
-    public Integer getContentDescriptionId() {
+    public @NonNull Integer getContentDescriptionId() {
         return mContentDescId;
     }
 

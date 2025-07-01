@@ -288,7 +288,7 @@ class DebugCreationContext : RemoteContext() {
                     stringBuilder.append("restorePaint\n")
                 }
 
-                override fun replacePaint(paint: PaintBundle?) {
+                override fun replacePaint(paint: PaintBundle) {
                     stringBuilder.append("replacePaint\n")
                 }
 
@@ -464,6 +464,10 @@ class DebugCreationContext : RemoteContext() {
                 ) {
                     stringBuilder.append("matrixFromPath($pathId, $fraction, $vOffset, $flags)")
                 }
+
+                override fun drawToBitmap(bitmapId: Int, mode: Int, color: Int) {
+                    stringBuilder.append("drawToBitmap($bitmapId)\n")
+                }
             }
     }
 
@@ -474,7 +478,7 @@ class DebugCreationContext : RemoteContext() {
         width: Int,
         height: Int,
         capabilities: Long,
-        properties: IntMap<Any>,
+        properties: IntMap<Any>?,
     ) {
         stringBuilder.append(
             "header($majorVersion, $minorVersion, $patchVersion)" +

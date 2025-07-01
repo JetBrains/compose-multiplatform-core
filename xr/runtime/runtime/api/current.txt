@@ -211,18 +211,6 @@ package androidx.xr.runtime {
 
 }
 
-package androidx.xr.runtime.java {
-
-  public final class Coroutines {
-    method public static <T> com.google.common.util.concurrent.ListenableFuture<T> toFuture(androidx.xr.runtime.Session session, kotlin.jvm.functions.Function2<? super kotlinx.coroutines.CoroutineScope,? super kotlin.coroutines.Continuation<? super T>,? extends java.lang.Object?> coroutine);
-  }
-
-  public final class Flows {
-    method public static <T> io.reactivex.rxjava3.core.Observable<T> toObservable(androidx.xr.runtime.Session session, kotlinx.coroutines.flow.Flow<? extends T> flow);
-  }
-
-}
-
 package androidx.xr.runtime.math {
 
   public final class BoundingBox {

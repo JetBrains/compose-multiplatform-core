@@ -30,7 +30,8 @@ import androidx.xr.runtime.math.Pose
  * Note: The size property of this Entity is always reported as {0, 0, 0}, regardless of the actual
  * size of the model.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+// TODO: b/427566816 - Remove the HiddenSuperClass warning.
+@Suppress("HiddenSuperclass") // BaseEntity is an internal class
 public class GltfModelEntity
 private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     BaseEntity<RtGltfEntity>(rtEntity, entityManager) {
@@ -41,10 +42,28 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     @Retention(AnnotationRetention.SOURCE)
     internal annotation class AnimationStateValue
 
+    /** Specifies the current animation state of the GltfModelEntity. */
     public object AnimationState {
+        /** The animation is currently playing. */
         public const val PLAYING: Int = 0
+        /** The animation is currently stopped. */
         public const val STOPPED: Int = 1
     }
+
+    /**
+     * The current animation state of the GltfModelEntity.
+     *
+     * @return The current animation state.
+     */
+    @AnimationStateValue
+    public val animationState: Int
+        get() {
+            return when (rtEntity.animationState) {
+                RtGltfEntity.AnimationState.PLAYING -> return AnimationState.PLAYING
+                RtGltfEntity.AnimationState.STOPPED -> return AnimationState.STOPPED
+                else -> AnimationState.STOPPED
+            }
+        }
 
     public companion object {
         /**
@@ -71,10 +90,9 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
          * This method must be called from the main thread.
          * https://developer.android.com/guide/components/processes-and-threads
          *
-         * @param session Session to create the [GltfModel] in.
-         * @param model The [GltfModel] this Entity is referencing.
-         * @param pose The initial pose of the entity.
-         * @return a GltfModelEntity instance
+         * @param session [Session] to create the [GltfModel] in.
+         * @param model The [GltfModel] this [Entity] is referencing.
+         * @param pose The initial [Pose] of the [Entity].
          */
         @MainThread
         @JvmStatic
@@ -84,42 +102,51 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             model: GltfModel,
             pose: Pose = Pose.Identity,
         ): GltfModelEntity =
-            GltfModelEntity.create(
-                session.platformAdapter,
-                session.scene.entityManager,
-                model,
-                pose,
-            )
-    }
-
-    /** Returns the current animation state of this glTF entity. */
-    @AnimationStateValue
-    public fun getAnimationState(): Int {
-        return when (rtEntity.animationState) {
-            RtGltfEntity.AnimationState.PLAYING -> return AnimationState.PLAYING
-            RtGltfEntity.AnimationState.STOPPED -> return AnimationState.STOPPED
-            else -> AnimationState.STOPPED
-        }
+            create(session.platformAdapter, session.scene.entityManager, model, pose)
     }
 
     /**
-     * Starts the animation with the given name.
+     * Starts the animation with the given name. Only one animation can be playing at a time.
      *
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
      *
-     * @param animationName The name of the animation to start. If null, the first animation found
-     *   in the glTF will be played.
-     * @param loop Whether the animation should loop.
+     * @param loop Whether the animation should loop over or stop after animating once.
+     * @param animationName The name of the animation to start.
+     * @throws IllegalArgumentException if the underlying model doesn't contain an animation with
+     *   the given name.
      */
     @MainThread
-    @JvmOverloads
-    public fun startAnimation(loop: Boolean, animationName: String? = null) {
-        rtEntity.startAnimation(loop, animationName)
+    public fun startAnimation(loop: Boolean, animationName: String) {
+        try {
+            rtEntity.startAnimation(loop, animationName)
+        } catch (_: Exception) {
+            throw IllegalArgumentException("Animation name is invalid.")
+        }
     }
 
     /**
-     * Stops the animation of the glTF entity.
+     * Starts animating the glTF with the first animation found in the model.
+     *
+     * This method must be called from the main thread.
+     * https://developer.android.com/guide/components/processes-and-threads
+     *
+     * @param loop Whether the animation should loop over or stop after animating once. Defaults to
+     *   true.
+     * @throws IllegalArgumentException if the underlying model doesn't contain any animations.
+     */
+    @MainThread
+    @JvmOverloads
+    public fun startAnimation(loop: Boolean = true) {
+        try {
+            rtEntity.startAnimation(loop, null)
+        } catch (_: Exception) {
+            throw IllegalArgumentException("Model doesn't contain any animations.")
+        }
+    }
+
+    /**
+     * Stops the currently active animation.
      *
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
@@ -142,6 +169,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
      * @param meshName The name of the mesh to use the material for.
      */
     @MainThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun setMaterialOverride(material: Material, meshName: String) {
         rtEntity.setMaterialOverride(material.material!!, meshName)
     }

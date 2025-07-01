@@ -323,6 +323,8 @@ internal constructor(
         removeAllComponents()
         entityManager.removeEntity(this)
         rtEntity.dispose()
+        // TODO b/427314036: Set rtEntity to null here and add checkDisposed() to all public
+        //                   methods.
     }
 
     override fun addComponent(component: Component): Boolean {

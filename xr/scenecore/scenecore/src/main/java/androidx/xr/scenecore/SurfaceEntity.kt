@@ -61,6 +61,7 @@ private constructor(
     rtEntity: RtSurfaceEntity,
     entityManager: EntityManager,
     canvasShape: CanvasShape,
+    private var disposed: Boolean = false, // TODO b/427314036: remove this
 ) : BaseEntity<RtSurfaceEntity>(rtEntity, entityManager) {
 
     /** Represents the shape of the Canvas that backs a SurfaceEntity. */
@@ -286,6 +287,19 @@ private constructor(
         }
     }
 
+    // TODO b/427314036: remove this once this is enforced within BaseEntity.
+    override fun dispose() {
+        super.dispose()
+        disposed = true
+    }
+
+    // TODO b/427314036: remove this once this is enforced within BaseEntity.
+    private fun checkDisposed() {
+        if (disposed) {
+            throw IllegalStateException("Entity is disposed.")
+        }
+    }
+
     public companion object {
         private fun getRtStereoMode(stereoMode: Int): Int {
             return when (stereoMode) {
@@ -418,11 +432,17 @@ private constructor(
      * correctly produce a stereoscopic view to the user.
      *
      * Values must be one of the values from [StereoMode].
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var stereoMode: Int
-        get() = rtEntity.stereoMode
+        get() {
+            checkDisposed()
+            return rtEntity.stereoMode
+        }
         @MainThread
         set(value) {
+            checkDisposed()
             rtEntity.stereoMode = getRtStereoMode(value)
         }
 
@@ -434,16 +454,22 @@ private constructor(
      * [canvasShape].
      */
     public val dimensions: FloatSize3d
-        get() = rtEntity.dimensions.toFloatSize3d()
+        get() {
+            checkDisposed()
+            return rtEntity.dimensions.toFloatSize3d()
+        }
 
     /**
-     * The shape of the canvas that backs the Entity.
+     * The shape of the canvas that backs the Entity. Updating this value will alter the dimensions
+     * of the Entity.
      *
-     * Updating this value will alter the dimensions of the Entity.
+     * @throws IllegalArgumentException if an invalid canvas shape is provided.
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var canvasShape: CanvasShape = canvasShape
         @MainThread
         set(value) {
+            checkDisposed()
             val rtCanvasShape =
                 when (value) {
                     is CanvasShape.Quad ->
@@ -461,10 +487,13 @@ private constructor(
     /**
      * The texture to be composited into the alpha channel of the surface. If null, the alpha mask
      * will be disabled.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var primaryAlphaMaskTexture: Texture? = null
         @MainThread
         set(value) {
+            checkDisposed()
             rtEntity.setPrimaryAlphaMaskTexture(value?.texture)
             field = value
         }
@@ -472,10 +501,13 @@ private constructor(
     /**
      * The texture to be composited into the alpha channel of the secondary view of the surface.
      * This is only used for interleaved stereo content. If null, the alpha mask will be disabled.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var auxiliaryAlphaMaskTexture: Texture? = null
         @MainThread
         set(value) {
+            checkDisposed()
             rtEntity.setAuxiliaryAlphaMaskTexture(value?.texture)
             field = value
         }
@@ -489,11 +521,17 @@ private constructor(
      * between [0.0f - 0.5f]. Default value is 0.0f.
      *
      * Setter must be called from the main thread.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var featherRadiusX: Float
-        get() = rtEntity.featherRadiusX
+        get() {
+            checkDisposed()
+            return rtEntity.featherRadiusX
+        }
         @MainThread
         set(value) {
+            checkDisposed()
             rtEntity.featherRadiusX = value
         }
 
@@ -506,11 +544,17 @@ private constructor(
      * between [0.0f - 0.5f]. Default value is 0.0f.
      *
      * Setter must be called from the main thread.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var featherRadiusY: Float
-        get() = rtEntity.featherRadiusY
+        get() {
+            checkDisposed()
+            return rtEntity.featherRadiusY
+        }
         @MainThread
         set(value) {
+            checkDisposed()
             rtEntity.featherRadiusY = value
         }
 
@@ -522,9 +566,12 @@ private constructor(
      * conversion.
      *
      * The setter must be called from the main thread.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var contentColorMetadata: ContentColorMetadata?
         get() {
+            checkDisposed()
             return if (!rtEntity.contentColorMetadataSet) {
                 null
             } else {
@@ -538,6 +585,7 @@ private constructor(
         }
         @MainThread
         set(value) {
+            checkDisposed()
             if (value == null) {
                 rtEntity.resetContentColorMetadata()
             } else {
@@ -555,9 +603,12 @@ private constructor(
      *
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
+     *
+     * @throws IllegalStateException if the Entity has been disposed.
      */
     @MainThread
     public fun getSurface(): Surface {
+        checkDisposed()
         return rtEntity.surface
     }
 
@@ -583,6 +634,7 @@ private constructor(
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(): PerceivedResolutionResult {
+        checkDisposed()
         check(lifecycleManager.config.headTracking != Config.HeadTrackingMode.DISABLED) {
             "Config.HeadTrackingMode is set to Disabled."
         }

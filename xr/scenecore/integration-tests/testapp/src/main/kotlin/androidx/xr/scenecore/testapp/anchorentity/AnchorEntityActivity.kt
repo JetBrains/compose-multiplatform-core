@@ -26,7 +26,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.GltfModel
@@ -94,7 +94,7 @@ class AnchorEntityActivity : AppCompatActivity() {
             anchorEntity =
                 AnchorEntity.create(
                     session!!,
-                    FloatSize3d(0.1f, 0.1f),
+                    FloatSize2d(0.1f, 0.1f),
                     PlaneOrientation.ANY,
                     PlaneSemanticType.ANY,
                 )

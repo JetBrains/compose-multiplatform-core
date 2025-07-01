@@ -172,7 +172,7 @@ class SplitEngineTestActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             while (true) {
                 if (dragonEntity.value != null) {
-                    dragonAnimationState.intValue = dragonEntity.value!!.getAnimationState()
+                    dragonAnimationState.intValue = dragonEntity.value!!.animationState
                 }
                 delay(16)
             }
@@ -385,7 +385,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                     Button(
                         onClick = {
                             dragonEntity.value!!.startAnimation(false, "Fast_Flying")
-                            dragonAnimationState.intValue = dragonEntity.value!!.getAnimationState()
+                            dragonAnimationState.intValue = dragonEntity.value!!.animationState
                         }
                     ) {
                         Text(text = "Animate Dragon Entity", fontSize = 20.sp)
@@ -393,7 +393,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                     Button(
                         onClick = {
                             dragonEntity.value!!.startAnimation(true, "Fast_Flying")
-                            dragonAnimationState.intValue = dragonEntity.value!!.getAnimationState()
+                            dragonAnimationState.intValue = dragonEntity.value!!.animationState
                         }
                     ) {
                         Text(text = "Loop Animate Dragon Entity", fontSize = 20.sp)
@@ -401,7 +401,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                     Button(
                         onClick = {
                             dragonEntity.value!!.stopAnimation()
-                            dragonAnimationState.intValue = dragonEntity.value!!.getAnimationState()
+                            dragonAnimationState.intValue = dragonEntity.value!!.animationState
                         }
                     ) {
                         Text(text = "Stop Animate Dragon Entity", fontSize = 20.sp)

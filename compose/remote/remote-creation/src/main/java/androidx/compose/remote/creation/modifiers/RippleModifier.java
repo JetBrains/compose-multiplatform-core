@@ -17,11 +17,13 @@ package androidx.compose.remote.creation.modifiers;
 
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Ripple modifier */
 public class RippleModifier implements RecordingModifier.Element {
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         writer.getBuffer().addModifierRipple();
     }
 }

@@ -16,8 +16,6 @@
 
 package androidx.compose.ui.focus
 
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.CustomDestinationResult.Cancelled
 import androidx.compose.ui.focus.CustomDestinationResult.None
@@ -130,8 +128,7 @@ internal class FocusTargetNode(
         // The focused item is being removed from a lazy list, so we need to clear focus.
         // This is called after onEndApplyChanges, so we can safely clear focus from the owner,
         // which could trigger an initial focus scenario.
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (ComposeUiFlags.isClearFocusOnResetEnabled && focusState.isFocused) {
+        if (focusState.isFocused) {
             requireOwner()
                 .focusOwner
                 .clearFocus(

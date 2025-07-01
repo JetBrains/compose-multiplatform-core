@@ -18,6 +18,8 @@ package androidx.compose.remote.creation.modifiers;
 import androidx.compose.remote.core.operations.layout.animation.AnimationSpec;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Width modifier */
 public class AnimateSpecModifier implements RecordingModifier.Element {
 
@@ -26,8 +28,8 @@ public class AnimateSpecModifier implements RecordingModifier.Element {
     int mMotionEasingType;
     float mVisibilityDuration;
     int mVisibilityEasingType;
-    AnimationSpec.ANIMATION mEnterAnimation;
-    AnimationSpec.ANIMATION mExitAnimation;
+    AnimationSpec.@NonNull ANIMATION mEnterAnimation;
+    AnimationSpec.@NonNull ANIMATION mExitAnimation;
 
     public AnimateSpecModifier(
             int animationId,
@@ -35,8 +37,8 @@ public class AnimateSpecModifier implements RecordingModifier.Element {
             int motionEasingType,
             float visibilityDuration,
             int visibilityEasingType,
-            AnimationSpec.ANIMATION enterAnimation,
-            AnimationSpec.ANIMATION exitAnimation) {
+            AnimationSpec.@NonNull ANIMATION enterAnimation,
+            AnimationSpec.@NonNull ANIMATION exitAnimation) {
         mAnimationId = animationId;
         mMotionDuration = motionDuration;
         mMotionEasingType = motionEasingType;
@@ -47,7 +49,7 @@ public class AnimateSpecModifier implements RecordingModifier.Element {
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         AnimationSpec.apply(
                 writer.getBuffer().getBuffer(),
                 mAnimationId,

@@ -31,7 +31,6 @@ androidx {
 
 android {
     namespace 'androidx.compose.remote.creation'
-
     compileSdk 35
 }
 

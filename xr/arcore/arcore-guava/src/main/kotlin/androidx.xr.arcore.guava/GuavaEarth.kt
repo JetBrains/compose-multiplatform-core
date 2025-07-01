@@ -26,7 +26,7 @@ import androidx.xr.arcore.Earth
 import androidx.xr.arcore.Earth.Surface
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.java.toFuture
+import androidx.xr.runtime.guava.toFuture
 import androidx.xr.runtime.math.Quaternion
 import com.google.common.util.concurrent.ListenableFuture
 

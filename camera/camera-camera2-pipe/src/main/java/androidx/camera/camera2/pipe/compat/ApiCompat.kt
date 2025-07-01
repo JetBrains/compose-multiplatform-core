@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.content.Context
+import android.graphics.ColorSpace
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -533,6 +534,11 @@ internal object Api34Compat {
         cameraMetadata[CameraCharacteristics.CONTROL_AVAILABLE_SETTINGS_OVERRIDES]?.contains(
             android.hardware.camera2.CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM
         ) == true
+
+    @JvmStatic
+    fun setColorSpace(sessionConfiguration: SessionConfiguration, colorSpace: ColorSpace.Named) {
+        sessionConfiguration.setColorSpace(colorSpace)
+    }
 }
 
 @RequiresApi(35)

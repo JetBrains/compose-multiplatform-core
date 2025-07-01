@@ -164,7 +164,7 @@ public class ClickArea extends Operation
     }
 
     @Override
-    public Integer getContentDescriptionId() {
+    public @NonNull Integer getContentDescriptionId() {
         return mContentDescription;
     }
 

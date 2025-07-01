@@ -18,21 +18,23 @@ package androidx.compose.remote.creation.modifiers;
 import androidx.compose.remote.core.semantics.AccessibilityModifier;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Semantics modifier, including */
 public class SemanticsModifier implements RecordingModifier.Element {
 
-    AccessibilityModifier mSemantics;
+    @NonNull AccessibilityModifier mSemantics;
 
-    public SemanticsModifier(AccessibilityModifier semantics) {
+    public SemanticsModifier(@NonNull AccessibilityModifier semantics) {
         this.mSemantics = semantics;
     }
 
-    public AccessibilityModifier getSemantics() {
+    public @NonNull AccessibilityModifier getSemantics() {
         return mSemantics;
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         writer.getBuffer().getBuffer().start(mSemantics.getOpCode());
         mSemantics.write(writer.getBuffer().getBuffer());
     }

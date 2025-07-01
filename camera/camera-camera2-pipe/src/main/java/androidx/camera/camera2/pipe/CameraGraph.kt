@@ -91,6 +91,7 @@ public interface CameraGraph : CameraGraphBase<Session> {
         val customCameraBackend: CameraBackendFactory? = null,
         val metadataTransform: MetadataTransform = MetadataTransform(),
         val flags: Flags = Flags(),
+        val sessionColorSpace: CameraColorSpace? = null,
         // TODO: Internal error handling. May be better at the CameraPipe level.
     ) {
         internal var sharedCameraIds: List<CameraId> = emptyList()

@@ -20,7 +20,7 @@ package androidx.xr.arcore.guava
 
 import androidx.xr.arcore.Anchor
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.java.toFuture
+import androidx.xr.runtime.guava.toFuture
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.UUID
 

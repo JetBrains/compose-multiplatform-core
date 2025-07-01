@@ -18,18 +18,20 @@ package androidx.compose.remote.creation.actions;
 import androidx.compose.remote.core.operations.layout.modifiers.ValueStringChangeActionOperation;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 public class ValueStringChange implements Action {
 
     int mValueId = -1;
-    String mValue = "";
+    @NonNull String mValue = "";
 
-    public ValueStringChange(int id, String value) {
+    public ValueStringChange(int id, @NonNull String value) {
         mValueId = id;
         mValue = value;
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         int valueId = writer.addText(mValue);
         ValueStringChangeActionOperation.apply(writer.getBuffer().getBuffer(), mValueId, valueId);
     }

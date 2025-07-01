@@ -47,7 +47,7 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     private final SubspaceNode mSubspace;
     private final int mModelImpressNode;
     private final int mSubspaceImpressNode;
-    @AnimationState private int mAnimationState = AnimationState.STOPPED;
+    @AnimationStateValue private int mAnimationState = AnimationState.STOPPED;
 
     GltfEntityImpl(
             GltfModelResourceImpl gltfModelResource,
@@ -128,7 +128,7 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     }
 
     @Override
-    @AnimationState
+    @AnimationStateValue
     public int getAnimationState() {
         return mAnimationState;
     }

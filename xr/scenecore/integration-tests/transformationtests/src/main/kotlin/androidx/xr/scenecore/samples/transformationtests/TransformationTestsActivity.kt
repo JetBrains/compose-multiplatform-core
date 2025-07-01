@@ -24,6 +24,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
@@ -90,7 +91,7 @@ class TransformationTestsActivity : AppCompatActivity() {
         anchor =
             AnchorEntity.create(
                 session,
-                FloatSize3d(0.1f, 0.1f),
+                FloatSize2d(0.1f, 0.1f),
                 PlaneOrientation.ANY,
                 PlaneSemanticType.ANY,
             )
@@ -133,7 +134,7 @@ class TransformationTestsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             while (true) {
                 delay(16L)
-                val anchorState = anchor!!.getState()
+                val anchorState = anchor!!.state
                 for (panel in debugTextPanelsToUpdate) {
                     // If the anchor is not anchored, then skip updating its panel
                     if (panel == anchorDebugPanel) {

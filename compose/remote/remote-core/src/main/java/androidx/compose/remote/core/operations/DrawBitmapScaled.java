@@ -195,7 +195,7 @@ public class DrawBitmapScaled extends PaintOperation
     }
 
     @Override
-    public Integer getContentDescriptionId() {
+    public @NonNull Integer getContentDescriptionId() {
         return mContentDescId;
     }
 

@@ -19,23 +19,26 @@ import android.graphics.Shader;
 
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /** Background modifier, takes a color and a shape */
 public class BackgroundModifier implements RecordingModifier.Element {
 
-    Shader mShader;
+    @Nullable Shader mShader;
     int mColor;
 
-    public BackgroundModifier(Shader shader, int color) {
+    public BackgroundModifier(@Nullable Shader shader, int color) {
         this.mShader = shader;
         this.mColor = color;
     }
 
-    public Shader getShader() {
+    public @Nullable Shader getShader() {
         return mShader;
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         if (mShader == null) {
             writer.getBuffer().addModifierBackground(mColor, 0);
         }

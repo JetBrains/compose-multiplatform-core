@@ -20,22 +20,24 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.os.Build;
 
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Support RemoteCompose Paint creation */
 public class Painter {
-    PaintBundle mPaint = new PaintBundle();
-    RemoteComposeWriter mBuilder;
+    @NonNull PaintBundle mPaint = new PaintBundle();
+    @NonNull RemoteComposeWriter mBuilder;
     public static int FONT_TYPE_DEFAULT = PaintBundle.FONT_TYPE_DEFAULT;
     public static int FONT_TYPE_SANS_SERIF = PaintBundle.FONT_TYPE_SANS_SERIF;
     public static int FONT_TYPE_SERIF = PaintBundle.FONT_TYPE_SERIF;
     public static int FONT_TYPE_MONOSPACE = PaintBundle.FONT_TYPE_MONOSPACE;
     private static final int NORMAL_WEIGHT = 400;
 
-    Painter(RemoteComposeWriter builder) {
+    Painter(@NonNull RemoteComposeWriter builder) {
         mBuilder = builder;
     }
 
@@ -53,7 +55,7 @@ public class Painter {
      * @param aa true to set the antialias bit in the flags, false to clear it
      * @return the painter object
      */
-    public Painter setAntiAlias(boolean aa) {
+    public @NonNull Painter setAntiAlias(boolean aa) {
         mPaint.setAntiAlias(aa);
         return this;
     }
@@ -64,7 +66,7 @@ public class Painter {
      * @param color int color
      * @return the painter object
      */
-    public Painter setColor(int color) {
+    public @NonNull Painter setColor(int color) {
         mPaint.setColor(color);
         return this;
     }
@@ -75,7 +77,7 @@ public class Painter {
      * @param colorId
      * @return the painter object
      */
-    public Painter setColorId(int colorId) {
+    public @NonNull Painter setColorId(int colorId) {
         mPaint.setColorId(colorId);
         return this;
     }
@@ -85,7 +87,7 @@ public class Painter {
      *
      * @param join set the paint's Join, used whenever the paint's style is Stroke or StrokeAndFill.
      */
-    public Painter setStrokeJoin(Paint.Join join) {
+    public @NonNull Painter setStrokeJoin(Paint.@NonNull Join join) {
         mPaint.setStrokeJoin(join.ordinal());
         return this;
     }
@@ -97,7 +99,7 @@ public class Painter {
      * @param width set the paint's stroke width, used whenever the paint's style is Stroke or
      *     StrokeAndFill.
      */
-    public Painter setStrokeWidth(float width) {
+    public @NonNull Painter setStrokeWidth(float width) {
         mPaint.setStrokeWidth(width);
         return this;
     }
@@ -108,7 +110,7 @@ public class Painter {
      *
      * @param style The new style to set in the paint
      */
-    public Painter setStyle(Paint.Style style) {
+    public @NonNull Painter setStyle(Paint.@NonNull Style style) {
         mPaint.setStyle(style.ordinal());
         return this;
     }
@@ -119,7 +121,7 @@ public class Painter {
      * @param cap set the paint's line cap style, used whenever the paint's style is Stroke or
      *     StrokeAndFill.
      */
-    public Painter setStrokeCap(Paint.Cap cap) {
+    public @NonNull Painter setStrokeCap(Paint.@NonNull Cap cap) {
         mPaint.setStrokeCap(cap.ordinal());
         return this;
     }
@@ -131,7 +133,7 @@ public class Painter {
      * @param miter set the miter limit on the paint, used whenever the paint's style is Stroke or
      *     StrokeAndFill.
      */
-    public Painter setStrokeMiter(float miter) {
+    public @NonNull Painter setStrokeMiter(float miter) {
         mPaint.setStrokeMiter(miter);
         return this;
     }
@@ -142,7 +144,7 @@ public class Painter {
      *
      * @param alpha set the alpha component [0..1.0] of the paint's color.
      */
-    public Painter setAlpha(float alpha) {
+    public @NonNull Painter setAlpha(float alpha) {
         mPaint.setAlpha((alpha > 2) ? alpha / 255f : alpha);
         return this;
     }
@@ -153,13 +155,13 @@ public class Painter {
      * @param color The ARGB source color used with the specified Porter-Duff mode
      * @param mode The porter-duff mode that is applied
      */
-    public Painter setPorterDuffColorFilter(int color, PorterDuff.Mode mode) {
+    public @NonNull Painter setPorterDuffColorFilter(int color, PorterDuff.@NonNull Mode mode) {
         mPaint.setColorFilter(color, porterDuffInt(mode));
         return this;
     }
 
     /** clears the color Filter. the same as paint.setColorFilter(null); */
-    public Painter clearColorFilter() {
+    public @NonNull Painter clearColorFilter() {
         mPaint.clearColorFilter();
         return this;
     }
@@ -177,14 +179,14 @@ public class Painter {
      *     line.
      * @param tile The Shader tiling mode
      */
-    public Painter setLinearGradient(
+    public @NonNull Painter setLinearGradient(
             float startX,
             float startY,
             float endX,
             float endY,
-            int[] colors,
-            float[] positions,
-            Shader.TileMode tile) {
+            int @NonNull [] colors,
+            float @Nullable [] positions,
+            Shader.@NonNull TileMode tile) {
         mPaint.setLinearGradient(colors, 0, positions, startX, startY, endX, endY, tile.ordinal());
         return this;
     }
@@ -203,15 +205,15 @@ public class Painter {
      *     line.
      * @param tile The Shader tiling mode
      */
-    public Painter setLinearGradient(
+    public @NonNull Painter setLinearGradient(
             float startX,
             float startY,
             float endX,
             float endY,
-            int[] colors,
+            int @NonNull [] colors,
             int mask,
-            float[] positions,
-            Shader.TileMode tile) {
+            float @NonNull [] positions,
+            Shader.@NonNull TileMode tile) {
         mPaint.setLinearGradient(
                 colors, mask, positions, startX, startY, endX, endY, tile.ordinal());
         return this;
@@ -230,13 +232,13 @@ public class Painter {
      *     circle.
      * @param tileMode The Shader tiling mode
      */
-    public Painter setRadialGradient(
+    public @NonNull Painter setRadialGradient(
             float centerX,
             float centerY,
             float radius,
-            int[] colors,
-            float[] positions,
-            Shader.TileMode tileMode) {
+            int @NonNull [] colors,
+            float @Nullable [] positions,
+            Shader.@NonNull TileMode tileMode) {
         mPaint.setRadialGradient(
                 colors, 0, positions, centerX, centerY, radius, tileMode.ordinal());
         return this;
@@ -256,14 +258,14 @@ public class Painter {
      *     circle.
      * @param tileMode The Shader tiling mode
      */
-    public Painter setRadialGradient(
+    public @NonNull Painter setRadialGradient(
             float centerX,
             float centerY,
             float radius,
-            int[] colors,
+            int @NonNull [] colors,
             int mask,
-            float[] positions,
-            Shader.TileMode tileMode) {
+            float @Nullable [] positions,
+            Shader.@NonNull TileMode tileMode) {
         mPaint.setRadialGradient(
                 colors, mask, positions, centerX, centerY, radius, tileMode.ordinal());
         return this;
@@ -281,7 +283,8 @@ public class Painter {
      *     may produce unexpected results. If positions is NULL, then the colors are automatically
      *     spaced evenly.
      */
-    public Painter setSweepGradient(float centerX, float centerY, int[] colors, float[] positions) {
+    public @NonNull Painter setSweepGradient(
+            float centerX, float centerY, int @NonNull [] colors, float @Nullable [] positions) {
         mPaint.setSweepGradient(colors, 0, positions, centerX, centerY);
         return this;
     }
@@ -300,8 +303,12 @@ public class Painter {
      *     spaced evenly.
      * @return painter
      */
-    public Painter setSweepGradient(
-            float centerX, float centerY, int[] colors, int mask, float[] positions) {
+    public @NonNull Painter setSweepGradient(
+            float centerX,
+            float centerY,
+            int @NonNull [] colors,
+            int mask,
+            float @Nullable [] positions) {
         mPaint.setSweepGradient(colors, mask, positions, centerX, centerY);
         return this;
     }
@@ -312,7 +319,7 @@ public class Painter {
      * @param matrixId shader matrix id
      * @return the painter object
      */
-    public Painter setShaderMatrix(float matrixId) {
+    public @NonNull Painter setShaderMatrix(float matrixId) {
         mPaint.setShaderMatrix(matrixId);
         return this;
     }
@@ -322,7 +329,7 @@ public class Painter {
      *
      * @param size set the paint's text size in pixel units.
      */
-    public Painter setTextSize(float size) {
+    public @NonNull Painter setTextSize(float size) {
         mPaint.setTextSize(size);
         return this;
     }
@@ -349,7 +356,7 @@ public class Painter {
      * @param weight The desired weight to be drawn.
      * @param italic {@code true} if italic style is desired to be drawn. Otherwise, {@code false}
      */
-    public Painter setTypeface(int fontType, int weight, boolean italic) {
+    public @NonNull Painter setTypeface(int fontType, int weight, boolean italic) {
         mPaint.setTextStyle(fontType, weight, italic);
         return this;
     }
@@ -360,7 +367,7 @@ public class Painter {
      * @param typeface a typeface
      * @return the painter object
      */
-    public Painter setTypeface(@NonNull String typeface) {
+    public @NonNull Painter setTypeface(@NonNull String typeface) {
         int fontType = mBuilder.textCreateId(typeface);
         mPaint.setTextStyle(fontType, NORMAL_WEIGHT, false);
         return this;
@@ -372,7 +379,7 @@ public class Painter {
      * @param fontDataId a typeface
      * @return the painter object
      */
-    public Painter setTypeface(int fontDataId) {
+    public @NonNull Painter setTypeface(int fontDataId) {
         mPaint.setTextStyle(fontDataId, NORMAL_WEIGHT, false, true);
         return this;
     }
@@ -383,7 +390,8 @@ public class Painter {
      * @param typeface a typeface
      * @return the painter object
      */
-    public Painter setTypeface(Typeface typeface) {
+    @androidx.annotation.RequiresApi(api = Build.VERSION_CODES.P)
+    public @NonNull Painter setTypeface(@Nullable Typeface typeface) {
         if (typeface != null) {
             int fontType = PaintBundle.FONT_TYPE_DEFAULT;
             if (typeface.equals(Typeface.SANS_SERIF)) {
@@ -409,7 +417,7 @@ public class Painter {
      * @param filter set to false to disable interpolation
      * @return the painter object
      */
-    public Painter setFilterBitmap(boolean filter) {
+    public @NonNull Painter setFilterBitmap(boolean filter) {
         mPaint.setFilterBitmap(filter);
         return this;
     }
@@ -420,12 +428,17 @@ public class Painter {
      * @param blend blend mode
      * @return the painter object
      */
-    public Painter setBlendMode(BlendMode blend) {
+    @androidx.annotation.RequiresApi(api = Build.VERSION_CODES.Q)
+    public @NonNull Painter setBlendMode(@NonNull BlendMode blend) {
         mPaint.setBlendMode(toBlendMode(blend));
         return this;
     }
 
-    private int toBlendMode(BlendMode blend) {
+    @androidx.annotation.RequiresApi(api = Build.VERSION_CODES.Q)
+    private int toBlendMode(@Nullable BlendMode blend) {
+        if (blend == null) {
+            return PaintBundle.BLEND_MODE_NULL;
+        }
         switch (blend) {
             case CLEAR:
                 return PaintBundle.BLEND_MODE_CLEAR;
@@ -495,7 +508,7 @@ public class Painter {
      * @param id shader id
      * @return the painter object
      */
-    public Painter setShader(int id) {
+    public @NonNull Painter setShader(int id) {
         mPaint.setShader(id);
         return this;
     }
@@ -506,7 +519,7 @@ public class Painter {
      * @param mode PorterDuff.Mode enum value
      * @return corresponding PaintBundle blend mode int value
      */
-    public static int porterDuffInt(PorterDuff.Mode mode) {
+    public static int porterDuffInt(PorterDuff.@NonNull Mode mode) {
         switch (mode) {
             case CLEAR:
                 return PaintBundle.BLEND_MODE_CLEAR;
@@ -555,7 +568,7 @@ public class Painter {
      * @param values array of values
      * @return the painter object
      */
-    public Painter setAxis(String[] tags, float[] values) {
+    public @NonNull Painter setAxis(String @NonNull [] tags, float @NonNull [] values) {
         int[] tagIds = new int[tags.length];
         for (int i = 0; i < tags.length; i++) {
             tagIds[i] = mBuilder.textCreateId(tags[i]);
@@ -571,7 +584,7 @@ public class Painter {
      * @param values array of values
      * @return the painter object
      */
-    public Painter setAxis(int[] tagIds, float[] values) {
+    public @NonNull Painter setAxis(int @NonNull [] tagIds, float @NonNull [] values) {
         mPaint.setTextAxis(tagIds, values);
         return this;
     }

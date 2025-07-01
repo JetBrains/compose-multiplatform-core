@@ -365,7 +365,7 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     /**
      * Return a recommended box for content to be placed in when in Full Space Mode.
      *
-     * The box is relative to the ActivitySpace's coordinate system. It is not scaled by the
+     * <p>The box is relative to the ActivitySpace's coordinate system. It is not scaled by the
      * ActivitySpace's transform. The dimensions are always in meters. This provides a
      * device-specific default volume that developers can use to size their content appropriately.
      *

@@ -24,8 +24,10 @@ import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
+import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import com.google.common.truth.Truth.assertThat
+import kotlin.check
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -79,6 +81,45 @@ class OpenXrManagerTest {
 
         assertThat(underTest.nativePointer).isGreaterThan(0L)
     }
+
+    @Test
+    fun configure_faceTrackingEnabled_addsFaceToUpdatables() = initOpenXrManagerAndRunTest {
+        underTest.create()
+        check(underTest.config.faceTracking == Config.FaceTrackingMode.DISABLED)
+        check(perceptionManager.xrResources.updatables.isEmpty())
+
+        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+
+        assertThat(perceptionManager.xrResources.updatables)
+            .containsExactly(perceptionManager.xrResources.userFace)
+    }
+
+    @Test
+    fun configure_faceTrackingDisabled_removesFaceFromUpdatables() = initOpenXrManagerAndRunTest {
+        underTest.create()
+        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        check(
+            perceptionManager.xrResources.updatables.contains(
+                perceptionManager.xrResources.userFace
+            )
+        )
+
+        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.DISABLED))
+
+        assertThat(perceptionManager.xrResources.updatables)
+            .doesNotContain(perceptionManager.xrResources.userFace)
+    }
+
+    @Ignore("b/427434474 test behavior is unpredictable until stub is fixed")
+    @Test
+    fun configure_faceTrackingEnabled_notCalibrated_throwsNotCalibratedException() =
+        initOpenXrManagerAndRunTest(isFaceTrackingCalibrated = false) {
+            underTest.create()
+
+            assertThrows(FaceTrackingNotCalibratedException::class.java) {
+                underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+            }
+        }
 
     @Test
     fun configure_deviceTrackingEnabled_addsDeviceToUpdatables() = initOpenXrManagerAndRunTest {
@@ -335,9 +376,18 @@ class OpenXrManagerTest {
         assertThat(underTest.nativePointer).isEqualTo(0L)
     }
 
-    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
+    private fun initOpenXrManagerAndRunTest(
+        isFaceTrackingCalibrated: Boolean = true,
+        testBody: () -> Unit,
+    ) {
         activityRule.scenario.onActivity {
-            underTest = OpenXrManager(it, perceptionManager, timeSource)
+            underTest =
+                OpenXrManager(
+                    it,
+                    perceptionManager,
+                    timeSource,
+                    faceTrackingCalibrated = isFaceTrackingCalibrated,
+                )
 
             testBody()
 

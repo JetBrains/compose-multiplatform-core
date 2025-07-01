@@ -85,3 +85,13 @@ public class ApkCheckAvailabilityInProgressException(public val requiredApk: Str
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ApkCheckAvailabilityErrorException(public val requiredApk: String) :
     LifecycleException("Failed to create session, unable to check $requiredApk availability.")
+
+/**
+ * A [Session] was unable to be created because a tracker required for a configured feature has not
+ * been calibrated.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class FaceTrackingNotCalibratedException() :
+    LifecycleException(
+        "Failed to create session, face tracking is required but has not been calibrated."
+    )

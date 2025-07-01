@@ -29,6 +29,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.FakeRuntime
 import androidx.xr.runtime.testing.FakeRuntimeArDevice
 import androidx.xr.runtime.testing.FakeRuntimeDepthMap
+import androidx.xr.runtime.testing.FakeRuntimeFace
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import androidx.xr.runtime.testing.FakeRuntimeHand
 import androidx.xr.runtime.testing.FakeRuntimePlane
@@ -256,6 +257,40 @@ class PerceptionStateExtenderTest {
             .isEqualTo(expectedPose)
         assertThat(coreState2.perceptionState!!.viewCameras[0].state.value.fieldOfView)
             .isEqualTo(expectedFov)
+    }
+
+    @Test
+    fun extend_withTwoStates_faceStatesUpdated(): Unit = runBlocking {
+        // arrange
+        underTest.initialize(fakeRuntime)
+        val coreState = CoreState(timeSource.markNow())
+        underTest.extend(coreState)
+        check(coreState.perceptionState!!.userFace != null)
+        check(
+            coreState.perceptionState!!.userFace!!.state.value.trackingState !=
+                TrackingState.TRACKING
+        )
+        check(coreState.perceptionState!!.userFace!!.state.value.blendShapeValues.isEmpty())
+        check(coreState.perceptionState!!.userFace!!.state.value.confidenceValues.isEmpty())
+
+        // act
+        timeSource += 10.milliseconds
+        val runtimeFace = fakeRuntime.perceptionManager.userFace!! as FakeRuntimeFace
+        runtimeFace.trackingState = TrackingState.TRACKING
+        val expectedBlendShapeValues = floatArrayOf(0.1f, 0.2f, 0.3f)
+        val expectedConfidenceValues = floatArrayOf(0.4f, 0.5f, 0.6f)
+        runtimeFace.blendShapeValues = expectedBlendShapeValues
+        runtimeFace.confidenceValues = expectedConfidenceValues
+        val coreState2 = CoreState(timeSource.markNow())
+        underTest.extend(coreState2)
+
+        // assert
+        assertThat(coreState2.perceptionState!!.userFace!!.state.value.trackingState)
+            .isEqualTo(TrackingState.TRACKING)
+        assertThat(coreState2.perceptionState!!.userFace!!.state.value.blendShapeValues)
+            .isEqualTo(expectedBlendShapeValues)
+        assertThat(coreState2.perceptionState!!.userFace!!.state.value.confidenceValues)
+            .isEqualTo(expectedConfidenceValues)
     }
 
     @Test

@@ -68,4 +68,7 @@ public interface PerceptionManager {
 
     /** Collection of [DepthMap]s for the current frame */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val depthMaps: List<DepthMap>
+
+    /** Face tracking information for the face. Only available on supported platforms. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val userFace: Face?
 }

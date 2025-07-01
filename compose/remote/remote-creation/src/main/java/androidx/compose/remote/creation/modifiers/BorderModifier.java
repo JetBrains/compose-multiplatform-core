@@ -18,6 +18,8 @@ package androidx.compose.remote.creation.modifiers;
 import androidx.compose.remote.core.operations.layout.modifiers.ShapeType;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 /** Border modifier, takes a color and a shape */
 public class BorderModifier implements RecordingModifier.Element {
     float mWidth;
@@ -57,7 +59,7 @@ public class BorderModifier implements RecordingModifier.Element {
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         writer.getBuffer().addModifierBorder(mWidth, mRoundedCorner, mColor, mShapeType);
     }
 }

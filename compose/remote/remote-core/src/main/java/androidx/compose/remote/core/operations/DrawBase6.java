@@ -164,14 +164,14 @@ public abstract class DrawBase6 extends PaintOperation implements VariableSuppor
         return "DrawBase6";
     }
 
-    protected MapSerializer serialize(
-            MapSerializer serializer,
-            String v1Name,
-            String v2Name,
-            String v3Name,
-            String v4Name,
-            String v5Name,
-            String v6Name) {
+    protected @NonNull MapSerializer serialize(
+            @NonNull MapSerializer serializer,
+            @NonNull String v1Name,
+            @NonNull String v2Name,
+            @NonNull String v3Name,
+            @NonNull String v4Name,
+            @NonNull String v5Name,
+            @NonNull String v6Name) {
         return serializer
                 .add(v1Name, mValue1, mV1)
                 .add(v2Name, mValue2, mV2)

@@ -17,7 +17,9 @@ package androidx.xr.runtime.testing {
     method public void setConfig(androidx.xr.runtime.Config);
     method public void setHasCreatePermission(boolean);
     method public void setHasMissingPermission(boolean);
+    method public void setShouldSupportFaceTracking(boolean);
     method public void setShouldSupportPlaneTracking(boolean);
+    method public boolean shouldSupportFaceTracking();
     method public boolean shouldSupportPlaneTracking();
     method public void stop();
     method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.time.ComparableTimeMark>);

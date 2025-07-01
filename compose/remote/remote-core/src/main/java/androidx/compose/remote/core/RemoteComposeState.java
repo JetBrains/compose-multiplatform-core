@@ -101,7 +101,7 @@ public class RemoteComposeState implements CollectionsAccess {
      * id.
      */
     public int cacheData(@NonNull Object item) {
-        int id = getNextAvailableId();
+        int id = createNextAvailableId();
         mDataIntMap.put(item, id);
         mIntDataMap.put(id, item);
         return id;
@@ -112,7 +112,7 @@ public class RemoteComposeState implements CollectionsAccess {
      * id.
      */
     public int cacheData(@NonNull Object item, int type) {
-        int id = getNextAvailableId(type);
+        int id = createNextAvailableId(type);
         mDataIntMap.put(item, id);
         mIntDataMap.put(id, item);
         return id;
@@ -198,7 +198,7 @@ public class RemoteComposeState implements CollectionsAccess {
 
     /** Insert an item in the cache */
     public int cacheFloat(float item) {
-        int id = getNextAvailableId();
+        int id = createNextAvailableId();
         mFloatMap.put(id, item);
         mIntegerMap.put(id, (int) item);
         return id;
@@ -244,7 +244,7 @@ public class RemoteComposeState implements CollectionsAccess {
      * @return the id of the integer
      */
     public int cacheInteger(int item) {
-        int id = getNextAvailableId();
+        int id = createNextAvailableId();
         mIntegerMap.put(id, item);
         mFloatMap.put(id, item);
         return id;
@@ -415,7 +415,7 @@ public class RemoteComposeState implements CollectionsAccess {
      *
      * @return next available id
      */
-    public int getNextAvailableId() {
+    public int createNextAvailableId() {
         return mNextId++;
     }
 
@@ -425,7 +425,7 @@ public class RemoteComposeState implements CollectionsAccess {
      *
      * @return return a unique id in the set
      */
-    public int getNextAvailableId(int type) {
+    public int createNextAvailableId(int type) {
         if (0 == type) {
             return mNextId++;
         }
@@ -486,11 +486,11 @@ public class RemoteComposeState implements CollectionsAccess {
         }
         if (mVarListeners.get(RemoteContext.ID_TIME_IN_SEC) != null) {
             int sub = (int) (currentTime % 1000);
-            return 1000 - sub;
+            return 2 + 1000 - sub;
         }
         if (mVarListeners.get(RemoteContext.ID_TIME_IN_MIN) != null) {
             int sub = (int) (currentTime % 60000);
-            return 1000 * 60 - sub;
+            return 2 + 1000 * 60 - sub;
         }
         return -1;
     }

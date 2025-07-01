@@ -20,6 +20,9 @@ import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifie
 import androidx.compose.remote.creation.RemoteComposeWriter;
 import androidx.compose.remote.creation.actions.Action;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +30,7 @@ import java.util.List;
 /** Represent a list of modifiers */
 public class RecordingModifier {
 
-    List<Element> mList = new ArrayList<>();
+    @NonNull List<Element> mList = new ArrayList<>();
 
     int mId = -1;
 
@@ -38,7 +41,7 @@ public class RecordingModifier {
      *
      * @return
      */
-    public RecordingModifier wrapContentSize() {
+    public @NonNull RecordingModifier wrapContentSize() {
         setWidthModifier(DimensionModifierOperation.Type.WRAP, 0);
         setHeightModifier(DimensionModifierOperation.Type.WRAP, 0);
         return this;
@@ -49,7 +52,7 @@ public class RecordingModifier {
      *
      * @param buffer
      */
-    public void write(RemoteComposeBuffer buffer) {
+    public void write(@NonNull RemoteComposeBuffer buffer) {
         // nothing
     }
 
@@ -59,7 +62,7 @@ public class RecordingModifier {
      * @param id
      * @return
      */
-    public RecordingModifier componentId(int id) {
+    public @NonNull RecordingModifier componentId(int id) {
         mId = id;
         return this;
     }
@@ -70,7 +73,7 @@ public class RecordingModifier {
      * @param id the id of the RemoteInt representing the runtime visibility
      * @return
      */
-    public RecordingModifier visibility(int id) {
+    public @NonNull RecordingModifier visibility(int id) {
         mList.add(new VisibilityModifier(id));
         return this;
     }
@@ -85,12 +88,12 @@ public class RecordingModifier {
      * @param value
      * @return
      */
-    public RecordingModifier spacedBy(float value) {
+    public @NonNull RecordingModifier spacedBy(float value) {
         mSpacedBy = value;
         return this;
     }
 
-    private WidthModifier findWidthModifier() {
+    private @NonNull WidthModifier findWidthModifier() {
         for (int i = 0; i < mList.size(); i++) {
             RecordingModifier.Element m = mList.get(i);
             if (m instanceof WidthModifier) {
@@ -100,7 +103,7 @@ public class RecordingModifier {
         return null;
     }
 
-    private void setWidthModifier(DimensionModifierOperation.Type type, float value) {
+    private void setWidthModifier(DimensionModifierOperation.@NonNull Type type, float value) {
         WidthModifier wm = findWidthModifier();
         if (wm == null) {
             mList.add(new WidthModifier(type, value));
@@ -109,7 +112,7 @@ public class RecordingModifier {
         }
     }
 
-    private HeightModifier findHeightModifier() {
+    private @NonNull HeightModifier findHeightModifier() {
         for (int i = 0; i < mList.size(); i++) {
             RecordingModifier.Element m = mList.get(i);
             if (m instanceof HeightModifier) {
@@ -119,7 +122,7 @@ public class RecordingModifier {
         return null;
     }
 
-    private void setHeightModifier(DimensionModifierOperation.Type type, float value) {
+    private void setHeightModifier(DimensionModifierOperation.@NonNull Type type, float value) {
         HeightModifier hm = findHeightModifier();
         if (hm == null) {
             mList.add(new HeightModifier(type, value));
@@ -134,7 +137,7 @@ public class RecordingModifier {
      * @param value
      * @return
      */
-    public RecordingModifier horizontalWeight(float value) {
+    public @NonNull RecordingModifier horizontalWeight(float value) {
         setWidthModifier(DimensionModifierOperation.Type.WEIGHT, value);
         return this;
     }
@@ -145,7 +148,7 @@ public class RecordingModifier {
      * @param value
      * @return
      */
-    public RecordingModifier verticalWeight(float value) {
+    public @NonNull RecordingModifier verticalWeight(float value) {
         setHeightModifier(DimensionModifierOperation.Type.WEIGHT, value);
         return this;
     }
@@ -157,7 +160,7 @@ public class RecordingModifier {
      * @param max maximum dimension, of -1f if not applied
      * @return
      */
-    public RecordingModifier widthIn(float min, float max) {
+    public @NonNull RecordingModifier widthIn(float min, float max) {
         then(new WidthInModifier(min, max));
         return this;
     }
@@ -169,7 +172,7 @@ public class RecordingModifier {
      * @param max maximum dimension, of -1f if not applied
      * @return
      */
-    public RecordingModifier heightIn(float min, float max) {
+    public @NonNull RecordingModifier heightIn(float min, float max) {
         then(new HeightInModifier(min, max));
         return this;
     }
@@ -180,7 +183,7 @@ public class RecordingModifier {
      * @param color color of the background
      * @return
      */
-    public RecordingModifier background(int color) {
+    public @NonNull RecordingModifier background(int color) {
         mList.add(new BackgroundModifier(null, color));
         return this;
     }
@@ -192,7 +195,7 @@ public class RecordingModifier {
      * @param priority a float representing a priority (lower priority get collapsed first)
      * @return
      */
-    public RecordingModifier collapsiblePriority(int orientation, float priority) {
+    public @NonNull RecordingModifier collapsiblePriority(int orientation, float priority) {
         mList.add(new CollapsiblePriorityModifier(orientation, priority));
         return this;
     }
@@ -203,7 +206,7 @@ public class RecordingModifier {
      * @param padding
      * @return
      */
-    public RecordingModifier padding(int padding) {
+    public @NonNull RecordingModifier padding(int padding) {
         mList.add(new PaddingModifier(padding, padding, padding, padding));
         return this;
     }
@@ -217,7 +220,7 @@ public class RecordingModifier {
      * @param bottom
      * @return
      */
-    public RecordingModifier padding(int start, int top, int end, int bottom) {
+    public @NonNull RecordingModifier padding(int start, int top, int end, int bottom) {
         mList.add(new PaddingModifier(start, top, end, bottom));
         return this;
     }
@@ -228,7 +231,7 @@ public class RecordingModifier {
      * @param value
      * @return
      */
-    public RecordingModifier width(int value) {
+    public @NonNull RecordingModifier width(int value) {
         setWidthModifier(DimensionModifierOperation.Type.EXACT, value);
         return this;
     }
@@ -239,7 +242,7 @@ public class RecordingModifier {
      * @param value
      * @return
      */
-    public RecordingModifier height(int value) {
+    public @NonNull RecordingModifier height(int value) {
         setHeightModifier(DimensionModifierOperation.Type.EXACT, value);
         return this;
     }
@@ -250,7 +253,7 @@ public class RecordingModifier {
      * @param value
      * @return
      */
-    public RecordingModifier size(int value) {
+    public @NonNull RecordingModifier size(int value) {
         return width(value).height(value);
     }
 
@@ -261,7 +264,7 @@ public class RecordingModifier {
      * @param height
      * @return
      */
-    public RecordingModifier size(int width, int height) {
+    public @NonNull RecordingModifier size(int width, int height) {
         return width(width).height(height);
     }
 
@@ -270,7 +273,7 @@ public class RecordingModifier {
      *
      * @return
      */
-    public RecordingModifier fillMaxWidth() {
+    public @NonNull RecordingModifier fillMaxWidth() {
         setWidthModifier(DimensionModifierOperation.Type.FILL, Float.NaN);
         return this;
     }
@@ -280,7 +283,7 @@ public class RecordingModifier {
      *
      * @return
      */
-    public RecordingModifier fillMaxHeight() {
+    public @NonNull RecordingModifier fillMaxHeight() {
         setHeightModifier(DimensionModifierOperation.Type.FILL, Float.NaN);
         return this;
     }
@@ -290,7 +293,7 @@ public class RecordingModifier {
      *
      * @return
      */
-    public RecordingModifier fillMaxSize() {
+    public @NonNull RecordingModifier fillMaxSize() {
         return fillMaxWidth().fillMaxHeight();
     }
 
@@ -355,7 +358,7 @@ public class RecordingModifier {
         return false;
     }
 
-    public List<RecordingModifier.Element> getList() {
+    public @NonNull List<RecordingModifier.Element> getList() {
         return mList;
     }
 
@@ -365,7 +368,7 @@ public class RecordingModifier {
      * @param shape
      * @return
      */
-    public RecordingModifier clip(Shape shape) {
+    public @NonNull RecordingModifier clip(@NonNull Shape shape) {
         mList.add(new ClipModifier(shape));
         return this;
     }
@@ -379,7 +382,8 @@ public class RecordingModifier {
      * @param shape
      * @return
      */
-    public RecordingModifier border(float width, float roundedCorner, int color, int shape) {
+    public @NonNull RecordingModifier border(
+            float width, float roundedCorner, int color, int shape) {
         mList.add(new BorderModifier(width, roundedCorner, color, shape));
         return this;
     }
@@ -390,7 +394,7 @@ public class RecordingModifier {
      * @param actions list of actions to execute on click
      * @return
      */
-    public RecordingModifier onClick(Action... actions) {
+    public @NonNull RecordingModifier onClick(Action @NonNull ... actions) {
         mList.add(new ClickActionModifier(Arrays.asList(actions)));
         return this;
     }
@@ -401,7 +405,7 @@ public class RecordingModifier {
      * @param actions list of actions to execute on touch down
      * @return
      */
-    public RecordingModifier onTouchDown(Action... actions) {
+    public @NonNull RecordingModifier onTouchDown(Action @NonNull ... actions) {
         mList.add(new TouchActionModifier(TouchActionModifier.DOWN, Arrays.asList(actions)));
         return this;
     }
@@ -412,7 +416,7 @@ public class RecordingModifier {
      * @param actions list of actions to execute on touch up
      * @return
      */
-    public RecordingModifier onTouchUp(Action... actions) {
+    public @NonNull RecordingModifier onTouchUp(Action @NonNull ... actions) {
         mList.add(new TouchActionModifier(TouchActionModifier.UP, Arrays.asList(actions)));
         return this;
     }
@@ -423,7 +427,7 @@ public class RecordingModifier {
      * @param actions list of actions to execute on cancel
      * @return
      */
-    public RecordingModifier onTouchCancel(Action... actions) {
+    public @NonNull RecordingModifier onTouchCancel(Action @NonNull ... actions) {
         mList.add(new TouchActionModifier(TouchActionModifier.CANCEL, Arrays.asList(actions)));
         return this;
     }
@@ -434,7 +438,7 @@ public class RecordingModifier {
      * @param existing
      * @return
      */
-    public RecordingModifier then(RecordingModifier existing) {
+    public @NonNull RecordingModifier then(@NonNull RecordingModifier existing) {
         mList.addAll(existing.mList);
         return this;
     }
@@ -445,13 +449,13 @@ public class RecordingModifier {
      * @param existing
      * @return
      */
-    public RecordingModifier then(RecordingModifier.Element existing) {
+    public @NonNull RecordingModifier then(RecordingModifier.@NonNull Element existing) {
         mList.add(existing);
         return this;
     }
 
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "RecordingModifier{mList=" + mList + '}';
     }
 
@@ -462,8 +466,8 @@ public class RecordingModifier {
      * @return
      * @param <T>
      */
-    public <T extends RecordingModifier.Element> T find(Class<T> type) {
-        for (Element element : mList) {
+    public @Nullable <T extends RecordingModifier.Element> T find(@NonNull Class<T> type) {
+        for (@NonNull Element element : mList) {
             if (type.isInstance(element)) {
                 return type.cast(element);
             }
@@ -478,6 +482,6 @@ public class RecordingModifier {
          *
          * @param writer
          */
-        void write(RemoteComposeWriter writer);
+        void write(@NonNull RemoteComposeWriter writer);
     }
 }

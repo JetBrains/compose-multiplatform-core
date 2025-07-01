@@ -406,9 +406,7 @@ class SplitEngine : ComponentActivity() {
                             dragonEntity.value!!.startAnimation(true, "Animation")
                         }
                         ApiButton("Stop Animate Dragon Entity", modifier) {
-                            if (
-                                dragonEntity.value!!.getAnimationState() == AnimationState.PLAYING
-                            ) {
+                            if (dragonEntity.value!!.animationState == AnimationState.PLAYING) {
                                 dragonEntity.value!!.stopAnimation()
                             }
                         }

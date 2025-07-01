@@ -32,10 +32,16 @@ public interface SurfaceEntity : Entity {
      * Specifies how the surface content will be routed for stereo viewing. Applications must render
      * into the surface in accordance with what is specified here in order for the compositor to
      * correctly produce a stereoscopic view to the user.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
     public var stereoMode: Int
 
-    /** Specifies the shape of the spatial canvas which the surface is texture mapped to. */
+    /**
+     * Specifies the shape of the spatial canvas which the surface is texture mapped to.
+     *
+     * @throws IllegalStateException when setting this value if the Entity has been disposed.
+     */
     public var canvasShape: CanvasShape
 
     /**
@@ -59,6 +65,7 @@ public interface SurfaceEntity : Entity {
      * will be disabled.
      *
      * @param alphaMask The primary alpha mask texture.
+     * @throws IllegalStateException if the Entity has been disposed.
      */
     public fun setPrimaryAlphaMaskTexture(alphaMask: TextureResource?)
 
@@ -67,6 +74,7 @@ public interface SurfaceEntity : Entity {
      * This is only used for interleaved stereo content. If null, the alpha mask will be disabled.
      *
      * @param alphaMask The auxiliary alpha mask texture.
+     * @throws IllegalStateException if the Entity has been disposed.
      */
     public fun setAuxiliaryAlphaMaskTexture(alphaMask: TextureResource?)
 
@@ -137,6 +145,7 @@ public interface SurfaceEntity : Entity {
      *   [SurfaceEntity.ColorTransfer.SRGB]).
      * @param colorRange The runtime color range value (e.g., [SurfaceEntity.ColorRange.FULL]).
      * @param maxCLL The maximum content light level in nits.
+     * @throws IllegalStateException if the Entity has been disposed.
      */
     public fun setContentColorMetadata(
         colorSpace: Int,
@@ -149,6 +158,8 @@ public interface SurfaceEntity : Entity {
      * Resets the color information to the runtime's default handling. This will set
      * [contentColorMetadataSet] to `false` and typically involves reverting [colorSpace],
      * [colorTransfer], [colorRange], and [maxCLL] to their default runtime values.
+     *
+     * @throws IllegalStateException if the Entity has been disposed.
      */
     public fun resetContentColorMetadata()
 
@@ -282,9 +293,17 @@ public interface SurfaceEntity : Entity {
         }
     }
 
-    /** The width of the left/right feathered edges of the canvas. */
+    /**
+     * The width of the left/right feathered edges of the canvas.
+     *
+     * @throws IllegalArgumentException if the Entity has been disposed.
+     */
     public var featherRadiusX: Float
 
-    /** The width of the top/bottom feathered edges of the canvas. */
+    /**
+     * The height of the top/bottom feathered edges of the canvas.
+     *
+     * @throws IllegalArgumentException if the Entity has been disposed.
+     */
     public var featherRadiusY: Float
 }

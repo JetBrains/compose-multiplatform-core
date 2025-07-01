@@ -219,6 +219,29 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Earth.Surface TERRAIN;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Face {
+    method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> getState();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+    method public suspend Object? update(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Face.State> state;
+    field public static final androidx.xr.arcore.Face.Companion Companion;
+  }
+
+  public static final class Face.Companion {
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? getUserFace(androidx.xr.runtime.Session session);
+  }
+
+  public static final class Face.State {
+    ctor public Face.State(androidx.xr.runtime.TrackingState trackingState, float[] blendShapeValues, float[] confidenceValues);
+    method public java.util.Map<androidx.xr.runtime.FaceBlendShapeType,java.lang.Float> getBlendShapes();
+    method public float getConfidence();
+    method public float getConfidence(int regionIndex);
+    method public androidx.xr.runtime.TrackingState getTrackingState();
+    property public java.util.Map<androidx.xr.runtime.FaceBlendShapeType,java.lang.Float> blendShapes;
+    property public float confidence;
+    property public androidx.xr.runtime.TrackingState trackingState;
+  }
+
   public final class Hand {
     method public static androidx.xr.arcore.Hand.HandSide getPrimaryHandSide(android.content.ContentResolver resolver);
     method public kotlinx.coroutines.flow.StateFlow<androidx.xr.arcore.Hand.State> getState();
@@ -270,6 +293,7 @@ package androidx.xr.arcore {
     method public androidx.xr.arcore.Hand? getRightHand();
     method public kotlin.time.ComparableTimeMark getTimeMark();
     method public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> getTrackables();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? getUserFace();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.ViewCamera> getViewCameras();
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.ArDevice arDevice;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.DepthMap> depthMaps;
@@ -277,6 +301,7 @@ package androidx.xr.arcore {
     property public androidx.xr.arcore.Hand? rightHand;
     property public kotlin.time.ComparableTimeMark timeMark;
     property public java.util.Collection<androidx.xr.arcore.Trackable<androidx.xr.arcore.Trackable.State>> trackables;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.Face? userFace;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public java.util.List<androidx.xr.arcore.ViewCamera> viewCameras;
   }
 

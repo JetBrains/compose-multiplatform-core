@@ -406,6 +406,7 @@ private val nonPublicMarkers =
         "androidx.compose.runtime.InternalComposeApi",
         "androidx.compose.runtime.InternalComposeTracingApi",
         "androidx.compose.ui.ExperimentalComposeUiApi",
+        "androidx.compose.ui.ExperimentalIndirectTouchTypeApi",
         "androidx.compose.ui.InternalComposeUiApi",
         "androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi",
         "androidx.compose.ui.node.InternalCoreApi",

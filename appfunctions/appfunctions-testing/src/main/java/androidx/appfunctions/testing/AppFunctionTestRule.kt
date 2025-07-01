@@ -20,6 +20,7 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.AppFunctionManagerCompat
+import androidx.appfunctions.internal.NullTranslatorSelector
 import androidx.appfunctions.testing.internal.FakeAppFunctionManagerApi
 import androidx.appfunctions.testing.internal.FakeAppFunctionReader
 import org.junit.rules.TestRule
@@ -45,22 +46,23 @@ public class AppFunctionTestRule(private val context: Context) : TestRule {
     private val appFunctionReader = FakeAppFunctionReader(context)
     private val appFunctionManagerApi = FakeAppFunctionManagerApi(context, appFunctionReader)
 
-    init {
-        AppFunctionManagerCompat.setAppFunctionReader(appFunctionReader)
-        AppFunctionManagerCompat.setAppFunctionManagerApi(appFunctionManagerApi)
-        AppFunctionManagerCompat.setSkipExtensionLibraryCheck(true)
-    }
-
     override fun apply(base: Statement?, description: Description?): Statement =
         object : Statement() {
             override fun evaluate() {
-                try {
-                    base?.evaluate()
-                } finally {
-                    AppFunctionManagerCompat.setAppFunctionReader(null)
-                    AppFunctionManagerCompat.setAppFunctionManagerApi(null)
-                    AppFunctionManagerCompat.setSkipExtensionLibraryCheck(false)
-                }
+                base?.evaluate()
             }
         }
+
+    /**
+     * Returns an [AppFunctionManagerCompat] instance for interacting with AppFunctions registered
+     * via the test rule.
+     */
+    public fun getAppFunctionManagerCompat(): AppFunctionManagerCompat {
+        return AppFunctionManagerCompat(
+            context = context,
+            appFunctionReader = appFunctionReader,
+            appFunctionManagerApi = appFunctionManagerApi,
+            translatorSelector = NullTranslatorSelector(),
+        )
+    }
 }

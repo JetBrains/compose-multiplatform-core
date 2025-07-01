@@ -501,7 +501,7 @@ public abstract class RemoteContext {
             int width,
             int height,
             long capabilities,
-            @NonNull IntMap<Object> properties) {
+            @Nullable IntMap<Object> properties) {
         mRemoteComposeState.setWindowWidth(width);
         mRemoteComposeState.setWindowHeight(height);
         mDocument.setVersion(majorVersion, minorVersion, patchVersion);

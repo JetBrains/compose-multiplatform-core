@@ -23,6 +23,7 @@ import androidx.annotation.RestrictTo
 import androidx.core.content.ContextCompat
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
+import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.manifest.HAND_TRACKING
@@ -38,6 +39,8 @@ internal constructor(
     private val activity: Activity,
     private val perceptionManager: OpenXrPerceptionManager,
     internal val timeSource: OpenXrTimeSource,
+    // TODO: b/427434474 fix native test stub for calibration to not require this flag
+    internal val faceTrackingCalibrated: Boolean = false,
 ) : LifecycleManager {
 
     /**
@@ -103,6 +106,7 @@ internal constructor(
                     deviceTracking = config.deviceTracking.mode,
                     depthEstimation = config.depthEstimation.mode,
                     anchorPersistence = config.anchorPersistence.mode,
+                    faceTracking = config.faceTracking.mode,
                     objectLabels = objectLabels.toLongArray(),
                     objectTracking = objectMode,
                 )
@@ -153,6 +157,21 @@ internal constructor(
                 config.depthEstimation
             )
             perceptionManager.depthEstimationMode = config.depthEstimation
+        }
+
+        if (config.faceTracking != this.config.faceTracking) {
+            if (config.faceTracking == Config.FaceTrackingMode.USER) {
+                if (!nativeGetFaceTrackerCalibration()) {
+                    if (!faceTrackingCalibrated) {
+                        throw FaceTrackingNotCalibratedException()
+                    }
+                }
+                perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.userFace)
+            } else {
+                perceptionManager.xrResources.removeUpdatable(
+                    perceptionManager.xrResources.userFace
+                )
+            }
         }
 
         this.config = config
@@ -218,4 +237,6 @@ internal constructor(
         objectTracking: Int,
         objectLabels: LongArray,
     ): Long
+
+    private external fun nativeGetFaceTrackerCalibration(): Boolean
 }

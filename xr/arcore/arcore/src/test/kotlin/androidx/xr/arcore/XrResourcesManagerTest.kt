@@ -29,6 +29,7 @@ import androidx.xr.runtime.testing.FakeRuntimeArDevice
 import androidx.xr.runtime.testing.FakeRuntimeAugmentedObject
 import androidx.xr.runtime.testing.FakeRuntimeDepthMap
 import androidx.xr.runtime.testing.FakeRuntimeEarth
+import androidx.xr.runtime.testing.FakeRuntimeFace
 import androidx.xr.runtime.testing.FakeRuntimeHand
 import androidx.xr.runtime.testing.FakeRuntimePlane
 import androidx.xr.runtime.testing.FakeRuntimeViewCamera
@@ -91,6 +92,15 @@ class XrResourcesManagerTest {
         assertThat(underTest.viewCameras.size).isEqualTo(2)
         assertThat(underTest.viewCameras[0].state.value.pose).isEqualTo(runtimeViewCameras[0].pose)
         assertThat(underTest.viewCameras[1].state.value.pose).isEqualTo(runtimeViewCameras[1].pose)
+    }
+
+    @Test
+    fun initiateFace_setsAvailableFace() {
+        val runtimeFace = FakeRuntimeFace()
+
+        underTest.initiateFace(runtimeFace)
+
+        assertThat(underTest.userFace!!.runtimeFace).isEqualTo(runtimeFace)
     }
 
     @Test

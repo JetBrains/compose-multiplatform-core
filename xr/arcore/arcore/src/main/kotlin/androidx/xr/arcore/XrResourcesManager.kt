@@ -21,6 +21,7 @@ import androidx.xr.runtime.internal.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.internal.AugmentedObject as RuntimeObject
 import androidx.xr.runtime.internal.DepthMap as RuntimeDepthMap
 import androidx.xr.runtime.internal.Earth as RuntimeEarth
+import androidx.xr.runtime.internal.Face as RuntimeFace
 import androidx.xr.runtime.internal.Hand as RuntimeHand
 import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.internal.Plane as RuntimePlane
@@ -63,6 +64,10 @@ internal class XrResourcesManager {
     lateinit var viewCameras: List<ViewCamera>
         private set
 
+    /** The data of the user's face */
+    private var _userFace: RuntimeFace? = null
+    val userFace: Face? by lazy { _userFace?.let { Face(it) } }
+
     /** Geospatial data */
     private var _earth: Earth? = null
     val earth: Earth
@@ -94,6 +99,10 @@ internal class XrResourcesManager {
 
     internal fun initiateDepthMaps(runtimeDepthMaps: List<RuntimeDepthMap>) {
         _depthMaps = runtimeDepthMaps.map { DepthMap(it) }
+    }
+
+    internal fun initiateFace(userFace: RuntimeFace?) {
+        _userFace = userFace
     }
 
     internal fun addUpdatable(updatable: Updatable) {

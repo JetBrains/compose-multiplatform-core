@@ -18,6 +18,8 @@ package androidx.compose.remote.creation.actions;
 import androidx.compose.remote.core.operations.layout.modifiers.ValueIntegerChangeActionOperation;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 
+import org.jspecify.annotations.NonNull;
+
 public class ValueIntegerChange implements Action {
 
     int mValueId = -1;
@@ -29,7 +31,7 @@ public class ValueIntegerChange implements Action {
     }
 
     @Override
-    public void write(RemoteComposeWriter writer) {
+    public void write(@NonNull RemoteComposeWriter writer) {
         ValueIntegerChangeActionOperation.apply(writer.getBuffer().getBuffer(), mValueId, mValue);
     }
 }

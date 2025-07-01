@@ -41,7 +41,7 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
     private static final int OP_CODE = Operations.FUNCTION_DEFINE;
     private static final String CLASS_NAME = "FunctionDefine";
     private final int mId;
-    private final int[] mFloatVarId;
+    private final int @NonNull [] mFloatVarId;
     @NonNull private ArrayList<Operation> mList = new ArrayList<>();
 
     @NonNull AnimatedFloatExpression mExp = new AnimatedFloatExpression();
@@ -50,7 +50,7 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
      * @param id The id of the function
      * @param floatVarId the ids of the variables
      */
-    public FloatFunctionDefine(int id, int[] floatVarId) {
+    public FloatFunctionDefine(int id, int @NonNull [] floatVarId) {
         mId = id;
         mFloatVarId = floatVarId;
     }
@@ -143,7 +143,7 @@ public class FloatFunctionDefine extends Operation implements VariableSupport, C
     /**
      * @return the array of id's
      */
-    public int[] getArgs() {
+    public int @NonNull [] getArgs() {
         return mFloatVarId;
     }
 

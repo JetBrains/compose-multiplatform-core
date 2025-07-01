@@ -76,7 +76,7 @@ public abstract class PaintContext {
         matrixSave();
     }
 
-    public Clock getClock() {
+    public @NonNull Clock getClock() {
         return mContext.getClock();
     }
 
@@ -218,7 +218,7 @@ public abstract class PaintContext {
      *
      * @param paint
      */
-    public abstract void replacePaint(PaintBundle paint);
+    public abstract void replacePaint(@NonNull PaintBundle paint);
 
     /**
      * draw a round rect
@@ -285,7 +285,7 @@ public abstract class PaintContext {
      *
      * @return an instance of a ComputedTextLayout (typically if complex text drawing is used)
      */
-    public abstract Platform.ComputedTextLayout layoutComplexText(
+    public abstract Platform.@Nullable ComputedTextLayout layoutComplexText(
             int textId,
             int start,
             int end,
@@ -322,7 +322,7 @@ public abstract class PaintContext {
      *
      * @param computedTextLayout pre-computed text layout
      */
-    public abstract void drawComplexText(Platform.ComputedTextLayout computedTextLayout);
+    public abstract void drawComplexText(Platform.@Nullable ComputedTextLayout computedTextLayout);
 
     /**
      * Draw an interpolation between two paths
@@ -528,4 +528,13 @@ public abstract class PaintContext {
      * @param flags flags
      */
     public abstract void matrixFromPath(int pathId, float fraction, float vOffset, int flags);
+
+    /**
+     * Redirect drawing to a bitmap (0 = back to main canvas)
+     *
+     * @param bitmapId id of bitmap to draw to or 0 to draw to the canvas
+     * @param mode flags support init of bitmap 0 = clear to color, 1 = no clear
+     * @param color set the initial color of the bitmap
+     */
+    public abstract void drawToBitmap(int bitmapId, int mode, int color);
 }

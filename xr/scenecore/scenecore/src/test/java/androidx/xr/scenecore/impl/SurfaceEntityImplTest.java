@@ -97,6 +97,8 @@ public final class SurfaceEntityImplTest {
         when(splitEngineSubspaceManager.createSubspace(anyString(), anyInt()))
                 .thenReturn(expectedSubspaceNode);
 
+        // TODO: Update this test to handle Entity.dispose() for Exceptions when FakeImpress is
+        //       updated.
         FakeImpressApiImpl impressApi = new FakeImpressApiImpl();
         int subspaceImpressNode = impressApi.createImpressNode();
         String subspaceName = "stereo_surface_panel_entity_subspace_" + subspaceImpressNode;

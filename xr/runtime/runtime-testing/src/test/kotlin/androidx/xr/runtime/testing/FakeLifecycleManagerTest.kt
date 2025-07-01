@@ -17,6 +17,7 @@
 package androidx.xr.runtime.testing
 
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -102,6 +103,15 @@ class FakeLifecycleManagerTest {
         underTest.hasMissingPermission = true
 
         assertFailsWith<PermissionNotGrantedException> { underTest.configure(Config()) }
+    }
+
+    @Test
+    fun configure_withFaceTrackingEnabled_doesNotSupportFaceTracking_throwsConfigurationNotSupported() {
+        underTest.create()
+        underTest.shouldSupportFaceTracking = false
+        assertFailsWith<ConfigurationNotSupportedException> {
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        }
     }
 
     @Test

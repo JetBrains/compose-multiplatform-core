@@ -83,7 +83,7 @@ public final class MouseInputHandler_RangeTest {
 
         mDetailsLookup.initAt(11);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeSelection(7, 11);
     }
@@ -96,11 +96,11 @@ public final class MouseInputHandler_RangeTest {
 
         mDetailsLookup.initAt(11);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mDetailsLookup.initAt(21);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeSelection(7, 21);
     }
@@ -113,19 +113,18 @@ public final class MouseInputHandler_RangeTest {
 
         mDetailsLookup.initAt(11);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         // click without shift sets a new range start point.
         TestItemDetails item = mDetailsLookup.initAt(20);
         mInputDelegate.onDown(CLICK);
-        mInputDelegate.onSingleTapUp(CLICK);
+        mInputDelegate.onSingleTapConfirmed(CLICK);
         mInputDelegate.onSingleTapConfirmed(CLICK);
 
         mFocusCallbacks.focusItem(item);
 
         mDetailsLookup.initAt(25);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
         mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeNotSelected(7, 11);
@@ -141,11 +140,11 @@ public final class MouseInputHandler_RangeTest {
 
         mDetailsLookup.initAt(17);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mDetailsLookup.initAt(10);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeSelection(7, 10);
     }
@@ -158,11 +157,11 @@ public final class MouseInputHandler_RangeTest {
 
         mDetailsLookup.initAt(7);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mDetailsLookup.initAt(14);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeSelection(14, 17);
     }
@@ -175,7 +174,7 @@ public final class MouseInputHandler_RangeTest {
 
         mDetailsLookup.initAt(5);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeSelection(5, 12);
     }
@@ -188,11 +187,11 @@ public final class MouseInputHandler_RangeTest {
 
         mDetailsLookup.initAt(11);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mDetailsLookup.initAt(0);
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeSelection(0, 7);
     }
@@ -207,12 +206,12 @@ public final class MouseInputHandler_RangeTest {
         // necessary.
         //
         // See: UserInputHandler.MouseDelegate#mHandledOnDown;
-        mInputDelegate.onSingleTapUp(SECONDARY_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SECONDARY_CLICK);
 
         mDetailsLookup.initAt(11);
         // Now we can send a subsequent event that should extend selection.
         mInputDelegate.onDown(SHIFT_CLICK);
-        mInputDelegate.onSingleTapUp(SHIFT_CLICK);
+        mInputDelegate.onSingleTapConfirmed(SHIFT_CLICK);
 
         mSelection.assertRangeSelection(7, 11);
     }

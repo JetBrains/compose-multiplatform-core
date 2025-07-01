@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.AugmentedObjectCategory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.internal.ConfigurationNotSupportedException
@@ -62,6 +63,11 @@ public class FakeLifecycleManager(
     /** If false, [configure] will throw an Exception if the config enables PlaneTracking. */
     @get:JvmName("shouldSupportPlaneTracking") public var shouldSupportPlaneTracking: Boolean = true
 
+    /** If false, configure() will throw an exception if the config enables FaceTracking */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @get:JvmName("shouldSupportFaceTracking")
+    public var shouldSupportFaceTracking: Boolean = true
+
     override fun create() {
         check(state == State.NOT_INITIALIZED)
         if (!hasCreatePermission) throw PermissionNotGrantedException()
@@ -97,6 +103,11 @@ public class FakeLifecycleManager(
         ) {
             throw ConfigurationNotSupportedException()
         }
+
+        if (!shouldSupportFaceTracking && config.faceTracking == Config.FaceTrackingMode.USER) {
+            throw ConfigurationNotSupportedException()
+        }
+
         if (hasMissingPermission) throw PermissionNotGrantedException()
         this.config = config
     }

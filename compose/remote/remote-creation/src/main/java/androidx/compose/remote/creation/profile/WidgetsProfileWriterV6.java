@@ -28,10 +28,10 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriter {
     public WidgetsProfileWriterV6(
             int width,
             int height,
-            String contentDescription,
+            @NonNull String contentDescription,
             int apiLevel,
             int profiles,
-            Platform platform) {
+            @NonNull Platform platform) {
         super(width, height, contentDescription, apiLevel, profiles, platform);
         mMaxValidFloatExpressionOperation = AnimatedFloatExpression.getMaxOpForLevel(apiLevel);
     }
@@ -42,7 +42,7 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriter {
      * @param data the font data
      * @return the id of the font use in painter.setTypeface(id)
      */
-    public int addFont(byte[] data) {
+    public int addFont(byte @NonNull [] data) {
         throw new RuntimeException("Adding custom fonts is not available in V6");
     }
 
@@ -53,7 +53,7 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriter {
      * @param ops Combination
      * @return the id of the expression as a Nan float
      */
-    public Float floatExpression(float... ops) {
+    public @NonNull Float floatExpression(float @NonNull ... ops) {
         validateOps(ops);
         return super.floatExpression(ops);
     }

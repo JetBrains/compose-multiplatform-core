@@ -23,6 +23,7 @@ import android.util.Size
 import android.view.Surface
 import android.view.SurfaceHolder
 import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.CameraColorSpace
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.OutputStream.DynamicRangeProfile
 import androidx.camera.camera2.pipe.OutputStream.MirrorMode
@@ -52,6 +53,7 @@ internal data class SessionConfigData(
     val stateCallback: CameraCaptureSessionWrapper.StateCallback,
     val sessionTemplateId: Int,
     val sessionParameters: Map<*, Any?>,
+    val sessionColorSpace: CameraColorSpace?,
 )
 
 /**

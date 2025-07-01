@@ -62,7 +62,7 @@ public class FloatAnimation extends Easing implements Serializable {
      *
      * @param description the float encoding of the animation
      */
-    public FloatAnimation(float... description) {
+    public FloatAnimation(float @NonNull ... description) {
         mType = CUBIC_STANDARD;
         setAnimationDescription(description);
     }
@@ -156,7 +156,7 @@ public class FloatAnimation extends Easing implements Serializable {
      * @param description the float encoding of the animation
      * @return a string describing the animation
      */
-    public static String unpackAnimationToString(float[] description) {
+    public static @NonNull String unpackAnimationToString(float @NonNull [] description) {
         float[] spec = description;
         float mDuration = (spec.length == 0) ? 1 : spec[0];
         int len = 0;

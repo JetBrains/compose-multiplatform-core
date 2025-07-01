@@ -41,6 +41,7 @@ package androidx.xr.arcore.playservices {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCorePerceptionManager implements androidx.xr.runtime.internal.PerceptionManager {
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.runtime.internal.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.internal.ArDevice getArDevice();
     method public java.util.List<androidx.xr.runtime.internal.DepthMap> getDepthMaps();
@@ -49,6 +50,7 @@ package androidx.xr.arcore.playservices {
     method public java.util.List<java.util.UUID> getPersistedAnchorUuids();
     method public androidx.xr.runtime.internal.Hand? getRightHand();
     method public java.util.Collection<androidx.xr.runtime.internal.Trackable> getTrackables();
+    method public androidx.xr.runtime.internal.Face? getUserFace();
     method public java.util.List<androidx.xr.runtime.internal.ViewCamera> getViewCameras();
     method public java.util.List<androidx.xr.runtime.internal.HitResult> hitTest(androidx.xr.runtime.math.Ray ray);
     method @SuppressCompatibility @androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi public com.google.ar.core.Frame lastFrame();
@@ -62,6 +64,7 @@ package androidx.xr.arcore.playservices {
     property public androidx.xr.runtime.internal.Hand? leftHand;
     property public androidx.xr.runtime.internal.Hand? rightHand;
     property public java.util.Collection<androidx.xr.runtime.internal.Trackable> trackables;
+    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public androidx.xr.runtime.internal.Face? userFace;
     property public java.util.List<androidx.xr.runtime.internal.ViewCamera> viewCameras;
   }
 

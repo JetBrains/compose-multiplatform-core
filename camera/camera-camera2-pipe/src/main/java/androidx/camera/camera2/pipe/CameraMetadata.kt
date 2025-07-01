@@ -30,6 +30,7 @@ import androidx.annotation.RestrictTo
 import androidx.camera.camera2.pipe.compat.Api33Compat
 import androidx.camera.camera2.pipe.compat.Api34Compat
 import androidx.camera.camera2.pipe.compat.Api35Compat
+import androidx.camera.camera2.pipe.compat.Camera2ColorSpaceProfiles
 
 /**
  * [CameraMetadata] is a compatibility wrapper around [CameraCharacteristics].
@@ -193,6 +194,17 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
         public val CameraMetadata.supportsColorSpaceProfiles: Boolean
             @JvmStatic
             get() = this.availableCapabilities.contains(CAPABILITIES_COLOR_SPACE_PROFILES)
+
+        public val CameraMetadata.availableColorSpaceProfiles: CameraColorSpaceProfiles?
+            @JvmStatic
+            get() =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    this[CameraCharacteristics.REQUEST_AVAILABLE_COLOR_SPACE_PROFILES]?.let {
+                        Camera2ColorSpaceProfiles(it)
+                    }
+                } else {
+                    null
+                }
 
         public val CameraMetadata.supportsAutoFocusTrigger: Boolean
             @JvmStatic
