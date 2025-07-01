@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.uikit.utils.CMPMetalDrawablesHandler
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.trace
@@ -24,17 +25,13 @@ import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import kotlin.math.roundToInt
 import kotlinx.cinterop.*
 import org.jetbrains.skia.*
-import platform.UIKit.UIColor
 import platform.Foundation.NSRunLoop
 import platform.Foundation.NSSelectorFromString
 import platform.Foundation.NSThread
 import platform.Metal.MTLCommandBufferProtocol
 import platform.QuartzCore.*
 import platform.darwin.*
-import platform.CoreGraphics.*
-import platform.CoreGraphics. CGColorRenderingIntent.kCGRenderingIntentDefault
 import org.jetbrains.skia.Rect
-import org.jetbrains.skiko.currentSystemTheme
 import platform.Foundation.NSLock
 import platform.Foundation.NSRunLoopCommonModes
 import platform.Foundation.NSTimeInterval
@@ -164,6 +161,7 @@ internal class MetalRedrawer(
     var preferredFramesPerSecond: NSInteger
         get() = caDisplayLink?.preferredFramesPerSecond ?: 0
         set(value) {
+            if (caDisplayLink?.preferredFramesPerSecond == value) return
             caDisplayLink?.preferredFramesPerSecond = value
         }
 
@@ -301,16 +299,24 @@ internal class MetalRedrawer(
 
     private var currentFrameRate: Float = Float.NaN
 
-    fun voteFrameRate(frameRate: Float) {
-        if (currentFrameRate.isNaN() || frameRate > currentFrameRate) {
-            currentFrameRate = frameRate
+    fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
+        val frameRateCategoryValue = when (frameRateCategory) {
+            FrameRateCategory.Default.value -> CAFrameRateRangeDefault.preferred
+            FrameRateCategory.Normal.value -> 60f
+            FrameRateCategory.High.value -> maximumFramesPerSecond.toFloat()
+            else -> Float.NaN
         }
-    }
 
-    fun applyVotedFrameRate() {
-        if (currentFrameRate.isNaN()) return
-        preferredFramesPerSecond = currentFrameRate.toLong()
-        currentFrameRate = Float.NaN
+        val resolvedFrameRate = when {
+            !frameRate.isNaN() && !frameRateCategoryValue.isNaN() -> maxOf(frameRate, frameRateCategoryValue)
+            !frameRate.isNaN() -> frameRate
+            !frameRateCategoryValue.isNaN() -> frameRateCategoryValue
+            else -> return
+        }
+
+        if (currentFrameRate.isNaN() || resolvedFrameRate > currentFrameRate) {
+            currentFrameRate = resolvedFrameRate
+        }
     }
 
     /**
@@ -349,6 +355,11 @@ internal class MetalRedrawer(
                 }
 
                 pictureRecorder.finishRecordingAsPicture()
+            }
+
+            if (!currentFrameRate.isNaN()) {
+                preferredFramesPerSecond = currentFrameRate.toLong()
+                currentFrameRate = Float.NaN
             }
 
             trace("MetalRedrawer:draw:waitInflightSemaphore") {

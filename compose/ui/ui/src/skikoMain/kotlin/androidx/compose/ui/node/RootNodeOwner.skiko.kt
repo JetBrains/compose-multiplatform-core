@@ -858,23 +858,21 @@ internal class RootNodeOwner(
             snapshotInvalidationTracker.requestDraw()
         }
 
-        val isArrEnabled: Boolean = @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isAdaptiveRefreshRateEnabled
+        private val isArrEnabled: Boolean = @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isAdaptiveRefreshRateEnabled
         private var currentFrameRate = Float.NaN
+        private var currentFrameRateCategory = 0f
 
         override fun voteFrameRate(frameRate: Float) {
             if (!isArrEnabled) return
 
-            val effectiveFrameRate = if (frameRate > 0) {
-                frameRate
-            } else if (frameRate < 0) {
-                platformContext.resolveFrameRateCategory(frameRate)
-            } else {
-                return
-            }
-
-            if (currentFrameRate.isNaN() || effectiveFrameRate > currentFrameRate) {
-                platformContext.voteFrameRate(frameRate)
-                currentFrameRate = effectiveFrameRate
+            if (frameRate > 0) {
+                if (currentFrameRate.isNaN() || frameRate > currentFrameRate) {
+                    currentFrameRate = frameRate
+                }
+            } else if (frameRate.isNaN() || frameRate < 0) {
+                if (frameRate.isNaN() || frameRate < currentFrameRateCategory) {
+                    currentFrameRateCategory = frameRate
+                }
             }
         }
 
@@ -909,9 +907,11 @@ internal class RootNodeOwner(
                 postponed.clear()
             }
 
-            if (isArrEnabled && !currentFrameRate.isNaN()) {
-                platformContext.applyVotedFrameRate(currentFrameRate)
+            val isAnyCurrentFrameRateSet = !currentFrameRate.isNaN() || currentFrameRateCategory != 0f
+            if (isArrEnabled && isAnyCurrentFrameRateSet) {
+                platformContext.voteFrameRate(currentFrameRate, currentFrameRateCategory)
                 currentFrameRate = Float.NaN
+                currentFrameRateCategory = 0f
             }
 
             isDrawingContent = false
