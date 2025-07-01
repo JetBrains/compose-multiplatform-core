@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.viewmodel.compose
+package androidx.compose.foundation.text.input
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.ui.platform.findComposeDefaultViewModelStoreOwner
-import androidx.lifecycle.ViewModelStoreOwner
+// TODO https://youtrack.jetbrains.com/issue/CMP-8484
 
-@OptIn(InternalComposeApi::class)
-@Composable
-internal actual fun findDefaultViewModelStoreOwner(): ViewModelStoreOwner? =
-    findComposeDefaultViewModelStoreOwner()
+internal actual val TextObfuscationMode.Companion.Default: TextObfuscationMode
+    get() = TextObfuscationMode.Hidden
