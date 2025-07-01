@@ -125,6 +125,7 @@ androidXMultiplatform {
                 // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
                 // https://youtrack.jetbrains.com/issue/KT-71032
                 implementation(libs.kotlinStdlibJs)
+                implementation(libs.kotlinTestJs)
             }
         }
 
@@ -145,7 +146,7 @@ androidXMultiplatform {
             dependsOn(webTest)
             dependencies {
                 implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
+                implementation(libs.kotlinTestWasm)
             }
         }
 
