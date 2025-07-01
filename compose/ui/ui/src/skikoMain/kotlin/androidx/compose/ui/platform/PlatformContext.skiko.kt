@@ -123,6 +123,10 @@ interface PlatformContext {
 
     val dragAndDropManager: PlatformDragAndDropManager get() = EmptyDragAndDropManager
 
+    var isKeepScreenOnEnabled: Boolean
+        get() = false
+        set(value) {}
+
     /**
      * The listener to track [RootForTest]s.
      *

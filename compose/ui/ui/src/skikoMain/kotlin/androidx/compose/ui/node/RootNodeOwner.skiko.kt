@@ -690,6 +690,18 @@ internal class RootNodeOwner(
             measureAndLayoutDelegate.registerOnLayoutCompletedListener(listener)
             snapshotInvalidationTracker.requestMeasureAndLayout()
         }
+
+        private var keepScreenOnCount = 0
+
+        override fun incrementKeepScreenOnCount() {
+            keepScreenOnCount++
+            platformContext.isKeepScreenOnEnabled = keepScreenOnCount > 0
+        }
+
+        override fun decrementKeepScreenOnCount() {
+            keepScreenOnCount--
+            platformContext.isKeepScreenOnEnabled = keepScreenOnCount > 0
+        }
     }
 
     private inner class PlatformRootForTestImpl : PlatformRootForTest {

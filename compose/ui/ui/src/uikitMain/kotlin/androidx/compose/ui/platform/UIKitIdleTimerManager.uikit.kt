@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,20 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.runtime.Composable
+import platform.UIKit.UIApplication
 
-@Composable
-internal actual fun ProvidePlatformCompositionLocals(
-    content: @Composable () -> Unit
-) {
-    content()
+internal object UIKitIdleTimerManager {
+    val isIdleTimerDisabled: Boolean get() = UIApplication.sharedApplication.idleTimerDisabled
+
+    private val clients = mutableSetOf<Any>()
+
+    fun setIdleTimerState(client: Any, disabled: Boolean) {
+        if (disabled) {
+            clients.add(client)
+        } else {
+            clients.remove(client)
+        }
+
+        UIApplication.sharedApplication.idleTimerDisabled = clients.isNotEmpty()
+    }
 }

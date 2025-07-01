@@ -4944,6 +4944,9 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformWind
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop|#static{}androidx_compose_ui_platform_Translations$stableprop[0]
 
 // Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop|#static{}androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop[0]
+
+// Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitTextInputService$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitTextInputService$stableprop|#static{}androidx_compose_ui_platform_UIKitTextInputService$stableprop[0]
 
 // Targets: [ios]
@@ -5137,6 +5140,9 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformWind
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_Translations$stableprop_getter|androidx_compose_ui_platform_Translations$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter|androidx_compose_ui_platform_UIKitIdleTimerManager$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitTextInputService$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_UIKitTextInputService$stableprop_getter|androidx_compose_ui_platform_UIKitTextInputService$stableprop_getter(){}[0]
