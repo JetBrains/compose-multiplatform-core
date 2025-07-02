@@ -22,7 +22,11 @@ import androidx.compose.foundation.gestures.detectTapAndPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.text.Handle
+import androidx.compose.foundation.text.TextContextMenuItem
 import androidx.compose.foundation.text.TextDragObserver
+import androidx.compose.foundation.text.addTextContextMenuComponents
+import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys
 import androidx.compose.foundation.text.determineCursorDesiredOffset
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.internal.IndexTransformationType.Deletion
@@ -44,6 +48,7 @@ import androidx.compose.foundation.text.selection.SelectionAdjustment
 import androidx.compose.foundation.text.selection.isPrecisePointer
 import androidx.compose.foundation.text.selection.mouseSelectionBtf2
 import androidx.compose.foundation.text.selection.touchSelectionFirstPress
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -52,6 +57,8 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.util.fastAll
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
@@ -361,5 +368,45 @@ private class UIKitTextFieldTextDragObserver(
             textFieldSelectionState.textLayoutState.fromDecorationToTextLayout(coercedOffset)
         )
         textFieldSelectionState.updateHandleDragging(Handle.Cursor, currentDragPosition)
+    }
+}
+
+internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
+    state: TextFieldSelectionState,
+    coroutineScope: CoroutineScope
+): Modifier = addTextContextMenuComponents {
+    fun TextContextMenuBuilderScope.textFieldItem(
+        key: Any,
+        enabled: Boolean,
+        onClick: () -> Unit,
+    ) {
+        addComponent(
+            TextContextMenuItem(
+                key = key,
+                enabled = enabled,
+                onClick = {
+                    onClick()
+                    close()
+                })
+        )
+    }
+
+    fun TextContextMenuBuilderScope.textFieldSuspendItem(
+        key: Any,
+        enabled: Boolean,
+        onClick: suspend () -> Unit,
+    ) {
+        textFieldItem(key, enabled) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
+        }
+    }
+
+    with(state) {
+        separator()
+        textFieldSuspendItem(TextContextMenuKeys.CutKey, enabled = canCut()) { cut() }
+        textFieldSuspendItem(TextContextMenuKeys.CopyKey, enabled = canCopy()) { copy(cancelSelection = false) }
+        textFieldSuspendItem(TextContextMenuKeys.PasteKey, enabled = canPaste()) { paste() }
+        textFieldItem(TextContextMenuKeys.SelectAllKey, enabled = canSelectAll()) { selectAll() }
+        separator()
     }
 }

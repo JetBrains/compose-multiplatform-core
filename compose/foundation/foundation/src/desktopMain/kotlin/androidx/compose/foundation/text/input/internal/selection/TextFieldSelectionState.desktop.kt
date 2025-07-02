@@ -19,7 +19,7 @@ package androidx.compose.foundation.text.input.internal.selection
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.CoroutineScope
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-7819
+// TODO https://youtrack.jetbrains.com/issue/CMP-7819
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     state: TextFieldSelectionState,
     coroutineScope: CoroutineScope
