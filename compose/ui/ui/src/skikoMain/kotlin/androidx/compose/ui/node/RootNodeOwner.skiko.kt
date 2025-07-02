@@ -857,13 +857,12 @@ internal class RootNodeOwner(
         override fun invalidate() {
             snapshotInvalidationTracker.requestDraw()
         }
-
-        private val isArrEnabled: Boolean = @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isAdaptiveRefreshRateEnabled
+        
         private var currentFrameRate = Float.NaN
         private var currentFrameRateCategory = 0f
 
         override fun voteFrameRate(frameRate: Float) {
-            if (!isArrEnabled) return
+            if (!ComposeUiFlags.isAdaptiveRefreshRateEnabled) return
 
             if (frameRate > 0) {
                 if (currentFrameRate.isNaN() || frameRate > currentFrameRate) {
@@ -908,7 +907,7 @@ internal class RootNodeOwner(
             }
 
             val isAnyCurrentFrameRateSet = !currentFrameRate.isNaN() || currentFrameRateCategory != 0f
-            if (isArrEnabled && isAnyCurrentFrameRateSet) {
+            if (ComposeUiFlags.isAdaptiveRefreshRateEnabled && isAnyCurrentFrameRateSet) {
                 platformContext.voteFrameRate(currentFrameRate, currentFrameRateCategory)
                 currentFrameRate = Float.NaN
                 currentFrameRateCategory = 0f
