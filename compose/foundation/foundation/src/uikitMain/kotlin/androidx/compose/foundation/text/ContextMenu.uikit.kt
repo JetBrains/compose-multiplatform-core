@@ -195,6 +195,7 @@ private class ContextMenuToolbarProvider(
                     fun actionItem(key: Any): (() -> Unit)? {
                         val item = components.firstOrNull { it.key == key } ?: return null
                         if (item !is TextContextMenuItem) return null
+                        if (!item.enabled) return null
 
                         return {
                             with(item) {
