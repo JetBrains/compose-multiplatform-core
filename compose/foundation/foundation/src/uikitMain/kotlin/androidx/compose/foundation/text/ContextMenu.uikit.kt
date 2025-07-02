@@ -56,7 +56,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import platform.UIKit.UIColor
 
 /**
  * Context menu area for [BasicTextField] (with [TextFieldValue] argument).
@@ -137,7 +136,6 @@ private fun ProvideDefaultPlatformTextContextMenuProviders(
         val density = LocalDensity.current
         val provider = remember {
             val editMenuView = CMPEditMenuView().also {
-                it.backgroundColor = UIColor.redColor.colorWithAlphaComponent(0.3)
                 it.userInteractionEnabled = false
             }
 

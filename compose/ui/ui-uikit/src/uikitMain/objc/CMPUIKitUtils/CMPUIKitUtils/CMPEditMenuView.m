@@ -66,7 +66,7 @@ id _editInteraction;
         if (self.editInteraction == nil || contextMenuItemsChanged || !self.isEditMenuShown) {
             BOOL isFirstMenuPresentation = self.presentInteractionBlock == nil;
             [self cancelPresentEditMenuInteraction];
-            NSTimeInterval delay = isFirstMenuPresentation ? 0 : [self editMenuDelay];
+            NSTimeInterval delay = isFirstMenuPresentation ? 0.05 : [self editMenuDelay];
             [self schedulePresentEditMenuInteractionWithDelay:delay];
         } else if (positionChanged) {
             [self.editInteraction updateVisibleMenuPositionAnimated:NO];
