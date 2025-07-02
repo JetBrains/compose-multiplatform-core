@@ -175,8 +175,12 @@ internal class GraphicsLayerOwnerLayer(
 
         mutatedFields = scope.mutatedFields
         if (maybeChangedFields != 0 || outlineChanged) {
-            invalidate()
+            triggerRepaint()
         }
+    }
+
+    private fun triggerRepaint() {
+        layerManager.invalidate()
     }
 
     private fun updateOutline() {
@@ -197,7 +201,7 @@ internal class GraphicsLayerOwnerLayer(
 
     override fun move(position: IntOffset) {
         graphicsLayer.topLeft = position
-        invalidate()
+        triggerRepaint()
     }
 
     override fun resize(size: IntSize) {
