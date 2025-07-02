@@ -601,18 +601,9 @@ class OwnerLayerTest {
             graphicsLayer = graphicsContext!!.createGraphicsLayer(),
             context = graphicsContext,
             layerManager = object : OwnedLayerManager {
-                override fun createLayer(
-                    drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-                    invalidateParentLayer: () -> Unit,
-                    explicitLayer: GraphicsLayer?
-                ): OwnedLayer = throw NotImplementedError()
-                override fun recycle(layer: OwnedLayer) = false
-                override fun notifyLayerIsDirty(layer: OwnedLayer, isDirty: Boolean) = Unit
-
                 override fun invalidate() {
                     invalidateBlock()
                 }
-                override fun voteFrameRate(frameRate: Float) = Unit
             },
             drawBlock = drawBlock,
             invalidateParentLayer = {}
