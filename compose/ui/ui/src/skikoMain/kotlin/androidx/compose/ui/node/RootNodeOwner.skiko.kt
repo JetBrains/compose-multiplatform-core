@@ -871,7 +871,7 @@ internal class RootNodeOwner(
                 if (isCurrentFrameRateUnset || frameRate > currentFrameRate) {
                     currentFrameRate = frameRate
                 }
-            } else if (frameRate < currentFrameRateCategory || (frameRate.isNaN() && isCurrentFrameRateCategoryUnset)) {
+            } else if ((!frameRate.isNaN() && frameRate < currentFrameRateCategory) || (frameRate.isNaN() && isCurrentFrameRateCategoryUnset)) {
                 currentFrameRateCategory = frameRate
             }
         }
