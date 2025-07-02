@@ -857,21 +857,22 @@ internal class RootNodeOwner(
         override fun invalidate() {
             snapshotInvalidationTracker.requestDraw()
         }
-        
+
         private var currentFrameRate = Float.NaN
         private var currentFrameRateCategory = 0f
 
         override fun voteFrameRate(frameRate: Float) {
             if (!ComposeUiFlags.isAdaptiveRefreshRateEnabled) return
 
+            val isCurrentFrameRateUnset = currentFrameRate.isNaN()
+            val isCurrentFrameRateCategoryUnset = currentFrameRateCategory == 0f
+
             if (frameRate > 0) {
-                if (currentFrameRate.isNaN() || frameRate > currentFrameRate) {
+                if (isCurrentFrameRateUnset || frameRate > currentFrameRate) {
                     currentFrameRate = frameRate
                 }
-            } else if (frameRate.isNaN() || frameRate < 0) {
-                if (frameRate.isNaN() || frameRate < currentFrameRateCategory) {
-                    currentFrameRateCategory = frameRate
-                }
+            } else if (frameRate < currentFrameRateCategory || (frameRate.isNaN() && isCurrentFrameRateCategoryUnset)) {
+                currentFrameRateCategory = frameRate
             }
         }
 
