@@ -128,6 +128,12 @@ interface PlatformContext {
         get() = false
         set(value) {}
 
+    /**
+     * Votes for a specific frame rate to be used for rendering.
+     *
+     * @param frameRate The explicit frame rate value requested
+     * @param frameRateCategory The frame rate category value requested as defined in [FrameRateCategory]
+     */
     fun voteFrameRate(frameRate: Float, frameRateCategory: Float) = Unit
 
     /**
