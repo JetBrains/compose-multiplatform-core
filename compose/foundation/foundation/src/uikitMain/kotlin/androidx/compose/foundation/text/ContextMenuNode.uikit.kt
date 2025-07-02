@@ -35,21 +35,21 @@ import androidx.compose.ui.unit.Density
 import platform.CoreGraphics.CGRectMake
 import platform.UIKit.UIView
 
-internal class ContextMenuElement(
+internal class ContextMenuLayoutElement(
     private val editMenuView: CMPEditMenuView
-) : ModifierNodeElement<ContextMenuNode>() {
+) : ModifierNodeElement<ContextMenuLayoutNode>() {
 
-    override fun create(): ContextMenuNode {
-        return ContextMenuNode(editMenuView = editMenuView)
+    override fun create(): ContextMenuLayoutNode {
+        return ContextMenuLayoutNode(editMenuView = editMenuView)
     }
 
-    override fun update(node: ContextMenuNode) {
+    override fun update(node: ContextMenuLayoutNode) {
         node.update(editMenuView = editMenuView)
     }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is ContextMenuElement) return false
+        if (other !is ContextMenuLayoutElement) return false
 
         if (editMenuView != other.editMenuView) return false
 
@@ -66,7 +66,7 @@ internal class ContextMenuElement(
     }
 }
 
-internal class ContextMenuNode(
+internal class ContextMenuLayoutNode(
     var editMenuView: CMPEditMenuView
 ) : Modifier.Node(),
     CompositionLocalConsumerModifierNode,

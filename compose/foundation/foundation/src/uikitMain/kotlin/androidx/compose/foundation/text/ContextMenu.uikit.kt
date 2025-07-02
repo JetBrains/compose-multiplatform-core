@@ -153,7 +153,7 @@ private fun ProvideDefaultPlatformTextContextMenuProviders(
             content = {
                 Box(
                     modifier = modifier.onGloballyPositioned { layoutCoordinates.value = it }
-                        .then(ContextMenuElement(provider.editMenuView)),
+                        .then(ContextMenuLayoutElement(provider.editMenuView)),
                     propagateMinConstraints = true
                 ) {
                     content()
