@@ -121,6 +121,7 @@ val taskNamesKnownToDuplicateOutputs =
         "transformUnixMainCInteropDependenciesMetadataForIde",
         "transformUnixTestCInteropDependenciesMetadataForIde",
         "transformLinuxMainCInteropDependenciesMetadataForIde",
+        "transformLinuxTestCInteropDependenciesMetadataForIde",
         "transformNonIosNativeTestCInteropDependenciesMetadataForIde",
         "transformLinuxTestCInteropDependenciesMetadataForIde",
         "transformNonIosNativeTestCInteropDependenciesMetadataForIde",
