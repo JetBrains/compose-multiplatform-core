@@ -3639,7 +3639,6 @@ final val androidx.compose.ui.focus/androidx_compose_ui_focus_FocusRequester_Com
 final val androidx.compose.ui.focus/androidx_compose_ui_focus_FocusRestorerNode$stableprop // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusRestorerNode$stableprop|#static{}androidx_compose_ui_focus_FocusRestorerNode$stableprop[0]
 final val androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode$stableprop // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode$stableprop|#static{}androidx_compose_ui_focus_FocusTargetNode$stableprop[0]
 final val androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode_FocusTargetElement$stableprop // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode_FocusTargetElement$stableprop|#static{}androidx_compose_ui_focus_FocusTargetNode_FocusTargetElement$stableprop[0]
-final val androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTransactionManager$stableprop // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTransactionManager$stableprop|#static{}androidx_compose_ui_focus_FocusTransactionManager$stableprop[0]
 final val androidx.compose.ui.graphics.vector/DefaultFillType // androidx.compose.ui.graphics.vector/DefaultFillType|{}DefaultFillType[0]
     final fun <get-DefaultFillType>(): androidx.compose.ui.graphics/PathFillType // androidx.compose.ui.graphics.vector/DefaultFillType.<get-DefaultFillType>|<get-DefaultFillType>(){}[0]
 final val androidx.compose.ui.graphics.vector/DefaultStrokeLineCap // androidx.compose.ui.graphics.vector/DefaultStrokeLineCap|{}DefaultStrokeLineCap[0]
@@ -4325,7 +4324,6 @@ final fun androidx.compose.ui.focus/androidx_compose_ui_focus_FocusRequester_Com
 final fun androidx.compose.ui.focus/androidx_compose_ui_focus_FocusRestorerNode$stableprop_getter(): kotlin/Int // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusRestorerNode$stableprop_getter|androidx_compose_ui_focus_FocusRestorerNode$stableprop_getter(){}[0]
 final fun androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode$stableprop_getter(): kotlin/Int // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode$stableprop_getter|androidx_compose_ui_focus_FocusTargetNode$stableprop_getter(){}[0]
 final fun androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode_FocusTargetElement$stableprop_getter(): kotlin/Int // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTargetNode_FocusTargetElement$stableprop_getter|androidx_compose_ui_focus_FocusTargetNode_FocusTargetElement$stableprop_getter(){}[0]
-final fun androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTransactionManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.focus/androidx_compose_ui_focus_FocusTransactionManager$stableprop_getter|androidx_compose_ui_focus_FocusTransactionManager$stableprop_getter(){}[0]
 final fun androidx.compose.ui.graphics.vector/Group(kotlin/String?, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, kotlin.collections/List<androidx.compose.ui.graphics.vector/PathNode>?, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.graphics.vector/Group|Group(kotlin.String?;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.collections.List<androidx.compose.ui.graphics.vector.PathNode>?;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.ui.graphics.vector/Path(kotlin.collections/List<androidx.compose.ui.graphics.vector/PathNode>, androidx.compose.ui.graphics/PathFillType, kotlin/String?, androidx.compose.ui.graphics/Brush?, kotlin/Float, androidx.compose.ui.graphics/Brush?, kotlin/Float, kotlin/Float, androidx.compose.ui.graphics/StrokeCap, androidx.compose.ui.graphics/StrokeJoin, kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Float, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int, kotlin/Int) // androidx.compose.ui.graphics.vector/Path|Path(kotlin.collections.List<androidx.compose.ui.graphics.vector.PathNode>;androidx.compose.ui.graphics.PathFillType;kotlin.String?;androidx.compose.ui.graphics.Brush?;kotlin.Float;androidx.compose.ui.graphics.Brush?;kotlin.Float;kotlin.Float;androidx.compose.ui.graphics.StrokeCap;androidx.compose.ui.graphics.StrokeJoin;kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Float;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.ui.graphics.vector/RenderVectorGroup(androidx.compose.ui.graphics.vector/VectorGroup, kotlin.collections/Map<kotlin/String, androidx.compose.ui.graphics.vector/VectorConfig>?, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.graphics.vector/RenderVectorGroup|RenderVectorGroup(androidx.compose.ui.graphics.vector.VectorGroup;kotlin.collections.Map<kotlin.String,androidx.compose.ui.graphics.vector.VectorConfig>?;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
@@ -4654,6 +4652,30 @@ sealed interface androidx.compose.ui.uikit/OnFocusBehavior { // androidx.compose
 }
 
 // Targets: [ios]
+sealed interface androidx.compose.ui.viewinterop/UIKitInteropInteractionMode { // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode|null[0]
+    final class Cooperative : androidx.compose.ui.viewinterop/UIKitInteropInteractionMode { // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative|null[0]
+        constructor <init>(kotlin/Int = ...) // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.<init>|<init>(kotlin.Int){}[0]
+
+        final val delayMillis // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.delayMillis|{}delayMillis[0]
+            final fun <get-delayMillis>(): kotlin/Int // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.delayMillis.<get-delayMillis>|<get-delayMillis>(){}[0]
+
+        final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.hashCode|hashCode(){}[0]
+
+        final object Companion { // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.Companion|null[0]
+            final const val DefaultDelayMillis // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.Companion.DefaultDelayMillis|{}DefaultDelayMillis[0]
+                final fun <get-DefaultDelayMillis>(): kotlin/Int // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.Cooperative.Companion.DefaultDelayMillis.<get-DefaultDelayMillis>|<get-DefaultDelayMillis>(){}[0]
+        }
+    }
+
+    final object NonCooperative : androidx.compose.ui.viewinterop/UIKitInteropInteractionMode { // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.NonCooperative|null[0]
+        final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.NonCooperative.equals|equals(kotlin.Any?){}[0]
+        final fun hashCode(): kotlin/Int // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.NonCooperative.hashCode|hashCode(){}[0]
+        final fun toString(): kotlin/String // androidx.compose.ui.viewinterop/UIKitInteropInteractionMode.NonCooperative.toString|toString(){}[0]
+    }
+}
+
+// Targets: [ios]
 final class androidx.compose.ui.draganddrop/DragAndDropTransferData // androidx.compose.ui.draganddrop/DragAndDropTransferData|null[0]
 
 // Targets: [ios]
@@ -4860,6 +4882,7 @@ final class androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration { // 
 
 // Targets: [ios]
 final class androidx.compose.ui.viewinterop/UIKitInteropProperties { // androidx.compose.ui.viewinterop/UIKitInteropProperties|null[0]
+    constructor <init>(androidx.compose.ui.viewinterop/UIKitInteropInteractionMode? = ..., kotlin/Boolean = ...) // androidx.compose.ui.viewinterop/UIKitInteropProperties.<init>|<init>(androidx.compose.ui.viewinterop.UIKitInteropInteractionMode?;kotlin.Boolean){}[0]
     constructor <init>(kotlin/Boolean, kotlin/Boolean) // androidx.compose.ui.viewinterop/UIKitInteropProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean){}[0]
 
     final val interactionMode // androidx.compose.ui.viewinterop/UIKitInteropProperties.interactionMode|{}interactionMode[0]
@@ -5305,6 +5328,12 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporary
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop|#static{}androidx_compose_ui_platform_WebTextInputService$stableprop[0]
 
 // Targets: [js, wasmJs]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar$stableprop|#static{}androidx_compose_ui_platform_WebTextToolbar$stableprop[0]
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop|#static{}androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop[0]
+
+// Targets: [js, wasmJs]
 final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop|#static{}androidx_compose_ui_viewinterop_InteropViewGroup$stableprop[0]
 
 // Targets: [js, wasmJs]
@@ -5378,6 +5407,12 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_W3CTemporary
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextInputService$stableprop_getter|androidx_compose_ui_platform_WebTextInputService$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar$stableprop_getter|androidx_compose_ui_platform_WebTextToolbar$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter|androidx_compose_ui_platform_WebTextToolbar_TextToolbarMenu$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_InteropViewGroup$stableprop_getter|androidx_compose_ui_viewinterop_InteropViewGroup$stableprop_getter(){}[0]
