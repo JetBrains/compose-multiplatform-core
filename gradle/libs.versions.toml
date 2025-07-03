@@ -52,7 +52,7 @@ kotlin19 = "1.9.24"
 # Use the most up-to-date patch
 kotlin20 = "2.0.21"
 kotlin21 = "2.1.20"
-kotlin = "2.1.20"
+kotlin = "2.1.21"
 kotlinBenchmark = "0.4.11"
 kotlinGradlePluginAnnotations = "1.9.24"
 kotlinGradlePluginApi = "1.9.24"
