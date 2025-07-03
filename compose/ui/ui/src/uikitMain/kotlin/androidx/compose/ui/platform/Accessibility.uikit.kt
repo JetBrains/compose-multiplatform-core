@@ -107,7 +107,6 @@ import platform.UIKit.accessibilityElements
 import platform.UIKit.accessibilityFrame
 import platform.UIKit.isAccessibilityElement
 import platform.UIKit.setAccessibilityElements
-import platform.darwin.NSInteger
 import platform.darwin.NSObject
 
 private val DUMMY_UI_ACCESSIBILITY_CONTAINER = NSObject()
@@ -361,19 +360,19 @@ private class AccessibilityRoot(
             field = value
             field?.setAccessibilityContainer(this)
             mediator.onScreenReaderActive(value != null)
+
+            setAccessibilityElements(value?.let { listOf(it) })
         }
 
-    override fun isAccessibilityElement(): Boolean = false
-
-    override fun accessibilityElementCount(): NSInteger = if (mediator.isEnabled) 1 else 0
-
-    override fun accessibilityElementAtIndex(index: NSInteger): Any? =
+    override fun accessibilityElements(): List<*> {
         if (mediator.isEnabled) {
             mediator.activateAccessibilityIfNeeded()
-            element
-        } else {
-            null
         }
+
+        return super.accessibilityElements()
+    }
+
+    override fun isAccessibilityElement(): Boolean = false
 
     override fun accessibilityContainer() = mediator.view
 
@@ -1287,7 +1286,7 @@ private fun debugTraverse(debugLogger: AccessibilityDebugLogger, accessibilityOb
 private fun debugContainmentChain(accessibilityObject: Any): String {
     val strings = mutableListOf<String>()
 
-    var currentObject = accessibilityObject as? Any
+    var currentObject = accessibilityObject as Any?
 
     while (currentObject != null) {
         when (val constCurrentObject = currentObject) {
