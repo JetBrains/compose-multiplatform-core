@@ -18,9 +18,9 @@ package androidx.compose.foundation.text.selection
 
 import androidx.compose.foundation.DesktopPlatform
 import androidx.compose.foundation.text.MappedKeys
-import androidx.compose.foundation.text.TextContextMenuItems
-import androidx.compose.foundation.text.TextContextMenuItems.Copy
-import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
+import androidx.compose.foundation.text.DesktopTextContextMenuItems
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Copy
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithLocalization
@@ -48,7 +48,7 @@ internal actual fun Modifier.addSelectionContainerTextContextMenuComponents(
     selectionManager: SelectionManager,
 ): Modifier = addTextContextMenuComponentsWithLocalization { localization ->
     fun TextContextMenuBuilderScope.selectionContainerItem(
-        item: TextContextMenuItems,
+        item: DesktopTextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
         onClick: () -> Unit

@@ -414,7 +414,7 @@ fun TextContextMenuArea(
  *
  * @param label The label of this item
  */
-internal enum class TextContextMenuItems(val key: Any, val label: (PlatformLocalization) -> String) {
+internal enum class DesktopTextContextMenuItems(val key: Any, val label: (PlatformLocalization) -> String) {
     Cut(
         key = TextContextMenuKeys.CutKey,
         label = { it.cut },

@@ -21,8 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-internal fun ProvideDefaultPlatformTextContextMenuProviders(
-    modifier: Modifier = Modifier,
+internal actual fun ProvideDefaultPlatformTextContextMenuProviders(
+    modifier: Modifier,
     content: @Composable () -> Unit
 ) {
     val dropdownDefined = LocalTextContextMenuDropdownProvider.current != null

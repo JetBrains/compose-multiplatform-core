@@ -16,11 +16,11 @@
 
 package androidx.compose.foundation.text.input.internal.selection
 
-import androidx.compose.foundation.text.TextContextMenuItems
-import androidx.compose.foundation.text.TextContextMenuItems.Copy
-import androidx.compose.foundation.text.TextContextMenuItems.Cut
-import androidx.compose.foundation.text.TextContextMenuItems.Paste
-import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
+import androidx.compose.foundation.text.DesktopTextContextMenuItems
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Copy
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Cut
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Paste
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithLocalization
@@ -34,7 +34,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     coroutineScope: CoroutineScope,
 ): Modifier = addTextContextMenuComponentsWithLocalization { localization ->
     fun TextContextMenuBuilderScope.textFieldItem(
-        item: TextContextMenuItems,
+        item: DesktopTextContextMenuItems,
         enabled: Boolean,
         onClick: () -> Unit,
     ) {
@@ -50,7 +50,7 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     }
 
     fun TextContextMenuBuilderScope.textFieldSuspendItem(
-        item: TextContextMenuItems,
+        item: DesktopTextContextMenuItems,
         enabled: Boolean,
         onClick: suspend () -> Unit,
     ) {
