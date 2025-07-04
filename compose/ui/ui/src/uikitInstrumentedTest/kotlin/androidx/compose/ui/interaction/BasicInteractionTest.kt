@@ -119,7 +119,7 @@ class BasicInteractionTest {
     }
 
     @Test
-    fun testCoreTextFieldToolbar() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldToolbar() = runUIKitInstrumentedTest {
         UIPasteboard.generalPasteboard().setString("paste text")
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
@@ -136,7 +136,7 @@ class BasicInteractionTest {
 
     @Ignore // https://youtrack.jetbrains.com/issue/CMP-8512/Missing-Paste-context-menu-on-BTF2
     @Test
-    fun testBasicTextFieldToolbar() = runUIKitInstrumentedTest {
+    fun testBasicTextField2Toolbar() = runUIKitInstrumentedTest {
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
         UIPasteboard.generalPasteboard().setString("paste text")
         setContent {
@@ -155,7 +155,7 @@ class BasicInteractionTest {
 
     @OptIn(ExperimentalFoundationApi::class)
     @Test
-    fun testTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
+    fun testBasicTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
         ComposeFoundationFlags.isNewContextMenuEnabled = true
         UIPasteboard.generalPasteboard().setString("paste text")
 
@@ -177,7 +177,7 @@ class BasicInteractionTest {
     @Ignore // https://youtrack.jetbrains.com/issue/CMP-8512/Missing-Paste-context-menu-on-BTF2
     @OptIn(ExperimentalFoundationApi::class)
     @Test
-    fun testBasicTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
+    fun testBasicTextField2ToolbarNewContextMenu() = runUIKitInstrumentedTest {
         ComposeFoundationFlags.isNewContextMenuEnabled = true
         UIPasteboard.generalPasteboard().setString("paste text")
 
