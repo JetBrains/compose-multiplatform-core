@@ -21,7 +21,11 @@ import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.internal.isAutofillAvailable
 import androidx.compose.foundation.text.MenuItemsAvailability
 import androidx.compose.foundation.text.TextContextMenuItems
-import androidx.compose.foundation.text.TextContextMenuItems.*
+import androidx.compose.foundation.text.TextContextMenuItems.Autofill
+import androidx.compose.foundation.text.TextContextMenuItems.Copy
+import androidx.compose.foundation.text.TextContextMenuItems.Cut
+import androidx.compose.foundation.text.TextContextMenuItems.Paste
+import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.runtime.State
 import androidx.compose.ui.platform.Clipboard
