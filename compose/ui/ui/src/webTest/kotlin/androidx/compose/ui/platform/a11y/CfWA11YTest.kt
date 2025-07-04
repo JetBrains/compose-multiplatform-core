@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
 import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.window.A11YConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -375,7 +374,7 @@ class CfWA11YTest : OnCanvasTests {
     @Test
     fun noA11YRootAndElementsWithDisabledA11Y() = runApplicationTest {
         createComposeWindow(
-            a11YConfiguration = A11YConfiguration(isA11YEnabled = false)
+            configure = { disableA11Y() }
         ) {
             Button(onClick = {}) {
                 Text("Button1")

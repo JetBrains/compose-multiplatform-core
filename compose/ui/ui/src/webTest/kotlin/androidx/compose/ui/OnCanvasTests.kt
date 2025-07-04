@@ -20,8 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.window.A11YConfiguration
 import androidx.compose.ui.window.ComposeViewport
+import androidx.compose.ui.window.ComposeViewportConfiguration
 import kotlin.coroutines.suspendCoroutine
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
@@ -41,8 +41,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.MutationObserver
-import org.w3c.dom.MutationObserverInit
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
 import org.w3c.dom.get
@@ -93,10 +91,10 @@ internal interface OnCanvasTests {
     }
 
     suspend fun createComposeWindow(
-        a11YConfiguration: A11YConfiguration = A11YConfiguration(isA11YEnabled = true),
+        configure: ComposeViewportConfiguration.() -> Unit = {},
         content: @Composable () -> Unit
     ) {
-        ComposeViewport(containerId, a11YConfiguration = a11YConfiguration, content = content)
+        ComposeViewport(viewportContainerId = containerId, configure = configure, content = content)
 
         suspendCoroutine { continuation ->
             // This helps reduce the flakiness.

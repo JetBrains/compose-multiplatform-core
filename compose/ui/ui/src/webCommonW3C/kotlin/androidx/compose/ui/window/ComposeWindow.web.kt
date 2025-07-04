@@ -66,8 +66,6 @@ import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.viewinterop.InteropViewGroup
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
-import androidx.compose.ui.window.A11YConfiguration.Disabled
-import androidx.compose.ui.window.A11YConfiguration.Enabled
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -184,7 +182,7 @@ internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
     private val interopContainerElement: HTMLDivElement,
     private val a11yContainerElement: HTMLDivElement?,
-    private val a11YConfiguration: A11YConfiguration,
+    private val configuration: ComposeViewportConfiguration,
     content: @Composable () -> Unit,
     private val state: ComposeWindowState
 ) : LifecycleOwner, ViewModelStoreOwner {
@@ -240,22 +238,22 @@ internal class ComposeWindow(
 
         override val textToolbar: TextToolbar = WebTextToolbar()
 
-        override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? = if (a11YConfiguration.isA11YEnabled()) {
-            ComposeWebSemanticsListener(
-                coroutineScope = MainScope(),
-                webSemanticsRoot = a11yContainerElement?.let {
-                    it.setAttribute("aria-label", "")
-                    it.setAttribute("role", "presentation")
-                    it.setAttribute("aria-live", "polite")
-                    it.id = "a11y_root"
-                    it.style.opacity = "0"
-                    it.style.setProperty("pointer-events", "none")
-                    it
-                } ?: error("a11yContainerElement must be provided"),
-            )
-        } else {
-            null
-        }
+        override val semanticsOwnerListener: PlatformContext.SemanticsOwnerListener? =
+            if (configuration.isA11YEnabled) {
+                ComposeWebSemanticsListener(
+                    coroutineScope = MainScope(),
+                    webSemanticsRoot = a11yContainerElement?.apply {
+                        setAttribute("aria-label", "")
+                        setAttribute("role", "presentation")
+                        setAttribute("aria-live", "polite")
+                        id = "cmp_a11y_root"
+                        style.opacity = "0"
+                        style.setProperty("pointer-events", "none")
+                    } ?: error("a11yContainerElement must be provided"),
+                )
+            } else {
+                null
+            }
 
         override val textInputService = object : WebTextInputService() {
 
@@ -616,7 +614,7 @@ private const val defaultCanvasElementId = "ComposeTarget"
  * This can be turned off by setting [applyDefaultStyles] to false.
  */
 @ExperimentalComposeUiApi
-@Deprecated("CanvasBasedWindow doesn't support HTML interop via WebElementView API. Use ComposeViewport API instead")
+@Deprecated("CanvasBasedWindow doesn't support HTML interop via WebElementView API and it doesn't support A11Y feature. Use ComposeViewport API instead")
 fun CanvasBasedWindow(
     title: String? = null,
     canvasElementId: String = defaultCanvasElementId,
@@ -648,13 +646,18 @@ fun CanvasBasedWindow(
     val canvas = document.getElementById(canvasElementId)?.let { it as HTMLCanvasElement }
         ?: error("failed to find element with id '$canvasElementId'")
 
+    val configuration = ComposeViewportConfiguration().apply {
+        // No support for a11y with deprecated CanvasBasedWindow API
+        disableA11Y()
+    }
+
     ComposeWindow(
         canvas = canvas,
         // a detached container
         interopContainerElement = document.createElement("div") as HTMLDivElement,
         a11yContainerElement = document.createElement("div") as HTMLDivElement,
         content = content,
-        a11YConfiguration = A11YConfiguration(isA11YEnabled = false),
+        configuration = configuration,
         state = if (requestResize == null) DefaultWindowState(document.documentElement!!) else ComposeWindowState.createFromLambda(requestResize)
     )
 }
@@ -668,11 +671,11 @@ fun CanvasBasedWindow(
 @ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainerId: String,
-    a11YConfiguration: A11YConfiguration = A11YConfiguration(isA11YEnabled = true),
+    configure: ComposeViewportConfiguration.() -> Unit = {},
     content: @Composable () -> Unit = { }
 ) {
     val canvasContainer = document.getElementById(viewportContainerId) ?: error("failed to find element by viewportContainerId: '$viewportContainerId'")
-    ComposeViewport(canvasContainer, a11YConfiguration, content)
+    ComposeViewport(canvasContainer, configure, content)
 }
 
 /**
@@ -684,13 +687,12 @@ fun ComposeViewport(
 @ExperimentalComposeUiApi
 fun ComposeViewport(
     viewportContainer: Element,
-    a11YConfiguration: A11YConfiguration = A11YConfiguration(isA11YEnabled = true),
+    configure: ComposeViewportConfiguration.() -> Unit = {},
     content: @Composable () -> Unit = { }
 ) {
     val canvas = document.createElement("canvas") as HTMLCanvasElement
     canvas.setAttribute("tabindex", "0")
     canvas.setAttribute("role", "generic")
-    // canvas.setAttribute("aria-hidden", "true")
 
     // Create a common container (parent html element) for canvas and the interop container
     // to position at the same place - the interop container is position at 0,0 relative to <canvas>.
@@ -712,15 +714,20 @@ fun ComposeViewport(
         left = "0"
     }
 
-    val a11yContainerElement = document.createElement("div") as HTMLDivElement
 
-    if (a11YConfiguration.isA11YEnabled()) {
-        layerRoot.appendChild(a11yContainerElement)
-        a11yContainerElement.style.apply {
+    val configuration = ComposeViewportConfiguration().apply(configure)
+
+    val a11yContainerElement = if (configuration.isA11YEnabled) {
+        val container = document.createElement("div") as HTMLDivElement
+        layerRoot.appendChild(container)
+        container.style.apply {
             position = "absolute"
             top = "0"
             left = "0"
         }
+        container
+    } else {
+        null
     }
 
     ComposeWindow(
@@ -728,36 +735,17 @@ fun ComposeViewport(
         interopContainerElement = interopContainerElement,
         a11yContainerElement = a11yContainerElement,
         content = content,
-        a11YConfiguration = a11YConfiguration,
+        configuration = configuration,
         state = DefaultWindowState(viewportContainer)
     )
 }
 
-/**
- * Represents the configuration for accessibility (a11y) features in a Compose-based application.
- */
 @ExperimentalComposeUiApi
-sealed class A11YConfiguration {
-    internal object Disabled : A11YConfiguration()
-    internal object Enabled : A11YConfiguration()
+class ComposeViewportConfiguration internal constructor() {
 
-    internal fun isA11YEnabled(): Boolean {
-        return this == Enabled
-    }
-}
+    internal var isA11YEnabled: Boolean = true
 
-/**
- * Configures accessibility settings for Compose-based UI components.
- *
- * @param isA11YEnabled A boolean indicating whether accessibility features should be enabled.
- * Defaults to true.
- * @return An instance of [A11YConfiguration] with accessibility either enabled or disabled.
- */
-@ExperimentalComposeUiApi
-fun A11YConfiguration(isA11YEnabled: Boolean = true): A11YConfiguration {
-    return if (isA11YEnabled) {
-        Enabled
-    } else {
-        Disabled
+    fun disableA11Y() {
+        isA11YEnabled = false
     }
 }

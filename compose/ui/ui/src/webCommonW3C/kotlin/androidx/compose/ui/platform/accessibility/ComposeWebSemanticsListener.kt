@@ -121,7 +121,7 @@ internal class ComposeWebSemanticsListener(
 
             val htmlNode = if (nodes[currentId] != null) {
                 nodes[currentId] = node
-                val htmlNode = webNodes[currentId]!!
+                val htmlNode = webNodes[currentId] ?: error("Node $currentId not found")
 
                 if (children.isNotEmpty()) {
                     // To ensure the correct order of nested nodes, we remove all of them.
