@@ -59,7 +59,6 @@ import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -797,7 +796,9 @@ internal class AccessibilityMediator(
             // Will exit on CancellationException from within await on `invalidationChannel.receive()`
             // when [job] is cancelled
             while (true) {
+                hasPendingInvalidations = false
                 invalidationChannel.receive()
+                hasPendingInvalidations = true
 
                 // Estimated delay between the iOS Accessibility Engine sync intervals.
                 // There is no reason to post change notifications more frequently because the iOS
@@ -863,8 +864,8 @@ internal class AccessibilityMediator(
         cancelAccessibilityDisabling()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val hasPendingInvalidations: Boolean get() = !invalidationChannel.isEmpty
+    var hasPendingInvalidations: Boolean = false
+        private set
 
     private fun convertToAppWindowCGRect(rect: Rect): CValue<CGRect> {
         return view.convertRect(rect.toDpRect(view.density).asCGRect(), toView = null)
@@ -905,11 +906,16 @@ internal class AccessibilityMediator(
 
     fun onSemanticsChange() {
         accessibilityDebugLogger?.log("onSemanticsChange")
-        invalidationChannel.trySend(Unit)
+        invalidateSemanticsTree()
     }
 
     fun onLayoutChange(nodeId: Int) {
         accessibilityDebugLogger?.log("onLayoutChange (nodeId=$nodeId)")
+        invalidateSemanticsTree()
+    }
+
+    private fun invalidateSemanticsTree() {
+        hasPendingInvalidations = true
         invalidationChannel.trySend(Unit)
     }
 
@@ -949,7 +955,7 @@ internal class AccessibilityMediator(
 
             if (focusedNodesScrollableParentsIds != ids) {
                 focusedNodesScrollableParentsIds = ids
-                invalidationChannel.trySend(Unit)
+                invalidateSemanticsTree()
 
                 if (ids.isNotEmpty()) {
                     // Hack to fix an issue where iOS accessibility only reads the items visible
