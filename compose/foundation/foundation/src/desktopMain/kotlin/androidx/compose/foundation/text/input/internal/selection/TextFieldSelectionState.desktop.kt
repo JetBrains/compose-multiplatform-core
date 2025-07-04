@@ -16,11 +16,55 @@
 
 package androidx.compose.foundation.text.input.internal.selection
 
+import androidx.compose.foundation.text.DesktopTextContextMenuItems
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Copy
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Cut
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.Paste
+import androidx.compose.foundation.text.DesktopTextContextMenuItems.SelectAll
+import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
+import androidx.compose.foundation.text.contextmenu.builder.item
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithLocalization
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 
-// TODO https://youtrack.jetbrains.com/issue/CMP-7819
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     state: TextFieldSelectionState,
-    coroutineScope: CoroutineScope
-): Modifier = this
+    coroutineScope: CoroutineScope,
+): Modifier = addTextContextMenuComponentsWithLocalization { localization ->
+    fun TextContextMenuBuilderScope.textFieldItem(
+        item: DesktopTextContextMenuItems,
+        enabled: Boolean,
+        onClick: () -> Unit,
+    ) {
+        item(
+            key = item.key,
+            label = item.label(localization),
+            enabled = enabled,
+            onClick = {
+                onClick()
+                close()
+            }
+        )
+    }
+
+    fun TextContextMenuBuilderScope.textFieldSuspendItem(
+        item: DesktopTextContextMenuItems,
+        enabled: Boolean,
+        onClick: suspend () -> Unit,
+    ) {
+        textFieldItem(item, enabled) {
+            coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
+        }
+    }
+
+    with(state) {
+        separator()
+        textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
+        textFieldSuspendItem(Copy, enabled = canCopy()) { copy(cancelSelection = false) }
+        textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
+        textFieldItem(SelectAll, enabled = canSelectAll()) { selectAll() }
+        separator()
+    }
+}
