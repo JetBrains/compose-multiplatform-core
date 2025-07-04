@@ -1049,6 +1049,7 @@ internal class AccessibilityMediator(
             presentIds.add(node.semanticsKey)
 
             val frame = nodes[node.id]?.adjustedBounds?.toRect() ?: node.unclippedBoundsInWindow
+
             if (node.unmergedConfig.getOrNull(SemanticsProperties.Focused) == true) {
                 focusedKey = node.semanticsKey
             }
