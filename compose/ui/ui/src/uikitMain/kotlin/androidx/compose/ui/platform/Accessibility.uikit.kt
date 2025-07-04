@@ -716,12 +716,15 @@ private sealed interface AccessibilityElementFocusMode {
     }
 
     /**
-     * Keeps focus at the element if present, or notify about significant changes on a screen
+     * Keeps focus on the element if present, or notify about significant changes on a screen.
      */
     data class KeepFocus(val key: AccessibilityElementKey) : AccessibilityElementFocusMode {
         override val targetElementKey: AccessibilityElementKey = key
     }
 
+    /**
+     * Changes focus on the element with the given [key].
+     */
     data class Focus(val key: AccessibilityElementKey) : AccessibilityElementFocusMode {
         override val targetElementKey: AccessibilityElementKey = key
     }
