@@ -27,6 +27,7 @@ internal actual class ClipboardPasteState actual constructor(private val clipboa
     actual val hasText: Boolean get() = _hasText
     actual val hasClip: Boolean get() = _hasClip
 
+    // TODO: replace the experimental API usage when a common ClipEntry API is ready - https://youtrack.jetbrains.com/issue/CMP-7624
     @OptIn(ExperimentalComposeUiApi::class)
     actual suspend fun update() {
         val entry = clipboard.getClipEntry()

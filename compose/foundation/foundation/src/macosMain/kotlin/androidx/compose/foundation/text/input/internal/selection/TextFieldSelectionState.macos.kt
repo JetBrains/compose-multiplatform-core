@@ -53,7 +53,6 @@ internal actual class ClipboardPasteState actual constructor(private val clipboa
     actual val hasText: Boolean get() = _hasText
     actual val hasClip: Boolean get() = _hasClip
 
-    @OptIn(ExperimentalComposeUiApi::class)
     actual suspend fun update() {
         val nativeClipboard = clipboard.nativeClipboard
         _hasClip = nativeClipboard.pasteboardItems?.isNotEmpty() ?: false
