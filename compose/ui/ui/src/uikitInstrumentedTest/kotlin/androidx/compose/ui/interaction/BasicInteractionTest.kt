@@ -5,16 +5,18 @@
 
 package androidx.compose.test.interaction
 
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -25,9 +27,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.UIKitInstrumentedTest
 import androidx.compose.ui.test.assertVisibleInContainer
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithTag
+import androidx.compose.ui.test.getAccessibilityTree
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect
@@ -39,6 +43,7 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import platform.UIKit.UIPasteboard
 
 class BasicInteractionTest {
     /**
@@ -114,28 +119,11 @@ class BasicInteractionTest {
     }
 
     @Test
-    fun testDoubleTap() = runUIKitInstrumentedTest {
-        var doubleClicked = false
+    fun testCoreTextFieldToolbar() = runUIKitInstrumentedTest {
+        UIPasteboard.generalPasteboard().setString("paste text")
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
-                Box(modifier = Modifier.size(100.dp).testTag("Clickable").combinedClickable(
-                    onDoubleClick = { doubleClicked = true }
-                ) {})
-                TextField("Hello Long Text", {}, modifier = Modifier.testTag("TextField"))
-            }
-        }
-
-        findNodeWithTag("Clickable").doubleTap()
-
-        assertTrue(doubleClicked)
-    }
-
-    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8133/Fix-keyboard-dependent-instrumented-tests-on-CI
-    @Test
-    fun testTextFieldCallout() = runUIKitInstrumentedTest {
-        setContent {
-            Column(modifier = Modifier.safeDrawingPadding()) {
-                TextField("Hello-long-long-long-long-long-text", {}, modifier = Modifier.testTag("TextField"))
+                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
             }
         }
 
@@ -143,6 +131,72 @@ class BasicInteractionTest {
 
         waitForIdle()
 
+        verifyFullToolbarPresent()
+    }
+
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8512/Missing-Paste-context-menu-on-BTF2
+    @Test
+    fun testBasicTextFieldToolbar() = runUIKitInstrumentedTest {
+        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+        UIPasteboard.generalPasteboard().setString("paste text")
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+            }
+        }
+
+        findNodeWithTag("TextField").doubleTap()
+
+        waitForIdle()
+        println(getAccessibilityTree().printTree())
+
+        verifyFullToolbarPresent()
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun testTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
+        ComposeFoundationFlags.isNewContextMenuEnabled = true
+        UIPasteboard.generalPasteboard().setString("paste text")
+
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                TextField("Hello-LongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
+            }
+        }
+
+        findNodeWithTag("TextField").doubleTap()
+
+        waitForIdle()
+        delay(500)
+        ComposeFoundationFlags.isNewContextMenuEnabled = false
+
+        verifyFullToolbarPresent()
+    }
+
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8512/Missing-Paste-context-menu-on-BTF2
+    @OptIn(ExperimentalFoundationApi::class)
+    @Test
+    fun testBasicTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
+        ComposeFoundationFlags.isNewContextMenuEnabled = true
+        UIPasteboard.generalPasteboard().setString("paste text")
+
+        val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
+        setContent {
+            Column(modifier = Modifier.safeDrawingPadding()) {
+                BasicTextField(textFieldState, modifier = Modifier.testTag("TextField"))
+            }
+        }
+
+        findNodeWithTag("TextField").doubleTap()
+        waitForIdle()
+
+        ComposeFoundationFlags.isNewContextMenuEnabled = false
+
+        verifyFullToolbarPresent()
+    }
+
+    private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
         // Verify elements from context menu present
         findNodeWithLabel("Cut").let {
             it.assertVisibleInContainer()
