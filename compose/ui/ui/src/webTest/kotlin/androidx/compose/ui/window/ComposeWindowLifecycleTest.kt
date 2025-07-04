@@ -43,7 +43,7 @@ class ComposeWindowLifecycleTest : OnCanvasTests {
             interopContainerElement = document.createElement("div") as HTMLDivElement,
             a11yContainerElement = null,
             content = {},
-            configuration = ComposeViewportConfiguration().apply { disableA11Y() },
+            configuration = ComposeViewportConfiguration(),
             state = DefaultWindowState(document.documentElement!!)
         )
 

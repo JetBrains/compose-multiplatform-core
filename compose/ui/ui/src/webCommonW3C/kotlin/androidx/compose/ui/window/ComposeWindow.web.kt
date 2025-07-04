@@ -647,8 +647,8 @@ fun CanvasBasedWindow(
         ?: error("failed to find element with id '$canvasElementId'")
 
     val configuration = ComposeViewportConfiguration().apply {
-        // No support for a11y with deprecated CanvasBasedWindow API
-        disableA11Y()
+        // No a11y support with deprecated CanvasBasedWindow API
+        isA11YEnabled = false
     }
 
     ComposeWindow(
@@ -738,14 +738,4 @@ fun ComposeViewport(
         configuration = configuration,
         state = DefaultWindowState(viewportContainer)
     )
-}
-
-@ExperimentalComposeUiApi
-class ComposeViewportConfiguration internal constructor() {
-
-    internal var isA11YEnabled: Boolean = true
-
-    fun disableA11Y() {
-        isA11YEnabled = false
-    }
 }

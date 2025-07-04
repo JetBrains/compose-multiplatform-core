@@ -374,7 +374,7 @@ class CfWA11YTest : OnCanvasTests {
     @Test
     fun noA11YRootAndElementsWithDisabledA11Y() = runApplicationTest {
         createComposeWindow(
-            configure = { disableA11Y() }
+            configure = { isA11YEnabled = false }
         ) {
             Button(onClick = {}) {
                 Text("Button1")
