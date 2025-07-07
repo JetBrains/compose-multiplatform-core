@@ -23,7 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
@@ -104,7 +103,6 @@ import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.QuartzCore.CACurrentMediaTime
-import platform.QuartzCore.CAFrameRateRangeDefault
 import platform.QuartzCore.CATransaction
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventButtonMaskPrimary
