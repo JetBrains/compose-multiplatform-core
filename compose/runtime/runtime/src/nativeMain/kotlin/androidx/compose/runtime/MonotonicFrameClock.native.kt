@@ -31,10 +31,8 @@ import kotlinx.coroutines.yield
 )
 public actual val DefaultMonotonicFrameClock: MonotonicFrameClock =
     object : MonotonicFrameClock {
-        private val markNow = TimeSource.Monotonic.markNow()
-
         override suspend fun <R> withFrameNanos(onFrame: (Long) -> R): R {
             yield()
-            return onFrame(markNow.elapsedNow().inWholeNanoseconds)
+            return onFrame(TimeSource.Monotonic.markNow().elapsedNow().inWholeNanoseconds)
         }
     }
