@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toDpRect
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -116,6 +117,7 @@ class BasicInteractionTest {
         assertEquals(DpRect(DpOffset.Zero, DpSize(screenSize.width, 100.dp)), boxRect)
     }
 
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
     @Test
     fun testBasicTextFieldToolbar() = runUIKitInstrumentedTest {
         setContent {
@@ -129,6 +131,7 @@ class BasicInteractionTest {
         verifyFullToolbarPresent()
     }
 
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
     @Test
     fun testBasicTextField2Toolbar() = runUIKitInstrumentedTest {
         val textFieldState = TextFieldState("Hello-LongLongLongLongLongLong-text")
@@ -143,6 +146,7 @@ class BasicInteractionTest {
         verifyFullToolbarPresent()
     }
 
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
     @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testBasicTextFieldToolbarNewContextMenu() = runUIKitInstrumentedTest {
@@ -159,6 +163,7 @@ class BasicInteractionTest {
         ComposeFoundationFlags.isNewContextMenuEnabled = false
     }
 
+    @Ignore // https://youtrack.jetbrains.com/issue/CMP-8537/Fix-toolbar-tests
     @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testBasicTextField2ToolbarNewContextMenu() = runUIKitInstrumentedTest {

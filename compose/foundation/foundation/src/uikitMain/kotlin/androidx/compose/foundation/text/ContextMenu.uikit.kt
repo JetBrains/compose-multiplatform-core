@@ -105,7 +105,7 @@ internal actual fun ContextMenuArea(
             content = content
         )
     } else {
-        content()
+        CommonContextMenuArea(selectionState, enabled, content)
     }
 }
 
@@ -124,7 +124,7 @@ internal actual fun ContextMenuArea(
             content = content
         )
     } else {
-        content()
+        CommonContextMenuArea(manager, content)
     }
 }
 
