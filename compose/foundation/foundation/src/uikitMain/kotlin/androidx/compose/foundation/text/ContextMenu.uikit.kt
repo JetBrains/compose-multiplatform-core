@@ -50,9 +50,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.uikit.utils.CMPEditMenuView
 import androidx.compose.ui.unit.Density
 import kotlin.coroutines.resume
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -66,7 +70,11 @@ internal actual fun ContextMenuArea(
     content: @Composable () -> Unit
 ) {
     if (ComposeFoundationFlags.isNewContextMenuEnabled) {
+        // The first time the menu is called up, the menu item provider contains a non-final set of
+        // menu items, which causes the context menu callout to blink.
+        // Adding a small delay resolves this issue.
         ProvideDefaultPlatformTextContextMenuProviders(
+            menuDelay = 100.milliseconds,
             modifier = manager.contextMenuAreaModifier,
             content = content
         )
@@ -123,6 +131,7 @@ internal actual fun ContextMenuArea(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ProvideDefaultPlatformTextContextMenuProviders(
+    menuDelay: Duration = 0.seconds,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
@@ -140,6 +149,7 @@ private fun ProvideDefaultPlatformTextContextMenuProviders(
             }
 
             ContextMenuToolbarProvider(
+                menuDelay = menuDelay,
                 editMenuView = editMenuView,
                 density = density,
                 coordinates = { layoutCoordinates.value }
@@ -170,6 +180,7 @@ private class ContextMenuItemsState(
 )
 
 private class ContextMenuToolbarProvider(
+    private val menuDelay: Duration,
     val editMenuView: CMPEditMenuView,
     private val density: Density,
     private val coordinates: () -> LayoutCoordinates?
@@ -179,6 +190,7 @@ private class ContextMenuToolbarProvider(
         var session: TextContextMenuSession? = null
         val result = coroutineScope {
             val job = launch {
+                delay(menuDelay)
                 snapshotFlow {
                     val layoutCoordinates = coordinates() ?: return@snapshotFlow null
 
