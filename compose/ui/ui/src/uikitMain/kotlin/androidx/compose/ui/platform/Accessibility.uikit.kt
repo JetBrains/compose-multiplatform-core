@@ -412,8 +412,7 @@ private sealed interface AccessibilityNode {
                     CoroutineScope(
                         context = mediator.coroutineContext + motionDurationScale + frameClock
                     ).launch(start = CoroutineStart.UNDISPATCHED) {
-                        semanticsNode.unmergedConfig
-                            .getOrNull(SemanticsActions.ScrollByOffset)
+                        semanticsNode.unmergedConfig.getOrNull(SemanticsActions.ScrollByOffset)
                             ?.invoke(delta)
                     }
                 }
