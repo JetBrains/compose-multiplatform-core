@@ -26,15 +26,14 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import org.w3c.dom.HTMLElement
 
@@ -45,21 +44,74 @@ internal class ComposeWebSemanticsListener(
 
     private val invalidationChannel =
         Channel<Unit>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+    private val syncTriggerChannel =
+        Channel<Long>(1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+
+    private companion object {
+        const val MAX_TIME_IN_DEBOUNCE_MS = 1000L
+        const val DEBOUNCE_MS = 100L
+    }
 
     init {
+        // Here we do the following:
+        // - Every invalidation doesn't trigger an a11y tree sync immediately, but only after the changes have settled (debounce 100ms).
+        // - We track the time spent in "debounce", so eventually it must sync the a11y tree despite no pause in invalidation events (the changes couldn't settle).
+        // So the a11y tree sync will happen either when the changes have settled or when the timeSpentInDebounce exceeds 1000 ms.
+
+        /*
+              1) --x-x-x-x-------------------------------------------------
+                         |--- 100ms ---| -> sync after changes settle
+
+              2) ---x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x--
+                    |-------- 1000ms -------| spent 1 second debouncing
+                                            |-> forced sync
+
+              3) ----------------------------x-x-x-x-x-x-x-x---------------
+                 |---------- 1200ms ---------|             |--- 100 ms ---| -> sync after changes settle
+                                             | No forced sync here, because the debouncing has just started
+         */
         coroutineScope.launch {
-            var lastSyncTimeMs = currentTimeMillis()
-            val invalidationFlow = invalidationChannel.receiveAsFlow()
+            var timeSpentDebouncing = 0L
+            var lastDebouncedTime = 0L
+            var lastSyncTime = currentTimeMillis()
+
+            launch {
+                invalidationChannel.receiveAsFlow().collect {
+                    val currentTime = currentTimeMillis()
+
+                    if (lastDebouncedTime == 0L) {
+                        lastDebouncedTime = currentTime
+                        timeSpentDebouncing = 0L
+                    } else {
+                        val delta = currentTime - lastDebouncedTime
+                        timeSpentDebouncing += delta
+                        lastDebouncedTime = currentTime
+                    }
+
+                    if (timeSpentDebouncing >= MAX_TIME_IN_DEBOUNCE_MS) {
+                        // we've been debouncing for too long, but must sync periodically, so force a sync
+                        lastDebouncedTime = 0L
+                        lastSyncTime = currentTime
+                        syncSemanticsWithWebA11Y()
+                    } else {
+                        syncTriggerChannel.trySend(currentTime)
+                    }
+                }
+            }
 
             @OptIn(FlowPreview::class)
-            merge(
-                invalidationFlow.sample(1000),
-                invalidationFlow.debounce(100)
-            ).collect {
-                val currentTime = currentTimeMillis()
-                if (currentTime - lastSyncTimeMs >= 100) {
-                    lastSyncTimeMs = currentTime
-                    syncSemanticsWithWebA11Y()
+            launch {
+                // debounce until the Semantics changes settled for at least 100ms
+                syncTriggerChannel.receiveAsFlow().debounce(DEBOUNCE_MS.milliseconds).collect {
+                    val currentTime = currentTimeMillis()
+
+                    // syncSemanticsWithWebA11Y could've been triggered from a "force sync" above,
+                    // so we check the lastSyncTime here
+                    if (currentTime - lastSyncTime >= DEBOUNCE_MS) {
+                        lastDebouncedTime = 0L
+                        lastSyncTime = currentTime
+                        syncSemanticsWithWebA11Y()
+                    }
                 }
             }
         }

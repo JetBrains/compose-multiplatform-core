@@ -322,6 +322,45 @@ class CfWA11YTest : OnCanvasTests {
     }
 
     @Test
+    fun noChangesFor1SecondTheDebounceShouldWork() = runApplicationTest {
+        var show by mutableStateOf(true)
+
+        createComposeWindow {
+            if (show) {
+                Text("Test", modifier = Modifier.testTag("testText"))
+            }
+        }
+
+        awaitIdle()
+        awaitA11YChanges()
+
+        val textEl = document.getElementById("testText") as HTMLElement
+        assertEquals("Test", textEl.innerText)
+
+
+        suspend fun realDelay(timeMs: Long) {
+            withContext(Dispatchers.Default) {
+                delay(timeMs)
+            }
+        }
+
+        realDelay(1200)
+
+        assertTrue(textEl.isConnected)
+
+        repeat(10) {
+            show = !show
+            realDelay(10)
+            assertTrue(textEl.isConnected)
+        }
+
+        show = false
+        awaitA11YChanges()
+
+        assertFalse(textEl.isConnected)
+    }
+
+    @Test
     fun clickListenerMustBeUpdated() = runApplicationTest {
         var clickCounter1 = 0
         var clickCounter2 = 0
