@@ -718,14 +718,14 @@ fun ComposeViewport(
     val configuration = ComposeViewportConfiguration().apply(configure)
 
     val a11yContainerElement = if (configuration.isA11YEnabled) {
-        val container = document.createElement("div") as HTMLDivElement
-        layerRoot.appendChild(container)
-        container.style.apply {
-            position = "absolute"
-            top = "0"
-            left = "0"
+        (document.createElement("div") as HTMLDivElement).also { a11yContainer ->
+            layerRoot.appendChild(a11yContainer)
+            a11yContainer.style.apply {
+                position = "absolute"
+                top = "0"
+                left = "0"
+            }
         }
-        container
     } else {
         null
     }

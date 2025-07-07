@@ -24,6 +24,15 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 @ExperimentalComposeUiApi
 class ComposeViewportConfiguration internal constructor() {
 
+    /**
+     * Indicates whether accessibility (a11y) is enabled for the associated Compose viewport.
+     * When it's enabled, the Compose Viewport will maintain a DOM tree mirroring the Compose semantics nodes.
+     * That DOM tree is visibly hidden, but reachable by the accessibility tools.
+     * It can be disabled to avoid the overhead of maintaining the DOM tree.
+     * By default, it is set to `true`.
+     *
+     * Note: This API is experimental and subject to change in the future.
+     */
     @ExperimentalComposeUiApi
     var isA11YEnabled: Boolean = true
 }
