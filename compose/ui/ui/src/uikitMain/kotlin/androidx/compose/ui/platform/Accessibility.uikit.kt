@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.platform
 
+import androidx.compose.runtime.BroadcastFrameClock
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.platform.accessibility.AccessibilityScrollEventResult
@@ -29,6 +31,7 @@ import androidx.compose.ui.platform.accessibility.isScreenReaderFocusable
 import androidx.compose.ui.platform.accessibility.scrollIfPossible
 import androidx.compose.ui.platform.accessibility.scrollToCenterRectIfNeeded
 import androidx.compose.ui.platform.accessibility.unclippedBoundsInWindow
+import androidx.compose.ui.semantics.ScrollAxisRange
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -38,9 +41,11 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.isImportantForAccessibility
 import androidx.compose.ui.semantics.sortByGeometryGroupings
 import androidx.compose.ui.uikit.density
+import androidx.compose.ui.uikit.toNanoSeconds
 import androidx.compose.ui.uikit.utils.CMPAccessibilityElement
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.asCGRect
+import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.toDpRect
 import androidx.compose.ui.unit.toRect
@@ -58,6 +63,7 @@ import kotlinx.cinterop.ExportObjCClass
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -65,8 +71,10 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import objcnames.classes.Protocol
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGPointMake
+import platform.CoreGraphics.CGPointZero
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectEqualToRect
 import platform.CoreGraphics.CGRectGetMaxX
@@ -78,6 +86,10 @@ import platform.CoreGraphics.CGRectGetMinY
 import platform.CoreGraphics.CGRectIntersectsRect
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
+import platform.CoreGraphics.CGSize
+import platform.CoreGraphics.CGSizeMake
+import platform.CoreGraphics.CGSizeZero
+import platform.QuartzCore.CACurrentMediaTime
 import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UIAccessibilityContainerType
 import platform.UIKit.UIAccessibilityContainerTypeNone
@@ -97,6 +109,7 @@ import platform.UIKit.UIFocusAnimationCoordinator
 import platform.UIKit.UIFocusEnvironmentProtocol
 import platform.UIKit.UIFocusItemContainerProtocol
 import platform.UIKit.UIFocusItemProtocol
+import platform.UIKit.UIFocusItemScrollableContainerProtocol
 import platform.UIKit.UIFocusSystem
 import platform.UIKit.UIFocusUpdateContext
 import platform.UIKit.UIPressesEvent
@@ -109,6 +122,10 @@ import platform.UIKit.isAccessibilityElement
 import platform.UIKit.setAccessibilityElements
 import platform.darwin.NSInteger
 import platform.darwin.NSObject
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
+import platform.objc.objc_getProtocol
+import platform.objc.protocol_isEqual
 
 private val DUMMY_UI_ACCESSIBILITY_CONTAINER = NSObject()
 
@@ -150,6 +167,13 @@ private sealed interface AccessibilityNode {
     val canBecomeFocused: Boolean get() = false
     fun didBecomeFocused() {}
     fun didResignFocused() {}
+
+    val canScroll: Boolean get() = false
+    var scrollContentOffset: CValue<CGPoint>
+        get() = CGPointZero.readValue()
+        set(_) {}
+    val scrollVisibleSize: CValue<CGSize> get() = CGSizeZero.readValue()
+    val scrollContentSize: CValue<CGSize> get() = CGSizeZero.readValue()
 
     /**
      * Represents a projection of the Compose semantics node to the iOS world.
@@ -304,7 +328,6 @@ private sealed interface AccessibilityNode {
             get() = semanticsNode.unmergedConfig.contains(SemanticsProperties.Focused)
 
         override fun didBecomeFocused() {
-            accessibilityScrollToVisible()
             mediator.keyboardFocusedElementKey = key
         }
 
@@ -323,7 +346,8 @@ private sealed interface AccessibilityNode {
      * semantic node with all its children.
      */
     class Container(
-        override val semanticsNode: SemanticsNode
+        override val semanticsNode: SemanticsNode,
+        private val mediator: AccessibilityMediator
     ) : AccessibilityNode {
         override val key: AccessibilityElementKey = semanticsNode.containerKey
 
@@ -331,6 +355,77 @@ private sealed interface AccessibilityNode {
 
         override val accessibilityContainerType: UIAccessibilityContainerType =
             UIAccessibilityContainerTypeSemanticGroup
+
+        private val horizontalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
+            .getOrNull(SemanticsProperties.HorizontalScrollAxisRange)
+
+        private val verticalAxis: ScrollAxisRange? = semanticsNode.unmergedConfig
+            .getOrNull(SemanticsProperties.VerticalScrollAxisRange)
+
+        private val width: Float get() = semanticsNode.size.width.toFloat()
+
+        private val height: Float get() = semanticsNode.size.height.toFloat()
+
+        override val canScroll: Boolean = horizontalAxis != null || verticalAxis != null
+
+        override val scrollContentSize: CValue<CGSize>
+            get() {
+                return with(semanticsNode.layoutNode.density) {
+                    CGSizeMake(
+                        width = (width + (horizontalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
+                        height = (height + (verticalAxis?.maxValue() ?: 0f)).toDp().value.toDouble(),
+                    )
+                }
+            }
+
+        override var scrollContentOffset: CValue<CGPoint>
+            get() {
+                return with(semanticsNode.layoutNode.density) {
+                    CGPointMake(
+                        x = (horizontalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                        y = (verticalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                    )
+                }
+            }
+            set(value) {
+                val newContentOffset = with(semanticsNode.layoutNode.density) {
+                    Offset(x = value.asDpOffset().x.toPx(), y = value.asDpOffset().y.toPx())
+                }
+
+                val currentContentOffset = Offset(
+                    x = horizontalAxis?.value() ?: 0f,
+                    y = verticalAxis?.value() ?: 0f
+                )
+
+                val delta = newContentOffset - currentContentOffset
+
+                if (delta != Offset.Zero) {
+                    // Because iOS updates content offset on every frame,
+                    // no need to animate it.
+                    val motionDurationScale = MotionDurationScaleImpl()
+                    motionDurationScale.scaleFactor = 0f
+                    val frameClock = BroadcastFrameClock()
+                    dispatch_async(dispatch_get_main_queue()) {
+                        frameClock.sendFrame(CACurrentMediaTime().toNanoSeconds())
+                    }
+
+                    CoroutineScope(
+                        context = mediator.coroutineContext + motionDurationScale + frameClock
+                    ).launch(start = CoroutineStart.UNDISPATCHED) {
+                        semanticsNode.unmergedConfig
+                            .getOrNull(SemanticsActions.ScrollByOffset)
+                            ?.invoke(delta)
+                    }
+                }
+            }
+
+        override val scrollVisibleSize: CValue<CGSize>
+            get() = with(semanticsNode.layoutNode.density) {
+                CGSizeMake(
+                    width = width.toDp().value.toDouble(),
+                    height = height.toDp().value.toDouble()
+                )
+            }
     }
 }
 
@@ -411,12 +506,21 @@ private class AccessibilityElement(
     children: List<AccessibilityElement>
 ) : CMPAccessibilityElement(DUMMY_UI_ACCESSIBILITY_CONTAINER),
     UIFocusItemProtocol,
-    UIFocusItemContainerProtocol {
+    UIFocusItemContainerProtocol,
+    UIFocusItemScrollableContainerProtocol {
     /**
      * A cache for the properties that are computed from the [SemanticsNode.config] and are communicated
      * to iOS Accessibility services.
      */
     private val cachedProperties = mutableMapOf<CachedAccessibilityPropertyKey<*>, Any?>()
+
+    private val scrollableProtocol = objc_getProtocol("UIFocusItemScrollableContainer")!!
+    override fun conformsToProtocol(aProtocol: Protocol?): Boolean {
+        if (protocol_isEqual(proto = aProtocol, other = scrollableProtocol)) {
+            return node.canScroll
+        }
+        return super.conformsToProtocol(aProtocol)
+    }
 
     val key: AccessibilityElementKey get() = node.key
 
@@ -675,6 +779,22 @@ private class AccessibilityElement(
     } ?: emptyList<Any>()
 
     override fun isTransparentFocusItem(): Boolean = true
+
+    override fun setContentOffset(contentOffset: CValue<CGPoint>) {
+        node.scrollContentOffset = contentOffset
+    }
+
+    override fun visibleSize(): CValue<CGSize> {
+        return node.scrollVisibleSize
+    }
+
+    override fun contentOffset(): CValue<CGPoint> {
+        return node.scrollContentOffset
+    }
+
+    override fun contentSize(): CValue<CGSize> {
+        return node.scrollContentSize
+    }
 }
 
 private class NodesSyncResult(
@@ -808,10 +928,17 @@ internal class AccessibilityMediator(
             while (true) {
                 invalidationChannel.receive()
 
-                // Estimated delay between the iOS Accessibility Engine sync intervals.
-                // There is no reason to post change notifications more frequently because the iOS
-                // Accessibility Engine will ignore them.
-                delay(100)
+                if (keyboardFocusedElementKey != null) {
+                    // Do nothing.
+                    // When full keyboard access is enabled, the selection rectangle can be updated
+                    // on every frame. To improve the user experience, we should update the
+                    // accessibility tree as quickly as possible.
+                } else {
+                    // Estimated delay between the iOS Accessibility Engine sync intervals.
+                    // There is no reason to post change notifications more frequently because the iOS
+                    // Accessibility Engine will ignore them.
+                    delay(100)
+                }
 
                 while (invalidationChannel.tryReceive().isSuccess) {
                     // Do nothing, just consume the channel
@@ -1092,7 +1219,7 @@ internal class AccessibilityMediator(
 
             presentIds.add(node.containerKey)
             return createOrUpdateAccessibilityElement(
-                node = AccessibilityNode.Container(semanticsNode = node),
+                node = AccessibilityNode.Container(semanticsNode = node, mediator = this),
                 children = beforeElements + containerElements + visibleElements + afterElements,
                 frame = frame
             )
