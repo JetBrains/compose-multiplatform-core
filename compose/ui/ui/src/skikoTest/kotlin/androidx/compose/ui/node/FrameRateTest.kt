@@ -48,7 +48,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration
 
 @OptIn(InternalTestApi::class, ExperimentalTestApi::class)
-class FrameRateVotingTest {
+class FrameRateTest {
 
     @Test
     fun testNoPreferredFrameRate() = runFrameRateComposeUiTest {
