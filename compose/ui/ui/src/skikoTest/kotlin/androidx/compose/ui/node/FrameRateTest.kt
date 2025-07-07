@@ -277,6 +277,19 @@ class FrameRateVotingTest {
     }
 
     @Test
+    fun testNestedFrameRatePreferencesSwapValues() = runFrameRateComposeUiTest {
+        setContent {
+            NestedFrameRatePreferencesUI(60f, 5f)
+        }
+
+        onNodeWithTag(BUTTON_TAG).performClick()
+
+        waitUntil(timeoutMillis = 150) {
+            votedFrameRate == 60f && votedFrameRateCategory == 0f
+        }
+    }
+
+    @Test
     fun testNestedFrameRateCategoryPreferences() = runFrameRateComposeUiTest {
         setContent {
             NestedFrameRatePreferencesUI(FrameRateCategory.Default.value, FrameRateCategory.Normal.value)
