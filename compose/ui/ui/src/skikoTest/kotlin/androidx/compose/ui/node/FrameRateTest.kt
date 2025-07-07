@@ -395,7 +395,6 @@ private class FrameRateComposeUiTest(
 
     override val platformContext: PlatformContext get() = object: PlatformContext by super.platformContext {
         override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
-            println("---- [debug] voteFrameRate: $frameRate, $frameRateCategory")
             votedFrameRate = frameRate
             votedFrameRateCategory = frameRateCategory
         }
