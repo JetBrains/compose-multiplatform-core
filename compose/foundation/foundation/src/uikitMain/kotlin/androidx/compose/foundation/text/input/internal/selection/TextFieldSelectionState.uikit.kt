@@ -55,6 +55,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.util.fastAll
 import kotlinx.coroutines.CoroutineScope
@@ -368,6 +369,20 @@ private class UIKitTextFieldTextDragObserver(
             textFieldSelectionState.textLayoutState.fromDecorationToTextLayout(coercedOffset)
         )
         textFieldSelectionState.updateHandleDragging(Handle.Cursor, currentDragPosition)
+    }
+}
+
+internal actual class ClipboardPasteState actual constructor(private val clipboard: Clipboard) {
+    private var _hasClip = false
+    private var _hasText = false
+
+    actual val hasText: Boolean get() = _hasText
+    actual val hasClip: Boolean get() = _hasClip
+
+    actual suspend fun update() {
+        val nativeClipboard = clipboard.nativeClipboard
+        _hasClip = nativeClipboard.numberOfItems > 0
+        _hasText = nativeClipboard.hasStrings
     }
 }
 
