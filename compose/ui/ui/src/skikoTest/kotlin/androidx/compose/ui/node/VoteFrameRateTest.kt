@@ -21,8 +21,6 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.scene.ComposeSceneInputHandler
 import androidx.compose.ui.scene.PointerEventResult
-import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import kotlin.coroutines.CoroutineContext
@@ -34,7 +32,6 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.skia.Surface
 
-@OptIn(InternalTestApi::class, ExperimentalTestApi::class)
 class VoteFrameRateTest {
 
     @Test
