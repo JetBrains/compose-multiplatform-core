@@ -218,25 +218,32 @@ private fun SourceInfoParserState.hasSection() =
 private fun SourceInfoParserState.parseParameterIndex(): List<ParameterSourceInformation> {
     // "P(" (<parameter-index> | <run>) [ [ "," ] (<parameter-index> | <run>) ]* ")"
     // parameter-index: <index> [ ":" <inline-class-fqname> ]
-    // run: "!" <number>
+    // run: "!" [ <number> ]
 
     advance(2) //  skip "P("
     val parameters = mutableListOf<ParameterSourceInformation>()
+    var pendingRun = false
     while (!atEnd() && !matches(')')) {
         if (matches('!')) {
             // run
             advance()
-            var count = takeIntUntil("!,)")
-            var nextIndex = 0
-            while (count > 0) {
-                // find next unsorted index
-                if (parameters.fastAny { it.sortedIndex == nextIndex }) {
-                    nextIndex++
-                    continue
-                }
+            val countString = takeUntil("!,)")
+            if (countString.isEmpty()) {
+                pendingRun = true
+            } else {
+                var count = countString.toInt()
+                var nextIndex = 0
 
-                parameters.add(ParameterSourceInformation(sortedIndex = nextIndex))
-                count--
+                while (count > 0) {
+                    // find next unsorted index
+                    if (parameters.fastAny { it.sortedIndex == nextIndex }) {
+                        nextIndex++
+                        continue
+                    }
+
+                    parameters.add(ParameterSourceInformation(sortedIndex = nextIndex))
+                    count--
+                }
             }
         } else {
             // parameter-index
@@ -246,6 +253,20 @@ private fun SourceInfoParserState.parseParameterIndex(): List<ParameterSourceInf
                 advance()
                 inlineClass = takeUntil("!,)").replaceComposePrefix()
             }
+
+            if (pendingRun) {
+                var nextIndex = 0
+                val maxIndex = index
+                while (nextIndex < maxIndex) {
+                    if (parameters.fastAny { it.sortedIndex == nextIndex }) {
+                        nextIndex++
+                        continue
+                    }
+                    parameters.add(ParameterSourceInformation(sortedIndex = nextIndex))
+                }
+                pendingRun = false
+            }
+
             parameters.add(
                 ParameterSourceInformation(sortedIndex = index, inlineClass = inlineClass)
             )
