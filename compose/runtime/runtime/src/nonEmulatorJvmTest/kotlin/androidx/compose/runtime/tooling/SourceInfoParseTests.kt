@@ -102,4 +102,16 @@ class SourceInfoParseTests {
         val info = parseSourceInformation("")
         assertNull(info)
     }
+
+    @Test
+    fun parseIncomplete() {
+        var ex: Exception? = null
+        try {
+            parseSourceInformationInternal("123@")
+        } catch (e: Exception) {
+            ex = e
+        }
+
+        assertEquals("Error while parsing source information: expected int at 123@|", ex?.message)
+    }
 }
