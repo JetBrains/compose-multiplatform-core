@@ -301,13 +301,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         )
     }
 
-    protected open val platformContext: PlatformContext get() = TestContext()
-
     private fun createUi(): ComposeScene = CanvasLayersComposeScene(
         density = density,
         size = size,
         coroutineContext = coroutineContext,
-        platformContext = platformContext,
+        platformContext = TestContext(),
         invalidate = { }
     )
 
