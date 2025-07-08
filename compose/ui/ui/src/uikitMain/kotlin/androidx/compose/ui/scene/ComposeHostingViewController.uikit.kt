@@ -19,9 +19,11 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.setValue
@@ -32,11 +34,12 @@ import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
-import androidx.compose.ui.platform.IOSLifecycleOwner
+import androidx.compose.ui.platform.DisposableSaveableStateRegistry
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.UIKitStateOwner
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalInterfaceOrientation
@@ -61,6 +64,8 @@ import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.savedstate.SavedState
+import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
@@ -96,11 +101,11 @@ import platform.darwin.dispatch_get_main_queue
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
-    private val lifecycleOwner: IOSLifecycleOwner = IOSLifecycleOwner(),
+    private var savedState: SavedState? = null,
+    private val stateOwner: UIKitStateOwner = UIKitStateOwner(savedState),
     coroutineContext: CoroutineContext = Dispatchers.Main
-) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner)) {
+) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(stateOwner)) {
     private val hapticFeedback = CupertinoHapticFeedback()
-
     private val rootView = ComposeView(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
@@ -115,9 +120,6 @@ internal class ComposeHostingViewController(
     private val motionDurationScale = MotionDurationScaleImpl()
     private var applicationActiveStateListener: ApplicationActiveStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
-    private var savableStateRegistry = SaveableStateRegistry(
-        restoredValues = null, canBeSaved = { true }
-    )
 
     private val backGestureDispatcher = UIKitBackGestureDispatcher(
         enableBackGesture = configuration.enableBackGesture,
@@ -286,6 +288,8 @@ internal class ComposeHostingViewController(
     override fun viewControllerDidEnterWindowHierarchy() {
         super.viewControllerDidEnterWindowHierarchy()
 
+        // TODO Restore savedState but to do it we need to re-create UIKitStateOwner
+
         val metalView = MetalView(
             retrieveInteropTransaction = {
                 mediator?.retrieveInteropTransaction() ?: object : UIKitInteropTransaction {
@@ -338,14 +342,7 @@ internal class ComposeHostingViewController(
     override fun viewControllerDidLeaveWindowHierarchy() {
         super.viewControllerDidLeaveWindowHierarchy()
 
-        // Store the current state in the next SaveableStateRegistry instance. It is used to
-        // provide the saved state to the next compose scene when the view controller re-enters
-        // the window hierarchy.
-        savableStateRegistry = SaveableStateRegistry(
-            restoredValues = savableStateRegistry.performSave(),
-            canBeSaved = { true }
-        )
-
+        savedState = stateOwner.saveState()
         rootView.updateMetalView(metalView = null)
         backGestureDispatcher.onDidMoveToWindow(null, rootView)
 
@@ -523,18 +520,25 @@ internal class ComposeHostingViewController(
     }
 
     @Composable
-    private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) =
+    private fun ProvideContainerCompositionLocals(content: @Composable () -> Unit) {
+        val saveableStateRegistry = remember {
+            DisposableSaveableStateRegistry("ComposeContainer", stateOwner)
+        }
+        DisposableEffect(Unit) { onDispose { saveableStateRegistry.dispose() } }
+
         CompositionLocalProvider(
             LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides this,
             LocalInterfaceOrientation provides interfaceOrientationState.value,
             LocalSystemTheme provides systemThemeState.value,
-            LocalLifecycleOwner provides lifecycleOwner,
-            LocalInternalViewModelStoreOwner provides lifecycleOwner,
+            LocalLifecycleOwner provides stateOwner,
+            LocalInternalViewModelStoreOwner provides stateOwner,
+            LocalSavedStateRegistryOwner provides stateOwner,
+            LocalSaveableStateRegistry provides saveableStateRegistry,
             LocalBackGestureDispatcher provides backGestureDispatcher,
-            LocalSaveableStateRegistry provides savableStateRegistry,
-            content = content
+            content = content,
         )
+    }
 
     private fun ComposeSceneMediator.updateInteractionRect() {
         interactionBounds = with(density) {
