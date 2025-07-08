@@ -701,6 +701,15 @@ fun ComposeViewport(
  *
  * Creates the composition in HTML canvas created in parent container identified by [viewportContainer] Element.
  * This size of canvas is adjusted with the size of the container
+ *
+ * The current hierarchy:
+ * <viewportContainer.shadowDom>
+ *     <app root>
+ *         <canvas/>
+ *         <interop elements container/>
+ *         <a11y elements root/>
+ *     </app root>
+ * </viewportContainer.shadowDom>
  */
 @ExperimentalComposeUiApi
 fun ComposeViewport(

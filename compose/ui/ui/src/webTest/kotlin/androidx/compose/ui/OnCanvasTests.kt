@@ -76,7 +76,7 @@ internal interface OnCanvasTests {
 
     private fun getContainer() = document.getElementById(containerId) ?: error("failed to get canvas with id ${containerId}")
 
-    private fun getAppRoot() = getContainer().children[0] as HTMLElement
+    private fun getAppRoot() = getShadowRoot().children[0] as HTMLElement
 
     fun getA11YContainer(): HTMLElement? {
         return if (getAppRoot().children.length < 3) {
@@ -88,7 +88,7 @@ internal interface OnCanvasTests {
     }
 
     fun getShadowRoot(): ExtendedShadowRoot =
-        (getCanvasContainer().shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
+        (getContainer().shadowRoot as? ExtendedShadowRoot) ?: error("failed to get shadowRoot")
 
     fun getCanvas(): HTMLCanvasElement {
         val canvas = (getShadowRoot().querySelector("canvas") as? HTMLCanvasElement) ?: error("failed to get canvas")
