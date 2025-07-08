@@ -165,6 +165,13 @@ internal class MetalRedrawer(
             caDisplayLink?.preferredFramesPerSecond = value
         }
 
+    val currentTargetFrameDuration: NSTimeInterval?
+        get() {
+            val currentTargetTimestamp = currentTargetTimestamp ?: return null
+            val currentTimestamp = caDisplayLink?.timestamp ?: return null
+            return currentTargetTimestamp - currentTimestamp
+        }
+
     private val displayLinkConditions = DisplayLinkConditions { paused ->
         caDisplayLink?.paused = paused
     }
@@ -216,7 +223,7 @@ internal class MetalRedrawer(
      * Display link for driving the rendering loop.
      * null after [dispose] call
      */
-    internal var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
+    private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
         target = DisplayLinkProxy {
             val targetTimestamp = currentTargetTimestamp ?: return@DisplayLinkProxy
 
@@ -226,7 +233,6 @@ internal class MetalRedrawer(
         },
         selector = NSSelectorFromString(DisplayLinkProxy::handleDisplayLinkTick.name)
     )
-        private set
 
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp

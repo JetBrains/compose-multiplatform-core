@@ -57,6 +57,7 @@ import androidx.compose.ui.window.ApplicationActiveStateListener
 import androidx.compose.ui.window.ComposeView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.FocusStack
+import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -104,8 +105,9 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
-    internal var mediator: ComposeSceneMediator? = null
-        private set
+    // Used for testing
+    internal val rootViewRedrawer: MetalRedrawer? get() = rootView.redrawer
+    private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     internal var layers: UIKitComposeSceneLayersHolder? = null
         private set

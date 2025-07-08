@@ -65,23 +65,23 @@ internal class FrameRateTest {
             }
         }
 
-        val caDisplayLink = hostingViewController.mediator?.redrawer?.caDisplayLink
-
-        assertNotNull(caDisplayLink, "caDisplayLink is null")
+        val redrawer = hostingViewController.rootViewRedrawer
+        assertNotNull(redrawer, "redrawer is null")
 
         for (frameRate in frameRates) {
             val expectedFrameDuration = 1.0 / frameRate
             findNodeWithTag("${frameRate}fps").tap()
             waitUntil {
-                val frameDuration = caDisplayLink.targetTimestamp - caDisplayLink.timestamp
+                val frameDuration = redrawer.currentTargetFrameDuration
+                assertNotNull(frameDuration)
                 checkEqual(frameDuration, expectedFrameDuration, 1e-5)
             }
         }
     }
 
     @Test
-    fun testHighFrameRates() = runUIKitInstrumentedTest {
-        val frameRates = listOf(60f, 80f, 120f)
+    fun testPreferredFrameRates() = runUIKitInstrumentedTest {
+        val frameRates = listOf(5f, 10f, 30f, 60f, 80f, 120f)
 
         setContent {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -91,16 +91,13 @@ internal class FrameRateTest {
             }
         }
 
-        val caDisplayLink = hostingViewController.mediator?.redrawer?.caDisplayLink
-
-        assertNotNull(caDisplayLink, "caDisplayLink is null")
+        val redrawer = hostingViewController.rootViewRedrawer
+        assertNotNull(redrawer, "redrawer is null")
 
         for (frameRate in frameRates) {
-            val expectedFrameDuration = 1.0 / 60f
             findNodeWithTag("${frameRate}fps").tap()
             waitUntil {
-                val frameDuration = caDisplayLink.targetTimestamp - caDisplayLink.timestamp
-                checkEqual(frameDuration, expectedFrameDuration, 1e-5)
+                redrawer.preferredFramesPerSecond == frameRate.toLong()
             }
         }
     }
