@@ -104,9 +104,11 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
-    private var mediator: ComposeSceneMediator? = null
+    internal var mediator: ComposeSceneMediator? = null
+        private set
     private val windowContext = PlatformWindowContext()
-    private var layers: UIKitComposeSceneLayersHolder? = null
+    internal var layers: UIKitComposeSceneLayersHolder? = null
+        private set
     private val layoutDirection get() = getLayoutDirection()
     private var hasViewAppeared: Boolean = false
     private val motionDurationScale = MotionDurationScaleImpl()

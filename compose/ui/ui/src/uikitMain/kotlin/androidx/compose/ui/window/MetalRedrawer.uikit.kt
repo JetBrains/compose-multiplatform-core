@@ -216,7 +216,7 @@ internal class MetalRedrawer(
      * Display link for driving the rendering loop.
      * null after [dispose] call
      */
-    private var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
+    internal var caDisplayLink: CADisplayLink? = CADisplayLink.displayLinkWithTarget(
         target = DisplayLinkProxy {
             val targetTimestamp = currentTargetTimestamp ?: return@DisplayLinkProxy
 
@@ -226,6 +226,7 @@ internal class MetalRedrawer(
         },
         selector = NSSelectorFromString(DisplayLinkProxy::handleDisplayLinkTick.name)
     )
+        private set
 
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp

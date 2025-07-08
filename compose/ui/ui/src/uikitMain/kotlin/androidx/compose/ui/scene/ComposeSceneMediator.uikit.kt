@@ -187,7 +187,7 @@ internal class ComposeSceneMediator(
     private val focusStack: FocusStack?,
     private val windowContext: PlatformWindowContext,
     private val coroutineContext: CoroutineContext,
-    private val redrawer: MetalRedrawer,
+    internal val redrawer: MetalRedrawer,
     private val backGestureDispatcher: UIKitBackGestureDispatcher,
     composeSceneFactory: (
         invalidate: () -> Unit,
