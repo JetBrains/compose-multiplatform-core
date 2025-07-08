@@ -81,14 +81,6 @@ NS_ASSUME_NONNULL_BEGIN
     return [super accessibilityPerformEscape];
 }
 
-- (BOOL)accessibilityScrollToVisible {
-    return NO;
-}
-
-- (BOOL)accessibilityScrollToVisibleWithChild:(id)child {
-    return NO;
-}
-
 - (void)accessibilityElementDidBecomeFocused {
     [super accessibilityElementDidBecomeFocused];
 }

@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.accessibility.accessibilityLabel
 import androidx.compose.ui.platform.accessibility.accessibilityTraits
 import androidx.compose.ui.platform.accessibility.accessibilityValue
 import androidx.compose.ui.platform.accessibility.allScrollableParentNodeIds
+import androidx.compose.ui.platform.accessibility.canScroll
 import androidx.compose.ui.platform.accessibility.isRTL
 import androidx.compose.ui.platform.accessibility.isScreenReaderFocusable
 import androidx.compose.ui.platform.accessibility.scrollIfPossible
@@ -55,6 +56,7 @@ import kotlin.time.measureTime
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
+import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
@@ -77,12 +79,18 @@ import platform.CoreGraphics.CGRectGetMinY
 import platform.CoreGraphics.CGRectIntersectsRect
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSNotification
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSSelectorFromString
 import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UIAccessibilityContainerType
 import platform.UIKit.UIAccessibilityContainerTypeNone
 import platform.UIKit.UIAccessibilityContainerTypeSemanticGroup
 import platform.UIKit.UIAccessibilityCustomAction
+import platform.UIKit.UIAccessibilityElement
+import platform.UIKit.UIAccessibilityElementFocusedNotification
 import platform.UIKit.UIAccessibilityFocusedElement
+import platform.UIKit.UIAccessibilityFocusedElementKey
 import platform.UIKit.UIAccessibilityLayoutChangedNotification
 import platform.UIKit.UIAccessibilityPageScrolledNotification
 import platform.UIKit.UIAccessibilityPostNotification
@@ -140,7 +148,6 @@ private sealed interface AccessibilityNode {
     fun accessibilityDecrement() {}
     fun accessibilityElementDidBecomeFocused() {}
     fun accessibilityElementDidLoseFocus() {}
-    fun accessibilityScrollToVisible(): Boolean = false
     fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean = false
     fun accessibilityPerformEscape(): Boolean = false
 
@@ -246,26 +253,6 @@ private sealed interface AccessibilityNode {
             mediator.clearFocusTargetIfNeeded(key)
         }
 
-        private var listener: DisplayLinkListener? = null
-        override fun accessibilityScrollToVisible(): Boolean {
-            if (listener != null) {
-                return false
-            }
-            val listener = DisplayLinkListener()
-            listener.start()
-            this.listener = listener
-            CoroutineScope(mediator.coroutineContext + listener.frameClock).launch {
-                semanticsNode.parent?.scrollToCenterRectIfNeeded(
-                    targetRect = semanticsNode.unclippedBoundsInWindow,
-                    safeAreaRectInWindow = mediator.safeAreaRectInWindow
-                )
-                listener.invalidate()
-                this@Semantics.listener = null
-            }
-
-            return true
-        }
-
         override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean {
             if (cachedConfig.contains(SemanticsProperties.Disabled)) {
                 return false
@@ -302,7 +289,6 @@ private sealed interface AccessibilityNode {
             get() = semanticsNode.unmergedConfig.contains(SemanticsProperties.Focused)
 
         override fun didBecomeFocused() {
-            accessibilityScrollToVisible()
             mediator.keyboardFocusedElementKey = key
         }
 
@@ -518,26 +504,6 @@ private class AccessibilityElement(
         }
 
         node.accessibilityDecrement()
-    }
-
-    override fun accessibilityScrollToVisible(): Boolean {
-        if (!isAlive) {
-            return false
-        }
-
-        return node.accessibilityScrollToVisible()
-    }
-
-    override fun accessibilityScrollToVisibleWithChild(child: Any): Boolean {
-        if (!isAlive) {
-            return false
-        }
-
-        if (child is AccessibilityElement) {
-            return child.accessibilityScrollToVisible()
-        }
-
-        return false
     }
 
     override fun accessibilityScroll(direction: UIAccessibilityScrollDirection): Boolean {
@@ -795,6 +761,63 @@ internal class AccessibilityMediator(
         return rectInWindow.asDpRect().toRect(view.density)
     }
 
+    private var displayLinkListener: DisplayLinkListener? = null
+
+    private var scrollJob: Job? = null
+
+    private val focusObserver = AccessibilityFocusedElementObserver { focusedElement ->
+        val listener = displayLinkListener ?: return@AccessibilityFocusedElementObserver
+
+        val scrollableContainer = findFirstAccessibilityElementInHierarchy(focusedElement) {
+            it.node.semanticsNode.canScroll
+        }
+        if (scrollableContainer != null) {
+            scrollJob?.cancel()
+            val rect = when {
+                focusedElement is AccessibilityElement ->
+                    focusedElement.node.semanticsNode.unclippedBoundsInWindow
+
+                else ->
+                    focusedElement.accessibilityFrame.asDpRect()
+                        .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
+            }
+            scrollJob = CoroutineScope(coroutineContext + listener.frameClock).launch {
+                scrollableContainer.node.semanticsNode.scrollToCenterRectIfNeeded(
+                    targetRect = rect,
+                    safeAreaRectInWindow = safeAreaRectInWindow
+                )
+            }
+        }
+    }
+
+    private fun findFirstAccessibilityElementInHierarchy(
+        element: Any,
+        validate: (AccessibilityElement) -> Boolean,
+    ): AccessibilityElement? {
+        var iterator: Any? = element
+        var result: AccessibilityElement? = null
+        while (iterator != null) {
+            when (iterator) {
+                is AccessibilityElement -> {
+                    if (result == null && validate(iterator)) {
+                        result = iterator
+                    }
+                    iterator = iterator.accessibilityContainer
+                }
+
+                is InteropWrappingView -> iterator = iterator.actualAccessibilityContainer
+                is AccessibilityRoot -> {
+                    // Return true only of the result element has the same root
+                    return result.takeIf { iterator == root }
+                }
+                is UIView -> iterator = iterator.superview
+                is UIAccessibilityElement -> iterator = iterator.accessibilityContainer
+                else -> return null
+            }
+        }
+        return null
+    }
+
     init {
         accessibilityDebugLogger?.log("AccessibilityMediator for $view created")
 
@@ -846,7 +869,8 @@ internal class AccessibilityMediator(
     private fun scheduleAccessibilityDisablingAndCleanup() {
         if (disableAccessibilityJob != null ||
             keyboardFocusedElementKey != null ||
-            focusMode is AccessibilityElementFocusMode.KeepFocus) {
+            focusMode is AccessibilityElementFocusMode.KeepFocus ||
+            hasFocusedElement()) {
             return
         }
         disableAccessibilityJob = coroutineScope.launch {
@@ -857,6 +881,13 @@ internal class AccessibilityMediator(
 
             cleanUp()
         }
+    }
+
+    private fun hasFocusedElement(): Boolean {
+        val element = UIAccessibilityFocusedElement(null) ?: return false
+        return findFirstAccessibilityElementInHierarchy(element) {
+            true
+        } != null
     }
 
     private fun cancelAccessibilityDisabling() {
@@ -928,6 +959,7 @@ internal class AccessibilityMediator(
     }
 
     fun dispose() {
+        focusObserver.dispose()
         job.cancel()
         disableAccessibilityJob?.cancel()
 
@@ -943,6 +975,9 @@ internal class AccessibilityMediator(
     }
 
     private fun cleanUp() {
+        displayLinkListener?.invalidate()
+        displayLinkListener = null
+
         disableAccessibilityJob = null
         isAccessibilityActive = false
 
@@ -1132,6 +1167,11 @@ internal class AccessibilityMediator(
 
         val (element, focusedElementKey) = traverseSemanticsTree(rootSemanticsNode)
         root.element = element
+
+        if (displayLinkListener == null) {
+            displayLinkListener = DisplayLinkListener()
+            displayLinkListener?.start()
+        }
 
         accessibilityDebugLogger?.let {
             debugTraverse(it, view)
@@ -1411,5 +1451,29 @@ private class BeyondBoundsComparator(private val isRTL: Boolean) : Comparator<Se
         }
 
         return result
+    }
+}
+
+private class AccessibilityFocusedElementObserver(
+    private val onElementFocused: (NSObject) -> Unit
+): NSObject() {
+    init {
+        NSNotificationCenter.defaultCenter.addObserver(
+            observer = this,
+            selector = NSSelectorFromString(::onFocus.name + ":"),
+            name = UIAccessibilityElementFocusedNotification,
+            `object` = null
+        )
+    }
+
+    @OptIn(BetaInteropApi::class)
+    @ObjCAction
+    private fun onFocus(arg: NSNotification) {
+        val accessibilityElement = arg.userInfo?.get(UIAccessibilityFocusedElementKey) as? NSObject
+        accessibilityElement?.let { onElementFocused(it) }
+    }
+
+    fun dispose() {
+        NSNotificationCenter.defaultCenter.removeObserver(this)
     }
 }
