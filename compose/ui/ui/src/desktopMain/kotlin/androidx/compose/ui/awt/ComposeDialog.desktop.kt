@@ -58,15 +58,6 @@ class ComposeDialog : JDialog {
         savedState = savedState,
     )
 
-    constructor(
-        owner: Window?,
-        modalityType: ModalityType = ModalityType.MODELESS,
-        graphicsConfiguration: GraphicsConfiguration? = null
-    ) : super(owner, "", modalityType, graphicsConfiguration) {
-        composePanel = createComposePanel()
-        contentPane.add(composePanel)
-    }
-
     /**
      * ComposeDialog is a dialog for building UI using Compose for Desktop.
      * ComposeDialog inherits javax.swing.JDialog.
@@ -88,11 +79,27 @@ class ComposeDialog : JDialog {
         contentPane.add(composePanel)
     }
 
-    constructor(graphicsConfiguration: GraphicsConfiguration? = null) :
-        super(null as Frame?, "", false, graphicsConfiguration) {
-        composePanel = createComposePanel()
-        contentPane.add(composePanel)
-    }
+    constructor(
+        owner: Window?,
+        modalityType: ModalityType = ModalityType.MODELESS,
+        graphicsConfiguration: GraphicsConfiguration? = null,
+    ) : this(
+        owner = owner,
+        modalityType = modalityType,
+        graphicsConfiguration = graphicsConfiguration,
+        skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+        savedState = null
+    )
+
+    constructor(
+        graphicsConfiguration: GraphicsConfiguration? = null,
+    ) : this(
+        owner = null,
+        modalityType = ModalityType.MODELESS,
+        graphicsConfiguration = graphicsConfiguration,
+        skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+        savedState = null
+    )
 
     // don't replace super() by super(null, ModalityType.MODELESS), because
     // this constructor creates an icon in the taskbar.
@@ -204,7 +211,7 @@ class ComposeDialog : JDialog {
 
     /**
      * Saves the current UI state into a [SavedState] object. The returned state can be used
-     * to restore the UI state later by passing it to the constructor's [savedState] parameter.
+     * to restore the UI state later by passing it to the constructor's `savedState` parameter.
      *
      * @return A [SavedState] object containing the current UI state.
      */
