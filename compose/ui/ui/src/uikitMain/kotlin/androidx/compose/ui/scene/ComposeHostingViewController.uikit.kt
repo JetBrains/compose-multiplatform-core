@@ -106,11 +106,10 @@ internal class ComposeHostingViewController(
         useOpaqueConfiguration = configuration.opaque,
     )
     // Used for testing
-    internal val rootViewRedrawer: MetalRedrawer? get() = rootView.redrawer
+    val rootViewRedrawer: MetalRedrawer? get() = rootView.redrawer
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
-    internal var layers: UIKitComposeSceneLayersHolder? = null
-        private set
+    private var layers: UIKitComposeSceneLayersHolder? = null
     private val layoutDirection get() = getLayoutDirection()
     private var hasViewAppeared: Boolean = false
     private val motionDurationScale = MotionDurationScaleImpl()
