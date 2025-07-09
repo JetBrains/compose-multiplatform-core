@@ -53,7 +53,7 @@ internal class ComposeView(
     private var onDidMoveToWindow: (UIWindow?) -> Unit = {}
     private var onLayoutSubviews: () -> Unit = {}
 
-    internal val redrawer: MetalRedrawer? get() = metalView?.redrawer
+    val redrawer: MetalRedrawer? get() = metalView?.redrawer
 
     override fun canBecomeFirstResponder(): Boolean {
         return true
