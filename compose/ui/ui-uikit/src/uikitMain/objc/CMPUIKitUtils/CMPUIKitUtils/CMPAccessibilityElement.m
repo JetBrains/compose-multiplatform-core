@@ -89,18 +89,6 @@ NS_ASSUME_NONNULL_BEGIN
     [super accessibilityElementDidLoseFocus];
 }
 
-- (NSInteger)accessibilityElementCount {
-    return [super accessibilityElementCount];
-}
-
-- (NSInteger)indexOfAccessibilityElement:(nonnull id)element {
-    return [super indexOfAccessibilityElement:element];
-}
-
-- (id _Nullable)accessibilityElementAtIndex:(NSInteger)index {
-    return [super accessibilityElementAtIndex:index];
-}
-
 - (NSArray *)accessibilityElements {
     return [super accessibilityElements];
 }

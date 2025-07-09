@@ -53,12 +53,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)accessibilityPerformEscape;
 
-- (__nullable id)accessibilityElementAtIndex:(NSInteger)index;
-
-- (NSInteger)accessibilityElementCount;
-
-- (NSInteger)indexOfAccessibilityElement:(id)element;
-
 - (NSArray *)accessibilityElements;
 
 - (void)setAccessibilityElements:(nullable NSArray *)accessibilityElements;
