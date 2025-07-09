@@ -284,6 +284,7 @@ private sealed interface AccessibilityNode {
             get() = semanticsNode.unmergedConfig.contains(SemanticsProperties.Focused)
 
         override fun didBecomeFocused() {
+            mediator.scrollToAccessibilityElement(key)
             mediator.keyboardFocusedElementKey = key
         }
 
@@ -777,19 +778,29 @@ internal class AccessibilityMediator(
     private var scrollJob: Job? = null
 
     private val focusObserver = AccessibilityFocusedElementObserver { focusedElement ->
-        val listener = displayLinkListener ?: return@AccessibilityFocusedElementObserver
+        scrollToAccessibilityElement(focusedElement)
+        scheduleFocusedScrollableParentsIdsUpdate(focusedElement)
+    }
 
-        val scrollableContainer = findFirstAccessibilityElementInHierarchy(focusedElement) {
+    fun scrollToAccessibilityElement(key: AccessibilityElementKey) {
+        val element = accessibilityElementsMap[key] ?: return
+        scrollToAccessibilityElement(element)
+    }
+
+    private fun scrollToAccessibilityElement(element: NSObject) {
+        val listener = displayLinkListener ?: return
+
+        val scrollableContainer = findFirstAccessibilityElementInHierarchy(element) {
             it.node.semanticsNode.canScroll
         }
         if (scrollableContainer != null) {
             scrollJob?.cancel()
             val rect = when {
-                focusedElement is AccessibilityElement ->
-                    focusedElement.node.semanticsNode.unclippedBoundsInWindow
+                element is AccessibilityElement ->
+                    element.node.semanticsNode.unclippedBoundsInWindow
 
                 else ->
-                    focusedElement.accessibilityFrame.asDpRect()
+                    element.accessibilityFrame.asDpRect()
                         .toRect(scrollableContainer.node.semanticsNode.layoutNode.density)
             }
             scrollJob = CoroutineScope(coroutineContext + listener.frameClock).launch {
@@ -800,7 +811,6 @@ internal class AccessibilityMediator(
             }
         }
 
-        scheduleFocusedScrollableParentsIdsUpdate(focusedElement)
     }
 
     private fun iterateAccessibilityElementHierarchy(
