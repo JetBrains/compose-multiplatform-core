@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.window
 
-internal actual fun implicitOnWasmReady(block: () -> Unit) {
+internal actual fun onSkikoReady(block: () -> Unit) {
     // onWasmReady {} is not needed in k/wasm target, so NoOp
     block()
 }

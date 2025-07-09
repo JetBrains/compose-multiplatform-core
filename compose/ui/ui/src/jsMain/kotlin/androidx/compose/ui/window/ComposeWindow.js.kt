@@ -18,6 +18,6 @@ package androidx.compose.ui.window
 
 import org.jetbrains.skiko.wasm.onWasmReady
 
-internal actual fun implicitOnWasmReady(block: () -> Unit) {
+internal actual fun onSkikoReady(block: () -> Unit) {
     onWasmReady(block)
 }

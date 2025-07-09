@@ -50,6 +50,6 @@ expect internal fun InternalComposeViewport(
     content: @Composable () -> Unit = { }
 )
 
-// In K/JS target, the app can't start right away. We should wait until skiko.wasm is ready.
+// In K/JS target, an application can't start right away. We should wait until skiko.wasm is ready.
 // We'll do it implicitly, rather than asking the app developers to call it.
-expect internal fun implicitOnWasmReady(block: () -> Unit)
+expect internal fun onSkikoReady(block: () -> Unit)
