@@ -713,7 +713,7 @@ internal class AccessibilityMediator(
 ) {
     private var focusMode: AccessibilityElementFocusMode = AccessibilityElementFocusMode.None
 
-    var focusedNodesScrollableParentsIds = setOf<Int>()
+    var focusedNodesScrollableParentsIds: Set<Int> = setOf()
         private set(value) {
             if (field != value) {
                 field = value
