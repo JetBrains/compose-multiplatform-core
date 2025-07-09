@@ -26,5 +26,5 @@ import org.w3c.dom.HTMLElement
  */
 @InternalComposeUiApi
 val LocalActiveClipEventsTarget = staticCompositionLocalOf<() -> HTMLElement?> {
-    error("LocalActiveClipEventsTarget not provided")
+    { null }
 }
