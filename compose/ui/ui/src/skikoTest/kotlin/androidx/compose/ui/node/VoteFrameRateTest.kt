@@ -382,13 +382,12 @@ class VoteFrameRateTest {
 }
 
 private fun RootNodeOwner(
-    coroutineContext: CoroutineContext = EmptyCoroutineContext,
-    platformContext: PlatformContext = PlatformContext.Empty,
+    platformContext: PlatformContext = PlatformContext.Empty
 ) = RootNodeOwner(
     density = Density(1f),
     layoutDirection = LayoutDirection.Ltr,
     size = null,
-    coroutineContext = coroutineContext,
+    coroutineContext = EmptyCoroutineContext,
     platformContext = platformContext,
     snapshotInvalidationTracker = SnapshotInvalidationTracker {},
     inputHandler = ComposeSceneInputHandler(
