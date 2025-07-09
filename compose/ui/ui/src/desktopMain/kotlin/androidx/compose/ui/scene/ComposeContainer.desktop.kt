@@ -206,16 +206,16 @@ internal class ComposeContainer(
     private var isFocused = false
 
     init {
+        savedStateController.performAttach()
+        savedStateController.performRestore(savedState)
+        enableSavedStateHandles()
+
         setWindow(window)
         this.windowContainer = windowContainer
 
         if (layerType == LayerType.OnComponent && renderSettings !is RenderSettings.SwingGraphics) {
             error("LayerType.OnComponent can only be used with rendering via Swing graphics")
         }
-
-        savedStateController.performAttach()
-        savedStateController.performRestore(savedState)
-        enableSavedStateHandles()
     }
 
     /**
