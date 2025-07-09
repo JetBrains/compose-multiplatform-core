@@ -74,7 +74,7 @@ internal class FrameRateTest {
             waitUntil {
                 val frameDuration = redrawer.currentTargetFrameDuration
                 assertNotNull(frameDuration)
-                checkEqual(frameDuration, expectedFrameDuration, 1e-5)
+                checkEqual(expectedFrameDuration, frameDuration, 1e-5)
             }
         }
     }
@@ -103,9 +103,14 @@ internal class FrameRateTest {
     }
 }
 
-private fun checkEqual(a: Double, b: Double, absoluteTolerance: Double): Boolean {
-    return abs(a - b) <= absoluteTolerance
-}
+private fun checkEqual(expected: Double, actual: Double, absoluteTolerance: Double): Boolean =
+    try {
+        assertEquals(expected, actual, absoluteTolerance)
+        true
+    } catch (_: AssertionError) {
+        false
+    }
+
 
 @Composable
 private fun AlphaButton(frameRate: Float) {
