@@ -361,6 +361,7 @@ internal class RootNodeOwner(
         override val coroutineContext: CoroutineContext,
     ) : Owner {
         private val platformFocusOwner = object : PlatformFocusOwner {
+            var g = false
             override fun requestOwnerFocus(
                 focusDirection: FocusDirection?,
                 previouslyFocusedRect: Rect?
@@ -387,9 +388,7 @@ internal class RootNodeOwner(
                     // if focusDirection is forward/backward,
                     // it will move the focus after/before ComposePanel
                     if (platformContext.parentFocusManager.moveFocus(requestedFocusDirection)) {
-                        FocusRequester.Cancel
-                    } else {
-                        FocusRequester.Default
+                        cancelFocusChange()
                     }
                 }
             }
