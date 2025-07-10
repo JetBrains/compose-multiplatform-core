@@ -361,7 +361,6 @@ internal class RootNodeOwner(
         override val coroutineContext: CoroutineContext,
     ) : Owner {
         private val platformFocusOwner = object : PlatformFocusOwner {
-            var g = false
             override fun requestOwnerFocus(
                 focusDirection: FocusDirection?,
                 previouslyFocusedRect: Rect?
