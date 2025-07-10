@@ -69,7 +69,7 @@ class ComposeDialog : JDialog {
      */
     @ExperimentalComposeUiApi
     constructor(
-        owner: Window? = null,
+        owner: Window?,
         modalityType: ModalityType = ModalityType.MODELESS,
         graphicsConfiguration: GraphicsConfiguration? = null,
         skiaLayerAnalytics: SkiaLayerAnalytics = SkiaLayerAnalytics.Empty,
