@@ -87,9 +87,13 @@ open class JetbrainsExtensions(
         // so we check for an alternative name too.
         // Historically, we had such aliases only for the 'ios <-> uikit' pair.
         val altName = if (targetName.startsWith("ios")) {
-            targetName.replace("ios", "uikit")
+            targetName
+                .replace("iossimulator", "uikitsim")
+                .replace("ios", "uikit")
         } else if (targetName.startsWith("uikit")) {
-            targetName.replace("uikit", "ios")
+            targetName
+                .replace("uikitsim", "iossimulator")
+                .replace("uikit", "ios")
         } else {
             null
         }
