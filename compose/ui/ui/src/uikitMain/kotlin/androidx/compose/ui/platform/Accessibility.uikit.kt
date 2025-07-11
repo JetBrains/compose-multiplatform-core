@@ -813,6 +813,15 @@ internal class AccessibilityMediator(
 
     }
 
+    /**
+     * Iterates through the accessibility element hierarchy starting from the top element down to the root.
+     * For each element of type `AccessibilityElement` invokes [onElement] callback.
+     *
+     * @param element The starting point for the iteration in the hierarchy.
+     * @param onElement A callback function that is invoked for each `AccessibilityElement` encountered during the iteration.
+     * @return Returns `true` if the provided [element] located in the hierarchy of the tree of current [AccessibilityMediator],
+     * otherwise returns `false`.
+     */
     private fun iterateAccessibilityElementHierarchy(
         element: Any,
         onElement: (AccessibilityElement) -> Unit,
