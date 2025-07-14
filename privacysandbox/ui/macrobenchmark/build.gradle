@@ -5,10 +5,10 @@ plugins {
 }
 
 android {
-    namespace 'androidx.privacysandbox.ui.macrobenchmark'
+    namespace = "androidx.privacysandbox.ui.macrobenchmark"
 
     defaultConfig {
-        minSdk 23
+        minSdk = 23
     }
 
     privacySandbox {

@@ -58,7 +58,7 @@ index 64ca70606b5..c948188bbf1 100644
 +private fun AbiFunction.contextReceiverParametersCount(): Int =
 +    valueParameters.count { it.kind == AbiValueParameterKind.CONTEXT }
 diff --git a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
-index 13d986907ba..1803dfe1b2c 100644
+index 55bb041da54..483285ec065 100644
 --- a/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
 +++ b/binarycompatibilityvalidator/binarycompatibilityvalidator/src/main/java/androidx/binarycompatibilityvalidator/KLibDumpParser.kt
 @@ -31,9 +31,11 @@ import org.jetbrains.kotlin.library.abi.AbiProperty
@@ -131,9 +131,9 @@ index 13d986907ba..1803dfe1b2c 100644
              signatures = signaturesStub,
 -            annotations = emptySet(), // annotations aren't part of klib dumps
 +            annotations = AbiAnnotationListImpl.EMPTY, // annotations aren't part of klib dumps
-             isInline = false, // TODO
--            contextReceiverParametersCount = 0, // TODO
-+            // contextReceiverParametersCount = 0, // TODO
+             isInline = false, // inline constructors are not legal
+-            contextReceiverParametersCount = 0, // not allowed on constructors
++            // contextReceiverParametersCount = 0,  // not allowed on constructors
              valueParameters = valueParameters,
          )
      }
@@ -208,10 +208,10 @@ index 5e3d9d1ffef..d4f4b1850fb 100644
  
      @Test
 diff --git a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
-index 3f6716c183a..87db4f06894 100644
+index 6557853d536..8042bacdf98 100644
 --- a/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
 +++ b/buildSrc/private/src/main/kotlin/androidx/build/AndroidXMultiplatformExtension.kt
-@@ -48,7 +48,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+@@ -46,7 +46,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
  import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
  import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
  import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
@@ -220,7 +220,7 @@ index 3f6716c183a..87db4f06894 100644
  import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
  import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmTargetDsl
  import org.jetbrains.kotlin.gradle.targets.js.ir.DefaultIncrementalSyncTask
-@@ -802,15 +802,17 @@ private fun Project.configureNode() {
+@@ -801,15 +801,17 @@ private fun Project.configureNode() {
      }
  }
  
@@ -357,7 +357,7 @@ index 2ab99afd991..9efa72619e4 100644
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/internal/ComposableLambda.kt b/compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/internal/ComposableLambda.kt
-index 4a1bc0f1812..25646accd8d 100644
+index 614f4b4706c..7fede95df9d 100644
 --- a/compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/internal/ComposableLambda.kt
 +++ b/compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/internal/ComposableLambda.kt
 @@ -15,6 +15,7 @@
@@ -369,7 +369,7 @@ index 4a1bc0f1812..25646accd8d 100644
  package androidx.compose.runtime.internal
  
 diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
-index 715f5f44888..28196a6bf58 100644
+index 3ab8f8652d2..f70c428eea1 100644
 --- a/gradle/libs.versions.toml
 +++ b/gradle/libs.versions.toml
 @@ -52,7 +52,8 @@ kotlin19 = "1.9.24"
@@ -383,10 +383,10 @@ index 715f5f44888..28196a6bf58 100644
  kotlinGradlePluginAnnotations = "1.9.24"
  kotlinGradlePluginApi = "1.9.24"
 diff --git a/gradle/verification-keyring.keys b/gradle/verification-keyring.keys
-index 50231c427df..bcddb57893b 100644
+index de864f10426..24841d9c58b 100644
 --- a/gradle/verification-keyring.keys
 +++ b/gradle/verification-keyring.keys
-@@ -6218,6 +6218,31 @@ FJXLEW77wWHN+QpRD6BShYZDvUA2mtO0zlB8reU+VCxgnFfm66DkUg==
+@@ -6233,6 +6233,31 @@ FJXLEW77wWHN+QpRD6BShYZDvUA2mtO0zlB8reU+VCxgnFfm66DkUg==
  =jYDe
  -----END PGP PUBLIC KEY BLOCK-----
  
@@ -419,10 +419,10 @@ index 50231c427df..bcddb57893b 100644
  sub    9A347756830C4541
  -----BEGIN PGP PUBLIC KEY BLOCK-----
 diff --git a/gradle/verification-metadata.xml b/gradle/verification-metadata.xml
-index 83ef4c2bae4..b11cc8b2049 100644
+index b2da13c4478..74fc731c175 100644
 --- a/gradle/verification-metadata.xml
 +++ b/gradle/verification-metadata.xml
-@@ -196,6 +196,7 @@
+@@ -201,6 +201,7 @@
           <trusted-key id="3D11126EA77E4E07FBABB38614A84C976D265B25" group="com.google.protobuf"/>
           <trusted-key id="3DBC5D7DC2FB8DD68AA429BD353A436E043E3145" group="com.google.code.findbugs"/>
           <trusted-key id="3EB3846B3DC004C13883753CEEF9ECC7D5D90518" group="com.google.dagger"/>
@@ -430,7 +430,7 @@ index 83ef4c2bae4..b11cc8b2049 100644
           <trusted-key id="4021EEEAFF5DE8404DCD0A270AA3E5C3D232E79B" group="jakarta.inject" name="jakarta.inject-api"/>
           <trusted-key id="41A1A08C62FCA78B79D3081164A16FAAEC16A4BE" group="org.apache.commons" name="commons-math3"/>
           <trusted-key id="41CD49B4EF5876F9E9F691DABAC30622339994C4">
-@@ -719,6 +720,17 @@
+@@ -725,6 +726,17 @@
              <sha256 value="74bb0f3a80307c529421c3ed84517b8f543867709f41e53cd73df99e6442af4d" origin="Generated by Node" reason="Artifact is not signed. Remove when https://github.com/nodejs/node/issues/53917 is resolved"/>
           </artifact>
        </component>
@@ -448,7 +448,7 @@ index 83ef4c2bae4..b11cc8b2049 100644
        <component group="org.ow2" name="ow2" version="1.5">
           <artifact name="ow2-1.5.pom">
              <sha256 value="0f8a1b116e760b8fe6389c51b84e4b07a70fc11082d4f936e453b583dd50b43b" origin="Generated by Gradle" reason="Artifact is not signed"/>
-@@ -753,5 +765,20 @@
+@@ -759,5 +771,20 @@
              <sha256 value="4e54622f5dc0f8b6c51e28650268f001e3b55d076c8e3a9d9731c050820c0a3d" origin="Generated by Gradle" reason="Artifact is not signed"/>
           </artifact>
        </component>
@@ -502,7 +502,7 @@ index 9904e3f1337..d8b7f1a14b4 100644
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/privacysandbox/ui/ui-client/build.gradle b/privacysandbox/ui/ui-client/build.gradle
-index 0495ea8244d..a933575e679 100644
+index ca03bb13633..8fa90fb3df1 100644
 --- a/privacysandbox/ui/ui-client/build.gradle
 +++ b/privacysandbox/ui/ui-client/build.gradle
 @@ -21,6 +21,8 @@
@@ -514,17 +514,17 @@ index 0495ea8244d..a933575e679 100644
  import androidx.build.SoftwareType
  
  plugins {
-@@ -66,4 +68,5 @@ androidx {
+@@ -65,4 +67,5 @@ androidx {
      type = SoftwareType.PUBLISHED_LIBRARY
      inceptionYear = "2022"
      description = "show UI from a Runtime-aware SDK"
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/room/room-compiler-processing-testing/build.gradle b/room/room-compiler-processing-testing/build.gradle
-index f0cc0bb8dd3..d031e84bf90 100644
+index 20b0811c1ef..34eee6cda34 100644
 --- a/room/room-compiler-processing-testing/build.gradle
 +++ b/room/room-compiler-processing-testing/build.gradle
-@@ -97,5 +97,5 @@ androidx {
+@@ -96,5 +96,5 @@ androidx {
      type = SoftwareType.ANNOTATION_PROCESSOR_UTILS
      inceptionYear = "2020"
      description = "Testing helpers for Room XProcessing APIs"
@@ -559,7 +559,7 @@ index 4dfd3279019..d3a3e783d1b 100644
  /** Runs KAPT to run Java annotation processors. */
  internal class KaptCompilationStep(
 diff --git a/room/room-compiler-processing/build.gradle b/room/room-compiler-processing/build.gradle
-index 01071b4cb30..87872c941af 100644
+index d2f4d60ce1e..5facb6e7279 100644
 --- a/room/room-compiler-processing/build.gradle
 +++ b/room/room-compiler-processing/build.gradle
 @@ -78,5 +78,5 @@ androidx {
@@ -581,7 +581,7 @@ index d92247fc0e7..35eab41004d 100644
 +    kotlinTarget = KotlinTarget.KOTLIN_2_2
  }
 diff --git a/tracing/tracing-ktx/build.gradle b/tracing/tracing-ktx/build.gradle
-index 81c257c6b5c..6085ce6d9c9 100644
+index 0ec9c675271..731e6a7a72d 100644
 --- a/tracing/tracing-ktx/build.gradle
 +++ b/tracing/tracing-ktx/build.gradle
 @@ -21,6 +21,8 @@
@@ -593,7 +593,7 @@ index 81c257c6b5c..6085ce6d9c9 100644
  import androidx.build.SoftwareType
  
  plugins {
-@@ -39,6 +41,7 @@ androidx {
+@@ -38,6 +40,7 @@ androidx {
      type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
      inceptionYear = "2020"
      description = "Android Tracing"
@@ -602,7 +602,7 @@ index 81c257c6b5c..6085ce6d9c9 100644
  
  android {
 diff --git a/tracing/tracing/build.gradle b/tracing/tracing/build.gradle
-index 16e9a18d6a6..34205a72f01 100644
+index afe4e2318e0..1d80f3b4e80 100644
 --- a/tracing/tracing/build.gradle
 +++ b/tracing/tracing/build.gradle
 @@ -21,6 +21,8 @@
@@ -614,7 +614,7 @@ index 16e9a18d6a6..34205a72f01 100644
  import androidx.build.SoftwareType
  import androidx.build.PlatformIdentifier
  import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-@@ -105,4 +107,5 @@ androidx {
+@@ -104,4 +106,5 @@ androidx {
      deviceTests {
          enableAlsoRunningOnPhysicalDevices = true
      }

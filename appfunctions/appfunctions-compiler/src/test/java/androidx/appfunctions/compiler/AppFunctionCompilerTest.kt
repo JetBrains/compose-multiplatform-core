@@ -872,4 +872,17 @@ class AppFunctionCompilerTest {
             goldenFileName = "functionWithEmptySerializable_app_function_dynamic_schema.xml",
         )
     }
+
+    @Test
+    fun testAppFunctionWithOptionalNonNullSerializable_fail() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("AppFunctionWithOptionalNonNullSerializable.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            "Type com.testdata.SerializableData cannot be optional",
+        )
+    }
 }

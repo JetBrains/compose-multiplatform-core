@@ -32,6 +32,7 @@ import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
+import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -187,7 +188,7 @@ class PerceivedResolutionManager(
                     pose = Pose(Vector3(0.5f, 0f, 0.1f)),
                 )
 
-            mMovableComponent = MovableComponent.create(session)
+            mMovableComponent = MovableComponent.createSystemMovable(session)
             mPanelEntity!!.addComponent(mMovableComponent!!)
 
             // Start the periodic update for perceived resolution

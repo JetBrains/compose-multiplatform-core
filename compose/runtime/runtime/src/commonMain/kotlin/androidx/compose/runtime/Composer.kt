@@ -374,7 +374,9 @@ internal constructor(
  * @see movableContentOf
  */
 @InternalComposeApi
-public class MovableContent<P>(public val content: @Composable (parameter: P) -> Unit)
+public class MovableContent<P>(public val content: @Composable (parameter: P) -> Unit) {
+    internal var used: Boolean = false
+}
 
 /**
  * A Compose compiler plugin API. DO NOT call directly.
@@ -3424,6 +3426,7 @@ internal class ComposerImpl(
         )
     }
 
+    @OptIn(ExperimentalComposeApi::class)
     private fun invokeMovableContentLambda(
         content: MovableContent<Any?>,
         locals: PersistentCompositionLocalMap,
@@ -3455,7 +3458,11 @@ internal class ComposerImpl(
             // Either insert a place-holder to be inserted later (either created new or moved from
             // another location) or (re)compose the movable content. This is forced if a new value
             // needs to be created as a late change.
-            if (inserting && !force) {
+            if (
+                inserting &&
+                    !force &&
+                    (!ComposeRuntimeFlags.isMovableContentUsageTrackingEnabled || content.used)
+            ) {
                 writerHasAProvider = true
 
                 // Create an anchor to the movable group
@@ -3475,6 +3482,7 @@ internal class ComposerImpl(
             } else {
                 val savedProvidersInvalid = providersInvalid
                 providersInvalid = providersChanged
+                content.used = true
                 invokeComposable(this, { content.content(parameter) })
                 providersInvalid = savedProvidersInvalid
             }

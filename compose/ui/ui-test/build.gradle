@@ -29,12 +29,15 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.ui.test"
+        androidResources.enable = true
+    }
     desktop()
     mac()
     ios()
@@ -241,11 +244,6 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
     }
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.ui.test"
 }
 
 androidx {

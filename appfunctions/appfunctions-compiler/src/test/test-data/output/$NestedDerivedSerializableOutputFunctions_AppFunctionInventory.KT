@@ -38,7 +38,8 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
     private val REFERENCE_RESPONSE_VALUE_TYPE: AppFunctionReferenceTypeMetadata =
         AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedDerivedSerializable",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -48,13 +49,15 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGBASENAME:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 8,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTEDBASE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedBaseSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -74,25 +77,29 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
             properties = COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.NestedBaseSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedBaseSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_LONGBASEVALUE:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 6,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_NESTEDDERIVED:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedDerivedSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP:
@@ -112,7 +119,8 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
             properties = COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP,
             required = COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.NonNestedChildSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST:
@@ -125,13 +133,15 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
         AppFunctionAllOfTypeMetadata = AppFunctionAllOfTypeMetadata(
             matchAll = COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST,
             qualifiedName = "com.testdata.NonNestedChildSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDDERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NonNestedChildSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDDERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST:
@@ -143,7 +153,8 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
         AppFunctionAllOfTypeMetadata = AppFunctionAllOfTypeMetadata(
             matchAll = COM_TESTDATA_NESTEDDERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST,
             qualifiedName = "com.testdata.NestedDerivedSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -177,13 +188,15 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
     private val ARRAY_RESPONSE_VALUE_TYPE_REFERENCE_ITEM_TYPE: AppFunctionReferenceTypeMetadata =
         AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedDerivedSerializable",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val ARRAY_RESPONSE_VALUE_TYPE: AppFunctionArrayTypeMetadata =
         AppFunctionArrayTypeMetadata(
             itemType = ARRAY_RESPONSE_VALUE_TYPE_REFERENCE_ITEM_TYPE,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -193,13 +206,15 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_STRINGBASENAME:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 8,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTEDBASE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedBaseSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -219,25 +234,29 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
             properties = COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_NESTEDBASESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.NestedBaseSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedBaseSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_LONGBASEVALUE:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 6,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_NESTEDDERIVED:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NestedDerivedSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP:
@@ -257,7 +276,8 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
             properties = COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP,
             required = COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.NonNestedChildSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST:
@@ -270,13 +290,15 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
         AppFunctionAllOfTypeMetadata = AppFunctionAllOfTypeMetadata(
             matchAll = COM_TESTDATA_NONNESTEDCHILDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST,
             qualifiedName = "com.testdata.NonNestedChildSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDDERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.NonNestedChildSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_NESTEDDERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST:
@@ -288,7 +310,8 @@ public class `$NestedDerivedSerializableOutputFunctions_AppFunctionInventory` : 
         AppFunctionAllOfTypeMetadata = AppFunctionAllOfTypeMetadata(
             matchAll = COM_TESTDATA_NESTEDDERIVEDSERIALIZABLE_ALL_OF_DATA_TYPE_MATCH_ALL_LIST,
             qualifiedName = "com.testdata.NestedDerivedSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =

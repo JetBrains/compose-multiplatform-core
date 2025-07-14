@@ -51,10 +51,9 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
     namespace = "androidx.xr.arcore"
-    sourceSets.main.resources.srcDirs += "src/main/resources"
 }
 
 androidx {

@@ -36,7 +36,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -53,7 +54,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -63,7 +65,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTED:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -81,7 +84,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
             properties = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -110,13 +114,15 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
         AppFunctionArrayTypeMetadata(
             itemType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -133,7 +139,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -143,7 +150,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTED:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -161,7 +169,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
             properties = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -190,13 +199,15 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE: AppFunctionArrayTypeMetadata =
         AppFunctionArrayTypeMetadata(
             itemType = PARAMETER_METADATA_SERIALIZABLE_ARRAY_DATA_TYPE_REFERENCE_ITEM_TYPE,
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -213,7 +224,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -223,7 +235,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTED:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -241,7 +254,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
             properties = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =
@@ -270,7 +284,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PARAMETER_METADATA_SERIALIZABLE_REFERENCE_DATA_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val SERIALIZABLE_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -287,7 +302,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -297,7 +313,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP_NESTED:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -315,7 +332,8 @@ public class `$RecursiveSerializableInputFunctions_AppFunctionInventory` : AppFu
             properties = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_RECURSIVESERIALIZABLE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.RecursiveSerializable",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =

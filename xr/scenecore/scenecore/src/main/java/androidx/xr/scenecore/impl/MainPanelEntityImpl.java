@@ -39,7 +39,6 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
-    Activity mRuntimeActivity;
 
     // Note that we expect the Node supplied here to be the WindowLeash node.
     MainPanelEntityImpl(
@@ -48,8 +47,7 @@ final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
             XrExtensions extensions,
             EntityManager entityManager,
             ScheduledExecutorService executor) {
-        super(node, extensions, entityManager, executor);
-        mRuntimeActivity = activity;
+        super(activity, node, extensions, entityManager, executor);
 
         // Read the Pixel dimensions for the primary panel off the Activity's WindowManager.
         //   Note that this requires MinAPI 30.
@@ -64,7 +62,7 @@ final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
     }
 
     private Rect getBoundsFromWindowManager() {
-        return mRuntimeActivity.getWindowManager().getCurrentWindowMetrics().getBounds();
+        return getActivity().getWindowManager().getCurrentWindowMetrics().getBounds();
     }
 
     @Override
@@ -92,10 +90,6 @@ final class MainPanelEntityImpl extends BasePanelEntity implements PanelEntity {
         super.setSizeInPixels(dimensions);
         // TODO: b/376934871 - Check async results.
         mExtensions.setMainWindowSize(
-                mRuntimeActivity,
-                dimensions.width,
-                dimensions.height,
-                Runnable::run,
-                (result) -> {});
+                getActivity(), dimensions.width, dimensions.height, Runnable::run, (result) -> {});
     }
 }

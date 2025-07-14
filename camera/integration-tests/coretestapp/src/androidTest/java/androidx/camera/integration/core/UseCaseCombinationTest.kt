@@ -17,9 +17,12 @@ package androidx.camera.integration.core
 
 import android.Manifest
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
+import android.os.Build
 import android.util.Rational
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION
 import androidx.camera.core.AspectRatio
 import androidx.camera.core.AspectRatio.Ratio
 import androidx.camera.core.Camera
@@ -34,6 +37,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
+import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.resolutionselector.AspectRatioStrategy
 import androidx.camera.core.resolutionselector.ResolutionSelector
@@ -60,6 +64,7 @@ import androidx.camera.video.VideoCapabilities
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth
@@ -872,6 +877,87 @@ class UseCaseCombinationTest(
         // Act & assert.
         imageCapture.waitForCapturing()
     }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+    fun canPopulateStreamUseCaseStreamSpecOption_sequentialBindFourUseCases() {
+        assumeTrue(isStreamUseCaseSupported())
+        // Arrange.
+        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageCapture, imageAnalysis))
+
+        // Bind Preview and verify
+        bindUseCases(preview)
+        // PREVIEW_VIDEO_STILL is selected for single preview use case in the beginning
+        verifyStreamSpecStreamUseCase(preview, StreamUseCase.PREVIEW_VIDEO_STILL)
+
+        // Bind additional ImageCapture and verify
+        bindUseCases(preview, imageCapture)
+        // PREVIEW is re-selected for preview use case after imageCapture is bound
+        verifyStreamSpecStreamUseCase(preview, StreamUseCase.PREVIEW)
+        verifyStreamSpecStreamUseCase(imageCapture, StreamUseCase.STILL_CAPTURE)
+
+        // Bind additional ImageAnalysis and verify
+        bindUseCases(preview, imageCapture, imageAnalysis)
+        verifyStreamSpecStreamUseCase(preview, StreamUseCase.PREVIEW)
+        verifyStreamSpecStreamUseCase(imageCapture, StreamUseCase.STILL_CAPTURE)
+        verifyStreamSpecStreamUseCase(imageAnalysis, StreamUseCase.PREVIEW)
+
+        checkAndPrepareVideoCaptureSources()
+        assumeTrue(
+            camera.isUseCasesCombinationSupported(
+                preview,
+                imageCapture,
+                imageAnalysis,
+                videoCapture,
+            )
+        )
+
+        // Bind additional VideoCapture and verify
+        bindUseCases(preview, imageCapture, imageAnalysis, videoCapture)
+        verifyStreamSpecStreamUseCase(imageCapture, StreamUseCase.STILL_CAPTURE)
+        verifyStreamSpecStreamUseCase(imageAnalysis, StreamUseCase.PREVIEW)
+        // StreamSharing is enabled and preview and videoCapture stream use case will be null.
+        verifyStreamSpecStreamUseCase(preview, null)
+        verifyStreamSpecStreamUseCase(videoCapture, null)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
+    fun canPopulateStreamUseCaseStreamSpecOption_sequentialBindImageAnalysisAndPreview() {
+        assumeTrue(isStreamUseCaseSupported())
+        // Arrange.
+        assumeTrue(camera.isUseCasesCombinationSupported(preview, imageAnalysis))
+
+        // Bind ImageAnalysis and verify
+        bindUseCases(imageAnalysis)
+        // PREVIEW_VIDEO_STILL is selected for single imageAnalysis use case in the beginning
+        verifyStreamSpecStreamUseCase(imageAnalysis, StreamUseCase.PREVIEW_VIDEO_STILL)
+
+        // Bind additional Preview and verify
+        bindUseCases(imageAnalysis, preview)
+        // PREVIEW is re-selected for imageAnalysis use case after preview is bound
+        verifyStreamSpecStreamUseCase(imageAnalysis, StreamUseCase.PREVIEW)
+        verifyStreamSpecStreamUseCase(preview, StreamUseCase.PREVIEW)
+    }
+
+    private fun isStreamUseCaseSupported(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val characteristics = CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)
+            characteristics?.get(CameraCharacteristics.SCALER_AVAILABLE_STREAM_USE_CASES)?.let {
+                return it.isNotEmpty()
+            }
+        }
+        return false
+    }
+
+    private fun verifyStreamSpecStreamUseCase(useCase: UseCase, streamUseCase: StreamUseCase?) {
+        assertThat(useCase.getStreamUseCaseTypeValue()).isEqualTo(streamUseCase?.value)
+    }
+
+    private fun UseCase.getStreamUseCaseTypeValue(): Long? =
+        attachedStreamSpec
+            ?.implementationOptions
+            ?.retrieveOption(STREAM_USE_CASE_STREAM_SPEC_OPTION, null)
 
     private fun initPreview(
         monitor: PreviewMonitor,

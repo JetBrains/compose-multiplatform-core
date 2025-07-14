@@ -56,10 +56,11 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialCurvedRow
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -123,7 +124,7 @@ class CurvedPanelAndRowApp : ComponentActivity() {
                     modifier =
                         SubspaceModifier.width(800.dp).fillMaxHeight().padding(horizontal = 20.dp)
                 ) {
-                    MainPanel(modifier = SubspaceModifier.fillMaxSize())
+                    SpatialMainPanel(modifier = SubspaceModifier.fillMaxSize())
                 }
                 SpatialColumn(modifier = SubspaceModifier.width(200.dp).fillMaxHeight()) {
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Right")
@@ -171,7 +172,7 @@ class CurvedPanelAndRowApp : ComponentActivity() {
     @SuppressLint("SetTextI18n")
     @Composable
     fun ViewBasedAppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
-        SpatialPanel(
+        SpatialAndroidViewPanel(
             factory = { context ->
                 TextView(context).apply {
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)

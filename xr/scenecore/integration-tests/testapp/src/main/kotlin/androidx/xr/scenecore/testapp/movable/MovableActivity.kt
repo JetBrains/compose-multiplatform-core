@@ -32,8 +32,8 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorPlacement
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.EntityMoveListener
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.MoveListener
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.PlaneOrientation
 import androidx.xr.scenecore.PlaneSemanticType
@@ -63,7 +63,7 @@ class MovableActivity : AppCompatActivity() {
     private var anchorable = false
     private var movableComponent: MovableComponent? = null
     private val executor = Executors.newSingleThreadExecutor()
-    private var planeTypeFilter: MutableSet<Int> = mutableSetOf()
+    private var planeOrientationFilter: MutableSet<Int> = mutableSetOf()
     private var planeSemanticFilter: MutableSet<Int> = mutableSetOf()
 
     companion object {
@@ -151,7 +151,7 @@ class MovableActivity : AppCompatActivity() {
     }
 
     private fun setupAnchorPlacementCheckboxes(view: View, movablePanelEntity: Entity) {
-        val planeTypeCheckboxMap =
+        val planeOrientationCheckboxMap =
             mapOf(
                 view.findViewById<CheckBox>(R.id.planetype_any_checkbox) to PlaneOrientation.ANY,
                 view.findViewById<CheckBox>(R.id.planetype_horizontal_checkbox) to
@@ -173,14 +173,14 @@ class MovableActivity : AppCompatActivity() {
                     PlaneSemanticType.FLOOR,
             )
 
-        for ((planeView, planeType) in planeTypeCheckboxMap) {
+        for ((planeView, planeOrientation) in planeOrientationCheckboxMap) {
             if (planeView.isChecked) {
-                planeTypeFilter.add(planeType)
+                planeOrientationFilter.add(planeOrientation)
             }
             planeView.setOnCheckedChangeListener { _, isChecked: Boolean ->
                 when (isChecked) {
-                    true -> planeTypeFilter.add(planeType)
-                    false -> planeTypeFilter.remove(planeType)
+                    true -> planeOrientationFilter.add(planeOrientation)
+                    false -> planeOrientationFilter.remove(planeOrientation)
                 }
                 replaceMovableComponent(movablePanelEntity)
             }
@@ -203,50 +203,45 @@ class MovableActivity : AppCompatActivity() {
     private fun replaceMovableComponent(movablePanelEntity: Entity) {
         movableComponent?.let { movablePanelEntity.removeComponent(it) }
         val anchorPlacementSet: MutableSet<AnchorPlacement> = mutableSetOf()
+
         if (anchorable) {
             anchorPlacementSet.add(
-                AnchorPlacement.createForPlanes(planeTypeFilter, planeSemanticFilter)
+                AnchorPlacement.createForPlanes(planeOrientationFilter, planeSemanticFilter)
             )
-        }
-
-        movableComponent =
-            MovableComponent.create(session!!, systemMovable, scaleInZ, anchorPlacementSet)
-        movableComponent?.let {
-            if (!movablePanelEntity.addComponent(it)) {
-                Log.e(TAG, "Error adding Movable component to parentedMovableEntity")
-            }
-            it.addMoveListener(
-                executor,
-                object : MoveListener {
-                    override fun onMoveUpdate(
-                        entity: Entity,
-                        currentInputRay: Ray,
-                        currentPose: Pose,
-                        currentScale: Float,
-                    ) {
-                        if (!systemMovable) {
+            movableComponent = MovableComponent.createAnchorable(session!!, anchorPlacementSet)
+        } else if (systemMovable) {
+            movableComponent = MovableComponent.createSystemMovable(session!!, scaleInZ)
+        } else {
+            movableComponent =
+                MovableComponent.createCustomMovable(
+                    session!!,
+                    scaleInZ,
+                    executor,
+                    object : EntityMoveListener {
+                        override fun onMoveUpdate(
+                            entity: Entity,
+                            currentInputRay: Ray,
+                            currentPose: Pose,
+                            currentScale: Float,
+                        ) {
                             entity.setPose(currentPose)
                             entity.setScale(currentScale)
                         }
-                    }
 
-                    override fun onMoveEnd(
-                        entity: Entity,
-                        finalInputRay: Ray,
-                        finalPose: Pose,
-                        finalScale: Float,
-                        updatedParent: Entity?,
-                    ) {
-                        if (!systemMovable) {
-                            entity.setPose(finalPose)
-                            entity.setScale(finalScale)
+                        override fun onMoveEnd(
+                            entity: Entity,
+                            finalInputRay: Ray,
+                            finalPose: Pose,
+                            finalScale: Float,
+                            updatedParent: Entity?,
+                        ) {
+                            if (updatedParent != null) {
+                                Log.i(TAG, "Panel parent is updated to: $updatedParent")
+                            }
                         }
-                        if (updatedParent != null) {
-                            Log.i(TAG, "Panel parent is updated to: $updatedParent")
-                        }
-                    }
-                },
-            )
+                    },
+                )
         }
+        movablePanelEntity.addComponent(movableComponent!!)
     }
 }

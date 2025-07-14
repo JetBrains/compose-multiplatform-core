@@ -1549,10 +1549,9 @@ private class MutableEntries<K, V>(private val parent: MutableScatterMap<K, V>) 
             override fun next(): MutableMap.MutableEntry<K, V> = iterator.next()
 
             override fun remove() {
-                if (current != -1) {
-                    parent.removeValueAt(current)
-                    current = -1
-                }
+                check(current != -1) { "Call next() before removing element from the iterator." }
+                parent.removeValueAt(current)
+                current = -1
             }
         }
 
@@ -1635,10 +1634,9 @@ private class MutableKeys<K, V>(private val parent: MutableScatterMap<K, V>) : M
             }
 
             override fun remove() {
-                if (current >= 0) {
-                    parent.removeValueAt(current)
-                    current = -1
-                }
+                check(current != -1) { "Call next() before removing element from the iterator." }
+                parent.removeValueAt(current)
+                current = -1
             }
         }
 
@@ -1710,10 +1708,9 @@ private class MutableValues<K, V>(private val parent: MutableScatterMap<K, V>) :
             }
 
             override fun remove() {
-                if (current >= 0) {
-                    parent.removeValueAt(current)
-                    current = -1
-                }
+                check(current != -1) { "Call next() before removing element from the iterator." }
+                parent.removeValueAt(current)
+                current = -1
             }
         }
 

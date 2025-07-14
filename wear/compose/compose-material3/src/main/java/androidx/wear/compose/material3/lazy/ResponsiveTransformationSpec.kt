@@ -419,7 +419,13 @@ internal class ResponsiveTransformationSpecImpl(
         painter: Painter,
         shape: Shape,
         border: BorderStroke?,
-    ): Painter = BackgroundPainter(shape = shape, border = border, backgroundPainter = painter)
+    ): Painter =
+        BackgroundPainter(
+            height = { itemHeight },
+            shape = shape,
+            border = border,
+            backgroundPainter = painter,
+        )
 }
 
 private fun lerp(

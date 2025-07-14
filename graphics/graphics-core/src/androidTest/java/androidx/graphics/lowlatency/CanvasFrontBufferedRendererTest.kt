@@ -57,7 +57,8 @@ import org.junit.runner.RunWith
 @SmallTest
 class CanvasFrontBufferedRendererTest {
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testFrontBufferedLayerRender() {
         val renderLatch = AtomicReference<CountDownLatch?>()
@@ -182,7 +183,8 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testMultiBufferedLayerRender() {
         val renderLatch = AtomicReference<CountDownLatch?>()
@@ -264,7 +266,8 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testRenderMultiBufferLayer() {
         val squareSize = 100f
@@ -368,7 +371,8 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testCancelFrontBufferLayerRender() {
         val squareSize = 100f
@@ -540,7 +544,8 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testMultiBufferedContentsNotPersisted() {
         val screenWidth = SurfaceViewTestActivity.WIDTH
@@ -635,19 +640,23 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testParentLayerRotate90() = parentLayerRotationTest(UiAutomation.ROTATION_FREEZE_90)
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testParentLayerRotate180() = parentLayerRotationTest(UiAutomation.ROTATION_FREEZE_180)
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testParentLayerRotate270() = parentLayerRotationTest(UiAutomation.ROTATION_FREEZE_270)
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testParentLayerRotate0() = parentLayerRotationTest(UiAutomation.ROTATION_FREEZE_0)
 
@@ -1091,7 +1100,8 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testMultiBufferedLayerRenderWithDisplayP3() {
         val displayP3ColorSpace = ColorSpace.get(ColorSpace.Named.DISPLAY_P3)
@@ -1206,7 +1216,8 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testFrontBufferRenderWhileCommitPendingExecutes() {
         val commitLatch = AtomicReference<CountDownLatch?>()
@@ -1270,7 +1281,8 @@ class CanvasFrontBufferedRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testCommitWhileCommitPendingExecutes() {
         val commitLatch = AtomicReference<CountDownLatch?>()

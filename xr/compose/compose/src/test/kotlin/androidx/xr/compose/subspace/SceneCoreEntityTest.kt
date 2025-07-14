@@ -44,6 +44,7 @@ import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.PanelEntity
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -416,6 +417,7 @@ class SceneCoreEntityTest {
             .assertHeightIsEqualTo(200.dp)
     }
 
+    @Ignore // b/427806050
     @Test
     fun sceneCoreEntity_factoryAndUpdate_areCalledTheAppropriateNumberOfTimes() {
         var factoryCalled = 0

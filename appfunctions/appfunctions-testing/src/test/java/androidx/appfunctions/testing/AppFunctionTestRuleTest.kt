@@ -65,7 +65,7 @@ class AppFunctionTestRuleTest {
                     .take(1)
                     .toList()
 
-            assertThat(results.single()).hasSize(8)
+            assertThat(results.single().single().appFunctions).hasSize(8)
         }
 
     @Test(timeout = 5000)
@@ -94,10 +94,20 @@ class AppFunctionTestRuleTest {
             runBlocking(Dispatchers.Default) { emittedValues.take(2).collect {} }
             assertThat(emittedValues.replayCache).hasSize(2)
             // Assert first result to be default value.
-            assertThat(emittedValues.replayCache[0].single { it.id == functionIdToTest }.isEnabled)
+            assertThat(
+                    emittedValues.replayCache[0]
+                        .flatMap { it.appFunctions }
+                        .single { it.id == functionIdToTest }
+                        .isEnabled
+                )
                 .isFalse()
             // Assert next update has updated value.
-            assertThat(emittedValues.replayCache[1].single { it.id == functionIdToTest }.isEnabled)
+            assertThat(
+                    emittedValues.replayCache[1]
+                        .flatMap { it.appFunctions }
+                        .single { it.id == functionIdToTest }
+                        .isEnabled
+                )
                 .isTrue()
         }
 
@@ -115,7 +125,7 @@ class AppFunctionTestRuleTest {
                     .take(1)
                     .toList()
 
-            assertThat(results.single().map { it.id })
+            assertThat(results.single().flatMap { it.appFunctions }.map { it.id })
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
@@ -130,7 +140,7 @@ class AppFunctionTestRuleTest {
                     .take(1)
                     .toList()
 
-            assertThat(results.single()).hasSize(8)
+            assertThat(results.single().single().appFunctions).hasSize(8)
         }
 
     @Test(timeout = 5000)
@@ -147,7 +157,7 @@ class AppFunctionTestRuleTest {
                     .take(1)
                     .toList()
 
-            assertThat(results.single().map { it.id })
+            assertThat(results.single().flatMap { it.appFunctions }.map { it.id })
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
@@ -165,7 +175,7 @@ class AppFunctionTestRuleTest {
                     .take(1)
                     .toList()
 
-            assertThat(results.single().map { it.id })
+            assertThat(results.single().flatMap { it.appFunctions }.map { it.id })
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 

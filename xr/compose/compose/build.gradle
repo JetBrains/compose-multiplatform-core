@@ -73,7 +73,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
     namespace = "androidx.xr.compose"
 }
@@ -83,7 +83,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Compose libraries for the androidx.xr namespace."
-    // b/384785925
-    metalavaK2UastEnabled = false
     enableRobolectric()
 }

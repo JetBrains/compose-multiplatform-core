@@ -42,6 +42,7 @@ import androidx.pdf.view.PdfView
 import androidx.pdf.view.fastscroll.FastScrollDrawer
 import androidx.pdf.view.fastscroll.FastScroller
 import androidx.pdf.viewer.fragment.R as PdfR
+import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.GeneralClickAction
@@ -149,18 +150,18 @@ class PdfViewerFragmentV2TestSuite {
         onView(withId(PdfR.id.pdfView)).perform(swipeUp())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
 
-        // Espresso will wait on the idling resource on the next action performed hence adding a
-        // click which is essentially a no-op
-        onView(withId(PdfR.id.pdfView)).perform(click())
+        // Cause Espresso to wait for IdlingResources before performing the assertion below
+        // which doesn't use Espresso APIs.
+        Espresso.onIdle()
         // Check if the scrubber is visible
         withPdfView(scenario) { _, _, fastScrollThumb ->
             assertTrue(fastScrollThumb.alpha == FastScrollDrawer.VISIBLE_ALPHA)
         }
 
         // Scrubber should auto hide after animation and delay ends
-        val totalTimeForScubberToHide =
+        val totalTimeForScrubberToHide =
             FastScroller.HIDE_ANIMATION_DURATION_MILLIS + FastScroller.HIDE_DELAY_MS
-        onView(isRoot()).perform(waitFor(totalTimeForScubberToHide))
+        onView(isRoot()).perform(waitFor(totalTimeForScrubberToHide))
         withPdfView(scenario) { _, _, fastScrollThumb ->
             assertTrue(fastScrollThumb.alpha == FastScrollDrawer.GONE_ALPHA)
         }
@@ -169,16 +170,16 @@ class PdfViewerFragmentV2TestSuite {
         onView(withId(PdfR.id.pdfView)).perform(swipeDown())
         scenario.onFragment { it.pdfScrollIdlingResource.increment() }
 
-        // Espresso will wait on the idling resource on the next action performed hence adding a
-        // click which is essentially a no-op
-        onView(withId(PdfR.id.pdfView)).perform(click())
+        // Cause Espresso to wait for IdlingResources before performing the assertion below
+        // which doesn't use Espresso APIs.
+        Espresso.onIdle()
         withPdfView(scenario) { _, _, fastScrollThumb ->
             assertTrue(fastScrollThumb.alpha == FastScrollDrawer.VISIBLE_ALPHA)
         }
 
         // Actions for scrolling by the scrubber
-        var fastScrollScrubberClick: GeneralClickAction? = null
-        var fastScrollScrubberSwipe: GeneralSwipeAction? = null
+        lateinit var fastScrollScrubberClick: GeneralClickAction
+        lateinit var fastScrollScrubberSwipe: GeneralSwipeAction
 
         // Used to compute the location of scrubber on view and set the gesture values
         withPdfView(scenario) { _, pdfView, fastScrollThumb ->
@@ -225,8 +226,8 @@ class PdfViewerFragmentV2TestSuite {
             )
         }
 
-        onView(isRoot()).perform(fastScrollScrubberClick!!)
-        onView(isRoot()).perform(fastScrollScrubberSwipe!!)
+        onView(isRoot()).perform(fastScrollScrubberClick)
+        onView(isRoot()).perform(fastScrollScrubberSwipe)
 
         withPdfView(scenario) { _, pdfView, _ ->
             assertPageIndicatorLabel(
@@ -584,6 +585,7 @@ class PdfViewerFragmentV2TestSuite {
 
         // PDF Link coordinates for sample link PDF
         val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
+
         onView(withId(PdfR.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
 
         val capturedIntent = Intents.getIntents().firstOrNull()
@@ -756,8 +758,7 @@ class PdfViewerFragmentV2TestSuite {
                 "Fast scroll thumb cannot be null",
                 fragment.getPdfViewInstance().fastScrollVerticalThumbDrawable,
             )
-            val fastScrollThumb = fragment.getPdfViewInstance().fastScrollVerticalThumbDrawable!!
-            assertNotNull("Fast scroll thumbnail cannot be null", fastScrollThumb)
+            val fastScrollThumb = fragment.getPdfViewInstance().fastScrollVerticalThumbDrawable
             callback(fragment, fragment.getPdfViewInstance(), fastScrollThumb)
         }
     }

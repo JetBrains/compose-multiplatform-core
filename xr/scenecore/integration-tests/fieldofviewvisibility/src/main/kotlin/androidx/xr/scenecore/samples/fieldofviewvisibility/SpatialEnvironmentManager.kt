@@ -35,7 +35,6 @@ import androidx.xr.scenecore.SpatialEnvironment
 import androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference
 import androidx.xr.scenecore.scene
 import java.nio.file.Paths
-import kotlinx.coroutines.guava.await
 
 /** Manage the UI for the Spatial Environment. */
 class SpatialEnvironmentManager(private val session: Session) {
@@ -62,9 +61,7 @@ class SpatialEnvironmentManager(private val session: Session) {
             groundGeo = GltfModel.create(session, Paths.get("models", "GroundGeometry.glb"))
         }
         LaunchedEffect(Unit) {
-            blueSkybox =
-                ExrImage.createFromZipAsync(session, Paths.get("skyboxes", "BlueSkybox.zip"))
-                    .await()
+            blueSkybox = ExrImage.createFromZip(session, Paths.get("skyboxes", "BlueSkybox.zip"))
         }
 
         Row(modifier = Modifier.fillMaxWidth()) {

@@ -185,7 +185,7 @@ class PerceivedResolutionManager(
                                 pose = Pose(Vector3(0.5f, 0f, 0.1f)),
                             )
 
-                        mMovableComponent = MovableComponent.create(session)
+                        mMovableComponent = MovableComponent.createSystemMovable(session)
                         val unused = mPanelEntity!!.addComponent(mMovableComponent!!)
 
                         // Start the periodic update for perceived resolution

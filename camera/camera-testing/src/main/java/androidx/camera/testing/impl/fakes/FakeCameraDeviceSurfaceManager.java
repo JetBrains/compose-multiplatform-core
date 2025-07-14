@@ -42,7 +42,6 @@ import androidx.camera.core.streamsharing.StreamSharingConfig;
 import androidx.camera.video.impl.VideoCaptureConfig;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,7 +79,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     }
 
     @Override
-    public @Nullable SurfaceConfig transformSurfaceConfig(
+    public @NonNull SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,

@@ -76,6 +76,7 @@ class IndirectTouchEventTest {
                 offset.y,
                 0, // metaState
             )
+        motionEvent.source = SOURCE_TOUCH_NAVIGATION
 
         val indirectTouchEvent = IndirectTouchEvent(motionEvent)
 
@@ -85,6 +86,7 @@ class IndirectTouchEventTest {
         assertThat(indirectTouchEvent.type)
             .isEqualTo(convertActionToIndirectTouchEventType(motionEvent.actionMasked))
         assertThat(indirectTouchEvent.nativeEvent).isEqualTo(motionEvent)
+        assertThat(indirectTouchEvent.primaryAxis).isEqualTo(IndirectTouchEventPrimaryAxis.X)
     }
 
     @Test
@@ -243,6 +245,14 @@ class IndirectTouchEventTest {
         }
 
         rule.runOnIdle { assertThat(receivedEvent?.position).isEqualTo(Offset(10f, 10f)) }
+        rule.runOnIdle {
+            // Because the Device (containing the motion range) can't be set from the [MotionEvent],
+            // the default values for the motion ranges are null, so the scroll axis is unspecified.
+            // If you want to see tests of the scroll ranges (for primary axis), view the mocked
+            // tests in [IndirectTouchEventWithInputDeviceMockTest].
+            assertThat(receivedEvent?.primaryAxis)
+                .isEqualTo(IndirectTouchEventPrimaryAxis.Unspecified)
+        }
     }
 
     @Test

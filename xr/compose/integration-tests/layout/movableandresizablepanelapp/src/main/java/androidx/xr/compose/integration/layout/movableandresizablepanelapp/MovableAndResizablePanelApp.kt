@@ -38,9 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -155,7 +156,7 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                         PanelContent("[STANDARD] Middle Column Panel: $dynamicValue")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    MainPanel(
+                    SpatialMainPanel(
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
@@ -177,7 +178,7 @@ class MovableAndResizablePanelApp : ComponentActivity() {
                         PanelContent("[STANDARD] Right Column Panel: $dynamicValue")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent =
                             Intent(this@MovableAndResizablePanelApp, AnotherActivity::class.java),
                         modifier =

@@ -20,6 +20,8 @@ import android.Manifest
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
@@ -358,7 +360,7 @@ class SessionTest {
     }
 
     @Test
-    fun destroy_resumed_setsLifecycleToStopped() {
+    fun destroy_resumed_setsLifecycleToDestroyed() {
         activityController.create().start().resume()
         underTest = createSession()
 
@@ -369,7 +371,7 @@ class SessionTest {
     }
 
     @Test
-    fun destroy_setsPlatformAdapterToStopped() {
+    fun destroy_setsPlatformAdapterToDestroyed() {
         activityController.create().start().resume()
         underTest = createSession()
 
@@ -430,6 +432,22 @@ class SessionTest {
 
             assertThat(job.isCancelled).isTrue()
         }
+
+    @Test
+    fun destroy_activityDestroyedWithCustomLifecycleOwner_setsLifecycleToDestroyed() {
+        activityController.create().start().resume()
+        val lifecycleOwner =
+            object : LifecycleOwner {
+                override val lifecycle: Lifecycle
+                    get() = LifecycleRegistry(this)
+            }
+        underTest = (Session.create(activity, lifecycleOwner) as SessionCreateSuccess).session
+
+        activityController.destroy()
+
+        val lifecycleManager = underTest.runtime.lifecycleManager as FakeLifecycleManager
+        assertThat(lifecycleManager.state).isEqualTo(FakeLifecycleManager.State.DESTROYED)
+    }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {
         val result = Session.create(activity, coroutineDispatcher)

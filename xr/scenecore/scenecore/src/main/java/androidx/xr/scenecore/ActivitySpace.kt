@@ -18,7 +18,6 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivitySpace as RtActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.math.BoundingBox
@@ -29,12 +28,12 @@ import java.util.concurrent.Executor
 import java.util.function.Consumer
 
 /**
- * ActivitySpace is an Entity used to track the system-managed pose and boundary of the volume
- * associated with this Spatialized Activity. The Application cannot directly control this volume,
- * but the system might update it in response to the User moving it or entering or exiting FullSpace
- * mode.
+ * ActivitySpace is an [Entity] used to track the system-managed pose and boundary of the volume
+ * associated with a spatialized Activity. The Application cannot directly control this volume, but
+ * the system might update it in response to the User moving it or entering or exiting Full Space
+ * Mode.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Suppress("HiddenSuperclass")
 public class ActivitySpace
 private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManager) :
     BaseEntity<RtActivitySpace>(rtActivitySpace, entityManager) {
@@ -50,42 +49,47 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
         ConcurrentMap<Consumer<FloatSize3d>, RtActivitySpace.OnBoundsChangedListener> =
         ConcurrentHashMap()
 
-    /**
-     * The listener registered when using the deprecated registerOnBoundsChangedListener method. We
-     * keep this reference so it can be removed using the corresponding unregister method.
-     */
-    // TODO: b/370538244 - remove with deprecated spatial state callbacks
-    private var registeredBoundsListener: Consumer<FloatSize3d>? = null
+    private val spaceUpdatedListeners: ConcurrentMap<Runnable, Executor?> = ConcurrentHashMap()
 
-    /**
-     * Retrieves a copy of the current bounds of this ActivitySpace.
-     *
-     * @return [FloatSize3d] representing the current bounds of this ActivitySpace.
-     */
-    // TODO b/370618648: remove suppression after API review is complete.
-    public fun getBounds(): FloatSize3d = rtEntity.bounds.toFloatSize3d()
+    private val rtSpaceUpdatedListener = {
+        for ((listener, executor) in spaceUpdatedListeners.entries) {
+            if (executor == null) {
+                // The rtListener requested the default executor, so we can directly invoke.
+                listener.run()
+            } else {
+                executor.execute { listener.run() }
+            }
+        }
+    }
+
+    /** The current bounds of this ActivitySpace. */
+    public var bounds: FloatSize3d
+        get() = rtEntity.bounds.toFloatSize3d()
+        private set(value) {} // not used, but required by the compiler
 
     /**
      * Adds the given [Consumer] as a listener to be invoked when this ActivitySpace's current
-     * boundary changes. [Consumer#accept(Dimensions)] will be invoked on the main thread.
+     * boundary changes.
+     *
+     * [Consumer.accept] will be invoked on the main thread.
      *
      * @param listener The Consumer to be invoked when this ActivitySpace's current boundary
      *   changes.
      */
-    // TODO b/370618648: remove suppression after API review is complete.
-    public fun addBoundsChangedListener(listener: Consumer<FloatSize3d>): Unit =
-        addBoundsChangedListener(HandlerExecutor.mainThreadExecutor, listener)
+    public fun addOnBoundsChangedListener(listener: Consumer<FloatSize3d>): Unit =
+        addOnBoundsChangedListener(HandlerExecutor.mainThreadExecutor, listener)
 
     /**
      * Adds the given [Consumer] as a listener to be invoked when this ActivitySpace's current
-     * boundary changes. [Consumer#accept(Dimensions)] will be invoked on the given executor.
+     * boundary changes.
+     *
+     * [Consumer.accept] will be invoked on the given executor.
      *
      * @param callbackExecutor The executor on which to invoke the listener on.
      * @param listener The Consumer to be invoked when this ActivitySpace's current boundary
      *   changes.
      */
-    // TODO b/370618648: remove suppression after API review is complete.
-    public fun addBoundsChangedListener(
+    public fun addOnBoundsChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<FloatSize3d>,
     ) {
@@ -93,13 +97,10 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
             RtActivitySpace.OnBoundsChangedListener { rtDimensions ->
                 callbackExecutor.execute { listener.accept(rtDimensions.toFloatSize3d()) }
             }
-        boundsListeners.compute(
-            listener,
-            { _, _ ->
-                rtEntity.addOnBoundsChangedListener(rtListener)
-                rtListener
-            },
-        )
+        boundsListeners.compute(listener) { _, _ ->
+            rtEntity.addOnBoundsChangedListener(rtListener)
+            rtListener
+        }
     }
 
     /**
@@ -108,53 +109,57 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      *
      * @param listener The Consumer to be removed from receiving updates.
      */
-    // TODO b/370618648: remove suppression after API review is complete.
-    public fun removeBoundsChangedListener(listener: Consumer<FloatSize3d>): Unit {
-        boundsListeners.computeIfPresent(
-            listener,
-            { _, rtListener ->
-                rtEntity.removeOnBoundsChangedListener(rtListener)
-                null // returning null from computeIfPresent removes this entry from the Map
-            },
-        )
-    }
-
-    /**
-     * Sets a callback to be invoked when the bounds of the ActivitySpace change. The callback will
-     * be dispatched on the UI thread.
-     *
-     * @param listener A ((Dimensions) -> Unit) callback, where Dimensions are in meters.
-     */
-    // TODO: b/370538244 - remove with deprecated spatial state callbacks
-    @Suppress("Deprecation")
-    @Deprecated(message = "use addBoundsChangedListener(Consumer<Dimensions>)")
-    public fun registerOnBoundsChangedListener(listener: OnBoundsChangeListener) {
-        if (registeredBoundsListener != null) unregisterOnBoundsChangedListener()
-        registeredBoundsListener =
-            Consumer<FloatSize3d> { bounds -> listener.onBoundsChanged(bounds) }
-        addBoundsChangedListener(registeredBoundsListener!!)
-    }
-
-    /** Clears the listener set by [registerOnBoundsChangedListener]. */
-    // TODO: b/370538244 - remove with deprecated spatial state callbacks
-    @Deprecated(message = "use removeBoundsChangedListener(Consumer<Dimensions>)")
-    public fun unregisterOnBoundsChangedListener() {
-        if (registeredBoundsListener != null) {
-            removeBoundsChangedListener(registeredBoundsListener!!)
-            registeredBoundsListener = null
+    public fun removeOnBoundsChangedListener(listener: Consumer<FloatSize3d>) {
+        boundsListeners.computeIfPresent(listener) { _, rtListener ->
+            rtEntity.removeOnBoundsChangedListener(rtListener)
+            null // returning null from computeIfPresent removes this entry from the Map
         }
     }
 
     /**
-     * Registers a listener to be called when the underlying space has moved or changed.
+     * Adds a listener to be called when the ActivitySpace's origin has moved or changed, typically
+     * due to an internal system event.
      *
-     * @param listener The listener to register if non-null, else stops listening if null.
-     * @param executor The executor to run the listener on. Defaults to SceneCore executor if null.
+     * When this event occurs, any [ScenePose] that is not a child of ActivitySpace, such as
+     * [AnchorEntity] and [CameraView], will have a different position relative to the
+     * [ActivitySpace]. Therefore, this listener can be used to indicate when to invalidate any
+     * cached information about the relative difference in Pose between ActivitySpace's children and
+     * children of non-ActivitySpace ScenePoses.
+     *
+     * @param listener The listener to register.
+     * @param executor The [Executor] on which to run the listener.
      */
-    @JvmOverloads
-    @Suppress("ExecutorRegistration")
-    public fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor? = null) {
-        rtEntity.setOnSpaceUpdatedListener(listener, executor)
+    public fun addOnSpaceUpdatedListener(executor: Executor, listener: Runnable) {
+        val addRtListener = spaceUpdatedListeners.isEmpty()
+        spaceUpdatedListeners.put(listener, executor)
+        if (addRtListener) {
+            rtEntity.setOnSpaceUpdatedListener(rtSpaceUpdatedListener, null)
+        }
+    }
+
+    /**
+     * Adds a listener to be called when the ActivitySpace's origin has moved or changed, typically
+     * due to an internal system event.
+     *
+     * When this event occurs, any [ScenePose] that is not a child of ActivitySpace, such as
+     * [AnchorEntity] and [CameraView], will have a different position relative to the
+     * [ActivitySpace]. Therefore, this listener can be used to indicate when to invalidate any
+     * cached information about the relative difference in Pose between ActivitySpace's children and
+     * children of non-ActivitySpace ScenePoses.
+     *
+     * The callback will be made on the SceneCore executor.
+     *
+     * @param listener The listener to register.
+     */
+    public fun addOnSpaceUpdatedListener(listener: Runnable): Unit =
+        addOnSpaceUpdatedListener(DirectExecutor, listener)
+
+    /** Removes the previously-added listener. */
+    public fun removeOnSpaceUpdatedListener(listener: Runnable) {
+        spaceUpdatedListeners.remove(listener)
+        if (spaceUpdatedListeners.isEmpty()) {
+            rtEntity.setOnSpaceUpdatedListener(null, null)
+        }
     }
 
     /**
@@ -166,11 +171,4 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
      */
     public val recommendedContentBoxInFullSpace: BoundingBox =
         rtEntity.recommendedContentBoxInFullSpace
-}
-
-// TODO: b/370538244 - remove with deprecated spatial state callbacks
-@Deprecated(message = "Use addBoundsChangedListener(Consumer<Dimensions>)")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun interface OnBoundsChangeListener {
-    public fun onBoundsChanged(bounds: FloatSize3d) // Dimensions are in meters.
 }

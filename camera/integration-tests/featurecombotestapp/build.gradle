@@ -63,11 +63,6 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-    defaultConfig {
-        targetSdkVersion 35
-        minSdkVersion 21
-    }
-
-    namespace "androidx.camera.integration.featurecombotestapp"
+    compileSdk = 35
+    namespace = "androidx.camera.integration.featurecombotestapp"
 }

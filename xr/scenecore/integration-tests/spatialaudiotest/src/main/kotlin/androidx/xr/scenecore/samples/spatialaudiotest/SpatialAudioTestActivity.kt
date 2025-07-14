@@ -72,7 +72,7 @@ class SpatialAudioTestActivity : AppCompatActivity() {
                 Pose(Vector3(0F, 0F, 0.5F)),
             )
 
-        val movableComponent = MovableComponent.create(session, scaleInZ = false)
+        val movableComponent = MovableComponent.createSystemMovable(session, scaleInZ = false)
         val unused = soundEntity.addComponent(movableComponent)
 
         val pointSourceParams = PointSourceParams(soundEntity)

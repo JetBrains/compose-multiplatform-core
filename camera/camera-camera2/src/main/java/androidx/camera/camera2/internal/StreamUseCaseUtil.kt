@@ -59,7 +59,11 @@ public object StreamUseCaseUtil {
             if (Build.VERSION.SDK_INT >= 33) {
                 put(
                     SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL.toLong(),
-                    setOf(CaptureType.PREVIEW, CaptureType.METERING_REPEATING),
+                    setOf(
+                        CaptureType.PREVIEW,
+                        CaptureType.METERING_REPEATING,
+                        CaptureType.IMAGE_ANALYSIS,
+                    ),
                 )
                 put(
                     SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong(),

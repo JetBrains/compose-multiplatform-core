@@ -180,8 +180,8 @@ class FakePerceptionManagerTest {
                 underTest.detachAnchor(anchor)
             }
 
-            override fun persistAnchor(anchor: Anchor) {
-                underTest.persistAnchor(anchor)
+            override fun onAnchorPersisted(anchor: Anchor) {
+                underTest.onAnchorPersisted(anchor)
             }
 
             override val trackingState = TrackingState.TRACKING

@@ -99,7 +99,7 @@ public class SpatialEnvironment(private val runtime: JxrPlatformAdapter) {
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         @JvmOverloads
-        internal constructor(
+        public constructor(
             skybox: ExrImage?,
             geometry: GltfModel?,
             geometryMaterial: Material?,

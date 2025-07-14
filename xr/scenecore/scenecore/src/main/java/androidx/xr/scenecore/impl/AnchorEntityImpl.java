@@ -19,6 +19,7 @@ package androidx.xr.scenecore.impl;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -114,6 +115,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     static AnchorEntityImpl createSemanticAnchor(
+            Context context,
             Node node,
             Dimensions dimensions,
             PlaneType planeType,
@@ -132,6 +134,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         anchorCreationData.mPlaneSemantic = planeSemantic;
         anchorCreationData.mAnchorSearchDeadline = getAnchorDeadline(anchorSearchTimeout);
         return new AnchorEntityImpl(
+                context,
                 node,
                 anchorCreationData,
                 activitySpace,
@@ -143,6 +146,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     static AnchorEntityImpl createPersistedAnchor(
+            Context context,
             Node node,
             UUID uuid,
             Duration anchorSearchTimeout,
@@ -157,6 +161,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         anchorCreationData.mUuid = uuid;
         anchorCreationData.mAnchorSearchDeadline = getAnchorDeadline(anchorSearchTimeout);
         return new AnchorEntityImpl(
+                context,
                 node,
                 anchorCreationData,
                 activitySpace,
@@ -168,6 +173,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     static AnchorEntityImpl createAnchorFromPlane(
+            Context context,
             Node node,
             Plane plane,
             Pose planeOffsetPose,
@@ -184,6 +190,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         anchorCreationData.mPlaneOffsetPose = planeOffsetPose;
         anchorCreationData.mPlaneDataTimeNs = planeDataTimeNs;
         return new AnchorEntityImpl(
+                context,
                 node,
                 anchorCreationData,
                 activitySpace,
@@ -195,6 +202,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     static AnchorEntityImpl createAnchorFromRuntimeAnchor(
+            Context context,
             Node node,
             androidx.xr.runtime.internal.Anchor anchor,
             ActivitySpace activitySpace,
@@ -207,6 +215,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         anchorCreationData.mAnchorCreationType = AnchorCreationData.ANCHOR_CREATION_RUNTIME_ANCHOR;
         anchorCreationData.mRuntimeAnchor = anchor;
         return new AnchorEntityImpl(
+                context,
                 node,
                 anchorCreationData,
                 activitySpace,
@@ -218,6 +227,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     }
 
     protected AnchorEntityImpl(
+            Context context,
             Node node,
             AnchorCreationData anchorCreationData,
             ActivitySpace activitySpace,
@@ -226,7 +236,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
             EntityManager entityManager,
             ScheduledExecutorService executor,
             PerceptionLibrary perceptionLibrary) {
-        super(node, extensions, entityManager, executor);
+        super(context, node, extensions, entityManager, executor);
         mPerceptionLibrary = perceptionLibrary;
 
         try (NodeTransaction transaction = extensions.createNodeTransaction()) {

@@ -85,17 +85,44 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
 
         if (shouldExtendRange(e)) {
             extendSelectionRange(item);
-        } else {
-            if (shouldClearSelection(e, item)) {
-                mSelectionTracker.clearSelection();
-            }
-            if (mSelectionTracker.isSelected(item.getSelectionKey())) {
-                if (mSelectionTracker.deselect(item.getSelectionKey())) {
+            return;
+        }
+
+        K key = item.getSelectionKey();
+        int hotspotness = MotionEvents.isCtrlKeyPressed(e)
+                ? ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI
+                : item.classifySelectionHotspot(e);
+
+        switch (hotspotness) {
+            case ItemDetails.SELECTION_HOTSPOT_OUTSIDE:
+                if (!mSelectionTracker.isSelected(key)) {
+                    focusItem(item);
+                } else if (mSelectionTracker.deselect(key)) {
                     mFocusDelegate.clearFocus();
                 }
-            } else {
-                selectOrFocusItem(item, e);
-            }
+                return;
+
+            case ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI:
+                if (!mSelectionTracker.isSelected(key)) {
+                    selectItem(item);
+                } else if (mSelectionTracker.deselect(key)) {
+                    mFocusDelegate.clearFocus();
+                }
+                return;
+
+            case ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_SOLO:
+                boolean wasTheOnlyThingSelected = mSelectionTracker.isSelected(key)
+                        && (mSelectionTracker.getSelection().size() == 1);
+                mSelectionTracker.clearSelection();
+                if (!wasTheOnlyThingSelected) {
+                    selectItem(item);
+                }
+                return;
+
+            case ItemDetails.SELECTION_HOTSPOT_INSIDE_CLEAR_AND_THEN_SET:
+                mSelectionTracker.clearSelection();
+                selectItem(item);
+                return;
         }
     }
 
@@ -121,7 +148,15 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
             mSelectionTracker.startRange(mFocusDelegate.getFocusedPosition());
             mSelectionTracker.extendRange(item.getPosition());
         } else {
-            selectOrFocusItem(item, e);
+            int hotspotness = MotionEvents.isCtrlKeyPressed(e)
+                    ? ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI
+                    : item.classifySelectionHotspot(e);
+
+            if (hotspotness == ItemDetails.SELECTION_HOTSPOT_OUTSIDE) {
+                focusItem(item);
+            } else {
+                selectItem(item);
+            }
         }
         return true;
     }
@@ -147,13 +182,5 @@ final class MouseInputHandler<K> extends MotionInputHandler<K> {
         // since the handler might want to show a context menu
         // in an empty area or some other weirdo view.
         return mOnContextClickListener.onContextClick(e);
-    }
-
-    private void selectOrFocusItem(@NonNull ItemDetails<K> item, @NonNull MotionEvent e) {
-        if (item.inSelectionHotspot(e) || MotionEvents.isCtrlKeyPressed(e)) {
-            selectItem(item);
-        } else {
-            focusItem(item);
-        }
     }
 }

@@ -60,8 +60,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.scene
-import kotlin.math.max
-import kotlin.math.min
 import kotlinx.coroutines.android.awaitFrame
 
 private val LocalIsInApplicationSubspace: ProvidableCompositionLocal<Boolean> =

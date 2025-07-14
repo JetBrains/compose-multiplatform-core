@@ -25,6 +25,7 @@ import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.internal.AppFunctionReader
 import androidx.appfunctions.internal.findImpl
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.service.internal.AppFunctionInventory
@@ -75,7 +76,7 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
 
     override fun searchAppFunctions(
         searchFunctionSpec: AppFunctionSearchSpec
-    ): Flow<List<AppFunctionMetadata>> =
+    ): Flow<List<AppFunctionPackageMetadata>> =
         packageToFunctionMetadataMapState.map { packageToFunctionMetadataMap ->
             packageToFunctionMetadataMap
                 .filterKeys {
@@ -115,6 +116,10 @@ internal class FakeAppFunctionReader(context: Context) : AppFunctionReader {
                                 response = metadata.staticMetadata.response,
                                 components = metadata.staticMetadata.components,
                             )
+                        }
+                        .groupBy { it.packageName }
+                        .map { (packageName, appFunctions) ->
+                            AppFunctionPackageMetadata(packageName, appFunctions)
                         }
                 }
         }

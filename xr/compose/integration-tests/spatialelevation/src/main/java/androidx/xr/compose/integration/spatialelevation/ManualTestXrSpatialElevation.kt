@@ -217,7 +217,7 @@ private fun App() {
     // TODO(b/344599930): Issue with rendering rounded corners of elevated panel.
     if (showPopup) {
         SpatialPopup(alignment = Alignment.Center, onDismissRequest = { showPopup = false }) {
-            Box(Modifier.size(150.dp, 50.dp).background(Color.White, RoundedCornerShape(16.dp))) {
+            Box(Modifier.background(Color.White, RoundedCornerShape(16.dp))) {
                 Text("This is a popup: click anywhere to exit", modifier = Modifier.padding(10.dp))
             }
         }

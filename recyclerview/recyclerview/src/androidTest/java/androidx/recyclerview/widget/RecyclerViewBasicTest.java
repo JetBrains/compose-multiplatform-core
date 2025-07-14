@@ -60,6 +60,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -688,6 +689,74 @@ public class RecyclerViewBasicTest {
         assertEquals(1, mockLayoutManager.mItemsChangedCount);
     }
 
+    @Test
+    public void setAdapter_callsCorrectAdapterListenerMethods() throws Throwable {
+        MockOnAdapterChangeListener firstAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockOnAdapterChangeListener secondAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockAdapter firstAdapter = new MockAdapter(0);
+        MockAdapter secondAdapter = new MockAdapter(0);
+        mRecyclerView.addOnAdapterChangeListener(firstAdapterListener);
+        mRecyclerView.addOnAdapterChangeListener(secondAdapterListener);
+
+        mRecyclerView.setAdapter(firstAdapter);
+        mRecyclerView.setAdapter(secondAdapter);
+
+        assertEquals(1, firstAdapterListener.mAdapterChangedCount);
+        assertNull(firstAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, firstAdapterListener.mNewAdapter);
+        assertEquals(1, secondAdapterListener.mAdapterChangedCount);
+        assertNull(secondAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, secondAdapterListener.mNewAdapter);
+    }
+
+    @Test
+    public void swapAdapter_callsCorrectAdapterListenerMethods() throws Throwable {
+        MockOnAdapterChangeListener firstAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockOnAdapterChangeListener secondAdapterListener = new MockOnAdapterChangeListener() {
+            @Override
+            public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                    RecyclerView.@Nullable Adapter<?> newAdapter) {
+                super.onAdapterChanged(oldAdapter, newAdapter);
+                mRecyclerView.removeOnAdapterChangeListener(this);
+            }
+        };
+        MockAdapter firstAdapter = new MockAdapter(0);
+        MockAdapter secondAdapter = new MockAdapter(0);
+        mRecyclerView.addOnAdapterChangeListener(firstAdapterListener);
+        mRecyclerView.addOnAdapterChangeListener(secondAdapterListener);
+
+        mRecyclerView.swapAdapter(firstAdapter, true);
+        mRecyclerView.swapAdapter(secondAdapter, true);
+
+        assertEquals(1, firstAdapterListener.mAdapterChangedCount);
+        assertNull(firstAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, firstAdapterListener.mNewAdapter);
+        assertEquals(1, secondAdapterListener.mAdapterChangedCount);
+        assertNull(secondAdapterListener.mOldAdapter);
+        assertSame(firstAdapter, secondAdapterListener.mNewAdapter);
+    }
+
     static class MockLayoutManager extends RecyclerView.LayoutManager {
 
         int mLayoutCount = 0;
@@ -856,6 +925,23 @@ public class RecyclerViewBasicTest {
         public Object mItem;
         public MockViewHolder(View itemView) {
             super(itemView);
+        }
+    }
+
+    static class MockOnAdapterChangeListener implements RecyclerView.OnAdapterChangeListener {
+
+        int mAdapterChangedCount = 0;
+
+        RecyclerView.Adapter<?> mOldAdapter;
+
+        RecyclerView.Adapter<?> mNewAdapter;
+
+        @Override
+        public void onAdapterChanged(RecyclerView.@Nullable Adapter<?> oldAdapter,
+                RecyclerView.@Nullable Adapter<?> newAdapter) {
+            mOldAdapter = oldAdapter;
+            mNewAdapter = newAdapter;
+            mAdapterChangedCount++;
         }
     }
 

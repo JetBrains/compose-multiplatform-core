@@ -24,6 +24,7 @@ import androidx.annotation.OptIn as JavaOptIn
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraFilter
+import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraInfoUnavailableException
 import androidx.camera.core.CameraSelector
@@ -58,7 +59,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.futures.FutureCallback
 import androidx.camera.core.impl.utils.futures.FutureChain
 import androidx.camera.core.impl.utils.futures.Futures
-import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.core.util.Preconditions
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -81,8 +81,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
     private var cameraX: CameraX? = null
     @VisibleForTesting internal var context: Context? = null
     @GuardedBy("mLock")
-    private val cameraInfoMap: MutableMap<CameraUseCaseAdapter.CameraId, AdapterCameraInfo> =
-        HashMap()
+    private val cameraInfoMap: MutableMap<CameraIdentifier, AdapterCameraInfo> = HashMap()
     private val lifecycleCameraKeys = HashSet<LifecycleCameraRepository.Key>()
     override var configImplType = CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_UNKNOWN
 
@@ -587,13 +586,16 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                     getCameraInfo(secondaryCameraSelector) as AdapterCameraInfo
             }
 
-            val cameraId =
-                CameraUseCaseAdapter.generateCameraId(
+            // This identifier must be constructed identically to the one inside
+            // CameraUseCaseAdapter
+            // to ensure a correct lookup in the repository. It acts as the key.
+            val cameraUseCaseAdapterId =
+                CameraIdentifier.fromAdapterInfos(
                     primaryAdapterCameraInfo,
                     secondaryAdapterCameraInfo,
                 )
             var lifecycleCameraToBind =
-                lifecycleCameraRepository.getLifecycleCamera(lifecycleOwner, cameraId)
+                lifecycleCameraRepository.getLifecycleCamera(lifecycleOwner, cameraUseCaseAdapterId)
 
             // Check if there's another camera that has already been bound.
             val lifecycleCameras = lifecycleCameraRepository.lifecycleCameras
@@ -647,7 +649,9 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 cameraX!!.cameraFactory.cameraCoordinator,
             )
 
-            lifecycleCameraKeys.add(LifecycleCameraRepository.Key.create(lifecycleOwner, cameraId))
+            lifecycleCameraKeys.add(
+                LifecycleCameraRepository.Key.create(lifecycleOwner, cameraUseCaseAdapterId)
+            )
 
             return@trace lifecycleCameraToBind
         }
@@ -659,8 +663,9 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
             val cameraConfig = getCameraConfig(cameraSelector, cameraInfoInternal)
 
             val key =
-                CameraUseCaseAdapter.CameraId.create(
+                CameraIdentifier.create(
                     cameraInfoInternal.cameraId,
+                    null,
                     cameraConfig.compatibilityId,
                 )
             var adapterCameraInfo: AdapterCameraInfo?
@@ -668,7 +673,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider {
                 adapterCameraInfo = cameraInfoMap[key]
                 if (adapterCameraInfo == null) {
                     adapterCameraInfo = AdapterCameraInfo(cameraInfoInternal, cameraConfig)
-                    cameraInfoMap[key] = adapterCameraInfo!!
+                    cameraInfoMap[key] = adapterCameraInfo
                 }
             }
 

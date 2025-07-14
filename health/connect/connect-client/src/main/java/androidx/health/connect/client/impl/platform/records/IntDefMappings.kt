@@ -21,7 +21,6 @@ package androidx.health.connect.client.impl.platform.records
 
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
@@ -577,7 +576,6 @@ internal fun Int.toPlatformActivityIntensityType(): Int {
 internal val PLATFORM_TO_SDK_ACTIVITY_INTENSITY_TYPE: Map<Int, Int> =
     SDK_TO_PLATFORM_ACTIVITY_INTENSITY_TYPE.reversed()
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 internal val SDK_TO_PLATFORM_MINDFULNESS_SESSION_TYPE: Map<Int, Int> =
     mapOf(
         MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING to
@@ -597,7 +595,6 @@ internal fun Int.toPlatformMindfulnessSessionType(): Int {
         ?: PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN
 }
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 internal val PLATFORM_TO_SDK_MINDFULNESS_SESSION_TYPE: Map<Int, Int> =
     SDK_TO_PLATFORM_MINDFULNESS_SESSION_TYPE.reversed()
 
@@ -818,7 +815,6 @@ internal fun Int.toSdkActivityIntensityType(): Int {
         ?: ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE
 }
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 internal fun Int.toSdkMindfulnessSessionType(): Int {
     return PLATFORM_TO_SDK_MINDFULNESS_SESSION_TYPE[this]
         ?: MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN

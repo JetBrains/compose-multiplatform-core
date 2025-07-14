@@ -19,6 +19,7 @@ package androidx.camera.lifecycle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
+import androidx.camera.core.CameraIdentifier;
 import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SessionConfig;
@@ -38,6 +39,8 @@ import com.google.auto.value.AutoValue;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -93,6 +96,12 @@ final class LifecycleCameraRepository {
     @Nullable
     CameraCoordinator mCameraCoordinator;
 
+    /**
+     * A custom annotation to indicate that a CameraIdentifier should be from a CameraUseCaseAdapter
+     */
+    @Retention(RetentionPolicy.SOURCE)
+    @interface FromUseCaseAdapter {}
+
     @VisibleForTesting
     LifecycleCameraRepository() {
         // LifecycleCameraRepository is designed to be used as a singleton and the constructor
@@ -115,7 +124,7 @@ final class LifecycleCameraRepository {
      * LifecycleOwner}.
      *
      * @param lifecycleOwner       to associate with the LifecycleCamera
-     * @param cameraUseCaseAdaptor the CameraUseCaseAdapter to wrap in a LifecycleCamera
+     * @param cameraUseCaseAdapter the CameraUseCaseAdapter to wrap in a LifecycleCamera
      * @throws IllegalArgumentException if the LifecycleOwner is already in a destroyed state or
      *                                  if the repository already contains a LifecycleCamera that
      *                                  has the same LifecycleOwner and
@@ -123,18 +132,18 @@ final class LifecycleCameraRepository {
      */
     LifecycleCamera createLifecycleCamera(
             @NonNull LifecycleOwner lifecycleOwner,
-            @NonNull CameraUseCaseAdapter cameraUseCaseAdaptor) {
+            @NonNull CameraUseCaseAdapter cameraUseCaseAdapter) {
         LifecycleCamera lifecycleCamera;
         synchronized (mLock) {
-            Key key = Key.create(lifecycleOwner, cameraUseCaseAdaptor.getCameraId());
+            Key key = Key.create(lifecycleOwner, cameraUseCaseAdapter.getAdapterIdentifier());
             Preconditions.checkArgument(mCameraMap.get(key) == null, "LifecycleCamera already "
                     + "exists for the given LifecycleOwner and set of cameras");
 
             // Need to add observer before creating LifecycleCamera to make sure
             // it can be stopped before the latest active one is started.'
-            lifecycleCamera = new LifecycleCamera(lifecycleOwner, cameraUseCaseAdaptor);
+            lifecycleCamera = new LifecycleCamera(lifecycleOwner, cameraUseCaseAdapter);
             // Suspend the LifecycleCamera if there is no use case bound.
-            if (cameraUseCaseAdaptor.getUseCases().isEmpty()) {
+            if (cameraUseCaseAdapter.getUseCases().isEmpty()) {
                 lifecycleCamera.suspend();
             }
 
@@ -152,14 +161,16 @@ final class LifecycleCameraRepository {
      * Get the {@link LifecycleCamera} which contains the same LifecycleOwner and a
      * CameraUseCaseAdapter.CameraId.
      *
+     * @param cameraUseCaseAdapterIdentifier The identifier obtained from
+     * {@link CameraUseCaseAdapter#getAdapterIdentifier()}.
      * @return null if no such LifecycleCamera exists.
      */
     @Nullable
     LifecycleCamera getLifecycleCamera(LifecycleOwner lifecycleOwner,
-            CameraUseCaseAdapter.@NonNull CameraId cameraId
+            @NonNull @FromUseCaseAdapter CameraIdentifier cameraUseCaseAdapterIdentifier
     ) {
         synchronized (mLock) {
-            return mCameraMap.get(Key.create(lifecycleOwner, cameraId));
+            return mCameraMap.get(Key.create(lifecycleOwner, cameraUseCaseAdapterIdentifier));
         }
     }
 
@@ -215,7 +226,7 @@ final class LifecycleCameraRepository {
         synchronized (mLock) {
             LifecycleOwner lifecycleOwner = lifecycleCamera.getLifecycleOwner();
             Key key = Key.create(lifecycleOwner,
-                    lifecycleCamera.getCameraUseCaseAdapter().getCameraId());
+                    lifecycleCamera.getCameraUseCaseAdapter().getAdapterIdentifier());
 
             LifecycleCameraRepositoryObserver observer =
                     getLifecycleCameraRepositoryObserver(lifecycleOwner);
@@ -244,7 +255,7 @@ final class LifecycleCameraRepository {
         synchronized (mLock) {
             LifecycleOwner lifecycleOwner = lifecycleCamera.getLifecycleOwner();
             Key key = Key.create(lifecycleOwner,
-                    lifecycleCamera.getCameraUseCaseAdapter().getCameraId());
+                    lifecycleCamera.getCameraUseCaseAdapter().getAdapterIdentifier());
             mCameraMap.remove(key);
 
             Set<LifecycleOwner> lifecycleOwnerToUnregister = new HashSet<>();
@@ -603,20 +614,20 @@ final class LifecycleCameraRepository {
     }
 
     /**
-     * A key for mapping a {@link LifecycleOwner} and a {@link CameraUseCaseAdapter.CameraId} to a
+     * A key for mapping a {@link LifecycleOwner} and a {@link CameraIdentifier} to a
      * {@link LifecycleCamera}.
      */
     @AutoValue
     abstract static class Key {
         static Key create(@NonNull LifecycleOwner lifecycleOwner,
-                CameraUseCaseAdapter.@NonNull CameraId cameraId) {
+                @NonNull CameraIdentifier cameraIdentifier) {
             return new AutoValue_LifecycleCameraRepository_Key(
-                    System.identityHashCode(lifecycleOwner), cameraId);
+                    System.identityHashCode(lifecycleOwner), cameraIdentifier);
         }
 
         public abstract int getLifecycleOwnerHash();
 
-        public abstract CameraUseCaseAdapter.@NonNull CameraId getCameraId();
+        public abstract @NonNull CameraIdentifier getCameraIdentifier();
     }
 
     private static class LifecycleCameraRepositoryObserver implements LifecycleObserver {

@@ -425,6 +425,10 @@ class ExperimentalDetector : Detector(), SourceCodeScanner {
             return
         }
 
+        val usage = usageInfo.usage
+        // Don't visit usages that are missing source PSI information (such generated code).
+        usage.sourcePsi ?: return
+
         when (annotationInfo.qualifiedName) {
             JAVA_EXPERIMENTAL_ANNOTATION,
             JAVA_REQUIRES_OPT_IN_ANNOTATION -> {

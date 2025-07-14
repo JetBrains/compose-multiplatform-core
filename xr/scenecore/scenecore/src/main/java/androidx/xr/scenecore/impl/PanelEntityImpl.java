@@ -19,6 +19,7 @@ package androidx.xr.scenecore.impl;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.os.Binder;
 import android.util.Log;
 import android.view.SurfaceControlViewHost;
@@ -65,7 +66,7 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
             PixelDimensions surfaceDimensionsPx,
             @NonNull String name,
             ScheduledExecutorService executor) {
-        super(node, extensions, entityManager, executor);
+        super(context, node, extensions, entityManager, executor);
 
         View reparentedView = maybeReparentView(view, name, context);
         mSurfaceControlViewHost =
@@ -84,7 +85,7 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
             Dimensions surfaceDimensions,
             @NonNull String name,
             ScheduledExecutorService executor) {
-        super(node, extensions, entityManager, executor);
+        super(context, node, extensions, entityManager, executor);
         float unscaledPixelDensity = getDefaultPixelDensity();
         PixelDimensions surfaceDimensionsPx =
                 new PixelDimensions(
@@ -176,8 +177,15 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
     private void setDefaultOnBackInvokedCallback(View view) {
         OnBackInvokedCallback onBackInvokedCallback =
                 () -> {
-                    if (view.getContext() instanceof Activity) {
-                        ((Activity) view.getContext()).onBackPressed();
+                    Context context = view.getContext();
+                    // The context is not necessarily an activity, we need to find the activity
+                    // to forward the onBackPressed()
+                    while (context instanceof ContextWrapper) {
+                        if (context instanceof Activity) {
+                            ((Activity) context).onBackPressed();
+                            return;
+                        }
+                        context = ((ContextWrapper) context).getBaseContext();
                     }
                 };
         OnBackInvokedDispatcher backDispatcher = view.findOnBackInvokedDispatcher();

@@ -32,7 +32,8 @@ public class `$SimpleFunction_AppFunctionInventory` : AppFunctionInventory {
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(

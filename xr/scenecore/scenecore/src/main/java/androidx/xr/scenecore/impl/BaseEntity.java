@@ -16,7 +16,12 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.app.Activity;
+import android.content.Context;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 import androidx.xr.runtime.internal.Component;
 import androidx.xr.runtime.internal.Entity;
@@ -40,20 +45,70 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     private Vector3 mScale = new Vector3(1.0f, 1.0f, 1.0f);
     private float mAlpha = 1.0f;
     private boolean mHidden = false;
+    private ViewGroup mAccessibilityLayout = null;
+    private Context mContext;
+
+    BaseEntity(Context context) {
+        mContext = context;
+    }
 
     protected void addChildInternal(@NonNull Entity child) {
         if (mChildren.contains(child)) {
-            Log.w("RealityCoreRuntime", "Trying to add child who is already a child.");
+            Log.w("SceneCore", "Trying to add child who is already a child.");
         }
         mChildren.add(child);
     }
 
     protected void removeChildInternal(@NonNull Entity child) {
         if (!mChildren.contains(child)) {
-            Log.w("RealityCoreRuntime", "Trying to remove child who is not a child.");
+            Log.w("SceneCore", "Trying to remove child who is not a child.");
             return;
         }
         mChildren.remove(child);
+    }
+
+    private View getAccessibilityView() {
+        Activity activity = getActivity();
+        if (activity == null) {
+            Log.w("SceneCore", "Activity is not set and unable to create accessibility view");
+            return null;
+        }
+        if (mAccessibilityLayout == null) {
+            ViewGroup mainLayout = (ViewGroup) activity.getWindow().getDecorView();
+            mAccessibilityLayout = new FrameLayout(activity);
+            mAccessibilityLayout.setLayoutParams(new FrameLayout.LayoutParams(1, 1));
+            mainLayout.addView(mAccessibilityLayout);
+        }
+        // There should be only one child as per this design
+        if (mAccessibilityLayout.getChildCount() > 0) {
+            return mAccessibilityLayout.getChildAt(0);
+        }
+        // If the no view exists create one
+        View view = new View(activity);
+        view.setFocusable(true);
+        view.setFocusableInTouchMode(true);
+        mAccessibilityLayout.addView(view);
+        return view;
+    }
+
+    private void destroyAccessibilityView() {
+        Activity activity = getActivity();
+        if (activity != null && mAccessibilityLayout != null) {
+            ViewGroup mainLayout = (ViewGroup) activity.getWindow().getDecorView();
+            mainLayout.removeView(mAccessibilityLayout);
+            mAccessibilityLayout = null;
+        }
+    }
+
+    protected Context getContext() {
+        return mContext;
+    }
+
+    protected Activity getActivity() {
+        if (mContext instanceof Activity) {
+            return (Activity) mContext;
+        }
+        return null;
     }
 
     @Override
@@ -76,7 +131,7 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     @Override
     public void setParent(@Nullable Entity parent) {
         if ((parent != null) && !(parent instanceof BaseEntity)) {
-            Log.e("RealityCoreRuntime", "Cannot set non-BaseEntity as a parent of a BaseEntity");
+            Log.e("SceneCore", "Cannot set non-BaseEntity as a parent of a BaseEntity");
             return;
         }
         if (mParent != null) {
@@ -94,14 +149,34 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
     }
 
     @Override
-    public @NonNull String getContentDescription() {
-        return "content description";
+    @NonNull
+    public String getContentDescription() {
+        if (mAccessibilityLayout != null) {
+            View view = getAccessibilityView();
+            if (view != null) {
+                return view.getContentDescription().toString();
+            }
+        }
+        Log.w("SceneCore", "getContentDescription content description not provided");
+        return "";
     }
 
     @Override
     public void setContentDescription(@NonNull String text) {
-        // TODO (b/407776971) Implement Accessibility focus support
-        Log.i("BaseEntity", "setContentDescription: " + text);
+        Log.d("SceneCore", "setContentDescription: " + text);
+        if (text.isEmpty()) {
+            Log.d("SceneCore", "setContentDescription ignoring empty/null string.");
+            if (mAccessibilityLayout != null) {
+                destroyAccessibilityView();
+            }
+            return;
+        }
+        View view = getAccessibilityView();
+        if (view != null) {
+            view.setContentDescription(text);
+        } else {
+            Log.e("SceneCore", "setContentDescription is unable to get view.");
+        }
     }
 
     @Override
@@ -234,10 +309,12 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
         // Create a copy to avoid concurrent modification issues since the children detach
         // themselves
         // from their parents as they are disposed.
+        destroyAccessibilityView();
         List<Entity> childrenToDispose = new ArrayList<>(mChildren);
         for (Entity child : childrenToDispose) {
             child.dispose();
         }
+        mContext = null;
     }
 
     @Override

@@ -30,7 +30,6 @@ import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
-import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.stabilization.StabilizationMode
@@ -53,6 +52,9 @@ public interface StreamSpecsCalculator {
      *
      * @throws kotlin.UninitializedPropertyAccessException if the camera device surface manager has
      *   not been set yet.
+     * @throws IllegalArgumentException if no supported combination of surfaces can be found for the
+     *   given image format, size, and use case within the context of the camera device's
+     *   capabilities.
      */
     public fun calculateSuggestedStreamSpecs(
         @CameraMode.Mode cameraMode: Int,
@@ -192,7 +194,7 @@ public class StreamSpecsCalculatorImpl(
                     "Attached stream spec cannot be null for already attached use cases."
                 }
 
-            val surfaceConfig: SurfaceConfig? =
+            val surfaceConfig =
                 checkNotNull(cameraDeviceSurfaceManager)
                     .transformSurfaceConfig(
                         cameraMode,
@@ -206,7 +208,7 @@ public class StreamSpecsCalculatorImpl(
 
             val attachedSurfaceInfo =
                 AttachedSurfaceInfo.create(
-                    surfaceConfig!!,
+                    surfaceConfig,
                     useCase.imageFormat,
                     useCase.attachedSurfaceResolution!!,
                     attachedStreamSpec.dynamicRange,

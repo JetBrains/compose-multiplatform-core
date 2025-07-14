@@ -89,7 +89,7 @@ package androidx.benchmark.macro {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This Macrobenchmark API is experimental.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface ExperimentalMacrobenchmarkApi {
   }
 
-  @SuppressCompatibility @kotlin.RequiresOptIn(message="This Metric API is experimental.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface ExperimentalMetricApi {
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This Metric API is experimental.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface ExperimentalMetricApi {
   }
 
   @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public final class FrameTimingGfxInfoMetric extends androidx.benchmark.macro.Metric {
@@ -98,6 +98,8 @@ package androidx.benchmark.macro {
 
   public final class FrameTimingMetric extends androidx.benchmark.macro.Metric {
     ctor public FrameTimingMetric();
+    ctor @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public FrameTimingMetric(String processNameSuffix);
+    ctor @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public FrameTimingMetric(String processNameSuffix, optional String metricNameSuffix);
   }
 
   public final class MacrobenchmarkScope {

@@ -373,6 +373,7 @@ Completed
 .*com.google\.devtools\.kythe\.extractors\.java\.JavaCompilationUnitExtractor.*
 ^WARNING: Empty java source file.*
 # b/359449191
+> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:databridge:integration\-tests:testsdk\-asb\) with ExtractCompileSdkShimTransform
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:mediateesdkproviderwrapper\) with ExtractCompileSdkShimTransform
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:macrobenchmark:testapp:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform

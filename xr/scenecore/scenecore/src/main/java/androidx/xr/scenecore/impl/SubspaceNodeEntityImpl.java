@@ -16,6 +16,8 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.content.Context;
+
 import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Space;
@@ -47,12 +49,13 @@ public final class SubspaceNodeEntityImpl extends AndroidXrEntity implements Sub
     private Vector3 mScale = Vector3.One;
 
     SubspaceNodeEntityImpl(
+            Context context,
             XrExtensions extensions,
             EntityManager entityManager,
             ScheduledExecutorService executor,
             Node subspaceNode,
             Dimensions size) {
-        super(extensions.createNode(), extensions, entityManager, executor);
+        super(context, extensions.createNode(), extensions, entityManager, executor);
         this.mSubspaceNode = subspaceNode;
         setSize(size);
     }

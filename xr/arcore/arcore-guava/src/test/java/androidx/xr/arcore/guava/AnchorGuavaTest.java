@@ -16,8 +16,8 @@
 
 package androidx.xr.arcore.guava;
 
-import static androidx.xr.arcore.guava.AnchorGuava.persistAsync;
-import static androidx.xr.arcore.guava.AnchorGuava.updateAsync;
+import static androidx.xr.arcore.guava.GuavaAnchor.persistAsync;
+import static androidx.xr.arcore.guava.GuavaAnchor.updateAsync;
 
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;

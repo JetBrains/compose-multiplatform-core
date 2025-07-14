@@ -434,4 +434,4 @@ until API review is complete and addressed.
 ### How often can a beta release?
 
 As often as needed; however, releases outside of the bi-weekly (every 2 weeks)
-release will need to get approval from the TPM (natnaelbelay@).
+release will need to get approval from the TPMs (toolkit-tpgms@).

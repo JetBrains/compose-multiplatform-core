@@ -67,7 +67,18 @@ internal constructor() {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     internal abstract val featureTypeInternal: FeatureTypeInternal
 
-    public fun getFeatureType(): @FeatureType Int = featureTypeInternal.toFeatureType()
+    /**
+     * The type of this feature, which will be one of the following values.
+     * - [FEATURE_TYPE_DYNAMIC_RANGE]
+     * - [FEATURE_TYPE_FPS_RANGE]
+     * - [FEATURE_TYPE_VIDEO_STABILIZATION]
+     * - [FEATURE_TYPE_IMAGE_FORMAT]
+     */
+    public val featureType: @FeatureType Int by lazy {
+        // lazy is required here to workaround an issue of java.lang.ExceptionInInitializerError for
+        // trying to use an enum when all objects may not be initialized yet.
+        featureTypeInternal.toFeatureType()
+    }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open fun isSupportedIndividually(

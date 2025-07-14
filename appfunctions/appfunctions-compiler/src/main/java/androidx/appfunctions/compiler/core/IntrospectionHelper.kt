@@ -45,6 +45,7 @@ object IntrospectionHelper {
 
     object AppFunctionSerializableAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionSerializable")
+        const val PROPERTY_IS_DESCRIBED_BY_KDOC = "isDescribedByKdoc"
     }
 
     object AppFunctionSerializableInterfaceAnnotation {

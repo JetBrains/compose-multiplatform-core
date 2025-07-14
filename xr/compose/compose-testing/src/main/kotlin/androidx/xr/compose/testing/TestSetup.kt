@@ -337,8 +337,8 @@ private class TestSessionSpatialConfiguration(private val session: Session) : Sp
     override val hasXrSpatialFeature: Boolean = true
 
     override val bounds: DpVolumeSize by
-        mutableStateOf(session.scene.activitySpace.getBounds().toDpVolumeSize()).apply {
-            session.scene.activitySpace.addBoundsChangedListener { value = it.toDpVolumeSize() }
+        mutableStateOf(session.scene.activitySpace.bounds.toDpVolumeSize()).apply {
+            session.scene.activitySpace.addOnBoundsChangedListener { value = it.toDpVolumeSize() }
         }
 
     override fun requestHomeSpaceMode() {

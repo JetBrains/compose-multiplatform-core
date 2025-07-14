@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -86,7 +86,7 @@ class Animation : ComponentActivity() {
                     launch { animatedAlpha.animateTo(1.0f, animationSpec = tween(2000)) }
                 }
 
-                MainPanel(
+                SpatialMainPanel(
                     modifier =
                         SubspaceModifier.width(600.dp)
                             .height(400.dp)

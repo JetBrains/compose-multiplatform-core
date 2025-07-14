@@ -118,7 +118,7 @@ public annotation class Relation(
      *
      * @return The entity or view to fetch from. By default, inherited from the return type.
      */
-    val entity: KClass<*> = Any::class,
+    @Suppress("KotlinDefaultParameterOrder") val entity: KClass<*> = Any::class,
 
     /**
      * Reference column in the parent POJO.

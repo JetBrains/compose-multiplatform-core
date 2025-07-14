@@ -48,7 +48,7 @@ class ActivityPanelHostActivity : AppCompatActivity() {
             val intent = Intent(this, CounterActivity::class.java)
             activityPanelEntity.launchActivity(intent)
             activityPanelEntity.setPose(Pose(Vector3(0.5f, 0.5f, 0.0f)))
-            val movableComponent = MovableComponent.create(session)
+            val movableComponent = MovableComponent.createSystemMovable(session)
             movableComponent.size = activityPanelEntity.size.to3d()
             @Suppress("UNUSED_VARIABLE")
             val unused = activityPanelEntity.addComponent(movableComponent)

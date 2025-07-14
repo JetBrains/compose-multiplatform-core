@@ -92,11 +92,8 @@ internal constructor(
          */
         public val centerPose: Pose,
         /**
-         * Extents are axis aligned relative to the center pose.
-         *
-         * A set of extents used to determine the size of the object. These are assumed to originate
-         * from the [centerPose] and represent the distance in meters along each axis that the
-         * detected object extends from its center in that direction.
+         * The dimensions of the object, axis aligned relative to the center pose. These values
+         * represent the full length of the specific axis.
          */
         public val extents: Vector3,
     ) : Trackable.State {}

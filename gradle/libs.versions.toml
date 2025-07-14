@@ -2,13 +2,13 @@
 # -----------------------------------------------------------------------------
 # All of the following should be updated in sync.
 # -----------------------------------------------------------------------------
-androidGradlePlugin = "8.12.0-alpha04"
+androidGradlePlugin = "8.12.0-alpha08"
 # NOTE: When updating the lint version we also need to update the `api` version
 # supported by `IssueRegistry`'s.' For e.g. r.android.com/1331903
-androidLint = "31.12.0-alpha04"
+androidLint = "31.12.0-alpha08"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudio = "2025.1.2.4"
+androidStudio = "2025.1.2.8"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
@@ -18,12 +18,12 @@ androidLintMin = "31.1.1"
 # compatibility for Analysis API usage.
 androidLintStableAnalysis = "31.8.2"
 androidxActivity = "1.9.3"
-androidxTestRunner = "1.7.0-alpha03"
-androidxTestRules = "1.7.0-alpha03"
-androidxTestMonitor = "1.8.0-alpha03"
-androidxTestCore = "1.7.0-alpha03"
-androidxTestExtJunit = "1.3.0-alpha03"
-androidxTestExtTruth = "1.7.0-alpha03"
+androidxTestRunner = "1.7.0-beta01"
+androidxTestRules = "1.7.0-beta01"
+androidxTestMonitor = "1.8.0-beta01"
+androidxTestCore = "1.7.0-beta01"
+androidxTestExtJunit = "1.3.0-beta01"
+androidxTestExtTruth = "1.7.0-beta01"
 annotationVersion = "1.9.1"
 atomicFu = "0.27.0"
 autoService = "1.0-rc6"
@@ -39,8 +39,8 @@ datetime = "0.6.0"
 dependencyAnalysisGradlePlugin = "2.11.0"
 dexmaker = "2.28.5"
 dokka = "1.8.20-dev-214"
-espresso = "3.7.0-alpha04"
-espressoDevice = "1.1.0-alpha03"
+espresso = "3.7.0-beta01"
+espressoDevice = "1.1.0-beta01"
 grpc = "1.52.0"
 guavaJre = "33.2.1-jre"
 hamcrestCore = "1.3"
@@ -251,7 +251,7 @@ media3TestUtils = { module = "androidx.media3:media3-test-utils", version.ref = 
 media3Transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3" }
 media3Ui = { module = "androidx.media3:media3-ui", version.ref = "media3" }
 metalava = { module = "com.android.tools.metalava:metalava", version.ref = "metalava" }
-mlkitBarcode = { module = "com.google.mlkit:barcode-scanning", version = "17.0.2" }
+mlkitBarcode = { module = "com.google.mlkit:barcode-scanning", version = "17.3.0" }
 mockitoCore = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockitoCore4 = { module = "org.mockito:mockito-core", version = "4.8.0" }
 mockitoAndroid = { module = "org.mockito:mockito-android", version.ref = "mockito" }
@@ -273,7 +273,7 @@ playServicesBasement = { module = "com.google.android.gms:play-services-basement
 playServicesBlockstore = {module = "com.google.android.gms:play-services-auth-blockstore", version = "16.4.0"}
 playServicesDevicePerformance = { module = "com.google.android.gms:play-services-deviceperformance", version = "16.0.0" }
 playServicesFido = {module = "com.google.android.gms:play-services-fido", version = "21.0.0"}
-playServicesIdentityCredentials = {module = "com.google.android.gms:play-services-identity-credentials", version = "16.0.0-alpha07"}
+playServicesIdentityCredentials = {module = "com.google.android.gms:play-services-identity-credentials", version = "16.0.0-alpha08"}
 playServicesWearable = { module = "com.google.android.gms:play-services-wearable", version = "17.1.0" }
 protobuf = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobufCompiler = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }

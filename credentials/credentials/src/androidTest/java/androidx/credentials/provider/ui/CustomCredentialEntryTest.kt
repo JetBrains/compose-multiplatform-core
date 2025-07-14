@@ -105,7 +105,10 @@ class CustomCredentialEntryTest {
     fun constructor_nullIcon_defaultIconSet() {
         val entry = constructEntryWithRequiredParams()
         assertThat(
-                equals(entry.icon, Icon.createWithResource(mContext, R.drawable.ic_other_sign_in))
+                equals(
+                    entry.icon,
+                    Icon.createWithResource(mContext, R.drawable.adx_ic_other_sign_in),
+                )
             )
             .isTrue()
     }
@@ -185,7 +188,9 @@ class CustomCredentialEntryTest {
         assertThat(entry.typeDisplayName).isNull()
         assertThat(entry.lastUsedTime).isNull()
         assertThat(entry.icon.toString())
-            .isEqualTo(Icon.createWithResource(mContext, R.drawable.ic_other_sign_in).toString())
+            .isEqualTo(
+                Icon.createWithResource(mContext, R.drawable.adx_ic_other_sign_in).toString()
+            )
         assertThat(entry.isAutoSelectAllowed).isFalse()
         assertThat(entry.affiliatedDomain).isNull()
         assertThat(entry.entryGroupId).isEqualTo(TITLE)

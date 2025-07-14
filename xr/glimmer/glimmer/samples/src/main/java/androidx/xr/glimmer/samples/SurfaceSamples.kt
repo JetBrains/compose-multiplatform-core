@@ -44,7 +44,7 @@ import androidx.xr.glimmer.surface
 fun SurfaceSampleUsage() {
     VerticalList(
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item { SurfaceSample() }
         item { ClickableSurfaceSample() }

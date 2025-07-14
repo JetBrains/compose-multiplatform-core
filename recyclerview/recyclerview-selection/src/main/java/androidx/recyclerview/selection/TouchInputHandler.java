@@ -90,6 +90,8 @@ final class TouchInputHandler<K> extends MotionInputHandler<K> {
             return mSelectionTracker.clearSelection();
         }
 
+        // If something is already selected then we're in "selection mode": taps extend or toggle
+        // the selection.
         if (mSelectionTracker.hasSelection()) {
             if (shouldExtendRange(e)) {
                 extendSelectionRange(item);
@@ -102,9 +104,9 @@ final class TouchInputHandler<K> extends MotionInputHandler<K> {
             return true;
         }
 
-        // Touch events select if they occur in the selection hotspot,
-        // otherwise they activate.
-        return item.inSelectionHotspot(e)
+        // Otherwise, touch events select or activate depending on being inside or outside the
+        // selection hotspot.
+        return (item.classifySelectionHotspot(e) != ItemDetails.SELECTION_HOTSPOT_OUTSIDE)
                 ? selectItem(item)
                 : mOnItemActivatedListener.onItemActivated(item, e);
     }

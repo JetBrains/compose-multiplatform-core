@@ -403,7 +403,6 @@ androidx {
     inceptionYear = "2019"
     description = "Compose UI primitives. This library contains the primitives that form the Compose UI Toolkit, such as drawing, measurement and layout."
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui:ui-samples"))
     addGoldenImageAssets()
     enableRobolectric()
@@ -418,6 +417,12 @@ android {
     // namespace has to be unique, but default androidx.compose.ui.test package is taken by
     // the androidx.compose.ui:ui-test library
     testNamespace = "androidx.compose.ui.tests"
+}
+
+androidComponents {
+    onVariants(selector().all(), { variant ->
+        variant.sources.java?.addStaticSourceDirectory("src/androidMain/java")
+    })
 }
 
 // TODO(b/407725586): Remove this block when AndroidAssistTest passes on API Level 21

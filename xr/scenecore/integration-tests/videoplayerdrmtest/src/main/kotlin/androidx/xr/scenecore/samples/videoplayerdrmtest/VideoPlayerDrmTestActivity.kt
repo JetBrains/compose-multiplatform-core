@@ -114,7 +114,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
         if (movableComponentMp == null) {
-            movableComponentMp = MovableComponent.create(session)
+            movableComponentMp = MovableComponent.createSystemMovable(session)
             val unused = session.scene.mainPanelEntity.addComponent(movableComponentMp!!)
         }
 
@@ -263,7 +263,7 @@ class VideoPlayerDrmTestActivity : ComponentActivity() {
                 SurfaceEntity.create(session, stereoMode, pose, canvasShape, surfaceContentLevel)
             // Make the video player movable (to make it easier to look at it from different
             // angles and distances) (only on quad canvas)
-            movableComponent = MovableComponent.create(session)
+            movableComponent = MovableComponent.createSystemMovable(session)
             // The quad has a radius of 1.0 meters
             movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 

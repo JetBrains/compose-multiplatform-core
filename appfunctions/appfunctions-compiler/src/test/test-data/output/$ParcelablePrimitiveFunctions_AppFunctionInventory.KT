@@ -30,7 +30,8 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
     private val PARAMETER_METADATA_PENDINGINTENT_PRIMITIVE_DATA_TYPE:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 13,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val PENDINGINTENT_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -47,7 +48,8 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -82,7 +84,8 @@ public class `$ParcelablePrimitiveFunctions_AppFunctionInventory` : AppFunctionI
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 13,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(

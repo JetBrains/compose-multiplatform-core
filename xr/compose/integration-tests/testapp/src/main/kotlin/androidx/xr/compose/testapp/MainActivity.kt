@@ -53,7 +53,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,14 +68,19 @@ import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.animation.Animation
 import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
+import androidx.xr.compose.testapp.depthstacking.DepthStacking
 import androidx.xr.compose.testapp.modechange.ModeChange
 import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
+import androidx.xr.compose.testapp.nestedsubspace.NestedSubspace
+import androidx.xr.compose.testapp.panelvolume.PanelVolume
 import androidx.xr.compose.testapp.permissionsdialog.PermissionsDialog
+import androidx.xr.compose.testapp.resizablepanel.ResizablePanel
 import androidx.xr.compose.testapp.rotation.Rotation
 import androidx.xr.compose.testapp.spatialcompose.SpatialCompose
 import androidx.xr.compose.testapp.spatialelevation.SpatialElevation
 import androidx.xr.compose.testapp.splitengine.SplitEngine
+import androidx.xr.compose.testapp.ui.components.FpsCounterScreen
 import androidx.xr.compose.testapp.ui.components.TestCaseButton
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple40
@@ -102,9 +106,7 @@ class MainActivity : ComponentActivity() {
                         val scrollBehavior =
                             TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
                         Scaffold(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                            modifier = Modifier.fillMaxSize(),
                             topBar = { TopBar(scrollBehavior) },
                             bottomBar = { BottomBar() },
                         ) { innerPadding ->
@@ -180,13 +182,14 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun BottomBar() {
-        Box {
+        Box(contentAlignment = Alignment.CenterStart) {
             BottomAppBar(
                 actions = {},
                 contentColor = Color.White,
                 containerColor = Purple40,
                 tonalElevation = 5.dp,
             )
+            FpsCounterScreen()
         }
     }
 
@@ -265,6 +268,21 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.movable_scalable_panel_test)) {
                         startTest<MovableScalable>()
                     }
+                    TestCaseBlankRow("THE FOLLOWING ARE JXR COMPOSE DEVELOPER TESTS")
+                    TestCaseColumnRowItem(
+                        getString(R.string.depthstacking_modifier_order_test_case)
+                    ) {
+                        startTest<DepthStacking>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.nested_subspace_test_case)) {
+                        startTest<NestedSubspace>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.panel_volume_test_case)) {
+                        startTest<PanelVolume>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.resizable_panel_test_case)) {
+                        startTest<ResizablePanel>()
+                    }
                 }
             }
         }
@@ -287,6 +305,25 @@ class MainActivity : ComponentActivity() {
             )
             Box(modifier = Modifier.weight(1.5f)) { TestCaseButton("Run Test", onClick) }
         }
+    }
+
+    @Composable
+    private fun TestCaseBlankRow(label: String) {
+        Box(modifier = Modifier.background(Color.LightGray)) {
+            Row(
+                modifier = Modifier.padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    label,
+                    modifier = Modifier.weight(3.5f),
+                    fontSize = 22.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color.Black,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(1.dp).background(Purple80).fillMaxWidth())
     }
 
     private inline fun <reified T> startTest(title: String? = null) {

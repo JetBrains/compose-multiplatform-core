@@ -19,6 +19,7 @@ package androidx.xr.scenecore.impl;
 import static java.lang.Math.min;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.res.Resources;
 import android.util.TypedValue;
 
@@ -47,11 +48,12 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     private float mCornerRadius;
 
     BasePanelEntity(
+            Context context,
             Node node,
             XrExtensions extensions,
             EntityManager entityManager,
             ScheduledExecutorService executor) {
-        super(node, extensions, entityManager, executor);
+        super(context, node, extensions, entityManager, executor);
     }
 
     protected float getDefaultPixelDensity() {

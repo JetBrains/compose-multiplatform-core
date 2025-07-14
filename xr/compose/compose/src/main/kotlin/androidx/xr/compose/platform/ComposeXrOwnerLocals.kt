@@ -20,7 +20,6 @@ import android.app.Activity
 import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.Density
 import androidx.xr.compose.R
 import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.runtime.Session
@@ -90,7 +89,7 @@ private fun Activity.createXrOwnerLocals(): ComposeXrOwnerLocals? {
             session = session,
             spatialConfiguration = SessionSpatialConfiguration(session),
             spatialCapabilities = SessionSpatialCapabilities(session),
-            coreMainPanelEntity = CoreMainPanelEntity(session, Density(session.activity)),
+            coreMainPanelEntity = CoreMainPanelEntity(session),
             subspaceRootNode =
                 GroupEntity.create(session, "SubspaceRootContainer").apply {
                     session.scene.setKeyEntity(this)

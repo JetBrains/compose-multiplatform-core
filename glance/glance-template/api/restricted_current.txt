@@ -3,12 +3,12 @@ package androidx.glance.template {
 
   public final class ActionBlock {
     ctor public ActionBlock();
-    ctor public ActionBlock(optional java.util.List<? extends androidx.glance.template.TemplateButton> actionButtons, optional int type);
+    ctor @BytecodeOnly public ActionBlock(java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @KotlinOnly public ActionBlock(optional java.util.List<androidx.glance.template.TemplateButton> actionButtons, optional androidx.glance.template.ButtonType type);
     method public java.util.List<androidx.glance.template.TemplateButton> getActionButtons();
-    method public int getType();
     method @BytecodeOnly public int getType-r0b0Q_E();
     property public java.util.List<androidx.glance.template.TemplateButton> actionButtons;
-    property public int type;
+    property public androidx.glance.template.ButtonType type;
   }
 
   @kotlin.jvm.JvmInline public final value class AspectRatio {
@@ -18,15 +18,12 @@ package androidx.glance.template {
   }
 
   public static final class AspectRatio.Companion {
-    method public int getRatio16x9();
     method @BytecodeOnly public int getRatio16x9-ja8jjaE();
-    method public int getRatio1x1();
     method @BytecodeOnly public int getRatio1x1-ja8jjaE();
-    method public int getRatio2x3();
     method @BytecodeOnly public int getRatio2x3-ja8jjaE();
-    property public int Ratio16x9;
-    property public int Ratio1x1;
-    property public int Ratio2x3;
+    property public androidx.glance.template.AspectRatio Ratio16x9;
+    property public androidx.glance.template.AspectRatio Ratio1x1;
+    property public androidx.glance.template.AspectRatio Ratio2x3;
   }
 
   @kotlin.jvm.JvmInline public final value class ButtonType {
@@ -36,18 +33,14 @@ package androidx.glance.template {
   }
 
   public static final class ButtonType.Companion {
-    method public int getFab();
     method @BytecodeOnly public int getFab-r0b0Q_E();
-    method public int getIcon();
     method @BytecodeOnly public int getIcon-r0b0Q_E();
-    method public int getText();
     method @BytecodeOnly public int getText-r0b0Q_E();
-    method public int getTextIcon();
     method @BytecodeOnly public int getTextIcon-r0b0Q_E();
-    property public int Fab;
-    property public int Icon;
-    property public int Text;
-    property public int TextIcon;
+    property public androidx.glance.template.ButtonType Fab;
+    property public androidx.glance.template.ButtonType Icon;
+    property public androidx.glance.template.ButtonType Text;
+    property public androidx.glance.template.ButtonType TextIcon;
   }
 
   public final class CompositionLocalsKt {
@@ -120,17 +113,16 @@ package androidx.glance.template {
 
   public final class ImageBlock {
     ctor public ImageBlock();
-    ctor public ImageBlock(optional java.util.List<androidx.glance.template.TemplateImageWithDescription> images, optional int aspectRatio, optional int size, optional @IntRange(from=0L) int priority);
-    method public int getAspectRatio();
+    ctor @BytecodeOnly public ImageBlock(java.util.List!, int, int, @IntRange(from=0L) int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @KotlinOnly public ImageBlock(optional java.util.List<androidx.glance.template.TemplateImageWithDescription> images, optional androidx.glance.template.AspectRatio aspectRatio, optional androidx.glance.template.ImageSize size, optional @IntRange(from=0L) int priority);
     method @BytecodeOnly public int getAspectRatio-ja8jjaE();
     method public java.util.List<androidx.glance.template.TemplateImageWithDescription> getImages();
     method public int getPriority();
-    method public int getSize();
     method @BytecodeOnly public int getSize-KRlrA-I();
-    property public int aspectRatio;
+    property public androidx.glance.template.AspectRatio aspectRatio;
     property public java.util.List<androidx.glance.template.TemplateImageWithDescription> images;
     property @IntRange(from=0L) public int priority;
-    property public int size;
+    property public androidx.glance.template.ImageSize size;
   }
 
   @kotlin.jvm.JvmInline public final value class ImageSize {
@@ -140,18 +132,14 @@ package androidx.glance.template {
   }
 
   public static final class ImageSize.Companion {
-    method public int getLarge();
     method @BytecodeOnly public int getLarge-KRlrA-I();
-    method public int getMedium();
     method @BytecodeOnly public int getMedium-KRlrA-I();
-    method public int getSmall();
     method @BytecodeOnly public int getSmall-KRlrA-I();
-    method public int getUndefined();
     method @BytecodeOnly public int getUndefined-KRlrA-I();
-    property public int Large;
-    property public int Medium;
-    property public int Small;
-    property public int Undefined;
+    property public androidx.glance.template.ImageSize Large;
+    property public androidx.glance.template.ImageSize Medium;
+    property public androidx.glance.template.ImageSize Small;
+    property public androidx.glance.template.ImageSize Undefined;
   }
 
   @kotlin.jvm.JvmInline public final value class ListStyle {
@@ -161,24 +149,22 @@ package androidx.glance.template {
   }
 
   public static final class ListStyle.Companion {
-    method public int getBrief();
     method @BytecodeOnly public int getBrief-wieCnIM();
-    method public int getFull();
     method @BytecodeOnly public int getFull-wieCnIM();
-    property public int Brief;
-    property public int Full;
+    property public androidx.glance.template.ListStyle Brief;
+    property public androidx.glance.template.ListStyle Full;
   }
 
   public final class ListTemplateData {
     ctor public ListTemplateData();
-    ctor public ListTemplateData(optional androidx.glance.template.HeaderBlock? headerBlock, optional java.util.List<androidx.glance.template.ListTemplateItem> listContent, optional int listStyle);
+    ctor @BytecodeOnly public ListTemplateData(androidx.glance.template.HeaderBlock!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @KotlinOnly public ListTemplateData(optional androidx.glance.template.HeaderBlock? headerBlock, optional java.util.List<androidx.glance.template.ListTemplateItem> listContent, optional androidx.glance.template.ListStyle listStyle);
     method public androidx.glance.template.HeaderBlock? getHeaderBlock();
     method public java.util.List<androidx.glance.template.ListTemplateItem> getListContent();
-    method public int getListStyle();
     method @BytecodeOnly public int getListStyle-wieCnIM();
     property public androidx.glance.template.HeaderBlock? headerBlock;
     property public java.util.List<androidx.glance.template.ListTemplateItem> listContent;
-    property public int listStyle;
+    property public androidx.glance.template.ListStyle listStyle;
   }
 
   public final class ListTemplateItem {
@@ -226,12 +212,12 @@ package androidx.glance.template {
   }
 
   public final class TemplateImageWithDescription {
-    ctor public TemplateImageWithDescription(androidx.glance.ImageProvider image, String description, optional float cornerRadius);
-    method public float getCornerRadius();
+    ctor @KotlinOnly public TemplateImageWithDescription(androidx.glance.ImageProvider image, String description, optional androidx.compose.ui.unit.Dp cornerRadius);
+    ctor @BytecodeOnly public TemplateImageWithDescription(androidx.glance.ImageProvider!, String!, float, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @BytecodeOnly public float getCornerRadius-D9Ej5fM();
     method public String getDescription();
     method public androidx.glance.ImageProvider getImage();
-    property public float cornerRadius;
+    property public androidx.compose.ui.unit.Dp cornerRadius;
     property public String description;
     property public androidx.glance.ImageProvider image;
   }
@@ -243,12 +229,12 @@ package androidx.glance.template {
   }
 
   public final class TemplateText {
-    ctor public TemplateText(String text, optional int type);
+    ctor @KotlinOnly public TemplateText(String text, optional androidx.glance.template.TextType type);
+    ctor @BytecodeOnly public TemplateText(String!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public String getText();
-    method public int getType();
     method @BytecodeOnly public int getType-FY95lY0();
     property public String text;
-    property public int type;
+    property public androidx.glance.template.TextType type;
   }
 
   public final class TemplateTextButton extends androidx.glance.template.TemplateButton {
@@ -276,21 +262,16 @@ package androidx.glance.template {
   }
 
   public static final class TextType.Companion {
-    method public int getBody();
     method @BytecodeOnly public int getBody-FY95lY0();
-    method public int getDisplay();
     method @BytecodeOnly public int getDisplay-FY95lY0();
-    method public int getHeadline();
     method @BytecodeOnly public int getHeadline-FY95lY0();
-    method public int getLabel();
     method @BytecodeOnly public int getLabel-FY95lY0();
-    method public int getTitle();
     method @BytecodeOnly public int getTitle-FY95lY0();
-    property public int Body;
-    property public int Display;
-    property public int Headline;
-    property public int Label;
-    property public int Title;
+    property public androidx.glance.template.TextType Body;
+    property public androidx.glance.template.TextType Display;
+    property public androidx.glance.template.TextType Headline;
+    property public androidx.glance.template.TextType Label;
+    property public androidx.glance.template.TextType Title;
   }
 
 }

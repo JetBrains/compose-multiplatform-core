@@ -88,7 +88,13 @@ class OpenXrManagerTest {
         check(underTest.config.faceTracking == Config.FaceTrackingMode.DISABLED)
         check(perceptionManager.xrResources.updatables.isEmpty())
 
-        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        // Configure twice because the first attempt will throw an exception during testing due to
+        // calibration being read as false the first time the OpenXR stub is called.
+        try {
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        } catch (e: FaceTrackingNotCalibratedException) {
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        }
 
         assertThat(perceptionManager.xrResources.updatables)
             .containsExactly(perceptionManager.xrResources.userFace)
@@ -97,7 +103,11 @@ class OpenXrManagerTest {
     @Test
     fun configure_faceTrackingDisabled_removesFaceFromUpdatables() = initOpenXrManagerAndRunTest {
         underTest.create()
-        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        try {
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        } catch (e: FaceTrackingNotCalibratedException) {
+            underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        }
         check(
             perceptionManager.xrResources.updatables.contains(
                 perceptionManager.xrResources.userFace
@@ -110,10 +120,9 @@ class OpenXrManagerTest {
             .doesNotContain(perceptionManager.xrResources.userFace)
     }
 
-    @Ignore("b/427434474 test behavior is unpredictable until stub is fixed")
     @Test
     fun configure_faceTrackingEnabled_notCalibrated_throwsNotCalibratedException() =
-        initOpenXrManagerAndRunTest(isFaceTrackingCalibrated = false) {
+        initOpenXrManagerAndRunTest {
             underTest.create()
 
             assertThrows(FaceTrackingNotCalibratedException::class.java) {
@@ -329,22 +338,17 @@ class OpenXrManagerTest {
             underTest.resume()
 
             // The OpenXR stub returns a different value for each call to [OpenXrTimeSource::read]
-            // in
-            // increments of 1000ns when `xrConvertTimespecTimeToTimeKHR` is executed. The first
-            // call
-            // returns 1000ns and is the value associated with [timeMark]. The second call returns
-            // 2000ns
-            // and is the value associated with [AbstractLongTimeSource::zero], which is calculated
-            // automatically with the first call to [OpenXrTimeSource::markNow].
+            // in increments of 1000ns when `xrConvertTimespecTimeToTimeKHR` is executed. The first
+            // call returns 1000ns and is the value associated with [timeMark]. The second call
+            // returns 2000ns and is the value associated with [AbstractLongTimeSource::zero],
+            // which is calculated automatically with the first call to [OpenXrTimeSource::markNow].
             // Note that this is just an idiosyncrasy of the test stub and not how OpenXR works in
-            // practice,
-            // where the second call would return an almost identical value to the first call's
-            // value.
+            // practice, where the second call would return an almost identical value to the first
+            // call's value.
             val timeMark = underTest.update()
 
             // The third call happens with the call to [elapsedNow] and returns 3000ns. Thus, the
-            // elapsed
-            // time is 3000ns (i.e. "now") -  1000ns (i.e. "the start time") = 2000ns.
+            // elapsed time is 3000ns (i.e. "now") -  1000ns (i.e. "the start time") = 2000ns.
             assertThat(timeMark.elapsedNow().inWholeNanoseconds).isEqualTo(2000L)
         }
     }
@@ -359,11 +363,12 @@ class OpenXrManagerTest {
     }
 
     @Test
-    fun pause_afterStop_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
+    fun pause_withoutResume_doesNotDestroyNativeOpenXrManager() = initOpenXrManagerAndRunTest {
         underTest.create()
-        underTest.stop()
 
-        assertThrows(IllegalStateException::class.java) { underTest.pause() }
+        underTest.pause()
+
+        assertThat(underTest.nativePointer).isNotEqualTo(0L)
     }
 
     @Test
@@ -376,18 +381,9 @@ class OpenXrManagerTest {
         assertThat(underTest.nativePointer).isEqualTo(0L)
     }
 
-    private fun initOpenXrManagerAndRunTest(
-        isFaceTrackingCalibrated: Boolean = true,
-        testBody: () -> Unit,
-    ) {
+    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            underTest =
-                OpenXrManager(
-                    it,
-                    perceptionManager,
-                    timeSource,
-                    faceTrackingCalibrated = isFaceTrackingCalibrated,
-                )
+            underTest = OpenXrManager(it, perceptionManager, timeSource)
 
             testBody()
 

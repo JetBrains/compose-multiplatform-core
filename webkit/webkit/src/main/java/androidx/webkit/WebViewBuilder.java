@@ -47,6 +47,7 @@ import java.util.List;
  * <p>WebView instances constructed by this builder can be used as direct drop-in replacements for
  * WebView's created by the class constructor with no additional code changes.
  */
+@WebViewBuilder.Experimental
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class WebViewBuilder {
     private boolean mRestrictJavascriptInterface;

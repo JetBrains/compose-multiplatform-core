@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.content.Context;
 import android.util.Log;
 
 import androidx.concurrent.futures.ResolvableFuture;
@@ -38,9 +39,10 @@ import java.util.concurrent.Executor;
 /** Implementation of a RealityCore Entity that logs its function calls. */
 class LoggingEntityImpl extends BaseEntity implements LoggingEntity {
 
-    private static final String TAG = "RealityCoreRuntime";
+    private static final String TAG = "SceneCore";
 
-    LoggingEntityImpl() {
+    LoggingEntityImpl(Context context) {
+        super(context);
         Log.i(TAG, "Creating LoggingEntity.");
     }
 

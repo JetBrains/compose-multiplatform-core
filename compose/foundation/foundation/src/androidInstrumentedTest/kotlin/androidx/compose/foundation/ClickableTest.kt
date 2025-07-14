@@ -49,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertModifierIsPure
 import androidx.compose.testutils.first
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusManager
@@ -64,6 +65,7 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -121,6 +123,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ClickableTest {
@@ -733,13 +736,20 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
 
         rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
 
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
+            .sendIndirectTouchMoveEvents(
+                3,
+                16L,
+                pressPosition,
+                16L,
+                Offset(50f, 0f),
+                IndirectTouchEventPrimaryAxis.X,
+            )
 
         // The press should fire, and then the drag should instantly cancel it
         rule.runOnIdle {
@@ -1117,11 +1127,18 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
         rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
+            .sendIndirectTouchMoveEvents(
+                3,
+                16L,
+                pressPosition,
+                16L,
+                Offset(50f, 0f),
+                IndirectTouchEventPrimaryAxis.X,
+            )
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -1214,7 +1231,7 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
         rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
@@ -1226,7 +1243,14 @@ class ClickableTest {
 
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
+            .sendIndirectTouchMoveEvents(
+                3,
+                16L,
+                pressPosition,
+                16L,
+                Offset(50f, 0f),
+                IndirectTouchEventPrimaryAxis.X,
+            )
 
         // The drag should cancel the press
         rule.runOnIdle {
@@ -1320,7 +1344,7 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
         rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
@@ -4921,7 +4945,7 @@ class ClickableTest {
         }
 
         // The indirect touch event should cause the indication node to be created
-        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, 0f)
+        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, Offset.Zero)
 
         rule.runOnIdle {
             assertThat(created).isTrue()
@@ -5930,7 +5954,7 @@ class ClickableTest {
         }
 
         // The indirect touch event should cause the indication node to be created
-        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, 0f)
+        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, Offset.Zero)
 
         rule.runOnIdle {
             assertThat(created).isTrue()

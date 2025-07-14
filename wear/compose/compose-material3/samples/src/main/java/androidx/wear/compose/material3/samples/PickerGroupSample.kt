@@ -60,6 +60,7 @@ fun PickerGroupSample() {
                 selected = selectedPickerIndex == 0,
                 onSelected = { selectedPickerIndex = 0 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
+                contentDescription = { "Hours" },
                 modifier = Modifier.size(80.dp, 100.dp),
             )
 
@@ -68,6 +69,7 @@ fun PickerGroupSample() {
                 selected = selectedPickerIndex == 1,
                 onSelected = { selectedPickerIndex = 1 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
+                contentDescription = { "Minutes" },
                 modifier = Modifier.size(80.dp, 100.dp),
             )
         }
@@ -103,6 +105,7 @@ fun AutoCenteringPickerGroup() {
                 selected = selectedPickerIndex == 0,
                 onSelected = { selectedPickerIndex = 0 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
+                contentDescription = { "Hours" },
                 modifier = Modifier.size(80.dp, 100.dp),
             )
             PickerGroupItem(
@@ -110,6 +113,7 @@ fun AutoCenteringPickerGroup() {
                 selected = selectedPickerIndex == 1,
                 onSelected = { selectedPickerIndex = 1 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
+                contentDescription = { "Minutes" },
                 modifier = Modifier.size(80.dp, 100.dp),
             )
             PickerGroupItem(
@@ -117,6 +121,7 @@ fun AutoCenteringPickerGroup() {
                 selected = selectedPickerIndex == 2,
                 onSelected = { selectedPickerIndex = 2 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
+                contentDescription = { "Seconds" },
                 modifier = Modifier.size(80.dp, 100.dp),
             )
             PickerGroupItem(
@@ -124,6 +129,7 @@ fun AutoCenteringPickerGroup() {
                 selected = selectedPickerIndex == 3,
                 onSelected = { selectedPickerIndex = 3 },
                 option = { optionIndex, _ -> Text(text = "%03d".format(optionIndex)) },
+                contentDescription = { "Milliseconds" },
                 modifier = Modifier.size(80.dp, 100.dp),
             )
         }

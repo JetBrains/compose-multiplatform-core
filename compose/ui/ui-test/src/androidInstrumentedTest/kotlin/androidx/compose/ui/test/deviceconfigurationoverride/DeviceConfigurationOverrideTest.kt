@@ -36,9 +36,18 @@ import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.ForcedSize
+import androidx.compose.ui.test.Keyboard
+import androidx.compose.ui.test.KeyboardHidden
+import androidx.compose.ui.test.KeyboardType
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.Locales
+import androidx.compose.ui.test.Navigation
+import androidx.compose.ui.test.NavigationHidden
+import androidx.compose.ui.test.NavigationType
 import androidx.compose.ui.test.RoundScreen
+import androidx.compose.ui.test.Touchscreen
+import androidx.compose.ui.test.UiMode
+import androidx.compose.ui.test.UiModeType
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -576,6 +585,87 @@ class DeviceConfigurationOverrideTest {
         }
 
         assertFalse(configuration.isScreenRound)
+    }
+
+    @Test
+    fun keyboardOverride_qwerty_overridesKeyboardConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.Keyboard(KeyboardType.Qwerty)) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.keyboard, Configuration.KEYBOARD_QWERTY)
+    }
+
+    @Test
+    fun keyboardHiddenOverride_false_overridesKeyboardHiddenConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.KeyboardHidden(false)) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.keyboardHidden, Configuration.KEYBOARDHIDDEN_NO)
+    }
+
+    @Test
+    fun navigationOverride_false_overridesNavigationConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.Navigation(NavigationType.Dpad)
+            ) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.navigation, Configuration.NAVIGATION_DPAD)
+    }
+
+    @Test
+    fun navigationHiddenOverride_false_overridesNavigationHiddenConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.NavigationHidden(false)) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.navigationHidden, Configuration.NAVIGATIONHIDDEN_NO)
+    }
+
+    @Test
+    fun touchscreen_false_overridesTouchscreenConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.Touchscreen(false)) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        assertEquals(configuration.touchscreen, Configuration.TOUCHSCREEN_NOTOUCH)
+    }
+
+    @Test
+    fun uiModeOverride_car_overridesUiModeConfigValue() {
+        lateinit var configuration: Configuration
+
+        rule.setContent {
+            DeviceConfigurationOverride(DeviceConfigurationOverride.UiMode(UiModeType.Car)) {
+                configuration = LocalConfiguration.current
+            }
+        }
+
+        val uiMode = configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+        assertEquals(uiMode, Configuration.UI_MODE_TYPE_CAR)
     }
 
     @Test

@@ -17,6 +17,7 @@
 package androidx.privacysandbox.ui.integration.testapp.fragments
 
 import android.os.Bundle
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.FragmentOption
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
@@ -37,6 +38,7 @@ import androidx.privacysandbox.ui.integration.testapp.fragments.views.ScrollFrag
 
 data class FragmentOptions(
     @FragmentOption val cujType: Int,
+    @AdFormat val adFormat: Int,
     @MediationOption val mediation: Int,
     @AdType val adType: Int,
     @ZOrderOption val isZOrderOnTop: Boolean,
@@ -54,6 +56,10 @@ data class FragmentOptions(
         const val FRAGMENT_SCROLL = "scroll"
         const val FRAGMENT_POOLING_CONTAINER = "pooling-container"
         const val FRAGMENT_OCCLUSIONS_HIDDEN = "occlusions-hidden"
+
+        const val KEY_AD_FORMAT = "ad-format"
+        const val AD_FORMAT_BANNER_AD = "banner-ad" // default
+        const val AD_FORMAT_NATIVE_AD = "native-ad"
 
         const val KEY_MEDIATION = "mediation"
         const val MEDIATION_TYPE_NON_MEDIATED = "non-mediated" // default
@@ -93,6 +99,13 @@ data class FragmentOptions(
                     FRAGMENT_SCROLL_HIDDEN -> FragmentOption.SCROLL_HIDDEN
                     FRAGMENT_OCCLUSIONS_HIDDEN -> FragmentOption.OCCLUSIONS_HIDDEN
                     else -> FragmentOption.RESIZE
+                }
+            val adFormatExtra = extras.getString(KEY_AD_FORMAT)
+            val adFormat =
+                when (adFormatExtra) {
+                    AD_FORMAT_BANNER_AD -> AdFormat.BANNER_AD
+                    AD_FORMAT_NATIVE_AD -> AdFormat.NATIVE_AD
+                    else -> AdFormat.BANNER_AD
                 }
             val mediationExtra = extras.getString(KEY_MEDIATION)
             val mediation =
@@ -139,6 +152,7 @@ data class FragmentOptions(
                 }
             return FragmentOptions(
                 fragment,
+                adFormat,
                 mediation,
                 adType,
                 zOrder,

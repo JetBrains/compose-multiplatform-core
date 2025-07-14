@@ -56,6 +56,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraEffect;
+import androidx.camera.core.CameraIdentifier;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CompositionSettings;
@@ -77,7 +78,6 @@ import androidx.camera.core.impl.CameraControlInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.CameraMode;
 import androidx.camera.core.impl.Config;
-import androidx.camera.core.impl.Identifier;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.SessionProcessor;
@@ -89,8 +89,6 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.compat.workaround.StreamSharingForceEnabler;
 import androidx.camera.core.streamsharing.StreamSharing;
 import androidx.core.util.Preconditions;
-
-import com.google.auto.value.AutoValue;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -117,7 +115,7 @@ public final class CameraUseCaseAdapter implements Camera {
 
     private static final String TAG = "CameraUseCaseAdapter";
 
-    private final CameraId mId;
+    private final CameraIdentifier mCameraIdentifier;
 
     // UseCases from the app. This does not include internal UseCases created by CameraX.
     @GuardedBy("mLock")
@@ -237,34 +235,20 @@ public final class CameraUseCaseAdapter implements Camera {
         mSecondaryCompositionSettings = secondaryCompositionSettings;
         mCameraCoordinator = cameraCoordinator;
         mUseCaseConfigFactory = useCaseConfigFactory;
-        mId = generateCameraId(adapterCameraInfo, secondaryAdapterCameraInfo);
+        mCameraIdentifier =
+                CameraIdentifier.fromAdapterInfos(adapterCameraInfo, secondaryAdapterCameraInfo);
         mStreamSpecsCalculator = streamSpecsCalculator;
     }
 
-    /**
-     * Generate a identifier for the {@link AdapterCameraInfo}.
-     */
-    public static @NonNull CameraId generateCameraId(
-            @NonNull AdapterCameraInfo primaryCameraInfo,
-            @Nullable AdapterCameraInfo secondaryCameraInfo) {
-        return CameraId.create(
-                primaryCameraInfo.getCameraId()
-                        + (secondaryCameraInfo == null ? "" : secondaryCameraInfo.getCameraId()),
-                primaryCameraInfo.getCameraConfig().getCompatibilityId());
-    }
-
-    /**
-     * Returns the identifier for this {@link CameraUseCaseAdapter}.
-     */
-    public @NonNull CameraId getCameraId() {
-        return mId;
+    public @NonNull CameraIdentifier getAdapterIdentifier() {
+        return mCameraIdentifier;
     }
 
     /**
      * Returns true if the {@link CameraUseCaseAdapter} is an equivalent camera.
      */
     public boolean isEquivalent(@NonNull CameraUseCaseAdapter cameraUseCaseAdapter) {
-        return getCameraId().equals(cameraUseCaseAdapter.getCameraId());
+        return getAdapterIdentifier().equals(cameraUseCaseAdapter.getAdapterIdentifier());
     }
 
     /**
@@ -1277,27 +1261,6 @@ public final class CameraUseCaseAdapter implements Camera {
 
         }
         return false;
-    }
-
-    /**
-     * An identifier for a {@link CameraUseCaseAdapter}.
-     *
-     * <p>This identifies the actual camera instances that are wrapped by the
-     * CameraUseCaseAdapter and is used to determine if 2 different instances of
-     * CameraUseCaseAdapter are actually equivalent.
-     */
-    @AutoValue
-    public abstract static class CameraId {
-        /** Creates a identifier for a {@link CameraUseCaseAdapter}. */
-        public static @NonNull CameraId create(@NonNull String cameraIdString,
-                @NonNull Identifier cameraConfigId) {
-            return new AutoValue_CameraUseCaseAdapter_CameraId(cameraIdString, cameraConfigId);
-        }
-
-        /** Gets the camera ID string. */
-        public abstract @NonNull String getCameraIdString();
-        /** Gets the camera configuration. */
-        public abstract @NonNull Identifier getCameraConfigId();
     }
 
     /**

@@ -19,9 +19,9 @@ package androidx.credentials.provider
 import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.credentials.SignalAllAcceptedCredentialRequest
+import androidx.credentials.SignalAllAcceptedCredentialIdsRequest
 import androidx.credentials.SignalCredentialStateRequest
-import androidx.credentials.SignalUnknownCredentialStateRequest
+import androidx.credentials.SignalUnknownCredentialRequest
 import androidx.credentials.provider.CallingAppInfo.Companion.EXTRA_CREDENTIAL_REQUEST_ORIGIN
 import androidx.credentials.provider.CallingAppInfo.Companion.extractCallingAppInfo
 import androidx.credentials.provider.CallingAppInfo.Companion.setCallingAppInfo
@@ -102,11 +102,11 @@ constructor(val callingRequest: SignalCredentialStateRequest, val callingAppInfo
             val callingRequest: SignalCredentialStateRequest =
                 when (requestType) {
                     SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE ->
-                        SignalUnknownCredentialStateRequest(requestJson, origin)
+                        SignalUnknownCredentialRequest(requestJson, origin)
                     SIGNAL_CURRENT_USER_DETAILS_STATE_REQUEST_TYPE ->
-                        SignalUnknownCredentialStateRequest(requestJson, origin)
+                        SignalUnknownCredentialRequest(requestJson, origin)
                     SIGNAL_ALL_ACCEPTED_CREDENTIALS_REQUEST_TYPE ->
-                        SignalAllAcceptedCredentialRequest(requestJson, origin)
+                        SignalAllAcceptedCredentialIdsRequest(requestJson, origin)
                     else -> throw IllegalArgumentException("Request type is not supported")
                 }
 
@@ -136,13 +136,13 @@ constructor(val callingRequest: SignalCredentialStateRequest, val callingAppInfo
             val signalRequest =
                 when (requestType) {
                     SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE ->
-                        SignalUnknownCredentialStateRequest(requestJson, origin)
+                        SignalUnknownCredentialRequest(requestJson, origin)
 
                     SIGNAL_CURRENT_USER_DETAILS_STATE_REQUEST_TYPE ->
-                        SignalUnknownCredentialStateRequest(requestJson, origin)
+                        SignalUnknownCredentialRequest(requestJson, origin)
 
                     SIGNAL_ALL_ACCEPTED_CREDENTIALS_REQUEST_TYPE ->
-                        SignalAllAcceptedCredentialRequest(requestJson, origin)
+                        SignalAllAcceptedCredentialIdsRequest(requestJson, origin)
 
                     else -> throw IllegalArgumentException("Request type is not supported")
                 }

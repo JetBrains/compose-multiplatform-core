@@ -78,7 +78,7 @@ public class PointerCaptureComponentImplTest {
     private final ShadowNode mShadowNode = ShadowNode.extract(mNode);
 
     private final Entity mEntity =
-            new AndroidXrEntity(mNode, mXrExtensions, new EntityManager(), mFakeScheduler) {};
+            new AndroidXrEntity(null, mNode, mXrExtensions, new EntityManager(), mFakeScheduler) {};
 
     private void sendInputEvent(com.android.extensions.xr.node.InputEvent inputEvent) {
         mShadowNode

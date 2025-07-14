@@ -4992,6 +4992,9 @@ public final class ProtoLayoutInflater {
                                             buildState(
                                                     action.getLoadAction(), mClickable.getId())));
                     break;
+                case PENDING_INTENT_ACTION:
+                    // TODO: b/427644099 - get the pending intent and launch associated operation.
+                    break;
                 case VALUE_NOT_SET:
                     break;
             }

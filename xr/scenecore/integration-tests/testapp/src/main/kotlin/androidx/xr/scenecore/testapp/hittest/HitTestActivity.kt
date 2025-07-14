@@ -79,7 +79,7 @@ class HitTestActivity : AppCompatActivity() {
                 Pose(Vector3(0f, -0.5f, .5f)),
             )
         panelEntity.parent = session!!.scene.activitySpace
-        val movableComponent = MovableComponent.create(session!!)
+        val movableComponent = MovableComponent.createSystemMovable(session!!)
         if (!panelEntity.addComponent(movableComponent)) {
             Log.e("HitTestActivity", "Error adding MovableComponent to panelEntity")
         }
@@ -93,40 +93,36 @@ class HitTestActivity : AppCompatActivity() {
         buttonHitTest.text = "Hit Test"
         buttonHitTest.setOnClickListener {
             if (session!!.scene.spatialUser.head != null) {
-
-                val hitTestFuture =
-                    session!!
-                        .scene
-                        .spatialUser
-                        .head!!
-                        .hitTestAsync(Vector3(), Vector3(0f, 0f, -1f))
-                        .get()
-                if (hitTestFuture.hitPosition != null && hitTestFuture.surfaceNormal != null) {
-                    val updatedRotation =
-                        Quaternion.fromLookTowards(
-                            hitTestFuture.surfaceNormal!!,
+                lifecycleScope.launch {
+                    val hitTest =
+                        session!!.scene.spatialUser.head!!.hitTest(Vector3(), Vector3(0f, 0f, -1f))
+                    if (hitTest.hitPosition != null && hitTest.surfaceNormal != null) {
+                        val updatedRotation =
+                            Quaternion.fromLookTowards(
+                                hitTest.surfaceNormal!!,
+                                session!!
+                                    .scene
+                                    .spatialUser
+                                    .head!!
+                                    .transformPoseTo(
+                                        Pose(Vector3(0f, 1f, 0f)),
+                                        session!!.scene.activitySpace,
+                                    )
+                                    .translation,
+                            )
+                        val hitTestPose =
                             session!!
                                 .scene
                                 .spatialUser
                                 .head!!
                                 .transformPoseTo(
-                                    Pose(Vector3(0f, 1f, 0f)),
+                                    Pose(hitTest.hitPosition!!, updatedRotation),
                                     session!!.scene.activitySpace,
                                 )
-                                .translation,
-                        )
-                    val hitTestPose =
-                        session!!
-                            .scene
-                            .spatialUser
-                            .head!!
-                            .transformPoseTo(
-                                Pose(hitTestFuture.hitPosition!!, updatedRotation),
-                                session!!.scene.activitySpace,
-                            )
-                    transformWidgetModel?.let {
-                        val gltfEntity = GltfModelEntity.create(session!!, it, hitTestPose)
-                        gltfEntity.parent = session!!.scene.activitySpace
+                        transformWidgetModel?.let {
+                            val gltfEntity = GltfModelEntity.create(session!!, it, hitTestPose)
+                            gltfEntity.parent = session!!.scene.activitySpace
+                        }
                     }
                 }
             }
@@ -136,7 +132,7 @@ class HitTestActivity : AppCompatActivity() {
             val dragonModel =
                 GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
             val gltfEntity =
-                GltfModelEntity.create(session!!, dragonModel, Pose(Vector3(1f, 0f, 0f)))
+                GltfModelEntity.create(session!!, dragonModel, Pose(Vector3(1f, 1f, -2f)))
             gltfEntity.parent = session!!.scene.activitySpace
             val interactableComponent = InteractableComponent.create(session!!, mainExecutor) {}
             if (!gltfEntity.addComponent(interactableComponent)) {

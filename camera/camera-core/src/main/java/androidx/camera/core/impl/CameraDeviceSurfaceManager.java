@@ -56,14 +56,17 @@ public interface CameraDeviceSurfaceManager {
     /**
      * Transform to a SurfaceConfig object with cameraId, image format and size info
      *
-     * @param cameraMode  the working camera mode.
-     * @param cameraId    the camera id of the camera device to transform the object
-     * @param imageFormat the image format info for the surface configuration object
-     * @param size        the size info for the surface configuration object
+     * @param cameraMode    the working camera mode.
+     * @param cameraId      the camera id of the camera device to transform the object
+     * @param imageFormat   the image format info for the surface configuration object
+     * @param size          the size info for the surface configuration object
      * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
+     * @throws IllegalArgumentException if the {@code cameraId} is not found in the supported
+     *                                  combinations, or if there isn't a supported combination of
+     *                                  surfaces available for the given parameters.
      */
-    @Nullable SurfaceConfig transformSurfaceConfig(
+    @NonNull SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,

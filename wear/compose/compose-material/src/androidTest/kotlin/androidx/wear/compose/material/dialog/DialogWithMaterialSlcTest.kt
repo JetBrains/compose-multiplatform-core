@@ -21,8 +21,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -929,14 +932,16 @@ class DialogWithMaterialSlcContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            AlertWithMaterialSlc(
-                title = {},
-                negativeButton = {},
-                positiveButton = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                AlertWithMaterialSlc(
+                    title = {},
+                    negativeButton = {},
+                    positiveButton = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -948,13 +953,15 @@ class DialogWithMaterialSlcContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            AlertWithMaterialSlc(
-                title = {},
-                message = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                AlertWithMaterialSlc(
+                    title = {},
+                    message = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -966,12 +973,14 @@ class DialogWithMaterialSlcContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            ConfirmationWithMaterialSlc(
-                onTimeout = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                ConfirmationWithMaterialSlc(
+                    onTimeout = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -986,7 +995,12 @@ class DialogWithMaterialSlcContentColorTest {
         var expectedBackground = Color.Transparent
 
         rule.setContentWithTheme {
-            Box(modifier = Modifier.fillMaxSize().background(testBackground)) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.Companion.navigationBars)
+                        .background(testBackground)
+            ) {
                 expectedBackground = expected()
                 content()
             }

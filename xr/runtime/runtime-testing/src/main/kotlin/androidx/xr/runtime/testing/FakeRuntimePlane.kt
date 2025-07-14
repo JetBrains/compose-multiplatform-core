@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.testing
 
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
 import androidx.xr.runtime.internal.Plane as RuntimePlane
@@ -68,5 +69,5 @@ public class FakeRuntimePlane(
         anchors.remove(anchor)
     }
 
-    override fun persistAnchor(anchor: RuntimeAnchor) {}
+    @RestrictTo(RestrictTo.Scope.LIBRARY) override fun onAnchorPersisted(anchor: RuntimeAnchor) {}
 }

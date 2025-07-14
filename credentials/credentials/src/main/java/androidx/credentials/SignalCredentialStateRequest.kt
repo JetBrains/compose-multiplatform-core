@@ -25,8 +25,8 @@ import androidx.annotation.RestrictTo
  * An application can construct a subtype request and call [CredentialManager.signalCredentialState]
  * to propagate a signal credential state request.
  *
- * @property type the request type representing one of [SignalAllAcceptedCredentialRequest],
- *   [SignalCurrentUserDetailsCredentialRequest] and [SignalUnknownCredentialStateRequest])
+ * @property type the request type representing one of [SignalAllAcceptedCredentialIdsRequest],
+ *   [SignalCurrentUserDetailsRequest] and [SignalUnknownCredentialRequest])
  * @property requestJson the request data
  * @property origin the origin of a different application if the request is being made on behalf of
  *   that application (Note: for API level >=34, setting a non-null value for this parameter will
@@ -72,11 +72,11 @@ internal constructor(
         ): SignalCredentialStateRequest {
             return when (requestType) {
                 SIGNAL_UNKNOWN_CREDENTIAL_STATE_REQUEST_TYPE ->
-                    SignalUnknownCredentialStateRequest(requestJson, origin)
+                    SignalUnknownCredentialRequest(requestJson, origin)
                 SIGNAL_CURRENT_USER_DETAILS_STATE_REQUEST_TYPE ->
-                    SignalUnknownCredentialStateRequest(requestJson, origin)
+                    SignalCurrentUserDetailsRequest(requestJson, origin)
                 SIGNAL_ALL_ACCEPTED_CREDENTIALS_REQUEST_TYPE ->
-                    SignalAllAcceptedCredentialRequest(requestJson, origin)
+                    SignalAllAcceptedCredentialIdsRequest(requestJson, origin)
                 else -> throw IllegalArgumentException("Request type is not supported")
             }
         }

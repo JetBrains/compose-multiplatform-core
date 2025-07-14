@@ -17,6 +17,9 @@
 
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <application>
+        <property
+            android:name="android.app.appfunctions.app_metadata"
+            android:resource="@xml/app_metadata" />
     </application>
 
 </manifest>

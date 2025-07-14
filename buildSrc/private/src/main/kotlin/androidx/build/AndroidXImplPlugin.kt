@@ -30,7 +30,6 @@ import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.gradle.isRoot
 import androidx.build.kythe.configureProjectForKzipTasks
 import androidx.build.license.addLicensesToPublishedArtifacts
-import androidx.build.resources.CopyPublicResourcesDirTask
 import androidx.build.resources.configurePublicResourcesStub
 import androidx.build.sbom.configureSbomPublishing
 import androidx.build.sbom.validateAllArchiveInputsRecognized
@@ -51,6 +50,7 @@ import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
@@ -70,7 +70,6 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.TestPlugin
 import com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin
 import com.android.build.gradle.api.PrivacySandboxSdkPlugin
-import com.android.utils.appendCapitalized
 import com.google.devtools.ksp.gradle.KspExtension
 import com.google.devtools.ksp.gradle.KspGradleSubplugin
 import com.google.protobuf.gradle.ProtobufExtension
@@ -728,21 +727,25 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             finalizeDsl {
                 it.aarMetadata.configure(it.compileSdk)
                 it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
-                // When b/409613130 is fixed, set it.testOptions.targetSdk =
-                // project.defaultAndroidConfig.targetSdk
                 project.setUpBlankProguardFileForKmpAarIfNeeded(
                     kotlinMultiplatformAndroidTarget.optimization.consumerKeepRules
                 )
             }
         }
 
-        project.configureProjectForApiTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
-        project.configureProjectForKzipTasks(AndroidMultiplatformApiTaskConfig, androidXExtension)
-        kotlinMultiplatformAndroidComponentsExtension.onVariants {
+        kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
+            project.configureProjectForApiTasks(
+                AndroidMultiplatformApiTaskConfig(variant),
+                androidXExtension,
+            )
+            project.configureProjectForKzipTasks(
+                AndroidMultiplatformApiTaskConfig(variant),
+                androidXExtension,
+            )
+            project.configurePublicResourcesStub(variant)
             project.configureMultiplatformSourcesForAndroid(androidXExtension.samplesProjects)
         }
 
-        project.configurePublicResourcesStub(project.multiplatformExtension!!)
         project.configureVersionFileWriter(project.multiplatformExtension!!, androidXExtension)
 
         project.configureDependencyVerification(androidXExtension) { taskProvider ->
@@ -771,34 +774,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 )
                 it.outgoing.artifact(project.tasks.named("createFullJarAndroidMain"))
             }
-        }
-        project.writeBlankPublicTxtToAar(kotlinMultiplatformAndroidComponentsExtension)
-    }
-
-    private fun Project.writeBlankPublicTxtToAar(
-        componentsExtension: KotlinMultiplatformAndroidComponentsExtension
-    ) {
-        val blankPublicResourceDir =
-            project.getSupportRootFolder().resolve("buildSrc/blank-res-api")
-        componentsExtension.onVariants { variant ->
-            val taskProvider =
-                tasks.register(
-                    "repackageAarWithResourceApi".appendCapitalized(variant.name),
-                    RepackagingTask::class.java,
-                ) { task ->
-                    task.from(blankPublicResourceDir)
-                    task.from(zipTree(task.aarFile))
-                    task.destinationDirectory.fileProvider(
-                        task.output.locationOnly.map { location -> location.asFile.parentFile }
-                    )
-                    task.archiveFileName.set(
-                        task.output.locationOnly.map { location -> location.asFile.name }
-                    )
-                }
-            variant.artifacts
-                .use(taskProvider)
-                .wiredWithFiles(RepackagingTask::aarFile, RepackagingTask::output)
-                .toTransform(SingleArtifact.AAR)
         }
     }
 
@@ -949,13 +924,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.configureVersionFileWriter(libraryAndroidComponentsExtension, androidXExtension)
 
         val prebuiltLibraries = listOf("libtracing_perfetto.so", "libc++_shared.so")
-        val copyPublicResourcesDirTask =
-            project.tasks.register(
-                "generatePublicResourcesStub",
-                CopyPublicResourcesDirTask::class.java,
-            ) { task ->
-                task.buildSrcResDir.set(File(project.getSupportRootFolder(), "buildSrc/res"))
-            }
         libraryAndroidComponentsExtension.onVariants { variant ->
             if (variant.buildType == DEFAULT_PUBLISH_CONFIG) {
                 // Standard docs, resource API, and Metalava configuration for AndroidX projects.
@@ -970,11 +938,11 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             }
             if (variant.name == DEFAULT_PUBLISH_CONFIG) {
                 project.configureSourceJarForAndroid(variant, androidXExtension.samplesProjects)
+                project.configurePublicResourcesStub(variant)
                 project.configureDependencyVerification(androidXExtension) { taskProvider ->
                     taskProvider.configure { task -> task.dependsOn("compileReleaseJavaWithJavac") }
                 }
             }
-            configurePublicResourcesStub(variant, copyPublicResourcesDirTask)
             val verifyELFRegionAlignmentTaskProvider =
                 project.tasks.register(
                     variant.name + "VerifyELFRegionAlignment",
@@ -1116,6 +1084,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         @Suppress("deprecation") // TODO(aurimas): migrate to new API
         project.afterEvaluate {
+            check(
+                !androidXExtension.shouldPublish() || !compileOptions.isCoreLibraryDesugaringEnabled
+            ) {
+                "AndroidX libraries are not permitted to use core library desugaring as it " +
+                    "forces library users to also enable core library desugaring."
+            }
+
             val minSdkVersion = defaultConfig.minSdk!!
             check(minSdkVersion >= defaultMinSdk) {
                 "minSdkVersion $minSdkVersion lower than the default of $defaultMinSdk"
@@ -1199,6 +1174,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             defaultSourceSetName = "androidInstrumentedTest"
             sourceSetTreeName = "test"
         }
+        configureTargetSdkForTests(project.defaultAndroidConfig.targetSdk)
 
         // validate that SDK versions haven't been altered during evaluation
         project.afterEvaluate {
@@ -1214,6 +1190,20 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
 
         project.configureTestConfigGeneration(buildFeatures.isIsolatedProjectsEnabled())
         project.configureFtlRunner(componentsExtension)
+    }
+
+    // TODO(b/425976012): Set targetSdkForTests to project.defaultAndroidConfig.targetSdk
+    private fun KotlinMultiplatformAndroidLibraryTarget.configureTargetSdkForTests(version: Int?) {
+        checkNotNull(version) {
+            "version must be set for tests. call `configureTargetSdkForTests` in the `finalizeDsl` block"
+        }
+        compilations
+            .withType(KotlinMultiplatformAndroidDeviceTestCompilation::class.java)
+            .configureEach { it.targetSdk { this.version = release(version) } }
+
+        compilations
+            .withType(KotlinMultiplatformAndroidHostTestCompilation::class.java)
+            .configureEach { it.targetSdk { this.version = release(version.coerceAtMost(35)) } }
     }
 
     /**
@@ -1538,10 +1528,9 @@ private fun Configuration.isTest(): Boolean = name.lowercase().contains("test")
 internal fun Configuration.isPublished(): Boolean =
     !isTest() && !name.lowercase().contains("metadata") && !name.endsWith("CInterop")
 
-val Project.androidExtension: AndroidComponentsExtension<*, *, *>
+internal val Project.androidExtension: AndroidComponentsExtension<*, *, *>
     get() =
-        extensions.findByType<LibraryAndroidComponentsExtension>()
-            ?: extensions.findByType<ApplicationAndroidComponentsExtension>()
+        extensions.findByType<KotlinMultiplatformAndroidComponentsExtension>()
             ?: throw IllegalArgumentException("Failed to find any registered Android extension")
 
 val Project.multiplatformExtension

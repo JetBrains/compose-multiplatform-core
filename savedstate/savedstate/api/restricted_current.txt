@@ -9,7 +9,7 @@ package androidx.savedstate {
   }
 
   @kotlin.jvm.JvmInline public final value class SavedStateReader {
-    ctor @kotlin.PublishedApi internal SavedStateReader(android.os.Bundle source);
+    ctor @KotlinOnly @kotlin.PublishedApi internal SavedStateReader(android.os.Bundle source);
     method @BytecodeOnly public static androidx.savedstate.SavedStateReader! box-impl(android.os.Bundle!);
     method @BytecodeOnly @kotlin.PublishedApi internal static android.os.Bundle constructor-impl(android.os.Bundle);
     method public operator boolean contains(String key);
@@ -213,7 +213,7 @@ package androidx.savedstate {
   }
 
   @kotlin.jvm.JvmInline public final value class SavedStateWriter {
-    ctor @kotlin.PublishedApi internal SavedStateWriter(android.os.Bundle source);
+    ctor @KotlinOnly @kotlin.PublishedApi internal SavedStateWriter(android.os.Bundle source);
     method @BytecodeOnly public static androidx.savedstate.SavedStateWriter! box-impl(android.os.Bundle!);
     method public void clear();
     method @BytecodeOnly public static void clear-impl(android.os.Bundle!);

@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.media3.common.C
@@ -95,10 +96,9 @@ import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.Texture
 import androidx.xr.scenecore.TextureSampler
 import androidx.xr.scenecore.scene
-import com.google.common.util.concurrent.FutureCallback
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
+import java.nio.file.Paths
+import kotlinx.coroutines.launch
 
 class VideoPlayerActivity : ComponentActivity() {
     private var exoPlayer: ExoPlayer? = null
@@ -129,7 +129,14 @@ class VideoPlayerActivity : ComponentActivity() {
         checkExternalStoragePermission()
 
         // Load texture
-        loadTexture()
+        lifecycleScope.launch {
+            alphaMaskTexture =
+                Texture.create(
+                    session,
+                    Paths.get("textures", "alpha_mask.png"),
+                    TextureSampler.create(),
+                )
+        }
 
         setContent {
             if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
@@ -138,25 +145,6 @@ class VideoPlayerActivity : ComponentActivity() {
                 VideoPlayerUi()
             }
         }
-    }
-
-    private fun loadTexture() {
-        val alphaMaskTextureFuture: ListenableFuture<Texture> =
-            Texture.create(session, "textures/alpha_mask.png", TextureSampler.create())
-        Futures.addCallback(
-            alphaMaskTextureFuture,
-            object : FutureCallback<Texture> {
-                override fun onSuccess(texture: Texture) {
-                    Log.i("VideoPlayerTestActivity", "Alpha mask texture created")
-                    alphaMaskTexture = texture
-                }
-
-                override fun onFailure(t: Throwable) {
-                    Log.e("VideoPlayerTestActivity", "Failed to create alpha mask texture", t)
-                }
-            },
-            Runnable::run,
-        )
     }
 
     @Composable
@@ -240,10 +228,13 @@ class VideoPlayerActivity : ComponentActivity() {
         return when (stereoMode) {
             SurfaceEntity.StereoMode.MONO ->
                 Dimensions(1.0f, videoHeight.toFloat() / videoWidth, 0.0f)
+
             SurfaceEntity.StereoMode.TOP_BOTTOM ->
                 Dimensions(1.0f, 0.5f * videoHeight.toFloat() / videoWidth, 0.0f)
+
             SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
                 Dimensions(1.0f, 2.0f * videoHeight.toFloat() / videoWidth, 0.0f)
+
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
     }
@@ -286,7 +277,7 @@ class VideoPlayerActivity : ComponentActivity() {
     private fun SystemApisCard(session: Session) {
         val movableComponentMP = remember { mutableStateOf<MovableComponent?>(null) }
         if (movableComponentMP.value == null) {
-            movableComponentMP.value = MovableComponent.create(session)
+            movableComponentMP.value = MovableComponent.createSystemMovable(session)
             session.scene.mainPanelEntity.addComponent(movableComponentMP.value!!)
         }
         Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
@@ -474,7 +465,11 @@ class VideoPlayerActivity : ComponentActivity() {
                 value = featherRadiusX,
                 onValueChange = {
                     featherRadiusX = it
-                    surfaceEntity!!.featherRadiusX = featherRadiusX
+                    surfaceEntity!!.edgeFeather =
+                        SurfaceEntity.EdgeFeatheringParams.SmoothFeather(
+                            featherRadiusX,
+                            featherRadiusY,
+                        )
                 },
                 valueRange = 0.0f..0.5f,
             )
@@ -483,7 +478,11 @@ class VideoPlayerActivity : ComponentActivity() {
                 value = featherRadiusY,
                 onValueChange = {
                     featherRadiusY = it
-                    surfaceEntity!!.featherRadiusY = featherRadiusY
+                    surfaceEntity!!.edgeFeather =
+                        SurfaceEntity.EdgeFeatheringParams.SmoothFeather(
+                            featherRadiusX,
+                            featherRadiusY,
+                        )
                 },
                 valueRange = 0.0f..0.5f,
             )
@@ -584,6 +583,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     session.scene.activitySpace,
                 )!!
             }
+
             else -> {
                 defaultPose
             }
@@ -637,7 +637,7 @@ class VideoPlayerActivity : ComponentActivity() {
                 SurfaceEntity.create(session, stereoMode, pose, canvasShape, surfaceContentLevel)
             // Make the video player movable (to make it easier to look at it from different
             // angles and distances)
-            movableComponent = MovableComponent.create(session)
+            movableComponent = MovableComponent.createSystemMovable(session)
             // The quad has a radius of 1.0 meters
             movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
             // component?.size = coordinates.size.toDimensionsInMeters(density)

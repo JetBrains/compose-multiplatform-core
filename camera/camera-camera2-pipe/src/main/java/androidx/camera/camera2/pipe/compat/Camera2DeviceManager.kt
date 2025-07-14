@@ -454,7 +454,9 @@ constructor(
 
     private suspend fun processRequestCloseById(request: RequestCloseById) {
         val cameraId = request.activeCameraId
-        Log.info { "PruningCamera2DeviceManager#processRequestCloseById(${request.activeCameraId}" }
+        Log.info {
+            "PruningCamera2DeviceManager#processRequestCloseById(${request.activeCameraId})"
+        }
 
         disconnectPendingRequestOpens(
             pendingRequestOpens.filter { it.request.virtualCamera.cameraId == cameraId }

@@ -17,7 +17,6 @@
 package androidx.text.vertical
 
 import android.graphics.Canvas
-import android.graphics.Paint
 import android.text.Spanned
 import android.text.TextPaint
 import kotlin.math.max
@@ -178,23 +177,5 @@ internal class RubyLayoutRun(
         if (out.size > 1) {
             out.fill(0f, 1, out.size)
         }
-    }
-}
-
-/**
- * Executes a block of code with a temporary applying scaling of the text size of a given
- * [TextPaint].
- */
-private inline fun <T : Paint, R> withTempScale(
-    textPaint: T,
-    scale: Float,
-    crossinline block: () -> R,
-): R {
-    val originalSize = textPaint.textSize
-    textPaint.textSize *= scale
-    try {
-        return block()
-    } finally {
-        textPaint.textSize = originalSize
     }
 }

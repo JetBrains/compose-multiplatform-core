@@ -40,12 +40,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertModifierIsPure
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.InspectableValue
@@ -80,6 +82,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DraggableTest {
@@ -169,16 +172,28 @@ class DraggableTest {
     }
 
     @Test
-    fun draggable_indirectTouchDrag_worksOnBothOrientations() {
+    fun draggable_indirectTouchDrag_worksOnBothOrientations_primaryXAxis() {
         var total = 0f
         var orientation by mutableStateOf(Orientation.Horizontal)
         setDraggableContent(enableInitialFocus = true) {
             Modifier.draggable(orientation) { total += it }
         }
 
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward()
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(TouchPadStart, 0f),
+                Offset(TouchPadEnd, 0f),
+                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+            )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeBackward()
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(TouchPadEnd, 0f),
+                Offset(TouchPadStart, 0f),
+                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+            )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
 
         rule.runOnIdle {
@@ -186,9 +201,117 @@ class DraggableTest {
             total = 0f
         }
 
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeForward()
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(TouchPadStart, 0f),
+                Offset(TouchPadEnd, 0f),
+                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+            )
         rule.runOnIdle { assertThat(total).isGreaterThan(0) }
-        rule.onNodeWithTag(draggableBoxTag).sendIndirectSwipeBackward()
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(TouchPadEnd, 0f),
+                Offset(TouchPadStart, 0f),
+                primaryAxis = IndirectTouchEventPrimaryAxis.X,
+            )
+        rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
+    }
+
+    @Test
+    fun draggable_indirectTouchDrag_worksOnBothOrientations_primaryYAxis() {
+        var total = 0f
+        var orientation by mutableStateOf(Orientation.Horizontal)
+        setDraggableContent(enableInitialFocus = true) {
+            Modifier.draggable(orientation) { total += it }
+        }
+
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(0f, TouchPadStart),
+                Offset(0f, TouchPadEnd),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+            )
+        rule.runOnIdle { assertThat(total).isGreaterThan(0) }
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(0f, TouchPadEnd),
+                Offset(0f, TouchPadStart),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+            )
+        rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
+
+        rule.runOnIdle {
+            orientation = Orientation.Vertical
+            total = 0f
+        }
+
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(0f, TouchPadStart),
+                Offset(0f, TouchPadEnd),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+            )
+        rule.runOnIdle { assertThat(total).isGreaterThan(0) }
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(0f, TouchPadEnd),
+                Offset(0f, TouchPadStart),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Y,
+            )
+        rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
+    }
+
+    @Test
+    fun draggable_indirectTouchDrag_worksOnBothOrientations_noPrimaryAxis() {
+        var total = 0f
+        var orientation by mutableStateOf(Orientation.Horizontal)
+        setDraggableContent(enableInitialFocus = true) {
+            Modifier.draggable(orientation) { total += it }
+        }
+
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(TouchPadStart, 0f),
+                Offset(TouchPadEnd, 0f),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+            )
+        rule.runOnIdle { assertThat(total).isGreaterThan(0) }
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(TouchPadEnd, 0f),
+                Offset(TouchPadStart, 0f),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+            )
+        rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
+
+        rule.runOnIdle {
+            orientation = Orientation.Vertical
+            total = 0f
+        }
+
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(0f, TouchPadStart),
+                Offset(0f, TouchPadEnd),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+            )
+        rule.runOnIdle { assertThat(total).isGreaterThan(0) }
+        rule
+            .onNodeWithTag(draggableBoxTag)
+            .sendIndirectSwipeEvent(
+                Offset(0f, TouchPadEnd),
+                Offset(0f, TouchPadStart),
+                primaryAxis = IndirectTouchEventPrimaryAxis.Unspecified,
+            )
         rule.runOnIdle { assertThat(total).isLessThan(0.01f) }
     }
 
@@ -699,9 +822,9 @@ class DraggableTest {
             } else Modifier
         }
 
-        val stepSize = (TouchPadEnd - TouchPadStart) / 10
+        val stepSize = Offset((TouchPadEnd - TouchPadStart) / 10, 0f)
         var currentTime = SystemClock.uptimeMillis()
-        var currentValue = TouchPadStart
+        var currentValue = Offset(TouchPadStart, 0f)
 
         rule.onNodeWithTag(draggableBoxTag).sendIndirectTouchPressEvent(currentTime, currentValue)
         currentTime += 16L
@@ -710,7 +833,14 @@ class DraggableTest {
         val (newCurrentTime, newCurrentValue) =
             rule
                 .onNodeWithTag(draggableBoxTag)
-                .sendIndirectTouchMoveEvents(5, currentTime, currentValue, 16L, 1, stepSize)
+                .sendIndirectTouchMoveEvents(
+                    5,
+                    currentTime,
+                    currentValue,
+                    16L,
+                    stepSize,
+                    IndirectTouchEventPrimaryAxis.X,
+                )
 
         val prevTotal =
             rule.runOnIdle {
@@ -823,9 +953,9 @@ class DraggableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        val stepSize = (TouchPadEnd - TouchPadStart) / 10
+        val stepSize = Offset((TouchPadEnd - TouchPadStart) / 10, 0f)
         var currentTime = SystemClock.uptimeMillis()
-        var currentValue = TouchPadStart
+        var currentValue = Offset(TouchPadStart, 0f)
 
         rule.onNodeWithTag(draggableBoxTag).sendIndirectTouchPressEvent(currentTime, currentValue)
         currentTime += 16L
@@ -834,7 +964,14 @@ class DraggableTest {
         val (newCurrentTime, newCurrentValue) =
             rule
                 .onNodeWithTag(draggableBoxTag)
-                .sendIndirectTouchMoveEvents(5, currentTime, currentValue, 16L, 1, stepSize)
+                .sendIndirectTouchMoveEvents(
+                    5,
+                    currentTime,
+                    currentValue,
+                    16L,
+                    stepSize,
+                    IndirectTouchEventPrimaryAxis.X,
+                )
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)

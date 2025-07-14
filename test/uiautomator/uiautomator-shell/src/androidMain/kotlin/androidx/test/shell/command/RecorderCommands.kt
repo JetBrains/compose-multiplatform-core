@@ -64,9 +64,7 @@ public class RecorderCommands internal constructor(private val shell: Shell) {
                     .toInt()
 
             // Ensure recording has started
-            waitFor(onError = { throwWithCommandOutput() }) {
-                process.processGrep("screenrecord").any { it.pid == processPid }
-            }
+            waitFor(onError = { throwWithCommandOutput() }) { process.isProcessAlive(processPid) }
 
             return Recording(
                 pid = processPid,

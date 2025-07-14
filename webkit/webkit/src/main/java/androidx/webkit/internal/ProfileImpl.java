@@ -101,6 +101,7 @@ public class ProfileImpl implements Profile {
         }
     }
 
+    @Profile.ExperimentalUrlPrefetch
     @Override
     public void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
@@ -122,6 +123,7 @@ public class ProfileImpl implements Profile {
         }
     }
 
+    @Profile.ExperimentalUrlPrefetch
     @Override
     public void prefetchUrlAsync(@NonNull String url,
             @Nullable CancellationSignal cancellationSignal,
@@ -136,6 +138,7 @@ public class ProfileImpl implements Profile {
         }
     }
 
+    @Profile.ExperimentalUrlPrefetch
     @Override
     public void clearPrefetchAsync(@NonNull String url,
             @NonNull Executor callbackExecutor,
@@ -149,6 +152,7 @@ public class ProfileImpl implements Profile {
         }
     }
 
+    @Profile.ExperimentalUrlPrefetch
     @Override
     public void setSpeculativeLoadingConfig(
             @NonNull SpeculativeLoadingConfig speculativeLoadingConfig) {

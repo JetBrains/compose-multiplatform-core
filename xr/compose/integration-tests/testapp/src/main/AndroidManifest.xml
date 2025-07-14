@@ -105,6 +105,26 @@
            android:exported="true"
            android:label="SplitEngineTest"
            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".depthstacking.DepthStacking"
+            android:exported="true"
+            android:label="DepthStacking"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".nestedsubspace.NestedSubspace"
+            android:exported="true"
+            android:label="NestedSubspace"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".panelvolume.PanelVolume"
+            android:exported="true"
+            android:label="PanelVolume"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".resizablepanel.ResizablePanel"
+            android:exported="true"
+            android:label="ResizablePanel"
+            android:theme="@style/Theme.IntegrationTestsApp" />
 
 
         <property

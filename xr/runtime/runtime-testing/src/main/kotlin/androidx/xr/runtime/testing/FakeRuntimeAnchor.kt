@@ -52,10 +52,17 @@ internal constructor(
     public var isAttached: Boolean = anchorHolder != null
         private set
 
+    /**
+     * Generates a random UUID for the anchor and adds it to [FakePerceptionManager.anchorUuids].
+     *
+     * This function will only be added to the list of anchors returned by
+     * [FakePerceptionManager.getPersistedAnchorUuids] if the [anchorHolder] is a
+     * [FakePerceptionManager].
+     */
     override fun persist() {
         uuid = UUID.randomUUID()
         persistenceState = RuntimeAnchor.PersistenceState.PERSISTED
-        anchorHolder?.persistAnchor(this)
+        anchorHolder?.onAnchorPersisted(this)
     }
 
     override fun detach() {
@@ -67,7 +74,7 @@ internal constructor(
 
     public companion object {
         /** Limit for the number of anchors that can be created. */
-        public const val ANCHOR_RESOURCE_LIMIT: Int = 5
+        public const val ANCHOR_RESOURCE_LIMIT: Int = 6
         /** The current number of anchors created. */
         @JvmStatic public var anchorsCreatedCount: Int = 0
     }

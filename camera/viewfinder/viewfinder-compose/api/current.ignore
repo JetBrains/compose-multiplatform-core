@@ -1,15 +1,7 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.camera.viewfinder.compose.CoordinateTransformer#getTransformMatrix-sQKQjiQ():
-    Binary breaking change: Added method androidx.camera.viewfinder.compose.CoordinateTransformer.getTransformMatrix-sQKQjiQ()
-AddedAbstractMethod: androidx.camera.viewfinder.compose.MutableCoordinateTransformer#setTransformMatrix-58bKbWc(float[]):
-    Binary breaking change: Added method androidx.camera.viewfinder.compose.MutableCoordinateTransformer.setTransformMatrix-58bKbWc(float[])
-
-
-AddedMethod: androidx.camera.viewfinder.compose.CoordinateTransformer#transform-MK-Hz9U(long):
-    Added method androidx.camera.viewfinder.compose.CoordinateTransformer.transform-MK-Hz9U(long)
-AddedMethod: androidx.camera.viewfinder.compose.CoordinateTransformerKt#MutableCoordinateTransformer-58bKbWc(float[]):
-    Added method androidx.camera.viewfinder.compose.CoordinateTransformerKt.MutableCoordinateTransformer-58bKbWc(float[])
-AddedMethod: androidx.camera.viewfinder.compose.IdentityCoordinateTransformer#getTransformMatrix-sQKQjiQ():
-    Added method androidx.camera.viewfinder.compose.IdentityCoordinateTransformer.getTransformMatrix-sQKQjiQ()
-AddedMethod: androidx.camera.viewfinder.compose.ViewfinderKt#Viewfinder(androidx.camera.viewfinder.core.ViewfinderSurfaceRequest, androidx.compose.ui.Modifier, androidx.camera.viewfinder.core.TransformationInfo, androidx.camera.viewfinder.compose.MutableCoordinateTransformer, androidx.compose.ui.Alignment, androidx.compose.ui.layout.ContentScale, kotlin.jvm.functions.Function1<? super androidx.camera.viewfinder.compose.ViewfinderInitScope,kotlin.Unit>, androidx.compose.runtime.Composer, int, int):
-    Added method androidx.camera.viewfinder.compose.ViewfinderKt.Viewfinder(androidx.camera.viewfinder.core.ViewfinderSurfaceRequest,androidx.compose.ui.Modifier,androidx.camera.viewfinder.core.TransformationInfo,androidx.camera.viewfinder.compose.MutableCoordinateTransformer,androidx.compose.ui.Alignment,androidx.compose.ui.layout.ContentScale,kotlin.jvm.functions.Function1<? super androidx.camera.viewfinder.compose.ViewfinderInitScope,kotlin.Unit>,androidx.compose.runtime.Composer,int,int)
+RemovedMethod: androidx.camera.viewfinder.compose.CoordinateTransformer#getTransformMatrix():
+    Binary breaking change: Removed method androidx.camera.viewfinder.compose.CoordinateTransformer.getTransformMatrix()
+RemovedMethod: androidx.camera.viewfinder.compose.IdentityCoordinateTransformer#getTransformMatrix():
+    Binary breaking change: Removed method androidx.camera.viewfinder.compose.IdentityCoordinateTransformer.getTransformMatrix()
+RemovedMethod: androidx.camera.viewfinder.compose.MutableCoordinateTransformer#setTransformMatrix(float[]):
+    Binary breaking change: Removed method androidx.camera.viewfinder.compose.MutableCoordinateTransformer.setTransformMatrix(float[])

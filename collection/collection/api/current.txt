@@ -219,7 +219,7 @@ package androidx.collection {
   }
 
   @kotlin.jvm.JvmInline public final value class FloatFloatPair {
-    ctor public FloatFloatPair(float first, float second);
+    ctor @KotlinOnly public FloatFloatPair(float first, float second);
     method @BytecodeOnly public static androidx.collection.FloatFloatPair! box-impl(long);
     method public inline operator float component1();
     method @BytecodeOnly public static float component1-impl(long);
@@ -622,7 +622,7 @@ package androidx.collection {
   }
 
   @kotlin.jvm.JvmInline public final value class IntIntPair {
-    ctor public IntIntPair(int first, int second);
+    ctor @KotlinOnly public IntIntPair(int first, int second);
     method @BytecodeOnly public static androidx.collection.IntIntPair! box-impl(long);
     method public inline operator int component1();
     method @BytecodeOnly public static int component1-impl(long);

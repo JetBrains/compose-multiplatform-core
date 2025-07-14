@@ -16,6 +16,7 @@
 
 package androidx.webkit.internal;
 
+import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewStartUpConfig;
 
 import org.chromium.support_lib_boundary.WebViewStartUpConfigBoundaryInterface;
@@ -27,6 +28,7 @@ import java.util.concurrent.Executor;
  * Adapter between WebViewStartUpConfig and WebViewStartUpConfigBoundaryInterface (the
  * corresponding interface shared with the support library glue in the WebView APK).
  */
+@WebViewCompat.ExperimentalAsyncStartUp
 public class WebViewStartUpConfigAdapter implements WebViewStartUpConfigBoundaryInterface {
     private final WebViewStartUpConfig mWebViewStartUpConfig;
 

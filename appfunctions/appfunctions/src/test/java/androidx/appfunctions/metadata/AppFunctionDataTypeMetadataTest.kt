@@ -27,6 +27,7 @@ class AppFunctionDataTypeMetadataTest {
 
     @Test
     fun appFunctionArrayTypeMetadata_equalsAndHashCode() {
+        val description = "Test array description"
         val properties2 = mapOf("prop2" to AppFunctionPrimitiveTypeMetadata(TYPE_STRING, true))
 
         val arrayType1a =
@@ -37,6 +38,7 @@ class AppFunctionDataTypeMetadataTest {
             AppFunctionArrayTypeMetadata(
                 AppFunctionObjectTypeMetadata(properties2, emptyList(), "qualifiedName", false),
                 false,
+                description,
             )
 
         assertThat(arrayType1a).isEqualTo(arrayType1b)
@@ -48,8 +50,13 @@ class AppFunctionDataTypeMetadataTest {
 
     @Test
     fun appFunctionArrayTypeMetadata_toAppFunctionDataTypeMetadataDocument_returnsCorrectDocument() {
+        val description = "Test array description"
         val arrayType =
-            AppFunctionArrayTypeMetadata(AppFunctionPrimitiveTypeMetadata(TYPE_INT, true), false)
+            AppFunctionArrayTypeMetadata(
+                AppFunctionPrimitiveTypeMetadata(TYPE_INT, true),
+                false,
+                description,
+            )
 
         val document = arrayType.toAppFunctionDataTypeMetadataDocument()
 
@@ -60,33 +67,45 @@ class AppFunctionDataTypeMetadataTest {
                     itemType =
                         AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = true),
                     isNullable = false,
+                    description = description,
                 )
             )
     }
 
     @Test
     fun appFunctionAllOfTypeMetadata_equalsAndHashCode() {
+        val description = "Test AllOf description"
+
         val properties1 = mapOf("prop1" to AppFunctionPrimitiveTypeMetadata(TYPE_INT, false))
         val objectType =
-            AppFunctionObjectTypeMetadata(properties1, listOf("prop1"), "qualifiedName", false)
+            AppFunctionObjectTypeMetadata(
+                properties1,
+                listOf("prop1"),
+                "qualifiedName",
+                false,
+                description,
+            )
         val referenceType = AppFunctionReferenceTypeMetadata("type1", false)
         val allOfDataType1 =
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(objectType),
                 isNullable = true,
                 qualifiedName = null,
+                description = description,
             )
         val allOfDataType2 =
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(objectType, referenceType),
                 isNullable = true,
                 qualifiedName = "allOf1",
+                description = description,
             )
         val allOfDataType2a =
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(objectType, referenceType),
                 isNullable = true,
                 qualifiedName = "allOf1",
+                description = description,
             )
 
         assertThat(allOfDataType1).isNotEqualTo(allOfDataType2)
@@ -98,15 +117,24 @@ class AppFunctionDataTypeMetadataTest {
 
     @Test
     fun appFunctionAllOfTypeMetadata_toAppFunctionDatatypeMetadataDocument_returnsCorrectDocument() {
+        val description = "Test AllOf description"
+
         val properties1 = mapOf("prop1" to AppFunctionPrimitiveTypeMetadata(TYPE_INT, false))
         val objectType =
-            AppFunctionObjectTypeMetadata(properties1, listOf("prop1"), "qualifiedName", false)
+            AppFunctionObjectTypeMetadata(
+                properties1,
+                listOf("prop1"),
+                "qualifiedName",
+                false,
+                description,
+            )
         val referenceType = AppFunctionReferenceTypeMetadata("type1", false)
         val allOfDataType =
             AppFunctionAllOfTypeMetadata(
                 matchAll = listOf(referenceType, objectType),
                 isNullable = true,
                 qualifiedName = "allOf1",
+                description = description,
             )
 
         val document = allOfDataType.toAppFunctionDataTypeMetadataDocument()
@@ -127,15 +155,35 @@ class AppFunctionDataTypeMetadataTest {
 
     @Test
     fun appFunctionObjectTypeMetadata_equalsAndHashCode() {
+        val description = "Test Object description"
+
         val properties1 = mapOf("prop1" to AppFunctionPrimitiveTypeMetadata(TYPE_INT, false))
         val properties2 = mapOf("prop2" to AppFunctionPrimitiveTypeMetadata(TYPE_STRING, true))
 
         val objectType1a =
-            AppFunctionObjectTypeMetadata(properties1, listOf("prop1"), "qualifiedName", false)
+            AppFunctionObjectTypeMetadata(
+                properties1,
+                listOf("prop1"),
+                "qualifiedName",
+                false,
+                description,
+            )
         val objectType1b =
-            AppFunctionObjectTypeMetadata(properties1, listOf("prop1"), "qualifiedName", false)
+            AppFunctionObjectTypeMetadata(
+                properties1,
+                listOf("prop1"),
+                "qualifiedName",
+                false,
+                description,
+            )
         val objectType2 =
-            AppFunctionObjectTypeMetadata(properties2, listOf("prop2"), "qualifiedName", true)
+            AppFunctionObjectTypeMetadata(
+                properties2,
+                listOf("prop2"),
+                "qualifiedName",
+                true,
+                description,
+            )
 
         assertThat(objectType1a).isEqualTo(objectType1b)
         assertThat(objectType1a.hashCode()).isEqualTo(objectType1b.hashCode())
@@ -146,6 +194,7 @@ class AppFunctionDataTypeMetadataTest {
 
     @Test
     fun appFunctionObjectTypeMetadata_toAppFunctionDataTypeMetadataDocument_returnsCorrectDocument() {
+        val description = "Test Object description"
         val primitiveTypeInt = AppFunctionPrimitiveTypeMetadata(TYPE_INT, true)
         val primitiveTypeLong = AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false)
         val properties = mapOf("prop1" to primitiveTypeInt, "prop2" to primitiveTypeLong)
@@ -153,7 +202,13 @@ class AppFunctionDataTypeMetadataTest {
         val qualifiedName = "qualifiedName"
         val requiredProperties = listOf("prop1", "prop2")
         val appFunctionObjectTypeMetadata =
-            AppFunctionObjectTypeMetadata(properties, requiredProperties, qualifiedName, isNullable)
+            AppFunctionObjectTypeMetadata(
+                properties,
+                requiredProperties,
+                qualifiedName,
+                isNullable,
+                description,
+            )
 
         val convertedDocument =
             appFunctionObjectTypeMetadata.toAppFunctionDataTypeMetadataDocument()
@@ -181,29 +236,37 @@ class AppFunctionDataTypeMetadataTest {
                 required = requiredProperties,
                 objectQualifiedName = "qualifiedName",
                 isNullable = false,
+                description = description,
             )
         assertThat(convertedDocument).isEqualTo(expectedAppFunctionDataTypeMetadataDocument)
     }
 
     @Test
     fun appFunctionReferenceTypeMetadata_equalsAndHashCode() {
-        val ref1a = AppFunctionReferenceTypeMetadata("type1", false)
-        val ref1b = AppFunctionReferenceTypeMetadata("type1", false)
-        val ref2 = AppFunctionReferenceTypeMetadata("type2", true)
+        val description = "Test reference description"
+        val ref1a = AppFunctionReferenceTypeMetadata("type1", false, description)
+        val ref1b = AppFunctionReferenceTypeMetadata("type1", false, description)
+        val ref2 = AppFunctionReferenceTypeMetadata("type2", true, description)
+        val ref3 = AppFunctionReferenceTypeMetadata("type1", false, "Different description")
 
         assertThat(ref1a).isEqualTo(ref1b)
         assertThat(ref1a.hashCode()).isEqualTo(ref1b.hashCode())
 
         assertThat(ref1a).isNotEqualTo(ref2)
         assertThat(ref1a.hashCode()).isNotEqualTo(ref2.hashCode())
+
+        assertThat(ref1a).isNotEqualTo(ref3)
+        assertThat(ref1a.hashCode()).isNotEqualTo(ref3.hashCode())
     }
 
     @Test
     fun appFunctionReferenceTypeMetadata_toAppFunctionDataTypeMetadataDocument_returnsCorrectDocument() {
+        val description = "Test reference description"
         val referenceType =
             AppFunctionReferenceTypeMetadata(
                 referenceDataType = "#components/dataTypes/Test",
                 isNullable = true,
+                description = description,
             )
 
         val document = referenceType.toAppFunctionDataTypeMetadataDocument()
@@ -214,32 +277,53 @@ class AppFunctionDataTypeMetadataTest {
                     type = AppFunctionReferenceTypeMetadata.TYPE,
                     dataTypeReference = "#components/dataTypes/Test",
                     isNullable = true,
+                    description = description,
                 )
             )
     }
 
     @Test
     fun appFunctionPrimitiveTypeMetadata_equalsAndHashCode() {
-        val primitive1a = AppFunctionPrimitiveTypeMetadata(TYPE_INT, false)
-        val primitive1b = AppFunctionPrimitiveTypeMetadata(TYPE_INT, false)
-        val primitive2 = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, false)
+        val primitive1a = AppFunctionPrimitiveTypeMetadata(TYPE_INT, false, "Primitive description")
+        val primitive1b = AppFunctionPrimitiveTypeMetadata(TYPE_INT, false, "Primitive description")
+        val primitive2 =
+            AppFunctionPrimitiveTypeMetadata(TYPE_STRING, false, "Primitive description")
+        val primitive3 =
+            AppFunctionPrimitiveTypeMetadata(TYPE_INT, false, "Another primitive description")
 
         assertThat(primitive1a).isEqualTo(primitive1b)
         assertThat(primitive1a.hashCode()).isEqualTo(primitive1b.hashCode())
 
         assertThat(primitive1a).isNotEqualTo(primitive2)
         assertThat(primitive1a.hashCode()).isNotEqualTo(primitive2.hashCode())
+
+        assertThat(primitive1a).isNotEqualTo(primitive3)
+        assertThat(primitive1a.hashCode()).isNotEqualTo(primitive3.hashCode())
     }
 
     @Test
     fun appFunctionPrimitiveTypeMetadata_toAppFunctionDataTypeMetadataDocument_returnsCorrectDocument() {
-        val primitiveTypeInt = AppFunctionPrimitiveTypeMetadata(TYPE_INT, true)
-        val primitiveTypeLong = AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false)
+        val primitiveTypeInt =
+            AppFunctionPrimitiveTypeMetadata(TYPE_INT, true, "primitiveTypeInt description")
+        val primitiveTypeLong =
+            AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false, "primitiveTypeLong description")
 
         assertThat(primitiveTypeInt.toAppFunctionDataTypeMetadataDocument())
-            .isEqualTo(AppFunctionDataTypeMetadataDocument(type = TYPE_INT, isNullable = true))
+            .isEqualTo(
+                AppFunctionDataTypeMetadataDocument(
+                    type = TYPE_INT,
+                    isNullable = true,
+                    description = "primitiveTypeInt description",
+                )
+            )
         assertThat(primitiveTypeLong.toAppFunctionDataTypeMetadataDocument())
-            .isEqualTo(AppFunctionDataTypeMetadataDocument(type = TYPE_LONG, isNullable = false))
+            .isEqualTo(
+                AppFunctionDataTypeMetadataDocument(
+                    type = TYPE_LONG,
+                    isNullable = false,
+                    description = "primitiveTypeLong description",
+                )
+            )
     }
 
     @Test
@@ -248,12 +332,23 @@ class AppFunctionDataTypeMetadataTest {
         // which injects at class level and all tests will run for each combination, hence manually
         // iterating over the values.
         AppFunctionDataTypeMetadata.PRIMITIVE_TYPES.forEach { type ->
-            val document = AppFunctionDataTypeMetadataDocument(type = type, isNullable = false)
+            val document =
+                AppFunctionDataTypeMetadataDocument(
+                    type = type,
+                    isNullable = false,
+                    description = "Primitive description",
+                )
 
             val metadata = document.toAppFunctionDataTypeMetadata()
 
             assertThat(metadata)
-                .isEqualTo(AppFunctionPrimitiveTypeMetadata(type = type, isNullable = false))
+                .isEqualTo(
+                    AppFunctionPrimitiveTypeMetadata(
+                        type = type,
+                        isNullable = false,
+                        description = "Primitive description",
+                    )
+                )
         }
     }
 
@@ -268,6 +363,7 @@ class AppFunctionDataTypeMetadataTest {
                         isNullable = false,
                     ),
                 isNullable = true,
+                description = "Array description",
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -281,12 +377,15 @@ class AppFunctionDataTypeMetadataTest {
                             isNullable = false,
                         ),
                     isNullable = true,
+                    description = "Array description",
                 )
             )
     }
 
     @Test
     fun appFunctionDataTypeMetadataDocument_toAppFunctionObjectTypeMetadata_returnsCorrectMetadata() {
+        val description = "Test Object description"
+
         val document =
             AppFunctionDataTypeMetadataDocument(
                 type = AppFunctionDataTypeMetadata.TYPE_OBJECT,
@@ -304,6 +403,7 @@ class AppFunctionDataTypeMetadataTest {
                 required = listOf("property1"),
                 objectQualifiedName = "ObjectType",
                 isNullable = false,
+                description = description,
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -322,6 +422,7 @@ class AppFunctionDataTypeMetadataTest {
                     required = listOf("property1"),
                     qualifiedName = "ObjectType",
                     isNullable = false,
+                    description = description,
                 )
             )
     }
@@ -333,6 +434,7 @@ class AppFunctionDataTypeMetadataTest {
                 type = AppFunctionDataTypeMetadata.TYPE_REFERENCE,
                 dataTypeReference = "someReference",
                 isNullable = true,
+                description = "Reference description",
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -342,12 +444,15 @@ class AppFunctionDataTypeMetadataTest {
                 AppFunctionReferenceTypeMetadata(
                     referenceDataType = "someReference",
                     isNullable = true,
+                    description = "Reference description",
                 )
             )
     }
 
     @Test
     fun appFunctionDataTypeMetadataDocument_toAppFunctionAllOfTypeMetadata_returnsCorrectMetadata() {
+        val description = "Test AllOf description"
+
         val document =
             AppFunctionDataTypeMetadataDocument(
                 type = AppFunctionDataTypeMetadata.TYPE_ALL_OF,
@@ -360,6 +465,7 @@ class AppFunctionDataTypeMetadataTest {
                     ),
                 objectQualifiedName = "AllOfType",
                 isNullable = false,
+                description = description,
             )
 
         val metadata = document.toAppFunctionDataTypeMetadata()
@@ -376,12 +482,16 @@ class AppFunctionDataTypeMetadataTest {
                         ),
                     qualifiedName = "AllOfType",
                     isNullable = false,
+                    description = description,
                 )
             )
     }
 
     @Test
     fun appFunctionAllOfTypeMetadata_getPseudoObjectTypeMetadata_returnMergedObject() {
+        val nestedObjectDescription = "Nested Object description"
+        val objectDescription = "Test Object description"
+
         val nestedObjectTypeMetadata =
             AppFunctionObjectTypeMetadata(
                 properties =
@@ -392,6 +502,7 @@ class AppFunctionDataTypeMetadataTest {
                 required = listOf("stringValue"),
                 qualifiedName = "testNestedObject",
                 isNullable = false,
+                description = nestedObjectDescription,
             )
         val objectTypeMetadata =
             AppFunctionObjectTypeMetadata(
@@ -399,6 +510,7 @@ class AppFunctionDataTypeMetadataTest {
                 required = emptyList(),
                 qualifiedName = "testObject",
                 isNullable = false,
+                description = objectDescription,
             )
         val nestedAllOfType =
             AppFunctionAllOfTypeMetadata(
@@ -416,10 +528,12 @@ class AppFunctionDataTypeMetadataTest {
                             required = listOf("intValue"),
                             qualifiedName = "testAllOfNestedObject",
                             isNullable = false,
+                            description = objectDescription,
                         )
                     ),
                 qualifiedName = "testNestedAllOf",
                 isNullable = false,
+                description = nestedObjectDescription,
             )
         val referenceTypeMetadata =
             AppFunctionReferenceTypeMetadata(
@@ -443,6 +557,7 @@ class AppFunctionDataTypeMetadataTest {
                                 required = listOf("booleanValue"),
                                 qualifiedName = "testReferenceObject",
                                 isNullable = false,
+                                description = objectDescription,
                             )
                     )
             )
@@ -451,6 +566,7 @@ class AppFunctionDataTypeMetadataTest {
                 matchAll = listOf(objectTypeMetadata, nestedAllOfType, referenceTypeMetadata),
                 qualifiedName = null,
                 isNullable = false,
+                description = nestedObjectDescription,
             )
 
         val pseudoObject = allOfTypeMetadata.getPseudoObjectTypeMetadata(componentMetadata)

@@ -20,10 +20,10 @@ import androidx.compose.runtime.mock.Text
 import androidx.compose.runtime.mock.View
 import androidx.compose.runtime.mock.ViewApplier
 import androidx.compose.runtime.mock.compositionTest
+import kotlin.test.Test
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Test
 
 class LiveEditTests {
 
@@ -341,23 +341,26 @@ class LiveEditTests {
         }
     }
 
+    @OptIn(ExperimentalComposeApi::class)
     @Test
     fun testThrowing_movableContent_recomposition() {
         var recomposeCount = 0
+        // When the error is thrown is different when we are tracking movable content usage
+        val trackingMovableContent = ComposeRuntimeFlags.isMovableContentUsageTrackingEnabled
         liveEditTest(reloadCount = 2, collectSourceInformation = SourceInfo.None) {
             RestartGroup {
                 MarkAsTarget()
 
-                expectError("throwInMovableContent", 1)
+                expectError("throwInMovableContent", if (trackingMovableContent) 2 else 1)
 
                 val content = remember {
                     movableContentOf {
                         Expect(
                             "movable",
                             compose = 3,
-                            onRememberd = 2,
-                            onForgotten = 1,
-                            onAbandoned = 1,
+                            onRememberd = if (trackingMovableContent) 1 else 2,
+                            onForgotten = if (trackingMovableContent) 0 else 1,
+                            onAbandoned = if (trackingMovableContent) 2 else 1,
                         )
 
                         if (recomposeCount == 1) {

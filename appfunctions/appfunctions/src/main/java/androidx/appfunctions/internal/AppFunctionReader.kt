@@ -19,6 +19,7 @@ package androidx.appfunctions.internal
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import kotlinx.coroutines.flow.Flow
 
 /** Searches AppFunctions. */
@@ -30,12 +31,12 @@ public interface AppFunctionReader {
      *
      * @param searchFunctionSpec The search specification, which includes filters for searching
      *   matching documents.
-     * @return A flow emitting a list of app function metadata matching the search criteria.
+     * @return A flow emitting a list of app function package metadata matching the search criteria.
      * @see androidx.appfunctions.AppFunctionSearchSpec
      */
     public fun searchAppFunctions(
         searchFunctionSpec: AppFunctionSearchSpec
-    ): Flow<List<AppFunctionMetadata>>
+    ): Flow<List<AppFunctionPackageMetadata>>
 
     /**
      * Returns the [AppFunctionMetadata] of the given app function.

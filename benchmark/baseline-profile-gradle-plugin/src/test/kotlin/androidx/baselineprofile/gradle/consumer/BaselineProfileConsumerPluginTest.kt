@@ -1509,7 +1509,17 @@ class BaselineProfileConsumerPluginTest(private val agpVersion: TestAgpVersion) 
             """
                         .trimIndent(),
             )
-            gradleRunner.build("generateFreeReleaseBaselineProfile", "assembleFreeRelease") {}
+            gradleRunner.build(
+                "generateFreeReleaseBaselineProfile",
+                "assembleFreeRelease",
+                // Disable lint due to b/419294997
+                "-x",
+                "lintVitalAnalyzeFreeRelease",
+                "-x",
+                "lintVitalReportFreeRelease",
+                "-x",
+                "lintVitalFreeRelease",
+            ) {}
         }
     }
 }

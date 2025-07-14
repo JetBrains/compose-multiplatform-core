@@ -93,7 +93,7 @@ class SurfaceEntityManager(private val session: Session) {
                         // Make the video player movable (to make it easier to look at it from
                         // different
                         // angles and distances)
-                        mMovableComponent = MovableComponent.create(mSession)
+                        mMovableComponent = MovableComponent.createSystemMovable(mSession)
                         // The quad has a radius of 1.0 meters
                         mMovableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
                         val unused = surfaceEntity!!.addComponent(mMovableComponent!!)

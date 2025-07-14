@@ -429,13 +429,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             """
                             %T(
                                 type = %L,
-                                isNullable = %L
+                                isNullable = %L,
+                                description = %S
                             )
                             """
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_PRIMITIVE_TYPE_METADATA_CLASS,
                             primitiveTypeMetadata.type,
                             primitiveTypeMetadata.isNullable,
+                            primitiveTypeMetadata.description,
                         )
                     }
                 )
@@ -498,13 +500,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             """
                             %T(
                                 itemType = %L,
-                                isNullable = %L
+                                isNullable = %L,
+                                description = %S
                             )
                             """
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_ARRAY_TYPE_METADATA_CLASS,
                             itemTypeVariableName,
                             arrayTypeMetadata.isNullable,
+                            arrayTypeMetadata.description,
                         )
                     }
                 )
@@ -529,13 +533,15 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             """
                             %T(
                                 referenceDataType = %S,
-                                isNullable = %L
+                                isNullable = %L,
+                                description = %S
                             )
                             """
                                 .trimIndent(),
                             IntrospectionHelper.APP_FUNCTION_REFERENCE_TYPE_METADATA_CLASS,
                             referenceTypeMetadata.referenceDataType,
                             referenceTypeMetadata.isNullable,
+                            referenceTypeMetadata.description,
                         )
                     }
                 )
@@ -574,7 +580,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 properties = %L,
                                 required = %L,
                                 qualifiedName = %S,
-                                isNullable = %L
+                                isNullable = %L,
+                                description = %S
                             )
                             """
                                 .trimIndent(),
@@ -583,6 +590,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             requiredPropertiesListPropertyName,
                             objectTypeMetadata.qualifiedName,
                             objectTypeMetadata.isNullable,
+                            objectTypeMetadata.description,
                         )
                     }
                 )
@@ -614,7 +622,8 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             %T(
                                 matchAll = %L,
                                 qualifiedName = %S,
-                                isNullable = %L
+                                isNullable = %L,
+                                description = %S
                             )
                             """
                                 .trimIndent(),
@@ -622,6 +631,7 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                             matchAllListPropertyName,
                             allOfTypeMetadata.qualifiedName,
                             allOfTypeMetadata.isNullable,
+                            allOfTypeMetadata.description,
                         )
                     }
                 )

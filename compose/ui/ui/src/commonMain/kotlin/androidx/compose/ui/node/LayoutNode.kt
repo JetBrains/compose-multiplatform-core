@@ -1311,6 +1311,19 @@ internal class LayoutNode(
         _children.forEach { it.invalidateSubtree(false) }
     }
 
+    fun invalidateLayoutForSubtree() {
+        requestRemeasure()
+        _children.forEach { it.invalidateLayoutForSubtree() }
+    }
+
+    fun invalidateDrawForSubtree(isRootOfInvalidation: Boolean = true) {
+        if (isRootOfInvalidation) {
+            parent?.invalidateLayer()
+        }
+        nodes.headToTail(Nodes.Layout) { it.requireCoordinator(Nodes.Layout).layer?.invalidate() }
+        _children.forEach { it.invalidateDrawForSubtree(false) }
+    }
+
     /** Marks the layoutNode dirty for another lookahead measure pass. */
     internal fun markLookaheadMeasurePending() = layoutDelegate.markLookaheadMeasurePending()
 

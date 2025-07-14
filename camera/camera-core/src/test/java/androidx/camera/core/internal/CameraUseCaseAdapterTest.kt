@@ -153,7 +153,8 @@ class CameraUseCaseAdapterTest {
             StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeCameraDeviceSurfaceManager)
         fakeCameraInfo = FakeCameraInfoInternal(streamSpecsCalculator)
         fakeCamera = FakeCamera(CAMERA_ID, fakeCameraControl, fakeCameraInfo)
-        fakeSecondaryCamera = FakeCamera(SECONDARY_CAMERA_ID, fakeCameraControl, fakeCameraInfo)
+        val fakeCameraInfo2 = FakeCameraInfoInternal(SECONDARY_CAMERA_ID, streamSpecsCalculator)
+        fakeSecondaryCamera = FakeCamera(SECONDARY_CAMERA_ID, fakeCameraControl, fakeCameraInfo2)
         cameraCoordinator = FakeCameraCoordinator()
         executor = Executors.newSingleThreadExecutor()
         surfaceProcessorInternal = FakeSurfaceProcessorInternal(mainThreadExecutor())
@@ -824,8 +825,8 @@ class CameraUseCaseAdapterTest {
 
     @Test
     fun cameraIdEquals() {
-        val otherCameraId = createCameraUseCaseAdapter(fakeCamera).cameraId
-        assertThat(adapter.cameraId == otherCameraId).isTrue()
+        val otherCameraId = createCameraUseCaseAdapter(fakeCamera).adapterIdentifier
+        assertThat(adapter.adapterIdentifier).isEqualTo(otherCameraId)
     }
 
     @Test
@@ -1509,14 +1510,44 @@ class CameraUseCaseAdapterTest {
         val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera)
         val cameraUseCaseAdapter2 =
             createCameraUseCaseAdapter(fakeCamera, secondaryCamera = fakeSecondaryCamera)
-        assertThat(cameraUseCaseAdapter1.cameraId).isNotEqualTo(cameraUseCaseAdapter2.cameraId)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isNotEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
     }
 
     @Test
     fun generateCameraId_isNotDualCameraRecording() {
         val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera)
         val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera, secondaryCamera = null)
-        assertThat(cameraUseCaseAdapter1.cameraId).isEqualTo(cameraUseCaseAdapter2.cameraId)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
+    }
+
+    @Test
+    fun generateCameraId_sameWithIdenticalCameraConfig() {
+        val cameraConfig = FakeCameraConfig()
+        val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
+    }
+
+    @Test
+    fun generateCameraId_differsWithDifferentCameraConfig() {
+        val cameraConfig = FakeCameraConfig()
+        val cameraConfig2 = FakeCameraConfig()
+        val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera, cameraConfig2)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isNotEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
+    }
+
+    @Test
+    fun generateCameraId_differsWhenOneHasConfigAndOtherDoesNot() {
+        val cameraConfig = FakeCameraConfig()
+        val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isNotEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
     }
 
     @Test

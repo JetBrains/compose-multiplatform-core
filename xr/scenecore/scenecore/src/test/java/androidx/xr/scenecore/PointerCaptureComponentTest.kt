@@ -156,28 +156,32 @@ class PointerCaptureComponentTest {
 
         val inputEvent =
             RtInputEvent(
-                RtInputEvent.SOURCE_HANDS,
-                RtInputEvent.POINTER_TYPE_LEFT,
+                RtInputEvent.Source.HANDS,
+                RtInputEvent.Pointer.LEFT,
                 100,
                 Vector3(),
                 Vector3(0f, 0f, 1f),
-                RtInputEvent.ACTION_DOWN,
-                RtInputEvent.Companion.HitInfo(mockRtEntity, Vector3.One, Matrix4.Identity),
-                null,
+                RtInputEvent.Action.DOWN,
+                listOf(RtInputEvent.HitInfo(mockRtEntity, Vector3.One, Matrix4.Identity)),
             )
 
         // Only compare non-floating point values for stability
         inputListenerCaptor.lastValue.onInputEvent(inputEvent)
-        assertThat(inputListener.lastEvent.source).isEqualTo(InputEvent.SOURCE_HANDS)
-        assertThat(inputListener.lastEvent.pointerType).isEqualTo(InputEvent.POINTER_TYPE_LEFT)
+        assertThat(inputListener.lastEvent.source).isEqualTo(InputEvent.Source.SOURCE_HANDS)
+        assertThat(inputListener.lastEvent.pointerType)
+            .isEqualTo(InputEvent.Pointer.POINTER_TYPE_LEFT)
         assertThat(inputListener.lastEvent.timestamp).isEqualTo(inputEvent.timestamp)
-        assertThat(inputListener.lastEvent.action).isEqualTo(InputEvent.ACTION_DOWN)
-        assertThat(inputListener.lastEvent.hitInfo).isNotNull()
-        val hitInfo = inputListener.lastEvent.hitInfo!!
+        assertThat(inputListener.lastEvent.action).isEqualTo(InputEvent.Action.ACTION_DOWN)
+        assertThat(inputListener.lastEvent.hitInfoList).isNotEmpty()
+        val hitInfoList = inputListener.lastEvent.hitInfoList
+        assertThat(hitInfoList).isNotEmpty()
+        assertThat(hitInfoList.size).isEqualTo(1)
+
+        val hitInfo = hitInfoList[0]
+
         assertThat(hitInfo.inputEntity).isEqualTo(entity)
         assertThat(hitInfo.hitPosition).isEqualTo(Vector3.One)
         assertThat(hitInfo.transform).isEqualTo(Matrix4.Identity)
-        assertThat(inputListener.lastEvent.secondaryHitInfo).isNull()
     }
 
     @Test

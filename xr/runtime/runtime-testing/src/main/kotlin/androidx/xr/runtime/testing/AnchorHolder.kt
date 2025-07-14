@@ -22,7 +22,7 @@ import androidx.xr.runtime.internal.Anchor
 internal interface AnchorHolder {
 
     /** Notifies the [AnchorHolder] that the given [Anchor] has been persisted. */
-    public fun persistAnchor(anchor: Anchor)
+    public fun onAnchorPersisted(anchor: Anchor)
 
     /**
      * Detaches the given [Anchor] from this trackable. Single [Anchor] instances rely on this

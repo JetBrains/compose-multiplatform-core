@@ -35,6 +35,7 @@ import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
 import androidx.compose.ui.input.indirect.IndirectTouchEventType
 import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -738,7 +739,8 @@ private class IndirectTouchEventProcessor(
         viewConfiguration: ViewConfiguration,
     ): Boolean {
         if (velocityTracker == null) velocityTracker = VelocityTracker()
-        val smoothedEventPosition = touchInputEventSmoother.smoothEventPosition(event)
+        // Reduce noise and account for primary axis
+        val smoothedEventPosition = touchInputEventSmoother.smoothEventPosition(event, orientation)
 
         return when (event.type) {
             IndirectTouchEventType.Press -> {
@@ -757,25 +759,29 @@ private class IndirectTouchEventProcessor(
                 /** Haven't crossed the slop yet but just crossed it. */
                 if (
                     !hasCrossedTouchSlop &&
-                        abs(positionAccumulator.toRelevantAxis()) > viewConfiguration.touchSlop
+                        abs(positionAccumulator.toFloat(orientation)) > viewConfiguration.touchSlop
                 ) {
                     hasCrossedTouchSlop = true
                     startGestureTrigger.invoke() // signals the start of a drag cycle
                     val postSlopDelta =
-                        (abs(positionAccumulator.toRelevantAxis()) - viewConfiguration.touchSlop) *
-                            positionAccumulator.toRelevantAxis().sign
-                    delta = positionAccumulator.overrideRelevantAxis(postSlopDelta)
+                        (abs(positionAccumulator.toFloat(orientation)) -
+                            viewConfiguration.touchSlop) *
+                            positionAccumulator.toFloat(orientation).sign
+                    delta =
+                        if (orientation == Orientation.Horizontal) Offset(x = postSlopDelta, y = 0f)
+                        else Offset(x = 0f, y = postSlopDelta)
                     onDragEvent(DragStarted(startEventPosition))
                     consumed = true
                 }
 
                 /** Have crossed the slop and the delta is large enough to trigger a drag event. */
                 if (
-                    hasCrossedTouchSlop && delta.toRelevantAxis().absoluteValue > PixelSensitivity
+                    hasCrossedTouchSlop &&
+                        delta.toFloat(orientation).absoluteValue > PixelSensitivity
                 ) {
                     requireVelocityTracker().addPosition(event.uptimeMillis, smoothedEventPosition)
                     consumed = true // regular move, consume it
-                    onDragEvent(DragDelta(delta.toMeaningfulAxisOffset(orientation)))
+                    onDragEvent(DragDelta(delta))
                 }
                 previousIndirectTouchPosition = smoothedEventPosition
                 consumed
@@ -788,7 +794,6 @@ private class IndirectTouchEventProcessor(
                             DragStopped(
                                 requireVelocityTracker()
                                     .calculateVelocity(Velocity(maxVelocity, maxVelocity))
-                                    .toMeaningfulAxisVelocity(orientation)
                             )
                         onDragEvent(event)
                         true // gesture finished, consume it
@@ -833,9 +838,15 @@ internal class TouchInputEventSmoother() {
     private var rotatingIndex = 0
     private var rotatingArray = mutableListOf<IndirectTouchEvent>()
 
-    fun smoothEventPosition(event: IndirectTouchEvent): Offset {
-        var xPosition = event.position.x
-        var yPosition = event.position.y
+    /**
+     * Smooths [event]'s position and additionally locks it to the provided [orientation] if a
+     * [IndirectTouchEventPrimaryAxis] is defined.
+     */
+    fun smoothEventPosition(event: IndirectTouchEvent, orientation: Orientation?): Offset {
+        val primaryAxisPosition = event.primaryAxisPosition(orientation)
+
+        var xPosition = primaryAxisPosition.x
+        var yPosition = primaryAxisPosition.y
 
         if (event.type == IndirectTouchEventType.Press) {
             rotatingIndex = 0
@@ -852,11 +863,37 @@ internal class TouchInputEventSmoother() {
             if (rotatingIndex == SmoothingFactor) {
                 rotatingIndex = 0
             }
-            xPosition = rotatingArray.fastMap { it.position.x }.average().toFloat()
-            yPosition = rotatingArray.fastMap { it.position.y }.average().toFloat()
+            xPosition =
+                rotatingArray.fastMap { it.primaryAxisPosition(orientation).x }.average().toFloat()
+            yPosition =
+                rotatingArray.fastMap { it.primaryAxisPosition(orientation).y }.average().toFloat()
         }
 
         return Offset(xPosition, yPosition)
+    }
+
+    /**
+     * Returns a modified position for this [IndirectTouchEvent] accounting for
+     * [IndirectTouchEvent.primaryAxis]. When we no longer need to smooth positions, we should
+     * instead only use the primary axis to resolve delta changes, as changing the entire event in
+     * this way will affect the start position we report to onDragStarted. Until we can remove
+     * smoothing logic, it's complicated to manage primary axis as well as smoothed positions, so we
+     * just make the change here for simplicity.
+     */
+    private fun IndirectTouchEvent.primaryAxisPosition(orientation: Orientation?): Offset {
+        if (orientation == null) return position
+        val delta =
+            when (primaryAxis) {
+                IndirectTouchEventPrimaryAxis.X -> position.x
+                IndirectTouchEventPrimaryAxis.Y -> position.y
+                // No primary axis, so don't change the offset
+                else -> return position
+            }
+        return if (orientation == Orientation.Horizontal) {
+            Offset(x = delta, y = 0f)
+        } else {
+            Offset(x = 0f, y = delta)
+        }
     }
 
     /**
@@ -865,32 +902,4 @@ internal class TouchInputEventSmoother() {
     companion object {
         private const val SmoothingFactor = 3
     }
-}
-
-/** Converts to the axis that is most representative of motion */
-internal fun Offset.toRelevantAxis(): Float = x
-
-internal fun Velocity.toRelevantAxis(): Float = x
-
-private fun Offset.overrideRelevantAxis(newValue: Float): Offset = Offset(x = newValue, y = this.y)
-
-/**
- * TODO(levima) Remove once b/425876354 lands. Converts deltas from the "relevant" axis in the input
- *   event velocity to the "meaningful" axis, that is, the axis that this scrollable consumes
- *   events. This is a temporary solution until we have b/425876354.
- */
-private fun Offset.toMeaningfulAxisOffset(orientation: Orientation): Offset {
-    val offset = this.toRelevantAxis()
-    return if (orientation == Orientation.Horizontal) Offset(offset, 0f) else Offset(0f, offset)
-}
-
-/**
- * TODO(levima) Remove once b/425876354 lands. Converts deltas from the "relevant" axis in the input
- *   event velocity to the "meaningful" axis, that is, the axis that this scrollable consumes
- *   events. This is a temporary solution until
- *     * we have b/425876354.
- */
-private fun Velocity.toMeaningfulAxisVelocity(orientation: Orientation): Velocity {
-    val offset = this.toRelevantAxis()
-    return if (orientation == Orientation.Horizontal) Velocity(offset, 0f) else Velocity(0f, offset)
 }

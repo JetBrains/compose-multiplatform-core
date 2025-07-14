@@ -72,7 +72,7 @@ public class WebSettingsCompatTest {
     public void tearDown() {
         if (mWebViewOnUiThread != null) {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.COOKIE_INTERCEPT)) {
-                WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequestEnabled(
+                WebSettingsCompat.setCookiesIncludedInShouldInterceptRequest(
                         mWebViewOnUiThread.getSettings(), false);
             }
             mWebViewOnUiThread.cleanUp();
@@ -379,7 +379,7 @@ public class WebSettingsCompatTest {
     public void testCookieInterceptReceivesHeaderAndSetsCookies() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.COOKIE_INTERCEPT);
         WebSettings settings = mWebViewOnUiThread.getSettings();
-        WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequestEnabled(settings, true);
+        WebSettingsCompat.setCookiesIncludedInShouldInterceptRequest(settings, true);
         settings.setJavaScriptEnabled(true);
 
         String interceptUrl = "http://example.com/intercept.html";
@@ -407,7 +407,7 @@ public class WebSettingsCompatTest {
     public void testCookieInterceptNoHeadersAndSetsNoCookiesIfDisabled() throws Exception {
         WebkitUtils.checkFeature(WebViewFeature.COOKIE_INTERCEPT);
         WebSettings settings = mWebViewOnUiThread.getSettings();
-        WebSettingsCompat.setIncludeCookiesOnShouldInterceptRequestEnabled(settings, false);
+        WebSettingsCompat.setCookiesIncludedInShouldInterceptRequest(settings, false);
         settings.setJavaScriptEnabled(true);
 
         String interceptUrl = "http://example.com/intercept.html";

@@ -52,5 +52,5 @@ public class FakeRuntimeAugmentedObject(
         anchors.remove(anchor)
     }
 
-    override fun persistAnchor(anchor: RuntimeAnchor) {}
+    @RestrictTo(RestrictTo.Scope.LIBRARY) override fun onAnchorPersisted(anchor: RuntimeAnchor) {}
 }

@@ -19,8 +19,11 @@ package androidx.compose.foundation.text.selection
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.contextmenu.ContextMenuScope
+import androidx.compose.foundation.contextmenu.ContextMenuState
 import androidx.compose.foundation.internal.checkPreconditionNotNull
 import androidx.compose.foundation.internal.hasText
+import androidx.compose.foundation.internal.isAutofillAvailable
 import androidx.compose.foundation.internal.readAnnotatedString
 import androidx.compose.foundation.internal.toClipEntry
 import androidx.compose.foundation.text.DefaultCursorThickness
@@ -30,7 +33,15 @@ import androidx.compose.foundation.text.HandleState.Cursor
 import androidx.compose.foundation.text.HandleState.None
 import androidx.compose.foundation.text.HandleState.Selection
 import androidx.compose.foundation.text.LegacyTextFieldState
+import androidx.compose.foundation.text.MenuItemsAvailability
+import androidx.compose.foundation.text.TextContextMenuItems
+import androidx.compose.foundation.text.TextContextMenuItems.Autofill
+import androidx.compose.foundation.text.TextContextMenuItems.Copy
+import androidx.compose.foundation.text.TextContextMenuItems.Cut
+import androidx.compose.foundation.text.TextContextMenuItems.Paste
+import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextDragObserver
+import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.UndoManager
 import androidx.compose.foundation.text.ValidatingEmptyOffsetMappingIdentity
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequester
@@ -42,6 +53,7 @@ import androidx.compose.foundation.text.detectDownAndDragGesturesWithObserver
 import androidx.compose.foundation.text.getLineHeight
 import androidx.compose.foundation.text.isPositionInsideSelection
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -242,6 +254,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
     internal val touchSelectionObserver =
         object : TextDragObserver {
             private var isLongPressSelectionOnly = true
+            private var runningSelection: TextRange? = null
 
             override fun onDown(point: Offset) {
                 // Not supported for long-press-drag.
@@ -300,6 +313,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                     // When char based selection is used, we want to ensure we snap the
                     // beginning offset to the start word boundary of the first selected word.
                     dragBeginSelection = adjustedStartSelection
+                    runningSelection = adjustedStartSelection
                 }
 
                 // don't set selection handle state until drag ends
@@ -380,6 +394,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                             )
                         }
 
+                    runningSelection = newSelection
                     if (newSelection != dragBeginSelection) {
                         isLongPressSelectionOnly = false
                     }
@@ -396,7 +411,7 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
                 currentDragPosition = null
                 updateFloatingToolbar(show = true)
 
-                val collapsed = value.selection.collapsed
+                val collapsed = runningSelection?.collapsed ?: value.selection.collapsed
                 setHandleState(if (collapsed) Cursor else Selection)
                 state?.showSelectionHandleStart =
                     !collapsed && isSelectionHandleInVisibleBound(isStartHandle = true)
@@ -1400,3 +1415,21 @@ internal expect fun Modifier.addBasicTextFieldTextContextMenuComponents(
     manager: TextFieldSelectionManager,
     coroutineScope: CoroutineScope,
 ): Modifier
+
+internal fun TextFieldSelectionManager.contextMenuBuilder(
+    contextMenuState: ContextMenuState,
+    itemsAvailability: State<MenuItemsAvailability>,
+): ContextMenuScope.() -> Unit = {
+    fun textFieldItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
+        TextItem(contextMenuState, label, enabled, operation)
+    }
+
+    val availability: MenuItemsAvailability = itemsAvailability.value
+    textFieldItem(Cut, enabled = availability.canCut) { cut() }
+    textFieldItem(Copy, enabled = availability.canCopy) { copy(cancelSelection = false) }
+    textFieldItem(Paste, enabled = availability.canPaste) { paste() }
+    textFieldItem(SelectAll, enabled = availability.canSelectAll) { selectAll() }
+    if (isAutofillAvailable()) {
+        textFieldItem(Autofill, enabled = availability.canAutofill) { autofill() }
+    }
+}

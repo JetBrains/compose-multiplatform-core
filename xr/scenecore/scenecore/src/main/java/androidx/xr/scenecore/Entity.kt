@@ -218,6 +218,7 @@ public interface Entity : ScenePose {
      * @param component the Component to be added to the Entity.
      * @return True if given Component was successfully added to the Entity.
      */
+    // TODO: b/428196727 - Consider a better indication of failures.
     public fun addComponent(component: Component): Boolean
 
     /**
@@ -265,7 +266,11 @@ internal constructor(
 
     private val componentList = mutableListOf<Component>()
 
-    override var contentDescription: String = ""
+    override var contentDescription: String
+        get() = rtEntity.contentDescription
+        set(value) {
+            rtEntity.contentDescription = value
+        }
 
     override var parent: Entity?
         get() = rtEntity.parent?.let { entityManager.getEntityForRtEntity(it) }

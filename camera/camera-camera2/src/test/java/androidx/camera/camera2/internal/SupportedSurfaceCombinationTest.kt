@@ -19,6 +19,7 @@ package androidx.camera.camera2.internal
 import android.content.Context
 import android.content.pm.PackageManager.FEATURE_CAMERA_CONCURRENT
 import android.graphics.ImageFormat
+import android.graphics.ImageFormat.JPEG
 import android.graphics.ImageFormat.JPEG_R
 import android.graphics.ImageFormat.PRIVATE
 import android.graphics.SurfaceTexture
@@ -75,6 +76,7 @@ import androidx.camera.core.impl.CameraMode
 import androidx.camera.core.impl.CameraMode.ULTRA_HIGH_RESOLUTION_CAMERA
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
 import androidx.camera.core.impl.ImageInputConfig
+import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
@@ -139,7 +141,6 @@ private const val DEFAULT_CAMERA_ID = "0"
 private const val EXTERNAL_CAMERA_ID = "0-external"
 private const val EXTERNAL_INT_CAMERA_ID = "101"
 private const val SENSOR_ORIENTATION_90 = 90
-private const val STREAM_USE_CASE_OVERRIDE = 3L
 private val LANDSCAPE_PIXEL_ARRAY_SIZE = Size(4032, 3024)
 private val DISPLAY_SIZE = Size(720, 1280)
 private val PREVIEW_SIZE = Size(1280, 720)
@@ -3624,190 +3625,296 @@ class SupportedSurfaceCombinationTest {
         assertThat(resultList).containsExactlyElementsIn(expectedResultList).inOrder()
     }
 
+    // //////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // STREAM_USE_CASE tests
+    //
+    // //////////////////////////////////////////////////////////////////////////////////////////
+
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
-    fun canPopulateStreamUseCaseStreamSpecOption_jpeg() {
-        val jpegUseCase =
-            createUseCase(
-                CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.STILL_CAPTURE,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply { put(jpegUseCase, MAXIMUM_SIZE) }
-        val result = getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
-        assertThat(result.useCaseStreamSpecs.size).isEqualTo(1)
-        assertThat(result.useCaseStreamSpecs[jpegUseCase.currentConfig]!!.getStreamUseCase())
-            .isEqualTo(STREAM_USE_CASE_OVERRIDE)
+    fun canPopulateStreamUseCaseAsStillCaptureType_withSingleImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(MAXIMUM_SIZE),
+            expectedStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseAsMultiPurposeType_withSinglePreview() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW),
+            expectedSizes = listOf(PREVIEW_SIZE),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW_VIDEO_STILL),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseAsMultiPurposeType_withSingleImageAnalysis() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_ANALYSIS),
+            expectedSizes = listOf(RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW_VIDEO_STILL),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewAndImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(PREVIEW_SIZE, MAXIMUM_SIZE),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.STILL_CAPTURE),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewAndVideoCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.VIDEO_CAPTURE),
+            expectedSizes = listOf(PREVIEW_SIZE, RECORD_SIZE),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.VIDEO_RECORD),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewAndImageAnalysis() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS),
+            expectedSizes = listOf(PREVIEW_SIZE, RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewVideoCaptureAndImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes =
+                listOf(CaptureType.PREVIEW, CaptureType.VIDEO_CAPTURE, CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(PREVIEW_SIZE, RECORD_SIZE, RECORD_SIZE),
+            expectedStreamUseCases =
+                listOf(
+                    StreamUseCase.PREVIEW,
+                    StreamUseCase.VIDEO_RECORD,
+                    StreamUseCase.STILL_CAPTURE,
+                ),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseTypes_withPreviewImageAnalysisAndImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes =
+                listOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS, CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(PREVIEW_SIZE, RESOLUTION_VGA, MAXIMUM_SIZE),
+            expectedStreamUseCases =
+                listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW, StreamUseCase.STILL_CAPTURE),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseStreamSpecOption_overrideImageCaptureAsVideoRecordType() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(MAXIMUM_SIZE),
+            expectedStreamUseCases = listOf(StreamUseCase.VIDEO_RECORD),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
+            streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD),
+        )
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun throwException_PopulateStreamUseCaseStreamSpecOption_notFullyOverride() {
-        val jpegUseCase =
-            createUseCase(
-                CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.STILL_CAPTURE,
-            )
-        val yuvUseCase =
-            createUseCase(
-                CaptureType.PREVIEW,
-                streamUseCaseOverride = false,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(jpegUseCase, MAXIMUM_SIZE)
-                put(yuvUseCase, PREVIEW_SIZE)
-            }
         assertThrows(IllegalArgumentException::class.java) {
-            getSuggestedSpecsAndVerify(useCaseExpectedResultMap)
+            populateStreamUseCaseTypesForUseCases(
+                captureTypes = listOf(CaptureType.IMAGE_CAPTURE, CaptureType.PREVIEW),
+                expectedSizes = listOf(MAXIMUM_SIZE, PREVIEW_SIZE),
+                expectedStreamUseCases = emptyList(), // unnecessary for the test
+                useCaseConfigStreamUseCases =
+                    listOf(StreamUseCase.STILL_CAPTURE, StreamUseCase.PREVIEW),
+                streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD, NO_STREAM_USE_CASE),
+            )
         }
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
-    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedCombination() {
-        val useCase1 =
-            createUseCase(
-                CaptureType.PREVIEW,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCase2 =
-            createUseCase(
-                CaptureType.PREVIEW,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(useCase1, PREVIEW_SIZE)
-                put(useCase2, PREVIEW_SIZE)
-            }
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to NO_STREAM_USE_CASE, useCase2 to NO_STREAM_USE_CASE)
-        // PRIV + PRIV is supported by the Ultra-high table but not Stream use case
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            cameraMode = ULTRA_HIGH_RESOLUTION_CAMERA,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedPreviewMaxSizeCombination() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW),
+            expectedSizes = listOf(MAXIMUM_SIZE),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedPreviewAndPreviewCombination() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.PREVIEW),
+            expectedSizes = listOf(PREVIEW_SIZE, PREVIEW_SIZE),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE, NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
+            streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD, StreamUseCase.VIDEO_RECORD),
         )
     }
 
     @Config(minSdk = 21, maxSdk = 32)
     @Test
     fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOs() {
-        val jpegUseCase =
-            createUseCase(
-                CaptureType.IMAGE_CAPTURE,
-                streamUseCaseOverride = true,
-                streamUseCase = StreamUseCase.STILL_CAPTURE,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply { put(jpegUseCase, MAXIMUM_SIZE) }
-        val expectedStreamUseCaseMap = mapOf(jpegUseCase to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(MAXIMUM_SIZE),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
         )
     }
 
-    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Config(minSdk = 21, maxSdk = 32)
     @Test
-    fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs_differentMaxSize() {
-        val useCase1 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply { put(useCase1, MAXIMUM_SIZE) }
-        // In this case, the stream use case path and limited path would produce two different max
-        // sizes, resulting in the stream use case path being dropped.
-        val expectedStreamUseCaseMap = mapOf(useCase1 to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
-        )
-    }
-
-    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
-    @Test
-    fun populateStreamUseCaseStreamSpecOption_previewAndRecordSize_success() {
-        val useCase1 =
-            createUseCase(CaptureType.VIDEO_CAPTURE, streamUseCase = StreamUseCase.VIDEO_RECORD)
-        val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCaseExpectedResultMap = mapOf(useCase1 to RECORD_SIZE, useCase2 to PREVIEW_SIZE)
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to StreamUseCase.VIDEO_RECORD, useCase2 to StreamUseCase.PREVIEW)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
-        )
-    }
-
-    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
-    @Test
-    fun populateStreamUseCaseStreamSpecOption_twoPreviewSizes_success() {
-        val useCase1 =
-            createUseCase(CaptureType.VIDEO_CAPTURE, streamUseCase = StreamUseCase.VIDEO_RECORD)
-        val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCasesOutputSizesMap =
-            mapOf(useCase1 to listOf(PREVIEW_SIZE), useCase2 to listOf(PREVIEW_SIZE))
-        val useCaseExpectedResultMap = mapOf(useCase1 to PREVIEW_SIZE, useCase2 to PREVIEW_SIZE)
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to StreamUseCase.VIDEO_RECORD, useCase2 to StreamUseCase.PREVIEW)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            useCasesOutputSizesMap = useCasesOutputSizesMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+    fun skipPopulateStreamUseCaseStreamSpecOption_unsupportedOsWithOverrideStreamUseCase() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.IMAGE_CAPTURE),
+            expectedSizes = listOf(MAXIMUM_SIZE),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.STILL_CAPTURE),
+            streamUseCasesOverride = listOf(StreamUseCase.VIDEO_RECORD),
         )
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs_wrongImageFormat() {
-        val useCase1 =
-            createUseCase(CaptureType.VIDEO_CAPTURE, streamUseCase = StreamUseCase.VIDEO_RECORD)
-        val useCase2 =
-            createUseCase(
-                CaptureType.PREVIEW,
-                imageFormat = ImageFormat.JPEG,
-                streamUseCase = StreamUseCase.PREVIEW,
-            )
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(useCase1, PREVIEW_SIZE)
-                put(useCase2, MAXIMUM_SIZE)
-            }
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to NO_STREAM_USE_CASE, useCase2 to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.IMAGE_ANALYSIS),
+            expectedSizes = listOf(PREVIEW_SIZE, RESOLUTION_VGA),
+            useCaseConfigImageFormats = listOf(JPEG, null),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE, NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
         )
     }
 
     @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun populateStreamUseCaseStreamSpecOptionWithSupportedSurfaceConfigs_wrongCaptureType() {
-        val useCase1 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCase2 = createUseCase(CaptureType.PREVIEW, streamUseCase = StreamUseCase.PREVIEW)
-        val useCaseExpectedResultMap =
-            mutableMapOf<UseCase, Size>().apply {
-                put(useCase1, RECORD_SIZE)
-                put(useCase2, PREVIEW_SIZE)
-            }
-        val expectedStreamUseCaseMap =
-            mapOf(useCase1 to NO_STREAM_USE_CASE, useCase2 to NO_STREAM_USE_CASE)
-        getSuggestedSpecsAndVerify(
-            useCaseExpectedResultMap,
-            hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-            expectedStreamUseCaseMap = expectedStreamUseCaseMap,
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.PREVIEW, CaptureType.PREVIEW),
+            expectedSizes = listOf(PREVIEW_SIZE, RECORD_SIZE),
+            expectedStreamUseCases = listOf(NO_STREAM_USE_CASE, NO_STREAM_USE_CASE),
+            useCaseConfigStreamUseCases = listOf(StreamUseCase.PREVIEW, StreamUseCase.PREVIEW),
         )
     }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseStreamSpecOption_meteringRepeatingForImageCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.METERING_REPEATING),
+            expectedSizes = listOf(RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW),
+            attachedSurfaceInfoList = listOf(createImageCaptureAttachedSurfaceInfo()),
+        )
+    }
+
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun canPopulateStreamUseCaseStreamSpecOption_meteringRepeatingForVideoCapture() {
+        populateStreamUseCaseTypesForUseCases(
+            captureTypes = listOf(CaptureType.METERING_REPEATING),
+            expectedSizes = listOf(RESOLUTION_VGA),
+            expectedStreamUseCases = listOf(StreamUseCase.PREVIEW),
+            attachedSurfaceInfoList = listOf(createVideoCaptureAttachedSurfaceInfo()),
+        )
+    }
+
+    /**
+     * Creates the UseCases to populate the stream use case and verify the result.
+     *
+     * @param captureTypes capture types info for the use cases.
+     * @param expectedSizes expected sizes for the use cases.
+     * @param expectedStreamUseCases expected stream use cases for the use cases.
+     * @param useCaseConfigImageFormats image format setting in the use cases' configs.
+     * @param useCaseConfigStreamUseCases default stream use cases setting in the use cases'
+     *   configs.
+     * @param streamUseCasesOverride the stream use cases override in the use cases' configs.
+     * @param attachedSurfaceInfoList the attached surface info list.
+     */
+    private fun populateStreamUseCaseTypesForUseCases(
+        captureTypes: List<CaptureType>,
+        expectedSizes: List<Size>,
+        expectedStreamUseCases: List<StreamUseCase?>,
+        useCaseConfigImageFormats: List<Int?>? = null,
+        useCaseConfigStreamUseCases: List<StreamUseCase?>? = null,
+        streamUseCasesOverride: List<StreamUseCase?>? = null,
+        attachedSurfaceInfoList: List<AttachedSurfaceInfo> = emptyList(),
+    ) {
+        val useCasesOutputSizesMap = mutableMapOf<UseCase, List<Size>>()
+        val useCaseExpectedSizeResultMap = mutableMapOf<UseCase, Size>()
+        val useCaseExpectedStreamUseCaseResultMap = mutableMapOf<UseCase, StreamUseCase?>()
+
+        captureTypes.onEachIndexed { index, captureType ->
+            val useCase =
+                createUseCase(
+                    captureType = captureType,
+                    imageFormat = useCaseConfigImageFormats?.get(index),
+                    streamUseCaseOverride = streamUseCasesOverride?.get(index),
+                    streamUseCase = useCaseConfigStreamUseCases?.get(index),
+                )
+            useCasesOutputSizesMap[useCase] = listOf(expectedSizes[index])
+            useCaseExpectedSizeResultMap[useCase] = expectedSizes[index]
+            useCaseExpectedStreamUseCaseResultMap[useCase] = expectedStreamUseCases.getOrNull(index)
+        }
+
+        val result =
+            getSuggestedSpecsAndVerify(
+                useCasesExpectedSizeMap = useCaseExpectedSizeResultMap,
+                attachedSurfaceInfoList = attachedSurfaceInfoList,
+                hardwareLevel = INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
+                useCasesOutputSizesMap = useCasesOutputSizesMap,
+            )
+        assertThat(result.useCaseStreamSpecs.size).isEqualTo(captureTypes.size)
+
+        useCaseExpectedStreamUseCaseResultMap.keys.forEach { useCase ->
+            assertThat(result.useCaseStreamSpecs[useCase.currentConfig]!!.getStreamUseCase())
+                .isEqualTo(useCaseExpectedStreamUseCaseResultMap[useCase]?.value)
+        }
+    }
+
+    private fun createImageCaptureAttachedSurfaceInfo() =
+        AttachedSurfaceInfo.create(
+            SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM, StreamUseCase.STILL_CAPTURE),
+            JPEG,
+            MAXIMUM_SIZE,
+            SDR,
+            listOf(CaptureType.IMAGE_CAPTURE),
+            MutableOptionsBundle.emptyBundle(),
+            SESSION_TYPE_REGULAR,
+            FRAME_RATE_RANGE_UNSPECIFIED,
+            false,
+        )
+
+    private fun createVideoCaptureAttachedSurfaceInfo() =
+        AttachedSurfaceInfo.create(
+            SurfaceConfig.create(ConfigType.PRIV, ConfigSize.RECORD, StreamUseCase.VIDEO_RECORD),
+            PRIVATE,
+            RECORD_SIZE,
+            SDR,
+            listOf(CaptureType.VIDEO_CAPTURE),
+            MutableOptionsBundle.emptyBundle(),
+            SESSION_TYPE_REGULAR,
+            FRAME_RATE_RANGE_UNSPECIFIED,
+            false,
+        )
 
     @Config(minSdk = Build.VERSION_CODES.M)
     @Test
@@ -4810,7 +4917,7 @@ class SupportedSurfaceCombinationTest {
         val cameraXConfig =
             CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
                 .setDeviceSurfaceManagerProvider(surfaceManagerProvider)
-                .setCameraFactoryProvider { _, _, _, _, _ -> cameraFactory!! }
+                .setCameraFactoryProvider { _, _, _, _, _, _ -> cameraFactory!! }
                 .build()
         val cameraX: CameraX =
             try {
@@ -4845,7 +4952,7 @@ class SupportedSurfaceCombinationTest {
             targetFrameRate,
             isStrictFpsRequired,
             dynamicRange,
-            streamUseCaseOverride = false,
+            streamUseCaseOverride = null,
             surfaceOccupancyPriority = surfaceOccupancyPriority,
             streamUseCase = streamUseCase,
         )
@@ -4857,10 +4964,10 @@ class SupportedSurfaceCombinationTest {
         targetFrameRate: Range<Int>? = null,
         isStrictFpsRequired: Boolean? = null,
         dynamicRange: DynamicRange = DynamicRange.UNSPECIFIED,
-        streamUseCaseOverride: Boolean = false,
         imageFormat: Int? = null,
         surfaceOccupancyPriority: Int? = null,
         streamUseCase: StreamUseCase? = null,
+        streamUseCaseOverride: StreamUseCase? = null,
     ): UseCase {
         val builder =
             FakeUseCaseConfig.Builder(
@@ -4898,11 +5005,8 @@ class SupportedSurfaceCombinationTest {
             dynamicRange,
         )
 
-        if (streamUseCaseOverride) {
-            builder.mutableConfig.insertOption(
-                Camera2ImplConfig.STREAM_USE_CASE_OPTION,
-                STREAM_USE_CASE_OVERRIDE,
-            )
+        streamUseCaseOverride?.let {
+            builder.mutableConfig.insertOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION, it.value)
         }
 
         surfaceOccupancyPriority?.let { builder.setSurfaceOccupancyPriority(it) }

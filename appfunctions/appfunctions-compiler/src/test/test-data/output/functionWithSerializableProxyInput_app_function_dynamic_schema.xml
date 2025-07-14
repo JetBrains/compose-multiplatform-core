@@ -54,10 +54,6 @@
                 <id>unused</id>
                 <isNullable>true</isNullable>
                 <objectQualifiedName>java.time.LocalDateTime</objectQualifiedName>
-                <description>
- A proxy class for [LocalDateTime] that can be used to serialize and deserialize [LocalDateTime]
- objects across the App Functions boundary.
-</description>
                 <properties>
                     <dataTypeMetadata>
                         <id>unused</id>

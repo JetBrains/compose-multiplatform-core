@@ -17,6 +17,7 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.SUPPORTED_TYPES_STRING
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isAllowToBeOptional
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isSupportedType
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.getVisibility
@@ -189,6 +190,12 @@ class AppFunctionSerializableValidateHelper(
                     SUPPORTED_TYPES_STRING +
                     ", an @AppFunctionSerializable or a list of @AppFunctionSerializable\nbut found " +
                     propertyDeclaration.type.toTypeName(),
+                propertyDeclaration.type,
+            )
+        }
+        if (!propertyDeclaration.isRequired && !isAllowToBeOptional(propertyDeclaration.type)) {
+            throw ProcessingException(
+                "Type ${propertyDeclaration.type.toTypeName()} cannot be optional",
                 propertyDeclaration.type,
             )
         }

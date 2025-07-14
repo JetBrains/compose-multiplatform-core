@@ -74,6 +74,8 @@ class GLFrontBufferedRendererTest {
         const val TAG = "GLFrontBufferedRenderer"
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testFrontBufferedLayerRender() {
         val renderLatch = CountDownLatch(1)
@@ -275,6 +277,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testDoubleBufferedLayerRender() {
         val commitLatch = AtomicReference<CountDownLatch?>()
@@ -388,6 +392,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testRenderDoubleBufferLayer() {
         val squareSize = 100f
@@ -533,6 +539,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testBufferRetargetingFrontBufferLayer() {
         val squareSize = 100f
@@ -670,6 +678,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testBufferRetargetingDoubleBufferedLayer() {
         val commitLatch = AtomicReference<CountDownLatch?>()
@@ -837,6 +847,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testCancelFrontBufferLayerRender() {
         val squareSize = 100f
@@ -1096,6 +1108,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testDoubleBufferedContentsNotPersisted() {
         val mOrthoMatrix = FloatArray(16)
@@ -1198,6 +1212,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testRenderAfterPauseAndResume() {
         val renderLatch = CountDownLatch(2)
@@ -1639,6 +1655,8 @@ class GLFrontBufferedRendererTest {
         }
     }
 
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testFrontBufferClearAfterRender() {
         val frontLatch = AtomicReference<CountDownLatch?>()

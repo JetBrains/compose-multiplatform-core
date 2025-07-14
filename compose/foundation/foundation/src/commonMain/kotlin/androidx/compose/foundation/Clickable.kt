@@ -24,7 +24,6 @@ import androidx.compose.foundation.gestures.TouchInputEventSmoother
 import androidx.compose.foundation.gestures.detectTapAndPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.isChangedToDown
-import androidx.compose.foundation.gestures.toRelevantAxis
 import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -41,6 +40,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
 import androidx.compose.ui.input.indirect.IndirectTouchEventType
 import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
 import androidx.compose.ui.input.key.Key
@@ -1471,11 +1471,16 @@ internal abstract class AbstractClickableNode(
         if (touchInputEventSmoother == null) touchInputEventSmoother = TouchInputEventSmoother()
         return processIndirectTouchEvent(
             event.type,
-            touchInputEventSmoother!!.smoothEventPosition(event),
+            event.primaryAxis,
+            touchInputEventSmoother!!.smoothEventPosition(event, orientation = null),
         )
     }
 
-    private fun processIndirectTouchEvent(type: IndirectTouchEventType, position: Offset): Boolean {
+    private fun processIndirectTouchEvent(
+        type: IndirectTouchEventType,
+        primaryAxis: IndirectTouchEventPrimaryAxis,
+        position: Offset,
+    ): Boolean {
         var consumedEvent = false
         when (type) {
             IndirectTouchEventType.Press -> {
@@ -1491,8 +1496,14 @@ internal abstract class AbstractClickableNode(
                     /** TODO(levima) Change once b/424744511 to use a consumption based approach. */
                     val distanceFromPress = position - pressPosition
                     // move too far, give up event
+                    val adjustedDistance =
+                        when (primaryAxis) {
+                            IndirectTouchEventPrimaryAxis.X -> distanceFromPress.x
+                            IndirectTouchEventPrimaryAxis.Y -> distanceFromPress.y
+                            else -> distanceFromPress.getDistance()
+                        }
                     if (
-                        distanceFromPress.toRelevantAxis().absoluteValue >
+                        adjustedDistance.absoluteValue >
                             currentValueOf(LocalViewConfiguration).touchSlop
                     ) {
                         indirectTouchEventPressPosition = null

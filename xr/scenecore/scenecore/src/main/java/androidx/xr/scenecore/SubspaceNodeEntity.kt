@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.internal.SubspaceNodeEntity as RtSubspaceNodeEntity
 import androidx.xr.runtime.math.FloatSize3d
 import com.google.androidxr.splitengine.SubspaceNode
@@ -49,7 +50,7 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
          * @param subspaceNode The [SubspaceNode] to create the [SubspaceNodeEntity] from.
          * @param size The initial [FloatSize3d] of the [SubspaceNodeEntity] in meters in unscaled
          *   local space.
-         * @return The created [SubspaceNodeEntity].
+         * @deprecated Use [create(session, subspaceNodeHolder, size)] instead.
          */
         @JvmStatic
         public fun create(
@@ -57,9 +58,26 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
             subspaceNode: SubspaceNode,
             size: FloatSize3d,
         ): SubspaceNodeEntity =
+            create(session, SubspaceNodeHolder(subspaceNode, SubspaceNode::class.java), size)
+
+        /**
+         * Creates a [SubspaceNodeEntity] from a [SubspaceNodeHolder] with a given [FloatSize3d].
+         *
+         * @param session The [Session].
+         * @param subspaceNodeHolder The [SubspaceNodeHolder] to create the [SubspaceNodeEntity]
+         *   from.
+         * @param size The initial [FloatSize3d] of the [SubspaceNodeEntity] in meters in unscaled
+         *   local space.
+         */
+        @JvmStatic
+        public fun create(
+            session: Session,
+            subspaceNodeHolder: SubspaceNodeHolder<*>,
+            size: FloatSize3d,
+        ): SubspaceNodeEntity =
             SubspaceNodeEntity(
                 session.platformAdapter.createSubspaceNodeEntity(
-                    subspaceNode,
+                    subspaceNodeHolder,
                     size.toRtDimensions(),
                 ),
                 session.scene.entityManager,

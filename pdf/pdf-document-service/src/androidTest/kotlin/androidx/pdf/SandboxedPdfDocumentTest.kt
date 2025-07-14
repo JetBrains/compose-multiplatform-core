@@ -99,9 +99,9 @@ class SandboxedPdfDocumentTest {
             val expectedWidth = 612
             val pageIterator = pageInfos.iterator()
 
-            assertThat(pageInfos.size == 2)
+            assertThat(pageInfos.size == 2).isTrue()
             for (index: Int in pageRange) {
-                assertThat(pageIterator.hasNext())
+                assertThat(pageIterator.hasNext()).isTrue()
                 val pageInfo = pageIterator.next()
                 assertThat(pageInfo.pageNum == index).isTrue()
                 assertThat(pageInfo.height == expectedHeight).isTrue()
@@ -243,7 +243,7 @@ class SandboxedPdfDocumentTest {
 
             assertNotNull(selection)
             assertNotNull(expectedSelection)
-            assertThat(selection?.size == expectedSelection?.size)
+            assertThat(selection?.size == expectedSelection?.size).isTrue()
             for (index: Int in 0..selection!!.size - 1) {
                 assertThat(selection[index].text == expectedSelection!![index].text).isTrue()
             }

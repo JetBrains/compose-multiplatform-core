@@ -37,11 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -50,7 +47,6 @@ import androidx.wear.compose.materialcore.isSmallScreen
 import kotlin.math.PI
 import kotlin.math.absoluteValue
 import kotlin.math.asin
-import kotlin.math.floor
 import kotlin.math.min
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -165,9 +161,6 @@ public fun CircularProgressIndicator(
     strokeWidth: Dp = CircularProgressIndicatorDefaults.IndeterminateStrokeWidth,
     gapSize: Dp = CircularProgressIndicatorDefaults.calculateRecommendedGapSize(strokeWidth),
 ) {
-    val stroke =
-        with(LocalDensity.current) { Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round) }
-
     val infiniteTransition = rememberInfiniteTransition()
     // A global rotation that does a 1440 degrees rotation in 5 seconds.
     val globalRotation =
@@ -239,9 +232,8 @@ public fun CircularProgressIndicator(
  * @param enabled controls the enabled state. Although this component is not clickable, it can be
  *   contained within a clickable component. When enabled is `false`, this component will appear
  *   visually disabled.
- * @param targetProgress Target value if the progress value is to be animated. Used to determine if
- *   small progress values should be capped to a minimum of stroke width. For a static progress
- *   indicator this should be equal to progress.
+ * @param targetProgress Target value if the progress value is to be animated. For a static progress
+ *   indicator this should be equal to progress. This parameter is currently not used.
  * @param allowProgressOverflow When progress overflow is allowed, values smaller than 0.0 will be
  *   coerced to 0, while values larger than 1.0 will be wrapped around and shown as overflow with a
  *   different track color [ProgressIndicatorColors.overflowTrackBrush]. For example values 1.2, 2.2
@@ -262,7 +254,7 @@ public fun DrawScope.drawCircularProgressIndicator(
     colors: ProgressIndicatorColors,
     strokeWidth: Dp,
     enabled: Boolean = true,
-    targetProgress: Float = progress,
+    targetProgress: Float = progress, // TODO(b/430544552) remove unused parameter
     allowProgressOverflow: Boolean = false,
     startAngle: Float = CircularProgressIndicatorDefaults.StartAngle,
     endAngle: Float = startAngle,
@@ -276,21 +268,7 @@ public fun DrawScope.drawCircularProgressIndicator(
     val gapSweep = asin((strokePx + gapSizePx) / (minSize - strokePx)).toDegrees() * 2f
     val hasOverflow = allowProgressOverflow && progress > 1f
     val wrappedProgress = wrapProgress(progress, allowProgressOverflow)
-    var progressSweep = fullSweep * wrappedProgress
-
-    // If progress sweep or remaining track sweep is smaller than gap sweep, it
-    // will be shown as a small dot. This dot should never be shown as
-    // static value, only in progress animation transitions.
-    val wrappedTargetProgress = wrapProgress(targetProgress, allowProgressOverflow)
-    val isValidTarget =
-        targetProgress.isFullInt() ||
-            (!allowProgressOverflow && targetProgress == 1 + GapExtraProgress) ||
-            wrappedTargetProgress * fullSweep in gapSweep..fullSweep - gapSweep
-    if (
-        !wrappedProgress.isFullInt() && !isValidTarget && floor(progress) == floor(targetProgress)
-    ) {
-        progressSweep = progressSweep.coerceIn(gapSweep, fullSweep - gapSweep)
-    }
+    val progressSweep = fullSweep * wrappedProgress
 
     if (hasOverflow) {
         // Draw the overflow track background.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:JvmName("ExrImageGuava")
+@file:JvmName("GuavaExrImage")
 
 package androidx.xr.scenecore.guava
 

@@ -1,6 +1,55 @@
 // Signature format: 4.0
 package androidx.text.vertical {
 
+  public final class EmphasisSpan extends android.text.style.MetricAffectingSpan {
+    ctor public EmphasisSpan(optional int style, optional boolean filled, optional float scale);
+    method public String getLetter();
+    method public float getScale();
+    method public void updateDrawState(android.text.TextPaint? p0);
+    method public void updateMeasureState(android.text.TextPaint p0);
+    property public String letter;
+    property public float scale;
+    field public static final androidx.text.vertical.EmphasisSpan.Companion Companion;
+    field public static final boolean DEFAULT_EMPHASIS_FILL = true;
+    field public static final int DEFAULT_EMPHASIS_STYLE = 0; // 0x0
+    field public static final float DEFAULT_SCALE = 0.5f;
+  }
+
+  public static final class EmphasisSpan.Companion {
+    property public static boolean DEFAULT_EMPHASIS_FILL;
+    property public static int DEFAULT_EMPHASIS_STYLE;
+    property public static float DEFAULT_SCALE;
+  }
+
+  public final class EmphasisStyle {
+    property public static int CIRCLE;
+    property public static int DOT;
+    property public static int DOUBLE_CIRCLE;
+    property public static int SESAME;
+    property public static int TRIANGLE;
+    field public static final int CIRCLE = 1; // 0x1
+    field public static final int DOT = 0; // 0x0
+    field public static final int DOUBLE_CIRCLE = 2; // 0x2
+    field public static final androidx.text.vertical.EmphasisStyle INSTANCE;
+    field public static final int SESAME = 4; // 0x4
+    field public static final int TRIANGLE = 3; // 0x3
+  }
+
+  public final class FontShearSpan extends android.text.style.MetricAffectingSpan {
+    ctor public FontShearSpan();
+    ctor public FontShearSpan(optional float fontShear);
+    method public float getFontShear();
+    method public void updateDrawState(android.text.TextPaint? p0);
+    method public void updateMeasureState(android.text.TextPaint p0);
+    property public float fontShear;
+    field public static final androidx.text.vertical.FontShearSpan.Companion Companion;
+    field public static final float DEFAULT_FONT_SHEAR = 0.1678842f;
+  }
+
+  public static final class FontShearSpan.Companion {
+    property public static float DEFAULT_FONT_SHEAR;
+  }
+
   public final class RubySpan {
     method public int getOrientation();
     method public CharSequence getText();

@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.input.indirect
 
+import android.view.InputDevice
+import android.view.InputDevice.SOURCE_TOUCH_NAVIGATION
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
 import android.view.MotionEvent.ACTION_MOVE
@@ -29,6 +31,7 @@ constructor(
     override val position: Offset,
     override val uptimeMillis: Long,
     override val type: IndirectTouchEventType,
+    override val primaryAxis: IndirectTouchEventPrimaryAxis,
     internal val nativeEvent: MotionEvent,
 ) : PlatformIndirectTouchEvent
 
@@ -36,13 +39,25 @@ constructor(
 val IndirectTouchEvent.nativeEvent: MotionEvent
     get() = (this as AndroidIndirectTouchEvent).nativeEvent
 
-/** Allows creation of a [IndirectTouchEvent] from a [MotionEvent] for cross module testing. */
+/**
+ * Allows creation of a [IndirectTouchEvent] from a [MotionEvent] for cross module testing.
+ * IMPORTANT NOTE: Primary axis is determined by properties of the [InputDevice] contained within
+ * the [MotionEvent]. However, when manually creating a [MotionEvent], there is no way to set the
+ * [InputDevice]. Therefore, this function allows you to manually set the primary axis for testing.
+ * If you have a system created [MotionEvent], you can call indirectScrollAxis() on your
+ * [MotionEvent] to get the primary axis.
+ */
+// TODO: Add detailed notes why we are passing primary axis vs. grabbing it from MotionEvent.
 @ExperimentalIndirectTouchTypeApi
-fun IndirectTouchEvent(motionEvent: MotionEvent): IndirectTouchEvent =
+fun IndirectTouchEvent(
+    motionEvent: MotionEvent,
+    primaryAxis: IndirectTouchEventPrimaryAxis = IndirectTouchEventPrimaryAxis.X,
+): IndirectTouchEvent =
     AndroidIndirectTouchEvent(
         position = Offset(motionEvent.x, motionEvent.y),
         uptimeMillis = motionEvent.eventTime,
         type = convertActionToIndirectTouchEventType(motionEvent.actionMasked),
+        primaryAxis = primaryAxis,
         nativeEvent = motionEvent,
     )
 
@@ -55,3 +70,34 @@ internal fun convertActionToIndirectTouchEventType(actionMasked: Int): IndirectT
         else -> IndirectTouchEventType.Unknown
     }
 }
+
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
+internal fun indirectScrollAxis(motionEvent: MotionEvent): IndirectTouchEventPrimaryAxis {
+    require(motionEvent.isFromSource(SOURCE_TOUCH_NAVIGATION)) {
+        "MotionEvent must be a touch navigation source"
+    }
+
+    motionEvent.device?.let { inputDevice ->
+        val xMotionRange = inputDevice.getMotionRange(MotionEvent.AXIS_X)
+        val yMotionRange = inputDevice.getMotionRange(MotionEvent.AXIS_Y)
+
+        if (xMotionRange != null && yMotionRange == null) {
+            return IndirectTouchEventPrimaryAxis.X
+        } else if (yMotionRange != null && xMotionRange == null) {
+            return IndirectTouchEventPrimaryAxis.Y
+        } else if (xMotionRange != null && yMotionRange != null) {
+            val xRange = xMotionRange.range
+            val yRange = yMotionRange.range
+
+            if ((xRange > yRange) && ((yRange == 0f) || (xRange / yRange >= RATIO_CUTOFF))) {
+                return IndirectTouchEventPrimaryAxis.X
+            } else if ((yRange > xRange) && ((xRange == 0f) || (yRange / xRange >= RATIO_CUTOFF))) {
+                return IndirectTouchEventPrimaryAxis.Y
+            }
+        }
+    }
+    return IndirectTouchEventPrimaryAxis.Unspecified
+}
+
+// TODO: Remove once platform supports device specifying preferred axis for scrolling.
+private const val RATIO_CUTOFF = 5f

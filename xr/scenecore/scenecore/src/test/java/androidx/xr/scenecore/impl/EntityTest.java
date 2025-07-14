@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
+import android.content.Context;
 
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilter;
 import androidx.xr.runtime.internal.HitTestResult;
@@ -36,6 +37,7 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.PerceptionLibraryConstants;
 import androidx.xr.scenecore.impl.perception.Session;
@@ -47,7 +49,6 @@ import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.Vec3;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
-import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -73,11 +74,12 @@ public final class EntityTest {
 
     static class TestEntity extends AndroidXrEntity {
         TestEntity(
+                Context context,
                 Node node,
                 XrExtensions extensions,
                 EntityManager entityManager,
                 ScheduledExecutorService executor) {
-            super(node, extensions, entityManager, executor);
+            super(context, node, extensions, entityManager, executor);
         }
     }
 
@@ -108,6 +110,7 @@ public final class EntityTest {
                         /* unscaledGravityAlignedActivitySpace= */ false);
         mEntity =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,
@@ -182,6 +185,7 @@ public final class EntityTest {
         mEntity.setPose(mTestPose, Space.PARENT);
         TestEntity child =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,
@@ -249,6 +253,7 @@ public final class EntityTest {
         mEntity.setScale(scale, Space.PARENT);
         TestEntity child =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,
@@ -268,6 +273,7 @@ public final class EntityTest {
         mEntity.setScale(scale, Space.PARENT);
         TestEntity child =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,
@@ -286,6 +292,7 @@ public final class EntityTest {
         mEntity.setScale(new Vector3(2f, 2f, 2f), Space.PARENT);
         TestEntity child =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,
@@ -295,6 +302,7 @@ public final class EntityTest {
         child.setScale(new Vector3(3f, 3f, 3f), Space.PARENT);
         TestEntity grandchild =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,
@@ -378,6 +386,7 @@ public final class EntityTest {
         mEntity.setAlpha(0.5f, Space.PARENT);
         TestEntity child =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,
@@ -394,6 +403,7 @@ public final class EntityTest {
         mEntity.setAlpha(0.5f, Space.PARENT);
         TestEntity child =
                 new TestEntity(
+                        mActivity,
                         mXrExtensions.createNode(),
                         mXrExtensions,
                         mEntityManager,

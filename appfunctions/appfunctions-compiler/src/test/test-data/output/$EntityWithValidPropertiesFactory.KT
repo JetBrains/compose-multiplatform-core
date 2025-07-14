@@ -13,13 +13,13 @@ public class `$EntityWithValidPropertiesFactory` : AppFunctionSerializableFactor
     val doubleParam = checkNotNull(appFunctionData.getDoubleOrNull("doubleParam"))
     val boolParam = checkNotNull(appFunctionData.getBooleanOrNull("boolParam"))
     val stringParam = checkNotNull(appFunctionData.getStringOrNull("stringParam"))
-    val longArray = checkNotNull(appFunctionData.getLongArray("longArray") ?: LongArray(0))
-    val doubleArray = checkNotNull(appFunctionData.getDoubleArray("doubleArray") ?: DoubleArray(0))
-    val boolArray = checkNotNull(appFunctionData.getBooleanArray("boolArray") ?: BooleanArray(0))
-    val stringList = checkNotNull(appFunctionData.getStringList("stringList") ?: emptyList())
+    val longArray = checkNotNull(appFunctionData.getLongArray("longArray"))
+    val doubleArray = checkNotNull(appFunctionData.getDoubleArray("doubleArray"))
+    val boolArray = checkNotNull(appFunctionData.getBooleanArray("boolArray"))
+    val stringList = checkNotNull(appFunctionData.getStringList("stringList"))
     val inputSerializableData = checkNotNull(appFunctionData.getAppFunctionData("inputSerializable"))
     val inputSerializable = inputSerializableFactory.fromAppFunctionData(inputSerializableData)
-    val serializableListData = appFunctionData.getAppFunctionDataList("serializableList") ?: emptyList()
+    val serializableListData = checkNotNull(appFunctionData.getAppFunctionDataList("serializableList"))
     val serializableList = serializableListData.map { data ->
       inputSerializableFactory.fromAppFunctionData(data)
     }

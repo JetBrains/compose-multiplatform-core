@@ -31,16 +31,11 @@ import android.opengl.GLES30.glGenTextures
 import android.opengl.GLES30.glTexImage2D
 import android.opengl.GLES30.glTexParameteri
 import androidx.xr.arcore.DepthMap
+import androidx.xr.arcore.apps.whitebox.depthmaps.DepthMode
 
 class DepthTextureHandler {
 
     public var depthTextureId: Int = -1
-        private set
-
-    public var depthTextureWidth: Int = -1
-        private set
-
-    public var depthTextureHeight: Int = -1
         private set
 
     /**
@@ -58,20 +53,21 @@ class DepthTextureHandler {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     }
 
-    public fun updateDepthTexture(depthMapState: DepthMap.State, renderSmooth: Boolean) {
-        depthTextureWidth = depthMapState.width
-        depthTextureHeight = depthMapState.height
+    public fun updateDepthTexture(depthMapState: DepthMap.State, depthMode: DepthMode) {
         glBindTexture(GL_TEXTURE_2D, depthTextureId)
         glTexImage2D(
             GL_TEXTURE_2D,
             0,
             GL_R32F,
-            depthTextureWidth,
-            depthTextureHeight,
+            depthMapState.width,
+            depthMapState.height,
             0,
             GL_RED,
             GL_FLOAT,
-            if (renderSmooth) depthMapState.smoothDepthMap else depthMapState.rawDepthMap,
+            when (depthMode) {
+                DepthMode.RAW -> depthMapState.rawDepthMap
+                DepthMode.SMOOTH -> depthMapState.smoothDepthMap
+            },
         )
     }
 }

@@ -37,6 +37,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -591,5 +592,23 @@ public interface CameraInfo {
     @ExperimentalSessionConfig
     default boolean isFeatureGroupSupported(@NonNull SessionConfig sessionConfig) {
         return false;
+    }
+
+    /**
+     * Returns the unique, stable CameraX identifier for this camera, if available.
+     *
+     * <p>For most standard CameraX implementations, this will return a non-null identifier.
+     * However, some legacy or testing implementations may not have a valid identifier, in which
+     * case this method will return {@code null}.
+     *
+     * @return The {@link CameraIdentifier} for this camera, or {@code null} if one is not
+     * available.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Nullable
+    default CameraIdentifier getCameraIdentifier() {
+        // For classes that implement CameraInfo but do not override this method,
+        // return null to indicate that no identifier is available.
+        return null;
     }
 }

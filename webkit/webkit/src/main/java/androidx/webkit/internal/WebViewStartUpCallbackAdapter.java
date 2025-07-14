@@ -36,6 +36,7 @@ import java.util.Objects;
  * Adapter between WebViewCompat.WebViewStartUpCallback and WebViewStartUpCallbackBoundaryInterface
  * (the corresponding interface shared with the support library glue in the WebView APK).
  */
+@WebViewCompat.ExperimentalAsyncStartUp
 public class WebViewStartUpCallbackAdapter implements WebViewStartUpCallbackBoundaryInterface {
     private final WebViewCompat.WebViewStartUpCallback mWebViewStartUpCallback;
 

@@ -75,6 +75,7 @@ import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.ExperimentalSubspaceVolumeApi
+import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialCurvedRow
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
@@ -308,7 +309,7 @@ class SubspaceComposableApp : ComponentActivity() {
     @SuppressLint("SetTextI18n")
     @Composable
     fun ViewBasedAppPanel(modifier: SubspaceModifier = SubspaceModifier, text: String = "") {
-        SpatialPanel(
+        SpatialAndroidViewPanel(
             factory = { context ->
                 TextView(context).apply {
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
@@ -332,6 +333,9 @@ class SubspaceComposableApp : ComponentActivity() {
             }
         var arrows by remember { mutableStateOf<GltfModel?>(null) }
         val gltfEntity = arrows?.let { remember { GltfModelEntity.create(session, it) } }
+        if (gltfEntity != null) {
+            gltfEntity!!.contentDescription = "Showing arrows"
+        }
 
         LaunchedEffect(Unit) {
             arrows = GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
@@ -358,6 +362,7 @@ class SubspaceComposableApp : ComponentActivity() {
                 val q = Quaternion(qX, qY, qZ, qW)
 
                 gltfEntity.setPose(Pose(rotation = q))
+                gltfEntity!!.contentDescription = "Animating arrows"
             }
 
             Volume(modifier) { gltfEntity.parent = it }

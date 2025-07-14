@@ -36,6 +36,7 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
@@ -200,7 +201,7 @@ class MovableActivity : ComponentActivity() {
                         PanelContent("[NOT MOVABLE]")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent = Intent(this@MovableActivity, AnotherActivity::class.java),
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)

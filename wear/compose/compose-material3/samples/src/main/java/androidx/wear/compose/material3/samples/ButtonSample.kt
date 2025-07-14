@@ -34,6 +34,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.wear.compose.material3.Button
@@ -284,7 +286,12 @@ fun CompactButtonWithOnLongClickSample(
         onLongClick = onLongClickHandler,
         onLongClickLabel = "Long click",
         label = { Text("Long clickable") },
-        modifier = modifier,
+        modifier =
+            modifier.semantics {
+                // Also override the 'click label' to say 'Double tap to press' instead of
+                // the usual 'Double tap to activate'.
+                onClick("press") { false }
+            },
     )
 }
 

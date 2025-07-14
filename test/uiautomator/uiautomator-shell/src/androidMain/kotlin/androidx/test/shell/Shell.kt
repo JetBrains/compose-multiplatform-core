@@ -29,40 +29,75 @@ import java.io.InputStream
 /**
  * Allows to execute commands. This class builds on top of [ShellProcess] and abstracts the shell
  * streams to focus on the output of a single command execution. A [ShellProcess] is created for
- * each executed command, using the given factory [shellProcessFactoryBlock].
+ * each executed command, using a [ShellServer] that can be reset by [Shell.setShellServer].
  */
 public object Shell {
 
-    private var shellProcessFactoryBlock: () -> (ShellProcess) = { ShellProcess.create() }
+    private val DEFAULT_SHELL_SERVER by lazy { ShellServer.start() }
+    private var shellServer: ShellServer? = null
 
-    /** Allows configuring the underlying [ShellProcess] utilized to execute the commands. */
-    public fun setShellProcessFactory(factory: () -> (ShellProcess)) {
-        this.shellProcessFactoryBlock = factory
+    /**
+     * Allows configuring the underlying [ShellProcess] utilized to execute the commands. The
+     * current [ShellServer] backing [Shell] is always closed when setting a new one.
+     *
+     * @param shellServer The new shell server to produce [ShellProcess] to launch commands.
+     */
+    public fun setShellServer(shellServer: ShellServer) {
+        this.shellServer?.close()
+        this.shellServer = shellServer
     }
 
-    /** Commands for wifi. */
+    /**
+     * Commands for wifi.
+     *
+     * @return an instance of [WifiCommands].
+     */
     public fun wifi(): WifiCommands = WifiCommands(shell = this)
 
     /** Commands for screen. */
     public fun screen(): ScreenCommands = ScreenCommands(shell = this)
 
-    /** Commands for application. */
+    /**
+     * Commands for application.
+     *
+     * @param packageName the application package name
+     * @return an instance of [ApplicationCommands].
+     */
     public fun application(packageName: String): ApplicationCommands =
         ApplicationCommands(shell = this, packageName = packageName)
 
-    /** Commands for screen recorder. */
+    /**
+     * Commands for screen recorder.
+     *
+     * @return an instance of [RecorderCommands].
+     */
     public fun recorder(): RecorderCommands = RecorderCommands(shell = this)
 
-    /** Commands for processes. */
+    /**
+     * Commands for processes.
+     *
+     * @return an instance of [ProcessCommands].
+     */
     public fun process(): ProcessCommands = ProcessCommands(shell = this)
 
-    /** Commands for permissions. */
+    /**
+     * Commands for permissions.
+     *
+     * @param packageName the application package name
+     * @return an instance of [PermissionCommands].
+     */
     public fun permission(packageName: String): PermissionCommands =
         PermissionCommands(shell = this, packageName = packageName)
 
-    /** Executes a given command and returns the ongoing [CommandOutput]. */
+    /**
+     * Executes a given command and returns the ongoing [CommandOutput].
+     *
+     * @param command a string containing the command to launch.
+     * @return a [CommandOutput] that allows to access the stream of the command output.
+     */
     public fun command(command: String): CommandOutput {
-        val shellProcess = shellProcessFactoryBlock()
+        val server = shellServer ?: DEFAULT_SHELL_SERVER
+        val shellProcess = server.newProcess()
         shellProcess.writeLine(command)
         shellProcess.close()
         return CommandOutput(command = command, shellProcess = shellProcess)

@@ -42,14 +42,14 @@ public annotation class UsesReflectionToAccessField(
      *
      * Mutually exclusive with [className].
      */
-    val classConstant: KClass<*> = Unspecified::class,
+    @Suppress("KotlinDefaultParameterOrder") val classConstant: KClass<*> = Unspecified::class,
 
     /**
      * Class name (or pattern) containing the field accessed by reflection.
      *
      * Mutually exclusive with [classConstant].
      */
-    val className: String = "",
+    @Suppress("KotlinDefaultParameterOrder") val className: String = "",
 
     /** Field name (or pattern) accessed by reflection. */
     val fieldName: String,

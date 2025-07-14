@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -52,8 +51,9 @@ import kotlinx.coroutines.asExecutor
  *   only be called if [enabled] is true. If the callback returns false or isn't specified, the
  *   default behavior of resizing this composable will be executed. If it returns true, it is the
  *   responsibility of the callback to process the event.
+ *
+ * TODO(b/427974119): Investigate fix for resizing from size Zero.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.resizable(
     enabled: Boolean = true,
     minimumSize: DpVolumeSize = DpVolumeSize.Zero,

@@ -33,7 +33,15 @@ class AnnotatedAppFunctionSerializableInterface(private val classDeclaration: KS
     override fun getProperties(): List<AppFunctionPropertyDeclaration> {
         return classDeclaration
             .getAllProperties()
-            .map { AppFunctionPropertyDeclaration(it) }
+            .map {
+                AppFunctionPropertyDeclaration(
+                    it,
+                    isDescribedByKdoc,
+                    // Property from interface is always required as there is no existing API
+                    // to tell if the interface property has default value or not.
+                    isRequired = true,
+                )
+            }
             .toList()
     }
 }

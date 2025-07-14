@@ -345,8 +345,8 @@ interface CredentialManager {
      * Signals a user's credential/credentials state to all credential providers.
      *
      * The execution does not invoke any UI but simply informs credential providers about the state
-     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialRequest],
-     * [SignalCurrentUserDetailsCredentialRequest], [SignalUnknownCredentialStateRequest].
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
+     * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
      *
      * @param request the request for signaling the credential state
      * @throws SignalCredentialStateException If the request parsing fails
@@ -516,8 +516,8 @@ interface CredentialManager {
      * This API uses callbacks instead of Kotlin coroutines.
      *
      * The execution does not invoke any UI but simply informs credential providers about the state
-     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialRequest],
-     * [SignalCurrentUserDetailsCredentialRequest], [SignalUnknownCredentialStateRequest].
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
+     * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
      *
      * @param request the request for signaling the credential state
      * @param executor the callback will take place on this executor

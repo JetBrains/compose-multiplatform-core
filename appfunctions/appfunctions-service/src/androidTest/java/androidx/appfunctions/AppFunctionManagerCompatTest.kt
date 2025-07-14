@@ -26,8 +26,12 @@ import android.content.IntentFilter
 import android.content.pm.PackageInstaller
 import android.os.Build
 import androidx.appfunctions.core.AppFunctionMetadataTestHelper
+import androidx.appfunctions.core.AppFunctionMetadataTestHelper.Companion.TEST_APP_METADATA
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
@@ -327,12 +331,32 @@ class AppFunctionManagerCompatTest {
                                 required = listOf("nested"),
                                 qualifiedName = "com.testdata.RecursiveSerializable",
                                 isNullable = true,
+                                description = "Description of com.testdata.RecursiveSerializable",
+                            ),
+                        )
+                        put(
+                            "com.testdata.DerivedSerializable",
+                            AppFunctionAllOfTypeMetadata(
+                                matchAll =
+                                    listOf(
+                                        AppFunctionReferenceTypeMetadata(
+                                            referenceDataType =
+                                                "com.testdata.RecursiveSerializable",
+                                            isNullable = true,
+                                        )
+                                    ),
+                                qualifiedName = "com.testdata.DerivedSerializable",
+                                isNullable = true,
+                                description = "A child class of [RecursiveSerializable].",
                             ),
                         )
                     }
             )
 
-        val appFunctions = appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+        val appFunctions: List<AppFunctionMetadata> =
+            appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().flatMap {
+                it.appFunctions
+            }
 
         assertThat(appFunctions).isNotEmpty()
         assertThat(appFunctions.filter { it.components != expectedComponentsInMainPackage })
@@ -340,17 +364,25 @@ class AppFunctionManagerCompatTest {
     }
 
     @Test
-    fun observeAppFunctions_packageListNotSetInSpec_returnsAllAppFunctions_withDynamicIndexer() =
+    fun observeAppFunctions_packageListNotSetInSpec_returnsMetadataForAllApps_withDynamicIndexer() =
         runBlocking<Unit> {
             assumeTrue(metadataTestHelper.isDynamicIndexerAvailable())
             installApk(ADDITIONAL_APK_FILE)
             val searchFunctionSpec = AppFunctionSearchSpec()
 
-            val appFunctions =
+            val appFunctionPackages: List<AppFunctionPackageMetadata> =
                 appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
 
-            assertThat(appFunctions)
-                .containsAtLeast(
+            // At least two apps should be indexed, can be more due to system apps implementing app
+            // functions.
+            assertThat(appFunctionPackages.size).isGreaterThan(1)
+            val testAppPackage =
+                appFunctionPackages.single { it.packageName == context.packageName }
+            assertThat(testAppPackage.resolveAppFunctionAppMetadata(context))
+                .isEqualTo(TEST_APP_METADATA)
+
+            assertThat(testAppPackage.appFunctions)
+                .containsExactly(
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_ENABLED_BY_DEFAULT,
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_DISABLED_BY_DEFAULT,
                     AppFunctionMetadataTestHelper.FunctionMetadata.MEDIA_SCHEMA_PRINT,
@@ -358,7 +390,14 @@ class AppFunctionManagerCompatTest {
                     AppFunctionMetadataTestHelper.FunctionMetadata.NOTES_SCHEMA_PRINT,
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_EXECUTION_FAIL,
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_EXECUTION_SUCCEED,
-                    AppFunctionMetadataTestHelper.FunctionMetadata.ADDITIONAL_LEGACY_CREATE_NOTE,
+                )
+            val additionalAppPackage =
+                appFunctionPackages.single { it.packageName == ADDITIONAL_APP_PACKAGE }
+            // Additional app doesn't specify app metadata.
+            assertThat(additionalAppPackage.resolveAppFunctionAppMetadata(context)).isNull()
+            assertThat(additionalAppPackage.appFunctions)
+                .containsExactly(
+                    AppFunctionMetadataTestHelper.FunctionMetadata.ADDITIONAL_LEGACY_CREATE_NOTE
                 )
         }
 
@@ -372,10 +411,16 @@ class AppFunctionManagerCompatTest {
                     packageNames = setOf(context.packageName, ADDITIONAL_APP_PACKAGE)
                 )
 
-            val appFunctions =
+            val appFunctionPackages: List<AppFunctionPackageMetadata> =
                 appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
 
-            assertThat(appFunctions)
+            assertThat(appFunctionPackages.size).isEqualTo(2)
+            val testAppPackage =
+                appFunctionPackages.single { it.packageName == context.packageName }
+            assertThat(testAppPackage.resolveAppFunctionAppMetadata(context))
+                .isEqualTo(TEST_APP_METADATA)
+
+            assertThat(testAppPackage.appFunctions)
                 .containsExactly(
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_ENABLED_BY_DEFAULT,
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_DISABLED_BY_DEFAULT,
@@ -384,12 +429,21 @@ class AppFunctionManagerCompatTest {
                     AppFunctionMetadataTestHelper.FunctionMetadata.NOTES_SCHEMA_PRINT,
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_EXECUTION_FAIL,
                     AppFunctionMetadataTestHelper.FunctionMetadata.NO_SCHEMA_EXECUTION_SUCCEED,
-                    AppFunctionMetadataTestHelper.FunctionMetadata.ADDITIONAL_LEGACY_CREATE_NOTE,
+                )
+            val additionalAppPackage =
+                appFunctionPackages.single { it.packageName == ADDITIONAL_APP_PACKAGE }
+            // Additional app doesn't specify app metadata.
+            assertThat(additionalAppPackage.resolveAppFunctionAppMetadata(context)).isNull()
+            assertThat(additionalAppPackage.appFunctions)
+                .containsExactly(
+                    AppFunctionMetadataTestHelper.FunctionMetadata.ADDITIONAL_LEGACY_CREATE_NOTE
                 )
         }
 
+    // TODO: b/421388047 - Add more test cases, checking missing fields and translations.
+
     @Test
-    fun observeAppFunctions_multiplePackagesSetInSpec_returnsScehmaAppFunctionsFromBoth_withLegacyIndexer() =
+    fun observeAppFunctions_multiplePackagesSetInSpec_returnsSchemaAppFunctionsFromBoth_withLegacyIndexer() =
         runBlocking<Unit> {
             assumeFalse(metadataTestHelper.isDynamicIndexerAvailable())
             installApk(ADDITIONAL_APK_FILE)
@@ -398,8 +452,10 @@ class AppFunctionManagerCompatTest {
                     packageNames = setOf(context.packageName, ADDITIONAL_APP_PACKAGE)
                 )
 
-            val appFunctions =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+            val appFunctions: List<AppFunctionMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().flatMap {
+                    it.appFunctions
+                }
 
             assertThat(appFunctions)
                 .containsExactly(
@@ -418,8 +474,10 @@ class AppFunctionManagerCompatTest {
             val searchFunctionSpec =
                 AppFunctionSearchSpec(packageNames = setOf(context.packageName))
 
-            val appFunctions =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+            val appFunctions: List<AppFunctionMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().flatMap {
+                    it.appFunctions
+                }
 
             assertThat(appFunctions)
                 .containsExactly(
@@ -441,8 +499,10 @@ class AppFunctionManagerCompatTest {
             val searchFunctionSpec =
                 AppFunctionSearchSpec(packageNames = setOf(context.packageName))
 
-            val appFunctions =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+            val appFunctions: List<AppFunctionMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().flatMap {
+                    it.appFunctions
+                }
 
             assertThat(appFunctions)
                 .containsExactly(
@@ -457,8 +517,10 @@ class AppFunctionManagerCompatTest {
         runBlocking<Unit> {
             val searchFunctionSpec = AppFunctionSearchSpec(schemaName = "print")
 
-            val appFunctions =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+            val appFunctions: List<AppFunctionMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().flatMap {
+                    it.appFunctions
+                }
 
             assertThat(appFunctions)
                 .containsAtLeast(
@@ -473,8 +535,10 @@ class AppFunctionManagerCompatTest {
         runBlocking<Unit> {
             val searchFunctionSpec = AppFunctionSearchSpec(schemaCategory = "media")
 
-            val appFunctions =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+            val appFunctions: List<AppFunctionMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().flatMap {
+                    it.appFunctions
+                }
 
             assertThat(appFunctions)
                 .containsAtLeast(
@@ -488,8 +552,10 @@ class AppFunctionManagerCompatTest {
         runBlocking<Unit> {
             val searchFunctionSpec = AppFunctionSearchSpec(minSchemaVersion = 2)
 
-            val appFunctions =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first()
+            val appFunctions: List<AppFunctionMetadata> =
+                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().flatMap {
+                    it.appFunctions
+                }
 
             assertThat(appFunctions)
                 .contains(AppFunctionMetadataTestHelper.FunctionMetadata.MEDIA_SCHEMA2_PRINT)
@@ -506,9 +572,11 @@ class AppFunctionManagerCompatTest {
             )
 
             val appFunctionMetadata =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().single {
-                    it.id == functionIdToTest
-                }
+                appFunctionManagerCompat
+                    .observeAppFunctions(searchFunctionSpec)
+                    .first()
+                    .flatMap { it.appFunctions }
+                    .single { it.id == functionIdToTest }
 
             assertThat(appFunctionMetadata.isEnabled).isFalse()
         }
@@ -524,9 +592,11 @@ class AppFunctionManagerCompatTest {
             )
 
             val appFunctionMetadata =
-                appFunctionManagerCompat.observeAppFunctions(searchFunctionSpec).first().single {
-                    it.id == functionIdToTest
-                }
+                appFunctionManagerCompat
+                    .observeAppFunctions(searchFunctionSpec)
+                    .first()
+                    .flatMap { it.appFunctions }
+                    .single { it.id == functionIdToTest }
 
             assertThat(appFunctionMetadata.isEnabled).isTrue()
         }
@@ -559,6 +629,7 @@ class AppFunctionManagerCompatTest {
             // Assert first result to be default value.
             assertThat(
                     emittedValues.replayCache[0]
+                        .flatMap { it.appFunctions }
                         .single {
                             it.id == AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT
                         }
@@ -570,6 +641,7 @@ class AppFunctionManagerCompatTest {
             // Assert next update has updated value.
             assertThat(
                     emittedValues.replayCache[1]
+                        .flatMap { it.appFunctions }
                         .single {
                             it.id == AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT
                         }
@@ -608,7 +680,12 @@ class AppFunctionManagerCompatTest {
             runBlocking(Dispatchers.Default) { emittedValues.take(2).collect {} }
             // Only 2 updates are emitted.
             assertThat(emittedValues.replayCache).hasSize(2)
-            assertThat(emittedValues.replayCache[1].single { it.id == functionIdToTest }.isEnabled)
+            assertThat(
+                    emittedValues.replayCache[1]
+                        .flatMap { it.appFunctions }
+                        .single { it.id == functionIdToTest }
+                        .isEnabled
+                )
                 .isTrue()
         }
 
@@ -640,6 +717,7 @@ class AppFunctionManagerCompatTest {
             assertThat(emittedValues.replayCache).hasSize(2)
             assertThat(
                     emittedValues.replayCache[1]
+                        .flatMap { it.appFunctions }
                         .single {
                             it.id == AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT
                         }
@@ -677,7 +755,7 @@ class AppFunctionManagerCompatTest {
             runBlocking(Dispatchers.Default) { emittedValues.take(3).collect {} }
             assertThat(emittedValues.replayCache).hasSize(3)
             // First result only contains functions from first package.
-            assertThat(emittedValues.replayCache[0].map { it.id })
+            assertThat(emittedValues.replayCache[0].flatMap { it.appFunctions }.map { it.id })
                 .containsExactly(
                     AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_ENABLED_BY_DEFAULT,
                     AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_DISABLED_BY_DEFAULT,
@@ -688,11 +766,12 @@ class AppFunctionManagerCompatTest {
                     AppFunctionMetadataTestHelper.FunctionIds.NO_SCHEMA_EXECUTION_SUCCEED,
                 )
             // Second result contains functionId from additional app install as well.
-            assertThat(emittedValues.replayCache[1].map { it.id })
+            assertThat(emittedValues.replayCache[1].flatMap { it.appFunctions }.map { it.id })
                 .contains(AppFunctionMetadataTestHelper.FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE)
             // Third result has modified value of isEnabled from the original package.
             assertThat(
                     emittedValues.replayCache[2]
+                        .flatMap { it.appFunctions }
                         .single {
                             it.id == AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT
                         }
@@ -730,18 +809,19 @@ class AppFunctionManagerCompatTest {
             runBlocking(Dispatchers.Default) { emittedValues.take(3).collect {} }
             assertThat(emittedValues.replayCache).hasSize(3)
             // First result only contains schema functions from first package.
-            assertThat(emittedValues.replayCache[0].map { it.id })
+            assertThat(emittedValues.replayCache[0].flatMap { it.appFunctions }.map { it.id })
                 .containsExactly(
                     AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT,
                     AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA2_PRINT,
                     AppFunctionMetadataTestHelper.FunctionIds.NOTES_SCHEMA_PRINT,
                 )
             // Second result contains functionId from additional app install as well.
-            assertThat(emittedValues.replayCache[1].map { it.id })
+            assertThat(emittedValues.replayCache[1].flatMap { it.appFunctions }.map { it.id })
                 .contains(AppFunctionMetadataTestHelper.FunctionIds.ADDITIONAL_LEGACY_CREATE_NOTE)
             // Third result has modified value of isEnabled from the original package.
             assertThat(
                     emittedValues.replayCache[2]
+                        .flatMap { it.appFunctions }
                         .single {
                             it.id == AppFunctionMetadataTestHelper.FunctionIds.MEDIA_SCHEMA_PRINT
                         }

@@ -49,7 +49,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.nio.file.Paths
 import java.util.concurrent.Executors
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
@@ -121,7 +120,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
 
         // Movable switch
         findViewById<SwitchMaterial>(R.id.switch_movable_in_fsm).also {
-            val movableComponent = MovableComponent.create(session!!)
+            val movableComponent = MovableComponent.createSystemMovable(session!!)
             it.setOnCheckedChangeListener { _, isOn ->
                 movableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
                 when (isOn) {
@@ -224,13 +223,25 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button_launch_settings_app).also {
             it.setOnClickListener {
                 var (intent, bundle) = createIntent()
-                bundle = session!!.scene.setFullSpaceMode(bundle)
+                bundle = session!!.scene.configureBundleForFullSpaceModeLaunch(bundle)
+                startActivity(intent, bundle)
+            }
+        }
+
+        // Launch settings app with environment inherited
+        findViewById<Button>(R.id.button_launch_settings_app_with_env_inherited).also {
+            it.setOnClickListener {
+                var (intent, bundle) = createIntent()
+                bundle =
+                    session!!
+                        .scene
+                        .configureBundleForFullSpaceModeLaunchWithEnvironmentInherited(bundle)
                 startActivity(intent, bundle)
             }
         }
 
         // Add bounds check listener for activity space bounds
-        session!!.scene.activitySpace.addBoundsChangedListener { dimensions ->
+        session!!.scene.activitySpace.addOnBoundsChangedListener { dimensions ->
             val dimsString =
                 "{w:${dimensions.width}, h:${dimensions.height}, d:${dimensions.depth}}"
             // Set activity space dimensions
@@ -247,9 +258,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            skybox =
-                ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "BlueSkybox.zip"))
-                    .await()
+            skybox = ExrImage.createFromZip(session!!, Paths.get("skyboxes", "BlueSkybox.zip"))
         }
     }
 

@@ -52,7 +52,7 @@ androidXMultiplatform {
                 implementation(project(":paging:paging-common"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
-                implementation(libs.kotlinSerializationCore)
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
             }
         }
         androidInstrumentedTest {
@@ -143,4 +143,11 @@ tasks.withType(AndroidLintAnalysisTask).configureEach {
 // Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
 tasks.withType(LintModelWriterTask).configureEach {
     mustRunAfter(tasks.withType(KspAATask))
+}
+
+afterEvaluate {
+    // This project has commonTest/ sources, but none of these contain actual tests. This means that
+    // testAndroidHostTest will attempt to run as it has sources, but there will be no tests to run.
+    // Starting Gradle 9.0.0 this is an error, hence we disable this task here.
+    tasks.named("testAndroidHostTest") { it.enabled = false }
 }

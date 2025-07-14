@@ -24,9 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
-import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
@@ -63,7 +63,7 @@ class ActivityPanelApp : ComponentActivity() {
         val minimumSize = DpVolumeSize(25.dp, 25.dp, 25.dp)
 
         SpatialColumn(SubspaceModifier.width(200.dp).height(1400.dp)) {
-            SpatialPanel(
+            SpatialActivityPanel(
                 modifier =
                     SubspaceModifier.width(panelWidth)
                         .height(panelHeight)
@@ -74,7 +74,7 @@ class ActivityPanelApp : ComponentActivity() {
             )
             SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
             for (i in 1..5) {
-                SpatialPanel(
+                SpatialActivityPanel(
                     modifier =
                         SubspaceModifier.width(panelWidth)
                             .height(panelHeight)
@@ -91,7 +91,7 @@ class ActivityPanelApp : ComponentActivity() {
 
         SpatialColumn(modifier = SubspaceModifier.offset(x = 200.dp)) {
             for (i in 6..10) {
-                SpatialPanel(
+                SpatialActivityPanel(
                     intent =
                         Intent(this@ActivityPanelApp, BaseActivity::class.java)
                             .putExtra("activityName", "Activity $i"),

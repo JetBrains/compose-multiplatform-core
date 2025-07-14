@@ -84,6 +84,7 @@ fun AggregateRecordsGroupedByDurationResponse<Any>.toSdkResponse(
         endTime,
         metrics.firstNotNullOfOrNull { getZoneOffset(it.toAggregationType()) }
             ?: ZoneOffset.systemDefault().rules.getOffset(startTime),
+        shouldSkipValidation = true,
     )
 }
 
@@ -108,6 +109,7 @@ fun AggregateRecordsGroupedByPeriodResponse<Any>.toSdkResponse(
         buildAggregationResult(metrics, ::get, platformDataOriginsGetter),
         bucketStartTime,
         bucketEndTime,
+        shouldSkipValidation = true,
     )
 }
 

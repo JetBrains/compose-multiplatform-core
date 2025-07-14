@@ -1333,6 +1333,7 @@ public class WebViewCompat {
         }
     }
 
+    @ExperimentalAsyncStartUp
     private static class NullReturningWebViewStartUpResult implements WebViewStartUpResult {
         @Override
         public Long getTotalTimeInUiThreadMillis() {
@@ -1425,6 +1426,7 @@ public class WebViewCompat {
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @ExperimentalUrlPrerender
+    @Profile.ExperimentalUrlPrefetch
     public static void prerenderUrlAsync(
             @NonNull WebView webView,
             @NonNull String url,

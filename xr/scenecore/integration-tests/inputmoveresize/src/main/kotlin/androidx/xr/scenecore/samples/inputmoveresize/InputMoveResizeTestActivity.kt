@@ -35,10 +35,10 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.EntityMoveListener
 import androidx.xr.scenecore.InputEvent
 import androidx.xr.scenecore.InteractableComponent
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.MoveListener
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
@@ -56,7 +56,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
     private var mainPanelResizableActive = false
 
     private val moveListener =
-        object : MoveListener {
+        object : EntityMoveListener {
             override fun onMoveStart(
                 entity: Entity,
                 initialInputRay: Ray,
@@ -150,23 +150,24 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         mainPanelSystemMovable.isChecked = true
         val mainPanelScaleInZ = findViewById<CheckBox>(R.id.scaleInZ)
         mainPanelScaleInZ.isChecked = true
-        var mainPanelMovableComponent = MovableComponent.create(session)
+        var mainPanelMovableComponent = MovableComponent.createSystemMovable(session)
 
         fun updateMainPanelMovableComponent() {
             if (mainPanelMovableActive) {
                 session.scene.mainPanelEntity.removeComponent(mainPanelMovableComponent)
             }
+
             mainPanelMovableComponent =
-                MovableComponent.create(
-                    session,
-                    mainPanelSystemMovable.isChecked,
-                    mainPanelScaleInZ.isChecked,
-                    emptySet(),
-                )
-            when (mainPanelSystemMovable.isChecked) {
-                true -> mainPanelMovableComponent.removeMoveListener(moveListener)
-                false -> mainPanelMovableComponent.addMoveListener(executor, moveListener)
-            }
+                if (mainPanelSystemMovable.isChecked) {
+                    MovableComponent.createSystemMovable(session, mainPanelScaleInZ.isChecked)
+                } else {
+                    MovableComponent.createCustomMovable(
+                        session,
+                        mainPanelScaleInZ.isChecked,
+                        executor,
+                        moveListener,
+                    )
+                }
             mainPanelMovableComponent.size = session.scene.mainPanelEntity.size.to3d()
         }
 
@@ -260,22 +261,23 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         systemMovableCheckbox.isChecked = true
         scaleInZCheckBox.isChecked = true
 
-        var movablePanelComponent = MovableComponent.create(session)
+        var movablePanelComponent = MovableComponent.createSystemMovable(session)
         movablePanelComponent.size = movablePanelEntity.size.to3d()
         fun updateMovablePanelComponent() {
             if (movablePanelActive) {
                 movablePanelEntity.removeComponent(movablePanelComponent)
             }
             movablePanelComponent =
-                MovableComponent.create(
-                    session,
-                    systemMovableCheckbox.isChecked,
-                    scaleInZCheckBox.isChecked,
-                )
-            when (systemMovableCheckbox.isChecked) {
-                true -> movablePanelComponent.removeMoveListener(moveListener)
-                else -> movablePanelComponent.addMoveListener(executor, moveListener)
-            }
+                if (systemMovableCheckbox.isChecked) {
+                    MovableComponent.createSystemMovable(session, scaleInZCheckBox.isChecked)
+                } else {
+                    MovableComponent.createCustomMovable(
+                        session,
+                        scaleInZCheckBox.isChecked,
+                        executor,
+                        moveListener,
+                    )
+                }
         }
         val checkBoxListener =
             CompoundButton.OnCheckedChangeListener { _, _ ->
@@ -319,11 +321,11 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val everythingPanelInteractableComponent =
             InteractableComponent.create(session, executor) {
                 Log.i(TAG, "input event $it")
-                if (it.action == InputEvent.ACTION_DOWN) {
+                if (it.action == InputEvent.Action.ACTION_DOWN) {
                     changeTextAndBGColor(everythingPanelView.findViewById(R.id.textView))
                 }
             }
-        val everythingPanelMovableComponent = MovableComponent.create(session)
+        val everythingPanelMovableComponent = MovableComponent.createSystemMovable(session)
         everythingPanelMovableComponent.size = everythingPanelEntity.size.to3d()
         val everythingPanelResizeComponent = ResizableComponent.create(session)
         everythingPanelResizeComponent.size = everythingPanelEntity.size.to3d()
@@ -415,7 +417,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val interactableComponent =
             InteractableComponent.create(session, mainExecutor) {
                 Log.i(TAG, "input event $it")
-                if (it.action == InputEvent.ACTION_DOWN) {
+                if (it.action == InputEvent.Action.ACTION_DOWN) {
                     changeTextAndBGColor(interactablePanelTextView)
                 }
             }

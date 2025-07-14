@@ -110,6 +110,7 @@
                 <id>unused</id>
                 <isNullable>true</isNullable>
                 <objectQualifiedName>com.testdata.RecursiveSerializable</objectQualifiedName>
+                <description>Description of com.testdata.RecursiveSerializable</description>
                 <properties>
                     <dataTypeMetadata>
                         <dataTypeReference>com.testdata.RecursiveSerializable</dataTypeReference>
@@ -125,6 +126,23 @@
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.RecursiveSerializable</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <allOf>
+                    <dataTypeReference>com.testdata.RecursiveSerializable</dataTypeReference>
+                    <id>unused</id>
+                    <isNullable>true</isNullable>
+                    <type>11</type>
+                </allOf>
+                <id>unused</id>
+                <isNullable>true</isNullable>
+                <objectQualifiedName>com.testdata.DerivedSerializable</objectQualifiedName>
+                <description>A child class of [RecursiveSerializable]. </description>
+                <type>12</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>com.testdata.DerivedSerializable</name>
         </dataTypes>
         <id>unused</id>
     </AppFunctionComponentMetadataDocument>

@@ -334,8 +334,8 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             qualifiedName = abiQualifiedName,
             signatures = signaturesStub,
             annotations = emptySet(), // annotations aren't part of klib dumps
-            isInline = false, // TODO
-            contextReceiverParametersCount = 0, // TODO
+            isInline = false, // inline constructors are not legal
+            contextReceiverParametersCount = 0, // not allowed on constructors
             valueParameters = valueParameters,
         )
     }

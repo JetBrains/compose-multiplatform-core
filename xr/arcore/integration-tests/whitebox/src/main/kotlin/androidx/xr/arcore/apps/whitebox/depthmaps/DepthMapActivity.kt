@@ -39,8 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.PerceptionState
 import androidx.xr.arcore.apps.whitebox.common.BackToMainActivityButton
 import androidx.xr.arcore.apps.whitebox.common.SessionLifecycleHelper
@@ -59,9 +57,12 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Sample that demonstrates usage of depth map data provided by JXR ARCore API. */
-class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfaceView.Renderer {
+class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
 
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
@@ -69,8 +70,8 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
     private lateinit var surfaceView: GLSurfaceView
     private val depthTexture: DepthTextureHandler = DepthTextureHandler()
     private val depthMapRenderer: DepthMapRenderer = DepthMapRenderer()
-    private var renderSmooth by mutableStateOf(false)
-    private var renderLeft by mutableStateOf(value = true)
+    private var selectedDepthMode by mutableStateOf(DepthMode.RAW)
+    private var selectedView by mutableStateOf(ViewSelection.LEFT)
     private val rawConfig =
         Config(
             depthEstimation = Config.DepthEstimationMode.RAW_ONLY,
@@ -81,6 +82,7 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
             depthEstimation = Config.DepthEstimationMode.SMOOTH_ONLY,
             headTracking = Config.HeadTrackingMode.LAST_KNOWN,
         )
+    private var configurationMutex = Mutex()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super<ComponentActivity>.onCreate(savedInstanceState)
@@ -113,13 +115,15 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
         sessionHelper.tryCreateSession()
     }
 
-    override fun onResume(owner: LifecycleOwner) {
+    override fun onResume() {
+        super<ComponentActivity>.onResume()
         if (::surfaceView.isInitialized) {
             surfaceView.onResume()
         }
     }
 
-    override fun onPause(owner: LifecycleOwner) {
+    override fun onPause() {
+        super<ComponentActivity>.onPause()
         if (::surfaceView.isInitialized) {
             surfaceView.onPause()
         }
@@ -130,7 +134,6 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
 
         // Prepare the rendering objects. This involves reading shaders, so may throw an exception.
         try {
-            // The depth texture is used for object occlusion and rendering.
             depthTexture.createOnGlThread()
             depthMapRenderer.createDepthGradientTexture(/* context= */ this)
             depthMapRenderer.createDepthShaders(/* context= */ this, depthTexture.depthTextureId)
@@ -145,20 +148,20 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
 
     override fun onDrawFrame(gl: GL10?) {
         // Get the latest depth from the session
-        val perceptionState: PerceptionState? = session.state.value.perceptionState
-        if (perceptionState != null) {
-            val depthMap =
-                if (renderLeft) {
-                    session.state.value.perceptionState!!.depthMaps[LEFT_VIEW]
-                } else {
-                    session.state.value.perceptionState!!.depthMaps[RIGHT_VIEW]
+        runBlocking {
+            configurationMutex.withLock {
+                val perceptionState: PerceptionState? = session.state.value.perceptionState
+                if (perceptionState != null) {
+                    val depthMap =
+                        when (selectedView) {
+                            ViewSelection.LEFT ->
+                                session.state.value.perceptionState!!.depthMaps[LEFT_VIEW]
+                            ViewSelection.RIGHT ->
+                                session.state.value.perceptionState!!.depthMaps[RIGHT_VIEW]
+                        }
+                    depthTexture.updateDepthTexture(depthMap.state.value, selectedDepthMode)
+                    depthMapRenderer.drawDepth()
                 }
-            if (
-                (depthMap.state.value.rawDepthMap != null && !renderSmooth) ||
-                    (depthMap.state.value.smoothDepthMap != null && renderSmooth)
-            ) {
-                depthTexture.updateDepthTexture(depthMap.state.value, renderSmooth)
-                depthMapRenderer.drawDepth()
             }
         }
     }
@@ -180,10 +183,17 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
                     Row(modifier = Modifier) {
                         BackToMainActivityButton()
                         val depthDescription: String =
-                            if (renderSmooth) {
-                                if (renderLeft) "Left Smooth" else "Right Smooth"
-                            } else {
-                                if (renderLeft) "Left Raw" else "Right Raw"
+                            when (selectedDepthMode) {
+                                DepthMode.RAW ->
+                                    when (selectedView) {
+                                        ViewSelection.LEFT -> "Left Smooth"
+                                        ViewSelection.RIGHT -> "Right Smooth"
+                                    }
+                                DepthMode.SMOOTH ->
+                                    when (selectedView) {
+                                        ViewSelection.LEFT -> "Left Raw"
+                                        ViewSelection.RIGHT -> "Right Raw"
+                                    }
                             }
                         Text(
                             modifier = Modifier.padding(8.dp),
@@ -194,18 +204,34 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
                         Button(
                             modifier = Modifier.padding(8.dp),
                             onClick = {
-                                surfaceView.onPause()
-                                renderSmooth = !renderSmooth
-                                val config = if (renderSmooth) smoothConfig else rawConfig
-                                session.configure(config)
-                                surfaceView.onResume()
+                                runBlocking {
+                                    configurationMutex.withLock {
+                                        when (selectedDepthMode) {
+                                            DepthMode.RAW -> {
+                                                session.configure(smoothConfig)
+                                                selectedDepthMode = DepthMode.SMOOTH
+                                            }
+
+                                            DepthMode.SMOOTH -> {
+                                                session.configure(rawConfig)
+                                                selectedDepthMode = DepthMode.RAW
+                                            }
+                                        }
+                                    }
+                                }
                             },
                         ) {
                             Text("Toggle Depth Type")
                         }
                         Button(
                             modifier = Modifier.padding(8.dp),
-                            onClick = { renderLeft = !renderLeft },
+                            onClick = {
+                                selectedView =
+                                    when (selectedView) {
+                                        ViewSelection.LEFT -> ViewSelection.RIGHT
+                                        ViewSelection.RIGHT -> ViewSelection.LEFT
+                                    }
+                            },
                         ) {
                             Text("Toggle View")
                         }
@@ -220,4 +246,14 @@ class DepthMapActivity : ComponentActivity(), DefaultLifecycleObserver, GLSurfac
         private const val LEFT_VIEW: Int = 0
         private const val RIGHT_VIEW: Int = 1
     }
+}
+
+enum class DepthMode {
+    RAW,
+    SMOOTH,
+}
+
+enum class ViewSelection {
+    LEFT,
+    RIGHT,
 }

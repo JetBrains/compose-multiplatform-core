@@ -17,7 +17,7 @@
 package androidx.credentials.provider
 
 import android.os.Bundle
-import androidx.credentials.SignalUnknownCredentialStateRequest
+import androidx.credentials.SignalUnknownCredentialRequest
 import androidx.credentials.assertEquals
 import androidx.credentials.getTestCallingAppInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -34,7 +34,10 @@ class ProviderSignalCredentialStateRequestTest {
     @Test
     fun constructor_success() {
         val request =
-            SignalUnknownCredentialStateRequest(requestJson = "{\"json\" : \"value\"}", "origin")
+            SignalUnknownCredentialRequest(
+                requestJson = "{\"rpId\":\"example.com\",\"credentialId\":\"Zm9vYmFy\"}",
+                origin = "origin",
+            )
 
         ProviderSignalCredentialStateRequest(request, getTestCallingAppInfo("origin"))
     }
@@ -43,9 +46,9 @@ class ProviderSignalCredentialStateRequestTest {
     fun bundleConversion_success() {
         val request =
             ProviderSignalCredentialStateRequest(
-                SignalUnknownCredentialStateRequest(
-                    requestJson = "{\"json\" : \"value\"}",
-                    "origin",
+                SignalUnknownCredentialRequest(
+                    requestJson = "{\"rpId\":\"example.com\",\"credentialId\":\"Zm9vYmFy\"}",
+                    origin = "origin",
                 ),
                 getTestCallingAppInfo("origin"),
             )

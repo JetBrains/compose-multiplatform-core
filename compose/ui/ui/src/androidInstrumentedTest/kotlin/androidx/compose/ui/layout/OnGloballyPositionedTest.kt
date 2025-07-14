@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.SimpleRow
 import androidx.compose.ui.Wrap
 import androidx.compose.ui.background
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -485,6 +486,33 @@ class OnGloballyPositionedTest {
             }
 
             assertEquals(Rect(0f, 0f, 20f, 20f), root.boundsInParent())
+        }
+    }
+
+    @Test
+    fun testBoundsInWindow() {
+        val positionedLatch = CountDownLatch(1)
+        lateinit var coordinates: LayoutCoordinates
+
+        rule.setContent {
+            Box(Modifier.clipToBounds()) {
+                FixedSize(
+                    10,
+                    Modifier.offset { IntOffset(-5, -5) }
+                        .then(
+                            Modifier.onGloballyPositioned {
+                                coordinates = it
+                                positionedLatch.countDown()
+                            }
+                        ),
+                ) {}
+            }
+        }
+        assertTrue(positionedLatch.await(1, TimeUnit.SECONDS))
+
+        rule.runOnUiThread {
+            assertEquals(Rect(0f, 0f, 5f, 5f), coordinates.boundsInWindow(clipBounds = true))
+            assertEquals(Rect(-5f, -5f, 5f, 5f), coordinates.boundsInWindow(clipBounds = false))
         }
     }
 

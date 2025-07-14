@@ -45,6 +45,7 @@ class AppFunctionParameterMetadataTest {
                         required = emptyList(),
                         qualifiedName = "qualifedName",
                         isNullable = true,
+                        description = "",
                     ),
             )
 

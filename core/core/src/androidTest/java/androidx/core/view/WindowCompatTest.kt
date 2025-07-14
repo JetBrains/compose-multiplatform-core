@@ -16,6 +16,7 @@
 
 package androidx.core.view
 
+import android.app.Dialog
 import android.graphics.Color
 import android.os.Build
 import android.support.v4.BaseInstrumentationTestCase
@@ -46,7 +47,7 @@ class WindowCompatTest :
 
     @Suppress("DEPRECATION")
     @Test
-    fun tests_enableEdgeToEdge() {
+    fun tests_enableEdgeToEdge_activity() {
         val window = mActivityTestRule.activity.window
         val view = mActivityTestRule.activity.findViewById<View>(R.id.view)!!
         mActivityTestRule.runOnUiThread {
@@ -67,6 +68,33 @@ class WindowCompatTest :
         }
         InstrumentationRegistry.getInstrumentation().waitForIdleSync()
         assertViewFillWindow(view, window)
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun tests_enableEdgeToEdge_dialog() {
+        mActivityTestRule.runOnUiThread {
+            val dialog = Dialog(mActivityTestRule.activity)
+            val window = dialog.window!!
+            WindowCompat.enableEdgeToEdge(window)
+
+            // Initialize the decor view after calling enableEdgeToEdge
+            window.decorView
+
+            assertEquals(window.statusBarColor, Color.TRANSPARENT)
+            assertEquals(window.navigationBarColor, Color.TRANSPARENT)
+            if (Build.VERSION.SDK_INT >= 28) {
+                assertEquals(
+                    if (Build.VERSION.SDK_INT >= 30) LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                    else LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
+                    window.attributes.layoutInDisplayCutoutMode,
+                )
+            }
+            if (Build.VERSION.SDK_INT >= 29) {
+                assertEquals(false, window.isStatusBarContrastEnforced)
+                assertEquals(false, window.isNavigationBarContrastEnforced)
+            }
+        }
     }
 
     private fun assertViewFillWindow(view: View, window: Window) {

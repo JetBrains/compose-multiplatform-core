@@ -71,12 +71,16 @@ public class OpenXrDepthMap internal constructor(private val viewIndex: Int) : D
                     "Unexpected number of depth map buffers for ${depthEstimationMode.toString()} config: expected=${EXPECTED_RAW_BUFFER_COUNT}, actual=${depthMapBuffers.size}"
                 }
                 updateRawBuffers(depthMapBuffers)
+                smoothDepthMap = null
+                smoothConfidenceMap = null
             }
             Config.DepthEstimationMode.SMOOTH_ONLY -> {
                 check(depthMapBuffers.size == EXPECTED_SMOOTH_BUFFER_COUNT) {
                     "Unexpected number of depth map buffers for ${depthEstimationMode.toString()} config: expected=${EXPECTED_SMOOTH_BUFFER_COUNT}, actual=${depthMapBuffers.size}"
                 }
                 updateSmoothBuffers(depthMapBuffers)
+                rawDepthMap = null
+                rawConfidenceMap = null
             }
             Config.DepthEstimationMode.SMOOTH_AND_RAW -> {
                 check(

@@ -61,12 +61,6 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
-        }
-
         androidInstrumentedTest {
             dependsOn(commonTest)
             dependencies {
@@ -157,5 +151,4 @@ androidx {
     samples(project(":savedstate:savedstate-compose"))
     inceptionYear = "2024"
     description = "Compose integration with Saved State"
-    enableRobolectric()
 }

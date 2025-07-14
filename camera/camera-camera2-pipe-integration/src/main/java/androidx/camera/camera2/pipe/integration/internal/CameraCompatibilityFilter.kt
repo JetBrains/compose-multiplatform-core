@@ -25,7 +25,7 @@ import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.InitializationException
 
 /**
- * The [CameraCompatibilityFilter] is responsible for filtering out Cameras that doesn't contains
+ * The [CameraCompatibilityFilter] is responsible for filtering out Cameras that don't contain
  * REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE capability.
  */
 public object CameraCompatibilityFilter {
@@ -37,6 +37,13 @@ public object CameraCompatibilityFilter {
     ): List<String> {
         val backwardCompatibleCameraIds = mutableListOf<String>()
         for (cameraId in availableCameraIds) {
+            // Heuristic: Always include camera IDs "0" and "1" to align with camera-camera2
+            // behavior, assuming they are the default back and front cameras.
+            if (cameraId == "0" || cameraId == "1") {
+                backwardCompatibleCameraIds.add(cameraId)
+                continue
+            }
+
             if (isBackwardCompatible(cameraId, cameraDevices)) {
                 backwardCompatibleCameraIds.add(cameraId)
             } else {

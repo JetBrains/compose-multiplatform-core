@@ -36,7 +36,8 @@ package androidx.compose.ui.test {
   @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public abstract class AndroidComposeUiTestEnvironment<A extends androidx.activity.ComponentActivity> {
     ctor public AndroidComposeUiTestEnvironment();
     ctor public AndroidComposeUiTestEnvironment(optional kotlin.coroutines.CoroutineContext effectContext);
-    ctor public AndroidComposeUiTestEnvironment(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional long testTimeout);
+    ctor @KotlinOnly public <A extends androidx.activity.ComponentActivity> AndroidComposeUiTestEnvironment(optional kotlin.coroutines.CoroutineContext effectContext, optional kotlin.coroutines.CoroutineContext runTestContext, optional kotlin.time.Duration testTimeout);
+    ctor @BytecodeOnly public AndroidComposeUiTestEnvironment(kotlin.coroutines.CoroutineContext!, kotlin.coroutines.CoroutineContext!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public final void cancelAndRecreateRecomposer();
     method protected abstract A? getActivity();
     method public final androidx.compose.ui.test.AndroidComposeUiTest<A> getTest();
@@ -170,9 +171,18 @@ package androidx.compose.ui.test {
     method @RequiresApi(31) public static androidx.compose.ui.test.DeviceConfigurationOverride FontWeightAdjustment(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int fontWeightAdjustment);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride ForcedSize(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, long size);
     method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride ForcedSize-6HolHcs(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, long);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride Keyboard(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int keyboardType);
+    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride Keyboard-XH3IKJc(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride KeyboardHidden(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isHidden);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride LayoutDirection(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, androidx.compose.ui.unit.LayoutDirection layoutDirection);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride Locales(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, androidx.compose.ui.text.intl.LocaleList locales);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride Navigation(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int navigationType);
+    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride Navigation-kMx_WSA(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride NavigationHidden(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isHidden);
     method @RequiresApi(23) public static androidx.compose.ui.test.DeviceConfigurationOverride RoundScreen(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isScreenRound);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride Touchscreen(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isTouchScreen);
+    method public static androidx.compose.ui.test.DeviceConfigurationOverride UiMode(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int uiModeType);
+    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride UiMode-oC794GY(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride WindowInsets(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, androidx.core.view.WindowInsetsCompat windowInsets);
   }
 
@@ -237,10 +247,9 @@ package androidx.compose.ui.test {
   @Deprecated public final class GestureScope {
     ctor @Deprecated public GestureScope(androidx.compose.ui.semantics.SemanticsNode node, androidx.compose.ui.test.TestContext testContext);
     method @BytecodeOnly @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope getDelegateScope();
-    method @Deprecated public long getVisibleSize();
     method @BytecodeOnly @Deprecated public long getVisibleSize-YbymL2g();
     property @Deprecated @kotlin.PublishedApi internal androidx.compose.ui.test.MultiModalInjectionScope delegateScope;
-    property @Deprecated public long visibleSize;
+    property @Deprecated public androidx.compose.ui.unit.IntSize visibleSize;
     field @Deprecated @kotlin.PublishedApi internal final androidx.compose.ui.test.MultiModalInjectionScope delegateScope;
   }
 
@@ -256,21 +265,21 @@ package androidx.compose.ui.test {
     method @BytecodeOnly @Deprecated public static void down-0AR0LA0(androidx.compose.ui.test.GestureScope, int, long);
     method @BytecodeOnly @Deprecated public static void down-Uv8p0NA(androidx.compose.ui.test.GestureScope, long);
     method @Deprecated public static inline float getBottom(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getBottomCenter(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getBottomLeft(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getBottomRight(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getCenter(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getCenterLeft(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getCenterRight(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getBottomCenter(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getBottomLeft(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getBottomRight(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getCenter(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getCenterLeft(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getCenterRight(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static inline float getCenterX(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static inline float getCenterY(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static inline int getHeight(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static inline float getLeft(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static inline float getRight(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static inline float getTop(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getTopCenter(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getTopLeft(androidx.compose.ui.test.GestureScope);
-    method @Deprecated public static long getTopRight(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getTopCenter(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getTopLeft(androidx.compose.ui.test.GestureScope);
+    method @BytecodeOnly @Deprecated public static long getTopRight(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static inline int getWidth(androidx.compose.ui.test.GestureScope);
     method @Deprecated public static void longClick(androidx.compose.ui.test.GestureScope, optional long position, optional long durationMillis);
     method @BytecodeOnly @Deprecated public static void longClick-d-4ec7I(androidx.compose.ui.test.GestureScope, long, long);
@@ -304,21 +313,21 @@ package androidx.compose.ui.test {
     method @BytecodeOnly @Deprecated public static void swipeWithVelocity-5iVPX68(androidx.compose.ui.test.GestureScope, long, long, float, long);
     method @Deprecated public static void up(androidx.compose.ui.test.GestureScope, optional int pointerId);
     property @Deprecated public static inline float androidx.compose.ui.test.GestureScope.bottom;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.bottomCenter;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.bottomLeft;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.bottomRight;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.center;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.centerLeft;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.centerRight;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.bottomCenter;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.bottomLeft;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.bottomRight;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.center;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.centerLeft;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.centerRight;
     property @Deprecated public static inline float androidx.compose.ui.test.GestureScope.centerX;
     property @Deprecated public static inline float androidx.compose.ui.test.GestureScope.centerY;
     property @Deprecated public static inline int androidx.compose.ui.test.GestureScope.height;
     property @Deprecated public static inline float androidx.compose.ui.test.GestureScope.left;
     property @Deprecated public static inline float androidx.compose.ui.test.GestureScope.right;
     property @Deprecated public static inline float androidx.compose.ui.test.GestureScope.top;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.topCenter;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.topLeft;
-    property @Deprecated public static long androidx.compose.ui.test.GestureScope.topRight;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.topCenter;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.topLeft;
+    property @Deprecated public static androidx.compose.ui.geometry.Offset androidx.compose.ui.test.GestureScope.topRight;
     property @Deprecated public static inline int androidx.compose.ui.test.GestureScope.width;
   }
 
@@ -342,17 +351,11 @@ package androidx.compose.ui.test {
   @kotlin.jvm.JvmDefaultWithCompatibility public interface InjectionScope extends androidx.compose.ui.unit.Density {
     method public void advanceEventTime(optional long durationMillis);
     method public default float getBottom();
-    method public default long getBottomCenter();
     method @BytecodeOnly public default long getBottomCenter-F1C5BW0();
-    method public default long getBottomLeft();
     method @BytecodeOnly public default long getBottomLeft-F1C5BW0();
-    method public default long getBottomRight();
     method @BytecodeOnly public default long getBottomRight-F1C5BW0();
-    method public default long getCenter();
     method @BytecodeOnly public default long getCenter-F1C5BW0();
-    method public default long getCenterLeft();
     method @BytecodeOnly public default long getCenterLeft-F1C5BW0();
-    method public default long getCenterRight();
     method @BytecodeOnly public default long getCenterRight-F1C5BW0();
     method public default float getCenterX();
     method public default float getCenterY();
@@ -361,25 +364,21 @@ package androidx.compose.ui.test {
     method public default float getLeft();
     method public default float getRight();
     method public default float getTop();
-    method public default long getTopCenter();
     method @BytecodeOnly public default long getTopCenter-F1C5BW0();
-    method public default long getTopLeft();
     method @BytecodeOnly public default long getTopLeft-F1C5BW0();
-    method public default long getTopRight();
     method @BytecodeOnly public default long getTopRight-F1C5BW0();
     method public androidx.compose.ui.platform.ViewConfiguration getViewConfiguration();
-    method public long getVisibleSize();
     method @BytecodeOnly public long getVisibleSize-YbymL2g();
     method public default int getWidth();
     method public default long percentOffset(optional float x, optional float y);
     method @BytecodeOnly public default long percentOffset-dBAh8RU(float, float);
     property public default float bottom;
-    property public default long bottomCenter;
-    property public default long bottomLeft;
-    property public default long bottomRight;
-    property public default long center;
-    property public default long centerLeft;
-    property public default long centerRight;
+    property public default androidx.compose.ui.geometry.Offset bottomCenter;
+    property public default androidx.compose.ui.geometry.Offset bottomLeft;
+    property public default androidx.compose.ui.geometry.Offset bottomRight;
+    property public default androidx.compose.ui.geometry.Offset center;
+    property public default androidx.compose.ui.geometry.Offset centerLeft;
+    property public default androidx.compose.ui.geometry.Offset centerRight;
     property public default float centerX;
     property public default float centerY;
     property public default long eventPeriodMillis;
@@ -387,11 +386,11 @@ package androidx.compose.ui.test {
     property public default float left;
     property public default float right;
     property public default float top;
-    property public default long topCenter;
-    property public default long topLeft;
-    property public default long topRight;
+    property public default androidx.compose.ui.geometry.Offset topCenter;
+    property public default androidx.compose.ui.geometry.Offset topLeft;
+    property public default androidx.compose.ui.geometry.Offset topRight;
     property public abstract androidx.compose.ui.platform.ViewConfiguration viewConfiguration;
-    property public abstract long visibleSize;
+    property public abstract androidx.compose.ui.unit.IntSize visibleSize;
     property public default int width;
   }
 
@@ -439,6 +438,23 @@ package androidx.compose.ui.test {
     method @BytecodeOnly public static boolean performKeyPress-34rOyRA(androidx.compose.ui.test.SemanticsNodeInteraction, android.view.KeyEvent);
   }
 
+  @kotlin.jvm.JvmInline public final value class KeyboardType {
+    method @BytecodeOnly public static androidx.compose.ui.test.KeyboardType! box-impl(int);
+    method public int getConfigValue();
+    method @BytecodeOnly public int unbox-impl();
+    property public int configValue;
+    field public static final androidx.compose.ui.test.KeyboardType.Companion Companion;
+  }
+
+  public static final class KeyboardType.Companion {
+    method @BytecodeOnly public int getNoKeys--uOuvaM();
+    method @BytecodeOnly public int getQwerty--uOuvaM();
+    method @BytecodeOnly public int getTwelveKey--uOuvaM();
+    property public androidx.compose.ui.test.KeyboardType NoKeys;
+    property public androidx.compose.ui.test.KeyboardType Qwerty;
+    property public androidx.compose.ui.test.KeyboardType TwelveKey;
+  }
+
   @kotlin.jvm.JvmDefaultWithCompatibility public interface MainTestClock {
     method public void advanceTimeBy(long milliseconds, optional boolean ignoreFrameDuration);
     method public void advanceTimeByFrame();
@@ -451,7 +467,7 @@ package androidx.compose.ui.test {
   }
 
   @kotlin.jvm.JvmInline public final value class MouseButton {
-    ctor public MouseButton(int buttonId);
+    ctor @KotlinOnly public MouseButton(int buttonId);
     method @BytecodeOnly public static androidx.compose.ui.test.MouseButton! box-impl(int);
     method @BytecodeOnly public static int constructor-impl(int);
     method public int getButtonId();
@@ -461,15 +477,12 @@ package androidx.compose.ui.test {
   }
 
   public static final class MouseButton.Companion {
-    method public int getPrimary();
     method @BytecodeOnly public int getPrimary-ipIFwKQ();
-    method public int getSecondary();
     method @BytecodeOnly public int getSecondary-ipIFwKQ();
-    method public int getTertiary();
     method @BytecodeOnly public int getTertiary-ipIFwKQ();
-    property public int Primary;
-    property public int Secondary;
-    property public int Tertiary;
+    property public androidx.compose.ui.test.MouseButton Primary;
+    property public androidx.compose.ui.test.MouseButton Secondary;
+    property public androidx.compose.ui.test.MouseButton Tertiary;
   }
 
   public interface MouseInjectionScope extends androidx.compose.ui.test.InjectionScope {
@@ -478,7 +491,6 @@ package androidx.compose.ui.test {
     method @BytecodeOnly public void enter-3MmeM6k(long, long);
     method public void exit(optional long position, optional long delayMillis);
     method @BytecodeOnly public void exit-3MmeM6k(long, long);
-    method public long getCurrentPosition();
     method @BytecodeOnly public long getCurrentPosition-F1C5BW0();
     method public default void moveBy(long delta, optional long delayMillis);
     method @BytecodeOnly public default void moveBy-3MmeM6k(long, long);
@@ -494,7 +506,7 @@ package androidx.compose.ui.test {
     method @BytecodeOnly public default void updatePointerBy-k-4lQ0M(long);
     method public void updatePointerTo(long position);
     method @BytecodeOnly public void updatePointerTo-k-4lQ0M(long);
-    property public abstract long currentPosition;
+    property public abstract androidx.compose.ui.geometry.Offset currentPosition;
   }
 
   public final class MouseInjectionScopeKt {
@@ -526,6 +538,25 @@ package androidx.compose.ui.test {
     method public void touch(kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.TouchInjectionScope,kotlin.Unit> block);
   }
 
+  @kotlin.jvm.JvmInline public final value class NavigationType {
+    method @BytecodeOnly public static androidx.compose.ui.test.NavigationType! box-impl(int);
+    method public int getConfigValue();
+    method @BytecodeOnly public int unbox-impl();
+    property public int configValue;
+    field public static final androidx.compose.ui.test.NavigationType.Companion Companion;
+  }
+
+  public static final class NavigationType.Companion {
+    method @BytecodeOnly public int getDpad-2KYgJvY();
+    method @BytecodeOnly public int getNoNav-2KYgJvY();
+    method @BytecodeOnly public int getTrackball-2KYgJvY();
+    method @BytecodeOnly public int getWheel-2KYgJvY();
+    property public androidx.compose.ui.test.NavigationType Dpad;
+    property public androidx.compose.ui.test.NavigationType NoNav;
+    property public androidx.compose.ui.test.NavigationType Trackball;
+    property public androidx.compose.ui.test.NavigationType Wheel;
+  }
+
   public final class OutputKt {
     method public static void printToLog(androidx.compose.ui.test.SemanticsNodeInteraction, String tag, optional int maxDepth);
     method public static void printToLog(androidx.compose.ui.test.SemanticsNodeInteractionCollection, String tag, optional int maxDepth);
@@ -552,12 +583,10 @@ package androidx.compose.ui.test {
   }
 
   public static final class ScrollWheel.Companion {
-    method public int getHorizontal();
     method @BytecodeOnly public int getHorizontal-LTdd5XU();
-    method public int getVertical();
     method @BytecodeOnly public int getVertical-LTdd5XU();
-    property public int Horizontal;
-    property public int Vertical;
+    property public androidx.compose.ui.test.ScrollWheel Horizontal;
+    property public androidx.compose.ui.test.ScrollWheel Vertical;
   }
 
   public final class SelectionResult {
@@ -714,6 +743,31 @@ package androidx.compose.ui.test {
     method public static void swipeUp(androidx.compose.ui.test.TouchInjectionScope, optional float startY, optional float endY, optional long durationMillis);
     method public static void swipeWithVelocity(androidx.compose.ui.test.TouchInjectionScope, long start, long end, float endVelocity, optional long durationMillis);
     method @BytecodeOnly public static void swipeWithVelocity-5iVPX68(androidx.compose.ui.test.TouchInjectionScope, long, long, float, long);
+  }
+
+  @kotlin.jvm.JvmInline public final value class UiModeType {
+    method @BytecodeOnly public static androidx.compose.ui.test.UiModeType! box-impl(int);
+    method public int getConfigValue();
+    method @BytecodeOnly public int unbox-impl();
+    property public int configValue;
+    field public static final androidx.compose.ui.test.UiModeType.Companion Companion;
+  }
+
+  public static final class UiModeType.Companion {
+    method @BytecodeOnly public int getAppliance-ZjwGzpQ();
+    method @BytecodeOnly public int getCar-ZjwGzpQ();
+    method @BytecodeOnly public int getDesk-ZjwGzpQ();
+    method @BytecodeOnly public int getNormal-ZjwGzpQ();
+    method @BytecodeOnly public int getTelevision-ZjwGzpQ();
+    method @BytecodeOnly public int getVrHeadset-ZjwGzpQ();
+    method @BytecodeOnly public int getWatch-ZjwGzpQ();
+    property public androidx.compose.ui.test.UiModeType Appliance;
+    property public androidx.compose.ui.test.UiModeType Car;
+    property public androidx.compose.ui.test.UiModeType Desk;
+    property public androidx.compose.ui.test.UiModeType Normal;
+    property public androidx.compose.ui.test.UiModeType Television;
+    property public androidx.compose.ui.test.UiModeType VrHeadset;
+    property public androidx.compose.ui.test.UiModeType Watch;
   }
 
 }

@@ -176,10 +176,9 @@ class TextFieldScrolledSelectionGestureTest : FocusedWindowTest {
         val text = (0..9).joinToString(separator = " ") { "text$it" }
         lateinit var textFieldLayoutCoordinates: LayoutCoordinates
         var sizeNullable: MutableState<IntSize?>? = null
-        lateinit var tfv: MutableState<TextFieldValue>
+        val tfv = mutableStateOf(TextFieldValue(text))
         setContent { tag ->
             sizeNullable = remember { mutableStateOf(null) }
-            tfv = remember { mutableStateOf(TextFieldValue(text)) }
             BasicTextField(
                 value = tfv.value,
                 onValueChange = { tfv.value = it },
@@ -196,9 +195,18 @@ class TextFieldScrolledSelectionGestureTest : FocusedWindowTest {
         onTextField.requestFocus()
 
         // scroll to the end
-        onTextField.performTouchInput { repeat(4) { swipe(start = centerRight, end = centerLeft) } }
+        onTextField.performTouchInput {
+            repeat(4) {
+                swipe(start = centerRight, end = centerLeft)
+                // prevent double click behavior
+                advanceEventTime(1000)
+            }
+        }
 
+        rule.waitForIdle()
         assertThat(sizeNullable!!.value).isNotNull()
+        // swipe shouldn't cause an initial selection
+        assertThat(tfv.value).isEqualTo(TextFieldValue(text))
         HorizontalScope(tfv, onTextField, textFieldLayoutCoordinates, sizeNullable!!.value!!)
             .block()
     }
@@ -282,9 +290,18 @@ class TextFieldScrolledSelectionGestureTest : FocusedWindowTest {
         onTextField.requestFocus()
 
         // scroll to the end
-        onTextField.performTouchInput { repeat(4) { swipe(start = bottomCenter, end = topCenter) } }
+        onTextField.performTouchInput {
+            repeat(4) {
+                swipe(start = bottomCenter, end = topCenter)
+                // prevent double click behavior
+                advanceEventTime(1000)
+            }
+        }
 
+        rule.waitForIdle()
         assertThat(sizeNullable!!.value).isNotNull()
+        // swipe shouldn't cause an initial selection
+        assertThat(tfv.value).isEqualTo(TextFieldValue(text))
         VerticalScope(tfv, onTextField, textFieldLayoutCoordinates, sizeNullable!!.value!!).block()
     }
 

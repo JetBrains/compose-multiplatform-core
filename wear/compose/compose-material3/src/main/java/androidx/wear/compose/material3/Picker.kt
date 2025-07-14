@@ -60,11 +60,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.scrollToIndex
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -81,6 +84,8 @@ import androidx.wear.compose.foundation.lazy.ScalingParams
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider
+import androidx.wear.compose.material3.internal.Strings
+import androidx.wear.compose.material3.internal.getString
 import kotlinx.coroutines.launch
 
 /**
@@ -154,6 +159,12 @@ public fun Picker(
         MaterialTheme.motionScheme.slowEffectsSpec()
     val animatedShimColorAlpha = remember { Animatable(if (readOnly) 1f else 0f) }
     val latestContentDescription by rememberUpdatedState(contentDescription)
+    val pickerClickHintString =
+        if (readOnly) {
+            getString(Strings.PickerClickToAdjustHint)
+        } else {
+            getString(Strings.PickerClickToSelectHint)
+        }
 
     LaunchedEffect(readOnly) {
         val targetAlpha = if (readOnly) 1f else 0f
@@ -164,14 +175,15 @@ public fun Picker(
         }
     }
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.semantics(mergeDescendants = true) {}) {
         ScalingLazyColumn(
             modifier =
                 Modifier.clearAndSetSemantics {
-                        onClick {
+                        onClick(pickerClickHintString) {
                             coroutineScope.launch { onSelected() }
                             true
                         }
+                        role = Role.ValuePicker
                         scrollToIndex {
                             coroutineScope.launch {
                                 state.scrollToOption(it)

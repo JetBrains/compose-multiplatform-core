@@ -197,8 +197,7 @@ public interface SurfaceEntity : Entity {
             // The surface content is secured. DRM content can be decoded into this Surface.
             // Screen captures of the SurfaceEntity will redact the Surface content.
             // TODO: b/411767049 - Redact only the Surface content, not the entire feed while the
-            // Surface
-            // is visible.
+            // Surface is visible.
             public const val PROTECTED: Int = 1
         }
     }
@@ -293,17 +292,20 @@ public interface SurfaceEntity : Entity {
         }
     }
 
-    /**
-     * The width of the left/right feathered edges of the canvas.
-     *
-     * @throws IllegalArgumentException if the Entity has been disposed.
-     */
-    public var featherRadiusX: Float
+    /** Specifies edge transparency effects for the canvas. */
+    public interface EdgeFeather {
+        /** A smooth feathering effect which moves from edges of UV space to the center. */
+        public class SmoothFeather(public val leftRight: Float, public val topBottom: Float) :
+            EdgeFeather
+
+        /** A Default implementation of EdgeFeather that does nothing. */
+        public class SolidEdge() : EdgeFeather
+    }
 
     /**
-     * The height of the top/bottom feathered edges of the canvas.
+     * The edge feathering effect for the spatialized geometry.
      *
-     * @throws IllegalArgumentException if the Entity has been disposed.
+     * @throws IllegalStateException if the Entity has been disposed.
      */
-    public var featherRadiusY: Float
+    public var edgeFeather: EdgeFeather
 }

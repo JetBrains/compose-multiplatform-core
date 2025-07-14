@@ -301,6 +301,9 @@ class HandTrackingActivity : ComponentActivity() {
         val leftHand = Hand.left(session)
         val rightHand = Hand.right(session)
 
+        var title = intent.getStringExtra("TITLE")
+        if (title == null) title = "Hand Tracking"
+
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
             topBar = {
@@ -313,7 +316,7 @@ class HandTrackingActivity : ComponentActivity() {
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
-                        text = "Hand Tracking",
+                        text = title,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,

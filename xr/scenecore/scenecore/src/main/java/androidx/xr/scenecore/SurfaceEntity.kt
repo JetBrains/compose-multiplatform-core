@@ -17,6 +17,7 @@
 package androidx.xr.scenecore
 
 import android.view.Surface
+import androidx.annotation.FloatRange
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
@@ -48,10 +49,7 @@ import androidx.xr.runtime.math.Pose
  * @property auxiliaryAlphaMaskTexture The texture to be composited into the alpha channel of the
  *   secondary view of the surface. This is only used for interleaved stereo content. If null, the
  *   alpha mask will be disabled.
- * @property featherRadiusX a [Float] which controls the canvas-relative radius of the edge fadeout
- *   on the left and right edges of the SurfaceEntity canvas.
- * @property featherRadiusY a [Float] which controls the canvas-relative radius of the edge fadeout
- *   on the top and bottom edges of the SurfaceEntity canvas.
+ * @property edgeFeather The [EdgeFeather] which describes the edge fading effects for the surface.
  * @property contentColorMetadata The [ContentColorMetadata] of the content (nullable).
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -98,6 +96,29 @@ private constructor(
             override val dimensions: FloatSize3d
                 get() = FloatSize3d(radius * 2, radius * 2, radius)
         }
+    }
+
+    /** Represents edge fading effects for a SurfaceEntity. */
+    public abstract class EdgeFeatheringParams private constructor() {
+        /**
+         * @property leftRight a [Float] which controls the canvas-relative radius of the edge
+         *   fadeout on the left and right edges of the SurfaceEntity canvas.
+         * @property topBottom a [Float] which controls the canvas-relative radius of the edge
+         *   fadeout on the top and bottom edges of the SurfaceEntity canvas.
+         *
+         * A radius of 0.05 represents 5% of the width of the visible canvas surface. Please note
+         * that this is scaled by the aspect ratio of Quad-shaped canvases.
+         *
+         * Applications are encouraged to use ZeroFeather or set this to 0.0 on Spherical canvases.
+         * The behavior is only defined for values between [0.0f - 0.5f]. Default values are 0.0f.
+         */
+        public class SmoothFeather(
+            @FloatRange(from = 0.0, to = 0.5) public val leftRight: Float = 0.0f,
+            @FloatRange(from = 0.0, to = 0.5) public val topBottom: Float = 0.0f,
+        ) : EdgeFeatheringParams() {}
+
+        /** Applies no edge fading to any canvas. */
+        public class SolidEdge : EdgeFeatheringParams() {}
     }
 
     @IntDef(ContentSecurityLevel.NONE, ContentSecurityLevel.PROTECTED)
@@ -513,49 +534,28 @@ private constructor(
         }
 
     /**
-     * Controls the canvas-relative radius of the edge fadeout on the left and right edges of the
-     * SurfaceEntity canvas. A radius of 0.05 represents 5% of the width of the visible canvas
-     * surface. Please note that this is scaled by the aspect ratio of Quad-shaped canvases.
-     *
-     * Applications are encouraged to set this to 0.0 on 360 canvases. The behavior is only defined
-     * between [0.0f - 0.5f]. Default value is 0.0f.
-     *
-     * Setter must be called from the main thread.
+     * The [EdgeFeather] feathering pattern to be used along the edges of the CanvasShape. This
+     * value must only be set from the main thread.
      *
      * @throws IllegalStateException when setting this value if the Entity has been disposed.
      */
-    public var featherRadiusX: Float
+    public var edgeFeather: EdgeFeatheringParams = EdgeFeatheringParams.SolidEdge()
         get() {
             checkDisposed()
-            return rtEntity.featherRadiusX
+            return field
         }
         @MainThread
         set(value) {
             checkDisposed()
-            rtEntity.featherRadiusX = value
-        }
-
-    /**
-     * Controls the canvas-relative radius of the edge fadeout on the top and bottom edges of the
-     * SurfaceEntity canvas. A radius of 0.05 represents 5% of the height of the visible canvas
-     * surface. Please note that this is scaled by the aspect ratio of Quad-shaped canvases.
-     *
-     * Applications are encouraged to set this to 0.0 on 360 canvases. The behavior is only defined
-     * between [0.0f - 0.5f]. Default value is 0.0f.
-     *
-     * Setter must be called from the main thread.
-     *
-     * @throws IllegalStateException when setting this value if the Entity has been disposed.
-     */
-    public var featherRadiusY: Float
-        get() {
-            checkDisposed()
-            return rtEntity.featherRadiusY
-        }
-        @MainThread
-        set(value) {
-            checkDisposed()
-            rtEntity.featherRadiusY = value
+            val rtEdgeFeather =
+                when (value) {
+                    is EdgeFeatheringParams.SolidEdge -> RtSurfaceEntity.EdgeFeather.SolidEdge()
+                    is EdgeFeatheringParams.SmoothFeather ->
+                        RtSurfaceEntity.EdgeFeather.SmoothFeather(value.leftRight, value.topBottom)
+                    else -> throw IllegalArgumentException("Unsupported edge feather: $value")
+                }
+            rtEntity.edgeFeather = rtEdgeFeather
+            field = value
         }
 
     /**

@@ -36,8 +36,4 @@ dependencies {
 android {
     compileSdk = 35
     namespace = "androidx.compose.ui.test.manifest.integration.testapp"
-
-    defaultConfig {
-        targetSdkVersion 35
-    }
 }

@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.guava;
 
-import static androidx.xr.arcore.guava.EarthGuava.createAnchorOnSurfaceAsync;
+import static androidx.xr.arcore.guava.GuavaEarth.createAnchorOnSurfaceAsync;
 
 import static com.google.common.truth.Truth.assertThat;
 

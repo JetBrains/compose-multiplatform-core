@@ -94,7 +94,7 @@ class PanelShadowRenderer {
     }
 
     void updatePanelPose(
-            Pose openXrToProposedPanel, Pose openXrtoPlane, PanelEntityImpl panelEntity) {
+            Pose openXrToProposedPanel, Pose openXrtoPlane, BasePanelEntity panelEntity) {
         // If there is no panel shadow node, create it.
         if (mPanelShadowNode == null) {
             createPanelShadow(openXrToProposedPanel, openXrtoPlane, panelEntity);
@@ -147,20 +147,20 @@ class PanelShadowRenderer {
     }
 
     private void createPanelShadow(
-            Pose openXrToProposedPanel, Pose openXrtoPlane, PanelEntityImpl panelEntity) {
+            Pose openXrToProposedPanel, Pose openXrtoPlane, BasePanelEntity panelEntity) {
         View view = new PanelShadowView(mActivity);
 
         // Scale the panel shadow to the size of the PanelEntity in the activity space.
         Vector3 entityScale = panelEntity.getWorldSpaceScale();
         float sizeX =
                 panelEntity.getSizeInPixels().width
-                                * entityScale.getX()
-                                / mActivitySpaceImpl.getWorldSpaceScale().getX()
+                        * entityScale.getX()
+                        / mActivitySpaceImpl.getWorldSpaceScale().getX()
                         + PANEL_BORDER_ADDED_MARGIN;
         float sizeZ =
                 panelEntity.getSizeInPixels().height
-                                * entityScale.getZ()
-                                / mActivitySpaceImpl.getWorldSpaceScale().getX()
+                        * entityScale.getZ()
+                        / mActivitySpaceImpl.getWorldSpaceScale().getX()
                         + PANEL_BORDER_ADDED_MARGIN;
 
         Pose panelPoseInActivitySpace =

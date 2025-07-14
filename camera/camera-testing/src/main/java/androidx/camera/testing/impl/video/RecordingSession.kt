@@ -28,7 +28,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 public class RecordingSession(private val defaults: Defaults) {
     public companion object {
         public const val DEFAULT_VERIFY_STATUS_COUNT: Int = 5
-        public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 5000
+        public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 10000
         public const val DEFAULT_VERIFY_STATUS_TIMEOUT_MS: Long = 15000
     }
 

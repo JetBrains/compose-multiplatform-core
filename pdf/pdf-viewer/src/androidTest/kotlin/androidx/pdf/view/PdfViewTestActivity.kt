@@ -35,7 +35,7 @@ open class PdfViewTestActivity : Activity() {
         ) {
             val language = intent.getStringExtra(LOCALE_LANGUAGE) as String
             val country = intent.getStringExtra(LOCALE_COUNTRY) as String
-            val newLocale = Locale(language, country)
+            @Suppress("Deprecation") val newLocale = Locale(language, country)
             val wrappedContext = updateContext(newBase, newLocale)
             return super.attachBaseContext(wrappedContext)
         }

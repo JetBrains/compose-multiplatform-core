@@ -329,9 +329,12 @@ public final class SupportedSurfaceCombination {
         return validatingBuilder.build();
     }
 
-    @Nullable List<SurfaceConfig> getOrderedSupportedStreamUseCaseSurfaceConfigList(
+    @Nullable
+    List<SurfaceConfig> getOrderedSupportedStreamUseCaseSurfaceConfigList(
             @NonNull FeatureSettings featureSettings,
-            List<SurfaceConfig> surfaceConfigList) {
+            @NonNull List<SurfaceConfig> surfaceConfigList,
+            @NonNull Map<Integer, AttachedSurfaceInfo> surfaceConfigIndexAttachedSurfaceInfoMap,
+            @NonNull Map<Integer, UseCaseConfig<?>> surfaceConfigIndexUseCaseConfigMap) {
         if (!StreamUseCaseUtil.shouldUseStreamUseCase(featureSettings)) {
             return null;
         }
@@ -340,7 +343,17 @@ public final class SupportedSurfaceCombination {
             List<SurfaceConfig> orderedSurfaceConfigList =
                     surfaceCombination.getOrderedSupportedSurfaceConfigList(surfaceConfigList);
             if (orderedSurfaceConfigList != null) {
-                return orderedSurfaceConfigList;
+                boolean captureTypesEligible = StreamUseCaseUtil.areCaptureTypesEligible(
+                        surfaceConfigIndexAttachedSurfaceInfoMap,
+                        surfaceConfigIndexUseCaseConfigMap, orderedSurfaceConfigList);
+                Lazy<Boolean> streamUseCasesAvailableForSurfaceConfigs = new UnsafeLazyImpl<>(
+                        () -> StreamUseCaseUtil.areStreamUseCasesAvailableForSurfaceConfigs(
+                                mCharacteristics, orderedSurfaceConfigList));
+
+                if (captureTypesEligible && streamUseCasesAvailableForSurfaceConfigs.getValue()) {
+
+                    return orderedSurfaceConfigList;
+                }
             }
         }
         return null;
@@ -983,21 +996,11 @@ public final class SupportedSurfaceCombination {
                         surfaceConfigIndexUseCaseConfigMap).first;
                 orderedSurfaceConfigListForStreamUseCase =
                         getOrderedSupportedStreamUseCaseSurfaceConfigList(featureSettings,
-                                surfaceConfigs);
-                if (orderedSurfaceConfigListForStreamUseCase != null
-                        && !StreamUseCaseUtil.areCaptureTypesEligible(
-                        surfaceConfigIndexAttachedSurfaceInfoMap,
-                        surfaceConfigIndexUseCaseConfigMap,
-                        orderedSurfaceConfigListForStreamUseCase)) {
-                    orderedSurfaceConfigListForStreamUseCase = null;
-                }
+                                surfaceConfigs,
+                                surfaceConfigIndexAttachedSurfaceInfoMap,
+                                surfaceConfigIndexUseCaseConfigMap);
                 if (orderedSurfaceConfigListForStreamUseCase != null) {
-                    if (StreamUseCaseUtil.areStreamUseCasesAvailableForSurfaceConfigs(
-                            mCharacteristics, orderedSurfaceConfigListForStreamUseCase)) {
-                        break;
-                    } else {
-                        orderedSurfaceConfigListForStreamUseCase = null;
-                    }
+                    break;
                 }
                 surfaceConfigIndexAttachedSurfaceInfoMap.clear();
                 surfaceConfigIndexUseCaseConfigMap.clear();
@@ -1239,7 +1242,8 @@ public final class SupportedSurfaceCombination {
             if (orderedSurfaceConfigListForStreamUseCase != null
                     && !supportedSizesForStreamUseCaseFound
                     && getOrderedSupportedStreamUseCaseSurfaceConfigList(
-                    featureSettings, surfaceConfigList) != null) {
+                    featureSettings, surfaceConfigList, surfaceConfigIndexToAttachedSurfaceInfoMap,
+                    surfaceConfigIndexToUseCaseConfigMap) != null) {
                 if (savedConfigMaxFpsForStreamUseCase == FRAME_RATE_UNLIMITED) {
                     savedConfigMaxFpsForStreamUseCase = currentConfigFrameRateCeiling;
                     savedSizesForStreamUseCase = possibleSizeList;

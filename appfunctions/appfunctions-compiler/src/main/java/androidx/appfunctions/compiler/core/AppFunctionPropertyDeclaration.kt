@@ -19,20 +19,30 @@ package androidx.appfunctions.compiler.core
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.KSValueParameter
 
 // TODO(b/403525399): Add support for checking optional property.
 /** A wrapper class to store the property declaration in a class. */
-data class AppFunctionPropertyDeclaration(val name: String, val type: KSTypeReference) {
+data class AppFunctionPropertyDeclaration(
+    val name: String,
+    val type: KSTypeReference,
+    val description: String,
+    val isRequired: Boolean,
+) {
     /** Creates an [AppFunctionPropertyDeclaration] from [KSPropertyDeclaration]. */
     constructor(
-        property: KSPropertyDeclaration
-    ) : this(checkNotNull(property.simpleName).asString(), property.type)
-
-    /** Creates an [AppFunctionPropertyDeclaration] from [KSValueParameter]. */
-    constructor(
-        valueParameter: KSValueParameter
-    ) : this(checkNotNull(valueParameter.name).asString(), valueParameter.type)
+        property: KSPropertyDeclaration,
+        isDescribedByKdoc: Boolean,
+        isRequired: Boolean,
+    ) : this(
+        checkNotNull(property.simpleName).asString(),
+        property.type,
+        if (isDescribedByKdoc) {
+            property.docString.orEmpty()
+        } else {
+            ""
+        },
+        isRequired,
+    )
 
     /** Indicates whether the [type] is a generic type or not. */
     val isGenericType: Boolean by lazy { type.resolve().declaration is KSTypeParameter }

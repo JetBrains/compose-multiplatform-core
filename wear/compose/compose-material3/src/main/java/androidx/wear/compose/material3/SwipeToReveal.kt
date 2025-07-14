@@ -668,7 +668,7 @@ internal constructor(
             iconEndFadeInFraction = endFadeInFraction(hasSecondaryAction),
             coroutineScope = coroutineScope,
             modifier = modifier.height(ButtonDefaults.Height),
-            hasUndo = hasPrimaryUndo,
+            shouldSetLastActionType = true,
         )
     }
 
@@ -705,7 +705,7 @@ internal constructor(
             iconEndFadeInFraction = endFadeInFraction(hasSecondaryAction),
             coroutineScope = coroutineScope,
             modifier = modifier.height(ButtonDefaults.Height),
-            hasSecondaryUndo,
+            shouldSetLastActionType = hasSecondaryUndo,
         )
     }
 
@@ -804,7 +804,7 @@ internal fun ActionButton(
     iconEndFadeInFraction: Float,
     coroutineScope: CoroutineScope,
     modifier: Modifier = Modifier,
-    hasUndo: Boolean = false,
+    shouldSetLastActionType: Boolean = false,
 ) {
     val containerColor =
         action.containerColor.takeOrElse {
@@ -875,7 +875,7 @@ internal fun ActionButton(
                     if (revealActionType == RevealActionType.UndoAction) {
                         revealState.animateTo(Covered)
                     } else {
-                        if (hasUndo || revealActionType == RevealActionType.PrimaryAction) {
+                        if (shouldSetLastActionType) {
                             revealState.lastActionType = revealActionType
                             revealState.animateTo(
                                 if (revealState.offset > 0) {

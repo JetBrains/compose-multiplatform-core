@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.guava;
 
-import static androidx.xr.scenecore.guava.ScenePoseGuava.hitTestAsync;
+import static androidx.xr.scenecore.guava.GuavaScenePose.hitTestAsync;
 import static androidx.xr.scenecore.SessionExt.getScene;
 
 import static com.google.common.truth.Truth.assertThat;

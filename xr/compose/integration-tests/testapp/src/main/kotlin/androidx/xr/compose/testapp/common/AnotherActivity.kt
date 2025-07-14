@@ -32,6 +32,8 @@ class AnotherActivity : ComponentActivity() {
             val showBottomBar = intent.getBooleanExtra("SHOW_BOTTOM_BAR", false)
             val title = intent.getStringExtra("TITLE") ?: "Another Activity"
             val bottomBarText = intent.getStringExtra("BOTTOM_BAR_TEXT") ?: ""
+            val insideText =
+                intent.getStringExtra("INSIDE_TEXT") ?: "Activity inside a spatial panel"
             IntegrationTestsAppTheme {
                 CommonTestScaffold(
                     title = title,
@@ -39,10 +41,7 @@ class AnotherActivity : ComponentActivity() {
                     bottomBarText = bottomBarText,
                     onClickBackArrow = null,
                 ) { padding ->
-                    ColumnWithCenterText(
-                        padding = padding,
-                        text = "Activity inside a spatial panel",
-                    )
+                    ColumnWithCenterText(padding = padding, text = insideText)
                 }
             }
         }

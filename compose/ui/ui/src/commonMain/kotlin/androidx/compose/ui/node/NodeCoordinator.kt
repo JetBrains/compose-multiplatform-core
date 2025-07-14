@@ -33,7 +33,9 @@ import androidx.compose.ui.graphics.DefaultCameraDistance
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.input.pointer.MatrixPositionCalculator
@@ -303,6 +305,13 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
 
     internal val lastMeasurementConstraints: Constraints
         get() = measurementConstraints
+
+    /** [lastShape] is accessed in the graphics layer modifier node and propagated to semantics. */
+    internal var lastShape: Shape = RectangleShape
+    /** [lastClip] is accessed in the graphics layer modifier node for semantics. */
+    internal var lastClip: Boolean = false
+    /** Whether layer block was invoked, used for semantics invalidation and property access. */
+    internal var wasLayerBlockInvoked: Boolean = false
 
     protected inline fun performingMeasure(
         constraints: Constraints,
@@ -576,6 +585,17 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
             graphicsLayerScope.size = size.toSize()
             snapshotObserver.observeReads(this, onCommitAffectingLayerParams) {
                 layerBlock.invoke(graphicsLayerScope)
+                if (lastShape !== graphicsLayerScope.shape || lastClip != graphicsLayerScope.clip) {
+                    lastShape = graphicsLayerScope.shape
+                    lastClip = graphicsLayerScope.clip
+                    if (wasLayerBlockInvoked) {
+                        // Semantics are already applied by the time the layer block is invoked for
+                        // the first time, so we only invalidate semantics after subsequent layer
+                        // block invocations and if the shape or clip changed.
+                        layoutNode.invalidateSemantics()
+                    }
+                }
+                wasLayerBlockInvoked = true
                 graphicsLayerScope.updateOutline()
             }
             val layerPositionalProperties =

@@ -51,8 +51,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.spatial.ApplicationSubspace
-import androidx.xr.compose.subspace.MainPanel
 import androidx.xr.compose.subspace.SpatialColumn
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -125,7 +125,7 @@ class WindowManagerJxrTestActivity : ComponentActivity() {
             }
             PanelGrid()
             if (showMainPanel) {
-                MainPanel(modifier = SubspaceModifier.height(800.dp).width(680.dp))
+                SpatialMainPanel(modifier = SubspaceModifier.height(800.dp).width(680.dp))
             }
         }
     }

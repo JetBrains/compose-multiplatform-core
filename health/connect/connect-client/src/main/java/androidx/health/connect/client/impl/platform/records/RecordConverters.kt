@@ -25,7 +25,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ActivityIntensityRecord
@@ -183,7 +182,6 @@ private fun Record.toPlatformRecordExt13(): PlatformRecord? {
     }
 }
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 private fun Record.toPlatformRecordExt15(): PlatformRecord? {
     if (!isAtLeastSdkExtension15()) {
         return null
@@ -263,7 +261,6 @@ private fun PlatformRecord.toSdkRecordExt13(): Record? {
     }
 }
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 @SuppressLint("NewApi") // Guarded by sdk extension check
 private fun PlatformRecord.toSdkRecordExt15(): Record? {
     if (!isAtLeastSdkExtension15()) {
@@ -501,7 +498,6 @@ private fun PlatformMenstruationFlowRecord.toSdkMenstruationFlowRecord() =
         metadata = metadata.toSdkMetadata(),
     )
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 @SuppressLint("NewApi") // Guarded by sdk extension check
 private fun PlatformMindfulnessSessionRecord.toSdkMindfulnessSessionRecord() =
     MindfulnessSessionRecord(
@@ -997,7 +993,6 @@ private fun MenstruationPeriodRecord.toPlatformMenstruationPeriodRecord() =
         }
         .build()
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 @SuppressLint("NewApi") // Guarded by sdk extension check
 private fun MindfulnessSessionRecord.toPlatformMindfulnessSessionRecord() =
     PlatformMindfulnessSessionRecordBuilder(

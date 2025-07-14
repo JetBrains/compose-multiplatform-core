@@ -253,6 +253,7 @@ package androidx.navigation {
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS}) public static @interface NavDestination.ClassType {
+    ctor @KotlinOnly public NavDestination.ClassType(kotlin.reflect.KClass<? extends java.lang.Object?> value);
     method public abstract Class<? extends java.lang.Object?> value();
     property public abstract kotlin.reflect.KClass<? extends java.lang.Object?> value;
   }
@@ -575,6 +576,7 @@ package androidx.navigation {
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.CLASS}) public static @interface Navigator.Name {
+    ctor @KotlinOnly public Navigator.Name(String value);
     method public abstract String value();
     property public abstract String value;
   }

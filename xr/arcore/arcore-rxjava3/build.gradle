@@ -15,12 +15,12 @@
 */
 
 /**
-        * This file was created using the `create_project.py` script located in the
-        * `<AndroidX root>/development/project-creator` directory.
-*
-* Please use that script when creating a new project, rather than copying an existing project and
-        * modifying its settings.
-*/
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
 import androidx.build.SoftwareType
 
@@ -44,10 +44,10 @@ dependencies {
 }
 
 android {
-    compileSdk 35
+    compileSdk = 35
 
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
 
     namespace = "androidx.xr.arcore.rxjava3"

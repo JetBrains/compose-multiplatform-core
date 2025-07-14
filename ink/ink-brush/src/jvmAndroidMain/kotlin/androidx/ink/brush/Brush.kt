@@ -46,6 +46,7 @@ private constructor(
 ) {
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Suppress("HiddenTypeParameter")
     public val internalColor: ComposeColor =
         // Caching this because the native call is slow. Still doing the round-trip on construction
         // to

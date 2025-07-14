@@ -14,15 +14,12 @@ package androidx.compose.foundation {
   }
 
   public static final class AndroidExternalSurfaceZOrder.Companion {
-    method public int getBehind();
     method @BytecodeOnly public int getBehind-B_4ceCc();
-    method public int getMediaOverlay();
     method @BytecodeOnly public int getMediaOverlay-B_4ceCc();
-    method public int getOnTop();
     method @BytecodeOnly public int getOnTop-B_4ceCc();
-    property public int Behind;
-    property public int MediaOverlay;
-    property public int OnTop;
+    property public androidx.compose.foundation.AndroidExternalSurfaceZOrder Behind;
+    property public androidx.compose.foundation.AndroidExternalSurfaceZOrder MediaOverlay;
+    property public androidx.compose.foundation.AndroidExternalSurfaceZOrder OnTop;
   }
 
   public final class AndroidExternalSurface_androidKt {
@@ -90,14 +87,14 @@ package androidx.compose.foundation {
   }
 
   @androidx.compose.runtime.Immutable public final class BorderStroke {
-    ctor public BorderStroke(float width, androidx.compose.ui.graphics.Brush brush);
+    ctor @KotlinOnly public BorderStroke(androidx.compose.ui.unit.Dp width, androidx.compose.ui.graphics.Brush brush);
+    ctor @BytecodeOnly public BorderStroke(float, androidx.compose.ui.graphics.Brush!, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.compose.foundation.BorderStroke copy(optional float width, optional androidx.compose.ui.graphics.Brush brush);
     method @BytecodeOnly public androidx.compose.foundation.BorderStroke copy-D5KLDUw(float, androidx.compose.ui.graphics.Brush);
     method public androidx.compose.ui.graphics.Brush getBrush();
-    method public float getWidth();
     method @BytecodeOnly public float getWidth-D9Ej5fM();
     property public androidx.compose.ui.graphics.Brush brush;
-    property public float width;
+    property public androidx.compose.ui.unit.Dp width;
   }
 
   public final class BorderStrokeKt {
@@ -146,6 +143,7 @@ package androidx.compose.foundation {
     property public boolean isAutomaticNestedPrefetchEnabled;
     property public boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
     property public boolean isFlingContinuationAtBoundsEnabled;
+    property public boolean isKeepInViewFocusObservationChangeEnabled;
     property public boolean isNewContextMenuEnabled;
     property public boolean isNonComposedClickableEnabled;
     property public boolean isNonSuspendingPointerInputInClickableEnabled;
@@ -159,6 +157,7 @@ package androidx.compose.foundation {
     field public static boolean isAutomaticNestedPrefetchEnabled;
     field public static boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
     field public static boolean isFlingContinuationAtBoundsEnabled;
+    field public static boolean isKeepInViewFocusObservationChangeEnabled;
     field public static boolean isNewContextMenuEnabled;
     field public static boolean isNonComposedClickableEnabled;
     field public static boolean isNonSuspendingPointerInputInClickableEnabled;
@@ -241,24 +240,21 @@ package androidx.compose.foundation {
   }
 
   public static final class MarqueeAnimationMode.Companion {
-    method public int getImmediately();
     method @BytecodeOnly public int getImmediately-ZbEOnfQ();
-    method public int getWhileFocused();
     method @BytecodeOnly public int getWhileFocused-ZbEOnfQ();
-    property public int Immediately;
-    property public int WhileFocused;
+    property public androidx.compose.foundation.MarqueeAnimationMode Immediately;
+    property public androidx.compose.foundation.MarqueeAnimationMode WhileFocused;
   }
 
   public final class MarqueeDefaults {
     method public int getIterations();
     method public int getRepeatDelayMillis();
     method public androidx.compose.foundation.MarqueeSpacing getSpacing();
-    method public float getVelocity();
     method @BytecodeOnly public float getVelocity-D9Ej5fM();
     property public int Iterations;
     property public int RepeatDelayMillis;
     property public androidx.compose.foundation.MarqueeSpacing Spacing;
-    property public float Velocity;
+    property public androidx.compose.ui.unit.Dp Velocity;
     field public static final androidx.compose.foundation.MarqueeDefaults INSTANCE;
   }
 
@@ -288,12 +284,12 @@ package androidx.compose.foundation {
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @androidx.compose.runtime.Stable public final class OverscrollConfiguration {
     ctor @Deprecated public OverscrollConfiguration();
-    ctor @Deprecated public OverscrollConfiguration(optional long glowColor, optional androidx.compose.foundation.layout.PaddingValues drawPadding);
+    ctor @KotlinOnly @Deprecated public OverscrollConfiguration(optional androidx.compose.ui.graphics.Color glowColor, optional androidx.compose.foundation.layout.PaddingValues drawPadding);
+    ctor @BytecodeOnly @Deprecated public OverscrollConfiguration(long, androidx.compose.foundation.layout.PaddingValues!, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @Deprecated public androidx.compose.foundation.layout.PaddingValues getDrawPadding();
-    method @Deprecated public long getGlowColor();
     method @BytecodeOnly @Deprecated public long getGlowColor-0d7_KjU();
     property @Deprecated public androidx.compose.foundation.layout.PaddingValues drawPadding;
-    property @Deprecated public long glowColor;
+    property @Deprecated public androidx.compose.ui.graphics.Color glowColor;
   }
 
   public final class OverscrollConfiguration_androidKt {
@@ -437,12 +433,11 @@ package androidx.compose.foundation.content {
     method public androidx.compose.ui.platform.ClipEntry getClipEntry();
     method public androidx.compose.ui.platform.ClipMetadata getClipMetadata();
     method public androidx.compose.foundation.content.PlatformTransferableContent? getPlatformTransferableContent();
-    method public int getSource();
     method @BytecodeOnly public int getSource-kB6V9T0();
     property public androidx.compose.ui.platform.ClipEntry clipEntry;
     property public androidx.compose.ui.platform.ClipMetadata clipMetadata;
     property public androidx.compose.foundation.content.PlatformTransferableContent? platformTransferableContent;
-    property public int source;
+    property public androidx.compose.foundation.content.TransferableContent.Source source;
   }
 
   @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi @kotlin.jvm.JvmInline public static final value class TransferableContent.Source {
@@ -452,15 +447,12 @@ package androidx.compose.foundation.content {
   }
 
   public static final class TransferableContent.Source.Companion {
-    method public int getClipboard();
     method @BytecodeOnly public int getClipboard-kB6V9T0();
-    method public int getDragAndDrop();
     method @BytecodeOnly public int getDragAndDrop-kB6V9T0();
-    method public int getKeyboard();
     method @BytecodeOnly public int getKeyboard-kB6V9T0();
-    property public int Clipboard;
-    property public int DragAndDrop;
-    property public int Keyboard;
+    property public androidx.compose.foundation.content.TransferableContent.Source Clipboard;
+    property public androidx.compose.foundation.content.TransferableContent.Source DragAndDrop;
+    property public androidx.compose.foundation.content.TransferableContent.Source Keyboard;
   }
 
   public final class TransferableContent_androidKt {
@@ -964,10 +956,10 @@ package androidx.compose.foundation.interaction {
   }
 
   public static final class PressInteraction.Press implements androidx.compose.foundation.interaction.PressInteraction {
-    ctor public PressInteraction.Press(long pressPosition);
-    method public long getPressPosition();
+    ctor @KotlinOnly public PressInteraction.Press(androidx.compose.ui.geometry.Offset pressPosition);
+    ctor @BytecodeOnly public PressInteraction.Press(long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @BytecodeOnly public long getPressPosition-F1C5BW0();
-    property public long pressPosition;
+    property public androidx.compose.ui.geometry.Offset pressPosition;
   }
 
   public static final class PressInteraction.Release implements androidx.compose.foundation.interaction.PressInteraction {
@@ -1044,7 +1036,6 @@ package androidx.compose.foundation.lazy {
     method public default boolean getReverseLayout();
     method public int getTotalItemsCount();
     method public int getViewportEndOffset();
-    method public default long getViewportSize();
     method @BytecodeOnly public default long getViewportSize-YbymL2g();
     method public int getViewportStartOffset();
     method public java.util.List<androidx.compose.foundation.lazy.LazyListItemInfo> getVisibleItemsInfo();
@@ -1055,7 +1046,7 @@ package androidx.compose.foundation.lazy {
     property public default boolean reverseLayout;
     property public abstract int totalItemsCount;
     property public abstract int viewportEndOffset;
-    property public default long viewportSize;
+    property public default androidx.compose.ui.unit.IntSize viewportSize;
     property public abstract int viewportStartOffset;
     property public abstract java.util.List<androidx.compose.foundation.lazy.LazyListItemInfo> visibleItemsInfo;
   }
@@ -1155,7 +1146,8 @@ package androidx.compose.foundation.lazy.grid {
   }
 
   public static final class GridCells.Adaptive implements androidx.compose.foundation.lazy.grid.GridCells {
-    ctor public GridCells.Adaptive(float minSize);
+    ctor @KotlinOnly public GridCells.Adaptive(androidx.compose.ui.unit.Dp minSize);
+    ctor @BytecodeOnly public GridCells.Adaptive(float, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public java.util.List<java.lang.Integer> calculateCrossAxisCellSizes(androidx.compose.ui.unit.Density, int availableSize, int spacing);
   }
 
@@ -1165,7 +1157,8 @@ package androidx.compose.foundation.lazy.grid {
   }
 
   public static final class GridCells.FixedSize implements androidx.compose.foundation.lazy.grid.GridCells {
-    ctor public GridCells.FixedSize(float size);
+    ctor @KotlinOnly public GridCells.FixedSize(androidx.compose.ui.unit.Dp size);
+    ctor @BytecodeOnly public GridCells.FixedSize(float, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public java.util.List<java.lang.Integer> calculateCrossAxisCellSizes(androidx.compose.ui.unit.Density, int availableSize, int spacing);
   }
 
@@ -1200,19 +1193,17 @@ package androidx.compose.foundation.lazy.grid {
     method public Object? getContentType();
     method public int getIndex();
     method public Object getKey();
-    method public long getOffset();
     method @BytecodeOnly public long getOffset-nOcc-ac();
     method public int getRow();
-    method public long getSize();
     method @BytecodeOnly public long getSize-YbymL2g();
     method public int getSpan();
     property public abstract int column;
     property public abstract Object? contentType;
     property public abstract int index;
     property public abstract Object key;
-    property public abstract long offset;
+    property public abstract androidx.compose.ui.unit.IntOffset offset;
     property public abstract int row;
-    property public abstract long size;
+    property public abstract androidx.compose.ui.unit.IntSize size;
     property public abstract int span;
     field public static final androidx.compose.foundation.lazy.grid.LazyGridItemInfo.Companion Companion;
     field public static final int UnknownColumn = -1; // 0xffffffff
@@ -1246,7 +1237,6 @@ package androidx.compose.foundation.lazy.grid {
     method public boolean getReverseLayout();
     method public int getTotalItemsCount();
     method public int getViewportEndOffset();
-    method public long getViewportSize();
     method @BytecodeOnly public long getViewportSize-YbymL2g();
     method public int getViewportStartOffset();
     method public java.util.List<androidx.compose.foundation.lazy.grid.LazyGridItemInfo> getVisibleItemsInfo();
@@ -1258,7 +1248,7 @@ package androidx.compose.foundation.lazy.grid {
     property public abstract boolean reverseLayout;
     property public abstract int totalItemsCount;
     property public abstract int viewportEndOffset;
-    property public abstract long viewportSize;
+    property public abstract androidx.compose.ui.unit.IntSize viewportSize;
     property public abstract int viewportStartOffset;
     property public abstract java.util.List<androidx.compose.foundation.lazy.grid.LazyGridItemInfo> visibleItemsInfo;
   }
@@ -1575,16 +1565,14 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     method public int getIndex();
     method public Object getKey();
     method public int getLane();
-    method public long getOffset();
     method @BytecodeOnly public long getOffset-nOcc-ac();
-    method public long getSize();
     method @BytecodeOnly public long getSize-YbymL2g();
     property public abstract Object? contentType;
     property public abstract int index;
     property public abstract Object key;
     property public abstract int lane;
-    property public abstract long offset;
-    property public abstract long size;
+    property public abstract androidx.compose.ui.unit.IntOffset offset;
+    property public abstract androidx.compose.ui.unit.IntSize size;
   }
 
   @androidx.compose.runtime.Stable public sealed interface LazyStaggeredGridItemScope {
@@ -1598,7 +1586,6 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     method public androidx.compose.foundation.gestures.Orientation getOrientation();
     method public int getTotalItemsCount();
     method public int getViewportEndOffset();
-    method public long getViewportSize();
     method @BytecodeOnly public long getViewportSize-YbymL2g();
     method public int getViewportStartOffset();
     method public java.util.List<androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemInfo> getVisibleItemsInfo();
@@ -1608,7 +1595,7 @@ package androidx.compose.foundation.lazy.staggeredgrid {
     property public abstract androidx.compose.foundation.gestures.Orientation orientation;
     property public abstract int totalItemsCount;
     property public abstract int viewportEndOffset;
-    property public abstract long viewportSize;
+    property public abstract androidx.compose.ui.unit.IntSize viewportSize;
     property public abstract int viewportStartOffset;
     property public abstract java.util.List<androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemInfo> visibleItemsInfo;
   }
@@ -1663,7 +1650,8 @@ package androidx.compose.foundation.lazy.staggeredgrid {
   }
 
   public static final class StaggeredGridCells.Adaptive implements androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells {
-    ctor public StaggeredGridCells.Adaptive(float minSize);
+    ctor @KotlinOnly public StaggeredGridCells.Adaptive(androidx.compose.ui.unit.Dp minSize);
+    ctor @BytecodeOnly public StaggeredGridCells.Adaptive(float, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public int[] calculateCrossAxisCellSizes(androidx.compose.ui.unit.Density, int availableSize, int spacing);
   }
 
@@ -1673,7 +1661,8 @@ package androidx.compose.foundation.lazy.staggeredgrid {
   }
 
   public static final class StaggeredGridCells.FixedSize implements androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells {
-    ctor public StaggeredGridCells.FixedSize(float size);
+    ctor @KotlinOnly public StaggeredGridCells.FixedSize(androidx.compose.ui.unit.Dp size);
+    ctor @BytecodeOnly public StaggeredGridCells.FixedSize(float, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public int[] calculateCrossAxisCellSizes(androidx.compose.ui.unit.Density, int availableSize, int spacing);
   }
 
@@ -1711,11 +1700,11 @@ package androidx.compose.foundation.pager {
   }
 
   public static final class PageSize.Fixed implements androidx.compose.foundation.pager.PageSize {
-    ctor public PageSize.Fixed(float pageSize);
+    ctor @KotlinOnly public PageSize.Fixed(androidx.compose.ui.unit.Dp pageSize);
+    ctor @BytecodeOnly public PageSize.Fixed(float, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public int calculateMainAxisPageSize(androidx.compose.ui.unit.Density, int availableSpace, int pageSpacing);
-    method public float getPageSize();
     method @BytecodeOnly public float getPageSize-D9Ej5fM();
-    property public float pageSize;
+    property public androidx.compose.ui.unit.Dp pageSize;
   }
 
   public final class PagerDefaults {
@@ -1749,7 +1738,6 @@ package androidx.compose.foundation.pager {
     method public boolean getReverseLayout();
     method public androidx.compose.foundation.gestures.snapping.SnapPosition getSnapPosition();
     method public int getViewportEndOffset();
-    method public long getViewportSize();
     method @BytecodeOnly public long getViewportSize-YbymL2g();
     method public int getViewportStartOffset();
     method public java.util.List<androidx.compose.foundation.pager.PageInfo> getVisiblePagesInfo();
@@ -1762,7 +1750,7 @@ package androidx.compose.foundation.pager {
     property public abstract boolean reverseLayout;
     property public abstract androidx.compose.foundation.gestures.snapping.SnapPosition snapPosition;
     property public abstract int viewportEndOffset;
-    property public abstract long viewportSize;
+    property public abstract androidx.compose.ui.unit.IntSize viewportSize;
     property public abstract int viewportStartOffset;
     property public abstract java.util.List<androidx.compose.foundation.pager.PageInfo> visiblePagesInfo;
   }
@@ -1916,7 +1904,7 @@ package androidx.compose.foundation.shape {
     method @BytecodeOnly public static androidx.compose.foundation.shape.AbsoluteRoundedCornerShape AbsoluteRoundedCornerShape-a9UjIt4(float, float, float, float);
   }
 
-  public abstract class CornerBasedShape implements androidx.compose.ui.graphics.Shape {
+  public abstract class CornerBasedShape implements androidx.compose.ui.graphics.Interpolatable androidx.compose.ui.graphics.Shape {
     ctor public CornerBasedShape(androidx.compose.foundation.shape.CornerSize topStart, androidx.compose.foundation.shape.CornerSize topEnd, androidx.compose.foundation.shape.CornerSize bottomEnd, androidx.compose.foundation.shape.CornerSize bottomStart);
     method public final androidx.compose.foundation.shape.CornerBasedShape copy(androidx.compose.foundation.shape.CornerSize all);
     method public abstract androidx.compose.foundation.shape.CornerBasedShape copy(optional androidx.compose.foundation.shape.CornerSize topStart, optional androidx.compose.foundation.shape.CornerSize topEnd, optional androidx.compose.foundation.shape.CornerSize bottomEnd, optional androidx.compose.foundation.shape.CornerSize bottomStart);
@@ -1928,6 +1916,7 @@ package androidx.compose.foundation.shape {
     method public final androidx.compose.foundation.shape.CornerSize getBottomStart();
     method public final androidx.compose.foundation.shape.CornerSize getTopEnd();
     method public final androidx.compose.foundation.shape.CornerSize getTopStart();
+    method public Object? lerp(Object? other, float t);
     property public final androidx.compose.foundation.shape.CornerSize bottomEnd;
     property public final androidx.compose.foundation.shape.CornerSize bottomStart;
     property public final androidx.compose.foundation.shape.CornerSize topEnd;
@@ -2104,10 +2093,12 @@ package androidx.compose.foundation.text {
 
   @androidx.compose.runtime.Immutable public final class KeyboardOptions {
     ctor public KeyboardOptions();
-    ctor @Deprecated public KeyboardOptions(optional int capitalization, optional boolean autoCorrect, optional int keyboardType, optional int imeAction);
-    ctor @Deprecated public KeyboardOptions(optional int capitalization, optional boolean autoCorrect, optional int keyboardType, optional int imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions);
-    ctor @Deprecated public KeyboardOptions(optional int capitalization, boolean autoCorrect, optional int keyboardType, optional int imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional Boolean? showKeyboardOnFocus, optional androidx.compose.ui.text.intl.LocaleList? hintLocales);
-    ctor public KeyboardOptions(optional int capitalization, optional Boolean? autoCorrectEnabled, optional int keyboardType, optional int imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional Boolean? showKeyboardOnFocus, optional androidx.compose.ui.text.intl.LocaleList? hintLocales);
+    ctor @KotlinOnly @Deprecated public KeyboardOptions(optional androidx.compose.ui.text.input.KeyboardCapitalization capitalization, boolean autoCorrect, optional androidx.compose.ui.text.input.KeyboardType keyboardType, optional androidx.compose.ui.text.input.ImeAction imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional Boolean? showKeyboardOnFocus, optional androidx.compose.ui.text.intl.LocaleList? hintLocales);
+    ctor @KotlinOnly public KeyboardOptions(optional androidx.compose.ui.text.input.KeyboardCapitalization capitalization, optional Boolean? autoCorrectEnabled, optional androidx.compose.ui.text.input.KeyboardType keyboardType, optional androidx.compose.ui.text.input.ImeAction imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional Boolean? showKeyboardOnFocus, optional androidx.compose.ui.text.intl.LocaleList? hintLocales);
+    ctor @BytecodeOnly @Deprecated public KeyboardOptions(int, boolean, int, int, androidx.compose.ui.text.input.PlatformImeOptions!, Boolean!, androidx.compose.ui.text.intl.LocaleList!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public KeyboardOptions(int, boolean, int, int, androidx.compose.ui.text.input.PlatformImeOptions!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public KeyboardOptions(int, boolean, int, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public KeyboardOptions(int, Boolean!, int, int, androidx.compose.ui.text.input.PlatformImeOptions!, Boolean!, androidx.compose.ui.text.intl.LocaleList!, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @Deprecated public androidx.compose.foundation.text.KeyboardOptions copy(optional int capitalization, optional boolean autoCorrect, optional int keyboardType, optional int imeAction);
     method @Deprecated public androidx.compose.foundation.text.KeyboardOptions copy(optional int capitalization, optional boolean autoCorrect, optional int keyboardType, optional int imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions);
     method @Deprecated public androidx.compose.foundation.text.KeyboardOptions copy(optional int capitalization, optional boolean autoCorrect, optional int keyboardType, optional int imeAction, optional androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions, optional Boolean? showKeyboardOnFocus, optional androidx.compose.ui.text.intl.LocaleList? hintLocales);
@@ -2118,23 +2109,20 @@ package androidx.compose.foundation.text {
     method @BytecodeOnly @Deprecated public androidx.compose.foundation.text.KeyboardOptions! copy-ij11fho(int, boolean, int, int, androidx.compose.ui.text.input.PlatformImeOptions!);
     method @Deprecated public boolean getAutoCorrect();
     method public Boolean? getAutoCorrectEnabled();
-    method public int getCapitalization();
     method @BytecodeOnly public int getCapitalization-IUNYP9k();
     method public androidx.compose.ui.text.intl.LocaleList? getHintLocales();
-    method public int getImeAction();
     method @BytecodeOnly public int getImeAction-eUduSuo();
-    method public int getKeyboardType();
     method @BytecodeOnly public int getKeyboardType-PjHm6EE();
     method public androidx.compose.ui.text.input.PlatformImeOptions? getPlatformImeOptions();
-    method @Deprecated public boolean getShouldShowKeyboardOnFocus();
+    method @BytecodeOnly @Deprecated public boolean getShouldShowKeyboardOnFocus();
     method public Boolean? getShowKeyboardOnFocus();
     method public androidx.compose.foundation.text.KeyboardOptions merge(androidx.compose.foundation.text.KeyboardOptions? other);
     property @Deprecated public boolean autoCorrect;
     property public Boolean? autoCorrectEnabled;
-    property public int capitalization;
+    property public androidx.compose.ui.text.input.KeyboardCapitalization capitalization;
     property public androidx.compose.ui.text.intl.LocaleList? hintLocales;
-    property public int imeAction;
-    property public int keyboardType;
+    property public androidx.compose.ui.text.input.ImeAction imeAction;
+    property public androidx.compose.ui.text.input.KeyboardType keyboardType;
     property public androidx.compose.ui.text.input.PlatformImeOptions? platformImeOptions;
     property @Deprecated public boolean shouldShowKeyboardOnFocus;
     property public Boolean? showKeyboardOnFocus;
@@ -2160,12 +2148,10 @@ package androidx.compose.foundation.text {
   }
 
   public final class TextAutoSizeDefaults {
-    method public long getMaxFontSize();
     method @BytecodeOnly public long getMaxFontSize-XSAIIZE();
-    method public long getMinFontSize();
     method @BytecodeOnly public long getMinFontSize-XSAIIZE();
-    property public long MaxFontSize;
-    property public long MinFontSize;
+    property public androidx.compose.ui.unit.TextUnit MaxFontSize;
+    property public androidx.compose.ui.unit.TextUnit MinFontSize;
     field public static final androidx.compose.foundation.text.TextAutoSizeDefaults INSTANCE;
   }
 
@@ -2323,24 +2309,21 @@ package androidx.compose.foundation.text.input {
     method public char charAt(int index);
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList getChanges();
     method public int getLength();
-    method public long getOriginalSelection();
     method @BytecodeOnly public long getOriginalSelection-d9O1mEE();
     method public CharSequence getOriginalText();
-    method public long getSelection();
     method @BytecodeOnly public long getSelection-d9O1mEE();
     method public boolean hasSelection();
     method public void placeCursorAfterCharAt(int index);
     method public void placeCursorBeforeCharAt(int index);
     method public void replace(int start, int end, CharSequence text);
     method public void revertAllChanges();
-    method public void setSelection(long);
     method @BytecodeOnly public void setSelection-5zc-tL8(long);
     property @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList changes;
     property public boolean hasSelection;
     property public int length;
-    property public long originalSelection;
+    property public androidx.compose.ui.text.TextRange originalSelection;
     property public CharSequence originalText;
-    property public long selection;
+    property public androidx.compose.ui.text.TextRange selection;
   }
 
   public static interface TextFieldBuffer.ChangeList {
@@ -2389,19 +2372,18 @@ package androidx.compose.foundation.text.input {
   }
 
   @androidx.compose.runtime.Stable public final class TextFieldState {
-    ctor @androidx.compose.runtime.annotation.RememberInComposition public TextFieldState(optional String initialText, optional long initialSelection);
+    ctor @KotlinOnly @androidx.compose.runtime.annotation.RememberInComposition public TextFieldState(optional String initialText, optional androidx.compose.ui.text.TextRange initialSelection);
+    ctor @BytecodeOnly @androidx.compose.runtime.annotation.RememberInComposition public TextFieldState(String!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @kotlin.PublishedApi internal void commitEdit(androidx.compose.foundation.text.input.TextFieldBuffer newValue);
     method public inline void edit(kotlin.jvm.functions.Function1<? super androidx.compose.foundation.text.input.TextFieldBuffer,kotlin.Unit> block);
     method @kotlin.PublishedApi internal void finishEditing();
-    method public androidx.compose.ui.text.TextRange? getComposition();
     method @BytecodeOnly public androidx.compose.ui.text.TextRange? getComposition-MzsxiRA();
-    method public long getSelection();
     method @BytecodeOnly public long getSelection-d9O1mEE();
     method public CharSequence getText();
     method @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public androidx.compose.foundation.text.input.UndoState getUndoState();
     method @kotlin.PublishedApi internal androidx.compose.foundation.text.input.TextFieldBuffer startEdit();
     property public androidx.compose.ui.text.TextRange? composition;
-    property public long selection;
+    property public androidx.compose.ui.text.TextRange selection;
     property public CharSequence text;
     property @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public androidx.compose.foundation.text.input.UndoState undoState;
   }
@@ -2430,15 +2412,12 @@ package androidx.compose.foundation.text.input {
   }
 
   public static final class TextObfuscationMode.Companion {
-    method public int getHidden();
     method @BytecodeOnly public int getHidden-vTwcZD0();
-    method public int getRevealLastTyped();
     method @BytecodeOnly public int getRevealLastTyped-vTwcZD0();
-    method public int getVisible();
     method @BytecodeOnly public int getVisible-vTwcZD0();
-    property public int Hidden;
-    property public int RevealLastTyped;
-    property public int Visible;
+    property public androidx.compose.foundation.text.input.TextObfuscationMode Hidden;
+    property public androidx.compose.foundation.text.input.TextObfuscationMode RevealLastTyped;
+    property public androidx.compose.foundation.text.input.TextObfuscationMode Visible;
   }
 
   public final class UndoState {
@@ -2477,13 +2456,12 @@ package androidx.compose.foundation.text.selection {
   }
 
   @androidx.compose.runtime.Immutable public final class TextSelectionColors {
-    ctor public TextSelectionColors(long handleColor, long backgroundColor);
-    method public long getBackgroundColor();
+    ctor @KotlinOnly public TextSelectionColors(androidx.compose.ui.graphics.Color handleColor, androidx.compose.ui.graphics.Color backgroundColor);
+    ctor @BytecodeOnly public TextSelectionColors(long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @BytecodeOnly public long getBackgroundColor-0d7_KjU();
-    method public long getHandleColor();
     method @BytecodeOnly public long getHandleColor-0d7_KjU();
-    property public long backgroundColor;
-    property public long handleColor;
+    property public androidx.compose.ui.graphics.Color backgroundColor;
+    property public androidx.compose.ui.graphics.Color handleColor;
   }
 
   public final class TextSelectionColorsKt {

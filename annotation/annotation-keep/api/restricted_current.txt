@@ -2,6 +2,7 @@
 package androidx.annotation.keep {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface UnconditionallyKeep {
+    ctor @KotlinOnly public UnconditionallyKeep(optional boolean shouldPreserveName);
     method public abstract boolean shouldPreserveName() default true;
     property public abstract boolean shouldPreserveName;
   }
@@ -11,6 +12,7 @@ package androidx.annotation.keep {
   }
 
   @kotlin.annotation.Repeatable @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface UsesReflectionToAccessField {
+    ctor @KotlinOnly public UsesReflectionToAccessField(optional kotlin.reflect.KClass<? extends java.lang.Object?> classConstant, optional String className, String fieldName, optional kotlin.reflect.KClass<? extends java.lang.Object?> fieldClass, optional String fieldClassName);
     method public abstract Class<? extends java.lang.Object?> classConstant() default Unspecified::class;
     method public abstract String className() default "";
     method public abstract Class<? extends java.lang.Object?> fieldClass() default Unspecified::class;
@@ -28,6 +30,7 @@ package androidx.annotation.keep {
   }
 
   @kotlin.annotation.Repeatable @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface UsesReflectionToAccessMethod {
+    ctor @KotlinOnly public UsesReflectionToAccessMethod(optional kotlin.reflect.KClass<? extends java.lang.Object?> classConstant, optional String className, String methodName, optional kotlin.reflect.KClass<? extends java.lang.Object?>[] params, optional String[] paramClassNames, optional kotlin.reflect.KClass<? extends java.lang.Object?> returnClass, optional String returnClassName);
     method public abstract Class<? extends java.lang.Object?> classConstant() default Unspecified::class;
     method public abstract String className() default "";
     method public abstract String methodName();
@@ -49,6 +52,7 @@ package androidx.annotation.keep {
   }
 
   @kotlin.annotation.Repeatable @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.CONSTRUCTOR}) public @interface UsesReflectionToConstruct {
+    ctor @KotlinOnly public UsesReflectionToConstruct(optional kotlin.reflect.KClass<? extends java.lang.Object?> classConstant, optional String className, optional kotlin.reflect.KClass<? extends java.lang.Object?>[] params, optional String[] paramClassNames);
     method public abstract Class<? extends java.lang.Object?> classConstant() default Unspecified::class;
     method public abstract String className() default "";
     method public abstract String[] paramClassNames() default {""};

@@ -19,7 +19,6 @@ package androidx.xr.scenecore
 import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.internal.ActivityPose as RtActivityPose
 import androidx.xr.runtime.internal.CameraViewActivityPose as RtCameraViewActivityPose
@@ -29,7 +28,6 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PerceptionSpaceActivityPose as RtPerceptionSpaceActivityPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import com.google.common.util.concurrent.ListenableFuture
 
 /**
  * A [Pose] in the Scene graph, which can be transformed into a Pose relative to another ScenePose.
@@ -49,9 +47,7 @@ public interface ScenePose {
      */
     public fun transformPoseTo(pose: Pose, destination: ScenePose): Pose
 
-    /**
-     * A filter for which Scenes to hit test with [ScenePose.hitTest] and [ScenePose.hitTestAsync]
-     */
+    /** A filter for which Scenes to hit test with [ScenePose.hitTest]. */
     public object HitTestFilter {
 
         /** Register hit tests for the scene which this ScenePose belongs. */
@@ -94,34 +90,6 @@ public interface ScenePose {
         direction: Vector3,
         @HitTestFilterValue hitTestFilter: Int,
     ): HitTestResult
-
-    /**
-     * Creates a hit test from the specified origin in the specified direction into the scene.
-     *
-     * @param origin The translation of the origin of the hit test relative to this ActivityPose.
-     * @param direction The direction for the hit test ray from the origin.
-     * @return a [ListenableFuture]<HitResult>. The HitTestResult describes if it hit something and
-     *   where relative to this ActivityPose. Listeners will be called on the main thread if
-     *   Runnable::run is supplied when adding a listener to the [ListenableFuture].
-     */
-    public fun hitTestAsync(origin: Vector3, direction: Vector3): ListenableFuture<HitTestResult>
-
-    /**
-     * Creates a hit test from the specified origin in the specified direction into the scene.
-     *
-     * @param origin The translation of the origin of the hit test relative to this ActivityPose.
-     * @param direction The direction for the hit test ray from the origin
-     * @param hitTestFilter Filter for which scenes to hit test. Hitting other scenes is only
-     *   allowed for apps with the `com.android.extensions.xr.ACCESS_XR_OVERLAY_SPACE` permission.
-     * @return a ListenableFuture<HitResult>. The HitResult describes if it hit something and where
-     *   relative to this [ScenePose]. Listeners will be called on the main thread if Runnable::run
-     *   is supplied when adding a listener to the [ListenableFuture].
-     */
-    public fun hitTestAsync(
-        origin: Vector3,
-        direction: Vector3,
-        @HitTestFilterValue hitTestFilter: Int,
-    ): ListenableFuture<HitTestResult>
 }
 
 /** The BaseScenePose implements the [ScenePose] interface. */
@@ -157,42 +125,6 @@ public abstract class BaseScenePose<out RtActivityPoseType : RtActivityPose>(
 
     override suspend fun hitTest(origin: Vector3, direction: Vector3): HitTestResult {
         return hitTest(origin, direction, ScenePose.HitTestFilter.SELF_SCENE.toRtHitTestFilter())
-    }
-
-    override fun hitTestAsync(
-        origin: Vector3,
-        direction: Vector3,
-        @ScenePose.HitTestFilterValue hitTestFilter: Int,
-    ): ListenableFuture<HitTestResult> {
-        val hitTestRtFuture =
-            this.rtActivityPose.hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
-        val resultFuture = ResolvableFuture.create<HitTestResult>()
-        hitTestRtFuture.addListener(
-            {
-                try {
-                    val hitTestRt = hitTestRtFuture.get()
-                    resultFuture.set(hitTestRt.toHitTestResult())
-                } catch (e: Exception) {
-                    if (e is InterruptedException) {
-                        Thread.currentThread().interrupt()
-                    }
-                    resultFuture.setException(e)
-                }
-            },
-            Runnable::run,
-        )
-        return resultFuture
-    }
-
-    override fun hitTestAsync(
-        origin: Vector3,
-        direction: Vector3,
-    ): ListenableFuture<HitTestResult> {
-        return hitTestAsync(
-            origin,
-            direction,
-            ScenePose.HitTestFilter.SELF_SCENE.toRtHitTestFilter(),
-        )
     }
 }
 

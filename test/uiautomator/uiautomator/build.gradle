@@ -21,6 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+import androidx.build.AndroidXConfig
 import androidx.build.SoftwareType
 
 plugins {
@@ -35,6 +36,8 @@ dependencies {
     implementation(libs.testCore)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.tracing:tracing:1.1.0")
+    // Compile-time stubs for optional XrExtensions usage in GestureController
+    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.instrumented.test.jar")))
 
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.testCore)

@@ -16,9 +16,6 @@ package androidx.window.core.layout {
   }
 
   @Deprecated public static final class WindowHeightSizeClass.Companion {
-    method @Deprecated public androidx.window.core.layout.WindowHeightSizeClass getCOMPACT();
-    method @Deprecated public androidx.window.core.layout.WindowHeightSizeClass getEXPANDED();
-    method @Deprecated public androidx.window.core.layout.WindowHeightSizeClass getMEDIUM();
     property @Deprecated public androidx.window.core.layout.WindowHeightSizeClass COMPACT;
     property @Deprecated public androidx.window.core.layout.WindowHeightSizeClass EXPANDED;
     property @Deprecated public androidx.window.core.layout.WindowHeightSizeClass MEDIUM;
@@ -76,9 +73,6 @@ package androidx.window.core.layout {
   }
 
   @Deprecated public static final class WindowWidthSizeClass.Companion {
-    method @Deprecated public androidx.window.core.layout.WindowWidthSizeClass getCOMPACT();
-    method @Deprecated public androidx.window.core.layout.WindowWidthSizeClass getEXPANDED();
-    method @Deprecated public androidx.window.core.layout.WindowWidthSizeClass getMEDIUM();
     property @Deprecated public androidx.window.core.layout.WindowWidthSizeClass COMPACT;
     property @Deprecated public androidx.window.core.layout.WindowWidthSizeClass EXPANDED;
     property @Deprecated public androidx.window.core.layout.WindowWidthSizeClass MEDIUM;

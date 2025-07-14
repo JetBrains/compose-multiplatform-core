@@ -41,7 +41,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.SpatialCapabilities
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
@@ -362,7 +362,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup(runtime = testJxrPlatformAdapter) {
                 ApplicationSubspace {
-                    MainPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel"))
+                    SpatialMainPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel"))
                     Orbiter(ContentEdge.Top) {
                         // The content of the Orbiter. We'll use its size, which is constrained
                         // by the parent's panel size, to verify the change.
@@ -388,7 +388,7 @@ class OrbiterTest {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
-                    MainPanel(
+                    SpatialMainPanel(
                         modifier =
                             SubspaceModifier.width(panelWidthDp)
                                 .height(panelHeightDp)

@@ -258,6 +258,7 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
      * Adapter method for
      * {@link androidx.webkit.WebSettingsCompat#getSpeculativeLoadingStatus(WebSettings)}
      */
+    @WebSettingsCompat.ExperimentalSpeculativeLoading
     @Override
     public int getSpeculativeLoadingStatus() {
         return WebSettingsCompat.SPECULATIVE_LOADING_DISABLED;

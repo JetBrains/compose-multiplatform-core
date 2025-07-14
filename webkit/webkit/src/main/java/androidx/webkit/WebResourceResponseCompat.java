@@ -206,7 +206,7 @@ public class WebResourceResponseCompat {
      * Set the list of {@code Set-Cookie} header values applicable to this response.
      *
      * <p>Note that these values will only be used by WebView if
-     * {@link WebSettingsCompat#isIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings)} is
+     * {@link WebSettingsCompat#areCookiesIncludedInShouldInterceptRequest(WebSettings)} is
      * {@code true}, and by service workers if
      * {@link ServiceWorkerWebSettingsCompat#isIncludeCookiesOnShouldInterceptRequestEnabled()}
      * is {@code true}. Otherwise the values will be ignored.

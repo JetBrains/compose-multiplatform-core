@@ -178,7 +178,7 @@ class VisibilityTestActivity : AppCompatActivity() {
                 Pose(Vector3(-0.5f, -0.1f, 0f)),
             )
         panelEntity.parent = parent
-        if (!panelEntity.addComponent(MovableComponent.create(session, false, false, emptySet()))) {
+        if (!panelEntity.addComponent(MovableComponent.createSystemMovable(session, false))) {
             throw RuntimeException("Failed to add movable component to panel")
         }
         panelContentView.findViewById<TextView>(R.id.textView).text = name

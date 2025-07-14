@@ -30,12 +30,19 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.foundation"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+    }
     desktop()
     mac()
     ios()
@@ -279,14 +286,6 @@ androidXMultiplatform {
 dependencies {
     lintChecks(project(":compose:foundation:foundation-lint"))
     lintPublish(project(":compose:foundation:foundation-lint"))
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.foundation"
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
 }
 
 androidx {

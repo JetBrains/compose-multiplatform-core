@@ -28,7 +28,6 @@ android {
 
     defaultConfig {
         applicationId = "androidx.privacysandbox.ui.macrobenchmark.testapp.target"
-        targetSdk = 35
     }
 
     buildTypes {

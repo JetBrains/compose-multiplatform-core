@@ -17,7 +17,6 @@
 package androidx.xr.compose.subspace
 
 import android.content.Intent
-import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
@@ -27,9 +26,7 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -55,7 +52,6 @@ import androidx.xr.scenecore.scene
 import com.android.extensions.xr.ShadowXrExtensions
 import com.android.extensions.xr.space.ShadowActivityPanel
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -112,30 +108,12 @@ class SpatialPanelTest {
     }
 
     @Test
-    fun spatialPanel_viewBasedPanelComposes() {
-        composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    val context = LocalContext.current
-                    val textView = remember { TextView(context).apply { text = "Hello World" } }
-                    @Suppress("DEPRECATION")
-                    SpatialPanel(view = textView, SubspaceModifier.testTag("panel"))
-                    // The View is not inserted in the compose tree, we need to test it differentlly
-                    assertEquals(View.VISIBLE, textView.visibility)
-                }
-            }
-        }
-        // TODO: verify that the TextView is add to the Panel
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-    }
-
-    @Test
     fun spatialPanel_AndroidViewBasedPanelComposes() {
         lateinit var view: TextView
         composeTestRule.setContent {
             TestSetup {
                 Subspace {
-                    SpatialPanel(
+                    SpatialAndroidViewPanel(
                         factory = {
                             TextView(it)
                                 .apply { text = "Hello AndroidView World" }
@@ -157,7 +135,7 @@ class SpatialPanelTest {
 
         composeTestRule.setContent {
             Text(text)
-            TestSetup { Subspace { MainPanel(SubspaceModifier.testTag("panel")) } }
+            TestSetup { Subspace { SpatialMainPanel(SubspaceModifier.testTag("panel")) } }
         }
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
@@ -172,7 +150,7 @@ class SpatialPanelTest {
             TestSetup {
                 ApplicationSubspace {
                     if (showMainPanel.value) {
-                        MainPanel(
+                        SpatialMainPanel(
                             SubspaceModifier.testTag("mainPanel").width(100.dp).height(100.dp)
                         )
                     }
@@ -201,8 +179,8 @@ class SpatialPanelTest {
                 Text(text)
                 TestSetup {
                     Subspace {
-                        MainPanel(SubspaceModifier.testTag("panel"))
-                        MainPanel(SubspaceModifier.testTag("panel2"))
+                        SpatialMainPanel(SubspaceModifier.testTag("panel"))
+                        SpatialMainPanel(SubspaceModifier.testTag("panel2"))
                     }
                 }
             }
@@ -218,8 +196,8 @@ class SpatialPanelTest {
                 Text(text)
                 TestSetup {
                     Subspace {
-                        MainPanel(SubspaceModifier.testTag("panel"))
-                        MainPanel(SubspaceModifier.testTag("panel2"))
+                        SpatialMainPanel(SubspaceModifier.testTag("panel"))
+                        SpatialMainPanel(SubspaceModifier.testTag("panel2"))
                     }
                 }
             }
@@ -246,7 +224,7 @@ class SpatialPanelTest {
         composeTestRule.setContent {
             TestSetup {
                 Subspace {
-                    MainPanel(
+                    SpatialMainPanel(
                         modifier =
                             SubspaceModifier.width(200.dp).height(300.dp).testTag("mainPanel"),
                         shape = SpatialRoundedCornerShape(CornerSize(16.dp)),
@@ -278,7 +256,7 @@ class SpatialPanelTest {
         composeTestRule.setContent {
             TestSetup {
                 Subspace {
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
                         modifier = SubspaceModifier.width(200.dp).height(300.dp),
                         shape = SpatialRoundedCornerShape(CornerSize(50)),
@@ -307,7 +285,7 @@ class SpatialPanelTest {
         composeTestRule.setContent {
             TestSetup {
                 Subspace {
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
                         modifier = SubspaceModifier.width(200.dp).height(300.dp),
                         shape = SpatialRoundedCornerShape(CornerSize(50)),
@@ -345,7 +323,7 @@ class SpatialPanelTest {
         composeTestRule.setContent {
             TestSetup {
                 Subspace {
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
                         modifier = SubspaceModifier.width(200.dp).height(300.dp),
                         shape = SpatialRoundedCornerShape(CornerSize(50)),

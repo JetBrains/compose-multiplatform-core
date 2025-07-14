@@ -191,15 +191,12 @@ class TransformationActivity : AppCompatActivity() {
                     "onActivitySpaceUpdatedCount",
                     (++onActivitySpaceUpdatedCount).toString(),
                 )
-                session!!
-                    .scene
-                    .activitySpace
-                    .setOnSpaceUpdatedListener({
-                        it.view.setLine(
-                            "onActivitySpaceUpdatedCount",
-                            (++onActivitySpaceUpdatedCount).toString(),
-                        )
-                    })
+                session!!.scene.activitySpace.addOnSpaceUpdatedListener {
+                    it.view.setLine(
+                        "onActivitySpaceUpdatedCount",
+                        (++onActivitySpaceUpdatedCount).toString(),
+                    )
+                }
             }
     }
 
@@ -219,6 +216,13 @@ class TransformationActivity : AppCompatActivity() {
 
         view.setLine("worldSpacePose", trackedEntity.activitySpacePose.toFormattedString())
         view.setLine("worldSpaceScale", trackedEntity.getScale().toString())
+        if (
+            trackedEntity == sunEntity ||
+                trackedEntity == planetEntity ||
+                trackedEntity == moonEntity
+        ) {
+            view.setLine("local scale", trackedEntity.getScale(Space.PARENT).toString())
+        }
 
         val activitySpacePose =
             trackedEntity.transformPoseTo(Pose.Identity, session!!.scene.activitySpace)
@@ -249,13 +253,7 @@ class TransformationActivity : AppCompatActivity() {
     }
 
     private fun switchMainPanelMovement(switchState: Boolean) {
-        val movableComponent =
-            MovableComponent.create(
-                session!!,
-                systemMovable = true,
-                scaleInZ = false,
-                anchorPlacement = setOf(),
-            )
+        val movableComponent = MovableComponent.createSystemMovable(session!!, scaleInZ = false)
         if (switchState) {
             movableActive.value = session!!.scene.mainPanelEntity.addComponent(movableComponent)
         } else {

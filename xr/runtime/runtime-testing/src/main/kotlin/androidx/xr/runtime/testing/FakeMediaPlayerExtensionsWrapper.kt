@@ -22,14 +22,58 @@ import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper
 import androidx.xr.runtime.internal.PointSourceParams
 import androidx.xr.runtime.internal.SoundFieldAttributes
 
-// TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [MediaPlayerExtensionsWrapper] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeMediaPlayerExtensionsWrapper : MediaPlayerExtensionsWrapper {
-    override fun setPointSourceParams(mediaPlayer: MediaPlayer, params: PointSourceParams) {}
+    private var _pointSourceParams: MutableMap<MediaPlayer, PointSourceParams> = mutableMapOf()
 
+    /**
+     * For test purposes only.
+     *
+     * This read-only map stores the [PointSourceParams] that were last set for each [MediaPlayer]
+     * instance via the [setPointSourceParams] method.
+     *
+     * Tests can inspect this map to verify that the code under test correctly applies the intended
+     * `PointSourceParams` to the `MediaPlayer`.
+     */
+    public val pointSourceParams: Map<MediaPlayer, PointSourceParams>
+        get() = _pointSourceParams
+
+    /**
+     * Sets the PointSourceParams of the MediaPlayer.
+     *
+     * @param mediaPlayer The MediaPlayer to set the PointSourceParams on.
+     * @param params The PointSourceParams to set.
+     */
+    override fun setPointSourceParams(mediaPlayer: MediaPlayer, params: PointSourceParams) {
+        _pointSourceParams[mediaPlayer] = params
+    }
+
+    private var _soundFieldAttributes: MutableMap<MediaPlayer, SoundFieldAttributes> =
+        mutableMapOf()
+
+    /**
+     * For test purposes only.
+     *
+     * This read-only map stores the [SoundFieldAttributes] that were last set for each
+     * [MediaPlayer] instance via the [setSoundFieldAttributes] method.
+     *
+     * Tests can inspect this map to verify that the code under test correctly applies the intended
+     * `SoundFieldAttributes` to the `MediaPlayer`.
+     */
+    public val soundFieldAttributes: Map<MediaPlayer, SoundFieldAttributes>
+        get() = _soundFieldAttributes
+
+    /**
+     * Sets the SoundFieldAttributes of the MediaPlayer.
+     *
+     * @param mediaPlayer The MediaPlayer to set the SoundFieldAttributes on.
+     * @param attributes The SoundFieldAttributes to set.
+     */
     override fun setSoundFieldAttributes(
         mediaPlayer: MediaPlayer,
         attributes: SoundFieldAttributes,
-    ) {}
+    ) {
+        _soundFieldAttributes[mediaPlayer] = attributes
+    }
 }

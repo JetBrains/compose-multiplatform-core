@@ -22,6 +22,8 @@
  * modifying its settings.
  */
 
+
+import androidx.build.AndroidXConfig
 import androidx.build.SoftwareType
 
 plugins {
@@ -46,14 +48,15 @@ dependencies {
     testImplementation(project(":kruth:kruth"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
 
+    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    implementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
 }
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
     namespace = "androidx.xr.runtime.testing"
-    sourceSets.main.resources.srcDirs += "src/main/resources"
 }
 
 androidx {

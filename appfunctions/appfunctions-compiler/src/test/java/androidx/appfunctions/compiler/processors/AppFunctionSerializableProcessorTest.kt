@@ -361,4 +361,31 @@ class AppFunctionSerializableProcessorTest {
             goldenFileName = "\$ContainsBothAttachmentsFactory.KT",
         )
     }
+
+    @Test
+    fun testProcessor_serializableWithDefaultValue_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("SerializableWithDefaultValue.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}SerializableWithDefaultValueFactory.kt",
+            goldenFileName = "${'$'}SerializableWithDefaultValueFactory.KT",
+        )
+    }
+
+    @Test
+    fun testProcessor_serializableWithOptionalNonNullSerializable_fail() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("SerializableWithOptionalNonNullSerializable.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            "Type com.testdata.NestedSerializable cannot be optional",
+        )
+    }
 }

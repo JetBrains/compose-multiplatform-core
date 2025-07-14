@@ -23,6 +23,7 @@ import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.IAutomatedTestCallback
 import androidx.privacysandbox.ui.integration.sdkproviderutils.ILoadSdkCallback
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AUTOMATED_TEST_CALLBACK
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.FragmentOption
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
@@ -42,6 +43,7 @@ import org.junit.Before
 abstract class AutomatedEndToEndTest(
     @FragmentOption private val uiFragment: String,
     @UiFrameworkOption private val uiFrameworkOption: String = FragmentOptions.UI_FRAMEWORK_VIEW,
+    @AdFormat private val adFormat: String = FragmentOptions.AD_FORMAT_BANNER_AD,
     @MediationOption
     private val mediationOption: String = FragmentOptions.MEDIATION_TYPE_NON_MEDIATED,
     @ZOrderOption private val zOrdering: String = FragmentOptions.Z_ORDER_BELOW,
@@ -111,6 +113,7 @@ abstract class AutomatedEndToEndTest(
         launchTestAppAndWaitForLoadingSdks(
             uiFragment,
             uiFrameworkOption,
+            adFormat,
             mediationOption,
             zOrdering,
             adType,
@@ -137,6 +140,7 @@ abstract class AutomatedEndToEndTest(
     internal fun launchTestAppAndWaitForLoadingSdks(
         @FragmentOption uiFragment: String,
         @UiFrameworkOption uiFrameworkOption: String,
+        @AdFormat adFormat: String,
         @MediationOption mediationOption: String,
         @ZOrderOption zOrdering: String,
         adType: String,
@@ -153,6 +157,7 @@ abstract class AutomatedEndToEndTest(
         val extras = Bundle()
         extras.putString(FragmentOptions.KEY_FRAGMENT, uiFragment)
         extras.putString(FragmentOptions.KEY_UI_FRAMEWORK, uiFrameworkOption)
+        extras.putString(FragmentOptions.KEY_AD_FORMAT, adFormat)
         extras.putString(FragmentOptions.KEY_MEDIATION, mediationOption)
         extras.putBoolean(FragmentOptions.KEY_DRAW_VIEWABILITY, false)
         extras.putString(FragmentOptions.KEY_Z_ORDER, zOrdering)

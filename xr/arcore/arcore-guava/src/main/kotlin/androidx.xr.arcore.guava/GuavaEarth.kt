@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:JvmName("EarthGuava")
+@file:JvmName("GuavaEarth")
 
 package androidx.xr.arcore.guava
 

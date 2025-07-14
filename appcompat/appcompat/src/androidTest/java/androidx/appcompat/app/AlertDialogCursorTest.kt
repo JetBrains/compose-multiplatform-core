@@ -37,6 +37,7 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.testutils.withActivity
 import java.io.File
 import org.hamcrest.Matchers
@@ -115,6 +116,7 @@ class AlertDialogCursorTest {
         databaseFile.delete()
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @Test
     fun testSimpleItemsFromCursor() {
         cursor = database.query("test", PROJECTION_WITHOUT_CHECKED, null, null, null, null, null)
@@ -230,6 +232,7 @@ class AlertDialogCursorTest {
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @LargeTest
     @Test
     fun testMultiChoiceItemsFromCursor() {
@@ -369,6 +372,7 @@ class AlertDialogCursorTest {
         }
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427246833
     @LargeTest
     @Test
     fun testSingleChoiceItemsFromCursor() {

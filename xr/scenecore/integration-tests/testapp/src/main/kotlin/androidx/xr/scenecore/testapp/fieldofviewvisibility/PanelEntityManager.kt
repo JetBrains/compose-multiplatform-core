@@ -85,7 +85,7 @@ class PanelEntityManager(private val session: Session, activity: FieldOfViewVisi
                     pose = Pose(Vector3(-0.6f, 0f, 0.2f)),
                 )
 
-            mMovableComponent = MovableComponent.create(mSession)
+            mMovableComponent = MovableComponent.createSystemMovable(mSession)
             mResizableComponent = ResizableComponent.create(mSession)
             val simpleResizeListener =
                 object : ResizeListener {

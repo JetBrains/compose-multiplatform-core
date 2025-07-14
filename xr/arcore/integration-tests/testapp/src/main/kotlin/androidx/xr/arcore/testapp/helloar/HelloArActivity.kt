@@ -98,59 +98,62 @@ class HelloArActivity : ComponentActivity() {
             )
         sessionHelper.tryCreateSession()
     }
-}
 
-@Composable
-fun HelloWorld(session: Session) {
-    val state by session.state.collectAsStateWithLifecycle()
-    val perceptionState = state.perceptionState
-    Scaffold(
-        modifier = Modifier.fillMaxSize().padding(0.dp),
-        topBar = {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(0.dp).background(color = GoogleYellow),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                BackToMainActivityButton()
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center,
-                    text = "Hello AR",
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                )
-            }
-        },
-    ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).background(color = Color.White)) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    modifier = Modifier.padding(start = 10.dp).weight(1f),
-                    text = "CoreState:",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    modifier = Modifier.padding(start = 10.dp).weight(3f),
-                    text = "${state.timeMark}",
-                    fontSize = 20.sp,
-                )
-            }
+    @Composable
+    fun HelloWorld(session: Session) {
+        val state by session.state.collectAsStateWithLifecycle()
+        val perceptionState = state.perceptionState
+        var title = intent.getStringExtra("TITLE")
+        if (title == null) title = "Hello AR"
+        Scaffold(
+            modifier = Modifier.fillMaxSize().padding(0.dp),
+            topBar = {
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth().padding(0.dp).background(color = GoogleYellow),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BackToMainActivityButton()
+                    Text(
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        text = title,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                    )
+                }
+            },
+        ) { innerPadding ->
+            Column(modifier = Modifier.padding(innerPadding).background(color = Color.White)) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(1f),
+                        text = "CoreState:",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(3f),
+                        text = "${state.timeMark}",
+                        fontSize = 20.sp,
+                    )
+                }
 
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    modifier = Modifier.padding(start = 10.dp).weight(1f),
-                    text = "Trackables:",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        modifier = Modifier.padding(start = 10.dp).weight(1f),
+                        text = "Trackables:",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
 
-            if (perceptionState != null) {
-                TrackablesList(perceptionState.trackables.toList())
-            } else {
-                Text(text = "PerceptionState is null.", fontSize = 22.sp)
+                if (perceptionState != null) {
+                    TrackablesList(perceptionState.trackables.toList())
+                } else {
+                    Text(text = "PerceptionState is null.", fontSize = 22.sp)
+                }
             }
         }
     }

@@ -93,22 +93,23 @@ class AnnotatedParameterizedAppFunctionSerializable(
      * [arguments].
      */
     override fun getProperties(): List<AppFunctionPropertyDeclaration> {
-        return checkNotNull(appFunctionSerializableClass.primaryConstructor).parameters.map {
-            valueParameter ->
-            val valueTypeDeclaration = valueParameter.type.resolve().declaration
+        return super.getProperties().map { propertyDeclaration ->
+            val valueTypeDeclaration = propertyDeclaration.type.resolve().declaration
             if (valueTypeDeclaration is KSTypeParameter) {
                 val actualType =
                     typeParameterMap[valueTypeDeclaration.name.asString()]
                         ?: throw ProcessingException(
                             "Unable to resolve actual type",
-                            valueParameter,
+                            propertyDeclaration.type,
                         )
                 AppFunctionPropertyDeclaration(
-                    checkNotNull(valueParameter.name).asString(),
-                    actualType,
+                    name = propertyDeclaration.name,
+                    type = actualType,
+                    description = propertyDeclaration.description,
+                    isRequired = propertyDeclaration.isRequired,
                 )
             } else {
-                AppFunctionPropertyDeclaration(valueParameter)
+                propertyDeclaration
             }
         }
     }

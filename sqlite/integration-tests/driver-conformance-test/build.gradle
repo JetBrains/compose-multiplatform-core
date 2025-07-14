@@ -80,9 +80,18 @@ androidXMultiplatform {
     }
 }
 
+afterEvaluate {
+    // This project has commonTest/ sources, but none of these contain actual tests. This means that
+    // testAndroidHostTest will attempt to run as it has sources, but there will be no tests to run.
+    // Starting Gradle 9.0.0 this is an error, hence we disable this task here.
+    tasks.named("testAndroidHostTest") { it.enabled = false }
+}
 
 androidx {
     name = "SQLite Driver Coformance Base Tests"
     inceptionYear = "2023"
     description = "SQLite Kotlin driver coformance base tests"
+    deviceTests {
+        enableAlsoRunOn16KbPageSizeDevices = true
+    }
 }

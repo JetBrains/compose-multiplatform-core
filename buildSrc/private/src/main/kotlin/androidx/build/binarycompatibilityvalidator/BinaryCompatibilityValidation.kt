@@ -106,7 +106,6 @@ class BinaryCompatibilityValidation(
         }
         val runtimeClasspath: ConfigurableFileCollection =
             project.files(project.prepareKlibValidationClasspath())
-        val projectVersion: Version = project.version()
         val projectAbiDir = project.getBcvFileDirectory().dir(NATIVE_SUFFIX)
         val currentIgnoreFile = projectAbiDir.file(IGNORE_FILE_NAME)
         val buildAbiDir = project.getBuiltBcvFileDirectory().map { it.dir(NATIVE_SUFFIX) }
@@ -120,17 +119,13 @@ class BinaryCompatibilityValidation(
         val generatedAndMergedApiFile: Provider<RegularFileProperty> =
             generateAbi.map { it.mergedApiFile }
         val updateKlibAbi =
-            project.updateKlibAbiTask(
-                projectAbiDir,
-                generatedAndMergedApiFile,
-                projectVersion.toString(),
-                runtimeClasspath,
-            )
+            project.updateKlibAbiTask(projectAbiDir, generatedAndMergedApiFile, runtimeClasspath)
 
         val extractKlibAbi =
             project.extractKlibAbiTask(projectAbiDir, klibExtractedFileDir, runtimeClasspath)
         val extractedProjectFile = extractKlibAbi.map { it.outputAbiFile }
-        val checkKlibAbi = project.checkKlibAbiTask(extractedProjectFile, generatedAndMergedApiFile)
+        val checkKlibAbi =
+            project.checkKlibAbiTask(extractedProjectFile, generatedAndMergedApiFile, projectAbiDir)
         val checkKlibAbiRelease =
             project.checkKlibAbiReleaseTask(
                 generatedAndMergedApiFile,
@@ -157,6 +152,7 @@ class BinaryCompatibilityValidation(
     private fun Project.checkKlibAbiTask(
         projectApiFile: Provider<RegularFileProperty>,
         generatedApiFile: Provider<RegularFileProperty>,
+        projectAbiDir: Directory,
     ) =
         project.tasks.register(
             CHECK_NAME.appendCapitalized(NATIVE_SUFFIX),
@@ -164,8 +160,11 @@ class BinaryCompatibilityValidation(
         ) {
             it.checkedInDump = projectApiFile
             it.builtDump = generatedApiFile
+            it.projectAbiDir.set(projectAbiDir)
             it.group = ABI_GROUP_NAME
             it.cacheEvenIfNoOutputs()
+            it.shouldWriteVersionedApiFile.set(project.shouldWriteVersionedApiFile())
+            it.version.set(projectVersion.toString())
         }
 
     /* Check that the current ABI definition is compatible with most recently released version */
@@ -227,7 +226,6 @@ class BinaryCompatibilityValidation(
     private fun Project.updateKlibAbiTask(
         klibApiDir: Directory,
         mergedKlibFile: Provider<RegularFileProperty>,
-        projectVersion: String,
         runtimeClasspath: ConfigurableFileCollection,
     ) =
         project.tasks.register(
@@ -236,7 +234,7 @@ class BinaryCompatibilityValidation(
         ) {
             it.outputDir.set(klibApiDir)
             it.inputApiLocation.set(mergedKlibFile.map { fileProperty -> fileProperty.get() })
-            it.version.set(projectVersion)
+            it.version.set(projectVersion.toString())
             it.shouldWriteVersionedApiFile.set(project.shouldWriteVersionedApiFile())
             it.group = ABI_GROUP_NAME
             it.unsupportedNativeTargetNames.set(unsupportedNativeTargetNames())

@@ -46,7 +46,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
     namespace = "androidx.xr.scenecore.testing"
 }

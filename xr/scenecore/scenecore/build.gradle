@@ -35,7 +35,6 @@ plugins {
 dependencies {
     api(libs.jspecify)
     api(libs.kotlinStdlib)
-    api(libs.guavaListenableFuture)
     api(project(":xr:arcore:arcore"))
     api(project(":xr:runtime:runtime"))
 
@@ -79,7 +78,7 @@ dependencies {
 android {
     defaultConfig {
         consumerProguardFiles 'proguard-rules.pro'
-        minSdkVersion 24
+        minSdk = 24
     }
     sourceSets {
         test {

@@ -49,22 +49,45 @@ class ResizableComponentImpl implements ResizableComponent {
             new ConcurrentHashMap<>();
     // Visible for testing.
     Consumer<ReformEvent> mReformEventConsumer;
-    private Entity mEntity;
-    private Dimensions mCurrentSize;
-    private Dimensions mMinSize;
-    private Dimensions mMaxSize;
+    private Entity mEntity = null;
+    private Dimensions mCurrentSize = null;
+
+    /** Follows scenecore/ResizableComponent.create document, the default minimum size is 0. */
+    private final Dimensions mMinimumSize = new Dimensions(0.0f, 0.0f, 0.0f);
+
+    @NonNull private Dimensions mMinSize = mMinimumSize;
+
+    /** Follows scenecore/ResizableComponent.create document, the default maximum size is 10. */
+    private final Dimensions mMaximumSize = new Dimensions(10.0f, 10.0f, 10.0f);
+
+    @NonNull private Dimensions mMaxSize = mMaximumSize;
     private float mFixedAspectRatio = 0.0f;
     private boolean mAutoHideContent = true;
     private boolean mAutoUpdateSize = true;
     private boolean mForceShowResizeOverlay = false;
+    private final Dimensions mMinimumValidSize = new Dimensions(0.01f, 0.01f, 0.0f);
+
+    /**
+     * Follows scenecore/ResizableComponent.size document, the default size is 1. If
+     * ResizableComponent is attached to a panel, use the panel size as default size.
+     */
+    private Dimensions mDefaultSize = new Dimensions(1f, 1f, 1f);
+
+    private Dimensions mLastValidSizeForResize = mDefaultSize;
 
     ResizableComponentImpl(
             ExecutorService executor,
             XrExtensions extensions,
-            Dimensions minSize,
-            Dimensions maxSize) {
-        mMinSize = minSize;
-        mMaxSize = maxSize;
+            @NonNull Dimensions minSize,
+            @NonNull Dimensions maxSize) {
+        if (isSizeWellFormed(minSize)
+                && isSizeWellFormed(maxSize)
+                && minSize.width < maxSize.width
+                && minSize.height < maxSize.height
+                && minSize.depth <= maxSize.depth) { // allows min/max depth to be equal
+            mMinSize = minSize;
+            mMaxSize = maxSize;
+        } // else use default initial value.
         mExtensions = extensions;
         mExecutor = executor;
     }
@@ -85,6 +108,10 @@ class ResizableComponentImpl implements ResizableComponent {
         // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
         if (entity instanceof PanelEntityImpl && mCurrentSize == null) {
             mCurrentSize = ((PanelEntityImpl) entity).getSize();
+            // If the entity is a panel, use the panel size as default size.
+            if (isSizeValid(mCurrentSize)) {
+                mDefaultSize = mCurrentSize;
+            }
             if (mCurrentSize.width < mMinSize.width
                     || mCurrentSize.width > mMaxSize.width
                     || mCurrentSize.height < mMinSize.height
@@ -93,7 +120,7 @@ class ResizableComponentImpl implements ResizableComponent {
                 return false;
             }
         }
-        if (mCurrentSize != null) {
+        if (isSizeWellFormed(mCurrentSize)) { // allows set (0, 0, 0) in onAttach
             unused =
                     reformOptions.setCurrentSize(
                             new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
@@ -124,14 +151,25 @@ class ResizableComponentImpl implements ResizableComponent {
         mEntity = null;
     }
 
+    @NonNull
     @Override
     public Dimensions getSize() {
+        if (mCurrentSize == null) {
+            Log.e(TAG, "This component isn't attached to a PanelEntity and never called setSize.");
+            return mDefaultSize;
+        }
         return mCurrentSize;
     }
 
     @Override
     public void setSize(@NonNull Dimensions size) {
         // TODO: b/350821054 - Implement synchronization policy around Entity/Component updates.
+        if (!isSizeValid(size)) {
+            size = isSizeValid(mCurrentSize) ? mCurrentSize : mDefaultSize;
+            // Even if the provided size is invalid, do not return. Instead, proceed with a
+            // valid fallback size. This ensures that ReformOptions are always updated, which
+            // is an expectation of the layout system (e.g., Compose) to prevent stale states.
+        }
         mCurrentSize = size;
         if (mEntity == null) {
             Log.i(TAG, "This component isn't attached to an entity.");
@@ -143,6 +181,7 @@ class ResizableComponentImpl implements ResizableComponent {
         ((AndroidXrEntity) mEntity).updateReformOptions();
     }
 
+    @NonNull
     @Override
     public Dimensions getMinimumSize() {
         return mMinSize;
@@ -150,6 +189,10 @@ class ResizableComponentImpl implements ResizableComponent {
 
     @Override
     public void setMinimumSize(@NonNull Dimensions minSize) {
+        if (!isMinSizeValid(minSize)) {
+            minSize = isMinSizeValid(mMinSize) ? mMinSize : mMinimumSize;
+            // Similar logic to setSize
+        }
         mMinSize = minSize;
         if (mEntity == null) {
             Log.i(TAG, "This component isn't attached to an entity.");
@@ -162,6 +205,7 @@ class ResizableComponentImpl implements ResizableComponent {
         ((AndroidXrEntity) mEntity).updateReformOptions();
     }
 
+    @NonNull
     @Override
     public Dimensions getMaximumSize() {
         return mMaxSize;
@@ -169,6 +213,10 @@ class ResizableComponentImpl implements ResizableComponent {
 
     @Override
     public void setMaximumSize(@NonNull Dimensions maxSize) {
+        if (!isMaxSizeValid(maxSize)) {
+            maxSize = isMaxSizeValid(mMaxSize) ? mMaxSize : mMaximumSize;
+            // Similar logic to setSize
+        }
         mMaxSize = maxSize;
         if (mEntity == null) {
             Log.i(TAG, "This component isn't attached to an entity.");
@@ -248,10 +296,11 @@ class ResizableComponentImpl implements ResizableComponent {
                         return;
                     }
                     Dimensions newSize =
-                            new Dimensions(
-                                    reformEvent.getProposedSize().x,
-                                    reformEvent.getProposedSize().y,
-                                    reformEvent.getProposedSize().z);
+                            getSanitizedSizeForResize(
+                                    new Dimensions(
+                                            reformEvent.getProposedSize().x,
+                                            reformEvent.getProposedSize().y,
+                                            reformEvent.getProposedSize().z));
                     if (mAutoUpdateSize) {
                         // Update the resize affordance size.
                         setSize(newSize);
@@ -321,5 +370,89 @@ class ResizableComponentImpl implements ResizableComponent {
         if (mResizeEventListenerMap.isEmpty()) {
             ((AndroidXrEntity) mEntity).removeReformEventConsumer(mReformEventConsumer);
         }
+    }
+
+    /**
+     * Checks that the Dimensions object is not null, its values are not NaN, and it meets a minimum
+     * system-level size.
+     */
+    private boolean isSizeWellFormed(Dimensions size) {
+        return size != null
+                && !Float.isNaN(size.width)
+                && !Float.isNaN(size.height)
+                && !Float.isNaN(size.depth)
+                && size.width >= 0
+                && size.height >= 0
+                && size.depth >= 0;
+    }
+
+    /**
+     * Checks if the given {@code Dimensions} object is a valid minimum size.
+     *
+     * <p>A minimum size is considered valid if it is well-formed (not null, not NaN, and
+     * non-negative) and its dimensions are smaller than the current maximum size. Specifically, the
+     * width and height must be strictly less than the maximum, while the depth can be less than or
+     * equal.
+     *
+     * @param minSize The {@code Dimensions} to validate.
+     * @return {@code true} if the provided minimum size is valid, {@code false} otherwise.
+     */
+    private boolean isMinSizeValid(Dimensions minSize) {
+        return isSizeWellFormed(minSize)
+                && minSize.width < mMaxSize.width
+                && minSize.height < mMaxSize.height
+                && minSize.depth <= mMaxSize.depth; // allows min/max depth to be equal
+    }
+
+    /**
+     * Checks if the given {@code Dimensions} object is a valid maximum size.
+     *
+     * <p>A maximum size is considered valid if it is well-formed (not null, not NaN, and
+     * non-negative) and its dimensions are larger than the current minimum size. Specifically, the
+     * width and height must be strictly greater than the minimum, while the depth can be greater
+     * than or equal.
+     *
+     * @param maxSize The {@code Dimensions} to validate.
+     * @return {@code true} if the provided maximum size is valid, {@code false} otherwise.
+     */
+    private boolean isMaxSizeValid(Dimensions maxSize) {
+        return isSizeWellFormed(maxSize)
+                && maxSize.width > mMinSize.width
+                && maxSize.height > mMinSize.height
+                && maxSize.depth >= mMinSize.depth; // allows min/max depth to be equal
+    }
+
+    /**
+     * Checks that the Dimensions object is well-formed and within the user-defined minimum and
+     * maximum size bounds.
+     */
+    private boolean isSizeValid(Dimensions size) {
+        return isSizeWellFormed(size)
+                && size.width >= mMinimumValidSize.width
+                && size.height >= mMinimumValidSize.height
+                && size.depth >= mMinimumValidSize.depth
+                && size.width >= mMinSize.width
+                && size.height >= mMinSize.height
+                && size.depth >= mMinSize.depth
+                && size.width <= mMaxSize.width
+                && size.height <= mMaxSize.height
+                && size.depth <= mMaxSize.depth;
+    }
+
+    /**
+     * Validates the incoming {@code size} and, if valid, caches it as the last known valid size.
+     *
+     * <p>This method always returns the last known valid size. This provides a stable, valid value
+     * for resizing operations, even if the incoming size is invalid (e.g., outside the minimum or
+     * maximum bounds).
+     *
+     * @param size The proposed new size to validate.
+     * @return The last known valid size.
+     */
+    private Dimensions getSanitizedSizeForResize(Dimensions size) {
+        if (isSizeValid(size)) {
+            mLastValidSizeForResize = size;
+        }
+        return mLastValidSizeForResize;
     }
 }

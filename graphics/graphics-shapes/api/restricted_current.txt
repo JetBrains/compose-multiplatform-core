@@ -205,6 +205,7 @@ package androidx.graphics.shapes {
   }
 
   public final class SvgPathParser {
+    ctor @BytecodeOnly public SvgPathParser(long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public static java.util.List<androidx.graphics.shapes.Feature> parseFeatures(String svgPath);
     field public static final androidx.graphics.shapes.SvgPathParser.Companion Companion;
   }

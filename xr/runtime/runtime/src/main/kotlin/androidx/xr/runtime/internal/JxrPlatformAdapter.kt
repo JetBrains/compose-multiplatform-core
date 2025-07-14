@@ -21,11 +21,11 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.SubspaceNodeHolder
 import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.math.Vector4
-import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.util.concurrent.ListenableFuture
 import java.time.Duration
 import java.util.UUID
@@ -682,11 +682,11 @@ public interface JxrPlatformAdapter {
     /**
      * A factory function to create a SubspaceNodeEntity.
      *
-     * @param subspaceNode The SubspaceNode to create the SubspaceNodeEntity from.
+     * @param subspaceNodeHolder Hold the SubspaceNode to create the SubspaceNodeEntity from.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun createSubspaceNodeEntity(
-        subspaceNode: SubspaceNode,
+        subspaceNodeHolder: SubspaceNodeHolder<*>,
         size: Dimensions,
     ): SubspaceNodeEntity
 

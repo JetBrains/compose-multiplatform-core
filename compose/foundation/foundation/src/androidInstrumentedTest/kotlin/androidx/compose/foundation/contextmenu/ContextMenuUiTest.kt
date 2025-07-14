@@ -98,7 +98,11 @@ class ContextMenuUiTest {
         contextMenuBuilderBlock: ContextMenuScope.() -> Unit,
     ) {
         ContextMenuColumn(colors, Modifier.testTag(tag)) {
-            val scope = remember { ContextMenuScope() }
+            val scope = remember {
+                ContextMenuScope { modifier, label, enabled, colors, leadingIcon, onClick ->
+                    ContextMenuItem(label, enabled, colors, modifier, leadingIcon, onClick)
+                }
+            }
             with(scope) {
                 clear()
                 contextMenuBuilderBlock()

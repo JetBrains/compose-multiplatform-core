@@ -16,6 +16,7 @@
 
 package androidx.xr.scenecore.impl;
 
+import android.content.Context;
 import android.util.Log;
 
 import androidx.xr.runtime.internal.SystemSpaceEntity;
@@ -53,11 +54,12 @@ abstract class SystemSpaceEntityImpl extends AndroidXrEntity implements SystemSp
     private Executor mSpaceUpdatedExecutor;
 
     SystemSpaceEntityImpl(
+            Context context,
             Node node,
             XrExtensions extensions,
             EntityManager entityManager,
             ScheduledExecutorService executor) {
-        super(node, extensions, entityManager, executor);
+        super(context, node, extensions, entityManager, executor);
 
         // The underlying CPM node is always expected to be updated in response to changes to
         // the coordinate space represented by a SystemSpaceEntityImpl so we subscribe at

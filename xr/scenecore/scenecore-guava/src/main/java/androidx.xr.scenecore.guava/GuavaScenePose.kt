@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:JvmName("ScenePoseGuava")
+@file:JvmName("GuavaScenePose")
 
 package androidx.xr.scenecore.guava
 

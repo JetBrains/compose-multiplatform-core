@@ -30,6 +30,7 @@ import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.scenecore.GroupEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +48,7 @@ class SpatialComposeSceneTest {
         mockJxrPlatformAdapter = mock<JxrPlatformAdapter>()
     }
 
+    @Ignore // b/427806050
     @Test
     fun spatialComposeScene_constructor_initializesPropertiesWithDefaultValues() {
         lateinit var scene: SpatialComposeScene
@@ -75,6 +77,7 @@ class SpatialComposeSceneTest {
         assertThat(currentSession).isEqualTo(session)
     }
 
+    @Ignore // b/427806050
     @Test
     fun spatialComposeScene_constructor_initializesPropertiesWithCustomValues() {
         lateinit var scene: SpatialComposeScene

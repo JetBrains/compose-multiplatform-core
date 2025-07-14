@@ -31,6 +31,7 @@ import android.util.Range;
 import android.util.Size;
 
 import androidx.annotation.OptIn;
+import androidx.camera.core.CameraIdentifier;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUseCaseAdapterProvider;
@@ -370,5 +371,21 @@ public interface CameraInfoInternal extends CameraInfo {
     default void setCameraUseCaseAdapterProvider(
             @NonNull CameraUseCaseAdapterProvider cameraUseCaseAdapterProvider) {
         UseCaseAdditionSimulator.setCameraUseCaseAdapterProvider(cameraUseCaseAdapterProvider);
+    }
+
+    @Override
+    default @NonNull CameraIdentifier getCameraIdentifier() {
+        return CameraIdentifier.create(getCameraId());
+    }
+
+    /**
+     * Returns the available capabilities of this camera, based on
+     * {@link CameraCharacteristics#REQUEST_AVAILABLE_CAPABILITIES}.
+     *
+     * @return a set of available capabilities, or an empty set if available capabilities could not
+     * be retrieved.
+     */
+    default @NonNull Set<@NonNull Integer> getAvailableCapabilities() {
+        return Collections.emptySet();
     }
 }

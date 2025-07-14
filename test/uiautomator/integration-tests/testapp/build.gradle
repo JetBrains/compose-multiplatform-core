@@ -55,6 +55,6 @@ android {
     compileSdk = 35
     namespace = "androidx.test.uiautomator.testapp"
     defaultConfig {
-        minSdk 23
+        minSdk = 23
     }
 }

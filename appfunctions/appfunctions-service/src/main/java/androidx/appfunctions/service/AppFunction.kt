@@ -66,8 +66,12 @@ package androidx.appfunctions.service
  * [androidx.appfunctions.AppFunctionInvalidArgumentException] with a detailed message explaining
  * why it is invalid.
  *
+ * For a detailed list of supported types and the rules governing their serialization, see
+ * [androidx.appfunctions.AppFunctionSerializable].
+ *
  * @see AppFunctionConfiguration.Builder.addEnclosingClassFactory
  * @see androidx.appfunctions.AppFunctionException
+ * @see androidx.appfunctions.AppFunctionSerializable
  */
 // Use BINARY here so that the annotation is kept around at the aggregation stage.
 @Retention(AnnotationRetention.BINARY)

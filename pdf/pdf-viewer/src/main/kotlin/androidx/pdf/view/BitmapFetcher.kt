@@ -16,6 +16,7 @@
 
 package androidx.pdf.view
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Point
 import android.graphics.PointF
@@ -396,6 +397,7 @@ internal class BitmapFetcher(
         return Size(finalSize.x.roundToInt(), finalSize.y.roundToInt())
     }
 
+    @SuppressLint("CheckResult")
     private fun scaleViewArea(scale: Float, viewArea: RectF): RectF {
         // Scale the provided viewArea, and clip it to the scaled bounds of the page
         // Carefully avoid mutating the provided Rect

@@ -27,6 +27,7 @@ import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadataDocument
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadataDocument
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadataDocument
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
@@ -77,7 +78,7 @@ internal class AppSearchAppFunctionReader(
     @OptIn(FlowPreview::class)
     override fun searchAppFunctions(
         searchFunctionSpec: AppFunctionSearchSpec
-    ): Flow<List<AppFunctionMetadata>> {
+    ): Flow<List<AppFunctionPackageMetadata>> {
         if (searchFunctionSpec.packageNames?.isEmpty() == true) {
             return flow { emit(emptyList()) }
         }
@@ -151,7 +152,7 @@ internal class AppSearchAppFunctionReader(
     private suspend fun performSearch(
         session: GlobalSearchSession,
         searchFunctionSpec: AppFunctionSearchSpec,
-    ): List<AppFunctionMetadata> {
+    ): List<AppFunctionPackageMetadata> {
         val joinSpec =
             JoinSpec.Builder(AppFunctionRuntimeMetadata.STATIC_METADATA_JOIN_PROPERTY)
                 .setNestedSearch("", RUNTIME_SEARCH_SPEC)
@@ -183,6 +184,10 @@ internal class AppSearchAppFunctionReader(
                 )
             }
             .filterNotNull()
+            .groupBy { it.packageName }
+            .map { (packageName, appFunctions) ->
+                AppFunctionPackageMetadata(packageName, appFunctions)
+            }
     }
 
     private suspend fun searchTopLevelComponent(

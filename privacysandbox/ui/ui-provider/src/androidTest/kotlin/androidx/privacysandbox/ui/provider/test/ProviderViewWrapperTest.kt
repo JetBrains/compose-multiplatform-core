@@ -54,7 +54,7 @@ class ProviderViewWrapperTest {
     private lateinit var mainHandler: Handler
     private lateinit var providerViewWrapper: ProviderViewWrapper
     private lateinit var providerView: View
-    private var dispatchedEventsSinceLastFrame = 0
+    private var dispatchedEventsSinceLastFrame = 0L
     private lateinit var motionEventTransferCallback: MotionEventTransferCallbackProxy
 
     @Before
@@ -297,10 +297,10 @@ class ProviderViewWrapperTest {
         for (i in 0 until frameTimes.size) {
             mainHandler.postAtTime(
                 {
-                    assertThat(dispatchedEventsSinceLastFrame)
-                        .isEqualTo(expectedDispatchedEventsPerFrame[i])
+                    if (dispatchedEventsSinceLastFrame == expectedDispatchedEventsPerFrame[i]) {
+                        allFramesPassedLatch.countDown()
+                    }
                     dispatchedEventsSinceLastFrame = 0
-                    allFramesPassedLatch.countDown()
                 },
                 frameTimes[i],
             )

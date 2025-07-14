@@ -20,7 +20,7 @@ package androidx.lifecycle {
 
   public abstract class ViewModel {
     ctor public ViewModel();
-    ctor @Deprecated public ViewModel(java.io.Closeable... closeables);
+    ctor @BytecodeOnly @Deprecated public ViewModel(java.io.Closeable!...!);
     ctor public ViewModel(java.lang.AutoCloseable... closeables);
     ctor public ViewModel(kotlinx.coroutines.CoroutineScope viewModelScope);
     ctor public ViewModel(kotlinx.coroutines.CoroutineScope viewModelScope, java.lang.AutoCloseable... closeables);

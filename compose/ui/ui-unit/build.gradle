@@ -160,6 +160,5 @@ androidx {
     inceptionYear = "2020"
     description = "Compose classes for simple units"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-unit:ui-unit-samples"))
 }

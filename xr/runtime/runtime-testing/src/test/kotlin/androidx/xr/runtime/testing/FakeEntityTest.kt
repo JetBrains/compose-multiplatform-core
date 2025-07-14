@@ -195,7 +195,7 @@ class FakeEntityTest {
     fun addInputEventListener_callsListeners_getValidInputEvent() {
         val listener = TestInputEventListener()
         val executor = DirectExecutor()
-        val inputEvent = InputEvent(0, 0, 0, Vector3.Zero, Vector3.Zero, 0, null, null)
+        val inputEvent = InputEvent(0, 0, 0, Vector3.Zero, Vector3.Zero, 0, emptyList())
         underTest.addInputEventListener(executor, listener)
         for (entry in underTest.inputEventListenerMap) {
             entry.key.onInputEvent(inputEvent)

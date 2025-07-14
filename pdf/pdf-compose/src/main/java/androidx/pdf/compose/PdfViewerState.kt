@@ -20,18 +20,14 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.util.SparseArray
 import androidx.annotation.IntRange
-import androidx.annotation.RestrictTo
+import androidx.collection.MutableIntObjectMap
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.MutatorMutex
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.core.util.keyIterator
@@ -41,19 +37,12 @@ import androidx.pdf.view.PdfView
 import androidx.pdf.view.Selection
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 
-/** Creates a [PdfViewerState] that is remembered across compositions using [remember] */
-@Composable
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public fun rememberPdfViewerState(): PdfViewerState {
-    val coroutineScope = rememberCoroutineScope()
-    return remember { PdfViewerState(coroutineScope) }
-}
-
 /** Scope used for suspending scroll blocks */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface PdfZoomScrollScope {
     /**
      * Attempts to scroll forward by [delta] px.
@@ -70,14 +59,7 @@ public interface PdfZoomScrollScope {
  * A state object that can be hoisted to observe and control [PdfViewer] zoom, scroll, and content
  * position.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class PdfViewerState(
-    /**
-     * Composition-scoped [CoroutineScope] used to bridge non-suspending callbacks from the
-     * [PdfView] underlying [PdfViewer] with suspend scrolling utilities like [MutatorMutex]
-     */
-    private val coroutineScope: CoroutineScope
-) {
+public class PdfViewerState {
     private val zoomScrollMutex = MutatorMutex()
 
     internal var pdfView: PdfView? = null
@@ -92,11 +74,11 @@ public class PdfViewerState(
             visiblePagesCount = pdfView?.visiblePagesCount ?: 0
             gestureState = pdfView?.gestureState ?: GESTURE_STATE_IDLE
             zoom = pdfView?.zoom ?: PdfView.DEFAULT_INIT_ZOOM
-            pageOffsetsState.clear()
+            visiblePageOffsets.clear()
             currentSelection = pdfView?.currentSelection
             // Cancel any in-progress mutations to release the mutex. MutatorMutex only supports
             // cancellation by enqueuing higher-priority mutations.
-            coroutineScope.launch {
+            mutatorMutexScope.launch {
                 zoomScrollMutex.mutate(priority = MutatePriority.PreventUserInput) {}
             }
             field = value
@@ -115,12 +97,14 @@ public class PdfViewerState(
     private var pdfViewObserver: PdfViewObserver? = null
 
     /** The first page in the viewport, including partially-visible pages. 0-indexed. */
-    @get:FrequentlyChangingValue
     public var firstVisiblePage: Int by mutableIntStateOf(0)
         private set
 
-    /** The number of pages visible in the viewport, including partially visible pages. */
     @get:FrequentlyChangingValue
+    public var firstVisiblePageOffset: Offset by mutableStateOf(Offset(0F, 0F))
+        private set
+
+    /** The number of pages visible in the viewport, including partially visible pages. */
     public var visiblePagesCount: Int by mutableIntStateOf(0)
         private set
 
@@ -131,12 +115,6 @@ public class PdfViewerState(
     @get:FrequentlyChangingValue
     public var zoom: Float by mutableFloatStateOf(PdfView.DEFAULT_INIT_ZOOM)
         private set
-
-    /** The [Offset] of each visible page, keyed by 0-indexed page number. */
-    // No mutableState*Of infrastructure for primitive collection types
-    @Suppress("PrimitiveInCollection")
-    public val pageOffsets: Map<Int, Offset>
-        @FrequentlyChangingValue get() = pageOffsetsState
 
     /**
      * State regarding whether the user is interacting with the PDF, one of [GESTURE_STATE_IDLE],
@@ -149,9 +127,7 @@ public class PdfViewerState(
     public var currentSelection: Selection? by mutableStateOf(null)
         private set
 
-    // No mutableState*Of infrastructure for primitive collection types
-    @Suppress("PrimitiveInCollection")
-    private val pageOffsetsState = mutableStateMapOf<Int, Offset>()
+    private val visiblePageOffsets = MutableIntObjectMap<Offset>()
 
     /**
      * Returns the [PdfPoint] corresponding to [offset] in Compose coordinates, or null if no PDF
@@ -160,7 +136,7 @@ public class PdfViewerState(
      * Returns null if this [PdfViewerState] is not yet associated with a [PdfViewer], or if the
      * [PdfViewer] is not associated with a [androidx.pdf.PdfDocument]
      */
-    public fun toPdfPoint(offset: Offset): PdfPoint? {
+    public fun visibleOffsetToPdfPoint(offset: Offset): PdfPoint? {
         return pdfView?.viewToPdfPoint(PointF(offset.x, offset.y))
     }
 
@@ -171,8 +147,16 @@ public class PdfViewerState(
      * Returns [Offset.Unspecified] if this [PdfViewerState] is not yet associated with a
      * [PdfViewer], or if the [PdfViewer] is not associated with a [androidx.pdf.PdfDocument]
      */
-    public fun toOffset(pdfPoint: PdfPoint): Offset? {
+    public fun pdfPointToVisibleOffset(pdfPoint: PdfPoint): Offset? {
         return pdfView?.pdfToViewPoint(pdfPoint)?.toOffset() ?: Offset.Unspecified
+    }
+
+    /**
+     * Returns the [Offset] of the page at [visiblePageNumber], or null if the provided page number
+     * is not currently visible.
+     */
+    public fun getVisiblePageOffset(@IntRange(from = 0) visiblePageNumber: Int): Offset? {
+        return visiblePageOffsets[visiblePageNumber]
     }
 
     /** Centers the page at [pageNum] in the viewport. */
@@ -217,7 +201,7 @@ public class PdfViewerState(
         PdfView.OnViewportChangedListener,
         PdfView.OnGestureStateChangedListener,
         PdfView.OnSelectionChangedListener {
-        private var interactionSession: UserInteractionSession? = null
+        private var interactionSession: Job? = null
 
         override fun onViewportChanged(
             firstVisiblePage: Int,
@@ -227,36 +211,44 @@ public class PdfViewerState(
         ) {
             this@PdfViewerState.firstVisiblePage = firstVisiblePage
             this@PdfViewerState.visiblePagesCount = visiblePagesCount
+            firstVisiblePageOffset = pageLocations.get(firstVisiblePage).toOffset()
             zoom = zoomLevel
 
             // Clear no longer visible pages
-            for (page in pageOffsetsState.keys) {
+            visiblePageOffsets.forEachKey { page ->
                 if (!pageLocations.contains(page)) {
-                    pageOffsetsState.remove(page)
+                    visiblePageOffsets.remove(page)
                 }
             }
             // Add or update new or existing pages
             for (page in pageLocations.keyIterator()) {
-                pageOffsetsState.put(page, pageLocations.get(page).toOffset())
+                visiblePageOffsets.put(page, pageLocations.get(page).toOffset())
             }
         }
 
         override fun onGestureStateChanged(newState: Int) {
             when (newState) {
                 PdfView.GESTURE_STATE_IDLE -> {
-                    interactionSession?.close()
+                    interactionSession?.cancel()
                     gestureState = GESTURE_STATE_IDLE
                 }
                 PdfView.GESTURE_STATE_INTERACTING -> {
                     gestureState = GESTURE_STATE_INTERACTING
-                    interactionSession = UserInteractionSession()
-                    coroutineScope.launch {
+                    mutatorMutexScope.launch {
+                        // This is only safe to do because mutatorMutexScope uses
+                        // Dispatchers.Unconfined, so this is executed prior to the launch just
+                        // above returning.
+                        interactionSession = coroutineContext[Job]
                         // Lock out Default priority mutations while the user is interacting
                         // This will cancel any ongoing Default-priority mutations as well as any
                         // ongoing UserInput mutations in case a previous UserInteractionSession
                         // was not properly closed.
                         zoomScrollMutex.mutate(priority = MutatePriority.UserInput) {
-                            interactionSession?.awaitClose()
+                            // This Job is captured just above, and it's cancelled when this
+                            // listener receives notice the user is no longer interacting with the
+                            // PDF. Thus, when the user is no longer interacting with the PDF, the
+                            // mutex is released and programmatic scrolling is unblocked.
+                            awaitCancellation()
                         }
                     }
                 }
@@ -301,13 +293,12 @@ public class PdfViewerState(
 /** [PdfZoomScrollScope] implementation that uses the [PdfView] underlying [PdfViewer] */
 private class PdfViewPositioner(private val pdfView: PdfView) : PdfZoomScrollScope {
     override fun scrollBy(delta: Offset): Offset {
-        val before = pdfView.scrollX to pdfView.scrollY
+        val beforeX = pdfView.scrollX
+        val beforeY = pdfView.scrollY
         pdfView.scrollBy(delta.x.roundToInt(), delta.y.roundToInt())
-        val after = pdfView.scrollX to pdfView.scrollY
-        return Offset(
-            (after.first - before.first).toFloat(),
-            (after.second - before.second).toFloat(),
-        )
+        val afterX = pdfView.scrollX
+        val afterY = pdfView.scrollY
+        return Offset((afterX - beforeX).toFloat(), (afterY - beforeY).toFloat())
     }
 
     override fun zoomTo(zoomLevel: Float) {
@@ -315,22 +306,17 @@ private class PdfViewPositioner(private val pdfView: PdfView) : PdfZoomScrollSco
     }
 }
 
-/**
- * Enables higher level code to track a user interaction session i.e. a duration of time during
- * which the user is interacting with the PDF.
- */
-private class UserInteractionSession {
-    private val channel = Channel<Unit>()
-
-    fun close() {
-        channel.trySend(Unit)
-    }
-
-    suspend fun awaitClose() {
-        channel.receive()
-    }
-}
-
 private fun PointF.toOffset() = Offset(this.x, this.y)
 
 private fun RectF.toOffset() = Offset(this.left, this.top)
+
+// It is rarely good practice to use a global constant scope in this way, but we're doing so here to
+// keep the scope out of the API. It's used strictly internally by PdfViewerState to access an
+// implementation detail MutatorMutex, and it doesn't make sense to leak that implementation detail
+// into the API surface. It's safe to capture this scope in a file-level constant because it has no
+// Job, and therefore it cannot leak child Job references.
+//
+// Dispatchers.Unconfined is safe to use because this scope is only used to mutate the MutatorMutex,
+// which is thread safe. We use Dispatchers.Unconfined so that we can safely assign a reference to
+// the current Job from within a launched Coroutine prior to the first suspension point.
+private val mutatorMutexScope = CoroutineScope(Dispatchers.Unconfined)

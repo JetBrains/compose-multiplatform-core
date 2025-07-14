@@ -39,8 +39,6 @@ internal constructor(
     private val activity: Activity,
     private val perceptionManager: OpenXrPerceptionManager,
     internal val timeSource: OpenXrTimeSource,
-    // TODO: b/427434474 fix native test stub for calibration to not require this flag
-    internal val faceTrackingCalibrated: Boolean = false,
 ) : LifecycleManager {
 
     /**
@@ -114,8 +112,11 @@ internal constructor(
                 -2L ->
                     throw RuntimeException(
                         "There was an unknown runtime error configuring the session."
-                    )
-                // XR_ERROR_RUNTIME_FAILURE
+                    ) // XR_ERROR_RUNTIME_FAILURE
+                -8L ->
+                    throw ConfigurationNotSupportedException(
+                        "Feature not supported."
+                    ) // XR_ERROR_FEATURE_UNSUPPORTED
                 -12L ->
                     throw IllegalStateException(
                         "One or more objects are null. Has the OpenXrManager been created?"
@@ -162,9 +163,7 @@ internal constructor(
         if (config.faceTracking != this.config.faceTracking) {
             if (config.faceTracking == Config.FaceTrackingMode.USER) {
                 if (!nativeGetFaceTrackerCalibration()) {
-                    if (!faceTrackingCalibrated) {
-                        throw FaceTrackingNotCalibratedException()
-                    }
+                    throw FaceTrackingNotCalibratedException()
                 }
                 perceptionManager.xrResources.addUpdatable(perceptionManager.xrResources.userFace)
             } else {
@@ -203,14 +202,18 @@ internal constructor(
         // Block the call for a time that is appropriate for OpenXR devices.
         // TODO: b/359871229 - Implement dynamic delay. We start with a fixed 20ms delay as it is
         // a nice round number that produces a reasonable frame rate @50 Hz, but this value may need
-        // to
-        // be adjusted in the future.
+        // to be adjusted in the future.
         delay(20.milliseconds)
         return now
     }
 
     override fun pause() {
-        check(nativePause())
+        if (!nativePause()) {
+            // Native pause fails when the OpenXR runtime is not running, so
+            // we should clean up its state so that it can be re-initialized
+            // later when resume() is called.
+            nativeDeInit()
+        }
     }
 
     override fun stop() {

@@ -18,8 +18,14 @@ package androidx.pdf.selection
 
 import android.graphics.drawable.Drawable
 import androidx.annotation.RestrictTo
+import androidx.pdf.view.PdfView
 
-/** The `object`s used as keys for the default selection menu items. */
+/**
+ * Defines unique keys for the default selection menu items.
+ *
+ * These keys are used to identify standard actions like Copy and Select All within the selection
+ * context menu.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object PdfSelectionMenuKeys {
     public object CopyKey
@@ -28,53 +34,69 @@ public object PdfSelectionMenuKeys {
 }
 
 /**
- * An abstract base class for components that can be displayed in a context menu.
+ * An abstract base class for any component that can be displayed within a context menu.
  *
- * @param key A unique key that identifies this component within the context menu.
+ * @property key A unique identifier for this component within its context menu.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class ContextMenuComponent internal constructor(public val key: Any)
 
 /**
- * A [SelectionMenuComponent] that represents a clickable item with a label in a selection menu.
+ * Represents a clickable item with a label in a selection menu.
  *
- * @param key A unique key that identifies this component
- * @param label The label text to be shown in the selection menu
- * @param onClick A lambda function to be invoked when this menu item is clicked. This is where the
- *   item's action is defined.
- * @param contentDescription An optional string for accessibility services, providing a description
- *   of the item for screen readers.
- * @param leadingIcon (internal param) An optional drawable resource to be displayed as an icon at
- *   the start of the menu item. This will be shown for [android.R.id.textAssist] menu item.
+ * @param key A unique identifier for this component.
+ * @property label The text to display for this menu item.
+ * @property contentDescription An optional accessibility description for screen readers.
+ * @property onClick A lambda function invoked when the item is clicked, providing access to the
+ *   [SelectionMenuSession].
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class SelectionMenuComponent
-internal constructor(
+public class SelectionMenuComponent(
     key: Any,
     public val label: String,
     public val contentDescription: String? = null,
-    internal val leadingIcon: Drawable? = null,
     public val onClick: SelectionMenuSession.() -> Unit,
-) : ContextMenuComponent(key) {
+) : ContextMenuComponent(key)
 
-    @JvmOverloads
-    public constructor(
-        key: Any,
-        label: String,
-        contentDescription: String? = null,
-        onClick: SelectionMenuSession.() -> Unit,
-    ) : this(
-        key = key,
-        label = label,
-        contentDescription = contentDescription,
-        onClick = onClick,
-        leadingIcon = null,
-    )
-}
+/**
+ * Represents a default selection menu item, designed for the standard selection menu components
+ * that might need access to the [PdfView] instance when clicked, such as "Copy" or "Select All".
+ *
+ * @param key A unique identifier for this component.
+ * @property label The text to display for this menu item.
+ * @property contentDescription An optional accessibility description for screen readers.
+ * @property onClick A lambda function invoked when the item is clicked, providing access to the
+ *   [SelectionMenuSession] and the [PdfView].
+ */
+internal class DefaultSelectionMenuComponent(
+    key: Any,
+    public val label: String,
+    public val contentDescription: String? = null,
+    public val onClick: SelectionMenuSession.(pdfView: PdfView) -> Unit,
+) : ContextMenuComponent(key)
 
-/** A session for an open selection menu that can be used to close the menu */
+/**
+ * Represents a smart selection menu item, which can include a leading icon in addition to a label
+ * and action.
+ *
+ * @param key A unique identifier for this component.
+ * @property label The text to display for this menu item.
+ * @property contentDescription An optional accessibility description for screen readers.
+ * @property leadingIcon An optional drawable to display as an icon before the label.
+ * @property onClick A lambda function invoked when the item is clicked, providing access to the
+ *   [SelectionMenuSession].
+ */
+internal class SmartSelectionMenuComponent(
+    key: Any,
+    public val label: String,
+    public val contentDescription: String? = null,
+    public val leadingIcon: Drawable? = null,
+    public val onClick: SelectionMenuSession.() -> Unit,
+) : ContextMenuComponent(key)
+
+/** Represents an active session of an open selection menu. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface SelectionMenuSession {
-    /** Closes the text context menu */
+    /** Closes the currently open text context menu. */
     public fun close()
 }

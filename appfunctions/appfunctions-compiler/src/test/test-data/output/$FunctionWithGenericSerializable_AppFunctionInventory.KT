@@ -32,7 +32,8 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
     private val PARAMETER_METADATA_PARAMS_REFERENCE_DATA_TYPE: AppFunctionReferenceTypeMetadata =
         AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.UpdateNoteParams",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val PARAMS_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -45,7 +46,8 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
     private val PARAMETER_METADATA_TOPLEVELGENERICPARAM_REFERENCE_DATA_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.SetField<kotlin.Int>",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val TOPLEVELGENERICPARAM_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -63,7 +65,8 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -73,7 +76,8 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
     private val COM_TESTDATA_SETFIELD_KOTLIN_STRING__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 8,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_STRING__OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -91,13 +95,15 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
             properties = COM_TESTDATA_SETFIELD_KOTLIN_STRING__OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_SETFIELD_KOTLIN_STRING__OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.SetField<kotlin.String>",
-            isNullable = true
+            isNullable = true,
+            description = "An example generic AppFunctionSerializable. "
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_STRING_NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 8,
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_STRING_NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -115,13 +121,15 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
             properties = COM_TESTDATA_SETFIELD_KOTLIN_STRING_NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_SETFIELD_KOTLIN_STRING_NULLABLE__OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.SetField<kotlin.String?>",
-            isNullable = true
+            isNullable = true,
+            description = "An example generic AppFunctionSerializable. "
         )
 
     private val COM_TESTDATA_ATTACHMENT_OBJECT_DATA_TYPE_PROPERTIES_MAP_URI:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 8,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_ATTACHMENT_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -139,19 +147,22 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
             properties = COM_TESTDATA_ATTACHMENT_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_ATTACHMENT_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.Attachment",
-            isNullable = true
+            isNullable = true,
+            description = "An attachment for a note entity. "
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT___OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE_REFERENCE_ITEM_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.Attachment",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT___OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE:
         AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
             itemType = COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT___OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE_REFERENCE_ITEM_TYPE,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT___OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -169,19 +180,22 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
             properties = COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT___OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT___OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.SetField<kotlin.collections.List<com.testdata.Attachment>>",
-            isNullable = true
+            isNullable = true,
+            description = "An example generic AppFunctionSerializable. "
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT__NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE_REFERENCE_ITEM_TYPE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.Attachment",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT__NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE:
         AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
             itemType = COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT__NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE_REFERENCE_ITEM_TYPE,
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT__NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -199,31 +213,36 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
             properties = COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT__NULLABLE__OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_SETFIELD_KOTLIN_COLLECTIONS_LIST_COM_TESTDATA_ATTACHMENT__NULLABLE__OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.SetField<kotlin.collections.List<com.testdata.Attachment>?>",
-            isNullable = true
+            isNullable = true,
+            description = "An example generic AppFunctionSerializable. "
         )
 
     private val COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_PROPERTIES_MAP_TITLE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.SetField<kotlin.String>",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_PROPERTIES_MAP_NULLABLETITLE:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.SetField<kotlin.String?>",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_PROPERTIES_MAP_ATTACHMENTS:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.SetField<kotlin.collections.List<com.testdata.Attachment>>",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_PROPERTIES_MAP_NULLABLEATTACHMENTS:
         AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.SetField<kotlin.collections.List<com.testdata.Attachment>?>",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -236,10 +255,6 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
 
     private val COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
         List<String> = listOf(
-      "title",
-      "nullableTitle",
-      "attachments",
-      "nullableAttachments",
     )
 
     private val COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE: AppFunctionObjectTypeMetadata =
@@ -247,13 +262,15 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
             properties = COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_UPDATENOTEPARAMS_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.UpdateNoteParams",
-            isNullable = true
+            isNullable = true,
+            description = "Parameters to update a note entity. "
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_INT__OBJECT_DATA_TYPE_PROPERTIES_MAP_VALUE:
         AppFunctionPrimitiveTypeMetadata = AppFunctionPrimitiveTypeMetadata(
             type = 7,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val COM_TESTDATA_SETFIELD_KOTLIN_INT__OBJECT_DATA_TYPE_PROPERTIES_MAP:
@@ -271,7 +288,8 @@ public class `$FunctionWithGenericSerializable_AppFunctionInventory` : AppFuncti
             properties = COM_TESTDATA_SETFIELD_KOTLIN_INT__OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_SETFIELD_KOTLIN_INT__OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.SetField<kotlin.Int>",
-            isNullable = true
+            isNullable = true,
+            description = "An example generic AppFunctionSerializable. "
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =

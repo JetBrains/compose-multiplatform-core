@@ -516,7 +516,7 @@ class TextFieldScrollTest : FocusedWindowTest {
 
     @Test
     fun textField_cursorHandle_hidden_whenScrolledOutOfView() {
-        val size = 100
+        val size = 200
         val tag = "Text"
 
         with(rule.density) {
@@ -533,6 +533,9 @@ class TextFieldScrollTest : FocusedWindowTest {
         rule.onNodeWithTag(tag).performClick()
 
         rule.onNode(isSelectionHandle(Handle.Cursor)).assertIsDisplayed()
+
+        // prevent double click behavior
+        rule.mainClock.advanceTimeBy(1000)
 
         // Scroll up by twice the height to move the cursor out of the visible area.
         rule.onNodeWithTag(tag).performTouchInput {

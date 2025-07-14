@@ -33,6 +33,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher.Companion.expectValue
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -679,6 +682,19 @@ class PickerTest {
         rule.waitForIdle()
 
         rule.onNodeWithText("2").assertExists()
+    }
+
+    @Test
+    fun picker_roleIsValuePicker() {
+        rule.setContentWithTheme {
+            Picker(state = rememberPickerState(1), contentDescription = { CONTENT_DESCRIPTION }) {
+                Box(modifier = Modifier.size(20.dp))
+            }
+        }
+
+        rule
+            .onNode(expectValue(SemanticsProperties.Role, Role.ValuePicker), useUnmergedTree = true)
+            .assertExists()
     }
 
     private fun animateScrollTo(

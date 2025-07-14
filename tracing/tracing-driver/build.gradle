@@ -60,30 +60,6 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
         }
-        androidInstrumentedTest {
-            // Declaring this source set even though we don't really have any instrumentation tests.
-            // This is because commonTest is implicitly treated as something that can be used for
-            // instrumentation tests. Therefore we need to include the test runner; otherwise the
-            // harness fails with an Exception. b/394958372.
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.junit)
-                implementation(libs.testExtJunit)
-                implementation(libs.testCore)
-                implementation(libs.testRunner)
-                implementation(libs.testRules)
-            }
-        }
-    }
-}
-
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        // Make sure to opt-in to expect-actual classes.
-        // https://youtrack.jetbrains.com/issue/KT-61573
-        freeCompilerArgs += [
-                "-Xexpect-actual-classes",
-        ]
     }
 }
 

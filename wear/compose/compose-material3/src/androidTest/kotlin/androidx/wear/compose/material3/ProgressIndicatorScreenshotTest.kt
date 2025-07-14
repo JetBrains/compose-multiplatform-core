@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
@@ -29,16 +28,13 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
@@ -53,7 +49,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(TestParameterInjector::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ProgressIndicatorScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -85,6 +81,17 @@ class ProgressIndicatorScreenshotTest {
                         indicatorColor = Color.Green,
                         trackColor = Color.Red.copy(alpha = 0.5f),
                     ),
+            )
+        }
+
+    @Test
+    fun progress_indicator_small_value(@TestParameter screenSize: ScreenSize) =
+        verifyProgressIndicatorScreenshot(screenSize = screenSize) {
+            CircularProgressIndicator(
+                progress = { 0.01f },
+                modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
+                startAngle = 120f,
+                endAngle = 60f,
             )
         }
 
@@ -123,7 +130,7 @@ class ProgressIndicatorScreenshotTest {
         rule.setContentWithTheme {
             ScreenConfiguration(screenSize.size) {
                 CircularProgressIndicator(
-                    progress = { progress.value },
+                    progress = { progress.floatValue },
                     modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
                     startAngle = 120f,
                     endAngle = 60f,
@@ -131,13 +138,10 @@ class ProgressIndicatorScreenshotTest {
             }
         }
 
-        rule.runOnIdle { progress.value = 1f }
+        rule.runOnIdle { progress.floatValue = 1f }
         rule.mainClock.advanceTimeBy(150)
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Test
@@ -180,7 +184,7 @@ class ProgressIndicatorScreenshotTest {
     @Test
     fun circular_progress_indicator_content(@TestParameter screenSize: ScreenSize) =
         verifyProgressIndicatorScreenshot(screenSize = screenSize) {
-            CircularProgressIndicatorStatic(
+            DrawCircularProgressIndicator(
                 progress = 0.25f,
                 modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
                 startAngle = 120f,
@@ -191,7 +195,7 @@ class ProgressIndicatorScreenshotTest {
     @Test
     fun circular_progress_indicator_content_overflow(@TestParameter screenSize: ScreenSize) =
         verifyProgressIndicatorScreenshot(screenSize = screenSize) {
-            CircularProgressIndicatorStatic(
+            DrawCircularProgressIndicator(
                 progress = 1.2f,
                 modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
                 startAngle = 120f,
@@ -203,7 +207,7 @@ class ProgressIndicatorScreenshotTest {
     @Test
     fun circular_progress_indicator_content_disabled(@TestParameter screenSize: ScreenSize) =
         verifyProgressIndicatorScreenshot(screenSize = screenSize) {
-            CircularProgressIndicatorStatic(
+            DrawCircularProgressIndicator(
                 progress = 0.25f,
                 modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
                 startAngle = 120f,
@@ -215,7 +219,7 @@ class ProgressIndicatorScreenshotTest {
     @Test
     fun circular_progress_indicator_content_custom_color(@TestParameter screenSize: ScreenSize) =
         verifyProgressIndicatorScreenshot(screenSize = screenSize) {
-            CircularProgressIndicatorStatic(
+            DrawCircularProgressIndicator(
                 progress = 0.75f,
                 modifier = Modifier.size(200.dp).testTag(TEST_TAG),
                 startAngle = 120f,
@@ -248,7 +252,7 @@ class ProgressIndicatorScreenshotTest {
         rule.setContentWithTheme {
             ScreenConfiguration(screenSize.size) {
                 SegmentedCircularProgressIndicator(
-                    progress = { progress.value },
+                    progress = { progress.floatValue },
                     segmentCount = 5,
                     modifier = Modifier.aspectRatio(1f).testTag(TEST_TAG),
                     startAngle = 120f,
@@ -257,13 +261,10 @@ class ProgressIndicatorScreenshotTest {
             }
         }
 
-        rule.runOnIdle { progress.value = 1f }
+        rule.runOnIdle { progress.floatValue = 1f }
         rule.mainClock.advanceTimeBy(150)
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Test
@@ -392,10 +393,7 @@ class ProgressIndicatorScreenshotTest {
 
         rule.mainClock.advanceTimeBy(200)
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Test
@@ -419,10 +417,7 @@ class ProgressIndicatorScreenshotTest {
 
         rule.mainClock.advanceTimeBy(200)
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     private fun verifyProgressIndicatorScreenshot(
@@ -437,9 +432,6 @@ class ProgressIndicatorScreenshotTest {
             }
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 }

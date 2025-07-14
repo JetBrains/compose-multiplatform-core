@@ -220,6 +220,177 @@ fun DeviceConfigurationOverride.Companion.RoundScreen(
     )
 }
 
+/** Values corresponding to keyboard type constants in [Configuration]. */
+@JvmInline
+value class KeyboardType private constructor(val configValue: Int) {
+    companion object {
+        val NoKeys = KeyboardType(Configuration.KEYBOARD_NOKEYS)
+        val Qwerty = KeyboardType(Configuration.KEYBOARD_QWERTY)
+        val TwelveKey = KeyboardType(Configuration.KEYBOARD_12KEY)
+    }
+}
+
+/**
+ * A [DeviceConfigurationOverride] that overrides the current keyboard type.
+ *
+ * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideKeyboard
+ */
+fun DeviceConfigurationOverride.Companion.Keyboard(
+    keyboardType: KeyboardType
+): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
+    OverriddenConfiguration(
+        configuration =
+            Configuration().apply {
+                // Initialize from the current configuration
+                updateFrom(LocalConfiguration.current)
+
+                keyboard = keyboardType.configValue
+            },
+        content = contentUnderTest,
+    )
+}
+
+/**
+ * A [DeviceConfigurationOverride] that overrides the current keyboard hidden state.
+ *
+ * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideKeyboardHidden
+ */
+fun DeviceConfigurationOverride.Companion.KeyboardHidden(
+    isHidden: Boolean
+): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
+    OverriddenConfiguration(
+        configuration =
+            Configuration().apply {
+                // Initialize from the current configuration
+                updateFrom(LocalConfiguration.current)
+
+                keyboardHidden =
+                    if (isHidden) {
+                        Configuration.KEYBOARDHIDDEN_YES
+                    } else {
+                        Configuration.KEYBOARDHIDDEN_NO
+                    }
+            },
+        content = contentUnderTest,
+    )
+}
+
+/** Values corresponding to navigation type constants in [Configuration]. */
+@JvmInline
+value class NavigationType private constructor(val configValue: Int) {
+    companion object {
+        val Dpad = NavigationType(Configuration.NAVIGATION_DPAD)
+        val Wheel = NavigationType(Configuration.NAVIGATION_WHEEL)
+        val NoNav = NavigationType(Configuration.NAVIGATION_NONAV)
+        val Trackball = NavigationType(Configuration.NAVIGATION_TRACKBALL)
+    }
+}
+
+/**
+ * A [DeviceConfigurationOverride] that overrides the current navigation type.
+ *
+ * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideNavigation
+ */
+fun DeviceConfigurationOverride.Companion.Navigation(
+    navigationType: NavigationType
+): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
+    OverriddenConfiguration(
+        configuration =
+            Configuration().apply {
+                // Initialize from the current configuration
+                updateFrom(LocalConfiguration.current)
+
+                navigation = navigationType.configValue
+            },
+        content = contentUnderTest,
+    )
+}
+
+/**
+ * A [DeviceConfigurationOverride] that overrides the current navigation hidden state.
+ *
+ * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideNavigationHidden
+ */
+fun DeviceConfigurationOverride.Companion.NavigationHidden(
+    isHidden: Boolean
+): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
+    OverriddenConfiguration(
+        configuration =
+            Configuration().apply {
+                // Initialize from the current configuration
+                updateFrom(LocalConfiguration.current)
+
+                navigationHidden =
+                    if (isHidden) {
+                        Configuration.NAVIGATIONHIDDEN_YES
+                    } else {
+                        Configuration.NAVIGATIONHIDDEN_NO
+                    }
+            },
+        content = contentUnderTest,
+    )
+}
+
+/**
+ * A [DeviceConfigurationOverride] that overrides the current touchscreen type.
+ *
+ * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideTouchscreen
+ */
+fun DeviceConfigurationOverride.Companion.Touchscreen(
+    isTouchScreen: Boolean
+): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
+    OverriddenConfiguration(
+        configuration =
+            Configuration().apply {
+                // Initialize from the current configuration
+                updateFrom(LocalConfiguration.current)
+
+                touchscreen =
+                    if (isTouchScreen) {
+                        Configuration.TOUCHSCREEN_FINGER
+                    } else {
+                        Configuration.TOUCHSCREEN_NOTOUCH
+                    }
+            },
+        content = contentUnderTest,
+    )
+}
+
+/** Values corresponding to UI mode type constants in [Configuration]. */
+@JvmInline
+value class UiModeType private constructor(val configValue: Int) {
+    companion object {
+        val Appliance = UiModeType(Configuration.UI_MODE_TYPE_APPLIANCE)
+        val Car = UiModeType(Configuration.UI_MODE_TYPE_CAR)
+        val Desk = UiModeType(Configuration.UI_MODE_TYPE_DESK)
+        val Normal = UiModeType(Configuration.UI_MODE_TYPE_NORMAL)
+        val Television = UiModeType(Configuration.UI_MODE_TYPE_TELEVISION)
+        val VrHeadset = UiModeType(Configuration.UI_MODE_TYPE_VR_HEADSET)
+        val Watch = UiModeType(Configuration.UI_MODE_TYPE_WATCH)
+    }
+}
+
+/**
+ * A [DeviceConfigurationOverride] that overrides the current navigation type.
+ *
+ * @sample androidx.compose.ui.test.samples.DeviceConfigurationOverrideUiMode
+ */
+fun DeviceConfigurationOverride.Companion.UiMode(
+    uiModeType: UiModeType
+): DeviceConfigurationOverride = DeviceConfigurationOverride { contentUnderTest ->
+    OverriddenConfiguration(
+        configuration =
+            Configuration().apply {
+                // Initialize from the current configuration
+                updateFrom(LocalConfiguration.current)
+
+                uiMode =
+                    (uiMode and Configuration.UI_MODE_TYPE_MASK.inv()) or uiModeType.configValue
+            },
+        content = contentUnderTest,
+    )
+}
+
 /**
  * A [DeviceConfigurationOverride] that overrides the window insets for the contained content.
  *

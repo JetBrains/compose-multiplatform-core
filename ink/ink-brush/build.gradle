@@ -27,12 +27,14 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
   jvm()
-  androidTarget()
+  androidLibrary {
+    namespace = "androidx.ink.brush"
+    androidResources.enable = true
+  }
 
   defaultPlatform(PlatformIdentifier.JVM)
 
@@ -87,10 +89,6 @@ androidXMultiplatform {
       //   mysterious SIGSEGV is resolved.
     }
   }
-}
-
-android {
-    namespace = "androidx.ink.brush"
 }
 
 androidx {

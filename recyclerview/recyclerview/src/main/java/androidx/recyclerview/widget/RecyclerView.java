@@ -499,6 +499,7 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
     boolean mAdapterUpdateDuringMeasure;
 
     private final AccessibilityManager mAccessibilityManager;
+    private List<OnAdapterChangeListener> mOnAdapterChangeListeners;
     private List<OnChildAttachStateChangeListener> mOnChildAttachStateListeners;
 
     /**
@@ -1360,6 +1361,12 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
             mLayout.onAdapterChanged(oldAdapter, mAdapter);
         }
         mRecycler.onAdapterChanged(oldAdapter, mAdapter, compatibleWithPrevious);
+        if (mOnAdapterChangeListeners != null) {
+            final int cnt = mOnAdapterChangeListeners.size();
+            for (int i = cnt - 1; i >= 0; i--) {
+                mOnAdapterChangeListeners.get(i).onAdapterChanged(oldAdapter, mAdapter);
+            }
+        }
         mState.mStructureChanged = true;
     }
 
@@ -1429,6 +1436,46 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
             return mLayout.getBaseline();
         } else {
             return super.getBaseline();
+        }
+    }
+
+    /**
+     * Register a listener that will be notified whenever the current adapter is replaced.
+     *
+     * <p>This listener will be called during {@link #setAdapter(Adapter)} and
+     * {@link #swapAdapter(Adapter, boolean)}. Do not call {@link #setAdapter(Adapter)} or
+     * {@link #swapAdapter(Adapter, boolean)} from
+     * {@link OnAdapterChangeListener#onAdapterChanged(Adapter, Adapter)} since that can lead to
+     * infinite recursion.</p>
+     *
+     * @param listener Listener to register
+     */
+    public void addOnAdapterChangeListener(@NonNull OnAdapterChangeListener listener) {
+        if (mOnAdapterChangeListeners == null) {
+            mOnAdapterChangeListeners = new ArrayList<>();
+        }
+        mOnAdapterChangeListeners.add(listener);
+    }
+
+    /**
+     * Removes the provided listener from adapter listeners list.
+     *
+     * @param listener Listener to unregister
+     */
+    public void removeOnAdapterChangeListener(@NonNull OnAdapterChangeListener listener) {
+        if (mOnAdapterChangeListeners == null) {
+            return;
+        }
+        mOnAdapterChangeListeners.remove(listener);
+    }
+
+    /**
+     * Removes all listeners that were added via
+     * {@link #addOnAdapterChangeListener(OnAdapterChangeListener)}.
+     */
+    public void clearOnAdapterChangeListeners() {
+        if (mOnAdapterChangeListeners != null) {
+            mOnAdapterChangeListeners.clear();
         }
     }
 
@@ -11953,6 +12000,21 @@ public class RecyclerView extends ViewGroup implements ScrollingView,
          * @param holder The ViewHolder containing the view that was recycled
          */
         void onViewRecycled(@NonNull ViewHolder holder);
+    }
+
+    /**
+     * A Listener interface that can be attached to a RecyclerView to get notified
+     * whenever the current adapter is replaced.
+     */
+    public interface OnAdapterChangeListener {
+
+        /**
+         * Called when the current adapter is replaced.
+         *
+         * @param oldAdapter The old adapter or {@code null} if no adapter was set
+         * @param newAdapter The new adapter or {@code null} if no adapter is set
+         */
+        void onAdapterChanged(@Nullable Adapter<?> oldAdapter, @Nullable Adapter<?> newAdapter);
     }
 
     /**

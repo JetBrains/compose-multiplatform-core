@@ -69,6 +69,7 @@ public final class SubspaceNodeEntityImplTest {
 
         mSubspaceNodeEntity =
                 new SubspaceNodeEntityImpl(
+                        mActivity,
                         mXrExtensions,
                         entityManager,
                         executor,

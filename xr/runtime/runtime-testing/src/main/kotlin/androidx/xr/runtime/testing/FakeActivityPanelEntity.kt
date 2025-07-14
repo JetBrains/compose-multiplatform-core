@@ -22,11 +22,39 @@ import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPanelEntity
 
-// TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [ActivityPanelEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeActivityPanelEntity : ActivityPanelEntity, FakePanelEntity() {
-    override fun launchActivity(intent: Intent, bundle: Bundle?) {}
+public class FakeActivityPanelEntity : FakePanelEntity(), ActivityPanelEntity {
 
-    override fun moveActivity(activity: Activity) {}
+    /** The intent that was last used to launch an activity. */
+    public var launchIntent: Intent = Intent()
+        private set
+
+    /** The bundle that was last used to launch an activity. */
+    public var launchBundle: Bundle? = null
+        private set
+
+    /**
+     * Launches the given activity into the panel.
+     *
+     * @param intent Intent to launch the activity.
+     * @param bundle Bundle to pass to the activity, can be null.
+     */
+    override fun launchActivity(intent: Intent, bundle: Bundle?) {
+        launchIntent = intent
+        launchBundle = bundle
+    }
+
+    /** The activity that was last moved into the panel. */
+    public var movedActivity: Activity = Activity()
+        private set
+
+    /**
+     * Moves the given activity into the panel.
+     *
+     * @param activity Activity to move into the ActivityPanel.
+     */
+    override fun moveActivity(activity: Activity) {
+        movedActivity = activity
+    }
 }

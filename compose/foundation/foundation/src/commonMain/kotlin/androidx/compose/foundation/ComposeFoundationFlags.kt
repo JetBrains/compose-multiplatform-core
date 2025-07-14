@@ -161,4 +161,15 @@ object ComposeFoundationFlags {
      * element on the screen.
      */
     @Suppress("MutableBareField") @JvmField var isTextFieldDpadNavigationEnabled = true
+
+    /**
+     * Controls the behavior of any scrollable container in terms of how it operates to keep the
+     * focused child in view when the container's viewport shrinks. When this flag is enabled, the
+     * scrollable polls the focused area among its descendants to find the most up-to-date area
+     * which should be kept in view. Otherwise, each focused child notifies the scrollable of its
+     * focus area through [onFocusedBoundsChanged].
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isKeepInViewFocusObservationChangeEnabled: Boolean = true
 }

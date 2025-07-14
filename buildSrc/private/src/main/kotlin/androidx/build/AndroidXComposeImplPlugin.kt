@@ -16,9 +16,12 @@
 
 package androidx.build
 
+import com.android.build.api.dsl.Lint
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LintLifecycleExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -27,6 +30,7 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
@@ -46,7 +50,14 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
             when (plugin) {
                 is AppPlugin,
                 is LibraryPlugin -> {
-                    project.configureAndroidCommonOptions()
+                    project.extensions
+                        .findByType(LintLifecycleExtension::class.java)!!
+                        .finalizeDsl { project.configureAndroidCommonOptions(it) }
+                }
+                is KotlinMultiplatformAndroidPlugin -> {
+                    project.extensions
+                        .getByType<KotlinMultiplatformAndroidComponentsExtension>()
+                        .finalizeDsl { project.configureAndroidCommonOptions(it.lint) }
                 }
                 is KotlinBasePluginWrapper -> {
                     configureComposeCompilerPlugin(project, extension)
@@ -56,51 +67,49 @@ class AndroidXComposeImplPlugin : Plugin<Project> {
     }
 
     companion object {
-        private fun Project.configureAndroidCommonOptions() {
-            extensions.findByType(LintLifecycleExtension::class.java)!!.finalizeDsl { lint ->
-                val isPublished = androidXExtension.shouldPublish()
+        private fun Project.configureAndroidCommonOptions(lint: Lint) {
+            val isPublished = androidXExtension.shouldPublish()
 
-                lint.run {
-                    // These lint checks are normally a warning (or lower), but we ignore (in
-                    // AndroidX)
-                    // warnings in Lint, so we make it an error here so it will fail the build.
-                    // Note that this causes 'UnknownIssueId' lint warnings in the build log when
-                    // Lint tries to apply this rule to modules that do not have this lint check, so
-                    // we disable that check too
-                    disable.add("UnknownIssueId")
-                    error.addAll(ComposeLintWarningIdsToTreatAsErrors)
+            lint.apply {
+                // These lint checks are normally a warning (or lower), but we ignore (in
+                // AndroidX)
+                // warnings in Lint, so we make it an error here so it will fail the build.
+                // Note that this causes 'UnknownIssueId' lint warnings in the build log when
+                // Lint tries to apply this rule to modules that do not have this lint check, so
+                // we disable that check too
+                disable.add("UnknownIssueId")
+                error.addAll(ComposeLintWarningIdsToTreatAsErrors)
 
-                    // Paths we want to disable ListIteratorChecks for
-                    val ignoreListIteratorFilter =
-                        listOf(
-                            // These are not runtime libraries and so Iterator allocation is not
-                            // relevant.
-                            "compose:ui:ui-test",
-                            "compose:ui:ui-tooling",
-                            "compose:ui:ui-inspection",
-                            // Navigation libraries are not in performance critical paths, so we can
-                            // ignore them.
-                            "navigation:navigation-compose",
-                            "wear:compose:compose-navigation",
-                        )
+                // Paths we want to disable ListIteratorChecks for
+                val ignoreListIteratorFilter =
+                    listOf(
+                        // These are not runtime libraries and so Iterator allocation is not
+                        // relevant.
+                        "compose:ui:ui-test",
+                        "compose:ui:ui-tooling",
+                        "compose:ui:ui-inspection",
+                        // Navigation libraries are not in performance critical paths, so we can
+                        // ignore them.
+                        "navigation:navigation-compose",
+                        "wear:compose:compose-navigation",
+                    )
 
-                    // Disable ListIterator if we are not in a matching path, or we are in an
-                    // unpublished project
-                    if (ignoreListIteratorFilter.any { path.contains(it) } || !isPublished) {
-                        disable.add("ListIterator")
-                    }
+                // Disable ListIterator if we are not in a matching path, or we are in an
+                // unpublished project
+                if (ignoreListIteratorFilter.any { path.contains(it) } || !isPublished) {
+                    disable.add("ListIterator")
+                }
 
-                    // b/333784604 Disable ConfigurationScreenWidthHeight for wear libraries, it
-                    // does not apply to wear
-                    if (path.startsWith(":wear:")) {
-                        disable.add("ConfigurationScreenWidthHeight")
-                    }
+                // b/333784604 Disable ConfigurationScreenWidthHeight for wear libraries, it
+                // does not apply to wear
+                if (path.startsWith(":wear:")) {
+                    disable.add("ConfigurationScreenWidthHeight")
+                }
 
-                    // These checks are not required for samples projects.
-                    if (androidXExtension.type == SoftwareType.SAMPLES) {
-                        disable.add("ListIterator")
-                        disable.add("PrimitiveInCollection")
-                    }
+                // These checks are not required for samples projects.
+                if (androidXExtension.type == SoftwareType.SAMPLES) {
+                    disable.add("ListIterator")
+                    disable.add("PrimitiveInCollection")
                 }
             }
 
@@ -136,7 +145,8 @@ private fun configureComposeCompilerPlugin(project: Project, extension: AndroidX
         // Add Compose compiler plugin to kotlinPlugin configuration, making sure it works
         // for Playground builds as well
         val isPlayground = ProjectLayoutType.isPlayground(project)
-        val compilerPluginVersion = project.getVersionByName("composeCompilerPlugin")
+        val compilerPluginVersion =
+            project.getVersionByName(if (isPlayground) "kotlin" else "composeCompilerPlugin")
         project.dependencies.add(
             COMPILER_PLUGIN_CONFIGURATION,
             "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:$compilerPluginVersion",

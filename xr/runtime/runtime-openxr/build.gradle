@@ -61,12 +61,11 @@ dependencies {
 android {
     namespace = "androidx.xr.runtime.openxr"
     sourceSets.main {
-        resources.srcDirs += "src/main/resources"
         jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/android")
     }
     defaultConfig {
         consumerProguardFiles 'proguard-rules.pro'
-        minSdkVersion 23
+        minSdk = 23
     }
     sourceSets.androidTest {
         jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")

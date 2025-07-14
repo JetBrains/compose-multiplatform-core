@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.test.samples
 
+import android.content.res.Configuration
 import androidx.annotation.Sampled
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -32,9 +33,18 @@ import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.FontScale
 import androidx.compose.ui.test.FontWeightAdjustment
 import androidx.compose.ui.test.ForcedSize
+import androidx.compose.ui.test.Keyboard
+import androidx.compose.ui.test.KeyboardHidden
+import androidx.compose.ui.test.KeyboardType
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.Locales
+import androidx.compose.ui.test.Navigation
+import androidx.compose.ui.test.NavigationHidden
+import androidx.compose.ui.test.NavigationType
 import androidx.compose.ui.test.RoundScreen
+import androidx.compose.ui.test.Touchscreen
+import androidx.compose.ui.test.UiMode
+import androidx.compose.ui.test.UiModeType
 import androidx.compose.ui.test.WindowInsets
 import androidx.compose.ui.test.then
 import androidx.compose.ui.text.intl.LocaleList
@@ -110,6 +120,55 @@ fun DeviceConfigurationOverrideFontWeightAdjustmentSample() {
 fun DeviceConfigurationOverrideRoundScreenSample() {
     DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
         LocalConfiguration.current.isScreenRound // will be true
+    }
+}
+
+@Sampled
+@Composable
+fun DeviceConfigurationOverrideKeyboard() {
+    DeviceConfigurationOverride(DeviceConfigurationOverride.Keyboard(KeyboardType.Qwerty)) {
+        LocalConfiguration.current.keyboard // will be Configuration.KEYBOARD_QWERTY
+    }
+}
+
+@Sampled
+@Composable
+fun DeviceConfigurationOverrideKeyboardHidden() {
+    DeviceConfigurationOverride(DeviceConfigurationOverride.KeyboardHidden(false)) {
+        LocalConfiguration.current.keyboardHidden // will be Configuration.KEYBOARDHIDDEN_NO
+    }
+}
+
+@Sampled
+@Composable
+fun DeviceConfigurationOverrideNavigation() {
+    DeviceConfigurationOverride(DeviceConfigurationOverride.Navigation(NavigationType.Dpad)) {
+        LocalConfiguration.current.navigation // will be Configuration.NAVIGATION_DPAD
+    }
+}
+
+@Sampled
+@Composable
+fun DeviceConfigurationOverrideNavigationHidden() {
+    DeviceConfigurationOverride(DeviceConfigurationOverride.NavigationHidden(false)) {
+        LocalConfiguration.current.navigationHidden // will be Configuration.NAVIGATIONHIDDEN_NO
+    }
+}
+
+@Sampled
+@Composable
+fun DeviceConfigurationOverrideTouchscreen() {
+    DeviceConfigurationOverride(DeviceConfigurationOverride.Touchscreen(false)) {
+        LocalConfiguration.current.touchscreen // will be Configuration.TOUCHSCREEN_NOTOUCH
+    }
+}
+
+@Sampled
+@Composable
+fun DeviceConfigurationOverrideUiMode() {
+    DeviceConfigurationOverride(DeviceConfigurationOverride.UiMode(UiModeType.Car)) {
+        // will be Configuration.UI_MODE_TYPE_CAR
+        LocalConfiguration.current.uiMode and Configuration.UI_MODE_TYPE_MASK
     }
 }
 

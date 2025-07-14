@@ -136,7 +136,10 @@ private constructor(
 }
 
 private val DefaultLineHeightStyle =
-    LineHeightStyle(alignment = LineHeightStyle.Alignment.Center, trim = LineHeightStyle.Trim.None)
+    LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Proportional,
+        trim = LineHeightStyle.Trim.FirstLineTop,
+    )
 
 private val TitleLarge =
     TextStyle.Default.copy(

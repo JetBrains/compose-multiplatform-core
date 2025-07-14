@@ -92,6 +92,7 @@ abstract class BaseFragment : Fragment() {
     }
 
     fun handleOptionsFromIntent(options: FragmentOptions) {
+        currentAdFormat = options.adFormat
         currentMediationOption = options.mediation
         currentAdType = options.adType
         shouldDrawViewabilityLayer = options.drawViewability

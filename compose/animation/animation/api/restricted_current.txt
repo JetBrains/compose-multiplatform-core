@@ -42,24 +42,18 @@ package androidx.compose.animation {
   }
 
   public static final class AnimatedContentTransitionScope.SlideDirection.Companion {
-    method public int getDown();
     method @BytecodeOnly public int getDown-DKzdypw();
-    method public int getEnd();
     method @BytecodeOnly public int getEnd-DKzdypw();
-    method public int getLeft();
     method @BytecodeOnly public int getLeft-DKzdypw();
-    method public int getRight();
     method @BytecodeOnly public int getRight-DKzdypw();
-    method public int getStart();
     method @BytecodeOnly public int getStart-DKzdypw();
-    method public int getUp();
     method @BytecodeOnly public int getUp-DKzdypw();
-    property public int Down;
-    property public int End;
-    property public int Left;
-    property public int Right;
-    property public int Start;
-    property public int Up;
+    property public androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection Down;
+    property public androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection End;
+    property public androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection Left;
+    property public androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection Right;
+    property public androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection Start;
+    property public androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection Up;
   }
 
   public final class AnimatedVisibilityKt {

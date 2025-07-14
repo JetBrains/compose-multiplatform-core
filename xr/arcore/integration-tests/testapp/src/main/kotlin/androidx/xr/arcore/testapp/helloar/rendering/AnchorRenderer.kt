@@ -83,7 +83,7 @@ internal class AnchorRenderer(
             if (planeModel.entity.getComponents().isEmpty()) {
                 planeModel.entity.addComponent(
                     InteractableComponent.create(session, activity.mainExecutor) { event ->
-                        if (event.action.equals(InputEvent.ACTION_DOWN)) {
+                        if (event.action.equals(InputEvent.Action.ACTION_DOWN)) {
                             val up =
                                 session.scene.spatialUser.head?.activitySpacePose?.up ?: Vector3.Up
                             val perceptionRayPose =

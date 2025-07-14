@@ -17,10 +17,12 @@
 package androidx.webkit.internal;
 
 import androidx.webkit.Page;
+import androidx.webkit.WebNavigationClient;
 
 import org.chromium.support_lib_boundary.WebViewPageBoundaryInterface;
 import org.jspecify.annotations.NonNull;
 
+@WebNavigationClient.ExperimentalNavigationCallback
 public class PageImpl implements Page {
     private final WebViewPageBoundaryInterface mPageBoundaryInterface;
 

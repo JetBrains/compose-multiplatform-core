@@ -82,6 +82,7 @@ public interface WebViewProviderFactory {
      * Fetch the boundary interface representing {@link
      * WebViewCompat#startUpWebView(WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}.
      */
+    @WebViewCompat.ExperimentalAsyncStartUp
     void startUpWebView(
             @NonNull WebViewStartUpConfig config,
             WebViewCompat.@NonNull WebViewStartUpCallback callback);

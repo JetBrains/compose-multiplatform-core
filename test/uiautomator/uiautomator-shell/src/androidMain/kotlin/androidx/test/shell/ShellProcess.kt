@@ -17,24 +17,14 @@
 package androidx.test.shell
 
 import android.annotation.SuppressLint
-import android.os.ParcelFileDescriptor
-import android.util.Log
-import androidx.test.shell.internal.ShellInstaller
-import androidx.test.shell.internal.TAG
-import androidx.test.shell.internal.uiAutomation
 import java.io.DataOutputStream
-import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.lang.Thread.sleep
-import java.net.InetSocketAddress
 import java.net.Socket
-import java.util.concurrent.atomic.AtomicBoolean
+import java.net.SocketException
 import kotlin.concurrent.thread
-import kotlin.random.Random
-
-private const val LOCALHOST = "localhost"
 
 /**
  * Represents a process that is running sh as a shell user.
@@ -68,72 +58,21 @@ private const val LOCALHOST = "localhost"
  */
 public class ShellProcess
 internal constructor(
-    private val shellExecFile: File,
-    private val command: String,
-    private val stdInSocketPort: Int,
-    private val stdOutSocketPort: Int,
-    private val stdErrSocketPort: Int,
-    private val connectToNativeProcessTimeoutMs: Int,
-    private val shellProcessVerboseLogs: Boolean,
+    private val stdInSocket: Socket,
+    private val stdOutSocket: Socket,
+    private val stdErrSocket: Socket,
 ) : AutoCloseable {
 
-    public companion object {
+    // A data output stream to write in the process standard input.
+    private val stdInOutputStream: DataOutputStream = DataOutputStream(stdInSocket.outputStream)
 
-        /**
-         * Creates a new [ShellProcess].
-         *
-         * Shell process connects to an internal native utility via tcp. The given base port and the
-         * two following ones are used.
-         *
-         * @param baseTcpPort a base tcp port to use to communicate with the native utility. Note
-         *   that the given port and the 2 following ones are used.
-         * @param connectToNativeProcessTimeoutMs timeout in ms to connect to the native process.
-         * @param nativeLogs whether the native cli process should print Android logs. The tag used
-         *   on logcat is `NativeShellProcess`.
-         * @return a running shell process, ready to accept commands.
-         * @throws IOException if the underlying native utility does not start.
-         */
-        @JvmStatic
-        @JvmOverloads
-        public fun create(
-            baseTcpPort: Int = Random.nextInt(from = 10240, until = 65536 - 3),
-            connectToNativeProcessTimeoutMs: Int = 1000,
-            nativeLogs: Boolean = false,
-        ): ShellProcess {
-            return ShellProcess(
-                    stdInSocketPort = baseTcpPort,
-                    stdOutSocketPort = baseTcpPort + 1,
-                    stdErrSocketPort = baseTcpPort + 2,
-                    shellExecFile = ShellInstaller.shellExecutableFile,
-                    command = "sh",
-                    connectToNativeProcessTimeoutMs = connectToNativeProcessTimeoutMs,
-                    shellProcessVerboseLogs = nativeLogs,
-                )
-                .also { it.start() }
-        }
-    }
+    // A wrapper around the stdout socket buffer to catch [SocketException] that may arise from the
+    // process unexpected termination.
+    private val stdOutSocketBuffer = SocketBuffer(socket = stdOutSocket)
 
-    // These are for the input socket only
-    private lateinit var stdInSocketClient: Socket
-    private lateinit var stdInOutputStream: DataOutputStream
-
-    // This repeater reads from the socket on stdOutSocketPort and copies into this instance object
-    // pipe. The data stream can be read accessing the associated input stream.
-    private val stdOutSocketToPipeRepeater =
-        SocketToPipeRepeater(
-            streamName = "stdout",
-            port = stdOutSocketPort,
-            onClose = ::cleanUpStreams,
-        )
-
-    // This repeater reads from the socket on stdErrSocketPort and copies into this instance object
-    // pipe. The data stream can be read accessing the associated input stream.
-    private val stdErrSocketToPipeRepeater =
-        SocketToPipeRepeater(
-            streamName = "stderr",
-            port = stdErrSocketPort,
-            onClose = ::cleanUpStreams,
-        )
+    // A wrapper around the stderr socket buffer to catch [SocketException] that may arise from the
+    // process unexpected termination.
+    private val stdErrSocketBuffer = SocketBuffer(socket = stdErrSocket)
 
     /**
      * An [InputStream] for the process standard output. Note that this is backed by a tcp
@@ -146,7 +85,7 @@ internal constructor(
      * ```
      */
     public val stdOut: InputStream
-        get() = stdOutSocketToPipeRepeater.inputStream
+        get() = stdOutSocketBuffer.inputStream
 
     /**
      * An [InputStream] for the process standard error. Note that this is backed by a tcp connection
@@ -159,14 +98,14 @@ internal constructor(
      * ```
      */
     public val stdErr: InputStream
-        get() = stdErrSocketToPipeRepeater.inputStream
+        get() = stdErrSocketBuffer.inputStream
 
     /** An [OutputStream] for the process standard output. */
     public val stdIn: OutputStream
         get() = stdInOutputStream
 
     /** Returns whether the process is closed. */
-    public fun isClosed(): Boolean = stdOutSocketToPipeRepeater.isClosed()
+    public fun isClosed(): Boolean = stdOutSocketBuffer.isClosed()
 
     /**
      * Writes a string in the process standard input.
@@ -174,8 +113,7 @@ internal constructor(
      * @param string a utf-8 string to write in the process stdin.
      */
     public fun writeLine(string: String) {
-        stdInOutputStream.write(string.toByteArray(Charsets.UTF_8))
-        stdInOutputStream.writeBytes(System.lineSeparator())
+        stdInOutputStream.write("$string${System.lineSeparator()}".toByteArray(Charsets.UTF_8))
     }
 
     /**
@@ -187,9 +125,21 @@ internal constructor(
     override fun close() {
         if (!isClosed()) {
             try {
-                stdInOutputStream.write(
-                    "exit ${System.lineSeparator()}".toByteArray(Charsets.UTF_8)
-                )
+                writeLine("exit")
+
+                // After closing this ShellProcess, the stdin socket is immediately closed as well.
+                stdInSocket.close()
+
+                // Spin up a clean up thread that periodically checks when the shell process
+                // connections are complete. This is necessary because if the native process
+                // terminates unexpectedly, the sockets can only be closed either calling socket
+                // or if an I/O fails. SocketBuffer#isClosed performs a health check that, when
+                // it fails, triggers the socket clean up.
+                thread {
+                    while (!stdOutSocketBuffer.isClosed() || !stdErrSocketBuffer.isClosed()) {
+                        @SuppressLint("BanThreadSleep") sleep(200)
+                    }
+                }
             } catch (_: IOException) {
                 // This may throw when there are multiple rapid calls to close() so that
                 // `isClosed` returns false but right before writing in the stream, the socket
@@ -199,121 +149,68 @@ internal constructor(
             }
         }
     }
-
-    private fun start() {
-        val cmd =
-            setOf(
-                    if (shellProcessVerboseLogs) "1" else "0",
-                    stdInSocketPort,
-                    stdOutSocketPort,
-                    stdErrSocketPort,
-                    command,
-                )
-                .joinToString(" ")
-                .let { "${shellExecFile.absolutePath} $it" }
-
-        // Runs the command, non blocking.
-        uiAutomation.executeShellCommand(cmd)
-
-        // Initializes the input socket, this is also the signal that the process started.
-        var retry = 0
-        var socket: Socket? = null
-        while (socket == null) {
-            try {
-                socket = Socket(LOCALHOST, stdInSocketPort)
-            } catch (e: IOException) {
-                // Thrown for connection refused.
-                if (++retry > connectToNativeProcessTimeoutMs)
-                    throw IOException("Can't connect to shell process.", e)
-
-                // Before retrying to connect wait a bit.
-                @SuppressLint("BanThreadSleep") sleep(1)
-            }
-        }
-        stdInSocketClient = socket
-        stdInOutputStream = DataOutputStream(socket.outputStream)
-
-        // Initializes stdout and stderr sockets and threads to read from those.
-        stdOutSocketToPipeRepeater.start()
-        stdErrSocketToPipeRepeater.start()
-    }
-
-    private fun cleanUpStreams() {
-        stdInOutputStream.close()
-        stdOutSocketToPipeRepeater.close()
-        stdErrSocketToPipeRepeater.close()
-    }
 }
 
 /**
- * Internal implementation that reads from a tcp socket on localhost:[port] and writes into a pipe
- * created with [ParcelFileDescriptor.createPipe]. The pipe read side is exposed as [inputStream]
- * for consumption. This adds a layer on top of the socket tcp stream that allows gracefully handle
- * cases where the tcp socket would throw an exception, like in the case of an IO exception.
- * Additionally it allows to finish reading the process output even after the socket is closed (as
- * that's copied into the pipe).
+ * Wrapper around [InputStream] of a [Socket]. This is needed because if the underlying process
+ * doesn't terminate correctly (for example if killed), the server side of the socket doesn't send
+ * the FIN package to indicate the end of the stream. When that happens, if the client attends to
+ * read but the connection doesn't exist anymore, a [SocketException] is thrown. An unexpected
+ * termination of the child process is completely normal in this scenario, so we can just ignore the
+ * [SocketException].
  */
-private class SocketToPipeRepeater(
-    private val streamName: String,
-    private val port: Int,
-    private val onClose: () -> (Unit),
-) {
+private class SocketBuffer(private val socket: Socket) {
 
-    val inputStream: InputStream
+    private val socketInputStream by lazy { socket.inputStream }
+    private var closed: Boolean = false
 
-    private val runningRef: AtomicBoolean = AtomicBoolean(false)
-    private val readFd: ParcelFileDescriptor
-    private val writeFd: ParcelFileDescriptor
-    private val outputStream: OutputStream
-
-    init {
-        val (readFd, writeFd) = ParcelFileDescriptor.createPipe()
-
-        this.readFd = readFd
-        this.inputStream = ParcelFileDescriptor.AutoCloseInputStream(readFd)
-
-        this.writeFd = writeFd
-        this.outputStream = ParcelFileDescriptor.AutoCloseOutputStream(writeFd)
+    fun markClosed() {
+        if (closed) return
+        socket.close()
+        closed = true
     }
 
-    /**
-     * Sets the running flag to off signaling the copy thread to stop. This doesn't happen
-     * immediately and it's async to the method call.
-     */
-    fun close() = runningRef.set(false)
-
-    /**
-     * Connects to a localhost socket and starts copying from it into a pipe. The pipe can be read
-     * from [inputStream].
-     */
-    fun start() {
-
-        // Ensure this has been called only once.
-        if (runningRef.getAndSet(true)) return
-
-        val socketAddress = InetSocketAddress(LOCALHOST, port)
-        val socket = Socket().apply { connect(socketAddress) }
-        thread(name = "${streamName}SocketToPipeRepeaterThread") {
-            try {
-                val socketInputStream = socket.inputStream
-                val buffer = ByteArray(8192)
-                while (socket.isConnected && runningRef.get()) {
-                    val read = socketInputStream.read(buffer, 0, buffer.size)
-                    if (read == -1) break
-                    outputStream.write(buffer, 0, read)
-                }
-            } catch (e: IOException) {
-                // Can happen if the socket closes abruptly or there is a connection error
-                Log.e(TAG, "$streamName Error reading $streamName", e)
-            } finally {
-                socket.close()
-                outputStream.close()
-                runningRef.set(false)
-                onClose()
-            }
+    fun isClosed(): Boolean {
+        if (closed) return true
+        return try {
+            socket.sendUrgentData(0x00)
+            false
+        } catch (_: IOException) {
+            markClosed()
+            true
         }
     }
 
-    /** Returns the state of the running flag. */
-    fun isClosed(): Boolean = !runningRef.get()
+    val inputStream =
+        object : InputStream() {
+
+            override fun close() = markClosed()
+
+            override fun read(): Int =
+                try {
+                    socketInputStream.read()
+                } catch (_: SocketException) {
+                    // Can happen if the native process ends unexpectedly.
+                    markClosed()
+                    -1
+                }
+
+            override fun read(b: ByteArray, offset: Int, len: Int): Int =
+                try {
+                    socketInputStream.read(b, offset, len)
+                } catch (_: SocketException) {
+                    // Can happen if the native process ends unexpectedly.
+                    markClosed()
+                    -1
+                }
+
+            override fun available(): Int =
+                try {
+                    socketInputStream.available()
+                } catch (_: SocketException) {
+                    // Can happen if the native process ends unexpectedly.
+                    markClosed()
+                    -1
+                }
+        }
 }

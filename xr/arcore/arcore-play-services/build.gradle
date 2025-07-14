@@ -55,8 +55,8 @@ dependencies {
 android {
     namespace = "androidx.xr.arcore.playservices"
     defaultConfig {
-        // TODO: b/422181667 - reduce minSdkVersion to 24.
-        minSdkVersion 27
+        // TODO: b/422181667 - reduce to 24.
+        minSdk = 27
     }
 }
 

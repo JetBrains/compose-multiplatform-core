@@ -7,7 +7,9 @@
     <string name="hand_tracking">Hand test case</string>
     <string name="plane_tracking">Plane Tracking test case</string>
     <string name="session_lifecycle">Session Lifecycle test case</string>
-    <string name="hit_test">Anchor and HitTest Test case</string>
+    <string name="hit_test">Anchor and HitTest test case</string>
     <string name="persisting_anchor">Persisting Anchor test case</string>
     <string name="loading_anchors">Loading Persisted Anchor test case</string>
+    <string name="fov_main_panel">FOV Testing of ViewCamera test case</string>
+    <string name="device_tracking_test">Device Tracking test case</string>
 </resources>

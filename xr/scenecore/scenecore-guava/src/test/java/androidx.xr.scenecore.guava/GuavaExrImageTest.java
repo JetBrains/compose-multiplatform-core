@@ -16,7 +16,7 @@
 
 package androidx.xr.scenecore.guava;
 
-import static androidx.xr.scenecore.guava.ExrImageGuava.createExrImageFromZipAsync;
+import static androidx.xr.scenecore.guava.GuavaExrImage.createExrImageFromZipAsync;
 
 import static com.google.common.truth.Truth.assertThat;
 

@@ -53,7 +53,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -103,15 +102,13 @@ class MainActivity : ComponentActivity() {
                     val scrollBehavior =
                         TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
                     Scaffold(
-                        modifier =
-                            Modifier.fillMaxSize()
-                                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                        modifier = Modifier.fillMaxSize(),
                         topBar = { TopBar(scrollBehavior) },
                         bottomBar = { BottomBar() },
                     ) { innerPadding ->
-                        Column(modifier = Modifier.padding(innerPadding)) {
-                            BuildDetails()
-                            TestCases()
+                        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                            Row(modifier = Modifier.fillMaxWidth().weight(0.2f)) { BuildDetails() }
+                            Row(modifier = Modifier.fillMaxWidth().weight(0.8f)) { TestCases() }
                         }
                     }
                 }
@@ -119,93 +116,79 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    companion object {
-        const val SCENE_UNDERSTANDING_COARSE_PERMISSION =
-            "android.permission.SCENE_UNDERSTANDING_COARSE"
-        const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
-        const val HEAD_TRACKING_PERMISSION = "android.permission.HEAD_TRACKING"
-        const val INTERNET_PERMISSION = "android.permission.INTERNET"
-    }
-}
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun TopBar(scrollBehavior: TopAppBarScrollBehavior) {
+        val context = LocalContext.current
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TopBar(scrollBehavior: TopAppBarScrollBehavior) {
-    val context = LocalContext.current
-
-    CenterAlignedTopAppBar(
-        colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = GoogleYellow,
-                titleContentColor = Color.Black,
-            ),
-        title = {
-            Text(
-                "JXR ARCore Tests",
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontSize = 32.sp,
-            )
-        },
-        navigationIcon = {
-            IconButton(onClick = { (context as Activity).finish() }) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = "Close the app",
-                    Modifier.size(36.dp),
-                    tint = Color.Black,
+        CenterAlignedTopAppBar(
+            colors =
+                TopAppBarDefaults.topAppBarColors(
+                    containerColor = GoogleYellow,
+                    titleContentColor = Color.Black,
+                ),
+            title = {
+                Text(
+                    "JXR ARCore Tests",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontSize = 32.sp,
                 )
-            }
-        },
-        scrollBehavior = scrollBehavior,
-    )
-}
+            },
+            navigationIcon = {
+                IconButton(onClick = { (context as Activity).finish() }) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close the app",
+                        Modifier.size(36.dp),
+                        tint = Color.Black,
+                    )
+                }
+            },
+            scrollBehavior = scrollBehavior,
+        )
+    }
 
-@Composable
-private fun TestCases() {
-    val context = LocalContext.current
-
-    Row(modifier = Modifier.fillMaxWidth()) {
+    @Composable
+    private fun TestCases() {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(10.dp).verticalScroll(rememberScrollState())) {
-                TestCaseColumnRowItem(getString(context, R.string.plane_tracking)) {
-                    context.startActivity(Intent(context, HelloArActivity::class.java))
+                TestCaseColumnRowItem(R.string.plane_tracking) { startTest<HelloArActivity>(it) }
+                TestCaseColumnRowItem(R.string.session_lifecycle) { startTest<HelloArActivity>(it) }
+                TestCaseColumnRowItem(R.string.hit_test) { startTest<HelloArActivity>(it) }
+                TestCaseColumnRowItem(R.string.device_tracking_test) {
+                    startTest<PersistentAnchorsActivity>(it)
                 }
-                TestCaseColumnRowItem(getString(context, R.string.session_lifecycle)) {
-                    context.startActivity(Intent(context, HelloArActivity::class.java))
+                TestCaseColumnRowItem(R.string.persisting_anchor) {
+                    startTest<PersistentAnchorsActivity>(it)
                 }
-                TestCaseColumnRowItem(getString(context, R.string.hit_test)) {
-                    context.startActivity(Intent(context, HelloArActivity::class.java))
+                TestCaseColumnRowItem(R.string.loading_anchors) {
+                    startTest<PersistentAnchorsActivity>(it)
                 }
-                TestCaseColumnRowItem(getString(context, R.string.persisting_anchor)) {
-                    context.startActivity(Intent(context, PersistentAnchorsActivity::class.java))
+                TestCaseColumnRowItem(R.string.fov_main_panel) {
+                    startTest<PersistentAnchorsActivity>(it)
                 }
-                TestCaseColumnRowItem(getString(context, R.string.loading_anchors)) {
-                    context.startActivity(Intent(context, PersistentAnchorsActivity::class.java))
-                }
-                TestCaseColumnRowItem(getString(context, R.string.hand_tracking)) {
-                    context.startActivity(Intent(context, HandTrackingActivity::class.java))
+                TestCaseColumnRowItem(R.string.hand_tracking) {
+                    startTest<HandTrackingActivity>(it)
                 }
             }
         }
     }
-}
 
-@Composable
-private fun BottomBar() {
-    Box {
-        BottomAppBar(
-            actions = {},
-            contentColor = Color.White,
-            containerColor = GoogleYellow,
-            tonalElevation = 5.dp,
-        )
+    @Composable
+    private fun BottomBar() {
+        Box {
+            BottomAppBar(
+                actions = {},
+                contentColor = Color.White,
+                containerColor = GoogleYellow,
+                tonalElevation = 5.dp,
+            )
+        }
     }
-}
 
-@Composable
-private fun BuildDetails() {
-    Row(modifier = Modifier.fillMaxWidth()) {
+    @Composable
+    private fun BuildDetails() {
         Box(modifier = Modifier.fillMaxWidth().background(color = Color.DarkGray)) {
             Column(modifier = Modifier.padding(10.dp)) {
                 val buildDate =
@@ -216,32 +199,48 @@ private fun BuildDetails() {
             }
         }
     }
-}
 
-@Composable
-private fun BuildInfoRowItem(label: String, value: String) {
-    Row {
-        Text(label, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
-        Text(value, modifier = Modifier.weight(3f))
+    @Composable
+    private fun BuildInfoRowItem(label: String, value: String) {
+        Row {
+            Text(label, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+            Text(value, modifier = Modifier.weight(3f))
+        }
     }
-}
 
-@Composable
-private fun TestCaseColumnRowItem(label: String, onClick: () -> Unit) {
-    TestCaseRowItem(label, onClick)
-    Spacer(modifier = Modifier.height(1.dp).background(Purple80).fillMaxWidth())
-}
+    @Composable
+    private fun TestCaseColumnRowItem(resId: Int, onClick: (String) -> Unit) {
+        val label = getString(resId)
+        TestCaseRowItem(label) { onClick(label) }
+        Spacer(modifier = Modifier.height(1.dp).background(Purple80).fillMaxWidth())
+    }
 
-@Composable
-private fun TestCaseRowItem(label: String, onClick: () -> Unit) {
-    Row(modifier = Modifier.padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            label,
-            modifier = Modifier.weight(3.5f),
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            textAlign = TextAlign.Left,
-        )
-        Box(modifier = Modifier.weight(1.5f)) { TestCaseButton("Run Test", onClick) }
+    @Composable
+    private fun TestCaseRowItem(label: String, onClick: () -> Unit) {
+        Row(modifier = Modifier.padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                label,
+                modifier = Modifier.weight(3.5f),
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Left,
+            )
+            Box(modifier = Modifier.weight(1.5f)) { TestCaseButton("Run Test", onClick) }
+        }
+    }
+
+    private inline fun <reified T> startTest(label: String) {
+        val intent = Intent(this@MainActivity, T::class.java)
+        intent.putExtra("TITLE", label)
+        startActivity(intent)
+    }
+
+    private inline fun <reified T> createIntent(): Intent = Intent(this@MainActivity, T::class.java)
+
+    companion object {
+        const val SCENE_UNDERSTANDING_COARSE_PERMISSION =
+            "android.permission.SCENE_UNDERSTANDING_COARSE"
+        const val HAND_TRACKING_PERMISSION = "android.permission.HAND_TRACKING"
+        const val HEAD_TRACKING_PERMISSION = "android.permission.HEAD_TRACKING"
     }
 }

@@ -95,7 +95,8 @@ public constructor(
         /**
          * Creates a new [Session].
          *
-         * @param activity the [Activity] that owns the session.
+         * @param activity the [Activity] that provides the context for the session's resources and
+         *   controls the session's runtime state based on the [activity]'s lifecycle.
          * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
          *   coroutines.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
@@ -108,16 +109,18 @@ public constructor(
         public fun create(
             activity: Activity,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
-        ): SessionCreateResult = create(activity, coroutineContext, false)
+        ): SessionCreateResult =
+            create(activity, coroutineContext, unscaledGravityAlignedActivitySpace = false)
 
         /**
          * Creates a new [Session].
          *
-         * @param activity the [Activity] that owns the session.
+         * @param activity the [Activity] that provides the context for the session's resources and
+         *   controls the session's runtime state based on the [activity]'s lifecycle.
          * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
          *   coroutines.
          * @param unscaledGravityAlignedActivitySpace whether to use the unscaled gravity aligned
-         *   activity space for the session. When true, causes ActivitySpace for this Session to
+         *   activity space for the session. When true, causes ActivitySpace for this session to
          *   always be gravity aligned and to have a scale of [1 unit = 1 Meter]. Note that this
          *   might result in visual inconsistencies between HOME_SPACE and FULL_SPACE_MANAGED modes.
          *   Defaults to True.
@@ -133,7 +136,53 @@ public constructor(
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
             unscaledGravityAlignedActivitySpace: Boolean = true,
         ): SessionCreateResult {
+            check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }
+            return create(
+                activity,
+                lifecycleOwner = activity,
+                coroutineContext,
+                unscaledGravityAlignedActivitySpace,
+            )
+        }
 
+        /**
+         * Creates a new [Session] with a provided [LifecycleOwner].
+         *
+         * Only use this version of the constructor if you desire to have finer control over the
+         * session's lifecycle. The [lifecycleOwner]'s lifecycle must still be bounded within the
+         * lifecycle of the provided [activity]. The session will be automatically destroyed if the
+         * [activity]'s lifecycle becomes destroyed.
+         *
+         * @param activity the [Activity] that provides the context for the session's resources.
+         * @param lifecycleOwner the [LifecycleOwner] whose lifecycle controls the runtime state of
+         *   the session.
+         * @param coroutineContext the [CoroutineContext] that will be used to handle the session's
+         *   coroutines.
+         * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
+         *   newly created session, or [SessionCreatePermissionsNotGranted] if the required
+         *   permissions haven't been granted.
+         */
+        @JvmOverloads
+        @JvmStatic
+        @Suppress("deprecation")
+        public fun create(
+            activity: Activity,
+            lifecycleOwner: LifecycleOwner,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
+        ): SessionCreateResult =
+            create(
+                activity,
+                lifecycleOwner,
+                coroutineContext,
+                unscaledGravityAlignedActivitySpace = false,
+            )
+
+        private fun create(
+            activity: Activity,
+            lifecycleOwner: LifecycleOwner,
+            coroutineContext: CoroutineContext = EmptyCoroutineContext,
+            unscaledGravityAlignedActivitySpace: Boolean = true,
+        ): SessionCreateResult {
             check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }
 
             if (activitySessionMap.containsKey(activity)) {
@@ -194,7 +243,19 @@ public constructor(
                     sessionConnectors,
                     CoroutineScope(context = coroutineContext),
                 )
-            activity.lifecycle.addObserver(session.lifecycleObserver)
+
+            lifecycleOwner.lifecycle.addObserver(session.lifecycleObserver)
+            if (lifecycleOwner != activity) {
+                activity.lifecycle.addObserver(
+                    observer =
+                        LifecycleEventObserver { _, event ->
+                            when (event) {
+                                Lifecycle.Event.ON_DESTROY -> session.destroy()
+                                else -> {}
+                            }
+                        }
+                )
+            }
 
             return SessionCreateSuccess(session)
         }

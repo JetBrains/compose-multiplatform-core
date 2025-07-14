@@ -137,14 +137,17 @@ class AppFunctionMetadataCreatorHelper {
                         seenDataTypeQualifiers,
                         resolvedAnnotatedSerializableProxies,
                         allowSerializableInterfaceTypes,
+                        // Parameter description will be provided through
+                        // AppFunctionParameterMetadata.
+                        description = "",
                     )
 
             add(
                 AppFunctionParameterMetadata(
                     name = checkNotNull(parameter.name).asString(),
-                    // TODO(b/394553462): Parse required state from annotation.
-                    isRequired = true,
+                    isRequired = !parameter.hasDefault,
                     dataType = dataTypeMetadata,
+                    // TODO(b/428155914): Add parameter description.
                 )
             )
         }
@@ -178,6 +181,8 @@ class AppFunctionMetadataCreatorHelper {
             seenDataTypeQualifiers,
             resolvedAnnotatedSerializableProxies,
             allowSerializableInterfaceTypes,
+            // Response description will be provided through AppFunctionResponseMetadata.
+            description = "",
         )
     }
 
@@ -186,6 +191,7 @@ class AppFunctionMetadataCreatorHelper {
         seenDataTypeQualifiers: MutableSet<String>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
         allowSerializableInterfaceTypes: Boolean,
+        description: String,
     ): AppFunctionDataTypeMetadata {
         val appFunctionTypeReference = AppFunctionTypeReference(this)
         return when (appFunctionTypeReference.typeCategory) {
@@ -193,6 +199,7 @@ class AppFunctionMetadataCreatorHelper {
                 AppFunctionPrimitiveTypeMetadata(
                     type = appFunctionTypeReference.toAppFunctionDataType(),
                     isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
                 )
             PRIMITIVE_ARRAY ->
                 AppFunctionArrayTypeMetadata(
@@ -200,8 +207,10 @@ class AppFunctionMetadataCreatorHelper {
                         AppFunctionPrimitiveTypeMetadata(
                             type = appFunctionTypeReference.determineArrayItemType(),
                             isNullable = false,
+                            description = "",
                         ),
                     isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
                 )
             PRIMITIVE_LIST ->
                 AppFunctionArrayTypeMetadata(
@@ -211,8 +220,10 @@ class AppFunctionMetadataCreatorHelper {
                             isNullable =
                                 AppFunctionTypeReference(appFunctionTypeReference.itemTypeReference)
                                     .isNullable,
+                            description = "",
                         ),
                     isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
                 )
             SERIALIZABLE_INTERFACE_SINGULAR,
             SERIALIZABLE_SINGULAR -> {
@@ -235,6 +246,7 @@ class AppFunctionMetadataCreatorHelper {
                 AppFunctionReferenceTypeMetadata(
                     referenceDataType = annotatedAppFunctionSerializable.jvmQualifiedName,
                     isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
                 )
             }
             SERIALIZABLE_INTERFACE_LIST,
@@ -262,8 +274,10 @@ class AppFunctionMetadataCreatorHelper {
                             isNullable =
                                 AppFunctionTypeReference(appFunctionTypeReference.itemTypeReference)
                                     .isNullable,
+                            description = "",
                         ),
                     isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
                 )
             }
             SERIALIZABLE_PROXY_SINGULAR -> {
@@ -289,6 +303,7 @@ class AppFunctionMetadataCreatorHelper {
                             .ignoreNullable()
                             .toString(),
                     isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
                 )
             }
             SERIALIZABLE_PROXY_LIST -> {
@@ -318,8 +333,10 @@ class AppFunctionMetadataCreatorHelper {
                             isNullable =
                                 AppFunctionTypeReference(appFunctionTypeReference.itemTypeReference)
                                     .isNullable,
+                            description = "",
                         ),
                     isNullable = appFunctionTypeReference.isNullable,
+                    description = description,
                 )
             }
         }
@@ -410,6 +427,9 @@ class AppFunctionMetadataCreatorHelper {
                             // default. This is because the outer AllOfType to this shared type
                             // can add further constraint (i.e. non-null) if required.
                             isNullable = true,
+                            // Description is already covered in the superclass's corresponding
+                            // AppFunctionObjectTypeMetadata.
+                            description = "",
                         )
                     )
                 }
@@ -420,7 +440,16 @@ class AppFunctionMetadataCreatorHelper {
                             checkNotNull(capabilitySuperType.toClassName().canonicalName),
                             capabilitySuperType
                                 .getDeclaredProperties()
-                                .map { AppFunctionPropertyDeclaration(it) }
+                                .map {
+                                    AppFunctionPropertyDeclaration(
+                                        property = it,
+                                        isDescribedByKdoc = false,
+                                        // Property from interface is always required as there is
+                                        // no existing API to tell if the interface property has
+                                        // default value or not.
+                                        isRequired = true,
+                                    )
+                                }
                                 .toList(),
                             unvisitedSerializableProperties,
                             sharedDataTypeMap,
@@ -543,10 +572,12 @@ class AppFunctionMetadataCreatorHelper {
                             seenDataTypeQualifiers,
                             resolvedAnnotatedSerializableProxies,
                             allowSerializableInterfaceTypes,
+                            property.description,
                         )
                     put(property.name, innerAppFunctionDataTypeMetadata)
-                    // TODO(b/394553462): Parse required state from annotation.
-                    requiredPropertiesList.add(property.name)
+                    if (property.isRequired) {
+                        requiredPropertiesList.add(property.name)
+                    }
                 }
             }
         return AppFunctionObjectTypeMetadata(

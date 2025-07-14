@@ -17,10 +17,16 @@
 package androidx.privacysandbox.databridge.client
 
 import android.content.Context
+import androidx.privacysandbox.databridge.client.util.KeyValueUtil
 import androidx.privacysandbox.databridge.core.Key
+import androidx.privacysandbox.databridge.core.KeyUpdateCallback
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Expect
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertSame
@@ -28,36 +34,195 @@ import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+
+private val intKey = Key.createIntKey("intKey")
+private val doubleKey = Key.createDoubleKey("doubleKey")
+private val longKey = Key.createLongKey("longKey")
+private val floatKey = Key.createFloatKey("floatKey")
+private val booleanKey = Key.createBooleanKey("booleanKey")
+private val stringKey = Key.createStringKey("stringKey")
+private val stringSetKey = Key.createStringSetKey("stringSetKey")
+private val byteArrayKey = Key.createByteArrayKey("byteArrayKey")
+
+private val setOfKeys =
+    setOf(intKey, doubleKey, longKey, floatKey, booleanKey, stringKey, stringSetKey, byteArrayKey)
+
+@RunWith(ParameterizedRobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
+class DataBridgeClientGetUnsetKeyReturnsNullParameterizedTest(private val key: Key) {
+    private var dataBridgeClient =
+        DataBridgeClient.getInstance(ApplicationProvider.getApplicationContext())
+
+    @Test
+    fun testGetValueForUnsetValueReturnsNull() = runBlocking {
+        val result = dataBridgeClient.getValue(key)
+        KeyValueUtil.assertKeyIsMissing(result)
+    }
+
+    companion object {
+        @JvmStatic
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{index}: key={0}")
+        fun data(): Collection<Array<Any>> {
+            return listOf(
+                arrayOf(intKey),
+                arrayOf(doubleKey),
+                arrayOf(longKey),
+                arrayOf(floatKey),
+                arrayOf(booleanKey),
+                arrayOf(stringKey),
+                arrayOf(stringSetKey),
+                arrayOf(byteArrayKey),
+            )
+        }
+    }
+}
+
+@RunWith(ParameterizedRobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
+class DataBridgeClientSetAndGetValueParameterizedTest(
+    private val key: Key,
+    private val value: Any,
+) {
+    private val dataBridgeClient =
+        DataBridgeClient.getInstance(ApplicationProvider.getApplicationContext())
+
+    @After fun tearDown() = runBlocking { dataBridgeClient.removeValue(key) }
+
+    @Test
+    fun testSetValueAndGetValueReturnsSetValue() = runBlocking {
+        dataBridgeClient.setValue(key, value)
+        val result = dataBridgeClient.getValue(key)
+        KeyValueUtil.assertKeySetSuccessfully(value, result)
+    }
+
+    companion object {
+        @JvmStatic
+        @ParameterizedRobolectricTestRunner.Parameters(name = "{index}: key={0}, value={1}")
+        fun data(): Collection<Array<Any>> {
+            return listOf(
+                arrayOf(intKey, 1),
+                arrayOf(doubleKey, 1.1),
+                arrayOf(longKey, 1L),
+                arrayOf(floatKey, 1.1f),
+                arrayOf(booleanKey, true),
+                arrayOf(stringKey, "stringValue"),
+                arrayOf(stringSetKey, setOf("stringValue1", "stringValue2")),
+                arrayOf(byteArrayKey, byteArrayOf(1, 2, 3, 4)),
+            )
+        }
+    }
+}
+
+@RunWith(ParameterizedRobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
+class DataBridgeClientOverrideWithDifferentTypeParameterizedTest(
+    private val key: Key,
+    private val originalValue: Any,
+    private val overwriteKey: Key,
+    private val overwriteValue: Any,
+) {
+    private val dataBridgeClient =
+        DataBridgeClient.getInstance(ApplicationProvider.getApplicationContext())
+
+    @After fun tearDown() = runBlocking { dataBridgeClient.removeValues(setOf(key, overwriteKey)) }
+
+    @Test
+    fun testSetValueCanBeOverwrittenByDifferentType() = runBlocking {
+        dataBridgeClient.setValue(key, originalValue)
+
+        dataBridgeClient.setValue(overwriteKey, overwriteValue)
+        val result = dataBridgeClient.getValue(overwriteKey)
+        KeyValueUtil.assertKeySetSuccessfully(overwriteValue, result)
+    }
+
+    companion object {
+        @JvmStatic
+        @ParameterizedRobolectricTestRunner.Parameters(
+            name = "{index}: key={0}, value={1}, overwrittenKey={2}, overwrittenValue={3}"
+        )
+        fun data(): Collection<Array<Any>> {
+            return listOf(
+                arrayOf(intKey, 1, Key.createStringKey(intKey.name), "stringValue"),
+                arrayOf(doubleKey, 1.1, Key.createStringKey(doubleKey.name), "stringValue"),
+                arrayOf(longKey, 1L, Key.createStringKey(longKey.name), "stringValue"),
+                arrayOf(floatKey, 1.1f, Key.createStringKey(floatKey.name), "stringValue"),
+                arrayOf(booleanKey, true, Key.createStringKey(booleanKey.name), "stringValue"),
+                arrayOf(stringKey, "stringValue", Key.createBooleanKey(stringKey.name), true),
+                arrayOf(
+                    stringSetKey,
+                    setOf("stringValue1", "stringValue2"),
+                    Key.createBooleanKey(stringSetKey.name),
+                    true,
+                ),
+                arrayOf(
+                    byteArrayKey,
+                    byteArrayOf(1, 2, 3, 4),
+                    Key.createBooleanKey(byteArrayKey.name),
+                    true,
+                ),
+            )
+        }
+    }
+}
+
+@RunWith(ParameterizedRobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
+class DataBridgeClientGetWrongTypeAfterSetParameterizedTest(
+    private val key: Key,
+    private val wrongTypeKey: Key,
+    private val value: Any,
+) {
+    private val dataBridgeClient =
+        DataBridgeClient.getInstance(ApplicationProvider.getApplicationContext())
+
+    @After fun tearDown() = runBlocking { dataBridgeClient.removeValues(setOf(key, wrongTypeKey)) }
+
+    @Test
+    fun testGetValueForWrongTypeAfterValueSetReturnsFailureWithClassCastException() = runBlocking {
+        dataBridgeClient.setValue(key, value)
+        val result = dataBridgeClient.getValue(wrongTypeKey)
+        KeyValueUtil.assertGetValueThrowsClassCastException(result)
+    }
+
+    companion object {
+        @JvmStatic
+        @ParameterizedRobolectricTestRunner.Parameters(
+            name = "{index}: key={0}, wrongTypeKey={1}, value={2}"
+        )
+        fun data(): Collection<Array<Any>> {
+            return listOf(
+                arrayOf(intKey, Key.createStringKey(intKey.name), 1),
+                arrayOf(doubleKey, Key.createStringKey(doubleKey.name), 1.1),
+                arrayOf(longKey, Key.createStringKey(longKey.name), 1L),
+                arrayOf(floatKey, Key.createStringKey(floatKey.name), 1.1f),
+                arrayOf(booleanKey, Key.createStringKey(booleanKey.name), true),
+                arrayOf(stringKey, Key.createBooleanKey(stringKey.name), "stringValue"),
+                arrayOf(
+                    stringSetKey,
+                    Key.createBooleanKey(stringSetKey.name),
+                    setOf("stringValue1", "stringValue2"),
+                ),
+                arrayOf(
+                    byteArrayKey,
+                    Key.createBooleanKey(byteArrayKey.name),
+                    byteArrayOf(1, 2, 3, 4),
+                ),
+            )
+        }
+    }
+}
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
 class DataBridgeClientTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private var dataBridgeClient = DataBridgeClient.getInstance(context)
-
-    private val intKey = Key.createIntKey("intKey")
-    private val doubleKey = Key.createDoubleKey("doubleKey")
-    private val longKey = Key.createLongKey("longKey")
-    private val floatKey = Key.createFloatKey("floatKey")
-    private val booleanKey = Key.createBooleanKey("booleanKey")
-    private val stringKey = Key.createStringKey("stringKey")
-    private val stringSetKey = Key.createStringSetKey("stringSetKey")
-    private val byteArrayKey = Key.createByteArrayKey("byteArrayKey")
-    private val setOfKeys =
-        setOf(
-            intKey,
-            doubleKey,
-            longKey,
-            floatKey,
-            booleanKey,
-            stringKey,
-            stringSetKey,
-            byteArrayKey,
-        )
-
+    private val dataBridgeClient = DataBridgeClient.getInstance(context)
     @Rule @JvmField val expect = Expect.create()
+
+    private val currentThreadExecutor = Executor { command -> command.run() }
 
     @After
     fun tearDown() {
@@ -88,211 +253,29 @@ class DataBridgeClientTest {
         )
     }
 
-    // TODO (b/414380274): Move to parameterized tests
-    @Test
-    fun testInt_getValue_forUnsetValue_returnsNull() = runBlocking { expectKeyIsMissing(intKey) }
-
-    @Test
-    fun testInt_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(intKey, 1)
-    }
-
-    @Test
-    fun testInt_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(intKey, 1)
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createStringKey(intKey.name), "stringValue")
-    }
-
-    @Test
-    fun testInt_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createStringKey(intKey.name), "stringValue")
-            expectGetValueThrowsClassCastException(intKey)
-        }
-
-    @Test
-    fun testDouble_getValue_forUnsetValue_returnsNull() = runBlocking {
-        expectKeyIsMissing(doubleKey)
-    }
-
-    @Test
-    fun testDouble_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(doubleKey, 1.1)
-    }
-
-    @Test
-    fun testDouble_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(doubleKey, 1.1)
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createStringKey(doubleKey.name), "stringValue")
-    }
-
-    @Test
-    fun testDouble_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createStringKey(doubleKey.name), "stringValue")
-            expectGetValueThrowsClassCastException(doubleKey)
-        }
-
-    @Test
-    fun testLong_getValue_forUnsetValue_returnsNull() = runBlocking { expectKeyIsMissing(longKey) }
-
-    @Test
-    fun testLong_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(longKey, 1L)
-    }
-
-    @Test
-    fun testLong_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(longKey, 1L)
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createStringKey(longKey.name), "stringValue")
-    }
-
-    @Test
-    fun testLong_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createStringKey(longKey.name), "stringValue")
-            expectGetValueThrowsClassCastException(longKey)
-        }
-
-    @Test
-    fun testFloat_getValue_forUnsetValue_returnsNull() = runBlocking {
-        expectKeyIsMissing(floatKey)
-    }
-
-    @Test
-    fun testFloat_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(floatKey, 1.1f)
-    }
-
-    @Test
-    fun testFloat_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(floatKey, 1.1f)
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createStringKey(floatKey.name), "stringValue")
-    }
-
-    @Test
-    fun testFloat_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createStringKey(floatKey.name), "stringValue")
-            expectGetValueThrowsClassCastException(floatKey)
-        }
-
-    @Test
-    fun testBoolean_getValue_forUnsetValue_returnsNull() = runBlocking {
-        expectKeyIsMissing(booleanKey)
-    }
-
-    @Test
-    fun testBoolean_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(booleanKey, true)
-    }
-
-    @Test
-    fun testBoolean_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(booleanKey, true)
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createStringKey(booleanKey.name), "stringValue")
-    }
-
-    @Test
-    fun testBoolean_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createStringKey(booleanKey.name), "stringValue")
-            expectGetValueThrowsClassCastException(booleanKey)
-        }
-
-    @Test
-    fun testString_getValue_forUnsetValue_returnsNull() = runBlocking {
-        expectKeyIsMissing(stringKey)
-    }
-
-    @Test
-    fun testString_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(stringKey, "stringValue")
-    }
-
-    @Test
-    fun testString_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(stringKey, "stringValue")
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createBooleanKey(stringKey.name), true)
-    }
-
-    @Test
-    fun testString_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createBooleanKey(stringKey.name), true)
-            expectGetValueThrowsClassCastException(stringKey)
-        }
-
-    @Test
-    fun testStringSet_getValue_forUnsetValue_returnsNull() = runBlocking {
-        expectKeyIsMissing(stringSetKey)
-    }
-
-    @Test
-    fun testStringSet_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(stringSetKey, setOf("stringValue1", "stringValue2"))
-    }
-
-    @Test
-    fun testStringSet_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(stringSetKey, setOf("stringValue1", "stringValue2"))
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createBooleanKey(stringSetKey.name), true)
-    }
-
-    @Test
-    fun testStringSet_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createBooleanKey(stringSetKey.name), true)
-            expectGetValueThrowsClassCastException(stringSetKey)
-        }
-
-    @Test
-    fun testByteArray_getValue_forUnsetValue_returnsNull() = runBlocking {
-        expectKeyIsMissing(byteArrayKey)
-    }
-
-    @Test
-    fun testByteArray_setValue_andGetValue_returnsSetValue() = runBlocking {
-        expectKeySetSuccessfully(byteArrayKey, byteArrayOf(1, 2, 3, 4))
-    }
-
-    @Test
-    fun testByteArray_setValue_withIntValue_canBeOverwrittenByStringValue() = runBlocking {
-        dataBridgeClient.setValue(byteArrayKey, byteArrayOf(1, 2, 3, 4))
-        // Overwriting with different key type is also successful
-        expectKeySetSuccessfully(Key.createBooleanKey(byteArrayKey.name), true)
-    }
-
-    @Test
-    fun testByteArray_getValue_forWrongTypeAfterValueSet_returnsFailureWithClassCastException() =
-        runBlocking {
-            dataBridgeClient.setValue(Key.createBooleanKey(byteArrayKey.name), true)
-            expectGetValueThrowsClassCastException(byteArrayKey)
-        }
-
     @Test
     fun testRemoveValue() = runBlocking {
-        expectKeySetSuccessfully(intKey, 1)
+        dataBridgeClient.setValue(intKey, 1)
+        var result = dataBridgeClient.getValue(intKey)
+        KeyValueUtil.assertKeySetSuccessfully(1, result)
 
         dataBridgeClient.removeValue(intKey)
-        expectKeyIsMissing(intKey)
+        result = dataBridgeClient.getValue(intKey)
+        KeyValueUtil.assertKeyIsMissing(result)
     }
 
     @Test
     fun testRemoveValues() = runBlocking {
-        expectKeySetSuccessfully(intKey, 1)
-        expectKeySetSuccessfully(booleanKey, true)
+        var result = setAndGetValue(intKey, 1)
+        KeyValueUtil.assertKeySetSuccessfully(1, result)
+
+        result = setAndGetValue(booleanKey, true)
+        KeyValueUtil.assertKeySetSuccessfully(true, result)
 
         dataBridgeClient.removeValues(setOf(intKey, booleanKey))
-        expectKeyIsMissing(intKey)
-        expectKeyIsMissing(booleanKey)
+
+        KeyValueUtil.assertKeyIsMissing(dataBridgeClient.getValue(intKey))
+        KeyValueUtil.assertKeyIsMissing(dataBridgeClient.getValue(booleanKey))
     }
 
     @Test
@@ -307,9 +290,14 @@ class DataBridgeClientTest {
 
     @Test
     fun testGetValues() = runBlocking {
-        expectKeySetSuccessfully(intKey, 1)
-        expectKeySetSuccessfully(booleanKey, false)
-        expectKeySetSuccessfully(stringKey, "stringValue")
+        var result = setAndGetValue(intKey, 1)
+        KeyValueUtil.assertKeySetSuccessfully(1, result)
+
+        result = setAndGetValue(booleanKey, false)
+        KeyValueUtil.assertKeySetSuccessfully(false, result)
+
+        result = setAndGetValue(stringKey, "stringValue")
+        KeyValueUtil.assertKeySetSuccessfully("stringValue", result)
 
         val keyValueMap = dataBridgeClient.getValues(setOfKeys)
         expect.that(keyValueMap[intKey]?.getOrNull()).isEqualTo(1)
@@ -376,7 +364,12 @@ class DataBridgeClientTest {
 
         // Verify that the action is atomic and none of the keys are set
         val keySet = setOf(intKey, longKey, booleanKey, stringSetKey)
-        runBlocking { keySet.forEach { expectKeyIsMissing(it) } }
+        runBlocking {
+            keySet.forEach {
+                val result = dataBridgeClient.getValue(it)
+                KeyValueUtil.assertKeyIsMissing(result)
+            }
+        }
     }
 
     @Test
@@ -402,24 +395,187 @@ class DataBridgeClientTest {
         }
     }
 
-    private suspend fun expectKeySetSuccessfully(key: Key, value: Any) {
+    @Test
+    fun testRegisterKeyUpdates_oneCallback_oneKey() = runBlocking {
+        val callback = KeyUpdateCallbackImpl()
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.registerKeyUpdateCallback(setOf(intKey), currentThreadExecutor, callback)
+        verifyCountAndValue(callback, intKey, 1, null)
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.setValue(intKey, 123)
+        verifyCountAndValue(callback, intKey, 2, 123)
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.removeValue(intKey)
+        verifyCountAndValue(callback, intKey, 3, null)
+
+        dataBridgeClient.unregisterKeyUpdateCallback(callback)
+    }
+
+    @Test
+    fun testRegisterKeyUpdates_oneCallback_multipleKeys_registeredMultipleTimes() = runBlocking {
+        val callback = KeyUpdateCallbackImpl()
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.registerKeyUpdateCallback(setOf(intKey), currentThreadExecutor, callback)
+        verifyCountAndValue(callback, intKey, 1, null)
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.setValue(intKey, 123)
+        verifyCountAndValue(callback, intKey, 2, 123)
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.removeValue(intKey)
+        verifyCountAndValue(callback, intKey, 3, null)
+
+        callback.initializeLatch(listOf(stringKey))
+        dataBridgeClient.registerKeyUpdateCallback(
+            setOf(stringKey),
+            currentThreadExecutor,
+            callback,
+        )
+        verifyCountAndValue(callback, stringKey, 1, null)
+
+        callback.initializeLatch(listOf(stringKey))
+        dataBridgeClient.setValue(stringKey, "stringValue")
+        verifyCountAndValue(callback, stringKey, 2, "stringValue")
+
+        dataBridgeClient.unregisterKeyUpdateCallback(callback)
+    }
+
+    @Test
+    fun testRegisterKeyUpdates_oneCallback_multipleKeys() = runBlocking {
+        val callback = KeyUpdateCallbackImpl()
+
+        callback.initializeLatch(listOf(intKey, stringKey))
+        dataBridgeClient.registerKeyUpdateCallback(
+            setOf(intKey, stringKey),
+            currentThreadExecutor,
+            callback,
+        )
+        verifyCountAndValue(callback, intKey, 1, null)
+        verifyCountAndValue(callback, stringKey, 1, null)
+
+        callback.initializeLatch(listOf(intKey, stringKey))
+        dataBridgeClient.setValues(mapOf(intKey to 123, stringKey to "stringValue"))
+        verifyCountAndValue(callback, intKey, 2, 123)
+        verifyCountAndValue(callback, stringKey, 2, "stringValue")
+
+        callback.initializeLatch(listOf(intKey, stringKey))
+        dataBridgeClient.removeValues(setOf(intKey, stringKey))
+        verifyCountAndValue(callback, intKey, 3, null)
+        verifyCountAndValue(callback, stringKey, 3, null)
+
+        dataBridgeClient.unregisterKeyUpdateCallback(callback)
+    }
+
+    @Test
+    fun testRegisterKeyUpdates_multipleCallbacks_multipleKeys() = runBlocking {
+        val callback1 = KeyUpdateCallbackImpl()
+        val callback2 = KeyUpdateCallbackImpl()
+
+        callback1.initializeLatch(listOf(intKey, stringKey))
+        dataBridgeClient.registerKeyUpdateCallback(
+            setOf(intKey, stringKey),
+            currentThreadExecutor,
+            callback1,
+        )
+        verifyCountAndValue(callback1, stringKey, 1, null)
+
+        callback2.initializeLatch(listOf(doubleKey, stringKey))
+        dataBridgeClient.registerKeyUpdateCallback(
+            setOf(doubleKey, stringKey),
+            currentThreadExecutor,
+            callback2,
+        )
+        verifyCountAndValue(callback2, stringKey, 1, null)
+
+        callback1.initializeLatch(listOf(stringKey))
+        callback2.initializeLatch(listOf(stringKey))
+        dataBridgeClient.setValue(stringKey, "stringValue")
+        verifyCountAndValue(callback1, stringKey, 2, "stringValue")
+        verifyCountAndValue(callback2, stringKey, 2, "stringValue")
+
+        dataBridgeClient.unregisterKeyUpdateCallback(callback1)
+        dataBridgeClient.unregisterKeyUpdateCallback(callback2)
+    }
+
+    @Test(expected = TimeoutException::class)
+    fun testUnregisterKeyUpdates() = runBlocking {
+        val callback = KeyUpdateCallbackImpl()
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.registerKeyUpdateCallback(setOf(intKey), currentThreadExecutor, callback)
+        verifyCountAndValue(callback, intKey, 1, null)
+
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.setValue(intKey, 123)
+        verifyCountAndValue(callback, intKey, 2, 123)
+
+        dataBridgeClient.unregisterKeyUpdateCallback(callback)
+        callback.initializeLatch(listOf(intKey))
+        dataBridgeClient.setValue(intKey, 11)
+
+        // This throws a TimeoutException exception because it CountDownLatch.awaits returns a
+        // boolean as the callback has been unregistered
+        val unused = callback.getCounterForKey(intKey)
+    }
+
+    class KeyUpdateCallbackImpl : KeyUpdateCallback {
+        private var keyUpdatedCounterMap = mutableMapOf<Key, Int>()
+        private var keyToValueMap = mutableMapOf<Key, Any?>()
+        // The latch will be used to ensure that the counter value and the value has been updated.
+        // Wait for the latch in [getCounterForKey] or [getValueForKey] to ensure that the
+        // [onKeyUpdated] function has been called
+        private val latchMap = mutableMapOf<Key, CountDownLatch>()
+
+        override fun onKeyUpdated(key: Key, value: Any?) {
+            val counter = keyUpdatedCounterMap[key]
+            keyUpdatedCounterMap[key] = if (counter == null) 1 else counter + 1
+
+            keyToValueMap[key] = value
+            latchMap[key]?.countDown()
+        }
+
+        fun initializeLatch(keys: List<Key>) {
+            keys.forEach { key -> latchMap[key] = CountDownLatch(1) }
+        }
+
+        fun getCounterForKey(key: Key): Int {
+            val res = latchMap[key]?.await(5, TimeUnit.SECONDS)
+            res?.let {
+                if (!it) {
+                    throw TimeoutException()
+                }
+            }
+            return keyUpdatedCounterMap[key] ?: 0
+        }
+
+        fun getValueForKey(key: Key): Any? {
+            val res = latchMap[key]?.await(5, TimeUnit.SECONDS)
+            res?.let {
+                if (!it) {
+                    throw TimeoutException()
+                }
+            }
+            return keyToValueMap[key]
+        }
+    }
+
+    private fun verifyCountAndValue(
+        callback: KeyUpdateCallbackImpl,
+        key: Key,
+        count: Int,
+        value: Any?,
+    ) {
+        expect.that(callback.getCounterForKey(key)).isEqualTo(count)
+        expect.that(callback.getValueForKey(key)).isEqualTo(value)
+    }
+
+    private suspend fun setAndGetValue(key: Key, value: Any?): Result<Any?> {
         dataBridgeClient.setValue(key, value)
-        val res = dataBridgeClient.getValue(key)
-        expect.that(res.isSuccess).isTrue()
-        expect.that(dataBridgeClient.getValue(key).getOrNull()).isEqualTo(value)
-    }
-
-    private suspend fun expectGetValueThrowsClassCastException(key: Key) {
-        val result = dataBridgeClient.getValue(key)
-
-        expect.that(result.isFailure).isTrue()
-        expect.that(result.exceptionOrNull() is ClassCastException).isTrue()
-    }
-
-    private suspend fun expectKeyIsMissing(key: Key) {
-        val result = dataBridgeClient.getValue(key)
-        expect.that(result.isSuccess).isTrue()
-
-        expect.that(result.getOrNull()).isNull()
+        return dataBridgeClient.getValue(key)
     }
 }

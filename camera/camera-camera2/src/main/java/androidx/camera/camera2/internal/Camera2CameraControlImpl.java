@@ -76,6 +76,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -149,6 +150,7 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
 
     // Workarounds
     private final AutoFlashAEModeDisabler mAutoFlashAEModeDisabler;
+    private boolean mIsRepeatingRequestAvailable = true;
 
     static final String TAG_SESSION_UPDATE_ID = "CameraControlSessionUpdateId";
     private final AtomicLong mNextSessionUpdateId = new AtomicLong(0);
@@ -345,6 +347,12 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
         }
+        if (!isRepeatingRequestAvailable()) {
+            return Futures.immediateFailedFuture(
+                    new OperationCanceledException(
+                            "Repeating request is not available possibly because it's disable for"
+                                    + " the ImageCapture."));
+        }
         return Futures.nonCancellationPropagating(
                 mFocusMeteringControl.startFocusAndMetering(action));
     }
@@ -354,6 +362,12 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
+        }
+        if (!isRepeatingRequestAvailable()) {
+            return Futures.immediateFailedFuture(
+                    new OperationCanceledException(
+                            "Repeating request is not available possibly because it's disable for"
+                                    + " the ImageCapture."));
         }
         return Futures.nonCancellationPropagating(mFocusMeteringControl.cancelFocusAndMetering());
     }
@@ -534,6 +548,11 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         if (isTorchOn()) {
             updateSessionConfigSynchronous();
         }
+    }
+
+    @ExecutedBy("mExecutor")
+    void setIsRepeatingRequestAvailable(boolean isRepeatingRequestAvailable) {
+        mIsRepeatingRequestAvailable = isRepeatingRequestAvailable;
     }
 
     /** {@inheritDoc} */
@@ -921,6 +940,24 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
             }
         }
         return false;
+    }
+
+    @VisibleForTesting
+    private boolean isRepeatingRequestAvailable() {
+        try {
+            return CallbackToFutureAdapter.<Boolean>getFuture(completer -> {
+                try {
+                    mExecutor.execute(() -> completer.set(mIsRepeatingRequestAvailable));
+                } catch (RejectedExecutionException e) {
+                    completer.setException(new RuntimeException(
+                            "Unable to check if repeating request is available. Camera executor "
+                                    + "shut down."));
+                }
+                return "isRepeatingRequestAvailable";
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Unable to check if repeating request is available.", e);
+        }
     }
 
     int getMaxAfRegionCount() {

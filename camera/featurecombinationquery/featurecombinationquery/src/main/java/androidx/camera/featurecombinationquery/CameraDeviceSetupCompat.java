@@ -46,16 +46,50 @@ public interface CameraDeviceSetupCompat {
     /**
      * Checks if the {@link SessionConfiguration} is supported.
      *
+     * <p><b>Note:</b> The Play Services implementation does not support querying
+     * {@link android.hardware.camera2.params.OutputConfiguration}s without an associated surface
+     * and will throw an {@link IllegalArgumentException} if an {@code OutputConfiguration} without
+     * an associated surface is passed. A {@link android.view.Surface} can be associated with an
+     * {@code OutputConfiguration} either during construction, or later with
+     * {@link android.hardware.camera2.params.OutputConfiguration#addSurface}. This is an
+     * unfortunate limitation of Android Framework APIs. For queries that are performance sensitive
+     * and need to happen before the final surface is ready, it is recommended to create temporary
+     * {@link android.hardware.camera2.params.OutputConfiguration} with a concrete surface from
+     * {@link android.media.ImageReader#newInstance} that matches the desired final surface instead.
+     *
+     * <p>Following are examples of some common final surfaces, and how ImageReader can be used to
+     * query them:
+     * <ul>
+     * <li> {@code SurfaceTexture.class}:
+     * <pre>
+     * ImageReader.newInstance(1920, 1080, PixelFormat.PRIVATE, 1,
+     *                         HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE)
+     * </pre>
+     * <li> {@code MediaRecorder.class}/{@code MediaCodec.class}:
+     * <pre>
+     * ImageReader.newInstance(1920, 1080, ImageFormat.PRIVATE, 1,
+     *                         HardwareBuffer.USAGE_VIDEO_ENCODE)
+     * </pre>
+     * <li> {@code SurfaceView.class}:
+     * <pre>
+     * ImageReader.newInstance(1920, 1080, ImageFormat.PRIVATE, 1,
+     *                         HardwareBuffer.USAGE_COMPOSER_OVERLAY)
+     * </pre>
+     * </ul>
+     *
      * @param sessionConfig The {@link SessionConfiguration} to check.
      * @return a {@link SupportQueryResult} indicating if the {@link SessionConfiguration} is
      * supported.
-     * @throws CameraAccessException if the camera device is no longer connected or has
-     *                               encountered a fatal error.
+     * @throws CameraAccessException    if the camera device is no longer connected or has
+     *                                  encountered a fatal error.
+     * @throws IllegalArgumentException if play-services implementation is included and an
+     *                                  {@link android.hardware.camera2.params.OutputConfiguration}
+     *                                  with a deferred Surface is passed.
      * @see CameraDevice.CameraDeviceSetup#isSessionConfigurationSupported
      */
     @NonNull
-    SupportQueryResult isSessionConfigurationSupported(
-            @NonNull SessionConfiguration sessionConfig) throws CameraAccessException;
+    SupportQueryResult isSessionConfigurationSupported(@NonNull SessionConfiguration sessionConfig)
+            throws CameraAccessException;
 
     /**
      * Checks if the set of features in {@link SessionConfigurationLegacy} is supported for the
@@ -95,9 +129,13 @@ public interface CameraDeviceSetupCompat {
      * @param sessionConfig The {@link SessionConfigurationLegacy} to check.
      * @return a {@link SupportQueryResult} indicating if the {@link SessionConfigurationLegacy}
      * is supported.
-     * @throws IllegalStateException if the camera device supports
-     * {@link android.hardware.camera2.CameraDevice.CameraDeviceSetup}
-     *
+     * @throws IllegalStateException    if the camera device supports
+     *                                  {@link
+     *                                  android.hardware.camera2.CameraDevice.CameraDeviceSetup}
+     * @throws IllegalArgumentException if play-services implementation is included and an
+     *                                  {@link android.hardware.camera2.params.OutputConfiguration}
+     *                                  with a deferred Surface is passed. See note in
+     *                                  {@link #isSessionConfigurationSupported}
      * @see SessionConfigurationLegacy
      * @see SessionParametersLegacy
      */

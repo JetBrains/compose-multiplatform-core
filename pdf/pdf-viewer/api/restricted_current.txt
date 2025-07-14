@@ -54,6 +54,7 @@ package androidx.pdf {
   }
 
   public interface PdfLoader {
+    method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public suspend Object? openDocument(android.net.Uri uri, android.os.ParcelFileDescriptor fileDescriptor, optional String? password, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument>) throws java.io.IOException;
     method @kotlin.jvm.Throws(exceptionClasses=IOException::class) public suspend Object? openDocument(android.net.Uri uri, optional String? password, kotlin.coroutines.Continuation<? super androidx.pdf.PdfDocument>) throws java.io.IOException;
   }
 
@@ -199,6 +200,7 @@ package androidx.pdf.view {
     method public final int getGestureState();
     method public final float getMaxZoom();
     method public final float getMinZoom();
+    method public final androidx.pdf.PdfDocument? getPdfDocument();
     method public final int getVisiblePagesCount();
     method public final float getZoom();
     method public final android.graphics.PointF? pdfToViewPoint(androidx.pdf.PdfPoint pdfPoint);
@@ -215,6 +217,7 @@ package androidx.pdf.view {
     method public final void setLinkClickListener(androidx.pdf.view.PdfView.LinkClickListener? listener);
     method public final void setMaxZoom(float);
     method public final void setMinZoom(float);
+    method public final void setPdfDocument(androidx.pdf.PdfDocument?);
     method public final void setZoom(float);
     method public final androidx.pdf.PdfPoint? viewToPdfPoint(android.graphics.PointF viewPoint);
     method public final androidx.pdf.PdfPoint? viewToPdfPoint(float x, float y);
@@ -227,6 +230,7 @@ package androidx.pdf.view {
     property public final int gestureState;
     property public final float maxZoom;
     property public final float minZoom;
+    property public final androidx.pdf.PdfDocument? pdfDocument;
     property public final int visiblePagesCount;
     property public final float zoom;
     field public static final androidx.pdf.view.PdfView.Companion Companion;

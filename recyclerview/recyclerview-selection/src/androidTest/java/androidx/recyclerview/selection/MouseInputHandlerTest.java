@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.view.MotionEvent;
 
+import androidx.recyclerview.selection.ItemDetailsLookup.ItemDetails;
 import androidx.recyclerview.selection.testing.SelectionProbe;
 import androidx.recyclerview.selection.testing.SelectionTrackers;
 import androidx.recyclerview.selection.testing.TestAdapter;
@@ -133,72 +134,162 @@ public final class MouseInputHandlerTest {
     }
 
     @Test
-    public void testClickOnSelectionHotspot_False() {
+    public void testClickOnSelectionHotspot_Outside() {
         // When nothing is selected, clicking outside the hotspot does nothing.
 
         mSelection.assertNoSelection();
 
-        mDetailsLookup.initAt(5).setInItemSelectRegion(false);
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_OUTSIDE);
         assertTrue(singleTap(CLICK));
         mSelection.assertNoSelection();
 
-        mDetailsLookup.initAt(5).setInItemSelectRegion(false);
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_OUTSIDE);
         assertTrue(singleTap(CLICK));
         mSelection.assertNoSelection();
 
         // When something is selected, clicking outside the hotspot does something conditional. If
         // clicking on a selected item, it deselects it. Otherwise, it clears the entire selection.
 
+        mSelectionMgr.clearSelection();
         mSelectionMgr.select("8");
         mSelectionMgr.select("9");
         mSelectionMgr.select("10");
         mSelectionMgr.select("11");
         mSelection.assertSelection(8, 9, 10, 11);
 
-        mDetailsLookup.initAt(9).setInItemSelectRegion(false);
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_OUTSIDE);
         assertTrue(singleTap(CLICK));
         mSelection.assertSelection(8, 10, 11);
 
-        mDetailsLookup.initAt(9).setInItemSelectRegion(false);
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_OUTSIDE);
         assertTrue(singleTap(CLICK));
         mSelection.assertNoSelection();
 
-        mDetailsLookup.initAt(20).setInItemSelectRegion(false);
+        mDetailsLookup.initAt(20).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_OUTSIDE);
         assertTrue(singleTap(CLICK));
         mSelection.assertNoSelection();
     }
 
     @Test
-    public void testClickOnSelectionHotspot_True() {
-        // Clicking inside the hotspot toggles selection.
+    public void testClickOnSelectionHotspot_InsideToggleMulti() {
+        // Clicking inside the hotspot toggles selection, with multiple items selectable.
 
         mSelection.assertNoSelection();
 
-        mDetailsLookup.initAt(5).setInItemSelectRegion(true);
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI);
         assertTrue(singleTap(CLICK));
         mSelection.assertSelection(5);
 
-        mDetailsLookup.initAt(5).setInItemSelectRegion(true);
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI);
         assertTrue(singleTap(CLICK));
         mSelection.assertNoSelection();
 
+        mSelectionMgr.clearSelection();
         mSelectionMgr.select("8");
         mSelectionMgr.select("9");
         mSelectionMgr.select("10");
         mSelectionMgr.select("11");
         mSelection.assertSelection(8, 9, 10, 11);
 
-        mDetailsLookup.initAt(9).setInItemSelectRegion(true);
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI);
         assertTrue(singleTap(CLICK));
         mSelection.assertSelection(8, 10, 11);
 
-        mDetailsLookup.initAt(9).setInItemSelectRegion(true);
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI);
         assertTrue(singleTap(CLICK));
         mSelection.assertSelection(8, 9, 10, 11);
 
-        mDetailsLookup.initAt(20).setInItemSelectRegion(true);
+        mDetailsLookup.initAt(20).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_MULTI);
         assertTrue(singleTap(CLICK));
         mSelection.assertSelection(8, 9, 10, 11, 20);
+    }
+
+    @Test
+    public void testClickOnSelectionHotspot_InsideToggleSolo() {
+        // Clicking inside the hotspot toggles selection, with just one item selectable.
+
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_SOLO);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(5);
+
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_SOLO);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertNoSelection();
+
+        mSelectionMgr.clearSelection();
+        mSelectionMgr.select("8");
+        mSelectionMgr.select("9");
+        mSelectionMgr.select("10");
+        mSelectionMgr.select("11");
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_SOLO);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(9);
+
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_SOLO);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(20).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_TOGGLE_SOLO);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(20);
+    }
+
+    @Test
+    public void testClickOnSelectionHotspot_InsideClearAndThenSet() {
+        // Clicking inside the hotspot clears and then sets selection.
+
+        mSelection.assertNoSelection();
+
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_CLEAR_AND_THEN_SET);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(5);
+
+        mDetailsLookup.initAt(5).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_CLEAR_AND_THEN_SET);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(5);
+
+        mSelectionMgr.clearSelection();
+        mSelectionMgr.select("8");
+        mSelectionMgr.select("9");
+        mSelectionMgr.select("10");
+        mSelectionMgr.select("11");
+        mSelection.assertSelection(8, 9, 10, 11);
+
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_CLEAR_AND_THEN_SET);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(9);
+
+        mDetailsLookup.initAt(9).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_CLEAR_AND_THEN_SET);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(9);
+
+        mDetailsLookup.initAt(20).setClassifySelectionHotspot(
+                ItemDetails.SELECTION_HOTSPOT_INSIDE_CLEAR_AND_THEN_SET);
+        assertTrue(singleTap(CLICK));
+        mSelection.assertSelection(20);
     }
 
     @Test

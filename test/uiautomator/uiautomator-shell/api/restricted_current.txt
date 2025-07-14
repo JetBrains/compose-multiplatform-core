@@ -8,7 +8,7 @@ package androidx.test.shell {
     method public androidx.test.shell.command.ProcessCommands process();
     method public androidx.test.shell.command.RecorderCommands recorder();
     method public androidx.test.shell.command.ScreenCommands screen();
-    method public void setShellProcessFactory(kotlin.jvm.functions.Function0<androidx.test.shell.ShellProcess> factory);
+    method public void setShellServer(androidx.test.shell.ShellServer shellServer);
     method public androidx.test.shell.command.WifiCommands wifi();
     field public static final androidx.test.shell.Shell INSTANCE;
   }
@@ -28,10 +28,6 @@ package androidx.test.shell {
 
   public final class ShellProcess implements java.lang.AutoCloseable {
     method public void close();
-    method public static androidx.test.shell.ShellProcess create();
-    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort);
-    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs);
-    method public static androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
     method public java.io.InputStream getStdErr();
     method public java.io.OutputStream getStdIn();
     method public java.io.InputStream getStdOut();
@@ -40,14 +36,27 @@ package androidx.test.shell {
     property public java.io.InputStream stdErr;
     property public java.io.OutputStream stdIn;
     property public java.io.InputStream stdOut;
-    field public static final androidx.test.shell.ShellProcess.Companion Companion;
   }
 
-  public static final class ShellProcess.Companion {
-    method public androidx.test.shell.ShellProcess create();
-    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort);
-    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs);
-    method public androidx.test.shell.ShellProcess create(optional int baseTcpPort, optional int connectToNativeProcessTimeoutMs, optional boolean nativeLogs);
+  public final class ShellServer implements java.lang.AutoCloseable {
+    method public void close();
+    method public androidx.test.shell.ShellProcess newProcess();
+    method public static androidx.test.shell.ShellServer start();
+    method public static androidx.test.shell.ShellServer start(optional int stdInSocketPort);
+    method public static androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort);
+    method public static androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort, optional int stdErrSocketPort);
+    method public static androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort, optional int stdErrSocketPort, optional boolean nativeLogs);
+    method public static androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort, optional int stdErrSocketPort, optional boolean nativeLogs, optional long connectTimeoutMs);
+    field public static final androidx.test.shell.ShellServer.Companion Companion;
+  }
+
+  public static final class ShellServer.Companion {
+    method public androidx.test.shell.ShellServer start();
+    method public androidx.test.shell.ShellServer start(optional int stdInSocketPort);
+    method public androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort);
+    method public androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort, optional int stdErrSocketPort);
+    method public androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort, optional int stdErrSocketPort, optional boolean nativeLogs);
+    method public androidx.test.shell.ShellServer start(optional int stdInSocketPort, optional int stdOutSocketPort, optional int stdErrSocketPort, optional boolean nativeLogs, optional long connectTimeoutMs);
   }
 
 }

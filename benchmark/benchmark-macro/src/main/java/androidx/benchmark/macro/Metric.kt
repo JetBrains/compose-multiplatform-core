@@ -200,7 +200,27 @@ private fun Long.nsToDoubleMs(): Double = this / 1_000_000.0
  * framerate rendering) more naturally.
  */
 @Suppress("CanSealedSubClassBeObject")
-class FrameTimingMetric : Metric() {
+class FrameTimingMetric() : Metric() {
+    private var processSuffix: String = ""
+    private var metricSuffix: String = ""
+
+    /**
+     * @param processNameSuffix A suffix appended to the app's package name for subprocesses. This
+     *   is useful when there are separate subprocesses of the app.
+     * @param metricNameSuffix A suffix appended to the metric names. Use this to distinguish
+     *   metrics collected from different subprocesses in the app. Defaults to [processNameSuffix]
+     *   with ":" replaced by "_".
+     */
+    @ExperimentalMetricApi
+    @JvmOverloads
+    constructor(
+        processNameSuffix: String,
+        metricNameSuffix: String = processNameSuffix.replace(oldValue = ":", newValue = "_"),
+    ) : this() {
+        processSuffix = processNameSuffix
+        metricSuffix = metricNameSuffix
+    }
+
     override fun getMeasurements(
         captureInfo: CaptureInfo,
         traceSession: TraceProcessor.Session,
@@ -209,7 +229,7 @@ class FrameTimingMetric : Metric() {
             FrameTimingQuery.getFrameData(
                 session = traceSession,
                 captureApiLevel = captureInfo.apiLevel,
-                packageName = captureInfo.targetPackageName,
+                packageName = captureInfo.targetPackageName + processSuffix,
             )
         return frameData
             .getFrameSubMetrics(captureInfo.apiLevel)
@@ -218,13 +238,13 @@ class FrameTimingMetric : Metric() {
                 Measurement(
                     name =
                         if (it.key == SubMetric.FrameDurationCpuNs) {
-                            "frameDurationCpuMs"
+                            "frameDurationCpuMs$metricSuffix"
                         } else {
-                            "frameOverrunMs"
+                            "frameOverrunMs$metricSuffix"
                         },
                     dataSamples = it.value.map { timeNs -> timeNs.nsToDoubleMs() },
                 )
-            } + listOf(Measurement("frameCount", frameData.size.toDouble()))
+            } + listOf(Measurement("frameCount$metricSuffix", frameData.size.toDouble()))
     }
 }
 

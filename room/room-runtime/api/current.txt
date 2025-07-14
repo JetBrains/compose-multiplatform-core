@@ -100,7 +100,6 @@ package androidx.room {
     method @Deprecated protected androidx.sqlite.db.SupportSQLiteOpenHelper createOpenHelper(androidx.room.DatabaseConfiguration config);
     method @Deprecated public void endTransaction();
     method public androidx.room.InvalidationTracker getInvalidationTracker();
-    method @Deprecated @kotlin.jvm.Volatile protected final androidx.sqlite.db.SupportSQLiteDatabase? getMDatabase();
     method public androidx.sqlite.db.SupportSQLiteOpenHelper getOpenHelper();
     method public java.util.concurrent.Executor getQueryExecutor();
     method public java.util.concurrent.Executor getTransactionExecutor();
@@ -114,7 +113,6 @@ package androidx.room {
     method public android.database.Cursor query(String query, Object?[]? args);
     method public void runInTransaction(Runnable body);
     method public <V> V runInTransaction(java.util.concurrent.Callable<V> body);
-    method @Deprecated @kotlin.jvm.Volatile protected final void setMDatabase(androidx.sqlite.db.SupportSQLiteDatabase?);
     method @Deprecated public void setTransactionSuccessful();
     property public androidx.room.InvalidationTracker invalidationTracker;
     property public boolean isOpen;

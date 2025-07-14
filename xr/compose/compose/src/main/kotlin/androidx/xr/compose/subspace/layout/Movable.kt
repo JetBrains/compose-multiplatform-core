@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace.layout
 
+import androidx.annotation.RestrictTo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.xr.compose.platform.LocalSession
@@ -29,13 +30,17 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.compose.unit.toDimensionsInMeters
 import androidx.xr.compose.unit.toIntVolumeSize
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
+import androidx.xr.scenecore.AnchorPlacement
 import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.EntityMoveListener
 import androidx.xr.scenecore.MovableComponent
-import androidx.xr.scenecore.MoveListener
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.PlaneOrientation as SceneCorePlaneOrientation
+import androidx.xr.scenecore.PlaneSemanticType as SceneCorePlaneSemantic
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
@@ -71,7 +76,49 @@ public fun SubspaceModifier.movable(
     onMove: ((MoveEvent) -> Boolean)? = null,
 ): SubspaceModifier =
     this.then(
-        MovableElement(enabled, onMoveStart, onMoveEnd, onMove, stickyPose, scaleWithDistance)
+        MovableElement(
+            enabled,
+            onMoveStart,
+            onMoveEnd,
+            onMove,
+            stickyPose,
+            scaleWithDistance,
+            anchorPlaneOrientations = emptySet(),
+            anchorPlaneSemantics = emptySet(),
+        )
+    )
+
+/**
+ * When the movable modifier is present and enabled, draggable UI controls will be shown that allow
+ * the user to move the element in 3D space. This feature is only available for
+ * [SpatialPanels][androidx.xr.compose.subspace.SpatialPanel] at the moment. This overload of the
+ * modifier allows the element to be anchored to a plane in the real world.
+ *
+ * @param enabled true if this composable should be movable.
+ * @param anchorPlaneOrientations when supplied, this movable entity can be anchored to Horizontal
+ *   or Vertical planes or both (ANY). Can be used without anchorPlaneSemantics being supplied.
+ * @param anchorPlaneSemantics when supplied, this movable entity can be anchored to planes which
+ *   match one of the supplied list of semantic interpretations, such as a "table" or "floor". Can
+ *   be used without anchorPlaneOrientations being supplied.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@Suppress("PrimitiveInCollection")
+public fun SubspaceModifier.anchorable(
+    enabled: Boolean = true,
+    anchorPlaneOrientations: Set<PlaneOrientation> = emptySet(),
+    anchorPlaneSemantics: Set<PlaneSemantic> = emptySet(),
+): SubspaceModifier =
+    this.then(
+        MovableElement(
+            enabled,
+            onMoveStart = null,
+            onMoveEnd = null,
+            onMove = null,
+            stickyPose = true,
+            scaleWithDistance = true,
+            anchorPlaneOrientations,
+            anchorPlaneSemantics,
+        )
     )
 
 /**
@@ -176,6 +223,7 @@ public class MoveEndEvent(
     }
 }
 
+@Suppress("PrimitiveInCollection")
 private class MovableElement(
     private val enabled: Boolean,
     private val onMoveStart: ((MoveStartEvent) -> Unit)?,
@@ -183,6 +231,8 @@ private class MovableElement(
     private val onMove: ((MoveEvent) -> Boolean)?,
     private val stickyPose: Boolean,
     private val scaleWithDistance: Boolean,
+    private val anchorPlaneOrientations: Set<PlaneOrientation> = emptySet(),
+    private val anchorPlaneSemantics: Set<PlaneSemantic> = emptySet(),
 ) : SubspaceModifierNodeElement<MovableNode>() {
     override fun create(): MovableNode =
         MovableNode(
@@ -192,6 +242,8 @@ private class MovableElement(
             onMoveEnd = onMoveEnd,
             onMove = onMove,
             scaleWithDistance = scaleWithDistance,
+            anchorPlaneOrientations = anchorPlaneOrientations,
+            anchorPlaneSemantics = anchorPlaneSemantics,
         )
 
     override fun update(node: MovableNode) {
@@ -201,6 +253,8 @@ private class MovableElement(
         node.onMove = onMove
         node.stickyPose = stickyPose
         node.scaleWithDistance = scaleWithDistance
+        node.anchorPlaneOrientations = anchorPlaneOrientations
+        node.anchorPlaneSemantics = anchorPlaneSemantics
     }
 
     override fun equals(other: Any?): Boolean {
@@ -212,6 +266,8 @@ private class MovableElement(
         if (onMove !== other.onMove) return false
         if (stickyPose != other.stickyPose) return false
         if (scaleWithDistance != other.scaleWithDistance) return false
+        if (anchorPlaneOrientations != other.anchorPlaneOrientations) return false
+        if (anchorPlaneSemantics != other.anchorPlaneSemantics) return false
         return true
     }
 
@@ -222,10 +278,13 @@ private class MovableElement(
         result = 31 * result + onMove.hashCode()
         result = 31 * result + stickyPose.hashCode()
         result = 31 * result + scaleWithDistance.hashCode()
+        result = 31 * result + anchorPlaneOrientations.hashCode()
+        result = 31 * result + anchorPlaneSemantics.hashCode()
         return result
     }
 }
 
+@Suppress("PrimitiveInCollection")
 internal class MovableNode(
     public var enabled: Boolean,
     public var stickyPose: Boolean,
@@ -233,12 +292,14 @@ internal class MovableNode(
     public var onMoveStart: ((MoveStartEvent) -> Unit)?,
     public var onMoveEnd: ((MoveEndEvent) -> Unit)?,
     public var onMove: ((MoveEvent) -> Boolean)?,
+    public var anchorPlaneOrientations: Set<PlaneOrientation> = emptySet(),
+    public var anchorPlaneSemantics: Set<PlaneSemantic> = emptySet(),
 ) :
     SubspaceModifier.Node(),
     CompositionLocalConsumerSubspaceModifierNode,
     CoreEntityNode,
     LayoutCoordinatesAwareModifierNode,
-    MoveListener,
+    EntityMoveListener,
     SubspaceLayoutModifierNode {
     private inline val density: Density
         get() = currentValueOf(LocalDensity)
@@ -298,11 +359,53 @@ internal class MovableNode(
     /** Enables the MovableComponent for this CoreEntity. */
     private fun enableComponent() {
         check(component == null) { "MovableComponent already enabled." }
-        component = MovableComponent.create(session, systemMovable = false)
+        val anchorPlacement = convertToAnchorPlacement()
+
+        if (!anchorPlacement.isEmpty())
+            session.configure(
+                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+            )
+
+        // The developer could have used the movable overload which allows them to supply their own
+        // onMove logic, or they could have used the overload which provides the anchoring ability
+        // (where the movement is managed by the system).
+        if (anchorPlacement.isEmpty()) {
+            component =
+                MovableComponent.createCustomMovable(
+                    session = session,
+                    scaleInZ = true,
+                    executor = MainExecutor,
+                    entityMoveListener = this,
+                )
+        } else {
+            component = MovableComponent.createAnchorable(session, anchorPlacement)
+            component?.addMoveListener(MainExecutor, this)
+        }
         check(component?.let { coreEntity.addComponent(it) } == true) {
             "Could not add MovableComponent to Core Entity."
         }
-        component?.addMoveListener(MainExecutor, this)
+    }
+
+    /**
+     * Takes the param values PlaneOrientation and PlaneSemantic, and returns the SceneCore
+     * equivalent, which is bundled in a structure called AnchorPlacement.
+     *
+     * The lint error was suppressed because the function being called requires a set of ints.
+     */
+    @Suppress("PrimitiveInCollection")
+    private fun convertToAnchorPlacement(): Set<AnchorPlacement> {
+        if (anchorPlaneOrientations.isEmpty() && anchorPlaneSemantics.isEmpty())
+            return mutableSetOf()
+
+        val planeTypeFilter: MutableSet<Int> = mutableSetOf()
+        anchorPlaneOrientations.forEach { planeTypeFilter.add(it.value) }
+        if (planeTypeFilter.isEmpty()) planeTypeFilter.add(SceneCorePlaneOrientation.ANY)
+
+        val planeSemanticFilter: MutableSet<Int> = mutableSetOf()
+        anchorPlaneSemantics.forEach { planeSemanticFilter.add(it.value) }
+        if (planeSemanticFilter.isEmpty()) planeSemanticFilter.add(SceneCorePlaneSemantic.ANY)
+
+        return mutableSetOf(AnchorPlacement.createForPlanes(planeTypeFilter, planeSemanticFilter))
     }
 
     /**
@@ -410,5 +513,30 @@ internal class MovableNode(
 
     public companion object {
         private val MainExecutor: Executor = Dispatchers.Main.asExecutor()
+    }
+}
+
+/** Type of plane based on orientation i.e. Horizontal or Vertical. */
+@JvmInline
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public value class PlaneOrientation private constructor(internal val value: Int) {
+    public companion object {
+        public val Horizontal: PlaneOrientation =
+            PlaneOrientation(SceneCorePlaneOrientation.HORIZONTAL)
+        public val Vertical: PlaneOrientation = PlaneOrientation(SceneCorePlaneOrientation.VERTICAL)
+        public val Any: PlaneOrientation = PlaneOrientation(SceneCorePlaneOrientation.ANY)
+    }
+}
+
+/** Semantic plane types. */
+@JvmInline
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public value class PlaneSemantic private constructor(internal val value: Int) {
+    public companion object {
+        public val Wall: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.WALL)
+        public val Floor: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.FLOOR)
+        public val Ceiling: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.CEILING)
+        public val Table: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.TABLE)
+        public val Any: PlaneSemantic = PlaneSemantic(SceneCorePlaneSemantic.ANY)
     }
 }

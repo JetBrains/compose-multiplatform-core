@@ -255,6 +255,8 @@ public class SupportedSurfaceCombination(
     private fun getOrderedSupportedStreamUseCaseSurfaceConfigList(
         featureSettings: FeatureSettings,
         surfaceConfigList: List<SurfaceConfig?>?,
+        surfaceConfigIndexAttachedSurfaceInfoMap: MutableMap<Int, AttachedSurfaceInfo>,
+        surfaceConfigIndexUseCaseConfigMap: MutableMap<Int, UseCaseConfig<*>>,
     ): List<SurfaceConfig>? {
         if (!StreamUseCaseUtil.shouldUseStreamUseCase(featureSettings)) {
             return null
@@ -263,7 +265,21 @@ public class SupportedSurfaceCombination(
             val orderedSurfaceConfigList =
                 surfaceCombination.getOrderedSupportedSurfaceConfigList(surfaceConfigList!!)
             if (orderedSurfaceConfigList != null) {
-                return orderedSurfaceConfigList
+                val captureTypesEligible =
+                    StreamUseCaseUtil.areCaptureTypesEligible(
+                        surfaceConfigIndexAttachedSurfaceInfoMap,
+                        surfaceConfigIndexUseCaseConfigMap,
+                        orderedSurfaceConfigList,
+                    )
+                val streamUseCasesAvailableForSurfaceConfigs = lazy {
+                    StreamUseCaseUtil.areStreamUseCasesAvailableForSurfaceConfigs(
+                        cameraMetadata,
+                        orderedSurfaceConfigList,
+                    )
+                }
+                if (captureTypesEligible && streamUseCasesAvailableForSurfaceConfigs.value) {
+                    return orderedSurfaceConfigList
+                }
             }
         }
         return null
@@ -899,29 +915,14 @@ public class SupportedSurfaceCombination(
                     false,
                 )
             orderedSurfaceConfigListForStreamUseCase =
-                getOrderedSupportedStreamUseCaseSurfaceConfigList(featureSettings, surfaceConfigs)
-            if (
-                orderedSurfaceConfigListForStreamUseCase != null &&
-                    !StreamUseCaseUtil.areCaptureTypesEligible(
-                        surfaceConfigIndexAttachedSurfaceInfoMap,
-                        surfaceConfigIndexUseCaseConfigMap,
-                        orderedSurfaceConfigListForStreamUseCase,
-                    )
-            ) {
-                orderedSurfaceConfigListForStreamUseCase = null
-            }
+                getOrderedSupportedStreamUseCaseSurfaceConfigList(
+                    featureSettings,
+                    surfaceConfigs,
+                    surfaceConfigIndexAttachedSurfaceInfoMap,
+                    surfaceConfigIndexUseCaseConfigMap,
+                )
             if (orderedSurfaceConfigListForStreamUseCase != null) {
-                orderedSurfaceConfigListForStreamUseCase =
-                    if (
-                        StreamUseCaseUtil.areStreamUseCasesAvailableForSurfaceConfigs(
-                            cameraMetadata,
-                            orderedSurfaceConfigListForStreamUseCase,
-                        )
-                    ) {
-                        break
-                    } else {
-                        null
-                    }
+                break
             }
             surfaceConfigIndexAttachedSurfaceInfoMap.clear()
             surfaceConfigIndexUseCaseConfigMap.clear()
@@ -1308,6 +1309,8 @@ public class SupportedSurfaceCombination(
                     getOrderedSupportedStreamUseCaseSurfaceConfigList(
                         featureSettings,
                         surfaceConfigList,
+                        surfaceConfigIndexToAttachedSurfaceInfoMap,
+                        surfaceConfigIndexToUseCaseConfigMap,
                     ) != null
             ) {
                 if (maxFpsForStreamUseCase == FRAME_RATE_UNLIMITED) {

@@ -47,6 +47,7 @@ class UiPresentationTests(
     AutomatedEndToEndTest(
         FragmentOptions.FRAGMENT_RESIZE_HIDDEN,
         uiFrameworkOption,
+        FragmentOptions.AD_FORMAT_BANNER_AD,
         mediationOption,
         zOrdering,
     ) {

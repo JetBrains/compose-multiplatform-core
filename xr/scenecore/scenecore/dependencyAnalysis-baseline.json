@@ -76,22 +76,6 @@
     {
       "coordinates": {
         "type": "module",
-        "identifier": "com.google.guava:guava",
-        "resolvedVersion": "33.3.1-jre"
-      },
-      "toConfiguration": "androidTestImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
-        "identifier": "com.google.guava:guava",
-        "resolvedVersion": "33.3.1-jre"
-      },
-      "toConfiguration": "testImplementation"
-    },
-    {
-      "coordinates": {
-        "type": "module",
         "identifier": "org.mockito:mockito-android",
         "resolvedVersion": "5.8.0"
       },

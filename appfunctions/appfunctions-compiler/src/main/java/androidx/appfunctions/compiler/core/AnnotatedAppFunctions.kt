@@ -20,6 +20,7 @@ import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.SUPPORTED_TYPES_STRING
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isAllowToBeOptional
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.isSupportedType
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
@@ -120,6 +121,14 @@ data class AnnotatedAppFunctions(
                                     .selfOrItemTypeReference.ensureQualifiedTypeName()
                                     .asString()
                             }",
+                        ksValueParameter,
+                    )
+                }
+
+                val isOptional = ksValueParameter.hasDefault
+                if (isOptional && !isAllowToBeOptional(ksValueParameter.type)) {
+                    throw ProcessingException(
+                        "Type ${ksValueParameter.type.toTypeName()} cannot be optional",
                         ksValueParameter,
                     )
                 }

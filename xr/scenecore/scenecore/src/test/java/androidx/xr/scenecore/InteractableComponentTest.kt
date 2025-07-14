@@ -149,28 +149,30 @@ class InteractableComponentTest {
         val rtInputEventListener = listenerCaptor.lastValue
         val rtInputEvent =
             RtInputEvent(
-                RtInputEvent.SOURCE_HANDS,
-                RtInputEvent.POINTER_TYPE_RIGHT,
+                RtInputEvent.Source.HANDS,
+                RtInputEvent.Pointer.RIGHT,
                 123456789L,
                 Vector3.Zero,
                 Vector3.One,
-                RtInputEvent.ACTION_DOWN,
-                RtInputEvent.Companion.HitInfo(mockGroupEntity, Vector3.One, Matrix4.Identity),
-                null,
+                RtInputEvent.Action.DOWN,
+                listOf(RtInputEvent.HitInfo(mockGroupEntity, Vector3.One, Matrix4.Identity)),
             )
         rtInputEventListener.onInputEvent(rtInputEvent)
         val inputEventCaptor = argumentCaptor<InputEvent>()
         verify(mockListener).onInputEvent(inputEventCaptor.capture())
         val inputEvent = inputEventCaptor.lastValue
-        assertThat(inputEvent.source).isEqualTo(InputEvent.SOURCE_HANDS)
-        assertThat(inputEvent.pointerType).isEqualTo(InputEvent.POINTER_TYPE_RIGHT)
+        assertThat(inputEvent.source).isEqualTo(InputEvent.Source.SOURCE_HANDS)
+        assertThat(inputEvent.pointerType).isEqualTo(InputEvent.Pointer.POINTER_TYPE_RIGHT)
         assertThat(inputEvent.timestamp).isEqualTo(rtInputEvent.timestamp)
-        assertThat(inputEvent.action).isEqualTo(InputEvent.ACTION_DOWN)
-        assertThat(inputEvent.hitInfo).isNotNull()
-        assertThat(inputEvent.hitInfo!!.inputEntity).isEqualTo(entity)
-        assertThat(inputEvent.hitInfo!!.hitPosition).isEqualTo(Vector3.One)
-        assertThat(inputEvent.hitInfo!!.transform).isEqualTo(Matrix4.Identity)
-        assertThat(inputEvent.secondaryHitInfo).isNull()
+        assertThat(inputEvent.action).isEqualTo(InputEvent.Action.ACTION_DOWN)
+        assertThat(inputEvent.hitInfoList).isNotEmpty()
+        assertThat(inputEvent.hitInfoList).hasSize(1)
+
+        val hitInfo = inputEvent.hitInfoList[0]
+        assertThat(hitInfo).isNotNull()
+        assertThat(hitInfo.inputEntity).isEqualTo(entity)
+        assertThat(hitInfo.hitPosition).isEqualTo(Vector3.One)
+        assertThat(hitInfo.transform).isEqualTo(Matrix4.Identity)
     }
 
     @Test

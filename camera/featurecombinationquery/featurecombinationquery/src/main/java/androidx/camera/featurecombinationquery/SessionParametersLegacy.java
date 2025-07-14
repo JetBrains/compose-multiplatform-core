@@ -18,9 +18,12 @@ package androidx.camera.featurecombinationquery;
 
 import android.hardware.camera2.CaptureRequest;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -88,6 +91,15 @@ public class SessionParametersLegacy {
     @Nullable
     public <T> T get(CaptureRequest.@NonNull Key<T> key) {
         return (T) mKeyVal.get(key);
+    }
+
+    /**
+     * Returns an immutable view of the underlying map. Does NOT make a copy.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @NonNull
+    public Map<CaptureRequest.Key<?>, Object> asMap() {
+        return Collections.unmodifiableMap(mKeyVal);
     }
 
     /**

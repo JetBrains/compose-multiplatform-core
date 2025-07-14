@@ -128,16 +128,18 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
     /**
      * Transform to a SurfaceConfig object with cameraId, image format and size info
      *
-     * @param cameraMode  the working camera mode.
-     * @param cameraId    the camera id of the camera device to transform the object
-     * @param imageFormat the image format info for the surface configuration object
-     * @param size        the size info for the surface configuration object
+     * @param cameraMode    the working camera mode.
+     * @param cameraId      the camera id of the camera device to transform the object
+     * @param imageFormat   the image format info for the surface configuration object
+     * @param size          the size info for the surface configuration object
      * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
-     * @throws IllegalStateException if not initialized
+     * @throws IllegalArgumentException if the {@code cameraId} is not found in the supported
+     *                                  combinations, or if there isn't a supported combination of
+     *                                  surfaces available for the given parameters.
      */
     @Override
-    public @Nullable SurfaceConfig transformSurfaceConfig(
+    public @NonNull SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -146,17 +148,14 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
         SupportedSurfaceCombination supportedSurfaceCombination =
                 mCameraSupportedSurfaceCombinationMap.get(cameraId);
 
-        SurfaceConfig surfaceConfig = null;
-        if (supportedSurfaceCombination != null) {
-            surfaceConfig =
-                    supportedSurfaceCombination.transformSurfaceConfig(
-                            cameraMode,
-                            imageFormat,
-                            size,
-                            streamUseCase);
-        }
+        Preconditions.checkArgument(supportedSurfaceCombination != null,
+                "No such camera id in supported combination list: " + cameraId);
 
-        return surfaceConfig;
+        return supportedSurfaceCombination.transformSurfaceConfig(
+                cameraMode,
+                imageFormat,
+                size,
+                streamUseCase);
     }
 
     @Override
@@ -175,10 +174,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
         SupportedSurfaceCombination supportedSurfaceCombination =
                 mCameraSupportedSurfaceCombinationMap.get(cameraId);
 
-        if (supportedSurfaceCombination == null) {
-            throw new IllegalArgumentException("No such camera id in supported combination list: "
-                    + cameraId);
-        }
+        Preconditions.checkArgument(supportedSurfaceCombination != null,
+                "No such camera id in supported combination list: " + cameraId);
 
         return supportedSurfaceCombination.getSuggestedStreamSpecifications(
                 cameraMode,

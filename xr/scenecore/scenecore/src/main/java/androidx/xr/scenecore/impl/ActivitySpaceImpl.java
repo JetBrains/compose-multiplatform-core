@@ -66,7 +66,6 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     private final Set<OnBoundsChangedListener> mBoundsListeners =
             Collections.synchronizedSet(new HashSet<>());
 
-    private final Activity mActivity;
     private final Supplier<SpatialState> mSpatialStateProvider;
     private final AtomicReference<Dimensions> mBounds = new AtomicReference<>();
     // The current scene parent aka ActivitySpace origin transform.
@@ -86,8 +85,7 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
             Supplier<SpatialState> spatialStateProvider,
             boolean unscaledGravityAlignedActivitySpace,
             ScheduledExecutorService executor) {
-        super(taskNode, extensions, entityManager, executor);
-        mActivity = activity;
+        super(activity, taskNode, extensions, entityManager, executor);
         mSpatialStateProvider = spatialStateProvider;
         mUnscaledGravityAlignedActivitySpace = unscaledGravityAlignedActivitySpace;
         Log.i(
@@ -281,7 +279,7 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         HitTestResultConsumer hitTestConsumer = new HitTestResultConsumer(hitTestFuture);
 
         mExtensions.hitTest(
-                mActivity,
+                getActivity(),
                 new Vec3(origin.getX(), origin.getY(), origin.getZ()),
                 new Vec3(direction.getX(), direction.getY(), direction.getZ()),
                 RuntimeUtils.getHitTestFilter(hitTestFilter),

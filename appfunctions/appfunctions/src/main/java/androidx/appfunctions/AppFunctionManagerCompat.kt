@@ -32,6 +32,7 @@ import androidx.appfunctions.internal.PlatformAppFunctionManagerApi
 import androidx.appfunctions.internal.Translator
 import androidx.appfunctions.internal.TranslatorSelector
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -180,20 +181,20 @@ public constructor(
      * [android.content.pm.PackageManager.canPackageQuery]. If a package is not queryable by the
      * calling app, its functions' metadata will not be visible.
      *
-     * Updates to [AppFunctionMetadata] can occur when the app defining the function is updated or
-     * when a function's enabled state changes.
+     * Updates to [AppFunctionPackageMetadata] can occur when the app defining the function is
+     * updated or when a function's enabled state changes.
      *
      * If multiple updates happen within a short duration, only the latest update might be emitted.
      *
      * @param searchSpec an [AppFunctionSearchSpec] instance specifying the filters for searching
      *   the app function metadata.
-     * @return a flow that emits a list of [AppFunctionMetadata] matching the search criteria and
-     *   updated versions of this list when underlying data changes.
+     * @return a flow that emits a list of [AppFunctionPackageMetadata] matching the search criteria
+     *   and updated versions of this list when underlying data changes.
      */
     @RequiresPermission(value = "android.permission.EXECUTE_APP_FUNCTIONS", conditional = true)
     public fun observeAppFunctions(
         searchSpec: AppFunctionSearchSpec
-    ): Flow<List<AppFunctionMetadata>> {
+    ): Flow<List<AppFunctionPackageMetadata>> {
         return appFunctionReader.searchAppFunctions(searchSpec)
     }
 

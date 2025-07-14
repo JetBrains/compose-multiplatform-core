@@ -36,6 +36,7 @@ import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult
 import androidx.camera.core.impl.UseCaseConfig
+import androidx.core.util.Preconditions
 
 /**
  * Adapt the [CameraDeviceSurfaceManager] interface to [CameraPipe].
@@ -103,6 +104,9 @@ public class CameraSurfaceAdapter(
      * @param size the size info for the surface configuration object
      * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
+     * @throws IllegalArgumentException if the {@code cameraId} is not found in the supported
+     *   combinations, or if there isn't a supported combination of surfaces available for the given
+     *   parameters.
      */
     override fun transformSurfaceConfig(
         cameraMode: Int,
@@ -111,7 +115,10 @@ public class CameraSurfaceAdapter(
         size: Size,
         streamUseCase: StreamUseCase,
     ): SurfaceConfig {
-        checkIfSupportedCombinationExist(cameraId)
+        Preconditions.checkArgument(
+            checkIfSupportedCombinationExist(cameraId),
+            "No such camera id in supported combination list: $cameraId",
+        )
 
         return supportedSurfaceCombinationMap[cameraId]!!.transformSurfaceConfig(
             cameraMode,
@@ -157,11 +164,10 @@ public class CameraSurfaceAdapter(
         findMaxSupportedFrameRate: Boolean,
     ): SurfaceStreamSpecQueryResult {
 
-        if (!checkIfSupportedCombinationExist(cameraId)) {
-            throw IllegalArgumentException(
-                "No such camera id in supported combination list: $cameraId"
-            )
-        }
+        Preconditions.checkArgument(
+            checkIfSupportedCombinationExist(cameraId),
+            "No such camera id in supported combination list: $cameraId",
+        )
 
         return supportedSurfaceCombinationMap[cameraId]!!.getSuggestedStreamSpecifications(
             cameraMode,

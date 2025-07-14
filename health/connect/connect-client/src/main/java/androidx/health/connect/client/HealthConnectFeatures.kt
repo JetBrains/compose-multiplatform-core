@@ -18,7 +18,6 @@ package androidx.health.connect.client
 
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.feature.HealthConnectPlatformVersion
 import androidx.health.connect.client.feature.HealthConnectVersionInfo
@@ -50,15 +49,15 @@ interface HealthConnectFeatures {
         const val FEATURE_READ_HEALTH_DATA_HISTORY = 4
 
         /** Feature constant for mindfulness session. */
-        @ExperimentalMindfulnessSessionApi const val FEATURE_MINDFULNESS_SESSION = 5
+        const val FEATURE_MINDFULNESS_SESSION = 5
 
         /** Feature constant for Personal Health Records APIs. */
         @ExperimentalPersonalHealthRecordApi const val FEATURE_PERSONAL_HEALTH_RECORD = 6
 
         /** Feature constant for Activity Intensity APIs. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) const val FEATURE_ACTIVITY_INTENSITY = 7
+        const val FEATURE_ACTIVITY_INTENSITY = 7
 
-        @OptIn(ExperimentalPersonalHealthRecordApi::class, ExperimentalMindfulnessSessionApi::class)
+        @OptIn(ExperimentalPersonalHealthRecordApi::class)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             value =
@@ -98,7 +97,7 @@ interface HealthConnectFeatures {
         private val SDK_EXT_16_PLATFORM_VERSION: HealthConnectPlatformVersion =
             HealthConnectPlatformVersion(buildVersionCode = 34, sdkExtensionVersion = 16)
 
-        @OptIn(ExperimentalPersonalHealthRecordApi::class, ExperimentalMindfulnessSessionApi::class)
+        @OptIn(ExperimentalPersonalHealthRecordApi::class)
         internal val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
             mapOf(
                 FEATURE_READ_HEALTH_DATA_IN_BACKGROUND to
@@ -108,7 +107,7 @@ interface HealthConnectFeatures {
                     ),
                 FEATURE_SKIN_TEMPERATURE to
                     HealthConnectVersionInfo(
-                        apkVersionCode = 187759,
+                        apkVersionCode = 200027,
                         platformVersion = SDK_EXT_13_PLATFORM_VERSION,
                     ),
                 FEATURE_READ_HEALTH_DATA_HISTORY to

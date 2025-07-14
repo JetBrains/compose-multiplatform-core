@@ -15,7 +15,7 @@ public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactor
 
     val localDateTimeData = checkNotNull(appFunctionData.getAppFunctionData("localDateTime"))
     val localDateTime = appFunctionLocalDateTimeFactory.fromAppFunctionData(localDateTimeData)
-    val localDateTimeListData = appFunctionData.getAppFunctionDataList("localDateTimeList") ?: emptyList()
+    val localDateTimeListData = checkNotNull(appFunctionData.getAppFunctionDataList("localDateTimeList"))
     val localDateTimeList = localDateTimeListData.map { data ->
       appFunctionLocalDateTimeFactory.fromAppFunctionData(data)
     }
@@ -24,7 +24,7 @@ public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactor
     if (localDateTimeNullableData != null) {
       localDateTimeNullable = appFunctionLocalDateTimeFactory.fromAppFunctionData(localDateTimeNullableData)
     }
-    val androidUriListData = appFunctionData.getAppFunctionDataList("androidUriList") ?: emptyList()
+    val androidUriListData = checkNotNull(appFunctionData.getAppFunctionDataList("androidUriList"))
     val androidUriList = androidUriListData.map { data ->
       appFunctionUriFactory.fromAppFunctionData(data)
     }

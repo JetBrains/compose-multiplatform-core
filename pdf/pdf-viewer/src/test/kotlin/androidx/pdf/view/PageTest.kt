@@ -230,7 +230,9 @@ class PageTest {
 
     @Test
     fun maybeUpdateFormWidgetInfos_updatesFormWidgetInfos() {
-        page.maybeUpdateFormWidgetInfos()
+        page.maybeUpdateFormWidgetInfos(
+            FormWidgetMetadataLoader(pdfDocument, PdfFormFillingState(10), mock())
+        )
         testDispatcher.scheduler.runCurrent()
         assertThat(page.formWidgetInfos).isNotNull()
         assertThat(page.formWidgetInfos?.size).isEqualTo(2)

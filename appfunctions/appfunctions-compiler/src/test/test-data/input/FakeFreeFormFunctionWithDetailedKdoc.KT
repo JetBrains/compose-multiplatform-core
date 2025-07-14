@@ -63,20 +63,81 @@ class FakeFreeFormFunctions {
     ): String {
         return input.data
     }
+
+    /** Tests the description elements for serializable's parametrized properties. */
+    @AppFunction(isDescribedByKdoc = true)
+    fun fakeFreeFormFunction_withParametrizedTypes(
+        appFunctionContext: AppFunctionContext,
+        parametrizedTypesInput: InputWithParametrizedTypes,
+    ) {}
+
+    /** Tests the description elements for serializable's repeated properties. */
+    @AppFunction(isDescribedByKdoc = true)
+    fun fakeFreeFormFunction_withRepeatedTypes(
+        appFunctionContext: AppFunctionContext,
+        parametrizedTypesInput: InputWithRepeatedTypes,
+    ) {}
+
+    /**
+     * Tests that the input class description is empty when class's isDescribedByKdoc = false,
+     */
+    @AppFunction(isDescribedByKdoc = true)
+    fun fakeFreeFormFunction_inputClassDescribedByKdoc_false(
+        appFunctionContext: AppFunctionContext,
+        notDescribedByKdoc: NotDescribedByKdoc,
+    ) {}
 }
 
-/**
- * A test input to the free-form function.
- *
- * @param data a String input.
- */
-@AppFunctionSerializable open class InputToFakeFreeFormFunction(open val data: String)
+/** A test input class to the free-form function. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
+open class InputToFakeFreeFormFunction(
+    /** A string param. */
+    open val data: String,
+)
 
-/**
- * A child class of [InputToFakeFreeFormFunction].
- *
- * @param data a String input.
- */
-@AppFunctionSerializable
-open class DerivedInputToFakeFreeFormFunction(override val data: String) :
-    InputToFakeFreeFormFunction(data)
+/** A child class of [InputToFakeFreeFormFunction]. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
+class DerivedInputToFakeFreeFormFunction(
+    /** A derived string param. */
+    override val data: String,
+    /** An int param. */
+    val anotherData: Int,
+) : InputToFakeFreeFormFunction(data)
+
+/** An input class with parametrized types */
+@AppFunctionSerializable(isDescribedByKdoc = true)
+class InputWithParametrizedTypes(
+    /** Parametrized primitive param. */
+    val parametrizedInt: Optional<Int>,
+    /** Parametrized nullable primitive param. */
+    val parametrizedNullableInt: Optional<Int?>,
+    /** Parametrized entity param. */
+    val parametrizedSerializable: Optional<InputToFakeFreeFormFunction>,
+    /** Parametrized nullable entity param. */
+    val parametrizedNullableSerializable: Optional<InputToFakeFreeFormFunction?>,
+)
+
+/** An input class with repeated params. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
+class InputWithRepeatedTypes(
+    /** Primitive array param. */
+    val intArray: IntArray,
+    /** String list param. */
+    val stringList: List<String>,
+    /** Serializable list param. */
+    val serializableList: List<InputToFakeFreeFormFunction>,
+)
+
+/** A generic serializable class. */
+@AppFunctionSerializable(isDescribedByKdoc = true)
+data class Optional<T>(
+    /** The value. */
+    val value: T
+)
+
+/** Class description. Should be ignored. */
+@AppFunctionSerializable(isDescribedByKdoc = false)
+class NotDescribedByKdoc(
+    /** Property description. Should be ignored. */
+    val param: Int,
+)

@@ -24,6 +24,11 @@ message TileRequest {
 
   // The timestamp of the last time the tile was visible.
   uint64 last_visible_millis = 4;
+
+  // The version of the resources that are currently cached in the renderer.
+  //
+  // If this is empty, the renderer does not have any resources cached.
+  string last_resources_version = 5;
 }
 
 // Parameters passed to a Tile Service when the renderer is requesting a

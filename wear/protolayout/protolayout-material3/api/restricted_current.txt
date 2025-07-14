@@ -362,12 +362,10 @@ package androidx.wear.protolayout.material3 {
   }
 
   public static final class TitleContentPlacementInDataCard.Companion {
-    method public int getBottom();
     method @BytecodeOnly public int getBottom-DGPfEqQ();
-    method public int getTop();
     method @BytecodeOnly public int getTop-DGPfEqQ();
-    property public int Bottom;
-    property public int Top;
+    property public androidx.wear.protolayout.material3.TitleContentPlacementInDataCard Bottom;
+    property public androidx.wear.protolayout.material3.TitleContentPlacementInDataCard Top;
   }
 
   public final class Typography {

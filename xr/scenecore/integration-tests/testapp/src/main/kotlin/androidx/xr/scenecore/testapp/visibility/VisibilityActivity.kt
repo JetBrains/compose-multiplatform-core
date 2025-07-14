@@ -217,7 +217,7 @@ class VisibilityActivity : AppCompatActivity() {
             PanelEntity.create(session!!, panelContentView, IntSize2d(640, 480), panelName, pose)
         panelEntity.parent = parent
 
-        val movableComponent = MovableComponent.create(session!!)
+        val movableComponent = MovableComponent.createSystemMovable(session!!)
         panelEntity.addComponent(movableComponent)
         movableComponent.size = getSizeInLocalSpace(panelEntity).to3d()
 

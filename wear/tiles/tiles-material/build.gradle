@@ -38,16 +38,6 @@ dependencies {
 
     implementation(project(":wear:tiles:tiles-proto"))
 
-    androidTestImplementation(libs.androidx.core)
-    androidTestImplementation(libs.guavaAndroid)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testMonitor)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(project(":test:screenshot:screenshot"))
-    androidTestImplementation(project(':wear:protolayout:protolayout'))
-    androidTestImplementation(project(":wear:tiles:tiles-renderer"))
-
     testImplementation(libs.junit)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
@@ -70,6 +60,5 @@ androidx {
     inceptionYear = "2021"
     description = "Material components library for Android Wear Tiles."
     legacyDisableKotlinStrictApiMode = true
-    addGoldenImageAssets()
     enableRobolectric()
 }

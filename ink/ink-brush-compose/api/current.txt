@@ -6,10 +6,10 @@ package androidx.ink.brush.compose {
     method @BytecodeOnly @CheckResult public static androidx.ink.brush.Brush copyWithComposeColor-iJQMabo(androidx.ink.brush.Brush, long, androidx.ink.brush.BrushFamily, float, float);
     method @CheckResult public static androidx.ink.brush.Brush createWithComposeColor(androidx.ink.brush.Brush.Companion, androidx.ink.brush.BrushFamily family, long color, float size, float epsilon);
     method @BytecodeOnly @CheckResult public static androidx.ink.brush.Brush createWithComposeColor-XO-JAsU(androidx.ink.brush.Brush.Companion, androidx.ink.brush.BrushFamily, long, float, float);
-    method public static long getComposeColor(androidx.ink.brush.Brush);
+    method @BytecodeOnly public static long getComposeColor(androidx.ink.brush.Brush);
     method public static androidx.ink.brush.Brush.Builder setComposeColor(androidx.ink.brush.Brush.Builder, long color);
     method @BytecodeOnly public static androidx.ink.brush.Brush.Builder setComposeColor-4WTKRHQ(androidx.ink.brush.Brush.Builder, long);
-    property public static long androidx.ink.brush.Brush.composeColor;
+    property public static androidx.compose.ui.graphics.Color androidx.ink.brush.Brush.composeColor;
   }
 
 }

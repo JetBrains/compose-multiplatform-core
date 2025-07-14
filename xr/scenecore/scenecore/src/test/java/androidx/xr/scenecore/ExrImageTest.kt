@@ -27,7 +27,6 @@ import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Paths
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -63,29 +62,6 @@ class ExrImageTest {
     }
 
     @Test
-    fun exrImage_createFromZipAsync_failsForExrFile() {
-        val mockRtExrImage = mock<RtExrImage>()
-        mockPlatformAdapter.stub {
-            on { loadExrImageByAssetName("test.exr") }
-                .thenReturn(Futures.immediateFuture(mockRtExrImage))
-        }
-        val session =
-            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
-
-        @Suppress("UNUSED_VARIABLE", "NewApi")
-        val exception =
-            assertFailsWith<IllegalArgumentException> {
-                val unusedExrImage: ListenableFuture<ExrImage> =
-                    ExrImage.createFromZipAsync(session, Paths.get("test.exr"))
-            }
-
-        assertThat(exception)
-            .hasMessageThat()
-            .contains("Only preprocessed skybox files with the .zip extension are supported.")
-        verify(mockPlatformAdapter, never()).loadExrImageByAssetName("test.exr")
-    }
-
-    @Test
     fun exrImage_createFromZip_failsForExrFile() {
         val mockRtExrImage = mock<RtExrImage>()
         mockPlatformAdapter.stub {
@@ -108,23 +84,6 @@ class ExrImageTest {
                 .contains("Only preprocessed skybox files with the .zip extension are supported.")
         }
         verify(mockPlatformAdapter, never()).loadExrImageByAssetName("test.exr")
-    }
-
-    @Test
-    fun exrImage_createFromZipAsync_withZipExtension_passes() {
-        val mockRtExrImage = mock<RtExrImage>()
-        mockPlatformAdapter.stub {
-            on { loadExrImageByAssetName("test.zip") }
-                .thenReturn(Futures.immediateFuture(mockRtExrImage))
-        }
-        val session =
-            Session(activity, fakeRuntimeFactory.createRuntime(activity), mockPlatformAdapter)
-        @Suppress("UNUSED_VARIABLE", "NewApi")
-        val exrImage: ListenableFuture<ExrImage> =
-            ExrImage.createFromZipAsync(session, Paths.get("test.zip"))
-
-        assertIs<ExrImage>(exrImage.get())
-        verify(mockPlatformAdapter).loadExrImageByAssetName("test.zip")
     }
 
     @Test

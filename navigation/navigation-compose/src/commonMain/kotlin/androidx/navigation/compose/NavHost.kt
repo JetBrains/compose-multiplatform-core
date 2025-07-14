@@ -755,12 +755,12 @@ internal fun NavHost(
         LaunchedEffect(transition.currentState, transition.targetState) {
             if (
                 transition.currentState == transition.targetState &&
-                // There is a race condition where previous animation has completed the new
-                // animation has yet to start and there is a navigate call before this effect.
-                // We need to make sure we are completing only when the start is settled on the
-                // actual entry.
-                (navController.currentBackStackEntry == null ||
-                    transition.targetState == navController.currentBackStackEntry)
+                    // There is a race condition where previous animation has completed the new
+                    // animation has yet to start and there is a navigate call before this effect.
+                    // We need to make sure we are completing only when the start is settled on the
+                    // actual entry.
+                    (navController.currentBackStackEntry == null ||
+                        transition.targetState == backStackEntry)
             ) {
                 visibleEntries.forEach { entry -> composeNavigator.onTransitionComplete(entry) }
                 zIndices.removeIf { key, _ -> key != transition.targetState.id }

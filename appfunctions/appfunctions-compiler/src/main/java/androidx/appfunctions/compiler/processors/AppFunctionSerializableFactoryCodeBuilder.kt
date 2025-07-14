@@ -190,12 +190,16 @@ class AppFunctionSerializableFactoryCodeBuilder(
     private fun appendFromAppFunctionDataMethodBodyCommon(getterResultName: String): CodeBlock {
         return buildCodeBlock {
             add(factoryInitStatements)
-            for ((paramName, paramType) in annotatedClass.getProperties()) {
+            for (property in annotatedClass.getProperties()) {
+                val paramName = property.name
+                val paramType = property.type
+                val isRequired = property.isRequired
+
                 val declaration = paramType.resolve().declaration
                 if (declaration is KSTypeParameter) {
                     appendGenericGetterStatement(paramName, declaration)
                 } else {
-                    appendGetterStatement(paramName, paramType)
+                    appendGetterStatement(paramName, paramType, isRequired)
                 }
             }
             appendGetterResultConstructorCallStatement(
@@ -406,12 +410,13 @@ class AppFunctionSerializableFactoryCodeBuilder(
     private fun CodeBlock.Builder.appendGetterStatement(
         paramName: String,
         paramType: KSTypeReference,
+        isRequired: Boolean,
     ): CodeBlock.Builder {
         val afType = AppFunctionTypeReference(paramType)
         return when (afType.typeCategory) {
             PRIMITIVE_SINGULAR,
             PRIMITIVE_ARRAY,
-            PRIMITIVE_LIST -> appendPrimitiveGetterStatement(paramName, afType)
+            PRIMITIVE_LIST -> appendPrimitiveGetterStatement(paramName, afType, isRequired)
             SERIALIZABLE_SINGULAR ->
                 appendSerializableGetterStatement(
                     paramName,
@@ -419,7 +424,12 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     afType,
                 )
             SERIALIZABLE_LIST ->
-                appendSerializableListGetterStatement(paramName, afType, afType.itemTypeReference)
+                appendSerializableListGetterStatement(
+                    paramName,
+                    afType,
+                    afType.itemTypeReference,
+                    isRequired,
+                )
             SERIALIZABLE_PROXY_SINGULAR -> {
                 val targetSerializableProxy =
                     resolvedAnnotatedSerializableProxies.getSerializableProxyForTypeReference(
@@ -440,6 +450,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
                     paramName,
                     afType,
                     targetSerializableProxy.serializableReferenceType,
+                    isRequired,
                 )
             }
             else -> {
@@ -454,22 +465,23 @@ class AppFunctionSerializableFactoryCodeBuilder(
     private fun CodeBlock.Builder.appendPrimitiveGetterStatement(
         paramName: String,
         afType: AppFunctionTypeReference,
+        isRequired: Boolean,
     ): CodeBlock.Builder {
         val formatStringMap =
             mapOf<String, Any>(
                 "param_name" to paramName,
                 "app_function_data_param_name" to APP_FUNCTION_DATA_PARAM_NAME,
                 "getter_name" to getAppFunctionDataGetterName(afType),
-                "default_value_postfix" to getGetterDefaultValuePostfix(afType),
+                "default_value_postfix" to getGetterDefaultValueStatement(afType, isRequired),
             )
-        if (afType.isNullable) {
+        if (!afType.isNullable && isRequired) {
             addNamed(
-                "val %param_name:L = %app_function_data_param_name:L.%getter_name:L(\"%param_name:L\")%default_value_postfix:L\n",
+                "val %param_name:L = checkNotNull(%app_function_data_param_name:L.%getter_name:L(\"%param_name:L\"))\n",
                 formatStringMap,
             )
         } else {
             addNamed(
-                "val %param_name:L = checkNotNull(%app_function_data_param_name:L.%getter_name:L(\"%param_name:L\")%default_value_postfix:L)\n",
+                "val %param_name:L = %app_function_data_param_name:L.%getter_name:L(\"%param_name:L\")%default_value_postfix:L\n",
                 formatStringMap,
             )
         }
@@ -481,7 +493,6 @@ class AppFunctionSerializableFactoryCodeBuilder(
         factoryName: String,
         afType: AppFunctionTypeReference,
     ): CodeBlock.Builder {
-        val annotatedSerializable = getAnnotatedSerializable(afType)
         val formatStringMap =
             mapOf<String, Any>(
                 "param_name" to paramName,
@@ -524,6 +535,7 @@ class AppFunctionSerializableFactoryCodeBuilder(
         paramName: String,
         afType: AppFunctionTypeReference,
         parametrizedItemType: KSTypeReference,
+        isRequired: Boolean,
     ): CodeBlock.Builder {
         val factoryInstanceName = parametrizedItemType.getFactoryVariableName()
         val formatStringMap =
@@ -533,15 +545,23 @@ class AppFunctionSerializableFactoryCodeBuilder(
                 "app_function_data_param_name" to APP_FUNCTION_DATA_PARAM_NAME,
                 "factory_instance_name" to factoryInstanceName,
                 "getter_name" to getAppFunctionDataGetterName(afType),
-                "default_value_postfix" to getGetterDefaultValuePostfix(afType),
+                "default_value_postfix" to getGetterDefaultValueStatement(afType, isRequired),
                 "null_safe_op" to if (afType.isNullable) "?" else "",
             )
 
-        addNamed(
+        if (!afType.isNullable && isRequired) {
+            addNamed(
+                "val %temp_list_name:L = checkNotNull(%app_function_data_param_name:L.%getter_name:L(\"%param_name:L\"))\n",
+                formatStringMap,
+            )
+        } else {
+            addNamed(
                 "val %temp_list_name:L = %app_function_data_param_name:L.%getter_name:L(\"%param_name:L\")%default_value_postfix:L\n",
                 formatStringMap,
             )
-            .addNamed(
+        }
+
+        addNamed(
                 "val %param_name:L = %temp_list_name:L%null_safe_op:L.map { data ->\n",
                 formatStringMap,
             )
@@ -726,22 +746,27 @@ class AppFunctionSerializableFactoryCodeBuilder(
         }
     }
 
-    // Missing list/array types default to an empty list/array; missing singular properties throw an
-    // error; all nullable properties default to null.
-    private fun getGetterDefaultValuePostfix(afType: AppFunctionTypeReference): String {
+    /** Gets the default value statement for the [afType] based on whether the value is required. */
+    private fun getGetterDefaultValueStatement(
+        afType: AppFunctionTypeReference,
+        isRequired: Boolean,
+    ): String {
         return when (afType.typeCategory) {
             PRIMITIVE_SINGULAR,
-            SERIALIZABLE_PROXY_SINGULAR,
-            SERIALIZABLE_SINGULAR -> ""
-            PRIMITIVE_ARRAY ->
-                if (afType.isNullable) {
-                    ""
-                } else {
-                    " ?: ${afType.selfOrItemTypeReference.getTypeShortName()}(0)"
-                }
+            PRIMITIVE_ARRAY,
             PRIMITIVE_LIST,
             SERIALIZABLE_PROXY_LIST,
-            SERIALIZABLE_LIST -> if (afType.isNullable) "" else " ?: emptyList()"
+            SERIALIZABLE_LIST -> {
+                if (!isRequired && !afType.isNullable) {
+                    " ?: ${afType.getTypeDefaultValueAsString()}"
+                } else {
+                    ""
+                }
+            }
+            SERIALIZABLE_PROXY_SINGULAR,
+            SERIALIZABLE_SINGULAR -> {
+                ""
+            }
             else -> {
                 throw ProcessingException(
                     "Unsupported type for @AppFunctionSerializable: ${afType.typeCategory}",

@@ -13,3 +13,21 @@ package androidx.xr.projected {
 
 }
 
+package androidx.xr.projected.permissions {
+
+  public final class ProjectedPermissionsRequestParams {
+    ctor public ProjectedPermissionsRequestParams(java.util.List<java.lang.String> permissions, String? rationale);
+    method public java.util.List<java.lang.String> getPermissions();
+    method public String? getRationale();
+    property public java.util.List<java.lang.String> permissions;
+    property public String? rationale;
+  }
+
+  public final class ProjectedPermissionsResultContract extends androidx.activity.result.contract.ActivityResultContract<java.util.List<? extends androidx.xr.projected.permissions.ProjectedPermissionsRequestParams>,java.util.Map<java.lang.String,? extends java.lang.Boolean>> {
+    ctor public ProjectedPermissionsResultContract();
+    method public android.content.Intent createIntent(android.content.Context context, java.util.List<androidx.xr.projected.permissions.ProjectedPermissionsRequestParams> input);
+    method public java.util.Map<java.lang.String,java.lang.Boolean> parseResult(int resultCode, android.content.Intent? intent);
+  }
+
+}
+

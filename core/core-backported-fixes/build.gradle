@@ -36,8 +36,8 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.kotlinReflect)
 }
-
 
 android {
     namespace = "androidx.core.backported.fixes"

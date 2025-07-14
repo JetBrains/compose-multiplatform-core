@@ -57,7 +57,9 @@ internal annotation class AppFunctionPrimitiveType
 public abstract class AppFunctionDataTypeMetadata
 internal constructor(
     /** Whether the data type is nullable. */
-    public val isNullable: Boolean
+    public val isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    public val description: String,
 ) {
     /** Converts this [AppFunctionDataTypeMetadata] to an [AppFunctionDataTypeMetadataDocument]. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -119,25 +121,30 @@ internal constructor(
 
         other as AppFunctionDataTypeMetadata
 
+        if (description != other.description) return false
         return isNullable == other.isNullable
     }
 
     override fun hashCode(): Int {
-        return isNullable.hashCode()
+        return 31 * description.hashCode() + isNullable.hashCode()
     }
 
     override fun toString(): String {
-        return "AppFunctionDataTypeMetadata(isNullable=$isNullable)"
+        return "AppFunctionDataTypeMetadata(isNullable=$isNullable, description=$description)"
     }
 }
 
 /** Defines the schema of an array data type. */
-public class AppFunctionArrayTypeMetadata(
+public class AppFunctionArrayTypeMetadata
+@JvmOverloads
+constructor(
     /** The type of items in the array. */
     public val itemType: AppFunctionDataTypeMetadata,
     /** Whether this data type is nullable. */
     isNullable: Boolean,
-) : AppFunctionDataTypeMetadata(isNullable = isNullable) {
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
         if (other !is AppFunctionArrayTypeMetadata) return false
@@ -153,7 +160,8 @@ public class AppFunctionArrayTypeMetadata(
     override fun toString(): String {
         return "AppFunctionArrayTypeMetadataDocument(" +
             "itemType=$itemType, " +
-            "isNullable=$isNullable" +
+            "isNullable=$isNullable," +
+            "description=$description" +
             ")"
     }
 
@@ -164,6 +172,7 @@ public class AppFunctionArrayTypeMetadata(
             itemType = itemType.toAppFunctionDataTypeMetadataDocument(),
             type = TYPE,
             isNullable = isNullable,
+            description = description.ifEmpty { null },
         )
     }
 
@@ -236,7 +245,9 @@ public class AppFunctionArrayTypeMetadata(
  *
  * This data type can be used to define the schema of an input or output type.
  */
-public class AppFunctionAllOfTypeMetadata(
+public class AppFunctionAllOfTypeMetadata
+@JvmOverloads
+constructor(
     /** The list of data types that are composed. */
     public val matchAll: List<AppFunctionDataTypeMetadata>,
     /**
@@ -247,10 +258,11 @@ public class AppFunctionAllOfTypeMetadata(
      * build the parameters for [androidx.appfunctions.ExecuteAppFunctionRequest].
      */
     public val qualifiedName: String?,
-
     /** Whether this data type is nullable. */
     isNullable: Boolean,
-) : AppFunctionDataTypeMetadata(isNullable = isNullable) {
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
 
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
@@ -269,7 +281,7 @@ public class AppFunctionAllOfTypeMetadata(
     }
 
     override fun toString(): String {
-        return "AppFunctionAllOfTypeMetadata(matchAll=$matchAll, isNullable=$isNullable)"
+        return "AppFunctionAllOfTypeMetadata(matchAll=$matchAll, isNullable=$isNullable, description=$description)"
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -280,6 +292,7 @@ public class AppFunctionAllOfTypeMetadata(
             allOf = allOfDocuments,
             isNullable = isNullable,
             objectQualifiedName = qualifiedName,
+            description = description.ifEmpty { null },
         )
     }
 
@@ -320,6 +333,7 @@ public class AppFunctionAllOfTypeMetadata(
             required = allRequired.toList(),
             qualifiedName = null,
             isNullable = false,
+            description = "",
         )
     }
 
@@ -339,7 +353,9 @@ public class AppFunctionAllOfTypeMetadata(
 }
 
 /** Defines the schema of a object type. */
-public class AppFunctionObjectTypeMetadata(
+public class AppFunctionObjectTypeMetadata
+@JvmOverloads
+constructor(
     /** The schema of the properties of the object. */
     public val properties: Map<String, AppFunctionDataTypeMetadata>,
     /** A list of required properties' names. */
@@ -353,7 +369,9 @@ public class AppFunctionObjectTypeMetadata(
     public val qualifiedName: String?,
     /** Whether this data type is nullable. */
     isNullable: Boolean,
-) : AppFunctionDataTypeMetadata(isNullable = isNullable) {
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
         if (other !is AppFunctionObjectTypeMetadata) return false
@@ -380,7 +398,8 @@ public class AppFunctionObjectTypeMetadata(
             "properties=$properties, " +
             "required=$required, " +
             "qualifiedName=$qualifiedName, " +
-            "isNullable=$isNullable" +
+            "isNullable=$isNullable," +
+            "description=$description" +
             ")"
     }
 
@@ -402,6 +421,7 @@ public class AppFunctionObjectTypeMetadata(
             required = required,
             objectQualifiedName = qualifiedName,
             isNullable = isNullable,
+            description = description.ifEmpty { null },
         )
     }
 
@@ -416,12 +436,16 @@ public class AppFunctionObjectTypeMetadata(
 /**
  * Represents a type that reference a data type that is defined in [AppFunctionComponentsMetadata].
  */
-public class AppFunctionReferenceTypeMetadata(
+public class AppFunctionReferenceTypeMetadata
+@JvmOverloads
+constructor(
     /** The string referencing a data type defined in [AppFunctionComponentsMetadata]. */
     public val referenceDataType: String,
     /** Whether the data type is nullable. */
     isNullable: Boolean,
-) : AppFunctionDataTypeMetadata(isNullable = isNullable) {
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
         if (other !is AppFunctionReferenceTypeMetadata) return false
@@ -437,7 +461,8 @@ public class AppFunctionReferenceTypeMetadata(
     override fun toString(): String {
         return "AppFunctionReferenceTypeMetadata(" +
             "referenceDataType=$referenceDataType, " +
-            "isNullable=$isNullable" +
+            "isNullable=$isNullable," +
+            "description=$description" +
             ")"
     }
 
@@ -447,6 +472,7 @@ public class AppFunctionReferenceTypeMetadata(
             type = TYPE,
             dataTypeReference = referenceDataType,
             isNullable = isNullable,
+            description = description.ifEmpty { null },
         )
     }
 
@@ -459,10 +485,16 @@ public class AppFunctionReferenceTypeMetadata(
 }
 
 /** Defines the schema of a primitive data type. */
-public class AppFunctionPrimitiveTypeMetadata(
+public class AppFunctionPrimitiveTypeMetadata
+@JvmOverloads
+constructor(
+    /** The data type. */
     @AppFunctionPrimitiveType public val type: Int,
+    /** Whether the data type is nullable. */
     isNullable: Boolean,
-) : AppFunctionDataTypeMetadata(isNullable) {
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
     override fun equals(other: Any?): Boolean {
         if (!super.equals(other)) return false
         if (other !is AppFunctionPrimitiveTypeMetadata) return false
@@ -479,7 +511,7 @@ public class AppFunctionPrimitiveTypeMetadata(
     }
 
     override fun toString(): String {
-        return "AppFunctionPrimitiveTypeMetadata(type=$type, isNullable=$isNullable)"
+        return "AppFunctionPrimitiveTypeMetadata(type=$type, isNullable=$isNullable, description=$description)"
     }
 
     /**
@@ -487,7 +519,11 @@ public class AppFunctionPrimitiveTypeMetadata(
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
-        return AppFunctionDataTypeMetadataDocument(type = type, isNullable = isNullable)
+        return AppFunctionDataTypeMetadataDocument(
+            type = type,
+            isNullable = isNullable,
+            description = description.ifEmpty { null },
+        )
     }
 
     public companion object {
@@ -570,6 +606,8 @@ public data class AppFunctionDataTypeMetadataDocument(
      * qualified name if available.
      */
     @Document.StringProperty public val objectQualifiedName: String? = null,
+    /** A description of the data type and its intended use. */
+    @Document.StringProperty public val description: String? = null,
 ) {
     @SuppressLint(
         // When doesn't handle @IntDef correctly.
@@ -582,6 +620,7 @@ public data class AppFunctionDataTypeMetadataDocument(
                 AppFunctionArrayTypeMetadata(
                     itemType = itemType.toAppFunctionDataTypeMetadata(),
                     isNullable = isNullable,
+                    description = description ?: "",
                 )
             }
             AppFunctionDataTypeMetadata.TYPE_OBJECT -> {
@@ -597,6 +636,7 @@ public data class AppFunctionDataTypeMetadataDocument(
                     required = required,
                     qualifiedName = objectQualifiedName,
                     isNullable = isNullable,
+                    description = description ?: "",
                 )
             }
             AppFunctionDataTypeMetadata.TYPE_REFERENCE ->
@@ -606,15 +646,21 @@ public data class AppFunctionDataTypeMetadataDocument(
                             "Data type reference must be present for reference type"
                         },
                     isNullable = isNullable,
+                    description = description ?: "",
                 )
             AppFunctionDataTypeMetadata.TYPE_ALL_OF ->
                 AppFunctionAllOfTypeMetadata(
                     matchAll = allOf.map { it.toAppFunctionDataTypeMetadata() },
                     qualifiedName = objectQualifiedName,
                     isNullable = isNullable,
+                    description = description ?: "",
                 )
             in AppFunctionDataTypeMetadata.PRIMITIVE_TYPES ->
-                AppFunctionPrimitiveTypeMetadata(type = type, isNullable = isNullable)
+                AppFunctionPrimitiveTypeMetadata(
+                    type = type,
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
             else -> throw IllegalArgumentException("Unknown type: $type")
         }
 }

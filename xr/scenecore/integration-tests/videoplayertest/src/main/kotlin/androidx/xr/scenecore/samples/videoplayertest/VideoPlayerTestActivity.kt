@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.media3.common.C
@@ -93,12 +94,11 @@ import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.Texture
 import androidx.xr.scenecore.TextureSampler
 import androidx.xr.scenecore.scene
-import com.google.common.util.concurrent.FutureCallback
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.file.Paths
+import kotlinx.coroutines.launch
 
 private const val TAG = "JXR-SurfaceEntity-VideoPlayerTestActivity"
 
@@ -122,6 +122,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
     // TODO: b/393150833 - Refactor these vars into a common UI struct to reduce nullability.
     private var surfaceEntity: SurfaceEntity? = null
     private var movableComponent: MovableComponent? = null // movable component for surfaceEntity
+    private var movableComponentMP: MovableComponent? = null // movable component for mainPanel
     private var videoPlaying by mutableStateOf<Boolean>(false)
     private var controlPanelEntity: PanelEntity? = null
     private var alphaMaskTexture: Texture? = null
@@ -180,23 +181,17 @@ class VideoPlayerTestActivity : ComponentActivity() {
         session.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
 
-        val alphaMaskTextureFuture: ListenableFuture<Texture> =
-            Texture.create(session, "alpha_mask.png", TextureSampler.create())
-        Futures.addCallback(
-            alphaMaskTextureFuture,
-            object : FutureCallback<Texture> {
-                override fun onSuccess(texture: Texture) {
-                    Log.i(TAG, "Alpha mask texture created")
-                    alphaMaskTexture = texture
-                }
+        // Set up the MoveableComponent so the user can move the Main Panel out of the way of
+        // video canvases which appear behind it.
+        if (movableComponentMP == null) {
+            movableComponentMP = MovableComponent.createSystemMovable(session)
+            val unused = session.scene.mainPanelEntity.addComponent(movableComponentMP!!)
+        }
 
-                override fun onFailure(t: Throwable) {
-                    Log.e(TAG, "Failed to create alpha mask texture", t)
-                }
-            },
-            Runnable::run,
-        )
-
+        lifecycleScope.launch {
+            alphaMaskTexture =
+                Texture.create(session, Paths.get("alpha_mask.png"), TextureSampler.create())
+        }
         setContent { HelloWorld(session, activity) }
     }
 
@@ -414,7 +409,11 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         value = featherRadiusX,
                         onValueChange = {
                             featherRadiusX = it
-                            surfaceEntity!!.featherRadiusX = featherRadiusX
+                            surfaceEntity!!.edgeFeather =
+                                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(
+                                    featherRadiusX,
+                                    featherRadiusY,
+                                )
                         },
                         valueRange = 0.0f..0.5f,
                     )
@@ -422,7 +421,11 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         value = featherRadiusY,
                         onValueChange = {
                             featherRadiusY = it
-                            surfaceEntity!!.featherRadiusY = featherRadiusY
+                            surfaceEntity!!.edgeFeather =
+                                SurfaceEntity.EdgeFeatheringParams.SmoothFeather(
+                                    featherRadiusX,
+                                    featherRadiusY,
+                                )
                         },
                         valueRange = 0.0f..0.5f,
                     )
@@ -531,8 +534,10 @@ class VideoPlayerTestActivity : ComponentActivity() {
         currentSurfaceEntity.setPose(correctedPose)
         Log.i(TAG, "SurfaceEntity visuals updated. Corrected Pose Applied: $correctedPose")
 
-        // controlPanelEntity should not be rotated.
+        // TODO: Redo this by going through a common parent entity for the SurfaceEntity and the
+        // control panel; making the control panel a sibling.
         controlPanelEntity?.let { panel ->
+            // controlPanelEntity should not be rotated.
             val videoQuadHeight = currentSurfaceEntity.dimensions.height
 
             // Position the control panel below and slightly in front of the video panel.
@@ -553,6 +558,14 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 Pose(targetControlPanelPosition, targetControlPanelRotation)
 
             panel.setPose(desiredControlPanelPose)
+
+            // This is a hack for nonQuad canvas shapes. We don't expect those videos to contain
+            // internal rotation, and we want to be able to position the control panel relative to
+            // the video panel.
+            if (!(currentSurfaceEntity.canvasShape is SurfaceEntity.CanvasShape.Quad)) {
+                panel.parent = currentSurfaceEntity
+            }
+
             Log.i(
                 TAG,
                 "ControlPanel pose updated to remain upright and positioned relative to video panel: $desiredControlPanelPose",
@@ -560,6 +573,8 @@ class VideoPlayerTestActivity : ComponentActivity() {
         }
     }
 
+    // Note that pose here will be ignored if the canvasShape is not a Quad
+    // TODO: Update this to take a Pose for the controlPanel
     @Suppress("UnsafeOptInUsageError")
     @Composable
     fun PlayVideoButton(
@@ -591,6 +606,15 @@ class VideoPlayerTestActivity : ComponentActivity() {
         Button(
             enabled = enabled,
             onClick = {
+                var actualPose = pose
+                if (!(canvasShape is SurfaceEntity.CanvasShape.Quad)) {
+                    actualPose =
+                        session.scene.spatialUser.head?.transformPoseTo(
+                            Pose.Identity,
+                            session.scene.activitySpace,
+                        )!!
+                }
+
                 // Create SurfaceEntity and MovableComponent if they don't exist.
                 if (surfaceEntity == null) {
 
@@ -615,7 +639,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         SurfaceEntity.create(
                             session,
                             stereoMode,
-                            pose,
+                            actualPose,
                             canvasShape,
                             surfaceContentLevel,
                             null,
@@ -623,7 +647,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         )
                     // Make the video player movable (to make it easier to look at it from different
                     // angles and distances) (only on quad canvas)
-                    movableComponent = MovableComponent.create(session)
+                    movableComponent = MovableComponent.createSystemMovable(session)
                     // The quad has a radius of 1.0 meters
                     movableComponent!!.size = FloatSize3d(1.0f, 1.0f, 1.0f)
 
@@ -631,7 +655,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                         val unused = surfaceEntity!!.addComponent(movableComponent!!)
                     }
                 }
-                currentPoseForVideo = pose
+                currentPoseForVideo = actualPose
 
                 // Get or initialize the ExoPlayer.
                 val player = initializeExoPlayer(activity)
@@ -862,7 +886,6 @@ class VideoPlayerTestActivity : ComponentActivity() {
 
     @Composable
     fun Naver180Button(session: Session, activity: Activity, enabled: Boolean = true) {
-
         PlayVideoButton(
             session = session,
             activity = activity,
@@ -870,11 +893,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
             videoUri =
                 Environment.getExternalStorageDirectory().getPath() + "/Download/Naver180.mp4",
             stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE,
-            pose =
-                session.scene.spatialUser.head?.transformPoseTo(
-                    Pose.Identity,
-                    session.scene.activitySpace,
-                )!!,
+            pose = Pose.Identity, // will be head pose
             canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
             buttonText = "[VR] Play Naver 180 (Side-by-Side)",
             buttonColor = VideoButtonColors.VR,
@@ -893,11 +912,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/Galaxy11_VR_3D360.mp4",
             stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
-            pose =
-                session.scene.spatialUser.head?.transformPoseTo(
-                    Pose.Identity,
-                    session.scene.activitySpace,
-                )!!,
+            pose = Pose.Identity, // will be head pose
             canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
             buttonText = "[VR] Play Galaxy 360 (Top-Bottom)",
             buttonColor = VideoButtonColors.VR,
@@ -916,11 +931,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/Naver180_MV-HEVC.mp4",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
-            pose =
-                session.scene.spatialUser.head?.transformPoseTo(
-                    Pose.Identity,
-                    session.scene.activitySpace,
-                )!!,
+            pose = Pose.Identity, // will be head pose
             canvasShape = SurfaceEntity.CanvasShape.Vr180Hemisphere(1.0f),
             buttonText = "[VR] Play Naver 180 (MV-HEVC)",
             buttonColor = VideoButtonColors.VR,
@@ -940,11 +951,7 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 Environment.getExternalStorageDirectory().getPath() +
                     "/Download/Galaxy11_VR_3D360_MV-HEVC.mp4",
             stereoMode = SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
-            pose =
-                session.scene.spatialUser.head?.transformPoseTo(
-                    Pose.Identity,
-                    session.scene.activitySpace,
-                )!!,
+            pose = Pose.Identity, // will be head pose
             canvasShape = SurfaceEntity.CanvasShape.Vr360Sphere(1.0f),
             buttonText = "[VR] Play Galaxy 360 (MV-HEVC)",
             buttonColor = VideoButtonColors.VR,
@@ -1085,7 +1092,6 @@ class VideoPlayerTestActivity : ComponentActivity() {
 
     @Composable
     fun VideoPlayerTestActivityUI(session: Session, activity: VideoPlayerTestActivity) {
-        val movableComponentMP = remember { mutableStateOf<MovableComponent?>(null) }
         val videoPaused = remember { mutableStateOf(false) }
         val alphaMaskEnabled = remember { mutableStateOf(false) }
         val subtitleCheckedState = remember { mutableStateOf(false) }
@@ -1109,15 +1115,6 @@ class VideoPlayerTestActivity : ComponentActivity() {
                 Button(
                     onClick = {
                         session.scene.requestFullSpaceMode()
-                        // Set up the MoveableComponent on the first jump into FSM so the user can
-                        // move the Main Panel out of the way.
-                        if (movableComponentMP.value == null) {
-                            movableComponentMP.value = MovableComponent.create(session)
-                            val unused =
-                                session.scene.mainPanelEntity.addComponent(
-                                    movableComponentMP.value!!
-                                )
-                        }
                         // We do this here to ensure that the Permissions popup isn't clipped.
                         checkExternalStoragePermission()
                     }

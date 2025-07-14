@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -189,6 +190,7 @@ public class MediaRouter2Test {
 
     @Test
     @MediumTest
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
     public void selectRoute_withSelectedMr2Route_shouldBeNoOp() throws Exception {
         String descriptorId = StubMediaRoute2ProviderService.MR2_ROUTE_ID1;
         String mr2DescriptorId = getMediaRoute2DescriptorId(descriptorId);
@@ -237,6 +239,7 @@ public class MediaRouter2Test {
 
     @Test
     @MediumTest
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
     public void selectRoute_withSelectingMr2Route_shouldBeNoOp() throws Exception {
         String descriptorId = StubMediaRoute2ProviderService.MR2_ROUTE_ID1;
         String mr2DescriptorId = getMediaRoute2DescriptorId(descriptorId);
@@ -378,7 +381,7 @@ public class MediaRouter2Test {
 
     @Test
     @MediumTest
-    public void addUserRouteFromMr1_isSystemRoute_returnsFalse() throws Exception {
+    public void addUserRouteFromMr1_isSystemRoute_returnsFalse() {
         getInstrumentation()
                 .runOnMainSync(
                         () -> {
@@ -503,11 +506,7 @@ public class MediaRouter2Test {
         Bundle extras = new Bundle();
         extras.putString("test-key", "test-value");
         MediaRouterParams params = new MediaRouterParams.Builder().setExtras(extras).build();
-        getInstrumentation()
-                .runOnMainSync(
-                        () -> {
-                            mRouter.setRouterParams(params);
-                        });
+        getInstrumentation().runOnMainSync(() -> mRouter.setRouterParams(params));
 
         assertTrue(onRouterParamsChangedLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS));
         Bundle actualExtras = routerParams[0].getExtras();
@@ -518,13 +517,12 @@ public class MediaRouter2Test {
     void addCallback(MediaRouter.Callback callback) {
         getInstrumentation()
                 .runOnMainSync(
-                        () -> {
-                            mRouter.addCallback(
-                                    mSelector,
-                                    callback,
-                                    MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY
-                                            | MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
-                        });
+                        () ->
+                                mRouter.addCallback(
+                                        mSelector,
+                                        callback,
+                                        MediaRouter.CALLBACK_FLAG_REQUEST_DISCOVERY
+                                                | MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN));
         mCallbacks.add(callback);
     }
 
@@ -555,8 +553,8 @@ public class MediaRouter2Test {
                                         mRouter.getRoutes().stream()
                                                 .collect(
                                                         Collectors.toMap(
-                                                                route -> route.getDescriptorId(),
-                                                                route -> route)));
+                                                                RouteInfo::getDescriptorId,
+                                                                Function.identity())));
     }
 
     void waitForRouteSelected(

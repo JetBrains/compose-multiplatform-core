@@ -279,7 +279,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
     @Composable
     private fun MainPanel() {
         val uuidsState = uuids.collectAsStateWithLifecycle()
-
+        var title = intent.getStringExtra("TITLE")
+        if (title == null) title = "Persistent Anchors"
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
             topBar = {
@@ -292,7 +293,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
-                        text = "Persistent Anchors",
+                        text = title,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                     )

@@ -85,7 +85,8 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
         anchorUuids.remove(uuid)
     }
 
-    override fun persistAnchor(anchor: Anchor) {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    override fun onAnchorPersisted(anchor: Anchor) {
         anchorUuids.add(anchor.uuid!!)
     }
 

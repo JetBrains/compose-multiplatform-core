@@ -51,6 +51,7 @@ import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.runtime.openxr.ExportableAnchor;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.impl.perception.Session;
@@ -61,7 +62,6 @@ import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeRepository;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
-import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -230,8 +230,11 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
 
     /** Creates an AnchorEntityImpl instance with a timeout. */
     private AnchorEntityImpl createAnchorEntityWithTimeout(Duration anchorSearchTimeout) {
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         Node node = mXrExtensions.createNode();
         return AnchorEntityImpl.createSemanticAnchor(
+                activity,
                 node,
                 ANCHOR_DIMENSIONS,
                 PlaneType.VERTICAL,
@@ -251,8 +254,11 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
      */
     private AnchorEntityImpl createPersistedAnchorEntityWithTimeout(
             UUID uuid, Duration anchorSearchTimeout) {
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         Node node = mXrExtensions.createNode();
         return AnchorEntityImpl.createPersistedAnchor(
+                activity,
                 node,
                 uuid,
                 anchorSearchTimeout,
@@ -271,8 +277,11 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         when(mSession.createAnchorFromUuid(uuid)).thenReturn(anchor);
         when(anchor.getAnchorToken()).thenReturn(mSharedAnchorToken);
 
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         Node node = mXrExtensions.createNode();
         return AnchorEntityImpl.createPersistedAnchor(
+                activity,
                 node,
                 uuid,
                 /* anchorSearchTimeout= */ null,
@@ -308,7 +317,10 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         when(mAnchor.persist()).thenReturn(UUID.randomUUID());
 
         Node node = mXrExtensions.createNode();
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         return AnchorEntityImpl.createAnchorFromPlane(
+                activity,
                 node,
                 mPlane,
                 new Pose(),
@@ -323,9 +335,12 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
 
     private AnchorEntityImpl createAnchorEntityFromPerceptionAnchor(
             androidx.xr.arcore.Anchor perceptionAnchor) {
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         Node node = mXrExtensions.createNode();
 
         return AnchorEntityImpl.createAnchorFromRuntimeAnchor(
+                activity,
                 node,
                 perceptionAnchor.getRuntimeAnchor(),
                 mActivitySpace,
@@ -339,6 +354,8 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     /** Creates a generic glTF entity. */
     private GltfEntityImpl createGltfEntity() {
         long modelToken = -1;
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         try {
             ListenableFuture<Long> modelTokenFuture =
                     mFakeImpressApi.loadGltfAsset("FakeGltfAsset.glb");
@@ -353,6 +370,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         }
         GltfModelResourceImpl model = new GltfModelResourceImpl(modelToken);
         return new GltfEntityImpl(
+                activity,
                 model,
                 mActivitySpace,
                 mFakeImpressApi,
@@ -822,9 +840,12 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
 
     @Test
     public void getPoseInActivitySpace_withNoActivitySpace_throwsException() throws Exception {
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         Node node = mXrExtensions.createNode();
         AnchorEntityImpl anchorEntity =
                 AnchorEntityImpl.createSemanticAnchor(
+                        activity,
                         node,
                         /* dimensions= */ null,
                         /* planeType= */ null,
@@ -866,9 +887,12 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     @Test
     public void getActivitySpacePose_withNonAndroidXrActivitySpaceRoot_throwsException()
             throws Exception {
+        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
+        Activity activity = activityController.create().start().get();
         Node node = mXrExtensions.createNode();
         AnchorEntityImpl anchorEntity =
                 AnchorEntityImpl.createSemanticAnchor(
+                        activity,
                         node,
                         /* dimensions= */ null,
                         /* planeType= */ null,

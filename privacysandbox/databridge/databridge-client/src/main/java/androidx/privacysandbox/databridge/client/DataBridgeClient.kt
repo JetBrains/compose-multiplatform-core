@@ -17,6 +17,7 @@
 package androidx.privacysandbox.databridge.client
 
 import android.content.Context
+import androidx.annotation.GuardedBy
 import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -31,11 +32,17 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.privacysandbox.databridge.core.Key
+import androidx.privacysandbox.databridge.core.KeyUpdateCallback
+import androidx.privacysandbox.databridge.core.KeyUpdateCallbackWithExecutor
 import androidx.privacysandbox.databridge.core.Type
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import java.lang.ClassCastException
+import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * This class provides APIs for the app process to access the data.
@@ -103,6 +110,29 @@ public abstract class DataBridgeClient private constructor() {
      */
     public abstract suspend fun removeValues(keys: Set<Key>)
 
+    /**
+     * Registers a callback that will be triggered whenever the value of any key in the provided set
+     * is updated.
+     *
+     * @param keys: Set of keys for which updates are required
+     * @param executor: The executor from which the callback is executed.
+     * @param callback: The callback which will be called when there is update in any of the keys in
+     *   the provided set
+     */
+    public abstract fun registerKeyUpdateCallback(
+        keys: Set<Key>,
+        executor: Executor,
+        callback: KeyUpdateCallback,
+    )
+
+    /**
+     * Unregisters the callback. This will ensure that the keys registered to the callback will not
+     * receive any further updates
+     *
+     * @param callback: The callback which should be unregistered
+     */
+    public abstract fun unregisterKeyUpdateCallback(callback: KeyUpdateCallback)
+
     public companion object {
         private var instance: DataBridgeClient? = null
         private val lock = Any()
@@ -149,6 +179,14 @@ public abstract class DataBridgeClient private constructor() {
         init {
             registerAppOwnedSdkSandboxInterface(context, this)
         }
+
+        private val keyGuard = Any()
+
+        @GuardedBy("keyGuard") private val keysLock = mutableMapOf<Key, Any>()
+
+        @GuardedBy("keyToKeyUpdateCallbackWithExecutorMap")
+        private val keyToKeyUpdateCallbackWithExecutorMap =
+            mutableMapOf<Key, MutableList<KeyUpdateCallbackWithExecutor>>()
 
         override suspend fun getValue(key: Key): Result<Any?> {
             return getValues(setOf(key))[key]!!
@@ -226,6 +264,7 @@ public abstract class DataBridgeClient private constructor() {
                     }
                 }
             }
+            keyValueMap.forEach { sendKeyUpdates(it.key, it.value) }
         }
 
         override suspend fun removeValue(key: Key) {
@@ -245,6 +284,36 @@ public abstract class DataBridgeClient private constructor() {
                         Type.STRING_SET -> preferences.remove(stringSetPreferencesKey(it.name))
                         Type.BYTE_ARRAY -> preferences.remove(byteArrayPreferencesKey(it.name))
                     }
+                }
+            }
+            keys.forEach { sendKeyUpdates(it, null) }
+        }
+
+        override fun registerKeyUpdateCallback(
+            keys: Set<Key>,
+            executor: Executor,
+            callback: KeyUpdateCallback,
+        ) {
+            keys.forEach { key -> registerCallback(key, callback, executor) }
+        }
+
+        override fun unregisterKeyUpdateCallback(callback: KeyUpdateCallback) {
+            val keysToRemoveFromMap = mutableListOf<Key>()
+
+            keyToKeyUpdateCallbackWithExecutorMap.forEach { (key, keyUpdateCallbackWithExecutorList)
+                ->
+                synchronized(getLockForKey(key)) {
+                    keyUpdateCallbackWithExecutorList.removeAll { it.keyUpdateCallback == callback }
+
+                    if (keyUpdateCallbackWithExecutorList.isEmpty()) {
+                        keysToRemoveFromMap.add(key)
+                    }
+                }
+            }
+
+            synchronized(keyGuard) {
+                keysToRemoveFromMap.forEach { key ->
+                    keyToKeyUpdateCallbackWithExecutorMap.remove(key)
                 }
             }
         }
@@ -274,6 +343,53 @@ public abstract class DataBridgeClient private constructor() {
             sdkSandboxManagerCompat.registerAppOwnedSdkSandboxInterface(
                 appOwnedSdkSandboxInterfaceCompat
             )
+        }
+
+        private fun registerCallback(key: Key, callback: KeyUpdateCallback, executor: Executor) {
+            synchronized(getLockForKey(key)) {
+                val keyUpdateCallbackWithExecutor =
+                    KeyUpdateCallbackWithExecutor(callback, executor)
+                keyToKeyUpdateCallbackWithExecutorMap
+                    .getOrPut(key) { mutableListOf() }
+                    .add(keyUpdateCallbackWithExecutor)
+
+                val scope = CoroutineScope(Dispatchers.IO)
+                scope.launch {
+                    val result = getValue(key)
+                    executor.execute {
+                        if (result.isSuccess) {
+                            callback.onKeyUpdated(key, result.getOrNull())
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun sendKeyUpdates(key: Key, value: Any?) {
+            if (
+                !keyToKeyUpdateCallbackWithExecutorMap.containsKey(key) ||
+                    !keysLock.containsKey(key)
+            ) {
+                return
+            }
+
+            synchronized(keysLock[key]!!) {
+                keyToKeyUpdateCallbackWithExecutorMap[key]?.forEach { keyUpdateCallbackWithExecutor
+                    ->
+                    keyUpdateCallbackWithExecutor.executor.execute {
+                        keyUpdateCallbackWithExecutor.keyUpdateCallback.onKeyUpdated(key, value)
+                    }
+                }
+            }
+        }
+
+        private fun getLockForKey(key: Key): Any {
+            synchronized(keyGuard) {
+                if (!keysLock.containsKey(key)) {
+                    keysLock[key] = Any()
+                }
+            }
+            return keysLock[key]!!
         }
     }
 }

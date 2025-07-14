@@ -51,6 +51,7 @@ import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 
 import androidx.test.rule.GrantPermissionRule;
+import androidx.xr.runtime.SubspaceNodeHolder;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.AnchorEntity;
 import androidx.xr.runtime.internal.AnchorEntity.State;
@@ -81,6 +82,7 @@ import androidx.xr.runtime.internal.SpatialEnvironment;
 import androidx.xr.runtime.internal.SpatialModeChangeListener;
 import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialVisibility;
+import androidx.xr.runtime.internal.SubspaceNodeEntity;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.TextureResource;
 import androidx.xr.runtime.internal.TextureSampler;
@@ -89,6 +91,7 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.perception.Anchor;
 import androidx.xr.scenecore.impl.perception.Fov;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
@@ -122,7 +125,6 @@ import com.android.extensions.xr.space.VisibilityState;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.androidxr.splitengine.SubspaceNode;
-import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -642,23 +644,6 @@ public final class JxrPlatformAdapterAxrTest {
         ShadowXrExtensions.extract(mXrExtensions).sendSpatialState(mActivity, state);
         verify(listener1).accept(any()); // Verify the removed listener was called exactly once
         verify(listener2, times(2)).accept(any()); // Verify the active listener was called twice
-    }
-
-    @Test
-    public void getHeadPoseInOpenXrUnboundedSpace_returnsNullWhenPerceptionSessionUninitialized() {
-        when(mPerceptionLibrary.getSession()).thenReturn(null);
-        assertThat(mRuntime.getHeadPoseInOpenXrUnboundedSpace()).isNull();
-    }
-
-    @Test
-    public void getHeadPoseInOpenXrUnboundedSpace_returnsPose() {
-        when(mSession.getHeadPose())
-                .thenReturn(
-                        new androidx.xr.scenecore.impl.perception.Pose(1f, 1f, 1f, 0f, 0f, 0f, 1f));
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        assertPose(
-                mRuntime.getHeadPoseInOpenXrUnboundedSpace(),
-                new Pose(new Vector3(1f, 1f, 1f), new Quaternion(0f, 0f, 0f, 1f)));
     }
 
     @Test
@@ -1798,9 +1783,12 @@ public final class JxrPlatformAdapterAxrTest {
         ArgumentCaptor<InputEvent> inputEventCaptor = ArgumentCaptor.forClass(InputEvent.class);
         verify(mockConsumer).onInputEvent(inputEventCaptor.capture());
         InputEvent capturedEvent = inputEventCaptor.getValue();
-        assertThat(capturedEvent.getHitInfo()).isNotNull();
-        assertThat(capturedEvent.getHitInfo().getInputEntity()).isEqualTo(panelEntity);
-        assertThat(capturedEvent.getHitInfo().getHitPosition()).isEqualTo(new Vector3(1, 2, 3));
+        assertThat(capturedEvent.getHitInfoList()).isNotEmpty();
+
+        InputEvent.HitInfo hitInfo = capturedEvent.getHitInfoList().get(0);
+
+        assertThat(hitInfo.getInputEntity()).isEqualTo(panelEntity);
+        assertThat(hitInfo.getHitPosition()).isEqualTo(new Vector3(1, 2, 3));
     }
 
     @Test
@@ -2777,5 +2765,19 @@ public final class JxrPlatformAdapterAxrTest {
         ShadowSpatialState.extract(spatialState).setSceneParentTransform(new Mat4f(new float[16]));
         mRuntime.onSpatialStateChanged(spatialState);
         verify(mockSpatialModeChangeListener).onSpatialModeChanged(any(), any());
+    }
+
+    @Test
+    public void createSubspaceNodeEntity_returnSubspaceNodeEntity() {
+        Dimensions size = new Dimensions(1.0f, 2.0f, 3.0f);
+        Node node = mXrExtensions.createNode();
+        SubspaceNode subspaceNode = new SubspaceNode(SUBSPACE_ID + 1, node);
+        SubspaceNodeHolder<?> holder = new SubspaceNodeHolder<>(subspaceNode, SubspaceNode.class);
+        SubspaceNodeEntity entity = mRuntime.createSubspaceNodeEntity(holder, size);
+
+        assertThat(entity).isNotNull();
+        assertThat(mNodeRepository.getScale(node).x).isEqualTo(size.width);
+        assertThat(mNodeRepository.getScale(node).y).isEqualTo(size.height);
+        assertThat(mNodeRepository.getScale(node).z).isEqualTo(size.depth);
     }
 }

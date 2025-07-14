@@ -60,12 +60,12 @@ internal inline fun rememberCorePanelEntity(
     val density = LocalDensity.current
     val coreEntity by remember {
         disposableValueOf(
-            CorePanelEntity(session.entityFactory(), density).also { it.shape = shape }
+            CorePanelEntity(session.entityFactory()).also { it.setShape(shape, density) }
         ) {
             it.dispose()
         }
     }
-    LaunchedEffect(shape) { coreEntity.shape = shape }
+    LaunchedEffect(shape, density) { coreEntity.setShape(shape, density) }
     return coreEntity
 }
 

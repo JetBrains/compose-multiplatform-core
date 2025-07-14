@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:JvmName("AnchorGuava")
+@file:JvmName("GuavaAnchor")
 
 package androidx.xr.arcore.guava
 

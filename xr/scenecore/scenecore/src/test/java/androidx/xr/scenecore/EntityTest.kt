@@ -781,13 +781,13 @@ class EntityTest {
     @Test
     fun activitySpaceGetBounds_callsImplGetBounds() {
         val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
-        val bounds = activitySpace.getBounds()
-        assertThat(bounds).isNotNull()
+
+        assertThat(activitySpace.bounds).isNotNull()
         assertThat(testActivitySpace.getBoundsCalled).isTrue()
     }
 
     @Test
-    fun activitySpaceSetBoundsListener_receivesBoundsChangedCallback() {
+    fun activitySpaceAddBoundsListener_receivesBoundsChangedCallback() {
         val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
         var called = false
         val boundsChangedListener =
@@ -798,36 +798,41 @@ class EntityTest {
                 called = true
             }
 
-        activitySpace.addBoundsChangedListener(directExecutor(), boundsChangedListener)
+        activitySpace.addOnBoundsChangedListener(directExecutor(), boundsChangedListener)
         testActivitySpace.sendBoundsChanged(RtDimensions(0.3f, 0.2f, 0.1f))
         assertThat(called).isTrue()
 
         called = false
-        activitySpace.removeBoundsChangedListener(boundsChangedListener)
+        activitySpace.removeOnBoundsChangedListener(boundsChangedListener)
         testActivitySpace.sendBoundsChanged(RtDimensions(0.5f, 0.5f, 0.5f))
         assertThat(called).isFalse()
     }
 
     @Test
-    fun setOnSpaceUpdatedListener_withNullParams_callsRuntimeSetOnSpaceUpdatedListener() {
+    fun addRemoveOnSpaceUpdatedListener_callsRuntimeSetOnSpaceUpdatedListener() {
         val mockRtActivitySpace = mock<RtActivitySpace>()
         whenever(mockPlatformAdapter.activitySpace).thenReturn(mockRtActivitySpace)
         val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
 
-        activitySpace.setOnSpaceUpdatedListener(null)
+        val listener = Runnable { print("Hello, World") }
+        activitySpace.addOnSpaceUpdatedListener(listener)
+
+        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(any(), eq(null))
+
+        activitySpace.removeOnSpaceUpdatedListener(listener)
         verify(mockRtActivitySpace).setOnSpaceUpdatedListener(eq(null), eq(null))
     }
 
     @Test
-    fun setOnSpaceUpdatedListener_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
+    fun addOnSpaceUpdatedListener_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
         val mockRtActivitySpace = mock<RtActivitySpace>()
         whenever(mockPlatformAdapter.activitySpace).thenReturn(mockRtActivitySpace)
         val activitySpace = ActivitySpace.create(mockPlatformAdapter, entityManager)
 
         var listenerCalled = false
         val captor = argumentCaptor<Runnable>()
-        activitySpace.setOnSpaceUpdatedListener({ listenerCalled = true }, directExecutor())
-        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(captor.capture(), any())
+        activitySpace.addOnSpaceUpdatedListener(directExecutor()) { listenerCalled = true }
+        verify(mockRtActivitySpace).setOnSpaceUpdatedListener(captor.capture(), anyOrNull())
         captor.firstValue.run()
         assertThat(listenerCalled).isTrue()
     }

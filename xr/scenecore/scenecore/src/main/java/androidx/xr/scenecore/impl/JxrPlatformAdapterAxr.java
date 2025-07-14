@@ -30,6 +30,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Pair;
+import androidx.xr.runtime.SubspaceNodeHolder;
 import androidx.xr.runtime.internal.ActivityPanelEntity;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Anchor;
@@ -65,6 +66,7 @@ import androidx.xr.runtime.internal.SpatialEnvironment;
 import androidx.xr.runtime.internal.SpatialModeChangeListener;
 import androidx.xr.runtime.internal.SpatialPointerComponent;
 import androidx.xr.runtime.internal.SpatialVisibility;
+import androidx.xr.runtime.internal.SubspaceNodeEntity;
 import androidx.xr.runtime.internal.SurfaceEntity;
 import androidx.xr.runtime.internal.TextureResource;
 import androidx.xr.runtime.internal.TextureSampler;
@@ -72,7 +74,12 @@ import androidx.xr.runtime.math.Matrix3;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.runtime.math.Vector4;
+import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
+import androidx.xr.scenecore.impl.impress.ImpressApiImpl;
+import androidx.xr.scenecore.impl.impress.KhronosPbrMaterial;
+import androidx.xr.scenecore.impl.impress.Texture;
+import androidx.xr.scenecore.impl.impress.WaterMaterial;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.impl.perception.ViewProjections;
@@ -86,11 +93,6 @@ import com.android.extensions.xr.space.SpatialState;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.androidxr.splitengine.SubspaceNode;
-import com.google.ar.imp.apibindings.ImpressApi;
-import com.google.ar.imp.apibindings.ImpressApiImpl;
-import com.google.ar.imp.apibindings.KhronosPbrMaterial;
-import com.google.ar.imp.apibindings.Texture;
-import com.google.ar.imp.apibindings.WaterMaterial;
 import com.google.ar.imp.view.splitengine.ImpSplitEngine;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -646,7 +648,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
     @Override
     public @NonNull LoggingEntity createLoggingEntity(@NonNull Pose pose) {
-        LoggingEntityImpl entity = new LoggingEntityImpl();
+        LoggingEntityImpl entity = new LoggingEntityImpl(mActivity);
         entity.setPose(pose, Space.PARENT);
         return entity;
     }
@@ -690,19 +692,6 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     @Override
     public @NonNull PerceptionSpaceActivityPose getPerceptionSpaceActivityPose() {
         return mPerceptionSpaceActivityPose;
-    }
-
-    /**
-     * Get the user's current head pose relative to @c XR_REFERENCE_SPACE_TYPE_UNBOUNDED_ANDROID.
-     */
-    // TODO(b/349180723): Refactor to a streaming based approach.
-    public @Nullable Pose getHeadPoseInOpenXrUnboundedSpace() {
-        Session session = mPerceptionLibrary.getSession();
-        if (session == null) {
-            Log.w(TAG, "Perception session is uninitialized, returning null head pose.");
-            return null;
-        }
-        return RuntimeUtils.fromPerceptionPose(Objects.requireNonNull(session.getHeadPose()));
     }
 
     /**
@@ -817,7 +806,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
         ListenableFuture<Texture> textureFuture;
         try {
-            textureFuture = mImpressApi.loadTexture(path, RuntimeUtils.getTextureSampler(sampler));
+            textureFuture = mImpressApi.loadTexture(path, sampler);
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to load texture with error: " + e.getMessage());
             // TODO:b/375070346 - make this method NonNull and set the textureResourceFuture to an
@@ -1086,9 +1075,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
         ListenableFuture<KhronosPbrMaterial> materialFuture;
         try {
-            materialFuture =
-                    mImpressApi.createKhronosPbrMaterial(
-                            RuntimeUtils.getKhronosPbrMaterialSpec(spec));
+            materialFuture = mImpressApi.createKhronosPbrMaterial(spec);
         } catch (RuntimeException e) {
             Log.e(TAG, "Failed to load Khronos PBR material with error: " + e.getMessage());
             // TODO:b/375070346 - make this method NonNull and set the textureResourceFuture to an
@@ -1723,6 +1710,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         activityPanel.setWindowBounds(windowBoundsRect);
         ActivityPanelEntityImpl activityPanelEntity =
                 new ActivityPanelEntityImpl(
+                        hostActivity,
                         activityPanel.getNode(),
                         name,
                         mExtensions,
@@ -1743,6 +1731,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             @NonNull Duration searchTimeout) {
         Node node = mExtensions.createNode();
         return AnchorEntityImpl.createSemanticAnchor(
+                mActivity,
                 node,
                 bounds,
                 planeType,
@@ -1760,6 +1749,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     public @NonNull AnchorEntity createAnchorEntity(@NonNull Anchor anchor) {
         Node node = mExtensions.createNode();
         return AnchorEntityImpl.createAnchorFromRuntimeAnchor(
+                mActivity,
                 node,
                 anchor,
                 getActivitySpace(),
@@ -1779,7 +1769,8 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
 
         // This entity is used to back JXR Core's GroupEntity.
-        Entity entity = new AndroidXrEntity(node, mExtensions, mEntityManager, mExecutor) {};
+        Entity entity =
+                new AndroidXrEntity(mActivity, node, mExtensions, mEntityManager, mExecutor) {};
         entity.setParent(parent);
         entity.setPose(pose, Space.PARENT);
         return entity;
@@ -1790,6 +1781,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
             @NonNull UUID uuid, @NonNull Duration searchTimeout) {
         Node node = mExtensions.createNode();
         return AnchorEntityImpl.createPersistedAnchor(
+                mActivity,
                 node,
                 uuid,
                 searchTimeout,
@@ -1946,6 +1938,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
 
         SurfaceEntity entity =
                 new SurfaceEntityImpl(
+                        mActivity,
                         parentEntity,
                         mImpressApi,
                         mSplitEngineSubspaceManager,
@@ -1971,6 +1964,7 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
         }
         GltfEntity entity =
                 new GltfEntityImpl(
+                        mActivity,
                         (GltfModelResourceImpl) model,
                         parentEntity,
                         mImpressApi,
@@ -2053,14 +2047,16 @@ public class JxrPlatformAdapterAxr implements JxrPlatformAdapter {
     }
 
     @Override
-    public @NonNull SubspaceNodeEntityImpl createSubspaceNodeEntity(
-            @NonNull SubspaceNode subspaceNode, @NonNull Dimensions size) {
+    public @NonNull SubspaceNodeEntity createSubspaceNodeEntity(
+            @NonNull SubspaceNodeHolder<?> subspaceNodeHolder, @NonNull Dimensions size) {
         SubspaceNodeEntityImpl subspaceNodeEntity =
                 new SubspaceNodeEntityImpl(
+                        mActivity,
                         mExtensions,
                         mEntityManager,
                         mExecutor,
-                        subspaceNode.getSubspaceNode(),
+                        SubspaceNodeHolder.assertGetValue(
+                            subspaceNodeHolder, SubspaceNode.class).getSubspaceNode(),
                         size);
         subspaceNodeEntity.setParent(mActivitySpace);
         return subspaceNodeEntity;

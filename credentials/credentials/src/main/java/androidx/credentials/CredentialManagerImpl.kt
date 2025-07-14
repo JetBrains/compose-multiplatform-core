@@ -311,8 +311,8 @@ internal class CredentialManagerImpl internal constructor(private val context: C
      * This API uses callbacks instead of Kotlin coroutines.
      *
      * The execution does not invoke any UI but simply informs credential providers about the state
-     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialRequest],
-     * [SignalCurrentUserDetailsCredentialRequest], [SignalUnknownCredentialStateRequest].
+     * of a user's credential. Supported signal types are [SignalAllAcceptedCredentialIdsRequest],
+     * [SignalCurrentUserDetailsRequest], [SignalUnknownCredentialRequest].
      *
      * @param request the request for signaling the credential state
      * @param executor the callback will take place on this executor

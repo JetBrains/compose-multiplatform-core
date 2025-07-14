@@ -37,7 +37,7 @@ fun ShapesSample() {
     val shapes = GlimmerTheme.shapes
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item { ShapeItem("small", shape = shapes.small) }
         item { ShapeItem("medium", shape = shapes.medium) }

@@ -19,12 +19,15 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.ink.authoring.compose"
+        compileSdk = 35
+        androidResources.enable = true
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -79,11 +82,6 @@ androidXMultiplatform {
             }
         }
     }
-}
-
-android {
-    namespace = "androidx.ink.authoring.compose"
-    compileSdk = 35
 }
 
 androidx {

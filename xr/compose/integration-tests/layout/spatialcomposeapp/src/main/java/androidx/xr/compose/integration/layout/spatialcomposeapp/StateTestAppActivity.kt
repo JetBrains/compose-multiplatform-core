@@ -47,7 +47,7 @@ import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
@@ -78,7 +78,7 @@ class StateTestAppActivity : ComponentActivity() {
             ApplicationSubspace {
                 SpatialRow {
                     if (useMainPanel) {
-                        MainPanel(modifier = SubspaceModifier.size(400.dp).movable())
+                        SpatialMainPanel(modifier = SubspaceModifier.size(400.dp).movable())
                     } else {
                         SpatialPanel(modifier = SubspaceModifier.movable()) {
                             MainPanelContent("Spatial Panel")

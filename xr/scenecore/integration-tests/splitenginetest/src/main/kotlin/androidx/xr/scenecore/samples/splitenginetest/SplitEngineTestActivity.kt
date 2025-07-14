@@ -69,7 +69,6 @@ import androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference
 import androidx.xr.scenecore.Texture
 import androidx.xr.scenecore.TextureSampler
 import androidx.xr.scenecore.scene
-import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Paths
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -192,7 +191,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                     // move the
                     // main panel around.
                     if (movableComponentMP.value == null) {
-                        movableComponentMP.value = MovableComponent.create(session)
+                        movableComponentMP.value = MovableComponent.createSystemMovable(session)
                         val unused =
                             session.scene.mainPanelEntity.addComponent(movableComponentMP.value!!)
                     }
@@ -212,24 +211,21 @@ class SplitEngineTestActivity : ComponentActivity() {
                 Text(text = "Split Engine APIs", fontSize = 50.sp)
                 Button(
                     onClick = {
-                        val skyboxTokenFuture: ListenableFuture<ExrImage> =
-                            ExrImage.createFromZipAsync(
-                                session,
-                                Paths.get("skyboxes", "BlueSkybox.zip"),
-                            )
-                        skyboxTokenFuture.addListener(
-                            {
-                                try {
-                                    blueSkybox.value = skyboxTokenFuture.get()
-                                } catch (e: Exception) {
-                                    Log.e(
-                                        "SplitEngineTestActivity",
-                                        "Failed to load BlueSkybox: " + e.message,
-                                    )
-                                }
-                            },
-                            Runnable::run,
-                        )
+                        lifecycleScope.launch {
+                            val skyboxToken: ExrImage =
+                                ExrImage.createFromZip(
+                                    session,
+                                    Paths.get("skyboxes", "BlueSkybox.zip"),
+                                )
+                            try {
+                                blueSkybox.value = skyboxToken
+                            } catch (e: Exception) {
+                                Log.e(
+                                    "SplitEngineTestActivity",
+                                    "Failed to load BlueSkybox: " + e.message,
+                                )
+                            }
+                        }
                     }
                 ) {
                     Text(text = "Load Skybox Blue", fontSize = 20.sp)
@@ -341,7 +337,7 @@ class SplitEngineTestActivity : ComponentActivity() {
                 if (dragonEntity.value != null) {
                     val interactableComponent =
                         InteractableComponent.create(session, mainExecutor) {
-                            if (it.action == InputEvent.ACTION_DOWN) {
+                            if (it.action == InputEvent.Action.ACTION_DOWN) {
                                 dragonEntity.value!!.setScale(
                                     dragonEntity.value!!.getScale() * 1.1f
                                 )
@@ -412,53 +408,30 @@ class SplitEngineTestActivity : ComponentActivity() {
                     )
                     Button(
                         onClick = {
-                            val spec =
-                                KhronosPbrMaterialSpec.create(
-                                    lightingModel = KhronosPbrMaterialSpec.LightingModel.LIT,
-                                    blendMode = KhronosPbrMaterialSpec.BlendMode.OPAQUE,
-                                    doubleSidedMode =
-                                        KhronosPbrMaterialSpec.DoubleSidedMode.SINGLE_SIDED,
-                                )
-                            val khronosPbrMaterialFuture: ListenableFuture<KhronosPbrMaterial> =
-                                KhronosPbrMaterial.create(session, spec)
-                            khronosPbrMaterialFuture.addListener(
-                                {
-                                    try {
-                                        khronosPbrMaterial.value = khronosPbrMaterialFuture.get()
-                                    } catch (e: Exception) {
-                                        Log.e(
-                                            "SplitEngineTestActivity",
-                                            "Failed to Khronos PBR Material: " + e.message,
-                                        )
-                                    }
-                                },
-                                Runnable::run,
-                            )
+                            lifecycleScope.launch {
+                                val spec =
+                                    KhronosPbrMaterialSpec.create(
+                                        lightingModel = KhronosPbrMaterialSpec.LightingModel.LIT,
+                                        blendMode = KhronosPbrMaterialSpec.BlendMode.OPAQUE,
+                                        doubleSidedMode =
+                                            KhronosPbrMaterialSpec.DoubleSidedMode.SINGLE_SIDED,
+                                    )
+                                khronosPbrMaterial.value = KhronosPbrMaterial.create(session, spec)
+                            }
                         }
                     ) {
                         Text(text = "Create Khronos PBR Material Split Engine", fontSize = 20.sp)
                     }
                     Button(
                         onClick = {
-                            val textureFuture: ListenableFuture<Texture> =
-                                Texture.create(
-                                    session,
-                                    "textures/pattern.png",
-                                    TextureSampler.create(),
-                                )
-                            textureFuture.addListener(
-                                {
-                                    try {
-                                        patternTexture.value = textureFuture.get()
-                                    } catch (e: Exception) {
-                                        Log.e(
-                                            "SplitEngineTestActivity",
-                                            "Failed to load Pattern Texture: " + e.message,
-                                        )
-                                    }
-                                },
-                                Runnable::run,
-                            )
+                            lifecycleScope.launch {
+                                patternTexture.value =
+                                    Texture.create(
+                                        session,
+                                        Paths.get("textures", "pattern.png"),
+                                        TextureSampler.create(),
+                                    )
+                            }
                         }
                     ) {
                         Text(text = "Load Pattern Texture Split Engine", fontSize = 20.sp)

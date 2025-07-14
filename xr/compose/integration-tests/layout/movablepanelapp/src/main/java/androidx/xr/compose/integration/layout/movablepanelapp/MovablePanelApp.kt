@@ -45,9 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.integration.common.AnotherActivity
 import androidx.xr.compose.spatial.Subspace
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -192,7 +193,7 @@ class MovablePanelApp : ComponentActivity() {
                         PanelContent("[MOVABLE WITH CUSTOM LISTENER]")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    MainPanel(
+                    SpatialMainPanel(
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)
                                 .width(panelWidth)
@@ -213,7 +214,7 @@ class MovablePanelApp : ComponentActivity() {
                         PanelContent("[NOT MOVABLE]")
                     }
                     SpatialLayoutSpacer(modifier = SubspaceModifier.height(20.dp))
-                    SpatialPanel(
+                    SpatialActivityPanel(
                         intent = Intent(this@MovablePanelApp, AnotherActivity::class.java),
                         modifier =
                             SubspaceModifier.offset(x = 120.dp)

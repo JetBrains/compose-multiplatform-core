@@ -64,40 +64,22 @@
     <string name="clipboard_label" msgid="8943155331324944981">"Kontent PDF fayldan nusxalandi"</string>
     <string name="fast_scroller_thumb" msgid="6712048991132846541">"Varaqlash tasmasi"</string>
     <string name="confirm_selection" msgid="7020926320719465164">"Tasdiqlash"</string>
-    <!-- no translation found for form_widget (5841730047544552656) -->
-    <skip />
-    <!-- no translation found for form_type (1302137779809645840) -->
-    <skip />
-    <!-- no translation found for form_title (2718582322716402117) -->
-    <skip />
-    <!-- no translation found for form_value (960532222685914495) -->
-    <skip />
-    <!-- no translation found for form_current_value (3883820498421821863) -->
-    <skip />
-    <!-- no translation found for form_read_only (4928929192592391646) -->
-    <skip />
-    <!-- no translation found for form_multiselect_type (8834016845619058170) -->
-    <skip />
-    <!-- no translation found for form_click_toggle_instruction (7171111300244445911) -->
-    <skip />
-    <!-- no translation found for form_click_opens_choices_menu_instruction (5648228168212004143) -->
-    <skip />
-    <!-- no translation found for form_click_enters_text_edit_mode_instruction (2305283577544618880) -->
-    <skip />
-    <!-- no translation found for form_unknown (6371515914365431330) -->
-    <skip />
-    <!-- no translation found for form_widget_type_push_button (3595388398616291441) -->
-    <skip />
-    <!-- no translation found for form_widget_type_checkbox (5165655383070460151) -->
-    <skip />
-    <!-- no translation found for form_widget_type_radio_button (879588277617060839) -->
-    <skip />
-    <!-- no translation found for form_widget_type_combo_box (1821324387398868582) -->
-    <skip />
-    <!-- no translation found for form_widget_type_list_box (8052623180309553495) -->
-    <skip />
-    <!-- no translation found for form_widget_type_text_field (581285155951215607) -->
-    <skip />
-    <!-- no translation found for form_widget_type_signature (3811511096215331673) -->
-    <skip />
+    <string name="form_widget" msgid="5841730047544552656">"Shakl vidjeti"</string>
+    <string name="form_type" msgid="1302137779809645840">"Turi: <xliff:g id="WIDGET_TYPE_NAME">%1$s</xliff:g>."</string>
+    <string name="form_title" msgid="2718582322716402117">"Nomi: <xliff:g id="WIDGET_ACCESSIBILITY_TITLE">%1$s</xliff:g>."</string>
+    <string name="form_value" msgid="960532222685914495">"Qiymat: <xliff:g id="WIDGET_VALUE">%1$s</xliff:g>."</string>
+    <string name="form_current_value" msgid="3883820498421821863">"Joriy qiymat: <xliff:g id="WIDGET_VALUE">%1$s</xliff:g>"</string>
+    <string name="form_read_only" msgid="4928929192592391646">"Vidjet faqat oʻqish rejimida va oʻzgartirilmaydi."</string>
+    <string name="form_multiselect_type" msgid="8834016845619058170">"Turi: Bir nechtasi tanlanadigan <xliff:g id="WIDGET_TYPE_NAME">%1$s</xliff:g>."</string>
+    <string name="form_click_toggle_instruction" msgid="7171111300244445911">"Bosilganda qiymat yoqiladi yoki oʻchiriladi"</string>
+    <string name="form_click_opens_choices_menu_instruction" msgid="5648228168212004143">"Bosilganda tanlov menyusi ochiladi."</string>
+    <string name="form_click_enters_text_edit_mode_instruction" msgid="2305283577544618880">"Bosilganda matnni tahrirlash rejimiga kiritiladi"</string>
+    <string name="form_unknown" msgid="6371515914365431330">"Noaniq"</string>
+    <string name="form_widget_type_push_button" msgid="3595388398616291441">"Push tugmasi"</string>
+    <string name="form_widget_type_checkbox" msgid="5165655383070460151">"Belgilash katakchasi"</string>
+    <string name="form_widget_type_radio_button" msgid="879588277617060839">"Tanlash tugmasi"</string>
+    <string name="form_widget_type_combo_box" msgid="1821324387398868582">"Kombo roʻyxat"</string>
+    <string name="form_widget_type_list_box" msgid="8052623180309553495">"Roʻyxat"</string>
+    <string name="form_widget_type_text_field" msgid="581285155951215607">"Matn qatori"</string>
+    <string name="form_widget_type_signature" msgid="3811511096215331673">"Imzo"</string>
 </resources>

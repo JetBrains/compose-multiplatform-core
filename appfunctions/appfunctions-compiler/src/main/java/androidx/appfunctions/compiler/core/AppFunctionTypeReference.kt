@@ -27,7 +27,18 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionS
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.metadata.AppFunctionPrimitiveTypeMetadata
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.squareup.kotlinpoet.BOOLEAN
+import com.squareup.kotlinpoet.BOOLEAN_ARRAY
+import com.squareup.kotlinpoet.BYTE_ARRAY
+import com.squareup.kotlinpoet.DOUBLE
+import com.squareup.kotlinpoet.DOUBLE_ARRAY
+import com.squareup.kotlinpoet.FLOAT
+import com.squareup.kotlinpoet.FLOAT_ARRAY
+import com.squareup.kotlinpoet.INT
+import com.squareup.kotlinpoet.INT_ARRAY
 import com.squareup.kotlinpoet.LIST
+import com.squareup.kotlinpoet.LONG
+import com.squareup.kotlinpoet.LONG_ARRAY
 import com.squareup.kotlinpoet.TypeName
 import java.time.Instant
 import java.time.LocalDateTime
@@ -107,6 +118,25 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
     }
 
     /**
+     * Gets the default value when the value is missing for the given type.
+     *
+     * This method returns the default value for the type when it is non-null, since the nullable
+     * type can always default to null.
+     *
+     * @throws ProcessingException if the current type cannot be optional
+     */
+    fun getTypeDefaultValueAsString(): String {
+        val typeQualifiedName = selfTypeReference.ensureQualifiedTypeName().asString()
+        val defaultValue =
+            TYPE_TO_DEFAULT_VALUE_MAP[typeQualifiedName]
+                ?: throw ProcessingException(
+                    "Type ${selfTypeReference.toTypeName()} is not allowed to be optional",
+                    selfTypeReference,
+                )
+        return defaultValue
+    }
+
+    /**
      * The category of types that are supported by app functions.
      *
      * The category of a type is determined by its underlying type. For example, a type reference to
@@ -125,6 +155,17 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
     }
 
     companion object {
+        /** Checks if [typeReference] is allowed to be an optional value in AppFunction. */
+        fun isAllowToBeOptional(typeReference: KSTypeReference): Boolean {
+            if (typeReference.resolve().isMarkedNullable) {
+                // Nullable types are always allowed to be optional
+                return true
+            }
+            return TYPE_TO_DEFAULT_VALUE_MAP.keys.contains(
+                typeReference.ensureQualifiedTypeName().asString()
+            )
+        }
+
         /**
          * Checks if the type reference is a supported type.
          *
@@ -307,5 +348,22 @@ class AppFunctionTypeReference(val selfTypeReference: KSTypeReference) {
         val SUPPORTED_TYPES_STRING: String =
             SUPPORTED_TYPES.joinToString(",\n") +
                 "\nLists of ${SUPPORTED_PRIMITIVE_TYPES_IN_LIST.joinToString(", ")}"
+
+        /** Maps of AppFunction's supported optional types to its default value. */
+        private val TYPE_TO_DEFAULT_VALUE_MAP =
+            mapOf<String, String>(
+                INT.canonicalName to "0",
+                LONG.canonicalName to "0L",
+                DOUBLE.canonicalName to "0.0",
+                FLOAT.canonicalName to "0.0f",
+                BOOLEAN.canonicalName to "false",
+                INT_ARRAY.canonicalName to "intArrayOf()",
+                LONG_ARRAY.canonicalName to "longArrayOf()",
+                BYTE_ARRAY.canonicalName to "byteArrayOf()",
+                DOUBLE_ARRAY.canonicalName to "doubleArrayOf()",
+                FLOAT_ARRAY.canonicalName to "floatArrayOf()",
+                BOOLEAN_ARRAY.canonicalName to "booleanArrayOf()",
+                LIST.canonicalName to "emptyList()",
+            )
     }
 }

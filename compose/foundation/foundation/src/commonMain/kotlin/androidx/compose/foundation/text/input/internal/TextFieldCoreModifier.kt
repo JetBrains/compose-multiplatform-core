@@ -201,7 +201,7 @@ internal class TextFieldCoreModifierNode(
             )
         )
 
-    init {
+    private val textContextMenuToolbarHandlerNode =
         delegate(
             TextContextMenuToolbarHandlerNode(
                 requester = toolbarRequester,
@@ -227,7 +227,6 @@ internal class TextFieldCoreModifierNode(
                 },
             )
         )
-    }
 
     override fun onAttach() {
         // if the attributes are right during onAttach, start the cursor job immediately.
@@ -277,6 +276,8 @@ internal class TextFieldCoreModifierNode(
             textLayoutState = textLayoutState,
             visible = isFocused || isDragHovered,
         )
+
+        textContextMenuToolbarHandlerNode.update(toolbarRequester)
 
         if (!showCursor) {
             changeObserverJob?.cancel()

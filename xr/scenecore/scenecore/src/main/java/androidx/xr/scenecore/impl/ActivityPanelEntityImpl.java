@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.impl;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -45,6 +46,7 @@ class ActivityPanelEntityImpl extends BasePanelEntity implements ActivityPanelEn
     //                    JxrPlatformAdapterAxr.
 
     ActivityPanelEntityImpl(
+            Context context,
             Node node,
             String name,
             XrExtensions extensions,
@@ -52,7 +54,7 @@ class ActivityPanelEntityImpl extends BasePanelEntity implements ActivityPanelEn
             ActivityPanel activityPanel,
             PixelDimensions windowBoundsPx,
             ScheduledExecutorService executor) {
-        super(node, extensions, entityManager, executor);
+        super(context, node, extensions, entityManager, executor);
         // We need to notify our base class of the pixelDimensions, even though the Extensions are
         // initialized in the factory method. (ext.ActivityPanel.setWindowBounds, etc)
         super.setSizeInPixels(windowBoundsPx);

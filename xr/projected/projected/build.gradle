@@ -27,12 +27,17 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("AndroidXComposePlugin")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
 
-    implementation("androidx.annotation:annotation:1.8.1")
+    implementation(project(":xr:glimmer:glimmer"))
+    implementation(project(":compose:material3:material3"))
+    implementation(project(":compose:test-utils"))
+    implementation("androidx.appcompat:appcompat:1.7.1")
+    implementation("androidx.activity:activity-compose:1.10.1")
 
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)

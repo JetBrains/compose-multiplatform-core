@@ -96,6 +96,24 @@ package androidx.test.uiautomator {
     method public static androidx.test.uiautomator.BySelector textStartsWith(String);
   }
 
+  public static class By.Window {
+    method public static androidx.test.uiautomator.ByWindowSelector active(boolean);
+    method @RequiresApi(30) public static androidx.test.uiautomator.ByWindowSelector displayId(int);
+    method public static androidx.test.uiautomator.ByWindowSelector focused(boolean);
+    method public static androidx.test.uiautomator.ByWindowSelector id(int);
+    method public static androidx.test.uiautomator.ByWindowSelector layer(int);
+    method public static androidx.test.uiautomator.ByWindowSelector layerAbove(int);
+    method public static androidx.test.uiautomator.ByWindowSelector layerBelow(int);
+    method public static androidx.test.uiautomator.ByWindowSelector pkg(String);
+    method public static androidx.test.uiautomator.ByWindowSelector pkg(java.util.regex.Pattern);
+    method public static androidx.test.uiautomator.ByWindowSelector title(String);
+    method public static androidx.test.uiautomator.ByWindowSelector title(java.util.regex.Pattern);
+    method public static androidx.test.uiautomator.ByWindowSelector titleContains(String);
+    method public static androidx.test.uiautomator.ByWindowSelector titleEndsWith(String);
+    method public static androidx.test.uiautomator.ByWindowSelector titleStartsWith(String);
+    method public static androidx.test.uiautomator.ByWindowSelector type(int);
+  }
+
   public class BySelector {
     method public androidx.test.uiautomator.BySelector checkable(boolean);
     method public androidx.test.uiautomator.BySelector checked(boolean);
@@ -141,6 +159,24 @@ package androidx.test.uiautomator {
     method public androidx.test.uiautomator.BySelector textContains(String);
     method public androidx.test.uiautomator.BySelector textEndsWith(String);
     method public androidx.test.uiautomator.BySelector textStartsWith(String);
+  }
+
+  public class ByWindowSelector {
+    method public androidx.test.uiautomator.ByWindowSelector active(boolean);
+    method @RequiresApi(30) public androidx.test.uiautomator.ByWindowSelector displayId(int);
+    method public androidx.test.uiautomator.ByWindowSelector focused(boolean);
+    method public androidx.test.uiautomator.ByWindowSelector id(int);
+    method public androidx.test.uiautomator.ByWindowSelector layer(@IntRange(from=0) int);
+    method public androidx.test.uiautomator.ByWindowSelector layerAbove(@IntRange(from=0) int);
+    method public androidx.test.uiautomator.ByWindowSelector layerBelow(@IntRange(from=1) int);
+    method public androidx.test.uiautomator.ByWindowSelector pkg(String);
+    method public androidx.test.uiautomator.ByWindowSelector pkg(java.util.regex.Pattern);
+    method public androidx.test.uiautomator.ByWindowSelector title(String);
+    method public androidx.test.uiautomator.ByWindowSelector title(java.util.regex.Pattern);
+    method public androidx.test.uiautomator.ByWindowSelector titleContains(String);
+    method public androidx.test.uiautomator.ByWindowSelector titleEndsWith(String);
+    method public androidx.test.uiautomator.ByWindowSelector titleStartsWith(String);
+    method public androidx.test.uiautomator.ByWindowSelector type(int);
   }
 
   public interface Condition<T, U> {
@@ -299,6 +335,8 @@ package androidx.test.uiautomator {
     method public androidx.test.uiautomator.UiObject2! findObject(androidx.test.uiautomator.BySelector);
     method public androidx.test.uiautomator.UiObject findObject(androidx.test.uiautomator.UiSelector);
     method public java.util.List<androidx.test.uiautomator.UiObject2!> findObjects(androidx.test.uiautomator.BySelector);
+    method public androidx.test.uiautomator.UiWindow? findWindow(androidx.test.uiautomator.ByWindowSelector);
+    method public java.util.List<androidx.test.uiautomator.UiWindow!> findWindows(androidx.test.uiautomator.ByWindowSelector);
     method public void freezeRotation() throws android.os.RemoteException;
     method @RequiresApi(30) public void freezeRotation(int);
     method @Deprecated public String! getCurrentActivityName();
@@ -319,6 +357,7 @@ package androidx.test.uiautomator {
     method public boolean hasAnyWatcherTriggered();
     method public boolean hasObject(androidx.test.uiautomator.BySelector);
     method public boolean hasWatcherTriggered(String?);
+    method public boolean hasWindow(androidx.test.uiautomator.ByWindowSelector);
     method public boolean isNaturalOrientation();
     method public boolean isScreenOn() throws android.os.RemoteException;
     method public boolean openNotification();
@@ -609,6 +648,23 @@ package androidx.test.uiautomator {
 
   public interface UiWatcher {
     method public boolean checkForCondition();
+  }
+
+  public final class UiWindow implements androidx.test.uiautomator.Searchable {
+    method public androidx.test.uiautomator.UiObject2! findObject(androidx.test.uiautomator.BySelector);
+    method public java.util.List<androidx.test.uiautomator.UiObject2!> findObjects(androidx.test.uiautomator.BySelector);
+    method public int getDisplayId();
+    method public int getId();
+    method public int getLayer();
+    method public String? getPackageName();
+    method public androidx.test.uiautomator.UiObject2? getRootObject();
+    method public String? getTitle();
+    method public int getType();
+    method public android.graphics.Rect getVisibleBounds();
+    method public boolean hasObject(androidx.test.uiautomator.BySelector);
+    method public boolean isActive();
+    method public boolean isFocused();
+    method public boolean isInPictureInPictureMode();
   }
 
   public class Until {

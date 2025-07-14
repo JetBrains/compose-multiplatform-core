@@ -64,17 +64,23 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.camera.camera2.Camera2Config;
+import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.camera2.internal.util.SemaphoreReleasingCamera2Callbacks;
 import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.CameraUnavailableException;
+import androidx.camera.core.CameraXConfig;
 import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.MirrorMode;
 import androidx.camera.core.Preview;
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureResult;
@@ -220,7 +226,8 @@ public final class Camera2CameraImplTest {
                 cameraManagerCompat, mCameraId, camera2CameraInfo, mCameraCoordinator,
                 mCameraStateRegistry, sCameraExecutor, sCameraHandler,
                 DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
-                -1L
+                -1L,
+                null
         );
     }
 
@@ -576,6 +583,105 @@ public final class Camera2CameraImplTest {
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync(
                 () -> mCamera2CameraImpl.detachUseCases(singletonList(imageCapture)));
+    }
+
+    @Test
+    public void attachNonRepeatingUseCase_meteringRepeatingIsNotAttachedIfDisabled()
+            throws CameraAccessExceptionCompat, CameraUnavailableException, ExecutionException,
+            InterruptedException {
+        // Arrange.
+        CameraXConfig cameraXConfig = CameraXConfig.Builder.fromConfig(
+                Camera2Config.defaultConfig()).setRepeatingStreamForced(false).build();
+        CameraManagerCompat cameraManagerCompat =
+                CameraManagerCompat.from((Context) ApplicationProvider.getApplicationContext());
+        Camera2CameraInfoImpl camera2CameraInfo = new Camera2CameraInfoImpl(
+                mCameraId, cameraManagerCompat);
+        Camera2CameraImpl camera = new Camera2CameraImpl(
+                ApplicationProvider.getApplicationContext(),
+                cameraManagerCompat, mCameraId, camera2CameraInfo, mCameraCoordinator,
+                mCameraStateRegistry, sCameraExecutor, sCameraHandler,
+                DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
+                -1L, cameraXConfig);
+        UseCase useCase = createUseCase(NON_REPEATING);
+
+        // Act.
+        camera.attachUseCases(singletonList(useCase));
+
+        // Assert.
+        assertThat(camera.isMeteringRepeatingAttached()).isFalse();
+
+        camera.detachUseCases(singletonList(useCase));
+        camera.release().get();
+    }
+
+    @Test
+    public void startFocusMetering_throwExceptionIfFocusMeteringDisabled()
+            throws InterruptedException, CameraAccessExceptionCompat, CameraUnavailableException,
+            ExecutionException {
+        // Arrange.
+        CameraXConfig cameraXConfig = CameraXConfig.Builder.fromConfig(
+                Camera2Config.defaultConfig()).setRepeatingStreamForced(false).build();
+        CameraManagerCompat cameraManagerCompat =
+                CameraManagerCompat.from((Context) ApplicationProvider.getApplicationContext());
+        Camera2CameraInfoImpl camera2CameraInfo = new Camera2CameraInfoImpl(
+                mCameraId, cameraManagerCompat);
+        Camera2CameraImpl camera = new Camera2CameraImpl(
+                ApplicationProvider.getApplicationContext(),
+                cameraManagerCompat, mCameraId, camera2CameraInfo, mCameraCoordinator,
+                mCameraStateRegistry, sCameraExecutor, sCameraHandler,
+                DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
+                -1L, cameraXConfig);
+        UseCase useCase = createUseCase(NON_REPEATING);
+
+        // Act.
+        camera.attachUseCases(singletonList(useCase));
+
+        // Assert.
+        try {
+            SurfaceOrientedMeteringPointFactory meteringPointFactory =
+                    new SurfaceOrientedMeteringPointFactory(1f, 1f);
+            MeteringPoint validMeteringPoint = meteringPointFactory.createPoint(0f, 0f);
+            camera.getCameraControl().startFocusAndMetering(
+                    new FocusMeteringAction.Builder(validMeteringPoint).build()).get();
+        } catch (ExecutionException e) {
+            assertThat(e.getCause()).isInstanceOf(CameraControl.OperationCanceledException.class);
+        }
+
+        camera.detachUseCases(singletonList(useCase));
+        camera.release().get();
+    }
+
+    @Test
+    public void cancelFocusMetering_throwExceptionIfFocusMeteringDisabled()
+            throws InterruptedException, CameraAccessExceptionCompat, CameraUnavailableException,
+            ExecutionException {
+        // Arrange.
+        CameraXConfig cameraXConfig = CameraXConfig.Builder.fromConfig(
+                Camera2Config.defaultConfig()).setRepeatingStreamForced(false).build();
+        CameraManagerCompat cameraManagerCompat =
+                CameraManagerCompat.from((Context) ApplicationProvider.getApplicationContext());
+        Camera2CameraInfoImpl camera2CameraInfo = new Camera2CameraInfoImpl(
+                mCameraId, cameraManagerCompat);
+        Camera2CameraImpl camera = new Camera2CameraImpl(
+                ApplicationProvider.getApplicationContext(),
+                cameraManagerCompat, mCameraId, camera2CameraInfo, mCameraCoordinator,
+                mCameraStateRegistry, sCameraExecutor, sCameraHandler,
+                DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
+                -1L, cameraXConfig);
+        UseCase useCase = createUseCase(NON_REPEATING);
+
+        // Act.
+        camera.attachUseCases(singletonList(useCase));
+
+        // Assert.
+        try {
+            camera.getCameraControl().cancelFocusAndMetering().get();
+        } catch (ExecutionException e) {
+            assertThat(e.getCause()).isInstanceOf(CameraControl.OperationCanceledException.class);
+        }
+
+        camera.detachUseCases(singletonList(useCase));
+        camera.release().get();
     }
 
     @Test
@@ -1346,7 +1452,7 @@ public final class Camera2CameraImplTest {
                     mCameraCoordinator,
                     mCameraStateRegistry, sCameraExecutor, sCameraHandler,
                     DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
-                    -1L);
+                    -1L, null);
             mCameraCoordinator.addConcurrentCameraIdsAndCameraSelectors(
                     new HashMap<String, CameraSelector>() {{
                         put(mCameraId, DEFAULT_BACK_CAMERA);

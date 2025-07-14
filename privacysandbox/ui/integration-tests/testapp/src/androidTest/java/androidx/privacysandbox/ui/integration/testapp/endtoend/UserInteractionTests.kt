@@ -232,6 +232,7 @@ open class AbstractUserInteractionInScrollTest(
     AutomatedEndToEndTest(
         FragmentOptions.FRAGMENT_SCROLL_HIDDEN,
         uiFrameworkOption,
+        FragmentOptions.AD_FORMAT_BANNER_AD,
         mediationOption,
         zOrdering,
         adType,

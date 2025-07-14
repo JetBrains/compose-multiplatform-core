@@ -789,6 +789,7 @@ class SandboxedSdkViewTest {
         assertThat(obstruction.height()).isEqualTo(obstructionHeight)
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     // TODO(b/345688233): Remove when no longer necessary.
     fun obstructionsNotReportedIfZAbove() {
@@ -813,6 +814,7 @@ class SandboxedSdkViewTest {
     }
 
     // TODO(b/406433094): Test Z-above transparent obstructions.
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     fun obstructionsNotReportedIfObstructionIsTransparent() {
         addViewToLayoutAndWaitToBeActive(placeInsideFrameLayout = true)
@@ -836,6 +838,7 @@ class SandboxedSdkViewTest {
         assertThat(sandboxedSdkViewUiInfo.obstructedGeometry).isEmpty()
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     fun obstructionNotReportedIfElevationIsLowerThanTarget() {
         addViewToLayoutAndWaitToBeActive(placeInsideFrameLayout = true)

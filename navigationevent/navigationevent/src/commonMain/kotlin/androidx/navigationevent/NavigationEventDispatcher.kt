@@ -17,6 +17,8 @@
 package androidx.navigationevent
 
 import androidx.annotation.MainThread
+import androidx.navigationevent.NavigationEventPriority.Companion.Default
+import androidx.navigationevent.NavigationEventPriority.Companion.Overlay
 
 /**
  * Dispatcher that can be used to register [NavigationEventCallback] instances for handling the
@@ -26,7 +28,19 @@ public class NavigationEventDispatcher(
     private val fallbackOnBackPressed: (() -> Unit)? = null,
     private val onHasEnabledCallbacksChanged: ((Boolean) -> Unit)? = null,
 ) {
+
+    /**
+     * A list of callbacks for a navigation event that is currently in progress.
+     *
+     * Callbacks in this list have the highest dispatch priority, ensuring that terminal events
+     * (like [dispatchOnCompleted] or [dispatchOnCancelled]) are delivered only to the participants
+     * of the active navigation. The list is cleared after the event is terminated.
+     *
+     * Notably, if a callback is removed while in this list, it is implicitly treated as a terminal
+     * event and receives an [dispatchOnCancelled] call before being removed.
+     */
     private val inProgressCallbacks: MutableList<NavigationEventCallback> = mutableListOf()
+
     /** Callbacks that should be processed with higher priority, before [normalCallbacks]. */
     private val overlayCallbacks = ArrayDeque<NavigationEventCallback>()
 
@@ -64,7 +78,9 @@ public class NavigationEventDispatcher(
      * all registered callbacks.
      */
     internal fun updateEnabledCallbacks() {
-        this.hasEnabledCallbacks = (overlayCallbacks + normalCallbacks).any { it.isEnabled }
+        // `any` and `||` are both efficient as they short-circuit on the first `true` result.
+        this.hasEnabledCallbacks =
+            overlayCallbacks.any { it.isEnabled } || normalCallbacks.any { it.isEnabled }
     }
 
     /**
@@ -76,26 +92,33 @@ public class NavigationEventDispatcher(
     public fun hasEnabledCallbacks(): Boolean = hasEnabledCallbacks
 
     /**
-     * Add a new [NavigationEventCallback]. Callbacks are invoked in the reverse order in which they
-     * are added, so this newly added [NavigationEventCallback] will be the first callback to be
-     * called.
+     * Adds a new [NavigationEventCallback] to receive navigation events.
      *
-     * To remove a callback, use [NavigationEventCallback.remove].
+     * **Callbacks are invoked based on [priority], and then by recency.** All [Overlay] callbacks
+     * are called before any [Default] callbacks. Within each priority group, callbacks are invoked
+     * in a Last-In, First-Out (LIFO) order—the most recently added callback is called first.
      *
-     * The callbacks provided will be invoked on the main thread.
+     * All callbacks are invoked on the main thread. To stop receiving events, a callback must be
+     * removed via [NavigationEventCallback.remove].
+     *
+     * @param callback The callback instance to be added.
+     * @param priority The priority of the callback, determining its invocation order relative to
+     *   others. See [NavigationEventPriority].
+     * @throws IllegalArgumentException if the given callback is already registered with a different
+     *   dispatcher.
      */
     @Suppress("PairedRegistration") // Callback is removed via `NavigationEventCallback.remove()`
     @MainThread
     public fun addCallback(
         callback: NavigationEventCallback,
-        priority: NavigationEventPriority = NavigationEventPriority.Default,
+        priority: NavigationEventPriority = Default,
     ) {
-        check(callback.dispatcher == null) {
+        require(callback.dispatcher == null) {
             "Callback '$callback' is already registered with a dispatcher"
         }
         when (priority) {
-            NavigationEventPriority.Overlay -> overlayCallbacks.addFirst(callback)
-            NavigationEventPriority.Default -> normalCallbacks.addFirst(callback)
+            Overlay -> overlayCallbacks.addFirst(callback)
+            Default -> normalCallbacks.addFirst(callback)
         }
 
         callback.dispatcher = this
@@ -135,14 +158,11 @@ public class NavigationEventDispatcher(
             dispatchOnCancelled()
         }
 
-        for (callback in getEnabledCallbacks()) {
+        for (callback in getEnabledCallbacksForDispatching()) {
             // Add callback to `inProgressCallbacks` *before* execution. This ensures `onCancelled`
             // can be called even if the callback removes itself during `onEventStarted`.
             inProgressCallbacks += callback
             callback.onEventStarted(event)
-
-            // If callback does not allow the event to pass through to other callbacks, stop.
-            if (!callback.isPassThrough) break
         }
     }
 
@@ -156,14 +176,11 @@ public class NavigationEventDispatcher(
     public fun dispatchOnProgressed(event: NavigationEvent) {
         // If there is callbacks in progress, only those are notified.
         // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacks() }
+        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacksForDispatching() }
         // Do not clear in-progress, as `progressed` is not a terminal event.
 
         for (callback in callbacks) {
             callback.onEventProgressed(event)
-
-            // If callback does not allow the event to pass through to other callbacks, stop.
-            if (!callback.isPassThrough) break
         }
     }
 
@@ -175,7 +192,7 @@ public class NavigationEventDispatcher(
     public fun dispatchOnCompleted() {
         // If there is callbacks in progress, only those are notified.
         // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacks() }
+        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacksForDispatching() }
         inProgressCallbacks.clear() // Clear in-progress, as 'completed' is a terminal event.
 
         if (callbacks.isEmpty()) {
@@ -183,9 +200,6 @@ public class NavigationEventDispatcher(
         } else {
             for (callback in callbacks) {
                 callback.onEventCompleted()
-
-                // If callback does not allow the event to pass through to other callbacks, stop.
-                if (!callback.isPassThrough) break
             }
         }
     }
@@ -198,18 +212,52 @@ public class NavigationEventDispatcher(
     public fun dispatchOnCancelled() {
         // If there is callbacks in progress, only those are notified.
         // Otherwise, all enabled callbacks are notified.
-        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacks() }
+        val callbacks = inProgressCallbacks.toList().ifEmpty { getEnabledCallbacksForDispatching() }
         inProgressCallbacks.clear() // Clear in-progress, as 'cancelled' is a terminal event.
 
         for (callback in callbacks) {
             callback.onEventCancelled()
-
-            // If callback does not allow the event to pass through to other callbacks, stop.
-            if (!callback.isPassThrough) break
         }
     }
 
-    private fun getEnabledCallbacks(): List<NavigationEventCallback> {
-        return (overlayCallbacks + normalCallbacks).filter { callback -> callback.isEnabled }
+    /**
+     * Builds the prioritized list of callbacks for event dispatch.
+     *
+     * Callbacks are added in a strict priority order: [overlayCallbacks] first, then
+     * [normalCallbacks]. The process stops if a callback has
+     * [NavigationEventCallback.isPassThrough] is `false`, allowing it to "consume" the event and
+     * prevent further propagation.
+     *
+     * **Performance Considerations:** This method avoids unnecessary allocations by iterating
+     * directly over the source collections. The early exit on a non-pass-through callback ensures
+     * that only the relevant callbacks are included in the final result.
+     *
+     * @return The list of callbacks to dispatch to, truncated at the first consuming callback.
+     */
+    private fun getEnabledCallbacksForDispatching(): List<NavigationEventCallback> {
+        val callbacksForDispatching = mutableListOf<NavigationEventCallback>()
+
+        // Process higher-priority overlay callbacks first.
+        for (callback in overlayCallbacks) {
+            if (callback.isEnabled) {
+                callbacksForDispatching += callback
+                // This callback consumes the event, so we stop here.
+                if (!callback.isPassThrough) {
+                    return callbacksForDispatching
+                }
+            }
+        }
+
+        // Then, process normal priority callbacks.
+        for (callback in normalCallbacks) {
+            if (callback.isEnabled) {
+                callbacksForDispatching += callback
+                if (!callback.isPassThrough) {
+                    return callbacksForDispatching
+                }
+            }
+        }
+
+        return callbacksForDispatching
     }
 }

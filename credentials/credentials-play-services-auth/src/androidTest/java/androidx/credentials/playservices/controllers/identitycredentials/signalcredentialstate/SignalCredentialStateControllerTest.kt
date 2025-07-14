@@ -16,7 +16,7 @@
 
 package androidx.credentials.playservices.controllers.identitycredentials.signalcredentialstate
 
-import androidx.credentials.SignalUnknownCredentialStateRequest
+import androidx.credentials.SignalUnknownCredentialRequest
 import androidx.credentials.playservices.TestCredentialsActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -33,8 +33,8 @@ class SignalCredentialStateControllerTest {
 
     @Test
     fun convertRequestToPlayServices_success() {
-        val requestJson = "{\"json\" : \"value\"}"
-        val request = SignalUnknownCredentialStateRequest(requestJson = requestJson, "origin")
+        val requestJson = "{\"rpId\":\"example.com\",\"credentialId\":\"Zm9vYmFy\"}"
+        val request = SignalUnknownCredentialRequest(requestJson = requestJson, "origin")
         val activityScenario = ActivityScenario.launch(TestCredentialsActivity::class.java)
 
         activityScenario.onActivity { activity: TestCredentialsActivity? ->

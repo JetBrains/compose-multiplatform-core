@@ -50,7 +50,6 @@ android {
     compileSdk = 35
     defaultConfig {
         minSdk = 35
-        targetSdk = 35
     }
     namespace = "androidx.xr.glimmer.demos"
 }

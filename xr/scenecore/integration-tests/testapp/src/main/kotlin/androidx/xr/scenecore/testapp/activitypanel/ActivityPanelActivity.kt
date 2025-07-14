@@ -95,7 +95,7 @@ class ActivityPanelActivity : AppCompatActivity() {
                     // Launch an activity in the panel
                     activityPanelEntity.launchActivity(intent, savedInstanceState)
                     // Add movable component
-                    val movableComponent = MovableComponent.create(session!!)
+                    val movableComponent = MovableComponent.createSystemMovable(session!!)
                     activityPanelEntity.addComponent(movableComponent)
                     movableComponent.size = getSizeInLocalSpace(activityPanelEntity)
                     // Add resizeable component

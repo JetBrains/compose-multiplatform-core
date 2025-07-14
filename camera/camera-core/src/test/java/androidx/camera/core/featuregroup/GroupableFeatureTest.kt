@@ -49,7 +49,7 @@ class GroupableFeatureTest {
 
     @Test
     fun objectHlg10_featureTypeIsDynamicRange() {
-        assertThat(HDR_HLG10.getFeatureType()).isEqualTo(FEATURE_TYPE_DYNAMIC_RANGE)
+        assertThat(HDR_HLG10.featureType).isEqualTo(FEATURE_TYPE_DYNAMIC_RANGE)
     }
 
     @Test
@@ -61,7 +61,7 @@ class GroupableFeatureTest {
 
     @Test
     fun objectFps60_featureTypeIsFpsRange() {
-        assertThat(FPS_60.getFeatureType()).isEqualTo(FEATURE_TYPE_FPS_RANGE)
+        assertThat(FPS_60.featureType).isEqualTo(FEATURE_TYPE_FPS_RANGE)
     }
 
     @Test
@@ -72,7 +72,7 @@ class GroupableFeatureTest {
 
     @Test
     fun objectImageUltraHdr_featureTypeIsImageFormat() {
-        assertThat(IMAGE_ULTRA_HDR.getFeatureType()).isEqualTo(FEATURE_TYPE_IMAGE_FORMAT)
+        assertThat(IMAGE_ULTRA_HDR.featureType).isEqualTo(FEATURE_TYPE_IMAGE_FORMAT)
     }
 
     @Test
@@ -83,7 +83,6 @@ class GroupableFeatureTest {
 
     @Test
     fun objectPreviewStabilization_featureTypeIsVideoStabilization() {
-        assertThat(PREVIEW_STABILIZATION.getFeatureType())
-            .isEqualTo(FEATURE_TYPE_VIDEO_STABILIZATION)
+        assertThat(PREVIEW_STABILIZATION.featureType).isEqualTo(FEATURE_TYPE_VIDEO_STABILIZATION)
     }
 }

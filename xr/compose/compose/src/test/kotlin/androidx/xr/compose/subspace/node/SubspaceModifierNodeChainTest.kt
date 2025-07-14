@@ -159,7 +159,8 @@ class SubspaceModifierNodeChainTest {
 
         // There should be multiple initial compositions as the SpatialPanel is attempting to size
         // itself and the state manager is initialized and settled.
-        var count = 4
+        var count = 2
+        composeTestRule.waitForIdle()
         assertThat(nodeCount).isEqualTo(count)
 
         // Trigger one recomposition.
@@ -203,7 +204,7 @@ class SubspaceModifierNodeChainTest {
         }
     }
 
-    private inner class CountNode(public var count: Int) : SubspaceModifier.Node(), CoreEntityNode {
+    private inner class CountNode(var count: Int) : SubspaceModifier.Node(), CoreEntityNode {
         // This is used to track the number of times the node is reused.
         private var internalCount = 0
 

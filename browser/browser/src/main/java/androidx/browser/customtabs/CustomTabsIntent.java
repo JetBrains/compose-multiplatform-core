@@ -54,6 +54,8 @@ import org.jspecify.annotations.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -210,7 +212,8 @@ public final class CustomTabsIntent {
             "org.chromium.chrome.browser.customtabs.EXTRA_DISABLE_DOWNLOAD_BUTTON";
 
     /**
-     * Extra to favor sending initial urls to external handler apps, if possible.
+     * Extra to favor sending redirects off of the initial URL to external handler apps, if
+     * possible.
      *
      * A Custom Tab Intent from a Custom Tab session will always have the package set,
      * so the Intent will always be to the browser. This extra can be used to allow
@@ -218,6 +221,15 @@ public final class CustomTabsIntent {
      */
     public static final String EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER =
             "android.support.customtabs.extra.SEND_TO_EXTERNAL_HANDLER";
+
+    /**
+     * Extra to favor the Custom Tab forwarding the initial URL sent to the Custom Tab to the
+     * default handling app for that URL instead of loading it (including following any
+     * redirects) in the Custom Tab.
+     */
+    @ExperimentalInitialNavigationCanLeaveBrowser
+    public static final String EXTRA_INITIAL_NAVIGATION_CAN_LEAVE_BROWSER =
+            "androidx.browser.customtabs.extra.INITIAL_NAVIGATION_CAN_LEAVE_BROWSER";
 
     /**
      * Extra that specifies the target locale the Translate UI should be triggered with.
@@ -689,6 +701,107 @@ public final class CustomTabsIntent {
     public static final int TOOLBAR_ACTION_BUTTON_ID = 0;
 
     /**
+     * Content target type: Image. Used with
+     * {@link CustomContentAction.Builder#Builder(int, String, PendingIntent, int)}.
+     * An action with this target type may be shown by the browser when the user interacts
+     * with an image element on the web page.
+     */
+    @ExperimentalCustomContentAction
+    public static final int CONTENT_TARGET_TYPE_IMAGE = 1;
+
+    /**
+     * Content target type: Link. Used with
+     * {@link CustomContentAction.Builder#Builder(int, String, PendingIntent, int)}.
+     * An action with this target type may be shown by the browser when the user interacts
+     * with a link (hyperlink) element on the web page.
+     */
+    @ExperimentalCustomContentAction
+    public static final int CONTENT_TARGET_TYPE_LINK = 2;
+
+    /**
+     * Defines the type of content a {@link CustomContentAction} can target.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @IntDef({CONTENT_TARGET_TYPE_IMAGE, CONTENT_TARGET_TYPE_LINK})
+    @Retention(RetentionPolicy.SOURCE)
+    @ExperimentalCustomContentAction
+    public @interface ContentTargetType {
+    }
+
+    /**
+     * Extra for an {@link ArrayList} of {@link Bundle} objects, each representing a
+     * {@link CustomContentAction}. The browser reads this to display custom actions.
+     * The client application adds this via
+     * {@link Builder#addCustomContentAction(CustomContentAction)}.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CUSTOM_CONTENT_ACTIONS =
+            "androidx.browser.customtabs.extra.CUSTOM_CONTENT_ACTIONS";
+
+    /**
+     * Extra added to the {@link PendingIntent} by the browser when a custom content action is
+     * triggered. This extra contains the integer ID of the specific
+     * {@link CustomContentAction} that was selected by the user. The client application
+     * should use this ID to determine which custom action was invoked. The action id cannot be set
+     * to negative numbers.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_TRIGGERED_CUSTOM_CONTENT_ACTION_ID =
+            "androidx.browser.customtabs.extra.TRIGGERED_CUSTOM_CONTENT_ACTION_ID";
+
+    /**
+     * Extra added to the {@link PendingIntent} by the browser when a custom content action is
+     * triggered. This extra contains an integer indicating the
+     * {@link ContentTargetType} (e.g., {@link #CONTENT_TARGET_TYPE_IMAGE} or
+     * {@link #CONTENT_TARGET_TYPE_LINK}) of the web content element that was interacted with.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CLICKED_CONTENT_TARGET_TYPE =
+            "androidx.browser.customtabs.extra.CLICKED_CONTENT_TARGET_TYPE";
+
+    /**
+     * Extra added to the custom content action {@link PendingIntent} by the browser.
+     * If the action was triggered on an image, this extra may contain the URL of that image.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CONTEXT_IMAGE_URL =
+            "androidx.browser.customtabs.extra.CONTEXT_IMAGE_URL";
+
+    /**
+     * Extra added to the custom content action {@link PendingIntent} by the browser.
+     * If the action was triggered on an image, this extra may contain the byte data of that image.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CONTEXT_IMAGE_DATA_URI =
+            "androidx.browser.customtabs.extra.CONTEXT_IMAGE_DATA_URI";
+
+    /**
+     * Extra added to the custom content action {@link PendingIntent} by the browser.
+     * If the action was triggered on an image, this extra may contain the URL of the page
+     * displaying that image.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CONTEXT_LINK_URL =
+            "androidx.browser.customtabs.extra.CONTEXT_LINK_URL";
+
+    /**
+     * Extra added to the custom content action {@link PendingIntent} by the browser.
+     * If the action was triggered on an image, this extra may contain the alt text of the
+     * clicked image, if available.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CONTEXT_IMAGE_ALT_TEXT =
+            "androidx.browser.customtabs.extra.CONTEXT_IMAGE_ALT_TEXT";
+
+    /**
+     * Extra added to the custom content action {@link PendingIntent} by the browser.
+     * If the action was triggered on a link, this extra may contain the visible text if available.
+     */
+    @ExperimentalCustomContentAction
+    public static final String EXTRA_CONTEXT_LINK_TEXT =
+            "androidx.browser.customtabs.extra.CONTEXT_LINK_TEXT";
+
+    /**
      * The maximum allowed number of toolbar items.
      */
     private static final int MAX_TOOLBAR_ITEMS = 5;
@@ -744,6 +857,7 @@ public final class CustomTabsIntent {
         @ShareState private int mShareState = SHARE_STATE_DEFAULT;
         private boolean mInstantAppsEnabled = true;
         private boolean mShareIdentity;
+        private @Nullable ArrayList<Bundle> mCustomContentActionBundles;
 
         /**
          * Creates a {@link CustomTabsIntent.Builder} object associated with no
@@ -1409,6 +1523,7 @@ public final class CustomTabsIntent {
          * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_DEFAULT
          * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_ON
          * @see CustomTabsIntent#OPEN_IN_BROWSER_STATE_OFF
+         * @throws IllegalArgumentException when an invalid option is provided.
          */
         @ExperimentalOpenInBrowser
         public @NonNull Builder setOpenInBrowserButtonState(
@@ -1447,13 +1562,32 @@ public final class CustomTabsIntent {
         }
 
         /**
-         * Enables sending initial urls to external handler apps, if possible.
+         * Enables sending any redirects off of the initial URL sent to the Custom Tab to default
+         * handling apps. Unless #EXTRA_INITIAL_NAVIGATION_CAN_LEAVE_BROWSER is also set, the
+         * initial URL will still always load in the Custom Tab.
          *
          * @param enabled Whether to send urls to external handler.
          * @see CustomTabsIntent#EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER
          */
         public @NonNull Builder setSendToExternalDefaultHandlerEnabled(boolean enabled) {
             mIntent.putExtra(EXTRA_SEND_TO_EXTERNAL_DEFAULT_HANDLER, enabled);
+            return this;
+        }
+
+        /**
+         * Allows the Custom Tab to forward the initial URL sent to the Custom Tab to the default
+         * handling app for that URL instead of loading it (including following any redirects) in
+         * the Custom Tab.
+         * <p>
+         * Note: This is not the default behavior. The default for this is to be set to false.
+         *
+         * @param enabled Whether the initial URL sent to the custom tab should be sent to the
+         *                default handling app for that URL.
+         * @see CustomTabsIntent#EXTRA_INITIAL_NAVIGATION_CAN_LEAVE_BROWSER
+         */
+        @ExperimentalInitialNavigationCanLeaveBrowser
+        public @NonNull Builder setInitialNavigationAllowedToLeaveBrowser(boolean enabled) {
+            mIntent.putExtra(EXTRA_INITIAL_NAVIGATION_CAN_LEAVE_BROWSER, enabled);
             return this;
         }
 
@@ -1542,6 +1676,43 @@ public final class CustomTabsIntent {
         }
 
         /**
+         * Adds a custom content action that can be invoked by the user on specific content types
+         * (image or link) within the Custom Tab.
+         * <p>
+         * The number of actions shown to the user is at the browser's discretion. The browser
+         * may choose not to display all the actions provided. Additionally, priority will be based
+         * on the order the actions were added, with the earliest added action being given the
+         * highest priority.
+         * <p>
+         * When the user triggers this action, the browser will send the
+         * {@link CustomContentAction#getPendingIntent()} associated with this action. The
+         * {@link Intent} within the {@link PendingIntent} will include the current URL of the
+         * Custom Tab as its data, {@link CustomTabsIntent#EXTRA_TRIGGERED_CUSTOM_CONTENT_ACTION_ID}
+         * with the ID of this action, {@link CustomTabsIntent#EXTRA_CLICKED_CONTENT_TARGET_TYPE}
+         * with the type of content interacted with, and potentially other contextual extras
+         * (e.g., {@link CustomTabsIntent#EXTRA_CONTEXT_IMAGE_URL}).
+         *
+         * @param action The {@link CustomContentAction} to add. Must not be null.
+         * @return This Builder.
+         * @throws IllegalArgumentException if an action with the same ID has already been added.
+         */
+        @ExperimentalCustomContentAction
+        public @NonNull Builder addCustomContentAction(@NonNull CustomContentAction action) {
+            if (mCustomContentActionBundles == null) {
+                mCustomContentActionBundles = new ArrayList<>();
+            }
+            // Check for duplicate IDs
+            for (Bundle existingBundle : mCustomContentActionBundles) {
+                if (existingBundle.getInt(CustomContentAction.KEY_ID) == action.getId()) {
+                    throw new IllegalArgumentException("CustomContentAction with ID "
+                            + action.getId() + " already exists.");
+                }
+            }
+            mCustomContentActionBundles.add(action.toBundle());
+            return this;
+        }
+
+        /**
          * Combines all the options that have been set and returns a new {@link CustomTabsIntent}
          * object.
          */
@@ -1570,6 +1741,10 @@ public final class CustomTabsIntent {
                 mIntent.putExtras(bundle);
             }
             mIntent.putExtra(EXTRA_SHARE_STATE, mShareState);
+            if (mCustomContentActionBundles != null && !mCustomContentActionBundles.isEmpty()) {
+                mIntent.putParcelableArrayListExtra(EXTRA_CUSTOM_CONTENT_ACTIONS,
+                        mCustomContentActionBundles);
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 setCurrentLocaleAsDefaultAcceptLanguage();
@@ -1881,6 +2056,16 @@ public final class CustomTabsIntent {
     }
 
     /**
+     * @return Whether the initial URL sent to the custom tab should be sent to the default
+     * handling app for that URL.
+     * @see CustomTabsIntent#EXTRA_INITIAL_NAVIGATION_CAN_LEAVE_BROWSER
+     */
+    @ExperimentalInitialNavigationCanLeaveBrowser
+    public static boolean isInitialNavigationAllowedToLeaveBrowser(@NonNull Intent intent) {
+        return intent.getBooleanExtra(EXTRA_INITIAL_NAVIGATION_CAN_LEAVE_BROWSER, false);
+    }
+
+    /**
      * Gets the target locale for the Translate UI.
      *
      * @return The target locale the Translate UI should be triggered with.
@@ -1934,6 +2119,36 @@ public final class CustomTabsIntent {
      */
     public static boolean isCloseButtonEnabled(@NonNull Intent intent) {
         return intent.getBooleanExtra(EXTRA_CLOSE_BUTTON_ENABLED, true);
+    }
+
+    /**
+     * Retrieves the list of {@link CustomContentAction}s configured for the given intent.
+     * <p>
+     * This method is primarily for inspection or debugging by the client application.
+     * The browser implementation directly consumes the {@link #EXTRA_CUSTOM_CONTENT_ACTIONS} extra.
+     *
+     * @param intent The intent from which to retrieve the custom content actions. Must not be null.
+     * @return A {@link List} of {@link CustomContentAction}s. Returns an empty list if
+     * no actions were set or if the extra is malformed or missing. The list is unmodifiable.
+     */
+    @ExperimentalCustomContentAction
+    public static @NonNull List<CustomContentAction> getCustomContentActions(
+            @NonNull Intent intent) {
+        ArrayList<Bundle> bundles = IntentCompat.getParcelableArrayListExtra(
+                intent,
+                EXTRA_CUSTOM_CONTENT_ACTIONS,
+                Bundle.class);
+        if (bundles == null) {
+            return Collections.emptyList();
+        }
+        List<CustomContentAction> actions = new ArrayList<>(bundles.size());
+        for (Bundle bundle : bundles) {
+            CustomContentAction action = CustomContentAction.fromBundle(bundle);
+            if (action != null) {
+                actions.add(action);
+            }
+        }
+        return Collections.unmodifiableList(actions);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

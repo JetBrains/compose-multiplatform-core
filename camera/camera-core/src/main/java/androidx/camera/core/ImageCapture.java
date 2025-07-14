@@ -1113,6 +1113,12 @@ public final class ImageCapture extends UseCase {
         private boolean isRawSupported() {
             if (mCameraInfo instanceof CameraInfoInternal) {
                 CameraInfoInternal cameraInfoInternal = (CameraInfoInternal) mCameraInfo;
+
+                if (!cameraInfoInternal.getAvailableCapabilities().contains(
+                        CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_RAW)) {
+                    return false;
+                }
+
                 return cameraInfoInternal.getSupportedOutputFormats().contains(RAW_SENSOR);
             }
 

@@ -2,6 +2,7 @@
 package androidx.wear.tiles.tooling.preview {
 
   @kotlin.annotation.MustBeDocumented @kotlin.annotation.Repeatable @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.ANNOTATION_CLASS, kotlin.annotation.AnnotationTarget.FUNCTION}) public @interface Preview {
+    ctor @KotlinOnly public Preview(optional String name, optional String group, optional String locale, optional String device, optional @FloatRange(from=0.01) float fontScale);
     method public abstract String device() default androidx.wear.tooling.preview.devices.WearDevices.SMALL_ROUND;
     method public abstract float fontScale() default 1.0;
     method public abstract String group() default "";

@@ -43,9 +43,7 @@ public class FakeSurfaceEntity : SurfaceEntity, FakeEntity() {
 
     override fun setAuxiliaryAlphaMaskTexture(alphaMask: TextureResource?) {}
 
-    override var featherRadiusX: Float = 0.0f
-
-    override var featherRadiusY: Float = 0.0f
+    override var edgeFeather: SurfaceEntity.EdgeFeather = SurfaceEntity.EdgeFeather.SolidEdge()
 
     override fun getPerceivedResolution(): PerceivedResolutionResult {
         return PerceivedResolutionResult.Success(PixelDimensions(0, 0))

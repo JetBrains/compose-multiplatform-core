@@ -91,7 +91,6 @@ androidx {
             "functionality to support wearable specific devices sizes, shapes and navigation " +
             "gestures. It builds upon the Jetpack Compose libraries."
     samples(project(":wear:compose:compose-foundation-samples"))
-    metalavaK2UastEnabled = false
     addGoldenImageAssets()
     enableRobolectric()
 }

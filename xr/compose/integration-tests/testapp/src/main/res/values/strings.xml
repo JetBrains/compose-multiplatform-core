@@ -20,6 +20,10 @@
     <string name="video_player_test">StereoVideo test case</string>
     <string name="cuj_gltf_entity_input_test_case">GLTF entity input test case</string>
     <string name="cuj_gltf_animation_test_case">GLTF Animation test case</string>
+    <string name="depthstacking_modifier_order_test_case">DepthStacking and ModifierOrder Layout test case</string>
+    <string name="nested_subspace_test_case">Nested Subspace Layout test case</string>
+    <string name="panel_volume_test_case">Panel Volume Layout test case</string>
+    <string name="resizable_panel_test_case">Resizable Panel test case</string>
 
     <string name="hello_android_xr">Hello Android XR.</string>
     <string name="switch_to_home_space_mode">Switch to Home Space Mode</string>

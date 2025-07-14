@@ -34,6 +34,7 @@ import androidx.compose.ui.test.performIndirectTouchEvent
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.dp
+import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.filters.MediumTest
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.setGlimmerThemeContent
@@ -101,6 +102,7 @@ class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) 
                 Offset.Zero.y,
                 0,
             )
+        down.source = SOURCE_TOUCH_NAVIGATION
         performIndirectTouchEvent(IndirectTouchEvent(down))
 
         val move =
@@ -112,6 +114,7 @@ class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) 
                 Offset.Zero.y,
                 0,
             )
+        move.source = SOURCE_TOUCH_NAVIGATION
         performIndirectTouchEvent(IndirectTouchEvent(move))
 
         val up =
@@ -123,6 +126,7 @@ class ListIndirectTouchTest : BaseListTestWithOrientation(Orientation.Vertical) 
                 Offset.Zero.y,
                 0,
             )
+        up.source = SOURCE_TOUCH_NAVIGATION
         performIndirectTouchEvent(IndirectTouchEvent(up))
     }
 }

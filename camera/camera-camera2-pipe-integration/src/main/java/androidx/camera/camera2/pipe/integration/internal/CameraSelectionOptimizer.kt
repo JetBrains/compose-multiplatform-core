@@ -35,19 +35,31 @@ import androidx.camera.core.internal.StreamSpecsCalculator
  */
 internal class CameraSelectionOptimizer {
     companion object {
-
-        @Throws(InitializationException::class)
         fun getSelectedAvailableCameraIds(
             cameraFactory: CameraFactory,
             availableCamerasSelector: CameraSelector?,
             streamSpecsCalculator: StreamSpecsCalculator,
         ): List<String> {
+            val cameraAppComponent = cameraFactory.cameraManager as CameraAppComponent
+            val cameraDevices = cameraAppComponent.getCameraDevices()
+            val cameraIdList = checkNotNull(cameraDevices.awaitCameraIds()).map { it.value }
+            return getSelectedAvailableCameraIds(
+                cameraAppComponent,
+                availableCamerasSelector,
+                cameraIdList,
+                streamSpecsCalculator,
+            )
+        }
+
+        fun getSelectedAvailableCameraIds(
+            cameraAppComponent: CameraAppComponent,
+            availableCamerasSelector: CameraSelector?,
+            cameraIdList: List<String>,
+            streamSpecsCalculator: StreamSpecsCalculator,
+        ): List<String> {
             try {
                 val availableCameraIds = mutableListOf<String>()
-                val cameraAppComponent = cameraFactory.cameraManager as CameraAppComponent
                 val cameraDevices = cameraAppComponent.getCameraDevices()
-
-                val cameraIdList = checkNotNull(cameraDevices.awaitCameraIds()).map { it.value }
                 if (availableCamerasSelector == null) {
                     return cameraIdList
                 }

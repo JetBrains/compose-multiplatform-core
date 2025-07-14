@@ -6,30 +6,28 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors(optional long containerColor, optional long contentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long disabledContainerColor, optional long disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
-    method public float getContainerHeight();
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
     method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method public androidx.tv.material3.ClickableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ClickableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
     method public androidx.tv.material3.ClickableChipShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
-    property public float ContainerHeight;
+    property public androidx.compose.ui.unit.Dp ContainerHeight;
     property public androidx.compose.foundation.shape.RoundedCornerShape ContainerShape;
-    property public float IconSize;
+    property public androidx.compose.ui.unit.Dp IconSize;
     field public static final androidx.tv.material3.AssistChipDefaults INSTANCE;
   }
 
   @androidx.compose.runtime.Immutable public final class Border {
-    ctor public Border(androidx.compose.foundation.BorderStroke border, optional float inset, optional androidx.compose.ui.graphics.Shape shape);
+    ctor @KotlinOnly public Border(androidx.compose.foundation.BorderStroke border, optional androidx.compose.ui.unit.Dp inset, optional androidx.compose.ui.graphics.Shape shape);
+    ctor @BytecodeOnly public Border(androidx.compose.foundation.BorderStroke!, float, androidx.compose.ui.graphics.Shape!, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.tv.material3.Border copy(optional androidx.compose.foundation.BorderStroke? border, optional androidx.compose.ui.unit.Dp? inset, optional androidx.compose.ui.graphics.Shape? shape);
     method @BytecodeOnly public androidx.tv.material3.Border copy-ZCAqi1o(androidx.compose.foundation.BorderStroke?, androidx.compose.ui.unit.Dp?, androidx.compose.ui.graphics.Shape?);
     method public androidx.compose.foundation.BorderStroke getBorder();
-    method public float getInset();
     method @BytecodeOnly public float getInset-D9Ej5fM();
     method public androidx.compose.ui.graphics.Shape getShape();
     property public androidx.compose.foundation.BorderStroke border;
-    property public float inset;
+    property public androidx.compose.ui.unit.Dp inset;
     property public androidx.compose.ui.graphics.Shape shape;
     field public static final androidx.tv.material3.Border.Companion Companion;
   }
@@ -52,17 +50,15 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
     method public androidx.compose.foundation.layout.PaddingValues getButtonWithIconContentPadding();
     method public androidx.compose.foundation.layout.PaddingValues getContentPadding();
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
-    method public float getIconSpacing();
     method @BytecodeOnly public float getIconSpacing-D9Ej5fM();
     method public androidx.tv.material3.ButtonGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ButtonScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
     method public androidx.tv.material3.ButtonShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
     property public androidx.compose.foundation.layout.PaddingValues ButtonWithIconContentPadding;
     property public androidx.compose.foundation.layout.PaddingValues ContentPadding;
-    property public float IconSize;
-    property public float IconSpacing;
+    property public androidx.compose.ui.unit.Dp IconSize;
+    property public androidx.compose.ui.unit.Dp IconSpacing;
     field public static final androidx.tv.material3.ButtonDefaults INSTANCE;
   }
 
@@ -190,45 +186,34 @@ package androidx.tv.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class CheckboxColors {
-    ctor public CheckboxColors(long checkedCheckmarkColor, long uncheckedCheckmarkColor, long checkedBoxColor, long uncheckedBoxColor, long disabledCheckedBoxColor, long disabledUncheckedBoxColor, long disabledIndeterminateBoxColor, long checkedBorderColor, long uncheckedBorderColor, long disabledBorderColor, long disabledUncheckedBorderColor, long disabledIndeterminateBorderColor);
+    ctor @KotlinOnly public CheckboxColors(androidx.compose.ui.graphics.Color checkedCheckmarkColor, androidx.compose.ui.graphics.Color uncheckedCheckmarkColor, androidx.compose.ui.graphics.Color checkedBoxColor, androidx.compose.ui.graphics.Color uncheckedBoxColor, androidx.compose.ui.graphics.Color disabledCheckedBoxColor, androidx.compose.ui.graphics.Color disabledUncheckedBoxColor, androidx.compose.ui.graphics.Color disabledIndeterminateBoxColor, androidx.compose.ui.graphics.Color checkedBorderColor, androidx.compose.ui.graphics.Color uncheckedBorderColor, androidx.compose.ui.graphics.Color disabledBorderColor, androidx.compose.ui.graphics.Color disabledUncheckedBorderColor, androidx.compose.ui.graphics.Color disabledIndeterminateBorderColor);
+    ctor @BytecodeOnly public CheckboxColors(long, long, long, long, long, long, long, long, long, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.tv.material3.CheckboxColors copy(optional long checkedCheckmarkColor, optional long uncheckedCheckmarkColor, optional long checkedBoxColor, optional long uncheckedBoxColor, optional long disabledCheckedBoxColor, optional long disabledUncheckedBoxColor, optional long disabledIndeterminateBoxColor, optional long checkedBorderColor, optional long uncheckedBorderColor, optional long disabledBorderColor, optional long disabledUncheckedBorderColor, optional long disabledIndeterminateBorderColor);
     method @BytecodeOnly public androidx.tv.material3.CheckboxColors copy-2qZNXz8(long, long, long, long, long, long, long, long, long, long, long, long);
-    method public long getCheckedBorderColor();
     method @BytecodeOnly public long getCheckedBorderColor-0d7_KjU();
-    method public long getCheckedBoxColor();
     method @BytecodeOnly public long getCheckedBoxColor-0d7_KjU();
-    method public long getCheckedCheckmarkColor();
     method @BytecodeOnly public long getCheckedCheckmarkColor-0d7_KjU();
-    method public long getDisabledBorderColor();
     method @BytecodeOnly public long getDisabledBorderColor-0d7_KjU();
-    method public long getDisabledCheckedBoxColor();
     method @BytecodeOnly public long getDisabledCheckedBoxColor-0d7_KjU();
-    method public long getDisabledIndeterminateBorderColor();
     method @BytecodeOnly public long getDisabledIndeterminateBorderColor-0d7_KjU();
-    method public long getDisabledIndeterminateBoxColor();
     method @BytecodeOnly public long getDisabledIndeterminateBoxColor-0d7_KjU();
-    method public long getDisabledUncheckedBorderColor();
     method @BytecodeOnly public long getDisabledUncheckedBorderColor-0d7_KjU();
-    method public long getDisabledUncheckedBoxColor();
     method @BytecodeOnly public long getDisabledUncheckedBoxColor-0d7_KjU();
-    method public long getUncheckedBorderColor();
     method @BytecodeOnly public long getUncheckedBorderColor-0d7_KjU();
-    method public long getUncheckedBoxColor();
     method @BytecodeOnly public long getUncheckedBoxColor-0d7_KjU();
-    method public long getUncheckedCheckmarkColor();
     method @BytecodeOnly public long getUncheckedCheckmarkColor-0d7_KjU();
-    property public long checkedBorderColor;
-    property public long checkedBoxColor;
-    property public long checkedCheckmarkColor;
-    property public long disabledBorderColor;
-    property public long disabledCheckedBoxColor;
-    property public long disabledIndeterminateBorderColor;
-    property public long disabledIndeterminateBoxColor;
-    property public long disabledUncheckedBorderColor;
-    property public long disabledUncheckedBoxColor;
-    property public long uncheckedBorderColor;
-    property public long uncheckedBoxColor;
-    property public long uncheckedCheckmarkColor;
+    property public androidx.compose.ui.graphics.Color checkedBorderColor;
+    property public androidx.compose.ui.graphics.Color checkedBoxColor;
+    property public androidx.compose.ui.graphics.Color checkedCheckmarkColor;
+    property public androidx.compose.ui.graphics.Color disabledBorderColor;
+    property public androidx.compose.ui.graphics.Color disabledCheckedBoxColor;
+    property public androidx.compose.ui.graphics.Color disabledIndeterminateBorderColor;
+    property public androidx.compose.ui.graphics.Color disabledIndeterminateBoxColor;
+    property public androidx.compose.ui.graphics.Color disabledUncheckedBorderColor;
+    property public androidx.compose.ui.graphics.Color disabledUncheckedBoxColor;
+    property public androidx.compose.ui.graphics.Color uncheckedBorderColor;
+    property public androidx.compose.ui.graphics.Color uncheckedBoxColor;
+    property public androidx.compose.ui.graphics.Color uncheckedCheckmarkColor;
   }
 
   public final class CheckboxDefaults {
@@ -312,96 +297,68 @@ package androidx.tv.material3 {
   }
 
   @androidx.compose.runtime.Stable public final class ColorScheme {
-    ctor public ColorScheme(long primary, long onPrimary, long primaryContainer, long onPrimaryContainer, long inversePrimary, long secondary, long onSecondary, long secondaryContainer, long onSecondaryContainer, long tertiary, long onTertiary, long tertiaryContainer, long onTertiaryContainer, long background, long onBackground, long surface, long onSurface, long surfaceVariant, long onSurfaceVariant, long surfaceTint, long inverseSurface, long inverseOnSurface, long error, long onError, long errorContainer, long onErrorContainer, long border, long borderVariant, long scrim);
+    ctor @KotlinOnly public ColorScheme(androidx.compose.ui.graphics.Color primary, androidx.compose.ui.graphics.Color onPrimary, androidx.compose.ui.graphics.Color primaryContainer, androidx.compose.ui.graphics.Color onPrimaryContainer, androidx.compose.ui.graphics.Color inversePrimary, androidx.compose.ui.graphics.Color secondary, androidx.compose.ui.graphics.Color onSecondary, androidx.compose.ui.graphics.Color secondaryContainer, androidx.compose.ui.graphics.Color onSecondaryContainer, androidx.compose.ui.graphics.Color tertiary, androidx.compose.ui.graphics.Color onTertiary, androidx.compose.ui.graphics.Color tertiaryContainer, androidx.compose.ui.graphics.Color onTertiaryContainer, androidx.compose.ui.graphics.Color background, androidx.compose.ui.graphics.Color onBackground, androidx.compose.ui.graphics.Color surface, androidx.compose.ui.graphics.Color onSurface, androidx.compose.ui.graphics.Color surfaceVariant, androidx.compose.ui.graphics.Color onSurfaceVariant, androidx.compose.ui.graphics.Color surfaceTint, androidx.compose.ui.graphics.Color inverseSurface, androidx.compose.ui.graphics.Color inverseOnSurface, androidx.compose.ui.graphics.Color error, androidx.compose.ui.graphics.Color onError, androidx.compose.ui.graphics.Color errorContainer, androidx.compose.ui.graphics.Color onErrorContainer, androidx.compose.ui.graphics.Color border, androidx.compose.ui.graphics.Color borderVariant, androidx.compose.ui.graphics.Color scrim);
+    ctor @BytecodeOnly public ColorScheme(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.tv.material3.ColorScheme copy(optional long primary, optional long onPrimary, optional long primaryContainer, optional long onPrimaryContainer, optional long inversePrimary, optional long secondary, optional long onSecondary, optional long secondaryContainer, optional long onSecondaryContainer, optional long tertiary, optional long onTertiary, optional long tertiaryContainer, optional long onTertiaryContainer, optional long background, optional long onBackground, optional long surface, optional long onSurface, optional long surfaceVariant, optional long onSurfaceVariant, optional long surfaceTint, optional long inverseSurface, optional long inverseOnSurface, optional long error, optional long onError, optional long errorContainer, optional long onErrorContainer, optional long border, optional long borderVariant, optional long scrim);
     method @BytecodeOnly public androidx.tv.material3.ColorScheme copy-G1PFc-w(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long);
-    method public long getBackground();
     method @BytecodeOnly public long getBackground-0d7_KjU();
-    method public long getBorder();
     method @BytecodeOnly public long getBorder-0d7_KjU();
-    method public long getBorderVariant();
     method @BytecodeOnly public long getBorderVariant-0d7_KjU();
-    method public long getError();
     method @BytecodeOnly public long getError-0d7_KjU();
-    method public long getErrorContainer();
     method @BytecodeOnly public long getErrorContainer-0d7_KjU();
-    method public long getInverseOnSurface();
     method @BytecodeOnly public long getInverseOnSurface-0d7_KjU();
-    method public long getInversePrimary();
     method @BytecodeOnly public long getInversePrimary-0d7_KjU();
-    method public long getInverseSurface();
     method @BytecodeOnly public long getInverseSurface-0d7_KjU();
-    method public long getOnBackground();
     method @BytecodeOnly public long getOnBackground-0d7_KjU();
-    method public long getOnError();
     method @BytecodeOnly public long getOnError-0d7_KjU();
-    method public long getOnErrorContainer();
     method @BytecodeOnly public long getOnErrorContainer-0d7_KjU();
-    method public long getOnPrimary();
     method @BytecodeOnly public long getOnPrimary-0d7_KjU();
-    method public long getOnPrimaryContainer();
     method @BytecodeOnly public long getOnPrimaryContainer-0d7_KjU();
-    method public long getOnSecondary();
     method @BytecodeOnly public long getOnSecondary-0d7_KjU();
-    method public long getOnSecondaryContainer();
     method @BytecodeOnly public long getOnSecondaryContainer-0d7_KjU();
-    method public long getOnSurface();
     method @BytecodeOnly public long getOnSurface-0d7_KjU();
-    method public long getOnSurfaceVariant();
     method @BytecodeOnly public long getOnSurfaceVariant-0d7_KjU();
-    method public long getOnTertiary();
     method @BytecodeOnly public long getOnTertiary-0d7_KjU();
-    method public long getOnTertiaryContainer();
     method @BytecodeOnly public long getOnTertiaryContainer-0d7_KjU();
-    method public long getPrimary();
     method @BytecodeOnly public long getPrimary-0d7_KjU();
-    method public long getPrimaryContainer();
     method @BytecodeOnly public long getPrimaryContainer-0d7_KjU();
-    method public long getScrim();
     method @BytecodeOnly public long getScrim-0d7_KjU();
-    method public long getSecondary();
     method @BytecodeOnly public long getSecondary-0d7_KjU();
-    method public long getSecondaryContainer();
     method @BytecodeOnly public long getSecondaryContainer-0d7_KjU();
-    method public long getSurface();
     method @BytecodeOnly public long getSurface-0d7_KjU();
-    method public long getSurfaceTint();
     method @BytecodeOnly public long getSurfaceTint-0d7_KjU();
-    method public long getSurfaceVariant();
     method @BytecodeOnly public long getSurfaceVariant-0d7_KjU();
-    method public long getTertiary();
     method @BytecodeOnly public long getTertiary-0d7_KjU();
-    method public long getTertiaryContainer();
     method @BytecodeOnly public long getTertiaryContainer-0d7_KjU();
-    property public long background;
-    property public long border;
-    property public long borderVariant;
-    property public long error;
-    property public long errorContainer;
-    property public long inverseOnSurface;
-    property public long inversePrimary;
-    property public long inverseSurface;
-    property public long onBackground;
-    property public long onError;
-    property public long onErrorContainer;
-    property public long onPrimary;
-    property public long onPrimaryContainer;
-    property public long onSecondary;
-    property public long onSecondaryContainer;
-    property public long onSurface;
-    property public long onSurfaceVariant;
-    property public long onTertiary;
-    property public long onTertiaryContainer;
-    property public long primary;
-    property public long primaryContainer;
-    property public long scrim;
-    property public long secondary;
-    property public long secondaryContainer;
-    property public long surface;
-    property public long surfaceTint;
-    property public long surfaceVariant;
-    property public long tertiary;
-    property public long tertiaryContainer;
+    property public androidx.compose.ui.graphics.Color background;
+    property public androidx.compose.ui.graphics.Color border;
+    property public androidx.compose.ui.graphics.Color borderVariant;
+    property public androidx.compose.ui.graphics.Color error;
+    property public androidx.compose.ui.graphics.Color errorContainer;
+    property public androidx.compose.ui.graphics.Color inverseOnSurface;
+    property public androidx.compose.ui.graphics.Color inversePrimary;
+    property public androidx.compose.ui.graphics.Color inverseSurface;
+    property public androidx.compose.ui.graphics.Color onBackground;
+    property public androidx.compose.ui.graphics.Color onError;
+    property public androidx.compose.ui.graphics.Color onErrorContainer;
+    property public androidx.compose.ui.graphics.Color onPrimary;
+    property public androidx.compose.ui.graphics.Color onPrimaryContainer;
+    property public androidx.compose.ui.graphics.Color onSecondary;
+    property public androidx.compose.ui.graphics.Color onSecondaryContainer;
+    property public androidx.compose.ui.graphics.Color onSurface;
+    property public androidx.compose.ui.graphics.Color onSurfaceVariant;
+    property public androidx.compose.ui.graphics.Color onTertiary;
+    property public androidx.compose.ui.graphics.Color onTertiaryContainer;
+    property public androidx.compose.ui.graphics.Color primary;
+    property public androidx.compose.ui.graphics.Color primaryContainer;
+    property public androidx.compose.ui.graphics.Color scrim;
+    property public androidx.compose.ui.graphics.Color secondary;
+    property public androidx.compose.ui.graphics.Color secondaryContainer;
+    property public androidx.compose.ui.graphics.Color surface;
+    property public androidx.compose.ui.graphics.Color surfaceTint;
+    property public androidx.compose.ui.graphics.Color surfaceVariant;
+    property public androidx.compose.ui.graphics.Color tertiary;
+    property public androidx.compose.ui.graphics.Color tertiaryContainer;
   }
 
   public final class ColorSchemeKt {
@@ -449,30 +406,27 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors(optional long containerColor, optional long contentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long selectedContainerColor, optional long selectedContentColor, optional long disabledContainerColor, optional long disabledContentColor, optional long focusedSelectedContainerColor, optional long focusedSelectedContentColor, optional long pressedSelectedContainerColor, optional long pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors-u3YEpmA(long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
-    method public float getContainerHeight();
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
     method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method public androidx.tv.material3.SelectableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.SelectableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale, optional @FloatRange(from=0.0) float selectedDisabledScale, optional @FloatRange(from=0.0) float focusedSelectedDisabledScale);
     method public androidx.tv.material3.SelectableChipShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape, optional androidx.compose.ui.graphics.Shape selectedDisabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedDisabledShape);
-    property public float ContainerHeight;
+    property public androidx.compose.ui.unit.Dp ContainerHeight;
     property public androidx.compose.foundation.shape.RoundedCornerShape ContainerShape;
-    property public float IconSize;
+    property public androidx.compose.ui.unit.Dp IconSize;
     field public static final androidx.tv.material3.FilterChipDefaults INSTANCE;
   }
 
   @androidx.compose.runtime.Immutable public final class Glow {
-    ctor public Glow(long elevationColor, float elevation);
+    ctor @KotlinOnly public Glow(androidx.compose.ui.graphics.Color elevationColor, androidx.compose.ui.unit.Dp elevation);
+    ctor @BytecodeOnly public Glow(long, float, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.tv.material3.Glow copy(optional androidx.compose.ui.graphics.Color? glowColor, optional androidx.compose.ui.unit.Dp? glowElevation);
     method @BytecodeOnly public androidx.tv.material3.Glow copy-4CeajsE(androidx.compose.ui.graphics.Color?, androidx.compose.ui.unit.Dp?);
-    method public float getElevation();
     method @BytecodeOnly public float getElevation-D9Ej5fM();
-    method public long getElevationColor();
     method @BytecodeOnly public long getElevationColor-0d7_KjU();
-    property public float elevation;
-    property public long elevationColor;
+    property public androidx.compose.ui.unit.Dp elevation;
+    property public androidx.compose.ui.graphics.Color elevationColor;
     field public static final androidx.tv.material3.Glow.Companion Companion;
   }
 
@@ -486,27 +440,21 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors(optional long containerColor, optional long contentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long disabledContainerColor, optional long disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
-    method public float getLargeButtonSize();
     method @BytecodeOnly public float getLargeButtonSize-D9Ej5fM();
-    method public float getLargeIconSize();
     method @BytecodeOnly public float getLargeIconSize-D9Ej5fM();
-    method public float getMediumButtonSize();
     method @BytecodeOnly public float getMediumButtonSize-D9Ej5fM();
-    method public float getMediumIconSize();
     method @BytecodeOnly public float getMediumIconSize-D9Ej5fM();
-    method public float getSmallButtonSize();
     method @BytecodeOnly public float getSmallButtonSize-D9Ej5fM();
-    method public float getSmallIconSize();
     method @BytecodeOnly public float getSmallIconSize-D9Ej5fM();
     method public androidx.tv.material3.ButtonGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ButtonScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
     method public androidx.tv.material3.ButtonShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
-    property public float LargeButtonSize;
-    property public float LargeIconSize;
-    property public float MediumButtonSize;
-    property public float MediumIconSize;
-    property public float SmallButtonSize;
-    property public float SmallIconSize;
+    property public androidx.compose.ui.unit.Dp LargeButtonSize;
+    property public androidx.compose.ui.unit.Dp LargeIconSize;
+    property public androidx.compose.ui.unit.Dp MediumButtonSize;
+    property public androidx.compose.ui.unit.Dp MediumIconSize;
+    property public androidx.compose.ui.unit.Dp SmallButtonSize;
+    property public androidx.compose.ui.unit.Dp SmallIconSize;
     field public static final androidx.tv.material3.IconButtonDefaults INSTANCE;
   }
 
@@ -531,22 +479,19 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipBorder border(boolean, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors(optional long containerColor, optional long contentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long selectedContainerColor, optional long selectedContentColor, optional long disabledContainerColor, optional long disabledContentColor, optional long focusedSelectedContainerColor, optional long focusedSelectedContentColor, optional long pressedSelectedContainerColor, optional long pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.SelectableChipColors colors-u3YEpmA(long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
-    method public float getAvatarSize();
     method @BytecodeOnly public float getAvatarSize-D9Ej5fM();
-    method public float getContainerHeight();
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
     method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
     method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShapeWithAvatar();
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
     method public androidx.tv.material3.SelectableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.SelectableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale, optional @FloatRange(from=0.0) float selectedDisabledScale, optional @FloatRange(from=0.0) float focusedSelectedDisabledScale);
     method public androidx.tv.material3.SelectableChipShape shape(boolean hasAvatar, optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape, optional androidx.compose.ui.graphics.Shape selectedDisabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedDisabledShape);
-    property public float AvatarSize;
-    property public float ContainerHeight;
+    property public androidx.compose.ui.unit.Dp AvatarSize;
+    property public androidx.compose.ui.unit.Dp ContainerHeight;
     property public androidx.compose.foundation.shape.RoundedCornerShape ContainerShape;
     property public androidx.compose.foundation.shape.RoundedCornerShape ContainerShapeWithAvatar;
-    property public float IconSize;
+    property public androidx.compose.ui.unit.Dp IconSize;
     field public static final androidx.tv.material3.InputChipDefaults INSTANCE;
   }
 
@@ -571,49 +516,36 @@ package androidx.tv.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class ListItemColors {
-    ctor public ListItemColors(long containerColor, long contentColor, long focusedContainerColor, long focusedContentColor, long pressedContainerColor, long pressedContentColor, long selectedContainerColor, long selectedContentColor, long disabledContainerColor, long disabledContentColor, long focusedSelectedContainerColor, long focusedSelectedContentColor, long pressedSelectedContainerColor, long pressedSelectedContentColor);
-    method public long getContainerColor();
+    ctor @KotlinOnly public ListItemColors(androidx.compose.ui.graphics.Color containerColor, androidx.compose.ui.graphics.Color contentColor, androidx.compose.ui.graphics.Color focusedContainerColor, androidx.compose.ui.graphics.Color focusedContentColor, androidx.compose.ui.graphics.Color pressedContainerColor, androidx.compose.ui.graphics.Color pressedContentColor, androidx.compose.ui.graphics.Color selectedContainerColor, androidx.compose.ui.graphics.Color selectedContentColor, androidx.compose.ui.graphics.Color disabledContainerColor, androidx.compose.ui.graphics.Color disabledContentColor, androidx.compose.ui.graphics.Color focusedSelectedContainerColor, androidx.compose.ui.graphics.Color focusedSelectedContentColor, androidx.compose.ui.graphics.Color pressedSelectedContainerColor, androidx.compose.ui.graphics.Color pressedSelectedContentColor);
+    ctor @BytecodeOnly public ListItemColors(long, long, long, long, long, long, long, long, long, long, long, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @BytecodeOnly public long getContainerColor-0d7_KjU();
-    method public long getContentColor();
     method @BytecodeOnly public long getContentColor-0d7_KjU();
-    method public long getDisabledContainerColor();
     method @BytecodeOnly public long getDisabledContainerColor-0d7_KjU();
-    method public long getDisabledContentColor();
     method @BytecodeOnly public long getDisabledContentColor-0d7_KjU();
-    method public long getFocusedContainerColor();
     method @BytecodeOnly public long getFocusedContainerColor-0d7_KjU();
-    method public long getFocusedContentColor();
     method @BytecodeOnly public long getFocusedContentColor-0d7_KjU();
-    method public long getFocusedSelectedContainerColor();
     method @BytecodeOnly public long getFocusedSelectedContainerColor-0d7_KjU();
-    method public long getFocusedSelectedContentColor();
     method @BytecodeOnly public long getFocusedSelectedContentColor-0d7_KjU();
-    method public long getPressedContainerColor();
     method @BytecodeOnly public long getPressedContainerColor-0d7_KjU();
-    method public long getPressedContentColor();
     method @BytecodeOnly public long getPressedContentColor-0d7_KjU();
-    method public long getPressedSelectedContainerColor();
     method @BytecodeOnly public long getPressedSelectedContainerColor-0d7_KjU();
-    method public long getPressedSelectedContentColor();
     method @BytecodeOnly public long getPressedSelectedContentColor-0d7_KjU();
-    method public long getSelectedContainerColor();
     method @BytecodeOnly public long getSelectedContainerColor-0d7_KjU();
-    method public long getSelectedContentColor();
     method @BytecodeOnly public long getSelectedContentColor-0d7_KjU();
-    property public long containerColor;
-    property public long contentColor;
-    property public long disabledContainerColor;
-    property public long disabledContentColor;
-    property public long focusedContainerColor;
-    property public long focusedContentColor;
-    property public long focusedSelectedContainerColor;
-    property public long focusedSelectedContentColor;
-    property public long pressedContainerColor;
-    property public long pressedContentColor;
-    property public long pressedSelectedContainerColor;
-    property public long pressedSelectedContentColor;
-    property public long selectedContainerColor;
-    property public long selectedContentColor;
+    property public androidx.compose.ui.graphics.Color containerColor;
+    property public androidx.compose.ui.graphics.Color contentColor;
+    property public androidx.compose.ui.graphics.Color disabledContainerColor;
+    property public androidx.compose.ui.graphics.Color disabledContentColor;
+    property public androidx.compose.ui.graphics.Color focusedContainerColor;
+    property public androidx.compose.ui.graphics.Color focusedContentColor;
+    property public androidx.compose.ui.graphics.Color focusedSelectedContainerColor;
+    property public androidx.compose.ui.graphics.Color focusedSelectedContentColor;
+    property public androidx.compose.ui.graphics.Color pressedContainerColor;
+    property public androidx.compose.ui.graphics.Color pressedContentColor;
+    property public androidx.compose.ui.graphics.Color pressedSelectedContainerColor;
+    property public androidx.compose.ui.graphics.Color pressedSelectedContentColor;
+    property public androidx.compose.ui.graphics.Color selectedContainerColor;
+    property public androidx.compose.ui.graphics.Color selectedContentColor;
   }
 
   public final class ListItemDefaults {
@@ -621,19 +553,16 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemColors colors(optional long containerColor, optional long contentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long selectedContainerColor, optional long selectedContentColor, optional long disabledContainerColor, optional long disabledContentColor, optional long focusedSelectedContainerColor, optional long focusedSelectedContentColor, optional long pressedSelectedContainerColor, optional long pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemColors colors-u3YEpmA(long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
-    method public float getIconSizeDense();
     method @BytecodeOnly public float getIconSizeDense-D9Ej5fM();
-    method public float getTonalElevation();
     method @BytecodeOnly public float getTonalElevation-D9Ej5fM();
     method public androidx.tv.material3.ListItemGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.ListItemScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ListItemShape shape(androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.ui.graphics.Shape?, androidx.compose.runtime.Composer?, int, int);
-    property public float IconSize;
-    property public float IconSizeDense;
-    property public float TonalElevation;
+    property public androidx.compose.ui.unit.Dp IconSize;
+    property public androidx.compose.ui.unit.Dp IconSizeDense;
+    property public androidx.compose.ui.unit.Dp TonalElevation;
     field public static final androidx.tv.material3.ListItemDefaults INSTANCE;
   }
 
@@ -745,55 +674,40 @@ package androidx.tv.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class NavigationDrawerItemColors {
-    ctor public NavigationDrawerItemColors(long containerColor, long contentColor, long inactiveContentColor, long focusedContainerColor, long focusedContentColor, long pressedContainerColor, long pressedContentColor, long selectedContainerColor, long selectedContentColor, long disabledContainerColor, long disabledContentColor, long disabledInactiveContentColor, long focusedSelectedContainerColor, long focusedSelectedContentColor, long pressedSelectedContainerColor, long pressedSelectedContentColor);
-    method public long getContainerColor();
+    ctor @KotlinOnly public NavigationDrawerItemColors(androidx.compose.ui.graphics.Color containerColor, androidx.compose.ui.graphics.Color contentColor, androidx.compose.ui.graphics.Color inactiveContentColor, androidx.compose.ui.graphics.Color focusedContainerColor, androidx.compose.ui.graphics.Color focusedContentColor, androidx.compose.ui.graphics.Color pressedContainerColor, androidx.compose.ui.graphics.Color pressedContentColor, androidx.compose.ui.graphics.Color selectedContainerColor, androidx.compose.ui.graphics.Color selectedContentColor, androidx.compose.ui.graphics.Color disabledContainerColor, androidx.compose.ui.graphics.Color disabledContentColor, androidx.compose.ui.graphics.Color disabledInactiveContentColor, androidx.compose.ui.graphics.Color focusedSelectedContainerColor, androidx.compose.ui.graphics.Color focusedSelectedContentColor, androidx.compose.ui.graphics.Color pressedSelectedContainerColor, androidx.compose.ui.graphics.Color pressedSelectedContentColor);
+    ctor @BytecodeOnly public NavigationDrawerItemColors(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @BytecodeOnly public long getContainerColor-0d7_KjU();
-    method public long getContentColor();
     method @BytecodeOnly public long getContentColor-0d7_KjU();
-    method public long getDisabledContainerColor();
     method @BytecodeOnly public long getDisabledContainerColor-0d7_KjU();
-    method public long getDisabledContentColor();
     method @BytecodeOnly public long getDisabledContentColor-0d7_KjU();
-    method public long getDisabledInactiveContentColor();
     method @BytecodeOnly public long getDisabledInactiveContentColor-0d7_KjU();
-    method public long getFocusedContainerColor();
     method @BytecodeOnly public long getFocusedContainerColor-0d7_KjU();
-    method public long getFocusedContentColor();
     method @BytecodeOnly public long getFocusedContentColor-0d7_KjU();
-    method public long getFocusedSelectedContainerColor();
     method @BytecodeOnly public long getFocusedSelectedContainerColor-0d7_KjU();
-    method public long getFocusedSelectedContentColor();
     method @BytecodeOnly public long getFocusedSelectedContentColor-0d7_KjU();
-    method public long getInactiveContentColor();
     method @BytecodeOnly public long getInactiveContentColor-0d7_KjU();
-    method public long getPressedContainerColor();
     method @BytecodeOnly public long getPressedContainerColor-0d7_KjU();
-    method public long getPressedContentColor();
     method @BytecodeOnly public long getPressedContentColor-0d7_KjU();
-    method public long getPressedSelectedContainerColor();
     method @BytecodeOnly public long getPressedSelectedContainerColor-0d7_KjU();
-    method public long getPressedSelectedContentColor();
     method @BytecodeOnly public long getPressedSelectedContentColor-0d7_KjU();
-    method public long getSelectedContainerColor();
     method @BytecodeOnly public long getSelectedContainerColor-0d7_KjU();
-    method public long getSelectedContentColor();
     method @BytecodeOnly public long getSelectedContentColor-0d7_KjU();
-    property public long containerColor;
-    property public long contentColor;
-    property public long disabledContainerColor;
-    property public long disabledContentColor;
-    property public long disabledInactiveContentColor;
-    property public long focusedContainerColor;
-    property public long focusedContentColor;
-    property public long focusedSelectedContainerColor;
-    property public long focusedSelectedContentColor;
-    property public long inactiveContentColor;
-    property public long pressedContainerColor;
-    property public long pressedContentColor;
-    property public long pressedSelectedContainerColor;
-    property public long pressedSelectedContentColor;
-    property public long selectedContainerColor;
-    property public long selectedContentColor;
+    property public androidx.compose.ui.graphics.Color containerColor;
+    property public androidx.compose.ui.graphics.Color contentColor;
+    property public androidx.compose.ui.graphics.Color disabledContainerColor;
+    property public androidx.compose.ui.graphics.Color disabledContentColor;
+    property public androidx.compose.ui.graphics.Color disabledInactiveContentColor;
+    property public androidx.compose.ui.graphics.Color focusedContainerColor;
+    property public androidx.compose.ui.graphics.Color focusedContentColor;
+    property public androidx.compose.ui.graphics.Color focusedSelectedContainerColor;
+    property public androidx.compose.ui.graphics.Color focusedSelectedContentColor;
+    property public androidx.compose.ui.graphics.Color inactiveContentColor;
+    property public androidx.compose.ui.graphics.Color pressedContainerColor;
+    property public androidx.compose.ui.graphics.Color pressedContentColor;
+    property public androidx.compose.ui.graphics.Color pressedSelectedContainerColor;
+    property public androidx.compose.ui.graphics.Color pressedSelectedContentColor;
+    property public androidx.compose.ui.graphics.Color selectedContainerColor;
+    property public androidx.compose.ui.graphics.Color selectedContentColor;
   }
 
   public final class NavigationDrawerItemDefaults {
@@ -803,42 +717,34 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemColors colors(optional long containerColor, optional long contentColor, optional long inactiveContentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long selectedContainerColor, optional long selectedContentColor, optional long disabledContainerColor, optional long disabledContentColor, optional long disabledInactiveContentColor, optional long focusedSelectedContainerColor, optional long focusedSelectedContentColor, optional long pressedSelectedContainerColor, optional long pressedSelectedContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.NavigationDrawerItemColors colors-V1nXRL4(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
-    method public float getCollapsedDrawerItemWidth();
     method @BytecodeOnly public float getCollapsedDrawerItemWidth-D9Ej5fM();
-    method public float getContainerHeightOneLine();
     method @BytecodeOnly public float getContainerHeightOneLine-D9Ej5fM();
-    method public float getContainerHeightTwoLine();
     method @BytecodeOnly public float getContainerHeightTwoLine-D9Ej5fM();
     method public androidx.compose.animation.EnterTransition getContentAnimationEnter();
     method public androidx.compose.animation.ExitTransition getContentAnimationExit();
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Border getDefaultBorder();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Border getDefaultBorder(androidx.compose.runtime.Composer?, int);
-    method public float getExpandedDrawerItemWidth();
     method @BytecodeOnly public float getExpandedDrawerItemWidth-D9Ej5fM();
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
-    method public float getNavigationDrawerItemElevation();
     method @BytecodeOnly public float getNavigationDrawerItemElevation-D9Ej5fM();
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long getTrailingBadgeContainerColor();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long getTrailingBadgeContainerColor(androidx.compose.runtime.Composer?, int);
-    method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long getTrailingBadgeContentColor();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long getTrailingBadgeContentColor(androidx.compose.runtime.Composer?, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.text.TextStyle getTrailingBadgeTextStyle();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.text.TextStyle getTrailingBadgeTextStyle(androidx.compose.runtime.Composer?, int);
     method public androidx.tv.material3.NavigationDrawerItemGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow, optional androidx.tv.material3.Glow selectedGlow, optional androidx.tv.material3.Glow focusedSelectedGlow, optional androidx.tv.material3.Glow pressedSelectedGlow);
     method public androidx.tv.material3.NavigationDrawerItemScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float selectedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedSelectedScale, optional @FloatRange(from=0.0) float focusedDisabledScale, optional @FloatRange(from=0.0) float pressedSelectedScale);
     method public androidx.tv.material3.NavigationDrawerItemShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape selectedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedSelectedShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape, optional androidx.compose.ui.graphics.Shape pressedSelectedShape);
-    property public float CollapsedDrawerItemWidth;
-    property public float ContainerHeightOneLine;
-    property public float ContainerHeightTwoLine;
+    property public androidx.compose.ui.unit.Dp CollapsedDrawerItemWidth;
+    property public androidx.compose.ui.unit.Dp ContainerHeightOneLine;
+    property public androidx.compose.ui.unit.Dp ContainerHeightTwoLine;
     property public androidx.compose.animation.EnterTransition ContentAnimationEnter;
     property public androidx.compose.animation.ExitTransition ContentAnimationExit;
     property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.Border DefaultBorder;
-    property public float ExpandedDrawerItemWidth;
-    property public float IconSize;
-    property public float NavigationDrawerItemElevation;
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long TrailingBadgeContainerColor;
-    property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public long TrailingBadgeContentColor;
+    property public androidx.compose.ui.unit.Dp ExpandedDrawerItemWidth;
+    property public androidx.compose.ui.unit.Dp IconSize;
+    property public androidx.compose.ui.unit.Dp NavigationDrawerItemElevation;
+    property public androidx.compose.ui.graphics.Color TrailingBadgeContainerColor;
+    property public androidx.compose.ui.graphics.Color TrailingBadgeContentColor;
     property @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.compose.ui.text.TextStyle TrailingBadgeTextStyle;
     field public static final androidx.tv.material3.NavigationDrawerItemDefaults INSTANCE;
   }
@@ -931,17 +837,15 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
     method public androidx.compose.foundation.layout.PaddingValues getButtonWithIconContentPadding();
     method public androidx.compose.foundation.layout.PaddingValues getContentPadding();
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
-    method public float getIconSpacing();
     method @BytecodeOnly public float getIconSpacing-D9Ej5fM();
     method public androidx.tv.material3.ButtonGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ButtonScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
     method public androidx.tv.material3.ButtonShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
     property public androidx.compose.foundation.layout.PaddingValues ButtonWithIconContentPadding;
     property public androidx.compose.foundation.layout.PaddingValues ContentPadding;
-    property public float IconSize;
-    property public float IconSpacing;
+    property public androidx.compose.ui.unit.Dp IconSize;
+    property public androidx.compose.ui.unit.Dp IconSpacing;
     field public static final androidx.tv.material3.OutlinedButtonDefaults INSTANCE;
   }
 
@@ -950,46 +854,37 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors(optional long containerColor, optional long contentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long disabledContainerColor, optional long disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ButtonColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
-    method public float getLargeButtonSize();
     method @BytecodeOnly public float getLargeButtonSize-D9Ej5fM();
-    method public float getLargeIconSize();
     method @BytecodeOnly public float getLargeIconSize-D9Ej5fM();
-    method public float getMediumButtonSize();
     method @BytecodeOnly public float getMediumButtonSize-D9Ej5fM();
-    method public float getMediumIconSize();
     method @BytecodeOnly public float getMediumIconSize-D9Ej5fM();
-    method public float getSmallButtonSize();
     method @BytecodeOnly public float getSmallButtonSize-D9Ej5fM();
-    method public float getSmallIconSize();
     method @BytecodeOnly public float getSmallIconSize-D9Ej5fM();
     method public androidx.tv.material3.ButtonGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ButtonScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
     method public androidx.tv.material3.ButtonShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
-    property public float LargeButtonSize;
-    property public float LargeIconSize;
-    property public float MediumButtonSize;
-    property public float MediumIconSize;
-    property public float SmallButtonSize;
-    property public float SmallIconSize;
+    property public androidx.compose.ui.unit.Dp LargeButtonSize;
+    property public androidx.compose.ui.unit.Dp LargeIconSize;
+    property public androidx.compose.ui.unit.Dp MediumButtonSize;
+    property public androidx.compose.ui.unit.Dp MediumIconSize;
+    property public androidx.compose.ui.unit.Dp SmallButtonSize;
+    property public androidx.compose.ui.unit.Dp SmallIconSize;
     field public static final androidx.tv.material3.OutlinedIconButtonDefaults INSTANCE;
   }
 
   @androidx.compose.runtime.Immutable public final class RadioButtonColors {
-    ctor public RadioButtonColors(long selectedColor, long unselectedColor, long disabledSelectedColor, long disabledUnselectedColor);
+    ctor @KotlinOnly public RadioButtonColors(androidx.compose.ui.graphics.Color selectedColor, androidx.compose.ui.graphics.Color unselectedColor, androidx.compose.ui.graphics.Color disabledSelectedColor, androidx.compose.ui.graphics.Color disabledUnselectedColor);
+    ctor @BytecodeOnly public RadioButtonColors(long, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.tv.material3.RadioButtonColors copy(optional long selectedColor, optional long unselectedColor, optional long disabledSelectedColor, optional long disabledUnselectedColor);
     method @BytecodeOnly public androidx.tv.material3.RadioButtonColors copy-jRlVdoo(long, long, long, long);
-    method public long getDisabledSelectedColor();
     method @BytecodeOnly public long getDisabledSelectedColor-0d7_KjU();
-    method public long getDisabledUnselectedColor();
     method @BytecodeOnly public long getDisabledUnselectedColor-0d7_KjU();
-    method public long getSelectedColor();
     method @BytecodeOnly public long getSelectedColor-0d7_KjU();
-    method public long getUnselectedColor();
     method @BytecodeOnly public long getUnselectedColor-0d7_KjU();
-    property public long disabledSelectedColor;
-    property public long disabledUnselectedColor;
-    property public long selectedColor;
-    property public long unselectedColor;
+    property public androidx.compose.ui.graphics.Color disabledSelectedColor;
+    property public androidx.compose.ui.graphics.Color disabledUnselectedColor;
+    property public androidx.compose.ui.graphics.Color selectedColor;
+    property public androidx.compose.ui.graphics.Color unselectedColor;
   }
 
   public final class RadioButtonDefaults {
@@ -1097,13 +992,12 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipBorder border(androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.tv.material3.Border?, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors(optional long containerColor, optional long contentColor, optional long focusedContainerColor, optional long focusedContentColor, optional long pressedContainerColor, optional long pressedContentColor, optional long disabledContainerColor, optional long disabledContentColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ReadOnlyComposable public androidx.tv.material3.ClickableChipColors colors-oq7We08(long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int);
-    method public float getContainerHeight();
     method @BytecodeOnly public float getContainerHeight-D9Ej5fM();
     method public androidx.compose.foundation.shape.RoundedCornerShape getContainerShape();
     method public androidx.tv.material3.ClickableChipGlow glow(optional androidx.tv.material3.Glow glow, optional androidx.tv.material3.Glow focusedGlow, optional androidx.tv.material3.Glow pressedGlow);
     method public androidx.tv.material3.ClickableChipScale scale(optional @FloatRange(from=0.0) float scale, optional @FloatRange(from=0.0) float focusedScale, optional @FloatRange(from=0.0) float pressedScale, optional @FloatRange(from=0.0) float disabledScale, optional @FloatRange(from=0.0) float focusedDisabledScale);
     method public androidx.tv.material3.ClickableChipShape shape(optional androidx.compose.ui.graphics.Shape shape, optional androidx.compose.ui.graphics.Shape focusedShape, optional androidx.compose.ui.graphics.Shape pressedShape, optional androidx.compose.ui.graphics.Shape disabledShape, optional androidx.compose.ui.graphics.Shape focusedDisabledShape);
-    property public float ContainerHeight;
+    property public androidx.compose.ui.unit.Dp ContainerHeight;
     property public androidx.compose.foundation.shape.RoundedCornerShape ContainerShape;
     field public static final androidx.tv.material3.SuggestionChipDefaults INSTANCE;
   }
@@ -1130,57 +1024,42 @@ package androidx.tv.material3 {
   }
 
   @androidx.compose.runtime.Immutable public final class SwitchColors {
-    ctor public SwitchColors(long checkedThumbColor, long checkedTrackColor, long checkedBorderColor, long checkedIconColor, long uncheckedThumbColor, long uncheckedTrackColor, long uncheckedBorderColor, long uncheckedIconColor, long disabledCheckedThumbColor, long disabledCheckedTrackColor, long disabledCheckedBorderColor, long disabledCheckedIconColor, long disabledUncheckedThumbColor, long disabledUncheckedTrackColor, long disabledUncheckedBorderColor, long disabledUncheckedIconColor);
+    ctor @KotlinOnly public SwitchColors(androidx.compose.ui.graphics.Color checkedThumbColor, androidx.compose.ui.graphics.Color checkedTrackColor, androidx.compose.ui.graphics.Color checkedBorderColor, androidx.compose.ui.graphics.Color checkedIconColor, androidx.compose.ui.graphics.Color uncheckedThumbColor, androidx.compose.ui.graphics.Color uncheckedTrackColor, androidx.compose.ui.graphics.Color uncheckedBorderColor, androidx.compose.ui.graphics.Color uncheckedIconColor, androidx.compose.ui.graphics.Color disabledCheckedThumbColor, androidx.compose.ui.graphics.Color disabledCheckedTrackColor, androidx.compose.ui.graphics.Color disabledCheckedBorderColor, androidx.compose.ui.graphics.Color disabledCheckedIconColor, androidx.compose.ui.graphics.Color disabledUncheckedThumbColor, androidx.compose.ui.graphics.Color disabledUncheckedTrackColor, androidx.compose.ui.graphics.Color disabledUncheckedBorderColor, androidx.compose.ui.graphics.Color disabledUncheckedIconColor);
+    ctor @BytecodeOnly public SwitchColors(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public androidx.tv.material3.SwitchColors copy(optional long checkedThumbColor, optional long checkedTrackColor, optional long checkedBorderColor, optional long checkedIconColor, optional long uncheckedThumbColor, optional long uncheckedTrackColor, optional long uncheckedBorderColor, optional long uncheckedIconColor, optional long disabledCheckedThumbColor, optional long disabledCheckedTrackColor, optional long disabledCheckedBorderColor, optional long disabledCheckedIconColor, optional long disabledUncheckedThumbColor, optional long disabledUncheckedTrackColor, optional long disabledUncheckedBorderColor, optional long disabledUncheckedIconColor);
     method @BytecodeOnly public androidx.tv.material3.SwitchColors copy-Q_H9qLU(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long);
-    method public long getCheckedBorderColor();
     method @BytecodeOnly public long getCheckedBorderColor-0d7_KjU();
-    method public long getCheckedIconColor();
     method @BytecodeOnly public long getCheckedIconColor-0d7_KjU();
-    method public long getCheckedThumbColor();
     method @BytecodeOnly public long getCheckedThumbColor-0d7_KjU();
-    method public long getCheckedTrackColor();
     method @BytecodeOnly public long getCheckedTrackColor-0d7_KjU();
-    method public long getDisabledCheckedBorderColor();
     method @BytecodeOnly public long getDisabledCheckedBorderColor-0d7_KjU();
-    method public long getDisabledCheckedIconColor();
     method @BytecodeOnly public long getDisabledCheckedIconColor-0d7_KjU();
-    method public long getDisabledCheckedThumbColor();
     method @BytecodeOnly public long getDisabledCheckedThumbColor-0d7_KjU();
-    method public long getDisabledCheckedTrackColor();
     method @BytecodeOnly public long getDisabledCheckedTrackColor-0d7_KjU();
-    method public long getDisabledUncheckedBorderColor();
     method @BytecodeOnly public long getDisabledUncheckedBorderColor-0d7_KjU();
-    method public long getDisabledUncheckedIconColor();
     method @BytecodeOnly public long getDisabledUncheckedIconColor-0d7_KjU();
-    method public long getDisabledUncheckedThumbColor();
     method @BytecodeOnly public long getDisabledUncheckedThumbColor-0d7_KjU();
-    method public long getDisabledUncheckedTrackColor();
     method @BytecodeOnly public long getDisabledUncheckedTrackColor-0d7_KjU();
-    method public long getUncheckedBorderColor();
     method @BytecodeOnly public long getUncheckedBorderColor-0d7_KjU();
-    method public long getUncheckedIconColor();
     method @BytecodeOnly public long getUncheckedIconColor-0d7_KjU();
-    method public long getUncheckedThumbColor();
     method @BytecodeOnly public long getUncheckedThumbColor-0d7_KjU();
-    method public long getUncheckedTrackColor();
     method @BytecodeOnly public long getUncheckedTrackColor-0d7_KjU();
-    property public long checkedBorderColor;
-    property public long checkedIconColor;
-    property public long checkedThumbColor;
-    property public long checkedTrackColor;
-    property public long disabledCheckedBorderColor;
-    property public long disabledCheckedIconColor;
-    property public long disabledCheckedThumbColor;
-    property public long disabledCheckedTrackColor;
-    property public long disabledUncheckedBorderColor;
-    property public long disabledUncheckedIconColor;
-    property public long disabledUncheckedThumbColor;
-    property public long disabledUncheckedTrackColor;
-    property public long uncheckedBorderColor;
-    property public long uncheckedIconColor;
-    property public long uncheckedThumbColor;
-    property public long uncheckedTrackColor;
+    property public androidx.compose.ui.graphics.Color checkedBorderColor;
+    property public androidx.compose.ui.graphics.Color checkedIconColor;
+    property public androidx.compose.ui.graphics.Color checkedThumbColor;
+    property public androidx.compose.ui.graphics.Color checkedTrackColor;
+    property public androidx.compose.ui.graphics.Color disabledCheckedBorderColor;
+    property public androidx.compose.ui.graphics.Color disabledCheckedIconColor;
+    property public androidx.compose.ui.graphics.Color disabledCheckedThumbColor;
+    property public androidx.compose.ui.graphics.Color disabledCheckedTrackColor;
+    property public androidx.compose.ui.graphics.Color disabledUncheckedBorderColor;
+    property public androidx.compose.ui.graphics.Color disabledUncheckedIconColor;
+    property public androidx.compose.ui.graphics.Color disabledUncheckedThumbColor;
+    property public androidx.compose.ui.graphics.Color disabledUncheckedTrackColor;
+    property public androidx.compose.ui.graphics.Color uncheckedBorderColor;
+    property public androidx.compose.ui.graphics.Color uncheckedIconColor;
+    property public androidx.compose.ui.graphics.Color uncheckedThumbColor;
+    property public androidx.compose.ui.graphics.Color uncheckedTrackColor;
   }
 
   public final class SwitchDefaults {
@@ -1188,9 +1067,8 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors(androidx.compose.runtime.Composer?, int);
     method @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors(optional long checkedThumbColor, optional long checkedTrackColor, optional long checkedBorderColor, optional long checkedIconColor, optional long uncheckedThumbColor, optional long uncheckedTrackColor, optional long uncheckedBorderColor, optional long uncheckedIconColor, optional long disabledCheckedThumbColor, optional long disabledCheckedTrackColor, optional long disabledCheckedBorderColor, optional long disabledCheckedIconColor, optional long disabledUncheckedThumbColor, optional long disabledUncheckedTrackColor, optional long disabledUncheckedBorderColor, optional long disabledUncheckedIconColor);
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.tv.material3.SwitchColors colors-V1nXRL4(long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, long, androidx.compose.runtime.Composer?, int, int, int);
-    method public float getIconSize();
     method @BytecodeOnly public float getIconSize-D9Ej5fM();
-    property public float IconSize;
+    property public androidx.compose.ui.unit.Dp IconSize;
     field public static final androidx.tv.material3.SwitchDefaults INSTANCE;
   }
 
@@ -1224,9 +1102,8 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void UnderlinedIndicator-jA1GFJw(androidx.compose.ui.unit.DpRect, boolean, androidx.compose.ui.Modifier?, long, long, androidx.compose.runtime.Composer?, int, int);
     method @androidx.compose.runtime.Composable public long contentColor();
     method @BytecodeOnly @androidx.compose.runtime.Composable public long contentColor-WaAFU9c(androidx.compose.runtime.Composer?, int);
-    method public long getContainerColor();
     method @BytecodeOnly public long getContainerColor-0d7_KjU();
-    property public long ContainerColor;
+    property public androidx.compose.ui.graphics.Color ContainerColor;
     field public static final androidx.tv.material3.TabRowDefaults INSTANCE;
   }
 

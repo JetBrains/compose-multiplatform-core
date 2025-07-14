@@ -20,7 +20,6 @@ import android.os.Build
 import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraConfigs
 import androidx.camera.core.impl.CameraRepository
-import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.FakeStreamSpecsCalculator
@@ -86,7 +85,7 @@ class CameraUseCaseAdapterProviderTest {
         val adapter = cameraUseCaseAdapterProvider.provide(cameraId)
 
         // Assert.
-        assertThat(adapter.cameraId.cameraIdString).isEqualTo(cameraId)
+        assertThat(adapter.adapterIdentifier.cameraIds).containsExactly(cameraId)
     }
 
     @Test
@@ -129,7 +128,7 @@ class CameraUseCaseAdapterProviderTest {
 
         // Assert.
         val expectedCameraId =
-            CameraUseCaseAdapter.generateCameraId(adapterCameraInfo0, adapterCameraInfo1)
-        assertThat(adapter.cameraId).isEqualTo(expectedCameraId)
+            CameraIdentifier.fromAdapterInfos(adapterCameraInfo0, adapterCameraInfo1)
+        assertThat(adapter.adapterIdentifier).isEqualTo(expectedCameraId)
     }
 }

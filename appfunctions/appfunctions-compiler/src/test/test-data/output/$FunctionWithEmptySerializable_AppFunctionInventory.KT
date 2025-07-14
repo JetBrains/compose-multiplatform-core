@@ -31,7 +31,8 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
     private val PARAMETER_METADATA_EMPTY_REFERENCE_DATA_TYPE: AppFunctionReferenceTypeMetadata =
         AppFunctionReferenceTypeMetadata(
             referenceDataType = "com.testdata.Empty",
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val EMPTY_PARAMETER_METADATA: AppFunctionParameterMetadata =
@@ -48,7 +49,8 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
     private val PRIMITIVE_RESPONSE_VALUE_TYPE: AppFunctionPrimitiveTypeMetadata =
         AppFunctionPrimitiveTypeMetadata(
             type = 0,
-            isNullable = false
+            isNullable = false,
+            description = ""
         )
 
     private val RESPONSE_METADATA: AppFunctionResponseMetadata = AppFunctionResponseMetadata(
@@ -67,7 +69,8 @@ public class `$FunctionWithEmptySerializable_AppFunctionInventory` : AppFunction
             properties = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_PROPERTIES_MAP,
             required = COM_TESTDATA_EMPTY_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
             qualifiedName = "com.testdata.Empty",
-            isNullable = true
+            isNullable = true,
+            description = ""
         )
 
     private val COMPONENTS_METADATA_DATA_TYPES_MAP: Map<String, AppFunctionDataTypeMetadata> =

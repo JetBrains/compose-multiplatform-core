@@ -16,7 +16,6 @@
 
 package androidx.health.connect.client.records
 
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_INT_TO_STRING_MAP
 import androidx.health.connect.client.records.MindfulnessSessionRecord.Companion.MINDFULNESS_SESSION_TYPE_STRING_TO_INT_MAP
 import androidx.health.connect.client.records.metadata.Metadata
@@ -30,7 +29,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 class MindfulnessSessionRecordTest {
 
     @Test

@@ -23,6 +23,7 @@ import com.google.androidxr.splitengine.SubspaceNode
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FakeSubspaceNodeEntity(
-    subspaceNode: SubspaceNode,
-    public override var size: Dimensions,
-) : SubspaceNodeEntity, FakeEntity() {}
+    public val subspaceNode: SubspaceNode,
+    /** The size of the [SubspaceNodeEntity] in meters, in unscaled local space. */
+    public override var size: Dimensions = Dimensions(2f, 1f, 0f),
+) : SubspaceNodeEntity, FakeEntity()

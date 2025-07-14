@@ -577,6 +577,7 @@ class AppFunctionDataTest {
                 qualifiedName =
                     "com.testdata.anotherDifferentPackage.AnotherDiffPackageSerializable",
                 isNullable = true,
+                description = "Description for AnotherDiffPackageSerializable",
             )
         val componentMetadata =
             AppFunctionComponentsMetadata(dataTypes = mapOf("Person" to personMetadata))
@@ -634,6 +635,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Inner data description",
             )
         val outerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -641,6 +643,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "outerData",
                 isNullable = false,
+                description = "Outer data description",
             )
         val innerDataBuilder =
             AppFunctionData.Builder(innerObjectType, AppFunctionComponentsMetadata())
@@ -667,6 +670,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Inner data description",
             )
         val incorrectInnerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -678,6 +682,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Incorrect inner data description",
             )
         val outerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -685,6 +690,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "outerData",
                 isNullable = false,
+                description = "Outer data description",
             )
         val incorrectInnerDataBuilder =
             AppFunctionData.Builder(incorrectInnerObjectType, AppFunctionComponentsMetadata())
@@ -709,6 +715,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Inner data description",
             )
         val incorrectInnerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -720,6 +727,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Incorrect inner data description",
             )
         val outerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -728,6 +736,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "outerData",
                 isNullable = false,
+                description = "Outer data description",
             )
         val correctInnerDataBuilder =
             AppFunctionData.Builder(innerObjectType, AppFunctionComponentsMetadata())
@@ -887,6 +896,7 @@ class AppFunctionDataTest {
                 required = listOf("long"),
                 isNullable = false,
                 qualifiedName = "testObject",
+                description = "Test object description",
             )
         val responseMetadata = AppFunctionResponseMetadata(valueType = objectMetadata)
 
@@ -919,6 +929,7 @@ class AppFunctionDataTest {
                 required = listOf("long"),
                 isNullable = false,
                 qualifiedName = "testObject",
+                description = "Test object description",
             )
         val componentMetadata =
             AppFunctionComponentsMetadata(dataTypes = mapOf("testObject" to objectMetadata))
@@ -1007,6 +1018,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "test",
                 isNullable = false,
+                description = "Test object description",
             )
 
         val TEST_PARAMETER_METADATA =

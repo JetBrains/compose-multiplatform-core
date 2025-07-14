@@ -1118,9 +1118,8 @@ class ScatterMapTest {
 
         val size = map.size
         assertEquals(3, map.size)
-        // No-op before a call to next()
         val iterator = values.iterator()
-        iterator.remove()
+        assertFailsWith<IllegalStateException> { iterator.remove() }
         assertEquals(size, map.size)
 
         assertTrue(iterator.hasNext())
@@ -1217,9 +1216,8 @@ class ScatterMapTest {
 
         val size = map.size
         assertEquals(3, map.size)
-        // No-op before a call to next()
         val iterator = keys.iterator()
-        iterator.remove()
+        assertFailsWith<IllegalStateException> { iterator.remove() }
         assertEquals(size, map.size)
 
         assertTrue(iterator.hasNext())
@@ -1368,9 +1366,8 @@ class ScatterMapTest {
 
         val size = map.size
         assertEquals(3, map.size)
-        // No-op before a call to next()
         val iterator = entries.iterator()
-        iterator.remove()
+        assertFailsWith<IllegalStateException> { iterator.remove() }
         assertEquals(size, map.size)
 
         assertTrue(iterator.hasNext())

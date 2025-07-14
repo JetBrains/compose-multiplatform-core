@@ -20,7 +20,7 @@ import android.view.View
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.ApplicationSubspace
-import androidx.xr.compose.subspace.SpatialPanel
+import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.TestSetup
@@ -81,7 +81,7 @@ class CoreEntityNodeTest {
         composeTestRule.setContent {
             TestSetup {
                 ApplicationSubspace {
-                    SpatialPanel(
+                    SpatialAndroidViewPanel(
                         factory = { View(it) },
                         SubspaceModifier.modifyCoreEntity {
                                 setRenderedSize(IntVolumeSize(100, 100, 0))

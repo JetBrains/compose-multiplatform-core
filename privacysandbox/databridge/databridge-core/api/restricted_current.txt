@@ -26,5 +26,9 @@ package androidx.privacysandbox.databridge.core {
     method public androidx.privacysandbox.databridge.core.Key createStringSetKey(String name);
   }
 
+  public interface KeyUpdateCallback {
+    method public void onKeyUpdated(androidx.privacysandbox.databridge.core.Key key, Object? value);
+  }
+
 }
 

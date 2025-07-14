@@ -163,4 +163,22 @@
         <item name="android:paddingBottom">40px</item>
         <item name="height">200px</item>
     </style>
+
+    <style name="TextAppearanceSpanCompat_fontFamilyOnly">
+        <item name="android:fontFamily">@font/samplexmldownloadedfont</item>
+    </style>
+
+    <style name="TextAppearanceSpanCompat_fontFamilyAndColorRed">
+        <item name="android:fontFamily">@font/samplexmldownloadedfont</item>
+        <item name="android:textSize">128px</item>
+    </style>
+
+    <style name="TextAppearanceSpanCompat_typeface">
+        <item name="android:typeface">sans</item>
+    </style>
+
+    <style name="TextAppearanceSpanCompat_stringFontFamily">
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
 </resources>

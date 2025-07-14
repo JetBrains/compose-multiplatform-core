@@ -59,7 +59,7 @@ android {
         // TODO(b/403022712) Remove minSdk once pdf-viewer and pdf-document-service drop their
         //   minSdk requirements
         minSdk = 31
-        compileSdk = 35
+        compileSdk = 36
     }
 }
 
