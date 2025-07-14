@@ -78,6 +78,7 @@ androidXMultiplatform {
                 api(project(":savedstate:savedstate-compose"))
 
                 implementation(project(":lifecycle:lifecycle-viewmodel"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
             }
         }
 

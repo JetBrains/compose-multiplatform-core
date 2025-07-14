@@ -82,7 +82,7 @@ androidXMultiplatform {
         }
 
         androidInstrumentedTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(project(":compose:animation:animation"))
                 implementation(project(":compose:test-utils"))
@@ -123,6 +123,7 @@ androidXMultiplatform {
         }
 
         desktopTest {
+            dependsOn(jvmTest)
             dependsOn(skikoTest)
             dependencies {
                 implementation(libs.truth)

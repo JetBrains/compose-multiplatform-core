@@ -126,5 +126,5 @@ androidx {
 }
 
 android {
-    namespace "androidx.compose.ui.backhandler"
+    namespace = "androidx.compose.ui.backhandler"
 }
