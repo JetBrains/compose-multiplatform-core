@@ -98,7 +98,10 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLStyleElement
 import org.w3c.dom.HTMLTitleElement
 import org.w3c.dom.MediaQueryListEvent
+import org.w3c.dom.MutationObserver
+import org.w3c.dom.MutationObserverInit
 import org.w3c.dom.OPEN
+import org.w3c.dom.ShadowRoot
 import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
 import org.w3c.dom.TouchEvent
@@ -202,6 +205,14 @@ internal class ComposeWindow(
     }
 
     private val canvasEvents = EventTargetListener(canvas)
+
+    private val detachListener = MutationObserver { _, _ ->
+        val root = canvas.getRootNode()
+        val queryElement = if (root is ShadowRoot) root.host else canvas
+        if (!document.body!!.contains(queryElement)) {
+            dispose()
+        }
+    }
 
     private var keyboardModeState: KeyboardModeState = KeyboardModeState.Hardware
 
@@ -407,6 +418,8 @@ internal class ComposeWindow(
                 else Lifecycle.Event.ON_STOP
             )
         }
+
+        detachListener.observe(document.body!!, MutationObserverInit(childList = true, subtree = true))
     }
 
     init {
@@ -472,9 +485,11 @@ internal class ComposeWindow(
         skiaLayer.needRedraw()
     }
 
-    // TODO: need to call .dispose() on window close.
     fun dispose() {
         check(!isDisposed)
+
+        detachListener.disconnect()
+
         lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         viewModelStore.clear()
 

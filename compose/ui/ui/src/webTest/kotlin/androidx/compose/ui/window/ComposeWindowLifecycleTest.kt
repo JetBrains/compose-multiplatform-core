@@ -21,53 +21,46 @@ import androidx.compose.ui.sendFromScope
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import kotlin.test.Ignore
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.test.runTest
-import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.events.Event
 
 class ComposeWindowLifecycleTest : OnCanvasTests {
     @Test
-    @Ignore // ignored while investigating CI issues: this test opens a new browser window which can be the cause
     fun allEvents() = runTest {
-        val canvas = getCanvas()
-        canvas.focus()
-
-        val lifecycleOwner = ComposeWindow(
-            canvas = canvas,
-            interopContainerElement = document.createElement("div") as HTMLDivElement,
-            a11yContainerElement = null,
-            content = {},
-            configuration = ComposeViewportConfiguration(),
-            state = DefaultWindowState(document.documentElement!!)
-        )
-
         val eventsChannel = Channel<Lifecycle.Event>(10)
-
-        lifecycleOwner.lifecycle.addObserver(object : LifecycleEventObserver {
-            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-                eventsChannel.sendFromScope(event)
-            }
-        })
+        createComposeWindow {
+            val lifecycle = LocalLifecycleOwner.current.lifecycle
+            lifecycle.addObserver(object : LifecycleEventObserver {
+                override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                    eventsChannel.sendFromScope(event)
+                }
+            })
+        }
 
         assertEquals(Lifecycle.State.CREATED, eventsChannel.receive().targetState)
         assertEquals(Lifecycle.State.STARTED, eventsChannel.receive().targetState)
-        assertEquals(Lifecycle.State.RESUMED, eventsChannel.receive().targetState)
 
-        // Browsers don't allow to blur the window from code:
-        // https://developer.mozilla.org/en-US/docs/Web/API/Window/blur
-        // So we simulate a new tab being open:
-        val anotherWindow = window.open("about:config")
-        assertTrue(anotherWindow != null)
+        // Dispatch artificial events that would be sent when the window gains and loses focus.
+        // Starting with a focus event before checking for the initial RESUMED makes this test
+        // robust in the face of both an already-focused window and a non-focused window. Then,
+        // a blur plus focus cycle simulates losing focus and regaining it.
+        window.dispatchEvent(Event("focus"))
+        assertEquals(Lifecycle.State.RESUMED, eventsChannel.receive().targetState)
+        window.dispatchEvent(Event("blur"))
         assertEquals(Lifecycle.State.STARTED, eventsChannel.receive().targetState)
-
-        // Now go back to the original window
-        anotherWindow.close()
+        window.dispatchEvent(Event("focus"))
         assertEquals(Lifecycle.State.RESUMED, eventsChannel.receive().targetState)
+
+        // Destroy the ComposeWindow by removing its host container from the DOM.
+        val host = getShadowRoot().host
+        host.parentNode?.removeChild(host)
+        assertEquals(Lifecycle.State.STARTED, eventsChannel.receive().targetState)
+        assertEquals(Lifecycle.State.CREATED, eventsChannel.receive().targetState)
+        assertEquals(Lifecycle.State.DESTROYED, eventsChannel.receive().targetState)
     }
 }
