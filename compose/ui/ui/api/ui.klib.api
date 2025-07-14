@@ -3928,6 +3928,7 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultUiApp
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultViewConfiguration$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultViewConfiguration$stableprop|#static{}androidx_compose_ui_platform_DefaultViewConfiguration$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_DelegateRootForTestListener$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_DelegateRootForTestListener$stableprop|#static{}androidx_compose_ui_platform_DelegateRootForTestListener$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_DelegatingSoftwareKeyboardController$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_DelegatingSoftwareKeyboardController$stableprop|#static{}androidx_compose_ui_platform_DelegatingSoftwareKeyboardController$stableprop[0]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_DisposableSaveableStateRegistry$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_DisposableSaveableStateRegistry$stableprop|#static{}androidx_compose_ui_platform_DisposableSaveableStateRegistry$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyViewConfiguration$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyViewConfiguration$stableprop|#static{}androidx_compose_ui_platform_EmptyViewConfiguration$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_FlushCoroutineDispatcher$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_FlushCoroutineDispatcher$stableprop|#static{}androidx_compose_ui_platform_FlushCoroutineDispatcher$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_GlobalSnapshotManager$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_GlobalSnapshotManager$stableprop|#static{}androidx_compose_ui_platform_GlobalSnapshotManager$stableprop[0]
@@ -4513,6 +4514,7 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultUiApp
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultViewConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultViewConfiguration$stableprop_getter|androidx_compose_ui_platform_DefaultViewConfiguration$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_DelegateRootForTestListener$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_DelegateRootForTestListener$stableprop_getter|androidx_compose_ui_platform_DelegateRootForTestListener$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_DelegatingSoftwareKeyboardController$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_DelegatingSoftwareKeyboardController$stableprop_getter|androidx_compose_ui_platform_DelegatingSoftwareKeyboardController$stableprop_getter(){}[0]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_DisposableSaveableStateRegistry$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_DisposableSaveableStateRegistry$stableprop_getter|androidx_compose_ui_platform_DisposableSaveableStateRegistry$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyViewConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_EmptyViewConfiguration$stableprop_getter|androidx_compose_ui_platform_EmptyViewConfiguration$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_FlushCoroutineDispatcher$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_FlushCoroutineDispatcher$stableprop_getter|androidx_compose_ui_platform_FlushCoroutineDispatcher$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_GlobalSnapshotManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_GlobalSnapshotManager$stableprop_getter|androidx_compose_ui_platform_GlobalSnapshotManager$stableprop_getter(){}[0]
@@ -4922,6 +4924,9 @@ final val androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegat
 final val androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop|#static{}androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop[0]
 
 // Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop|#static{}androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop[0]
+
+// Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_KeepFocus$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_KeepFocus$stableprop|#static{}androidx_compose_ui_platform_AccessibilityElementFocusMode_KeepFocus$stableprop[0]
 
 // Targets: [ios]
@@ -5060,7 +5065,7 @@ final val androidx.compose.ui.window/androidx_compose_ui_window_ComposeView$stab
 final val androidx.compose.ui.window/androidx_compose_ui_window_DisplayLinkListener$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_DisplayLinkListener$stableprop|#static{}androidx_compose_ui_window_DisplayLinkListener$stableprop[0]
 
 // Targets: [ios]
-final val androidx.compose.ui.window/androidx_compose_ui_window_FocusStack$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_FocusStack$stableprop|#static{}androidx_compose_ui_window_FocusStack$stableprop[0]
+final val androidx.compose.ui.window/androidx_compose_ui_window_FocusedViewsList$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_FocusedViewsList$stableprop|#static{}androidx_compose_ui_window_FocusedViewsList$stableprop[0]
 
 // Targets: [ios]
 final val androidx.compose.ui.window/androidx_compose_ui_window_InflightCommandBuffers$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_InflightCommandBuffers$stableprop|#static{}androidx_compose_ui_window_InflightCommandBuffers$stableprop[0]
@@ -5118,6 +5123,9 @@ final fun androidx.compose.ui.main/defaultUIKitMain(kotlin/String, platform.UIKi
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter|androidx_compose_ui_platform_accessibility_AccessibilityScrollEventResult$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop_getter|androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_KeepFocus$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_KeepFocus$stableprop_getter|androidx_compose_ui_platform_AccessibilityElementFocusMode_KeepFocus$stableprop_getter(){}[0]
@@ -5252,7 +5260,7 @@ final fun androidx.compose.ui.window/androidx_compose_ui_window_ComposeView$stab
 final fun androidx.compose.ui.window/androidx_compose_ui_window_DisplayLinkListener$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_DisplayLinkListener$stableprop_getter|androidx_compose_ui_window_DisplayLinkListener$stableprop_getter(){}[0]
 
 // Targets: [ios]
-final fun androidx.compose.ui.window/androidx_compose_ui_window_FocusStack$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_FocusStack$stableprop_getter|androidx_compose_ui_window_FocusStack$stableprop_getter(){}[0]
+final fun androidx.compose.ui.window/androidx_compose_ui_window_FocusedViewsList$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_FocusedViewsList$stableprop_getter|androidx_compose_ui_window_FocusedViewsList$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_InflightCommandBuffers$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_InflightCommandBuffers$stableprop_getter|androidx_compose_ui_window_InflightCommandBuffers$stableprop_getter(){}[0]
@@ -5293,6 +5301,12 @@ final val androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_Br
 
 // Targets: [js, wasmJs]
 final val androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop // androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop|#static{}androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop[0]
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AriaRoleId$stableprop // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AriaRoleId$stableprop|#static{}androidx_compose_ui_platform_accessibility_AriaRoleId$stableprop[0]
+
+// Targets: [js, wasmJs]
+final val androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_ComposeWebSemanticsListener$stableprop // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_ComposeWebSemanticsListener$stableprop|#static{}androidx_compose_ui_platform_accessibility_ComposeWebSemanticsListener$stableprop[0]
 
 // Targets: [js, wasmJs]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_BackingDomInput$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_BackingDomInput$stableprop|#static{}androidx_compose_ui_platform_BackingDomInput$stableprop[0]
@@ -5346,6 +5360,9 @@ final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInt
 final val androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop|#static{}androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop[0]
 
 // Targets: [js, wasmJs]
+final val androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop|#static{}androidx_compose_ui_window_ComposeViewportConfiguration$stableprop[0]
+
+// Targets: [js, wasmJs]
 final val androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop|#static{}androidx_compose_ui_window_ComposeWindow$stableprop[0]
 
 // Targets: [js, wasmJs]
@@ -5374,6 +5391,12 @@ final fun androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_Br
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(): kotlin/Int // androidx.compose.ui.input.pointer/androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter|androidx_compose_ui_input_pointer_DummyPointerIcon$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AriaRoleId$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_AriaRoleId$stableprop_getter|androidx_compose_ui_platform_accessibility_AriaRoleId$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_ComposeWebSemanticsListener$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform.accessibility/androidx_compose_ui_platform_accessibility_ComposeWebSemanticsListener$stableprop_getter|androidx_compose_ui_platform_accessibility_ComposeWebSemanticsListener$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_BackingDomInput$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_BackingDomInput$stableprop_getter|androidx_compose_ui_platform_BackingDomInput$stableprop_getter(){}[0]
@@ -5425,6 +5448,9 @@ final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInt
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop_getter(): kotlin/Int // androidx.compose.ui.viewinterop/androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop_getter|androidx_compose_ui_viewinterop_WebInteropViewHolder$stableprop_getter(){}[0]
+
+// Targets: [js, wasmJs]
+final fun androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter|androidx_compose_ui_window_ComposeViewportConfiguration$stableprop_getter(){}[0]
 
 // Targets: [js, wasmJs]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ComposeWindow$stableprop_getter|androidx_compose_ui_window_ComposeWindow$stableprop_getter(){}[0]

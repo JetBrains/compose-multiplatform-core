@@ -1183,7 +1183,7 @@ class NavHostTest {
     fun navBackStackEntrySingleTopLifecycleTest() = runComposeUiTestOnUiThread {
         var lastEvent: Lifecycle.Event? = null
         lateinit var navController: NavHostController
-        setContent {
+        setContentWithLifecycleOwner {
             navController = rememberNavController()
             NavHost(navController, startDestination = "First") {
                 composable("First") {

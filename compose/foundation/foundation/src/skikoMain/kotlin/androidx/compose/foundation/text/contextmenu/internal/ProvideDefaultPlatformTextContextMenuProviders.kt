@@ -25,9 +25,7 @@ import androidx.compose.ui.Modifier
 // https://android.googlesource.com/platform/frameworks/support/+/d8bc9d81dffa35162626e45ee68d4a7e271c6ada
 
 @Composable
-internal fun ProvideDefaultPlatformTextContextMenuProviders(
+internal expect fun ProvideDefaultPlatformTextContextMenuProviders(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
-) {
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-7819
-}
+)

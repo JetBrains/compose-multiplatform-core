@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
@@ -66,6 +67,22 @@ interface PlatformContext {
      * @see CanvasLayersComposeScene
      */
     val isWindowTransparent: Boolean get() = false
+
+    /**
+     * Indicates whether the transformation between local and window/screen coordinate spaces
+     * includes components other than simple translation (such as rotation, scaling, or skewing).
+     *
+     * When this property returns `true`:
+     * - Position calculations require full matrix transformations rather than simple offsets
+     * - Certain optimizations for translation-only transformations cannot be applied
+     *
+     * @return `true` if the transformation includes rotation, scaling, skewing, or other
+     *   non-translation components; `false` if only translation is used.
+     *
+     * @see convertLocalToWindowPosition
+     * @see convertWindowToLocalPosition
+     */
+    val hasNonTranslationComponents: Boolean get() = false
 
     /**
      * Converts [localPosition] relative to the [ComposeScene] into an [Offset] relative to
@@ -126,6 +143,14 @@ interface PlatformContext {
     var isKeepScreenOnEnabled: Boolean
         get() = false
         set(value) {}
+
+    /**
+     * Votes for a specific frame rate to be used for rendering.
+     *
+     * @param frameRate The explicit frame rate value requested
+     * @param frameRateCategory The frame rate category value requested as defined in [FrameRateCategory]
+     */
+    fun voteFrameRate(frameRate: Float, frameRateCategory: Float) = Unit
 
     /**
      * The listener to track [RootForTest]s.
@@ -284,4 +309,3 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
         }
     }
 }
-

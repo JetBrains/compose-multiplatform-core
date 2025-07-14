@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.platform.lerp
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.LocalKeyboardOverlapHeight
+import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Density
@@ -83,7 +84,7 @@ import androidx.compose.ui.viewinterop.UIKitInteropContainer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.ApplicationForegroundStateListener
 import androidx.compose.ui.window.ComposeSceneKeyboardOffsetManager
-import androidx.compose.ui.window.FocusStack
+import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.TouchesEventKind
@@ -183,7 +184,7 @@ private class SemanticsOwnerListenerImpl(
 
 internal class ComposeSceneMediator(
     private val onFocusBehavior: OnFocusBehavior,
-    private val focusStack: FocusStack?,
+    private val focusedViewsList: FocusedViewsList?,
     private val windowContext: PlatformWindowContext,
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
@@ -349,7 +350,7 @@ internal class ComposeSceneMediator(
             },
             view = _overlayView,
             viewConfiguration = viewConfiguration,
-            focusStack = focusStack,
+            focusedViewsList = focusedViewsList,
             onInputStarted = {
                 animateKeyboardOffsetChanges = true
             },
@@ -378,7 +379,7 @@ internal class ComposeSceneMediator(
             }
         }
 
-    fun onScrollEvent(
+    private fun onScrollEvent(
         position: DpOffset,
         delta: DpOffset,
         event: UIEvent?,
@@ -407,7 +408,7 @@ internal class ComposeSceneMediator(
         )
     }
 
-    fun onHoverEvent(
+    private fun onHoverEvent(
         position: DpOffset,
         event: UIEvent?,
         eventKind: TouchesEventKind
@@ -434,7 +435,7 @@ internal class ComposeSceneMediator(
         )
     }
 
-    fun onCancelScroll() {
+    private fun onCancelScroll() {
         redrawer.ongoingInteractionEventsCount -= 1
         scene.cancelPointerInput()
     }
@@ -520,7 +521,7 @@ internal class ComposeSceneMediator(
 
     fun setContent(content: @Composable () -> Unit) {
         _overlayView.runOnceOnAppeared {
-            focusStack?.pushAndFocus(userInputView)
+            focusedViewsList?.addAndFocus(userInputView)
 
             scene.setContent {
                 ProvideComposeSceneMediatorCompositionLocals {
@@ -587,6 +588,7 @@ internal class ComposeSceneMediator(
             LocalKeyboardOverlapHeight provides keyboardOverlapHeight,
             LocalSafeArea provides safeArea,
             LocalLayoutMargins provides layoutMargins,
+            LocalUIView provides _overlayView,
             content = content
         )
 
@@ -620,7 +622,7 @@ internal class ComposeSceneMediator(
         _overlayView.dispose()
         textInputService.stopInput()
         applicationForegroundStateListener.dispose()
-        focusStack?.popUntilNext(userInputView)
+        focusedViewsList?.remove(userInputView)
         keyboardManager.dispose()
         userInputView.dispose()
 
@@ -714,6 +716,10 @@ internal class ComposeSceneMediator(
         override var isKeepScreenOnEnabled: Boolean
             get() = UIKitIdleTimerManager.isIdleTimerDisabled
             set(value) { UIKitIdleTimerManager.setIdleTimerState(this@ComposeSceneMediator, value) }
+
+        override fun voteFrameRate(frameRate: Float, frameRateCategory: Float) {
+            redrawer.voteFrameRate(frameRate, frameRateCategory)
+        }
 
         override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
             // TODO: Adopt PlatformTextInputService2 (https://youtrack.jetbrains.com/issue/CMP-7832/iOS-Adopt-PlatformTextInputService2)
