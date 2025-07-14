@@ -23,31 +23,28 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.text.intl.Locale
 import kotlin.jvm.JvmInline
 
-//TODO: remove this file
-// when this will be in JB fork
-// https://android.googlesource.com/platform/frameworks/support/+/d8bc9d81dffa35162626e45ee68d4a7e271c6ada
-
-internal typealias ContextMenuStrings = Strings
+// FIXME: Remove. Used in generated code
+internal typealias Strings = ContextMenuStrings
 
 @Immutable
 @JvmInline
-internal value class Strings(val value: Int) {
-    companion object Companion {
-        val Cut: Strings = Strings(0)
-        val Copy: Strings = Strings(1)
-        val Paste: Strings = Strings(2)
-        val SelectAll: Strings = Strings(3)
-        val Autofill: Strings = Strings(4)
+internal actual value class ContextMenuStrings actual constructor(actual val value: Int) {
+    actual companion object {
+        actual val Cut = ContextMenuStrings(0)
+        actual val Copy = ContextMenuStrings(1)
+        actual val Paste = ContextMenuStrings(2)
+        actual val SelectAll = ContextMenuStrings(3)
+        actual val Autofill = ContextMenuStrings(4)
     }
 }
 
 @Composable
 @ReadOnlyComposable
-internal fun getString(string: Strings): String {
+internal actual fun getString(string: ContextMenuStrings): String {
     return getLocalizedString(string)
 }
 
-internal fun getLocalizedString(string: Strings): String {
+internal fun getLocalizedString(string: ContextMenuStrings): String {
     val locale = Locale.current
 
     val tag = localeTag(language = locale.language, region = locale.region)
@@ -58,9 +55,9 @@ internal fun getLocalizedString(string: Strings): String {
 }
 
 /**
- * A single translation; should contain all the [Strings].
+ * A single translation; should contain all the [ContextMenuStrings].
  */
-internal typealias Translation = Map<Strings, String>
+internal typealias Translation = Map<ContextMenuStrings, String>
 
 /**
  * Translations we've already loaded, mapped by the locale tag (see [localeTag]).
@@ -97,7 +94,7 @@ private fun localeTagChain(locale: Locale) = sequence {
 /**
  * Finds a [Translation] for the given locale.
  */
-private fun findTranslation(locale: Locale): Map<Strings, String> {
+private fun findTranslation(locale: Locale): Map<ContextMenuStrings, String> {
     // We don't need to merge translations because each one should contain all the strings.
     return localeTagChain(locale).firstNotNullOf { translationFor(it) }
 }
