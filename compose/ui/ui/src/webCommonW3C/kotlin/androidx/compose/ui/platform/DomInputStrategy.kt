@@ -113,7 +113,9 @@ internal class DomInputStrategy(
             when (evt.inputType) {
                 "deleteContentBackward" -> {
                     if (lastKeydown != null && lastKeydown?.key != "Backspace") {
-                        composeSender.sendEditCommand(DeleteSurroundingTextCommand(1,0))
+                        htmlInput as HTMLElementWithValue
+                        val size = htmlInput.selectionEnd - htmlInput.selectionStart
+                        composeSender.sendEditCommand(DeleteSurroundingTextCommand(size,0))
                     }
                 }
                 "insertCompositionText" -> {
@@ -257,6 +259,8 @@ private fun ImeOptions.createDomElement(): HTMLElement {
 
 private external interface HTMLElementWithValue  {
     var value: String
+    val selectionStart: Int
+    val selectionEnd: Int
     fun setSelectionRange(start: Int, end: Int, direction: String = definedExternally)
 }
 
@@ -318,4 +322,3 @@ private class RepeatDetector(private val input: HTMLElement) {
 }
 
 private fun isTypedEvent(evt: KeyboardEvent): Boolean = js("!evt.metaKey && !evt.ctrlKey && evt.key.charAt(0) === evt.key")
-
