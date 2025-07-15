@@ -67,6 +67,7 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
                     }
 
                     override fun sendEditCommand(commands: List<EditCommand>) {
+                        println("CMDs = ${commands.joinToString()}")
                         onEditCommand(commands)
                     }
                 },

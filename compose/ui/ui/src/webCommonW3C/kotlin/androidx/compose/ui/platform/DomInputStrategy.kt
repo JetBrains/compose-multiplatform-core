@@ -1,5 +1,6 @@
 package androidx.compose.ui.platform
 
+import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextInCodePointsCommand
@@ -29,8 +30,8 @@ internal class DomInputStrategy(
     private var repeatDetector: RepeatDetector
 
     init {
-        initEvents()
         repeatDetector = RepeatDetector(htmlInput)
+        initEvents()
     }
 
     fun updateState(textFieldValue: TextFieldValue) {
@@ -50,9 +51,10 @@ internal class DomInputStrategy(
         editState = EditState.Default
     }
 
+    var lastKeyDownEvent: KeyboardEvent? = null
+
     private fun initEvents() {
         var lastKeyboardEventIsDown = false
-        var lastActualCompositionTimestamp = 0
 
         htmlInput.addEventListener("blur", {evt ->
             // both accent dialogue and composition dialogue are lost when we switch windows
@@ -60,66 +62,49 @@ internal class DomInputStrategy(
             editState = EditState.Default
         })
 
-        htmlInput.addEventListener("keydown", {evt ->
+        var typedEventInputBalance = 0
+        var keyDownUpPair = 0
+        var lastKeydown: KeyboardEvent? = null
+
+        htmlInput.addEventListener("keydown", { evt ->
+            keyDownUpPair = 1
             evt as KeyboardEvent
-            lastKeyboardEventIsDown = evt.key != "Dead" && evt.key != "Unidentified"
 
-            if (evt.isComposing) {
-                editState = EditState.CompositeDialogue
-            }
+            val key = evt.key
+            lastKeydown = evt
+            val isTypedEvent = isTypedEvent(evt)
+            lastKeyboardEventIsDown = key != "Dead" && key != "Unidentified"
+            println("$editState, keydown - ${key} / $lastKeyboardEventIsDown, ${currentTimeMillis()}/${evt.timeStamp}")
 
-            if (editState is EditState.CompositeDialogue) {
-                evt.preventDefault()
+            println("isComposing = ${evt.isComposing} $key, $typedEventInputBalance, repeat = ${evt.repeat}, ist=$isTypedEvent")
+            if (isTypedEvent) {
+                if (typedEventInputBalance == 0) typedEventInputBalance++
+                return@addEventListener
+            } else if (!evt.isComposing && typedEventInputBalance == 0) {
+                composeSender.sendKeyboardEvent(evt.toComposeEvent())
                 return@addEventListener
             }
-
-            if (evt.repeat && isTypedEvent(evt)) {
-                if (repeatDetector.repeatMode == RepeatMode.Accent) {
-                    editState = EditState.AccentDialogue
-                    return@addEventListener
-                }
-                if (repeatDetector.repeatMode == RepeatMode.Unknown) {
-                    return@addEventListener
-                }
-            }
-
-            if (editState is EditState.AccentDialogue) {
-                return@addEventListener
-            }
-
-            val timeStamp = evt.timeStamp.toInt()
-            // We ignore timestamps that zero because that means that host OS/browser just doesn't provide this information
-            if (timeStamp != 0  && timeStamp <= lastActualCompositionTimestamp) {
-                evt.preventDefault()
-                return@addEventListener
-            }
-
-            editState = EditState.WaitingComposeActivity
-
-            val processed = composeSender.sendKeyboardEvent(evt.toComposeEvent())
-            if (processed) {
-                evt.preventDefault()
-            } else {
-                editState = EditState.Default
-            }
-
-            lastActualCompositionTimestamp = 0
+            typedEventInputBalance = 0
+            return@addEventListener
         })
 
         htmlInput.addEventListener("keyup", { evt ->
+            keyDownUpPair = 0
             lastKeyboardEventIsDown = false
             evt as KeyboardEvent
+            println("keyup ${evt.key}")
 
             if (evt.isComposing) {
                 editState = EditState.CompositeDialogue
             }
-
         })
 
         htmlInput.addEventListener("beforeinput", { evt ->
             evt as InputEvent
 
             if (editState is EditState.WaitingComposeActivity) return@addEventListener
+
+            println(evt.inputType)
 
             when (evt.inputType) {
                 "insertCompositionText" -> {
@@ -135,12 +120,15 @@ internal class DomInputStrategy(
                     ))
                 }
                 "insertText" -> {
-                    evt.preventDefault()
-
+                    println("insertText = ${evt.data}, $typedEventInputBalance, ${evt.isComposing}")
                     val editCommands = mutableListOf<EditCommand>()
-                    if (editState is EditState.AccentDialogue) {
+
+                    println("lkdk = ${lastKeydown?.key} vs ${evt.data}")
+                    val eq = lastKeydown?.key != null && lastKeydown.key != evt.data
+                    if (keyDownUpPair == 0 || eq) {
                         editCommands.add(DeleteSurroundingTextInCodePointsCommand(1, 0))
                     }
+
                     editCommands.add(CommitTextCommand(evt.data!!, 1))
 
                     editState = EditState.WaitingComposeActivity
@@ -148,13 +136,15 @@ internal class DomInputStrategy(
                 }
             }
 
-            evt.preventDefault()
+            typedEventInputBalance = 0
         })
 
         htmlInput.addEventListener("compositionstart", {evt ->
             evt as CompositionEvent
+            typedEventInputBalance = 0
             editState = EditState.CompositeDialogue
 
+            println("compositionstart($lastKeyboardEventIsDown) - ${evt.data} - ${currentTimeMillis()}/${evt.timeStamp}")
             if (lastKeyboardEventIsDown) {
                 composeSender.sendEditCommand(DeleteSurroundingTextInCodePointsCommand(1, 0))
             }
@@ -162,7 +152,8 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("compositionend", {evt ->
             evt as CompositionEvent
-            lastActualCompositionTimestamp = evt.timeStamp.toInt()
+            typedEventInputBalance = 0
+            println("compositionend - ${evt.data}")
 
             // in Safari we can rely on "insertFromComposition" input event but unfortunately it's not present in other browsers
             editState = EditState.WaitingComposeActivity
@@ -182,6 +173,7 @@ private sealed interface EditState {
 private external class InputEvent : Event {
     val inputType: String
     val data: String?
+    val isComposing: Boolean
 }
 
 private fun ImeOptions.createDomElement(): HTMLElement {
@@ -227,7 +219,7 @@ private fun ImeOptions.createDomElement(): HTMLElement {
         setProperty("position", "absolute")
         setProperty("user-select", "none")
         setProperty("forced-color-adjust", "none")
-        setProperty("white-space", "pre-wrap")
+        setProperty("white-space", "pre")
         setProperty("align-content", "center")
         setProperty("top", "calc(min(var(--compose-internal-web-backing-input-top) * 1px, 100vh - var(--compose-internal-web-backing-input-height) * 1px))")
         setProperty("left", "calc(min(var(--compose-internal-web-backing-input-left) * 1px, 100vw - var(--compose-internal-web-backing-input-width) * 1px))")
@@ -277,20 +269,23 @@ private sealed interface RepeatMode {
 
 private class RepeatDetector(private val input: HTMLElement) {
     private var resolving = false
-    var repeatMode: RepeatMode = RepeatMode.Unknown
+    var repeatMode: RepeatMode = RepeatMode.Accent
         private set
 
     init {
-        initEvents()
+//        initEvents()
     }
 
     fun initEvents() {
         input.addEventListener("keydown", { evt ->
             evt as KeyboardEvent
+            println("RepeatMode - ${evt.repeat}, ${evt.key}, ${this.repeatMode}")
             if (evt.repeat && this.repeatMode === RepeatMode.Unknown) {
                 // we can not deduce anything if event is not typed
                 if (!isTypedEvent(evt)) return@addEventListener
+//                resolving = true
                 if (resolving) {
+                    println("Set RepeatMode.Accent")
                     repeatMode = RepeatMode.Accent;
                     resolving = false;
                 } else {
@@ -302,6 +297,7 @@ private class RepeatDetector(private val input: HTMLElement) {
         input.addEventListener("beforeinput", {
             if (resolving && repeatMode === RepeatMode.Unknown) {
                 resolving = false;
+                println("Set RepeatMode.Accent")
                 repeatMode = RepeatMode.Default;
             }
         });
