@@ -86,7 +86,7 @@ internal class DomInputStrategy(
                 return@addEventListener
             } else if (!evt.isComposing && typedEventInputBalance == 0) {
                 val timestamp = evt.timeStamp.toInt()
-                if (timestamp > lastCompositionEndTimestamp) {
+                if (timestamp == 0 || timestamp > lastCompositionEndTimestamp) {
                     // In Safari 'keydown' is delivered after 'compositionend', unlike all other browsers
                     composeSender.sendKeyboardEvent(evt.toComposeEvent())
                 }
