@@ -46,6 +46,7 @@ import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextRange
 import java.awt.datatransfer.StringSelection
+import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import org.junit.Test
 

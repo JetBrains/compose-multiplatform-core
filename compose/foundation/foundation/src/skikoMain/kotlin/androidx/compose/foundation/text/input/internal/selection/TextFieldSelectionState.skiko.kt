@@ -16,20 +16,32 @@
 
 package androidx.compose.foundation.text.input.internal.selection
 
-import androidx.compose.ui.Modifier
+import androidx.compose.foundation.contextmenu.ContextMenuScope
+import androidx.compose.foundation.contextmenu.ContextMenuState
+import androidx.compose.foundation.internal.isAutofillAvailable
+import androidx.compose.foundation.text.MenuItemsAvailability
+import androidx.compose.foundation.text.TextContextMenuItems
+import androidx.compose.foundation.text.TextContextMenuItems.*
+import androidx.compose.foundation.text.TextItem
+import androidx.compose.runtime.State
 import androidx.compose.ui.platform.Clipboard
-import kotlinx.coroutines.CoroutineScope
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-7757
-internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
-    state: TextFieldSelectionState,
-    coroutineScope: CoroutineScope
-): Modifier = this
+internal fun TextFieldSelectionState.contextMenuBuilder(
+    state: ContextMenuState,
+    itemsAvailability: State<MenuItemsAvailability>,
+    onMenuItemClicked: TextFieldSelectionState.(TextContextMenuItems) -> Unit,
+): ContextMenuScope.() -> Unit = {
+    fun textFieldItem(label: TextContextMenuItems, enabled: Boolean) {
+        TextItem(state, label, enabled) { onMenuItemClicked(label) }
+    }
 
-// TODO: https://youtrack.jetbrains.com/issue/CMP-8485
-internal actual class ClipboardPasteState actual constructor(clipboard: Clipboard) {
-    actual val hasText: Boolean get() = false
-    actual val hasClip: Boolean get() = false
-    actual suspend fun update() {
+    val availability: MenuItemsAvailability = itemsAvailability.value
+
+    textFieldItem(Cut, enabled = availability.canCut)
+    textFieldItem(Copy, enabled = availability.canCopy)
+    textFieldItem(Paste, enabled = availability.canPaste)
+    textFieldItem(SelectAll, enabled = availability.canSelectAll)
+    if (isAutofillAvailable()) {
+        textFieldItem(Autofill, enabled = availability.canAutofill)
     }
 }
