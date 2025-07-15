@@ -67,6 +67,7 @@ internal class DomInputStrategy(
         var lastKeydown: KeyboardEvent? = null
         var isLastKeyDownTypedRepeat = false
         var noSkipNextDelete = false
+        var lastCompositionEndTimestamp = 0
 
         htmlInput.addEventListener("keydown", { evt ->
             keyDownUpPair = 1
@@ -84,7 +85,9 @@ internal class DomInputStrategy(
                 if (typedEventInputBalance == 0) typedEventInputBalance++
                 return@addEventListener
             } else if (!evt.isComposing && typedEventInputBalance == 0) {
-                composeSender.sendKeyboardEvent(evt.toComposeEvent())
+                if (lastCompositionEndTimestamp > 0 && evt.timeStamp.toInt() > lastCompositionEndTimestamp) {
+                    composeSender.sendKeyboardEvent(evt.toComposeEvent())
+                }
                 return@addEventListener
             }
             typedEventInputBalance = 0
@@ -111,6 +114,9 @@ internal class DomInputStrategy(
             println(evt.inputType)
 
             when (evt.inputType) {
+                "deleteByComposition" -> {
+                    composeSender.sendEditCommand(DeleteSurroundingTextCommand(1,0))
+                }
                 "deleteContentBackward" -> {
                     if (lastKeydown != null && lastKeydown?.key != "Backspace") {
                         htmlInput as HTMLElementWithValue
@@ -168,6 +174,7 @@ internal class DomInputStrategy(
         htmlInput.addEventListener("compositionend", {evt ->
             evt as CompositionEvent
             typedEventInputBalance = 0
+            lastCompositionEndTimestamp = evt.timeStamp.toInt()
             println("compositionend - ${evt.data}")
 
             // in Safari we can rely on "insertFromComposition" input event but unfortunately it's not present in other browsers
