@@ -1,8 +1,8 @@
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.currentTimeMillis
 import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.text.input.CommitTextCommand
+import androidx.compose.ui.text.input.DeleteSurroundingTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextInCodePointsCommand
 import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.ImeAction
@@ -65,6 +65,8 @@ internal class DomInputStrategy(
         var typedEventInputBalance = 0
         var keyDownUpPair = 0
         var lastKeydown: KeyboardEvent? = null
+        var isLastKeyDownTypedRepeat = false
+        var noSkipNextDelete = false
 
         htmlInput.addEventListener("keydown", { evt ->
             keyDownUpPair = 1
@@ -74,9 +76,10 @@ internal class DomInputStrategy(
             lastKeydown = evt
             val isTypedEvent = isTypedEvent(evt)
             lastKeyboardEventIsDown = key != "Dead" && key != "Unidentified"
-            println("$editState, keydown - ${key} / $lastKeyboardEventIsDown, ${currentTimeMillis()}/${evt.timeStamp}")
+            println("$editState, keydown - ${key}, isComposing = ${evt.isComposing} $key, $typedEventInputBalance, repeat = ${evt.repeat}, ist=$isTypedEvent")
 
-            println("isComposing = ${evt.isComposing} $key, $typedEventInputBalance, repeat = ${evt.repeat}, ist=$isTypedEvent")
+            noSkipNextDelete = isLastKeyDownTypedRepeat && key == "Process"
+            isLastKeyDownTypedRepeat = isTypedEvent && evt.repeat
             if (isTypedEvent) {
                 if (typedEventInputBalance == 0) typedEventInputBalance++
                 return@addEventListener
@@ -108,6 +111,11 @@ internal class DomInputStrategy(
             println(evt.inputType)
 
             when (evt.inputType) {
+                "deleteContentBackward" -> {
+                    if (lastKeydown != null && lastKeydown?.key != "Backspace") {
+                        composeSender.sendEditCommand(DeleteSurroundingTextCommand(1,0))
+                    }
+                }
                 "insertCompositionText" -> {
                     editState = EditState.Default
                     composeSender.sendEditCommand(SetComposingTextCommand(evt.data!!, 1))
@@ -126,7 +134,7 @@ internal class DomInputStrategy(
 
                     println("lkdk = ${lastKeydown?.key} vs ${evt.data}")
                     val eq = lastKeydown != null && lastKeydown!!.key != evt.data
-                    if (keyDownUpPair == 0 || eq) {
+                    if ((keyDownUpPair == 0 || eq) && lastKeydown?.key != "Unidentified") {
                         editCommands.add(DeleteSurroundingTextInCodePointsCommand(1, 0))
                     }
 
@@ -145,8 +153,12 @@ internal class DomInputStrategy(
             typedEventInputBalance = 0
             editState = EditState.CompositeDialogue
 
-            println("compositionstart($lastKeyboardEventIsDown) - ${evt.data}")
-            if (lastKeydown != null && !isTypedEvent(lastKeydown!!)) {
+            println("compositionstart($lastKeyboardEventIsDown) - ${evt.data}, skipNextDelete = $noSkipNextDelete")
+            if (lastKeydown?.key == "Process") {
+                if (noSkipNextDelete) {
+                    composeSender.sendEditCommand(DeleteSurroundingTextInCodePointsCommand(1, 0))
+                }
+            } else if (lastKeydown != null && !isTypedEvent(lastKeydown!!)) {
                 composeSender.sendEditCommand(DeleteSurroundingTextInCodePointsCommand(1, 0))
             }
         })
