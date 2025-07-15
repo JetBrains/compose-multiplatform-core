@@ -144,7 +144,8 @@ internal class DomInputStrategy(
 
                     println("lkdk = ${lastKeydown?.key} vs ${evt.data}")
                     val eq = lastKeydown != null && lastKeydown!!.key != evt.data
-                    if ((keyDownUpPair == 0 || eq) && lastKeydown?.key != "Unidentified") {
+                    val key = lastKeydown?.key
+                    if (eq && key != "Unidentified" && key != "Process") {
                         editCommands.add(DeleteSurroundingTextInCodePointsCommand(1, 0))
                     }
 
