@@ -91,6 +91,7 @@ internal class DomInputStrategy(
         htmlInput.addEventListener("keyup", { evt ->
             keyDownUpPair = 0
             lastKeyboardEventIsDown = false
+            lastKeydown = null
             evt as KeyboardEvent
             println("keyup ${evt.key}")
 
@@ -124,7 +125,7 @@ internal class DomInputStrategy(
                     val editCommands = mutableListOf<EditCommand>()
 
                     println("lkdk = ${lastKeydown?.key} vs ${evt.data}")
-                    val eq = lastKeydown?.key != null && lastKeydown.key != evt.data
+                    val eq = lastKeydown != null && lastKeydown!!.key != evt.data
                     if (keyDownUpPair == 0 || eq) {
                         editCommands.add(DeleteSurroundingTextInCodePointsCommand(1, 0))
                     }
@@ -144,8 +145,8 @@ internal class DomInputStrategy(
             typedEventInputBalance = 0
             editState = EditState.CompositeDialogue
 
-            println("compositionstart($lastKeyboardEventIsDown) - ${evt.data} - ${currentTimeMillis()}/${evt.timeStamp}")
-            if (lastKeyboardEventIsDown) {
+            println("compositionstart($lastKeyboardEventIsDown) - ${evt.data}")
+            if (lastKeydown != null && !isTypedEvent(lastKeydown!!)) {
                 composeSender.sendEditCommand(DeleteSurroundingTextInCodePointsCommand(1, 0))
             }
         })
