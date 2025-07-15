@@ -136,7 +136,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             }
             jsNativeMain.dependsOn(skikoMain)
             nativeMain.dependsOn(jsNativeMain)
-            jsWasmMain.dependsOn(jsNativeMain)
+            webMain.dependsOn(jsNativeMain)
             uikitMain {
                 dependencies {
                     implementation(project(":compose:ui:ui-uikit"))
@@ -144,12 +144,12 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             }
             jsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
             }
 
             wasmJsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
             }
 
             // TODO(b/214407011): These dependencies leak into instrumented tests as well. If you
