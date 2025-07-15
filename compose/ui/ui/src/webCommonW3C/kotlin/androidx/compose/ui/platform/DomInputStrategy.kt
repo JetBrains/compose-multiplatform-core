@@ -143,9 +143,16 @@ internal class DomInputStrategy(
                     val editCommands = mutableListOf<EditCommand>()
 
                     println("lkdk = ${lastKeydown?.key} vs ${evt.data}")
-                    val eq = lastKeydown != null && lastKeydown!!.key != evt.data
                     val key = lastKeydown?.key
-                    if (eq && key != "Unidentified" && key != "Process") {
+                    val shouldDeletePreviousChar = when {
+                        lastKeydown != null
+                            && key != "Process"
+                            && key != "Unidentified"
+                            && key != evt.data -> true
+                        lastKeydown == null && typedEventInputBalance > 0 -> true
+                        else -> false
+                    }
+                    if (shouldDeletePreviousChar) {
                         editCommands.add(DeleteSurroundingTextInCodePointsCommand(1, 0))
                     }
 
