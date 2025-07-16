@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.kruth.FloatSubject
+import androidx.kruth.Subject
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
 import kotlin.math.abs
@@ -55,6 +56,7 @@ import kotlin.math.ceil
 import kotlin.math.roundToInt
 import kotlin.test.Ignore
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 // TODO: move to commonTest once sample_font will be available outside of JVM
@@ -547,10 +549,10 @@ class DesktopParagraphIntegrationTest {
             // test positions that are 0, 1, 2 ... which maps to chars 0, 1, 2 ...
             for (i in 0..text.length - 1) {
                 val box = paragraph.getBoundingBox(i)
-                assertThat(box.left).isEqualTo(i * fontSizeInPx)
-                assertThat(box.right).isEqualTo((i + 1) * fontSizeInPx)
-                assertThat(box.top).isZero()
-                assertThat(box.bottom).isEqualTo(fontSizeInPx)
+                assertThat(box.left).isEqualToWithTolerance(i * fontSizeInPx)
+                assertThat(box.right).isEqualToWithTolerance((i + 1) * fontSizeInPx)
+                assertThat(box.top).isEqualToWithTolerance(0f)
+                assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
             }
         }
     }
@@ -572,10 +574,10 @@ class DesktopParagraphIntegrationTest {
             for (c in 0 until text.length) {
                 val box = paragraph.getBoundingBox(c)
                 val i = text.length - 1 - c // take the opposite side for non-relative calculation
-                assertThat(box.left).isEqualTo(i * fontSizeInPx)
-                assertThat(box.right).isEqualTo((i + 1) * fontSizeInPx)
-                assertThat(box.top).isZero()
-                assertThat(box.bottom).isEqualTo(fontSizeInPx)
+                assertThat(box.left).isEqualToWithTolerance(i * fontSizeInPx)
+                assertThat(box.right).isEqualToWithTolerance((i + 1) * fontSizeInPx)
+                assertThat(box.top).isEqualToWithTolerance(0f)
+                assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
             }
         }
     }
@@ -600,10 +602,10 @@ class DesktopParagraphIntegrationTest {
             for (i in secondLine.indices) {
                 val textPosition = i + firstLine.length
                 val box = paragraph.getBoundingBox(textPosition)
-                assertThat(box.left).isEqualTo(i * fontSizeInPx)
-                assertThat(box.right).isEqualTo((i + 1) * fontSizeInPx)
-                assertThat(box.top).isEqualTo(fontSizeInPx)
-                assertThat(box.bottom).isEqualTo(2f * fontSizeInPx)
+                assertThat(box.left).isEqualToWithTolerance(i * fontSizeInPx)
+                assertThat(box.right).isEqualToWithTolerance((i + 1) * fontSizeInPx)
+                assertThat(box.top).isEqualToWithTolerance(fontSizeInPx)
+                assertThat(box.bottom).isEqualToWithTolerance(2f * fontSizeInPx)
             }
         }
     }
@@ -629,10 +631,10 @@ class DesktopParagraphIntegrationTest {
                 val textPosition = i + firstLine.length
                 val layoutPosition = secondLine.length - 1 - i
                 val box = paragraph.getBoundingBox(textPosition)
-                assertThat(box.left).isEqualTo(layoutPosition * fontSizeInPx)
-                assertThat(box.right).isEqualTo((layoutPosition + 1) * fontSizeInPx)
-                assertThat(box.top).isEqualTo(fontSizeInPx)
-                assertThat(box.bottom).isEqualTo(2f * fontSizeInPx)
+                assertThat(box.left).isEqualToWithTolerance(layoutPosition * fontSizeInPx)
+                assertThat(box.right).isEqualToWithTolerance((layoutPosition + 1) * fontSizeInPx)
+                assertThat(box.top).isEqualToWithTolerance(fontSizeInPx)
+                assertThat(box.bottom).isEqualToWithTolerance(2f * fontSizeInPx)
             }
         }
     }
@@ -654,10 +656,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(3)
-            assertThat(box.left).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.right).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.right).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -678,10 +680,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(3)
-            assertThat(box.left).isEqualTo(50)
-            assertThat(box.right).isEqualTo(50)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(50f)
+            assertThat(box.right).isEqualToWithTolerance(50f)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -702,10 +704,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(9)
-            assertThat(box.left).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.right).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.right).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -726,10 +728,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(5)
-            assertThat(box.left).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.right).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.right).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -750,10 +752,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(4)
-            assertThat(box.left).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.right).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.right).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -774,10 +776,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(9)
-            assertThat(box.left).isEqualTo(0)
-            assertThat(box.right).isEqualTo(0)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(0f)
+            assertThat(box.right).isEqualToWithTolerance(0f)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -798,10 +800,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(9)
-            assertThat(box.left).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.right).isEqualTo(3 * fontSizeInPx)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.right).isEqualToWithTolerance(3 * fontSizeInPx)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -822,10 +824,10 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val box = paragraph.getBoundingBox(9)
-            assertThat(box.left).isEqualTo(0)
-            assertThat(box.right).isEqualTo(0)
-            assertThat(box.top).isEqualTo(0)
-            assertThat(box.bottom).isEqualTo(fontSizeInPx)
+            assertThat(box.left).isEqualToWithTolerance(0f)
+            assertThat(box.right).isEqualToWithTolerance(0f)
+            assertThat(box.top).isEqualToWithTolerance(0f)
+            assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -845,10 +847,10 @@ class DesktopParagraphIntegrationTest {
 
                 val textPosition = -1
                 val box = paragraph.getBoundingBox(textPosition)
-                assertThat(box.left).isZero()
-                assertThat(box.right).isZero()
-                assertThat(box.top).isZero()
-                assertThat(box.bottom).isEqualTo(fontSizeInPx)
+                assertThat(box.left).isEqualToWithTolerance(0f)
+                assertThat(box.right).isEqualToWithTolerance(0f)
+                assertThat(box.top).isEqualToWithTolerance(0f)
+                assertThat(box.bottom).isEqualToWithTolerance(fontSizeInPx)
             }
         }
     }
@@ -928,7 +930,7 @@ class DesktopParagraphIntegrationTest {
                 val cursorRect = paragraph.getCursorRect(i)
                 val cursorXOffset = i * fontSizeInPx
                 assertThat(cursorRect)
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         Rect(
                             left = cursorXOffset,
                             top = 0f,
@@ -957,7 +959,7 @@ class DesktopParagraphIntegrationTest {
             for (i in 0 until charsPerLine) {
                 val cursorXOffset = i * fontSizeInPx
                 assertThat(paragraph.getCursorRect(i))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         Rect(
                             left = cursorXOffset,
                             top = 0f,
@@ -970,7 +972,7 @@ class DesktopParagraphIntegrationTest {
             for (i in charsPerLine until text.length) {
                 val cursorXOffset = (i % charsPerLine) * fontSizeInPx
                 assertThat(paragraph.getCursorRect(i))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         Rect(
                             left = cursorXOffset,
                             top = fontSizeInPx,
@@ -992,7 +994,7 @@ class DesktopParagraphIntegrationTest {
 
             // Cursor before '\n'
             assertThat(paragraph.getCursorRect(3))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     Rect(
                         left = 3 * fontSizeInPx,
                         top = 0f,
@@ -1003,7 +1005,7 @@ class DesktopParagraphIntegrationTest {
 
             // Cursor after '\n'
             assertThat(paragraph.getCursorRect(4))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     Rect(left = 0f, top = fontSizeInPx, right = 0f, bottom = fontSizeInPx * 2f)
                 )
         }
@@ -1023,7 +1025,7 @@ class DesktopParagraphIntegrationTest {
 
             // Cursor before '\n'
             assertThat(paragraph.getCursorRect(3))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     Rect(
                         left = 3 * fontSizeInPx,
                         top = 0f,
@@ -1034,7 +1036,7 @@ class DesktopParagraphIntegrationTest {
 
             // Cursor after '\n'
             assertThat(paragraph.getCursorRect(4))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     Rect(left = 0f, top = fontSizeInPx, right = 0f, bottom = fontSizeInPx * 2f)
                 )
         }
@@ -1056,7 +1058,7 @@ class DesktopParagraphIntegrationTest {
             for (i in text.indices) {
                 val cursorXOffset = (text.length - i) * fontSizeInPx
                 assertThat(paragraph.getCursorRect(i))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         Rect(
                             left = cursorXOffset,
                             top = 0f,
@@ -1085,7 +1087,7 @@ class DesktopParagraphIntegrationTest {
             for (i in 0 until charsPerLine) {
                 val cursorXOffset = (charsPerLine - i) * fontSizeInPx
                 assertThat(paragraph.getCursorRect(i))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         Rect(
                             left = cursorXOffset,
                             top = 0f,
@@ -1098,7 +1100,7 @@ class DesktopParagraphIntegrationTest {
             for (i in charsPerLine until text.length) {
                 val cursorXOffset = (charsPerLine - i % charsPerLine) * fontSizeInPx
                 assertThat(paragraph.getCursorRect(i))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         Rect(
                             left = cursorXOffset,
                             top = fontSizeInPx,
@@ -1125,11 +1127,11 @@ class DesktopParagraphIntegrationTest {
 
             // Cursor before '\n'
             assertThat(paragraph.getCursorRect(3))
-                .isEqualTo(Rect(left = 0f, top = 0f, right = 0f, bottom = fontSizeInPx))
+                .isEqualToWithTolerance(Rect(left = 0f, top = 0f, right = 0f, bottom = fontSizeInPx))
 
             // Cursor after '\n'
             assertThat(paragraph.getCursorRect(4))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     Rect(
                         left = 3 * fontSizeInPx,
                         top = fontSizeInPx,
@@ -1156,11 +1158,11 @@ class DesktopParagraphIntegrationTest {
 
             // Cursor before '\n'
             assertThat(paragraph.getCursorRect(3))
-                .isEqualTo(Rect(left = 0f, top = 0f, right = 0f, bottom = fontSizeInPx))
+                .isEqualToWithTolerance(Rect(left = 0f, top = 0f, right = 0f, bottom = fontSizeInPx))
 
             // Cursor after '\n'
             assertThat(paragraph.getCursorRect(4))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     Rect(left = 0f, top = fontSizeInPx, right = 0f, bottom = fontSizeInPx * 2f)
                 )
         }
@@ -1180,7 +1182,8 @@ class DesktopParagraphIntegrationTest {
                 )
 
             for (i in 0..text.length) {
-                assertThat(paragraph.getHorizontalPosition(i, true)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, true))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
         }
     }
@@ -1197,7 +1200,7 @@ class DesktopParagraphIntegrationTest {
 
             for (i in 0..text.length) {
                 assertThat(paragraph.getHorizontalPosition(i, true))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
         }
     }
@@ -1216,15 +1219,17 @@ class DesktopParagraphIntegrationTest {
                 simpleParagraph(text = text, style = TextStyle(fontSize = fontSize), width = width)
 
             for (i in 0..ltrText.length) {
-                assertThat(paragraph.getHorizontalPosition(i, true)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, true))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
 
             for (i in 1 until rtlText.length) {
                 assertThat(paragraph.getHorizontalPosition(i + ltrText.length, true))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
 
-            assertThat(paragraph.getHorizontalPosition(text.length, true)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(text.length, true))
+                .isEqualToWithTolerance(width)
         }
     }
 
@@ -1243,10 +1248,12 @@ class DesktopParagraphIntegrationTest {
                     width = width,
                 )
 
-            assertThat(paragraph.getHorizontalPosition(0, true)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(0, true))
+                .isEqualToWithTolerance(width)
 
             for (i in 1 until text.length) {
-                assertThat(paragraph.getHorizontalPosition(i, true)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, true))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
 
             assertThat(paragraph.getHorizontalPosition(text.length, true)).isZero()
@@ -1272,10 +1279,11 @@ class DesktopParagraphIntegrationTest {
 
             for (i in 1 until text.length) {
                 assertThat(paragraph.getHorizontalPosition(i, true))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
 
-            assertThat(paragraph.getHorizontalPosition(text.length, true)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(text.length, true))
+                .isEqualToWithTolerance(width)
         }
     }
 
@@ -1297,15 +1305,17 @@ class DesktopParagraphIntegrationTest {
                 )
 
             for (i in 0..ltrText.length) {
-                assertThat(paragraph.getHorizontalPosition(i, true)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, true))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
 
             for (i in 1 until rtlText.length) {
                 assertThat(paragraph.getHorizontalPosition(i + ltrText.length, true))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
 
-            assertThat(paragraph.getHorizontalPosition(text.length, true)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(text.length, true))
+                .isEqualToWithTolerance(width)
         }
     }
 
@@ -1326,11 +1336,12 @@ class DesktopParagraphIntegrationTest {
                     width = width,
                 )
 
-            assertThat(paragraph.getHorizontalPosition(0, true)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(0, true))
+                .isEqualToWithTolerance(width)
 
             for (i in 1 until ltrText.length) {
                 assertThat(paragraph.getHorizontalPosition(i, true))
-                    .isEqualTo(rtlText.length * fontSizeInPx + i * fontSizeInPx)
+                    .isEqualToWithTolerance(rtlText.length * fontSizeInPx + i * fontSizeInPx)
             }
 
             for (i in 0..rtlText.length) {
@@ -1391,7 +1402,8 @@ class DesktopParagraphIntegrationTest {
                     width = width,
                 )
 
-            assertThat(paragraph.getHorizontalPosition(text.length, true)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(text.length, true))
+                .isEqualToWithTolerance(width)
         }
     }
 
@@ -1427,7 +1439,8 @@ class DesktopParagraphIntegrationTest {
                 )
 
             for (i in 0..text.length) {
-                assertThat(paragraph.getHorizontalPosition(i, false)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, false))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
         }
     }
@@ -1444,7 +1457,7 @@ class DesktopParagraphIntegrationTest {
 
             for (i in 0..text.length) {
                 assertThat(paragraph.getHorizontalPosition(i, false))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
         }
     }
@@ -1462,12 +1475,13 @@ class DesktopParagraphIntegrationTest {
                 simpleParagraph(text = text, style = TextStyle(fontSize = fontSize), width = width)
 
             for (i in ltrText.indices) {
-                assertThat(paragraph.getHorizontalPosition(i, false)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, false))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
 
             for (i in 0..rtlText.length) {
                 assertThat(paragraph.getHorizontalPosition(i + ltrText.length, false))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
         }
     }
@@ -1486,13 +1500,16 @@ class DesktopParagraphIntegrationTest {
                     width = width,
                 )
 
-            assertThat(paragraph.getHorizontalPosition(0, false)).isZero()
+            assertThat(paragraph.getHorizontalPosition(0, false))
+                .isEqualToWithTolerance(0f)
 
             for (i in 1 until text.length) {
-                assertThat(paragraph.getHorizontalPosition(i, false)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, false))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
 
-            assertThat(paragraph.getHorizontalPosition(text.length, false)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(text.length, false))
+                .isEqualToWithTolerance(width)
         }
     }
 
@@ -1510,11 +1527,12 @@ class DesktopParagraphIntegrationTest {
                     width = width,
                 )
 
-            assertThat(paragraph.getHorizontalPosition(0, false)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(0, false))
+                .isEqualToWithTolerance(width)
 
             for (i in 1 until text.length) {
                 assertThat(paragraph.getHorizontalPosition(i, false))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
 
             assertThat(paragraph.getHorizontalPosition(text.length, false)).isZero()
@@ -1538,16 +1556,17 @@ class DesktopParagraphIntegrationTest {
                 )
 
             for (i in ltrText.indices) {
-                assertThat(paragraph.getHorizontalPosition(i, false)).isEqualTo(fontSizeInPx * i)
+                assertThat(paragraph.getHorizontalPosition(i, false))
+                    .isEqualToWithTolerance(fontSizeInPx * i)
             }
 
             for (i in rtlText.indices) {
                 assertThat(paragraph.getHorizontalPosition(i + ltrText.length, false))
-                    .isEqualTo(width - fontSizeInPx * i)
+                    .isEqualToWithTolerance(width - fontSizeInPx * i)
             }
 
             assertThat(paragraph.getHorizontalPosition(text.length, false))
-                .isEqualTo(width - rtlText.length * fontSizeInPx)
+                .isEqualToWithTolerance(width - rtlText.length * fontSizeInPx)
         }
     }
 
@@ -1569,16 +1588,16 @@ class DesktopParagraphIntegrationTest {
                 )
 
             assertThat(paragraph.getHorizontalPosition(0, false))
-                .isEqualTo(width - ltrText.length * fontSizeInPx)
+                .isEqualToWithTolerance(width - ltrText.length * fontSizeInPx)
 
             for (i in 1..ltrText.length) {
                 assertThat(paragraph.getHorizontalPosition(i, false))
-                    .isEqualTo(rtlText.length * fontSizeInPx + i * fontSizeInPx)
+                    .isEqualToWithTolerance(rtlText.length * fontSizeInPx + i * fontSizeInPx)
             }
 
             for (i in 1..rtlText.length) {
                 assertThat(paragraph.getHorizontalPosition(i + ltrText.length, false))
-                    .isEqualTo(rtlText.length * fontSizeInPx - i * fontSizeInPx)
+                    .isEqualToWithTolerance(rtlText.length * fontSizeInPx - i * fontSizeInPx)
             }
         }
     }
@@ -1634,7 +1653,8 @@ class DesktopParagraphIntegrationTest {
                     width = width,
                 )
 
-            assertThat(paragraph.getHorizontalPosition(text.length, false)).isEqualTo(width)
+            assertThat(paragraph.getHorizontalPosition(text.length, false))
+                .isEqualToWithTolerance(width)
         }
     }
 
@@ -2274,7 +2294,7 @@ class DesktopParagraphIntegrationTest {
 
             // When textAlign is TextAlign.start, LTR aligns to left, RTL aligns to right.
             assertThat(paragraphLTR.getLineLeft(0)).isZero()
-            assertThat(paragraphRTL.getLineRight(0)).isEqualTo(layoutRTLWidth)
+            assertThat(paragraphRTL.getLineRight(0)).isEqualToWithTolerance(layoutRTLWidth)
         }
     }
 
@@ -2315,7 +2335,7 @@ class DesktopParagraphIntegrationTest {
                         width = layoutWidth,
                     )
 
-                assertThat(paragraph.getLineRight(0)).isEqualTo(layoutWidth)
+                assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(layoutWidth)
             }
         }
     }
@@ -2337,8 +2357,8 @@ class DesktopParagraphIntegrationTest {
                     )
 
                 val textWidth = text.length * fontSizeInPx
-                assertThat(paragraph.getLineLeft(0)).isEqualTo(layoutWidth / 2 - textWidth / 2)
-                assertThat(paragraph.getLineRight(0)).isEqualTo(layoutWidth / 2 + textWidth / 2)
+                assertThat(paragraph.getLineLeft(0)).isEqualToWithTolerance(layoutWidth / 2 - textWidth / 2)
+                assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(layoutWidth / 2 + textWidth / 2)
             }
         }
     }
@@ -2377,7 +2397,7 @@ class DesktopParagraphIntegrationTest {
                     width = layoutWidth,
                 )
 
-            assertThat(paragraph.getLineRight(0)).isEqualTo(layoutWidth)
+            assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(layoutWidth)
         }
     }
 
@@ -2396,7 +2416,7 @@ class DesktopParagraphIntegrationTest {
                     width = layoutWidth,
                 )
 
-            assertThat(paragraph.getLineRight(0)).isEqualTo(layoutWidth)
+            assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(layoutWidth)
         }
     }
 
@@ -2435,7 +2455,7 @@ class DesktopParagraphIntegrationTest {
                 )
 
             assertThat(paragraph.getLineLeft(0)).isZero()
-            assertThat(paragraph.getLineRight(0)).isEqualTo(layoutWidth)
+            assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(layoutWidth)
             // Last line should align start
             assertThat(paragraph.getLineLeft(1)).isZero()
         }
@@ -2566,7 +2586,7 @@ class DesktopParagraphIntegrationTest {
 
             val paragraph = simpleParagraph(text = text, style = TextStyle(fontSize = fontSize))
             assertThat(paragraph.getLineTop(0)).isZero()
-            assertThat(paragraph.getLineTop(1)).isEqualTo(fontSizeInPx)
+            assertThat(paragraph.getLineTop(1)).isEqualToWithTolerance(fontSizeInPx)
         }
     }
 
@@ -2600,8 +2620,8 @@ class DesktopParagraphIntegrationTest {
             val fontSizeInPx = fontSize.toPx()
 
             val paragraph = simpleParagraph(text = text, style = TextStyle(fontSize = fontSize))
-            assertThat(paragraph.getLineBottom(0)).isEqualTo(fontSizeInPx)
-            assertThat(paragraph.getLineBottom(1)).isEqualTo(fontSize.value * 2f)
+            assertThat(paragraph.getLineBottom(0)).isEqualToWithTolerance(fontSizeInPx)
+            assertThat(paragraph.getLineBottom(1)).isEqualToWithTolerance(fontSize.value * 2f)
         }
     }
 
@@ -2869,7 +2889,7 @@ class DesktopParagraphIntegrationTest {
             val actualHeight = paragraph.getLineHeight(i)
             // In the sample_font.ttf, the height of the line should be
             // fontSize + 0.2f * fontSize(line gap)
-            assertWithMessage("line number $i").that(actualHeight).isEqualTo(lineHeight)
+            assertWithMessage("line number $i").that(actualHeight).isEqualToWithTolerance(lineHeight)
         }
     }
 
@@ -2894,7 +2914,7 @@ class DesktopParagraphIntegrationTest {
             val actualHeight = paragraph.getLineHeight(i)
             // In the sample_font.ttf, the height of the line should be
             // fontSize + 0.2f * fontSize(line gap)
-            assertWithMessage("line number $i").that(actualHeight).isEqualTo(lineHeight * fontSize)
+            assertWithMessage("line number $i").that(actualHeight).isEqualToWithTolerance(lineHeight * fontSize)
         }
     }
 
@@ -2917,7 +2937,7 @@ class DesktopParagraphIntegrationTest {
             // Make sure there is only one line, so that we can use getLineRight to test fontSize.
             assertThat(paragraph.lineCount).isEqualTo(1)
             // Notice that in this test font, the width of character equals to fontSize.
-            assertThat(paragraph.getLineWidth(0)).isEqualTo(fontSizeInPx * text.length)
+            assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(fontSizeInPx * text.length)
         }
     }
 
@@ -2945,7 +2965,7 @@ class DesktopParagraphIntegrationTest {
             // Notice that in this test font, the width of character equals to fontSize.
             val expectedLineRight =
                 "abc".length * spanStyleFontSizeInPx + "de".length * fontSizeInPx
-            assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedLineRight)
+            assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedLineRight)
         }
     }
 
@@ -2977,7 +2997,7 @@ class DesktopParagraphIntegrationTest {
             assertThat(paragraph.lineCount).isEqualTo(1)
             // Notice that in this test font, the width of character equals to fontSize.
             val expectedWidth = "abc".length * fontSizeOverwriteInPx + "de".length * fontSizeInPx
-            assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+            assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
         }
     }
 
@@ -2997,7 +3017,8 @@ class DesktopParagraphIntegrationTest {
                     style = TextStyle(fontSize = fontSize),
                 )
 
-            assertThat(paragraph.getLineRight(0)).isEqualTo(text.length * fontSizeInPx * em.value)
+            assertThat(paragraph.getLineRight(0))
+                .isEqualToWithTolerance(text.length * fontSizeInPx * em.value)
         }
     }
 
@@ -3025,7 +3046,7 @@ class DesktopParagraphIntegrationTest {
                 )
 
             assertThat(paragraph.getLineRight(0))
-                .isEqualTo(text.length * fontSizeInPx * em.value * emNested.value)
+                .isEqualToWithTolerance(text.length * fontSizeInPx * em.value * emNested.value)
         }
     }
 
@@ -3053,7 +3074,7 @@ class DesktopParagraphIntegrationTest {
                     style = TextStyle(fontSize = paragraphFontSize),
                 )
 
-            assertThat(paragraph.getLineRight(0)).isEqualTo(text.length * fontSizeInPx * em.value)
+            assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(text.length * fontSizeInPx * em.value)
         }
     }
 
@@ -3081,7 +3102,7 @@ class DesktopParagraphIntegrationTest {
                     style = TextStyle(fontSize = paragraphFontSize),
                 )
 
-            assertThat(paragraph.getLineRight(0)).isEqualTo(text.length * fontSizeInPx)
+            assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(text.length * fontSizeInPx)
         }
     }
 
@@ -3113,7 +3134,7 @@ class DesktopParagraphIntegrationTest {
                     style = TextStyle(fontSize = paragraphFontSize),
                 )
 
-            assertThat(paragraph.getLineRight(0)).isEqualTo(text.length * fontSizeInPx * em2.value)
+            assertThat(paragraph.getLineRight(0)).isEqualToWithTolerance(text.length * fontSizeInPx * em2.value)
         }
     }
 
@@ -3138,14 +3159,14 @@ class DesktopParagraphIntegrationTest {
             // Notice that in this test font, the width of character equals to fontSize.
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         fontSizeInPx * text.length * (1 + letterSpacing) -
                             fontSizeInPx * letterSpacing * 0.5f - // left edge letter spacing
                             fontSizeInPx * letterSpacing * 0.5f // right edge letter spacing
                     )
             } else {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(fontSizeInPx * text.length * (1 + letterSpacing))
+                    .isEqualToWithTolerance(fontSizeInPx * text.length * (1 + letterSpacing))
             }
         }
     }
@@ -3171,14 +3192,14 @@ class DesktopParagraphIntegrationTest {
             // Notice that in this test font, the width of character equals to fontSize.
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         (fontSizeInPx + letterSpacing) * text.length -
                             letterSpacing * 0.5f - // left edge letter spacing
                             letterSpacing * 0.5f
                     ) // right edge letter spacing
             } else {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo((fontSizeInPx + letterSpacing) * text.length)
+                    .isEqualToWithTolerance((fontSizeInPx + letterSpacing) * text.length)
             }
         }
     }
@@ -3205,13 +3226,13 @@ class DesktopParagraphIntegrationTest {
             val expectedWidth = ("abc".length * letterSpacing + text.length) * fontSizeInPx
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         expectedWidth -
                             letterSpacing * fontSizeInPx * 0.5f - // left edge letter spacing
                             0f
                     ) // right edge letter spacing
             } else {
-                assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+                assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
             }
         }
     }
@@ -3247,7 +3268,7 @@ class DesktopParagraphIntegrationTest {
                     "de".length * (1 + letterSpacing) * fontSizeInPx
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         expectedWidth -
                             fontSizeInPx *
                                 letterSpacingOverwrite *
@@ -3255,7 +3276,7 @@ class DesktopParagraphIntegrationTest {
                             fontSizeInPx * letterSpacing * 0.5f
                     ) // right edge letter spacing
             } else {
-                assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+                assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
             }
         }
     }
@@ -3294,7 +3315,7 @@ class DesktopParagraphIntegrationTest {
                     ("abc".length * fontSizeOverwriteInPx + "de".length * fontSizeInPx)
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         expectedWidth -
                             letterSpacing *
                                 fontSizeOverwriteInPx *
@@ -3302,7 +3323,7 @@ class DesktopParagraphIntegrationTest {
                             letterSpacing * fontSizeInPx * 0.5f
                     ) // right edge letter spacing
             } else {
-                assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+                assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
             }
         }
     }
@@ -3340,7 +3361,7 @@ class DesktopParagraphIntegrationTest {
                     ("abc".length * fontSizeInPx * scaleX + "de".length * fontSizeInPx)
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         expectedWidth -
                             letterSpacing *
                                 fontSizeInPx *
@@ -3349,7 +3370,7 @@ class DesktopParagraphIntegrationTest {
                             letterSpacing * fontSizeInPx * 0.5f
                     ) // right edge letter spacing
             } else {
-                assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+                assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
             }
         }
     }
@@ -3388,13 +3409,13 @@ class DesktopParagraphIntegrationTest {
                     ("abc".length * fontSizeOverwriteInPx + "de".length * fontSizeInPx)
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         expectedWidth -
                             letterSpacingInPx * 0.5f - // left edge letter spacing
                             letterSpacingInPx * 0.5f
                     ) // right edge letter spacing
             } else {
-                assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+                assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
             }
         }
     }
@@ -3433,13 +3454,13 @@ class DesktopParagraphIntegrationTest {
                     ("abc".length * fontSizeInPx * scaleX + "de".length * fontSizeInPx)
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineWidth(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         expectedWidth -
                             letterSpacingInPx * 0.5f - // left edge letter spacing
                             letterSpacingInPx * 0.5f
                     ) // right edge letter spacing
             } else {
-                assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+                assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
             }
         }
     }
@@ -3475,13 +3496,13 @@ class DesktopParagraphIntegrationTest {
                 "de".length * fontSize * letterSpacingEm
         if (hasEdgeLetterSpacingBugFix()) {
             assertThat(paragraph.getLineWidth(0))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     expectedWidth -
                         letterSpacingSp * 0.5f - // left edge letter spacing
                         fontSize * letterSpacingEm * 0.5f
                 ) // right edge letter spacing
         } else {
-            assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+            assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
         }
     }
 
@@ -3513,13 +3534,13 @@ class DesktopParagraphIntegrationTest {
         val expectedWidth = fontSize * text.length * (1 + letterSpacingEm)
         if (hasEdgeLetterSpacingBugFix()) {
             assertThat(paragraph.getLineWidth(0))
-                .isEqualTo(
+                .isEqualToWithTolerance(
                     expectedWidth -
                         letterSpacingEm * fontSize * 0.5f - // left edge letter spacing
                         letterSpacingEm * fontSize * 0.5f
                 ) // right edge letter spacing
         } else {
-            assertThat(paragraph.getLineWidth(0)).isEqualTo(expectedWidth)
+            assertThat(paragraph.getLineWidth(0)).isEqualToWithTolerance(expectedWidth)
         }
     }
 
@@ -3571,7 +3592,8 @@ class DesktopParagraphIntegrationTest {
             )
 
         assertThat(paragraph.lineCount).isEqualTo(2)
-        assertThat(paragraph.getHorizontalPosition(0, true)).isEqualTo(indent)
+        assertThat(paragraph.getHorizontalPosition(0, true))
+            .isEqualToWithTolerance(indent)
     }
 
     @Test
@@ -3595,7 +3617,8 @@ class DesktopParagraphIntegrationTest {
             )
 
         // check the position of the first character in second line: "d" should be indented
-        assertThat(paragraph.getHorizontalPosition(3, true)).isEqualTo(indent)
+        assertThat(paragraph.getHorizontalPosition(3, true))
+            .isEqualToWithTolerance(indent)
     }
 
     @Test
@@ -3616,7 +3639,8 @@ class DesktopParagraphIntegrationTest {
                     ),
             )
 
-        assertThat(paragraph.getHorizontalPosition(0, true)).isEqualTo(indent * fontSize)
+        assertThat(paragraph.getHorizontalPosition(0, true))
+            .isEqualToWithTolerance(indent * fontSize)
     }
 
     @Test
@@ -3641,7 +3665,8 @@ class DesktopParagraphIntegrationTest {
             )
 
         assertThat(paragraph.lineCount).isEqualTo(2)
-        assertThat(paragraph.getHorizontalPosition(0, true)).isEqualTo(indent * fontSize)
+        assertThat(paragraph.getHorizontalPosition(0, true))
+            .isEqualToWithTolerance(indent * fontSize)
     }
 
     @Test
@@ -3667,7 +3692,8 @@ class DesktopParagraphIntegrationTest {
 
         assertThat(paragraph.lineCount).isEqualTo(2)
         // check the position of the first character in second line: "e" should be indented
-        assertThat(paragraph.getHorizontalPosition(4, true)).isEqualTo(indent * fontSize)
+        assertThat(paragraph.getHorizontalPosition(4, true))
+            .isEqualToWithTolerance(indent * fontSize)
     }
 
     @Test
@@ -3687,14 +3713,14 @@ class DesktopParagraphIntegrationTest {
 
             if (hasEdgeLetterSpacingBugFix()) {
                 assertThat(paragraph.getLineRight(0))
-                    .isEqualTo(
+                    .isEqualToWithTolerance(
                         fontSizeInPx * (1 + letterSpacing) * text.length -
                             fontSizeInPx * 0.5f - // left edge letter spacing
                             fontSizeInPx * 0.5f
                     ) // right edge letter spacing
             } else {
                 assertThat(paragraph.getLineRight(0))
-                    .isEqualTo(fontSizeInPx * (1 + letterSpacing) * text.length)
+                    .isEqualToWithTolerance(fontSizeInPx * (1 + letterSpacing) * text.length)
             }
         }
     }
@@ -4077,7 +4103,7 @@ class DesktopParagraphIntegrationTest {
             val paragraph = simpleParagraph(text = text, style = TextStyle(fontSize = fontSize))
 
             val expectedWidth = text.length * fontSize.toPx()
-            assertThat(paragraph.minIntrinsicWidth).isEqualTo(expectedWidth)
+            assertThat(paragraph.minIntrinsicWidth).isEqualToWithTolerance(expectedWidth)
         }
     }
 
@@ -4094,7 +4120,7 @@ class DesktopParagraphIntegrationTest {
 
             // +1 is for the white space
             val expectedWidth = (maxWordLength + 1) * fontSize.toPx()
-            assertThat(paragraph.minIntrinsicWidth).isEqualTo(expectedWidth)
+            assertThat(paragraph.minIntrinsicWidth).isEqualToWithTolerance(expectedWidth)
         }
     }
 
@@ -4120,7 +4146,7 @@ class DesktopParagraphIntegrationTest {
                 )
 
             val expectedWidth = "bb ".length * styledFontSize.toPx()
-            assertThat(paragraph.minIntrinsicWidth).isEqualTo(expectedWidth)
+            assertThat(paragraph.minIntrinsicWidth).isEqualToWithTolerance(expectedWidth)
         }
     }
 
@@ -4184,8 +4210,8 @@ class DesktopParagraphIntegrationTest {
                     overflow = TextOverflow.Clip,
                 )
 
-            assertThat(paragraph.maxIntrinsicWidth).isEqualTo(paragraphIntrinsics.maxIntrinsicWidth)
-            assertThat(paragraph.width).isEqualTo(fontSizeInPx * text.length)
+            assertThat(paragraph.maxIntrinsicWidth).isEqualToWithTolerance(paragraphIntrinsics.maxIntrinsicWidth)
+            assertThat(paragraph.width).isEqualToWithTolerance(fontSizeInPx * text.length)
         }
     }
 
@@ -4224,3 +4250,10 @@ class DesktopParagraphIntegrationTest {
 
 private fun FloatSubject.isEqualToWithTolerance(expected: Float, tolerance: Float = 0.001f) =
     isWithin(tolerance).of(expected)
+
+private fun Subject<Rect>.isEqualToWithTolerance(expected: Rect, tolerance: Float = 0.001f) {
+    assertEquals(expected.left, actual!!.left, tolerance)
+    assertEquals(expected.top, actual!!.top, tolerance)
+    assertEquals(expected.right, actual!!.right, tolerance)
+    assertEquals(expected.bottom, actual!!.bottom, tolerance)
+}
